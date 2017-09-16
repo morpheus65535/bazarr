@@ -19,7 +19,7 @@
 		<style>
 			body {
 				background-color: #1b1c1d;
-				background-image: url("/image_proxy/{{details[3]}}");
+				background-image: url("/image_proxy{{details[3]}}");
 				background-repeat: no-repeat;
 				background-attachment: fixed;
 				background-size: cover;
@@ -75,7 +75,7 @@
 	</head>
 	<body>
 		%import ast
-		<div style="display: none;"><img src="/image_proxy/{{details[3]}}"></div>
+		<div style="display: none;"><img src="/image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
@@ -114,7 +114,7 @@
 			</div>
 
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" src="/image_proxy/{{details[2]}}">
+				<img class="left floated ui image" src="/image_proxy{{details[2]}}">
 				<h2>{{details[0]}}</h2>
 				<p>{{details[1]}}</p>
 			</div>

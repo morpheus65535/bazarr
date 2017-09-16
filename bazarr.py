@@ -3,10 +3,6 @@ import bottle
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
-application = bottle.default_app()
-
-from paste import httpserver
-
 import sqlite3
 import itertools
 import operator
@@ -28,6 +24,7 @@ def static(path):
 
 @route('/image_proxy/<url:path>', method='GET')
 def image_proxy(url):
+    print url_sonarr_short + url
     img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
@@ -141,4 +138,17 @@ def remove_subtitles():
         except OSError:
             redirect('/episodes/' + sonarrSeriesId + '?error=1')
 
-httpserver.serve(application, host=ip, port=port)
+@route('/remove_subtitles', method='GET')
+def remove_subtitles():
+        episodePath = request.GET.episodePath
+        subtitlesPath = request.GET.subtitlesPath
+        sonarrSeriesId = request.GET.sonarrSeriesId
+
+        try:
+            os.remove(subtitlesPath)
+            store_subtitles(episodePath)
+            redirect('/episodes/' + sonarrSeriesId)
+        except OSError:
+            redirect('/episodes/' + sonarrSeriesId + '?error=1')
+
+run(host=ip, port=port)
