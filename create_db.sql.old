@@ -1,0 +1,49 @@
+CREATE TABLE `table_shows` (
+	`tvdbId`	INTEGER NOT NULL PRIMARY KEY UNIQUE,
+	`title`	TEXT NOT NULL,
+	`path`	TEXT NOT NULL UNIQUE,
+	`languages`	TEXT,
+	`hearing_impaired`	TEXT
+);
+CREATE TABLE `table_settings_subliminal` (
+	`age`	TEXT,
+	`max-workers`	INTEGER
+);
+CREATE TABLE `table_settings_providers` (
+	`name`	TEXT NOT NULL UNIQUE,
+	`username`	TEXT,
+	`password`	TEXT,
+	`enabled`	INTEGER,
+	PRIMARY KEY(`name`)
+);
+CREATE TABLE `table_settings_languages` (
+	`code`	TEXT NOT NULL UNIQUE,
+	`name`	TEXT NOT NULL,
+	`enabled`	INTEGER,
+	PRIMARY KEY(`code`)
+);
+CREATE TABLE `table_settings_general` (
+	`ip`	TEXT NOT NULL,
+	`port`	INTEGER NOT NULL,
+	`base_url`	TEXT,
+	`ssl`	INTEGER
+);
+INSERT INTO `table_settings_general` (ip,port,base_url,ssl) VALUES ('0.0.0.0',6767,NULL,NULL);
+CREATE TABLE `table_settings_connect` (
+	`ip`	TEXT NOT NULL,
+	`port`	INTEGER NOT NULL,
+	`base_url`	TEXT,
+	`ssl`	INTEGER,
+	`apikey`	TEXT NOT NULL
+);
+CREATE TABLE `table_scheduler` (
+	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+	`name`	TEXT NOT NULL,
+	`frequency`	TEXT NOT NULL
+);
+CREATE TABLE `table_history` (
+	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+	`timestamp`	TEXT NOT NULL,
+	`file`	TEXT NOT NULL,
+	`provider`	TEXT NOT NULL
+);
