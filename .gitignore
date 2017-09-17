@@ -1,1 +1,3 @@
 *.pyc
+bazarr.db
+cachefile.dbm

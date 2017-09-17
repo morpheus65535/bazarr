@@ -17,6 +17,7 @@ from get_languages import *
 from get_general_settings import *
 from get_sonarr_settings import *
 from list_subtitles import *
+from get_subtitle import *
 
 @route('/static/:path#.+#', name='static')
 def static(path):
@@ -24,7 +25,6 @@ def static(path):
 
 @route('/image_proxy/<url:path>', method='GET')
 def image_proxy(url):
-    print url_sonarr_short + url
     img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
@@ -78,7 +78,7 @@ def episodes(no):
     c = conn.cursor()
 
     series_details = []
-    series_details = c.execute("SELECT title, overview, poster, fanart FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
 
     sqlite3.enable_callback_tracebacks(True)
     episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles(path) FROM table_episodes WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchall()
@@ -133,22 +133,23 @@ def remove_subtitles():
 
         try:
             os.remove(subtitlesPath)
-            store_subtitles(episodePath)
-            redirect('/episodes/' + sonarrSeriesId)
         except OSError:
-            redirect('/episodes/' + sonarrSeriesId + '?error=1')
+            pass
+        store_subtitles(episodePath)
+        redirect('/episodes/' + sonarrSeriesId)
 
-@route('/remove_subtitles', method='GET')
-def remove_subtitles():
+@route('/get_subtitle', method='GET')
+def get_subtitle():
         episodePath = request.GET.episodePath
-        subtitlesPath = request.GET.subtitlesPath
+        language = request.GET.language
+        hi = request.GET.hi
         sonarrSeriesId = request.GET.sonarrSeriesId
-
+        
         try:
-            os.remove(subtitlesPath)
+            download_subtitle(episodePath, language, hi, None)
             store_subtitles(episodePath)
             redirect('/episodes/' + sonarrSeriesId)
         except OSError:
-            redirect('/episodes/' + sonarrSeriesId + '?error=1')
+            redirect('/episodes/' + sonarrSeriesId + '?error=2')
 
 run(host=ip, port=port)

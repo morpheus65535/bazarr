@@ -75,6 +75,8 @@
 	</head>
 	<body>
 		%import ast
+		%import pycountry
+		%from get_general_settings import *
 		<div style="display: none;"><img src="/image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
@@ -144,7 +146,6 @@
 										<th>Title</th>
 										<th class="collapsing">Existing subtitles</th>
 										<th class="collapsing">Missing subtitles</th>
-										<th class="no-sort"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -156,17 +157,16 @@
 										%actual_languages = ast.literal_eval(episode[4])
 										%if actual_languages is not None:
 											%for language in actual_languages:
-												
-												%if language[1] is not None:
-													<a href="/remove_subtitles?episodePath={{episode[1]}}&subtitlesPath={{language[1]}}&sonarrSeriesId={{episode[5]}}" class="ui tiny label">
-														{{language[0]}}
-														<i class="delete icon"></i>
-													</a>
-												%else:
-													<div class="ui tiny label">
-														{{language[0]}}
-													</div>
-												%end
+											%if language[1] is not None:
+											<a href="/remove_subtitles?episodePath={{episode[1]}}&subtitlesPath={{path_replace(language[1])}}&sonarrSeriesId={{episode[5]}}" class="ui tiny label">
+												{{language[0]}}
+												<i class="delete icon"></i>
+											</a>
+											%else:
+											<div class="ui tiny label">
+												{{language[0]}}
+											</div>
+											%end
 											%end
 										%end
 										</td>
@@ -174,18 +174,12 @@
 										%missing_languages = ast.literal_eval(episode[6])
 										%if missing_languages is not None:
 											%for language in missing_languages:
-											<div class="ui tiny label">
+											<a href="/get_subtitle?episodePath={{episode[1]}}&language={{pycountry.languages.lookup(str(language)).alpha_3}}&hi={{details[4]}}&sonarrSeriesId={{episode[5]}}" class="ui tiny label">
 												{{language}}
-											</div>
+												<i class="search icon"></i>
+											</a>
 											%end
 										%end
-										</td>
-										<td class="collapsing">
-											%if len(missing_languages) > 0:
-											<div class="ui inverted basic compact icon" data-tooltip="Download missing subtitles" data-inverted="" onclick="location.href='/edit_series/{{episode[3]}}';">
-												<i class="ui black download icon"></i>
-											</div>
-											%end
 										</td>
 									</tr>
 								%end
