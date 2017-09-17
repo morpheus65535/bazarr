@@ -158,7 +158,7 @@
 										%if actual_languages is not None:
 											%for language in actual_languages:
 											%if language[1] is not None:
-											<a href="/remove_subtitles?episodePath={{episode[1]}}&subtitlesPath={{path_replace(language[1])}}&sonarrSeriesId={{episode[5]}}" class="ui tiny label">
+											<a href="/remove_subtitles?episodePath={{episode[1]}}&subtitlesPath={{path_replace(language[1])}}&language={{pycountry.languages.lookup(str(language[0])).alpha_3}}&sonarrSeriesId={{episode[5]}}&sonarrEpisodeId={{episode[7]}}" class="ui tiny label">
 												{{language[0]}}
 												<i class="delete icon"></i>
 											</a>
@@ -174,9 +174,9 @@
 										%missing_languages = ast.literal_eval(episode[6])
 										%if missing_languages is not None:
 											%for language in missing_languages:
-											<a href="/get_subtitle?episodePath={{episode[1]}}&language={{pycountry.languages.lookup(str(language)).alpha_3}}&hi={{details[4]}}&sonarrSeriesId={{episode[5]}}" class="ui tiny label">
+											<a href="/get_subtitle?episodePath={{episode[1]}}&language={{pycountry.languages.lookup(str(language)).alpha_3}}&hi={{details[4]}}&sonarrSeriesId={{episode[5]}}&sonarrEpisodeId={{episode[7]}}" class="ui tiny label">
 												{{language}}
-												<i class="search icon"></i>
+												<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 											</a>
 											%end
 										%end

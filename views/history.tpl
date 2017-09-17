@@ -82,7 +82,7 @@
 				</thead>
 				<tbody>
 				%import time
-				%from utils import *
+				%import pretty
 				%for row in rows:
 					<tr class="selectable">
 						<td class="collapsing">
@@ -104,7 +104,7 @@
 						<td>{{row[3]}}</td>
 						<td class="collapsing">
 							<div class="ui inverted" data-tooltip="{{time.strftime('%A, %B %d %Y %H:%M', time.localtime(row[4]))}}" data-inverted="">
-								{{pretty_date(row[4])}}
+								{{pretty.date(int(row[4]))}}
 							</div>
 						</td>
 						<td>{{row[5]}}</td>

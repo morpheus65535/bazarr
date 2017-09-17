@@ -7,6 +7,7 @@ import sqlite3
 import itertools
 import operator
 import requests
+import pycountry
 from PIL import Image
 from io import BytesIO
 from fdsend import send_file
@@ -18,6 +19,7 @@ from get_general_settings import *
 from get_sonarr_settings import *
 from list_subtitles import *
 from get_subtitle import *
+from utils import *
 
 @route('/static/:path#.+#', name='static')
 def static(path):
@@ -81,8 +83,8 @@ def episodes(no):
     series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
 
     sqlite3.enable_callback_tracebacks(True)
-    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles(path) FROM table_episodes WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchall()
-    episodes=reversed(sorted(episodes, key=operator.itemgetter(2)))
+    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles(path), sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchall()
+    episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
     seasons_list = []
     for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
@@ -94,8 +96,9 @@ def episodes(no):
 def history():
     db = sqlite3.connect('bazarr.db')
     c = db.cursor()
-    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id LIMIT 15")
+    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15")
     data = c.fetchall()
+    data = reversed(sorted(data, key=operator.itemgetter(4)))
     c.close()
     return template('history', rows=data)
 
@@ -128,11 +131,15 @@ def system():
 @route('/remove_subtitles', method='GET')
 def remove_subtitles():
         episodePath = request.GET.episodePath
+        language = request.GET.language
         subtitlesPath = request.GET.subtitlesPath
         sonarrSeriesId = request.GET.sonarrSeriesId
+        sonarrEpisodeId = request.GET.sonarrEpisodeId
 
         try:
             os.remove(subtitlesPath)
+            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
         except OSError:
             pass
         store_subtitles(episodePath)
@@ -144,9 +151,11 @@ def get_subtitle():
         language = request.GET.language
         hi = request.GET.hi
         sonarrSeriesId = request.GET.sonarrSeriesId
+        sonarrEpisodeId = request.GET.sonarrEpisodeId
         
         try:
-            download_subtitle(episodePath, language, hi, None)
+            result = download_subtitle(episodePath, language, hi, None)
+            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             store_subtitles(episodePath)
             redirect('/episodes/' + sonarrSeriesId)
         except OSError:
