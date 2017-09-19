@@ -15,6 +15,8 @@ import urllib
 
 from init_db import *
 from get_languages import *
+from get_providers import *
+
 from get_general_settings import *
 from get_sonarr_settings import *
 from list_subtitles import *
@@ -108,16 +110,39 @@ def settings():
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_general")
     settings_general = c.fetchone()
-    c.execute("SELECT * FROM table_settings_languages")
+    c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
-    c.execute("SELECT * FROM table_settings_providers")
+    c.execute("SELECT * FROM table_settings_providers ORDER BY name")
     settings_providers = c.fetchall()
     c.execute("SELECT * FROM table_settings_sonarr")
     settings_sonarr = c.fetchone()
-    c.execute("SELECT * FROM table_settings_subliminal")
-    settings_subliminal = c.fetchone()
     c.close()
-    return template('settings', settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_subliminal=settings_subliminal)
+    return template('settings', settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr)
+
+@route('/save_settings', method='POST')
+def save_settings():
+    lang = request.forms.getall('languages')
+    if len(lang) > 0:
+        if lang[0] == '':
+            lang = None
+        else:
+            pass
+    else:
+        lang = None
+    hi = request.forms.get('hearing_impaired')
+
+    if hi == "on":
+        hi = "True"
+    else:
+        hi = "False"
+
+    conn = sqlite3.connect('bazarr.db')
+    c = conn.cursor()
+    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE tvdbId LIKE ?", (str(lang), hi, no))
+    conn.commit()
+    c.close()
+
+    redirect('/settings')
 
 @route('/system')
 def system():

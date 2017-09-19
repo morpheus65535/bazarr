@@ -1,6 +1,7 @@
 import os
 import enzyme
 import babelfish
+from subliminal import *
 import pycountry
 import sqlite3
 import ast
@@ -25,20 +26,19 @@ def store_subtitles(file):
 
         conn_db = sqlite3.connect('bazarr.db')
         c_db = conn_db.cursor()
-        enabled_languages = c_db.execute("SELECT code2 FROM table_settings_languages WHERE enabled = 1").fetchall()
         
-        for language in enabled_languages:
-            subtitle_path = os.path.splitext(file)[0] + "." + str(language[0]) + ".srt"
-            if os.path.isfile(subtitle_path):
-                languages.append([str(language[0]),str(path_replace_reverse(subtitle_path))])
+        subtitles = core.search_external_subtitles(file)
+        actual_subtitles = []
+        for subtitle, language in subtitles.iteritems():
+            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         try:
-            c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(languages), path_replace_reverse(file)))
+            c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
             conn_db.commit()
         except:
             pass
         c_db.close()
 
-    return languages
+    return actual_subtitles
     
 def list_missing_subtitles(file):
     conn_db = sqlite3.connect('bazarr.db')
@@ -69,5 +69,4 @@ def full_scan_subtitles():
     for path in all_path:
         print store_subtitles(path_replace(path[0]))
 
-#print list_missing_subtitles('/tv/Fear the Walking Dead/Season 3/Fear.The.Walking.Dead.S03E01.CONVERT.720p.WEB.h264-TBS[rarbg].mkv')
 #full_scan_subtitles()
