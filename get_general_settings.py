@@ -16,8 +16,7 @@ db.close()
 ip = general_settings[0]
 port = general_settings[1]
 base_url = general_settings[2]
-ssl = general_settings[3]
-path_mappings = ast.literal_eval(general_settings[4])
+path_mappings = ast.literal_eval(general_settings[3])
 
 def path_replace(path):
    for path_mapping in path_mappings:

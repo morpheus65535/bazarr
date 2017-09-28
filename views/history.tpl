@@ -1,10 +1,10 @@
 <html>
 	<head>
 		<!DOCTYPE html>
-		<script src="https://code.jquery.com/jquery-latest.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/semantic-ui/latest/semantic.min.js"></script>
-		<script src="https://semantic-ui.com/javascript/library/tablesort.js"></script>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/latest/semantic.min.css">
+		<script src="/static/jquery/jquery-latest.min.js"></script>
+		<script src="/static/semantic/semantic.min.js"></script>
+		<script src="/static/jquery/tablesort.js"></script>
+		<link rel="stylesheet" href="/static/semantic/semantic.min.css">
 		
 		<link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -34,6 +34,7 @@
 				border-radius: 0px;
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
+				margin-bottom: 3em;
 			}
 			#tablehistory {
 				padding: 3em;
@@ -69,7 +70,7 @@
 		</div>
 			
 		<div id="fondblanc" class="ui container">
-			<table id="tablehistory" class="ui very basic selectable sortable table">
+			<table id="tablehistory" class="ui very basic selectable table">
 				<thead>
 					<tr>
 						<th></th>

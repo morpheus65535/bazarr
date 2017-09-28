@@ -186,4 +186,4 @@ def get_subtitle():
         except OSError:
             redirect('/episodes/' + sonarrSeriesId + '?error=2')
 
-run(host=ip, port=port)
+run(host=ip, port=port, server='waitress')

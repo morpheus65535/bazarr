@@ -8,8 +8,33 @@ import ast
 
 from get_general_settings import *
 
+def list_subtitles(file):
+    languages = []
+    actual_subtitles = []
+    if os.path.exists(file):
+        if os.path.splitext(file)[1] == '.mkv':
+            try:
+                with open(file, 'rb') as f:
+                    mkv = enzyme.MKV(f)
+                
+                for subtitle_track in mkv.subtitle_tracks:
+                    try:
+                        languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
+                    except:
+                        pass
+            except:
+                pass
+
+        subtitles = core.search_external_subtitles(file)
+        
+        for subtitle, language in subtitles.iteritems():
+            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+
+    return actual_subtitles
+
 def store_subtitles(file):
     languages = []
+    actual_subtitles = []
     if os.path.exists(file):
         if os.path.splitext(file)[1] == '.mkv':
             try:
@@ -28,7 +53,7 @@ def store_subtitles(file):
         c_db = conn_db.cursor()
         
         subtitles = core.search_external_subtitles(file)
-        actual_subtitles = []
+        
         for subtitle, language in subtitles.iteritems():
             actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         try:
@@ -63,10 +88,14 @@ def list_missing_subtitles(file):
 def full_scan_subtitles():
     conn_db = sqlite3.connect('bazarr.db')
     c_db = conn_db.cursor()
-    all_path = c_db.execute("SELECT path FROM table_episodes").fetchall()
+    c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
 
-    for path in all_path:
-        print store_subtitles(path_replace(path[0]))
+def new_scan_subtitles():
+    conn_db = sqlite3.connect('bazarr.db')
+    c_db = conn_db.cursor()
+    c_db.execute("SELECT path FROM table_episodes WHERE subtitles is null").fetchall()
+    c_db.close()
 
 #full_scan_subtitles()
+#new_scan_subtitles()

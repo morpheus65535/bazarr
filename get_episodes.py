@@ -1,6 +1,8 @@
 import sqlite3
 import requests
 
+from list_subtitles import *
+
 # Open database connection
 db = sqlite3.connect('bazarr.db')
 c = db.cursor()
@@ -28,8 +30,8 @@ for seriesId in seriesIdList:
         if episode['hasFile']:
             try:
                 c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode) VALUES (?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber']))
-            except:
-                c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ? WHERE path = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], episode['episodeFile']['path']))
+            except sqlite3.Error:
+                test = c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ? WHERE path = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], episode['episodeFile']['path']))
         else:
             continue
     continue
@@ -40,4 +42,5 @@ db.commit()
 # Close database connection
 c.close()
             
-
+# Store substitles from episodes we've just added
+new_scan_subtitles()

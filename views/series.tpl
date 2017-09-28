@@ -1,10 +1,10 @@
 <html>
 	<head>
 		<!DOCTYPE html>
-		<script src="https://code.jquery.com/jquery-latest.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/semantic-ui/latest/semantic.min.js"></script>
-		<script src="https://semantic-ui.com/javascript/library/tablesort.js"></script>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/latest/semantic.min.css">
+		<script src="/static/jquery/jquery-latest.min.js"></script>
+		<script src="/static/semantic/semantic.min.js"></script>
+		<script src="/static/jquery/tablesort.js"></script>
+		<link rel="stylesheet" href="/static/semantic/semantic.min.css">
 		
 		<link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -34,6 +34,7 @@
 				border-radius: 0px;
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
+				margin-bottom: 3em;
 			}
 			#tableseries {
 				padding: 3em;
@@ -76,7 +77,6 @@
 				<thead>
 					<tr>
 						<th class="sorted ascending">Name</th>
-						<th>Status</th>
 						<th>Path</th>
 						<th>Language</th>
 						<th>Hearing-impaired</th>
@@ -89,17 +89,6 @@
 				%for row in rows:
 					<tr class="selectable">
 						<td><a href="/episodes/{{row[5]}}">{{row[1]}}</a></td>
-						<td>
-						%if os.path.exists(row[2]):
-							<div class="ui inverted basic compact icon" data-tooltip="Path exist" data-inverted="">
-								<i class="ui checkmark icon"></i>
-							</div>
-						%else:
-							<div class="ui inverted basic compact icon" data-tooltip="Path not found. Is your path substitution settings correct?" data-inverted="">
-								<i class="ui warning sign icon"></i>
-							</div>
-						%end
-						</td>
 						<td>
 						{{row[2]}}
 						</td>

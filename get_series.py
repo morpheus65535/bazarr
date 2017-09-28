@@ -13,6 +13,13 @@ url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
 
 r = requests.get(url_sonarr_api_series)
 shows_list = []
+
+# Get current shows in DB
+current_shows_db = c.execute('SELECT tvdbId FROM table_shows').fetchall()
+current_shows_db_list = [x[0] for x in current_shows_db]
+current_shows_sonarr = []
+
+# Parsing data returned from Sonarr
 for show in r.json():
     try:
         overview = unicode(show['overview'])
@@ -27,12 +34,23 @@ for show in r.json():
         fanart = show['images'][0]['url'].split('?')[0]
     except:
         fanart = ""
+
+    # Add shows in Sonarr to current shows list
+    current_shows_sonarr.append(show['tvdbId'])
+
     # Update or insert shows list in database table
     try:
         c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,show["tvdbId"]))
     except:
         print show["title"]
         c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?)''', (show["title"],show["path"],show["tvdbId"],show["tvdbId"],show["tvdbId"],show["id"],overview,poster,fanart))
+
+# Delete shows not in Sonarr anymore
+deleted_items = []
+for item in current_shows_db_list:
+    if item not in current_shows_sonarr:
+        deleted_items.append(tuple([item]))
+c.executemany('DELETE FROM table_shows WHERE tvdbId = ?',deleted_items)
 
 # Commit changes to database table
 db.commit()
