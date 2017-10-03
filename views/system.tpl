@@ -43,22 +43,26 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu four item">
+			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
 				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
-					<a class="menu item" href="/">
+					<a class="item" href="/">
 						<i class="play icon"></i>
 						Series
 					</a>
-					<a class="menu item" href="/history">
+					<a class="item" href="/history">
 						<i class="wait icon"></i>
 						History
 					</a>
-					<a class="menu item" href="/settings">
+					<a class="item" href="/wanted">
+						<i class="warning sign icon"></i>
+						Wanted
+					</a>
+					<a class="item" href="/settings">
 						<i class="settings icon"></i>
 						Settings
 					</a>
-					<a class="menu item" href="/system">
+					<a class="item" href="/system">
 						<i class="laptop icon"></i>
 						System
 					</a>

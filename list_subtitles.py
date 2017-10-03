@@ -65,37 +65,52 @@ def store_subtitles(file):
 
     return actual_subtitles
     
-def list_missing_subtitles(file):
+def list_missing_subtitles():
     conn_db = sqlite3.connect('bazarr.db')
     c_db = conn_db.cursor()
-    actual_subtitles_long = c_db.execute("SELECT sonarrSeriesId, subtitles FROM table_episodes WHERE path = ?", (file,)).fetchone()
-    desired_subtitles = c_db.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId = ?", (actual_subtitles_long[0],)).fetchone()
-    c_db.close()
-    missing_subtitles = []
-    actual_subtitles = []
-    if desired_subtitles[0] == "None":
-        pass
-    else:
-        actual_subtitles_long = ast.literal_eval(actual_subtitles_long[1])
-        for actual_subtitle in actual_subtitles_long:
-            actual_subtitles.append(actual_subtitle[0])
+    episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId").fetchall()
 
-        desired_subtitles = ast.literal_eval(desired_subtitles[0])
-        
-        missing_subtitles = (list(set(desired_subtitles) - set(actual_subtitles)))
-    return str(missing_subtitles)
+    missing_subtitles_global = []
+    
+    for episode_subtitles in episodes_subtitles:
+        actual_subtitles = []
+        desired_subtitles = []
+        missing_subtitles = []
+        actual_subtitles = ast.literal_eval(episode_subtitles[1])
+        desired_subtitles = ast.literal_eval(episode_subtitles[2])
+        actual_subtitles_list = []
+        if desired_subtitles == None:
+            pass
+        else:
+            actual_subtitles_list = []
+            for item in actual_subtitles:
+                actual_subtitles_list.append(item[0])
+            missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
+        missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
+
+    c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
+    conn_db.commit()
+
+    c_db.close()
 
 def full_scan_subtitles():
     conn_db = sqlite3.connect('bazarr.db')
     c_db = conn_db.cursor()
-    c_db.execute("SELECT path FROM table_episodes").fetchall()
+    episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
 
+    for episode in episodes:
+        store_subtitles(path_replace(episode[0]))
+        
 def new_scan_subtitles():
     conn_db = sqlite3.connect('bazarr.db')
     c_db = conn_db.cursor()
-    c_db.execute("SELECT path FROM table_episodes WHERE subtitles is null").fetchall()
+    episodes = c_db.execute("SELECT path FROM table_episodes WHERE subtitles is null").fetchall()
     c_db.close()
+
+    for episode in episodes:
+        store_subtitles(path_replace(episode[0]))
 
 #full_scan_subtitles()
 #new_scan_subtitles()
+#list_missing_subtitles()

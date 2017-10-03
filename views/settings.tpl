@@ -44,22 +44,26 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu four item">
+			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
 				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
-					<a class="menu item" href="/">
+					<a class="item" href="/">
 						<i class="play icon"></i>
 						Series
 					</a>
-					<a class="menu item" href="/history">
+					<a class="item" href="/history">
 						<i class="wait icon"></i>
 						History
 					</a>
-					<a class="menu item" href="/settings">
+					<a class="item" href="/wanted">
+						<i class="warning sign icon"></i>
+						Wanted
+					</a>
+					<a class="item" href="/settings">
 						<i class="settings icon"></i>
 						Settings
 					</a>
-					<a class="menu item" href="/system">
+					<a class="item" href="/system">
 						<i class="laptop icon"></i>
 						System
 					</a>
@@ -68,206 +72,209 @@
 		</div>
 			
 		<div id="fondblanc" class="ui container">
+			<form name="settings_form" id="settings_form" action="/save_settings" method="post" class="ui form">
 			<div class="ui top attached tabular menu">
 				<a class="item active" data-tab="general">General</a>
 				<a class="item" data-tab="sonarr">Sonarr</a>
 				<a class="item" data-tab="subliminal">Subliminal</a>
 			</div>
-			<form>
-				<div class="ui bottom attached tab segment active" data-tab="general">
-					<div class="ui container"><button class="ui blue right floated button">Save</button></div>
-					<br>
-					<div class="ui dividing header">Bazarr settings</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Listening IP address</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											<input type="text" value="{{settings_general[0]}}">
-										</div>
-									</div>
+			<div class="ui bottom attached tab segment active" data-tab="general">
+				<div class="ui container"><button class="ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
+				<br>
+				<div class="ui dividing header">Bazarr settings</div>
+				<div class="ui negative message">
+					<p>These changes require that you restart Bazarr.</p>
+				</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Listening IP address</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									<input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
 								</div>
+							</div>
+						</div>
 
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Listening port</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											<input type="text" value="{{settings_general[1]}}">
-										</div>
-									</div>
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Listening port</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									<input name="settings_general_port" type="text" value="{{settings_general[1]}}">
 								</div>
+							</div>
+						</div>
 
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Base URL</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											%if settings_general[2] == None:
-											%	base_url = "/"
-											%else:
-											%	base_url = settings_general[2]
-											%end
-											<input type="text" value="{{base_url}}">
-										</div>
-									</div>
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Base URL</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									%if settings_general[2] == None:
+									%	base_url = "/"
+									%else:
+									%	base_url = settings_general[2]
+									%end
+									<input name="settings_general_baseurl" type="text" value="{{base_url}}">
 								</div>
-					</div>
-
-					<div class="ui dividing header">Remote Path Mappings</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								%import ast
-								%path_substitutions = ast.literal_eval(settings_general[3])
-								%for x in range(0, 5):
-								%	path = []
-								%	try:
-								%		path = path_substitutions[x]
-								%	except IndexError:
-								%		path = ["", ""]
-								%	end
-							    <div class="middle aligned row">
-							    	<div class="right aligned four wide column">
-							    		
-							    	</div>
-									<div class="four wide column">
-										<div class="ui fluid input">
-											<input type="text" value="{{path[0]}}">
-										</div>
-									</div>
-									<div class="center aligned column">
-										<i class="arrow circle right icon"></i>
-									</div>
-									<div class="four wide column">
-										<div class="ui fluid input">
-											<input type="text" value="{{path[1]}}">
-										</div>
-									</div>
-								</div>
-								%end
 							</div>
 						</div>
 					</div>
 				</div>
-				<div class="ui bottom attached tab segment" data-tab="sonarr">
-					<div class="ui container"><button class="ui blue right floated button">Save</button></div>
-					<br>
-					<div class="ui dividing header">Sonarr settings</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Listening IP address</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											<input type="text" value="{{settings_sonarr[0]}}">
-										</div>
-									</div>
-								</div>
 
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Listening port</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											<input type="text" value="{{settings_sonarr[1]}}">
-										</div>
-									</div>
+				<div class="ui dividing header">Remote Path Mappings</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						%import ast
+						%path_substitutions = ast.literal_eval(settings_general[3])
+						%for x in range(0, 5):
+						%	path = []
+						%	try:
+						%		path = path_substitutions[x]
+						%	except IndexError:
+						%		path = ["", ""]
+						%	end
+					    <div class="middle aligned row">
+					    	<div class="right aligned four wide column">
+					    		
+					    	</div>
+							<div class="four wide column">
+								<div class="ui fluid input">
+									<input name="settings_general_sourcepath" type="text" value="{{path[0]}}">
 								</div>
-
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Base URL</label>
-									</div>
-									<div class="eleven wide column">
-										<div class="ui input">
-											<input type="text" value="{{settings_sonarr[2]}}">
-										</div>
-									</div>
-								</div>
-
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>SSL enabled</label>
-									</div>
-									<div class="eleven wide column">
-										<div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_sonarr[3]}}>
-									    	<input type="checkbox">
-									    	<label></label>
-									    </div>
-									</div>
-								</div>
-
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>API key</label>
-									</div>
-									<div class="five wide column">
-										<div class="ui fluid input">
-											<input type="text" value="{{settings_sonarr[4]}}">
-										</div>
-									</div>
+							</div>
+							<div class="center aligned column">
+								<i class="arrow circle right icon"></i>
+							</div>
+							<div class="four wide column">
+								<div class="ui fluid input">
+									<input name="settings_general_destpath" type="text" value="{{path[1]}}">
 								</div>
 							</div>
 						</div>
+						%end
+					</div>
 				</div>
-				<div class="ui bottom attached tab segment" data-tab="subliminal">
-					<div class="ui container"><button class="ui blue right floated button">Save</button></div>
-					<br>
-					<div class="ui dividing header">Subtitles providers</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Enabled providers</label>
-									</div>
-									<div class="eleven wide column">
-										<select name="settings_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
-											<option value="">Providers</option>
-											%enabled_providers = []
-											%for provider in settings_providers:
-											<option value="{{provider[0]}}">{{provider[0]}}</option>
-											%if provider[1] == True:
-											%	enabled_providers.append(str(provider[0]))
-											%end
-											%end
-										</select>
-									</div>
+			</div>
+			<div class="ui bottom attached tab segment" data-tab="sonarr">
+				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
+				<br>
+				<div class="ui dividing header">Sonarr settings</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Listening IP address</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									<input name="settings_sonarr_ip" type="text" value="{{settings_sonarr[0]}}">
 								</div>
 							</div>
 						</div>
-					<div class="ui dividing header">Subtitles languages</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned four wide column">
-										<label>Enabled languages</label>
-									</div>
-									<div class="eleven wide column">
-										<select name="settings_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
-											<option value="">Languages</option>
-											%enabled_languages = []
-											%for language in settings_languages:
-											<option value="{{language[1]}}">{{language[2]}}</option>
-											%if language[3] == True:
-											%	enabled_languages.append(str(language[1]))
-											%end
-											%end
-										</select>
-									</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Listening port</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									<input name="settings_sonarr_port" type="text" value="{{settings_sonarr[1]}}">
 								</div>
 							</div>
 						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Base URL</label>
+							</div>
+							<div class="eleven wide column">
+								<div class="ui input">
+									<input name="settings_sonarr_baseurl" type="text" value="{{settings_sonarr[2]}}">
+								</div>
+							</div>
+						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>SSL enabled</label>
+							</div>
+							<div class="eleven wide column">
+								<div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_sonarr[3]}}>
+							    	<input name="settings_sonarr_ssl" type="checkbox">
+							    	<label></label>
+							    </div>
+							</div>
+						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>API key</label>
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_sonarr_apikey" type="text" value="{{settings_sonarr[4]}}">
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-			</form>
+			</div>
+			<div class="ui bottom attached tab segment" data-tab="subliminal">
+				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
+				<br>
+				<div class="ui dividing header">Subtitles providers</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Enabled providers</label>
+							</div>
+							<div class="eleven wide column">
+								<select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
+									<option value="">Providers</option>
+									%enabled_providers = []
+									%for provider in settings_providers:
+									<option value="{{provider[0]}}">{{provider[0]}}</option>
+									%if provider[1] == True:
+									%	enabled_providers.append(str(provider[0]))
+									%end
+									%end
+								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="ui dividing header">Subtitles languages</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Enabled languages</label>
+							</div>
+							<div class="eleven wide column">
+								<select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
+									<option value="">Languages</option>
+									%enabled_languages = []
+									%for language in settings_languages:
+									<option value="{{language[1]}}">{{language[2]}}</option>
+									%if language[3] == True:
+									%	enabled_languages.append(str(language[1]))
+									%end
+									%end
+								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
+		</form>
 	</body>
 </html>
 

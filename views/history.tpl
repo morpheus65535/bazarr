@@ -35,9 +35,10 @@
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
-			}
-			#tablehistory {
 				padding: 3em;
+			}
+			.fast.backward, .backward, .forward, .fast.forward {
+    			cursor: pointer;
 			}
 		</style>
 	</head>
@@ -46,7 +47,7 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu four item">
+			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
 				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
 					<a class="item" href="/">
@@ -56,6 +57,10 @@
 					<a class="item" href="/history">
 						<i class="wait icon"></i>
 						History
+					</a>
+					<a class="item" href="/wanted">
+						<i class="warning sign icon"></i>
+						Wanted
 					</a>
 					<a class="item" href="/settings">
 						<i class="settings icon"></i>
@@ -113,6 +118,35 @@
 				%end
 				</tbody>
 			</table>
+			<div class="ui grid">
+				<div class="three column row">
+			    	<div class="column"></div>
+			    	<div class="center aligned column">
+			    		<i class="\\
+			    		%if page == "1":
+			    		disabled\\
+			    		%end
+			    		 fast backward icon"></i>
+			    		<i class="\\
+			    		%if page == "1":
+			    		disabled\\
+			    		%end
+			    		 backward icon"></i>
+			    		{{page}} / {{max_page}}
+			    		<i class="\\
+			    		%if int(page) == int(max_page):
+			    		disabled\\
+			    		%end
+			    		 forward icon"></i>
+			    		<i class="\\
+			    		%if int(page) == int(max_page):
+			    		disabled\\
+			    		%end
+			    		 fast forward icon"></i>
+			    	</div>
+			    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
+				</div>
+			</div>
 		</div>
 	</body>
 </html>
@@ -121,5 +155,18 @@
 <script>
 	$('a').click(function(){
 		$('#loader').addClass('active');
+	})
+
+	$('.fast.backward').click(function(){
+		location.href="?page=1";
+	})
+	$('.backward').click(function(){
+		location.href="?page={{int(page)-1}}";
+	})
+	$('.forward').click(function(){
+		location.href="?page={{int(page)+1}}";
+	})
+	$('.fast.forward').click(function(){
+		location.href="?page={{int(max_page)}}";
 	})
 </script>

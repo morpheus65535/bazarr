@@ -26,9 +26,8 @@
 				background-position:center center;
 			}
 			#divmenu {
-				background-color: #1b1c1d;
+				background-color: #272727;
 				opacity: 0.9;
-				border-radius: 5px;
 				padding-top: 2em;
 				padding-bottom: 1em;
 				padding-left: 1em;
@@ -82,8 +81,8 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
-			<div id="menu" class="ui inverted borderless labeled icon huge menu four item">
-				<a href="/"><img class="logo" src="/static/logo128.png"></a>
+			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
+				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
 					<a class="item" href="/">
 						<i class="play icon"></i>
@@ -92,6 +91,10 @@
 					<a class="item" href="/history">
 						<i class="wait icon"></i>
 						History
+					</a>
+					<a class="item" href="/wanted">
+						<i class="warning sign icon"></i>
+						Wanted
 					</a>
 					<a class="item" href="/settings">
 						<i class="settings icon"></i>
@@ -106,17 +109,12 @@
 		</div>
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
-			<br>
-			<div class="ui hidden negative message">
-				<i class="close icon"></i>
-				<div class="header">
-			    	An error occured while trying to delete subtitles file from disk.
-				</div>
-				<p>Please try again.</p>
-			</div>
-
 			<div id="divdetails" class="ui container">
 				<img class="left floated ui image" src="/image_proxy{{details[2]}}">
+				<div class="ui right floated inverted basic buttons">
+					<button id="scan_disk" class="ui button"><i class="refresh icon"></i>Scan disk for subtitles</button>
+					<button id="search_missing_subtitles" class="ui button"><i class="download icon"></i>Download missing subtitles</button>
+				</div>
 				<h2>{{details[0]}}</h2>
 				<p>{{details[1]}}</p>
 			</div>

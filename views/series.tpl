@@ -35,9 +35,10 @@
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
+				padding: 2em 3em 2em 3em;
 			}
 			#tableseries {
-				padding: 3em;
+				padding-top: 1em;
 			}
 			#divdetails {
 				min-height: 250px;
@@ -49,7 +50,7 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu four item">
+			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
 				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
 					<a class="item" href="/">
@@ -59,6 +60,10 @@
 					<a class="item" href="/history">
 						<i class="wait icon"></i>
 						History
+					</a>
+					<a class="item" href="/wanted">
+						<i class="warning sign icon"></i>
+						Wanted
 					</a>
 					<a class="item" href="/settings">
 						<i class="settings icon"></i>
@@ -73,6 +78,11 @@
 		</div>
 			
 		<div id="fondblanc" class="ui container">
+			<div class="ui basic buttons">
+				<button id="update_series" class="ui button"><i class="refresh icon"></i>Update Series</button>
+				<button id="update_all_episodes" class="ui button"><i class="refresh icon"></i>Update All Episodes</button>
+			</div>
+
 			<table id="tableseries" class="ui very basic selectable sortable table">
 				<thead>
 					<tr>
@@ -110,7 +120,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}">
+							<div class="ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -178,7 +188,7 @@
 
 	$('table').tablesort();
 
-	$('a').click(function(){
+	$('a, button').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -187,6 +197,14 @@
 	    	autofocus: false
 		})
 	;
+
+	$('#update_series').click(function(){
+		window.location = '/update_series';
+	})
+
+	$('#update_all_episodes').click(function(){
+		window.location = '/update_all_episodes';
+	})
 
 	$('.config').click(function(){
 		sessionStorage.scrolly=$(window).scrollTop();
