@@ -1,10 +1,14 @@
 FROM alpine:latest
 
+EXPOSE  6767
+VOLUME /bazarr
+
+WORKDIR /bazarr
+
 # Update
 RUN apk add --update python py-pip
 
 # Install app dependencies
 RUN pip install -r requirements.txt
 
-EXPOSE  6767
-CMD ["python", "/src/bazarr.py"]
+CMD ["python", "/bazarr/bazarr.py"]
