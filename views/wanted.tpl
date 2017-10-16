@@ -35,7 +35,10 @@
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
-				padding: 3em;
+				padding: 2em 3em 2em 3em;
+			}
+			#tablehistory {
+				padding-top: 2em;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
@@ -77,6 +80,9 @@
 		</div>
 			
 		<div id="fondblanc" class="ui container">
+			<div class="ui right floated basic buttons">
+				<button id="wanted_search_missing_subtitles" class="ui button"><i class="download icon"></i>Download wanted subtitles</button>
+			</div>
 			<table id="tablehistory" class="ui very basic selectable table">
 				<thead>
 					<tr>
@@ -101,7 +107,7 @@
 						%missing_languages = ast.literal_eval(row[3])
 						%if missing_languages is not None:
 							%for language in missing_languages:
-							<a href="/get_subtitle?episodePath={{row[5]}}&language={{pycountry.languages.lookup(str(language)).alpha_3}}&hi={{row[6]}}&sonarrSeriesId={{row[4]}}&sonarrEpisodeId={{row[7]}}" class="ui tiny label">
+							<a data-episodePath="{{row[5]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
 								{{language}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>
@@ -147,7 +153,7 @@
 
 
 <script>
-	$('a').click(function(){
+	$('a, button').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -163,4 +169,29 @@
 	$('.fast.forward').click(function(){
 		location.href="?page={{int(max_page)}}";
 	})
+
+	$('#wanted_search_missing_subtitles').click(function(){
+		window.location = '/wanted_search_missing_subtitles';
+	})
+
+	$('.get_subtitle').click(function(){
+		    var values = {
+		            episodePath: $(this).attr("data-episodePath"),
+		            language: $(this).attr("data-language"),
+		            hi: $(this).attr("data-hi"),
+		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		    };
+		    $.ajax({
+		        url: "/get_subtitle",
+		        type: "POST",
+		        dataType: "json",
+				data: values
+		    });
+		    $('#loader').addClass('active');
+	})
+
+	$(document).ajaxStop(function(){
+	    window.location.reload();
+	});
 </script>

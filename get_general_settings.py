@@ -16,7 +16,10 @@ db.close()
 ip = general_settings[0]
 port = general_settings[1]
 base_url = general_settings[2]
-path_mappings = ast.literal_eval(general_settings[3])
+if general_settings[3] is None:
+   path_mappings = []
+else:
+   path_mappings = ast.literal_eval(general_settings[3])
 
 def path_replace(path):
    for path_mapping in path_mappings:

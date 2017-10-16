@@ -156,7 +156,7 @@
 										%if actual_languages is not None:
 											%for language in actual_languages:
 											%if language[1] is not None:
-											<a href="/remove_subtitles?episodePath={{episode[1]}}&subtitlesPath={{path_replace(language[1])}}&language={{pycountry.languages.lookup(str(language[0])).alpha_3}}&sonarrSeriesId={{episode[5]}}&sonarrEpisodeId={{episode[7]}}" class="ui tiny label">
+											<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
 												{{language[0]}}
 												<i class="delete icon"></i>
 											</a>
@@ -172,7 +172,7 @@
 										%missing_languages = ast.literal_eval(episode[6])
 										%if missing_languages is not None:
 											%for language in missing_languages:
-											<a href="/get_subtitle?episodePath={{episode[1]}}&language={{pycountry.languages.lookup(str(language)).alpha_3}}&hi={{details[4]}}&sonarrSeriesId={{episode[5]}}&sonarrEpisodeId={{episode[7]}}" class="ui tiny label">
+											<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
 												{{language}}
 												<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 											</a>
@@ -190,3 +190,51 @@
 		</div>
 	</body>
 </html>
+
+<script>
+	$('#scan_disk').click(function(){
+		window.location = '/scan_disk/{{no}}';
+	})
+
+	$('#search_missing_subtitles').click(function(){
+		window.location = '/search_missing_subtitles/{{no}}';
+	})
+
+	$('.remove_subtitles').click(function(){
+		    var values = {
+		            episodePath: $(this).attr("data-episodePath"),
+		            language: $(this).attr("data-language"),
+		            subtitlesPath: $(this).attr("data-subtitlesPath"),
+		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		    };
+		    $.ajax({
+		        url: "/remove_subtitles",
+		        type: "POST",
+		        dataType: "json",
+				data: values
+		    });
+		    $('#loader').addClass('active');
+	})
+
+	$('.get_subtitle').click(function(){
+		    var values = {
+		            episodePath: $(this).attr("data-episodePath"),
+		            language: $(this).attr("data-language"),
+		            hi: $(this).attr("data-hi"),
+		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		    };
+		    $.ajax({
+		        url: "/get_subtitle",
+		        type: "POST",
+		        dataType: "json",
+				data: values
+		    });
+		    $('#loader').addClass('active');
+	})
+
+	$(document).ajaxStop(function(){
+	    window.location.reload();
+	});
+</script>

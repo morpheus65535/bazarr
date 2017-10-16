@@ -65,10 +65,15 @@ def store_subtitles(file):
 
     return actual_subtitles
     
-def list_missing_subtitles():
+def list_missing_subtitles(*no):
+    query_string = ''
+    try:
+        query_string = " WHERE table_episodes.sonarrSeriesId = " + str(no[0])
+    except:
+        pass
     conn_db = sqlite3.connect('bazarr.db')
     c_db = conn_db.cursor()
-    episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId").fetchall()
+    episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
 
     missing_subtitles_global = []
     
@@ -101,6 +106,17 @@ def full_scan_subtitles():
 
     for episode in episodes:
         store_subtitles(path_replace(episode[0]))
+
+def series_scan_subtitles(no):
+    conn_db = sqlite3.connect('bazarr.db')
+    c_db = conn_db.cursor()
+    episodes = c_db.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
+    c_db.close()
+    
+    for episode in episodes:
+        store_subtitles(path_replace(episode[0]))
+
+    list_missing_subtitles(no)
         
 def new_scan_subtitles():
     conn_db = sqlite3.connect('bazarr.db')

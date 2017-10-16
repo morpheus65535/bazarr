@@ -1,0 +1,11 @@
+babelfish
+bottle
+bottle-fdsend
+dogpile.cache
+enzyme
+py-pretty
+pycountry
+requests
+subliminal
+urllib3
+waitress

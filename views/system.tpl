@@ -34,6 +34,7 @@
 				border-radius: 0px;
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
+				margin-bottom: 3em;
 				padding: 1em;
 			}
 		</style>
@@ -80,10 +81,62 @@
 				Tasks
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
-				Logs
+				<div class="content">
+					<table class="ui very basic selectable table">
+						<thead>
+							<tr>
+								<th class="collapsing"></th>
+								<th>Message</th>
+								<th class="collapsing">Time</th>
+							</tr>
+						</thead>
+						<tbody>
+						%import time
+						%import datetime
+						%import pretty
+						%for log in logs:
+							%line = []
+							%line = log.split('|')
+							<tr class='log' data-message='{{line[2]}}' data-exception='{{line[3].replace("\\n", "<br />")}}'>
+								<td class="collapsing"><i class="\\
+								%if line[1] == 'INFO':
+blue info circle \\
+								%elif line[1] == 'WARNING':
+yellow warning circle \\
+								%elif line[1] == 'ERROR':
+red bug \\
+								%end
+icon"></i></td>
+								<td>{{line[2]}}</td>
+								<td title='{{line[0]}}' class="collapsing">{{pretty.date(int(time.mktime(datetime.datetime.strptime(line[0], "%d/%m/%Y %H:%M:%S").timetuple())))}}</td>
+							</tr>
+						%end
+						</tbody>
+					</table>
+				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="about">
 				About
+			</div>
+		</div>
+
+		<div class="ui small modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<div>Details</div>
+			</div>
+			<div class="content">
+				Message
+				<div id='message' class="ui segment">
+					<p></p>
+				</div>
+				Exception
+				<div id='exception' class="ui segment">
+					<p></p>
+				</div>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Close</button>
 			</div>
 		</div>
 	</body>
@@ -91,9 +144,21 @@
 
 
 <script>
+	$('.modal')
+		.modal({
+	    	autofocus: false
+		})
+	;
+
 	$('.menu .item')
 		.tab()
 	;
+
+	$('.log').click(function(){
+		$("#message").html($(this).data("message"));
+		$("#exception").html($(this).data("exception"));
+		$('.small.modal').modal('show');
+	})
 
 	$('a.menu').click(function(){
 		$('#loader').addClass('active');

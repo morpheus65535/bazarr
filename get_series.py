@@ -11,7 +11,6 @@ def update_series():
 
     # Get shows data from Sonarr
     url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
-
     r = requests.get(url_sonarr_api_series)
     shows_list = []
 
@@ -35,15 +34,13 @@ def update_series():
             fanart = show['images'][0]['url'].split('?')[0]
         except:
             fanart = ""
-
+        
         # Add shows in Sonarr to current shows list
         current_shows_sonarr.append(show['tvdbId'])
 
         # Update or insert shows list in database table
-        try:
-            c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,show["tvdbId"]))
-        except:
-            print show["title"]
+        result = c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,show["tvdbId"]))
+        if result.rowcount == 0:
             c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?)''', (show["title"],show["path"],show["tvdbId"],show["tvdbId"],show["tvdbId"],show["id"],overview,poster,fanart))
 
     # Delete shows not in Sonarr anymore

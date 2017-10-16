@@ -123,12 +123,12 @@
 			    	<div class="column"></div>
 			    	<div class="center aligned column">
 			    		<i class="\\
-			    		%if page == "1":
+			    		%if page == '1':
 			    		disabled\\
 			    		%end
 			    		 fast backward icon"></i>
 			    		<i class="\\
-			    		%if page == "1":
+			    		%if page == '1':
 			    		disabled\\
 			    		%end
 			    		 backward icon"></i>
@@ -153,15 +153,22 @@
 
 
 <script>
-	$('a').click(function(){
+	if (sessionStorage.scrolly) {
+	    $(window).scrollTop(sessionStorage.scrolly);
+	    sessionStorage.clear();
+	}
+
+	$('a, i').click(function(){
+		sessionStorage.scrolly=$(window).scrollTop();
+
 		$('#loader').addClass('active');
 	})
 
-	$('.fast.backward').click(function(){
-		location.href="?page=1";
-	})
 	$('.backward').click(function(){
 		location.href="?page={{int(page)-1}}";
+	})
+	$('.fast.backward').click(function(){
+		location.href="?page=1";
 	})
 	$('.forward').click(function(){
 		location.href="?page={{int(page)+1}}";

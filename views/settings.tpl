@@ -124,6 +124,22 @@
 								</div>
 							</div>
 						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Log Level</label>
+							</div>
+							<div class="eleven wide column">
+								<select name="settings_general_loglevel" id="settings_loglevel" class="ui fluid selection dropdown">
+									<option value="">Log Level</option>
+									<option value="DEBUG">Debug</option>
+									<option value="INFO">Info</option>
+									<option value="WARNING">Warning</option>
+									<option value="ERROR">Error</option>
+									<option value="CRITICAL">Critical</option>
+								</select>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -131,7 +147,11 @@
 				<div class="twelve wide column">
 					<div class="ui grid">
 						%import ast
-						%path_substitutions = ast.literal_eval(settings_general[3])
+						%if settings_general[3] is not None:
+						%	path_substitutions = ast.literal_eval(settings_general[3])
+						%else:
+						%	path_substitutions = []
+						%end
 						%for x in range(0, 5):
 						%	path = []
 						%	try:
@@ -165,6 +185,9 @@
 				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
 				<br>
 				<div class="ui dividing header">Sonarr settings</div>
+				<div class="ui negative message">
+					<p>These changes require that you restart Bazarr.</p>
+				</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
 						<div class="middle aligned row">
@@ -230,6 +253,9 @@
 				<br>
 				<div class="ui dividing header">Subtitles providers</div>
 				<div class="twelve wide column">
+					<div class="ui negative message">
+						<p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
+					</div>
 					<div class="ui grid">
 						<div class="middle aligned row">
 							<div class="right aligned four wide column">
@@ -294,11 +320,14 @@
 				$("#sonarr_ssl_div").checkbox('uncheck');
 			}
 	
+	$('#settings_loglevel').dropdown('clear');
+	$('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
 	$('#settings_providers').dropdown('clear');
 	$('#settings_providers').dropdown('set selected',{{!enabled_providers}});
 	$('#settings_languages').dropdown('clear');
 	$('#settings_languages').dropdown('set selected',{{!enabled_languages}});
 
+	$('#settings_loglevel').dropdown();
 	$('#settings_providers').dropdown();
 	$('#settings_languages').dropdown();
 </script>

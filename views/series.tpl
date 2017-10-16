@@ -81,6 +81,7 @@
 			<div class="ui basic buttons">
 				<button id="update_series" class="ui button"><i class="refresh icon"></i>Update Series</button>
 				<button id="update_all_episodes" class="ui button"><i class="refresh icon"></i>Update All Episodes</button>
+				<button id="add_new_episodes" class="ui button"><i class="wait icon"></i>Add New Episodes</button>
 			</div>
 
 			<table id="tableseries" class="ui very basic selectable sortable table">
@@ -97,7 +98,7 @@
 				%import ast
 				%import os
 				%for row in rows:
-					<tr class="selectable">
+					<tr class="selectable" {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
 						<td><a href="/episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 						{{row[2]}}
@@ -120,7 +121,7 @@
 								end
 							end
 							%>
-							<div class="ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -131,6 +132,7 @@
 		</div>
 
 		<div class="ui small modal">
+			<i class="close icon"></i>
 			<div class="header">
 				<div id="series_title"></div>
 			</div>
@@ -188,7 +190,7 @@
 
 	$('table').tablesort();
 
-	$('a, button').click(function(){
+	$('a, button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -204,6 +206,10 @@
 
 	$('#update_all_episodes').click(function(){
 		window.location = '/update_all_episodes';
+	})
+
+	$('#add_new_episodes').click(function(){
+		window.location = '/add_new_episodes';
 	})
 
 	$('.config').click(function(){
