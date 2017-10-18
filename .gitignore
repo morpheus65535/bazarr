@@ -1,0 +1,7 @@
+*.pyc
+bazarr.db
+cachefile.dbm
+*.log
+*.log.*
+*.db
+*.pyc
