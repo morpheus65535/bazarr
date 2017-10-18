@@ -16,6 +16,8 @@ db.close()
 ip = general_settings[0]
 port = general_settings[1]
 base_url = general_settings[2]
+if base_url.endswith('/'):
+    base_url = base_url[:-1]
 if general_settings[3] is None:
    path_mappings = []
 else:

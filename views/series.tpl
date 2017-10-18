@@ -1,18 +1,18 @@
 <html>
 	<head>
 		<!DOCTYPE html>
-		<script src="/static/jquery/jquery-latest.min.js"></script>
-		<script src="/static/semantic/semantic.min.js"></script>
-		<script src="/static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="/static/semantic/semantic.min.css">
+		<script src="{{base_url}}/static/jquery/jquery-latest.min.js"></script>
+		<script src="{{base_url}}/static/semantic/semantic.min.js"></script>
+		<script src="{{base_url}}/static/jquery/tablesort.js"></script>
+		<link rel="stylesheet" href="{{base_url}}/static/semantic/semantic.min.css">
 		
-		<link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-		<link rel="manifest" href="/static/manifest.json">
-		<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="/static/favicon.ico">
-		<meta name="msapplication-config" content="/static/browserconfig.xml">
+		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}/static/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}/static/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}/static/favicon-16x16.png">
+		<link rel="manifest" href="{{base_url}}/static/manifest.json">
+		<link rel="mask-icon" href="{{base_url}}/static/safari-pinned-tab.svg" color="#5bbad5">
+		<link rel="shortcut icon" href="{{base_url}}/static/favicon.ico">
+		<meta name="msapplication-config" content="{{base_url}}/static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 		
 		<title>Bazarr</title>
@@ -51,25 +51,25 @@
 		</div>
 		<div id="divmenu" class="ui container">
 			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
-				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
+				<a href="{{base_url}}/"><img style="margin-right:32px;" class="logo" src="{{base_url}}/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
-					<a class="item" href="/">
+					<a class="item" href="{{base_url}}/">
 						<i class="play icon"></i>
 						Series
 					</a>
-					<a class="item" href="/history">
+					<a class="item" href="{{base_url}}/history">
 						<i class="wait icon"></i>
 						History
 					</a>
-					<a class="item" href="/wanted">
+					<a class="item" href="{{base_url}}/wanted">
 						<i class="warning sign icon"></i>
 						Wanted
 					</a>
-					<a class="item" href="/settings">
+					<a class="item" href="{{base_url}}/settings">
 						<i class="settings icon"></i>
 						Settings
 					</a>
-					<a class="item" href="/system">
+					<a class="item" href="{{base_url}}/system">
 						<i class="laptop icon"></i>
 						System
 					</a>
@@ -99,7 +99,7 @@
 				%import os
 				%for row in rows:
 					<tr class="selectable" {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
-						<td><a href="/episodes/{{row[5]}}">{{row[1]}}</a></td>
+						<td><a href="{{base_url}}/episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 						{{row[2]}}
 						</td>
@@ -201,24 +201,24 @@
 	;
 
 	$('#update_series').click(function(){
-		window.location = '/update_series';
+		window.location = '{{base_url}}/update_series';
 	})
 
 	$('#update_all_episodes').click(function(){
-		window.location = '/update_all_episodes';
+		window.location = '{{base_url}}/update_all_episodes';
 	})
 
 	$('#add_new_episodes').click(function(){
-		window.location = '/add_new_episodes';
+		window.location = '{{base_url}}/add_new_episodes';
 	})
 
 	$('.config').click(function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
-		$('#series_form').attr('action', '/edit_series/' + $(this).data("tvdbid"));
+		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));
 
 		$("#series_title").html($(this).data("title"));
-		$("#series_poster").attr("src", "/image_proxy" + $(this).data("poster"));
+		$("#series_poster").attr("src", "{{base_url}}/image_proxy" + $(this).data("poster"));
 		
 		$('#series_languages').dropdown('clear');
 		var languages_array = eval($(this).data("languages"));

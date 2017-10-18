@@ -1,25 +1,25 @@
 <html>
 	<head>
 		<!DOCTYPE html>
-		<script src="/static/jquery/jquery-latest.min.js"></script>
-		<script src="/static/semantic/semantic.min.js"></script>
-		<script src="/static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="/static/semantic/semantic.min.css">
+		<script src="{{base_url}}/static/jquery/jquery-latest.min.js"></script>
+		<script src="{{base_url}}/static/semantic/semantic.min.js"></script>
+		<script src="{{base_url}}/static/jquery/tablesort.js"></script>
+		<link rel="stylesheet" href="{{base_url}}/static/semantic/semantic.min.css">
 		
-		<link rel="apple-touch-icon" sizes="120x120" href="/static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-		<link rel="manifest" href="/static/manifest.json">
-		<link rel="mask-icon" href="/static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="/static/favicon.ico">
-		<meta name="msapplication-config" content="/static/browserconfig.xml">
+		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}/static/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}/static/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}/static/favicon-16x16.png">
+		<link rel="manifest" href="{{base_url}}/static/manifest.json">
+		<link rel="mask-icon" href="{{base_url}}/static/safari-pinned-tab.svg" color="#5bbad5">
+		<link rel="shortcut icon" href="{{base_url}}/static/favicon.ico">
+		<meta name="msapplication-config" content="{{base_url}}/static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 		
 		<title>{{details[0]}} - Bazarr</title>
 		<style>
 			body {
 				background-color: #1b1c1d;
-				background-image: url("/image_proxy{{details[3]}}");
+				background-image: url("{{base_url}}/image_proxy{{details[3]}}");
 				background-repeat: no-repeat;
 				background-attachment: fixed;
 				background-size: cover;
@@ -76,31 +76,31 @@
 		%import ast
 		%import pycountry
 		%from get_general_settings import *
-		<div style="display: none;"><img src="/image_proxy{{details[3]}}"></div>
+		<div style="display: none;"><img src="{{base_url}}/image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		<div id="divmenu" class="ui container">
 			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
-				<a href="/"><img style="margin-right:32px;" class="logo" src="/static/logo128.png"></a>
+				<a href="{{base_url}}/"><img style="margin-right:32px;" class="logo" src="{{base_url}}/static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
-					<a class="item" href="/">
+					<a class="item" href="{{base_url}}/">
 						<i class="play icon"></i>
 						Series
 					</a>
-					<a class="item" href="/history">
+					<a class="item" href="{{base_url}}/history">
 						<i class="wait icon"></i>
 						History
 					</a>
-					<a class="item" href="/wanted">
+					<a class="item" href="{{base_url}}/wanted">
 						<i class="warning sign icon"></i>
 						Wanted
 					</a>
-					<a class="item" href="/settings">
+					<a class="item" href="{{base_url}}/settings">
 						<i class="settings icon"></i>
 						Settings
 					</a>
-					<a class="item" href="/system">
+					<a class="item" href="{{base_url}}/system">
 						<i class="laptop icon"></i>
 						System
 					</a>
@@ -110,7 +110,7 @@
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" src="/image_proxy{{details[2]}}">
+				<img class="left floated ui image" src="{{base_url}}/image_proxy{{details[2]}}">
 				<div class="ui right floated inverted basic buttons">
 					<button id="scan_disk" class="ui button"><i class="refresh icon"></i>Scan disk for subtitles</button>
 					<button id="search_missing_subtitles" class="ui button"><i class="download icon"></i>Download missing subtitles</button>
@@ -193,11 +193,11 @@
 
 <script>
 	$('#scan_disk').click(function(){
-		window.location = '/scan_disk/{{no}}';
+		window.location = '{{base_url}}/scan_disk/{{no}}';
 	})
 
 	$('#search_missing_subtitles').click(function(){
-		window.location = '/search_missing_subtitles/{{no}}';
+		window.location = '{{base_url}}/search_missing_subtitles/{{no}}';
 	})
 
 	$('.remove_subtitles').click(function(){
@@ -209,7 +209,7 @@
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
 		    };
 		    $.ajax({
-		        url: "/remove_subtitles",
+		        url: "{{base_url}}/remove_subtitles",
 		        type: "POST",
 		        dataType: "json",
 				data: values
@@ -226,7 +226,7 @@
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
 		    };
 		    $.ajax({
-		        url: "/get_subtitle",
+		        url: "{{base_url}}/get_subtitle",
 		        type: "POST",
 		        dataType: "json",
 				data: values

@@ -63,11 +63,11 @@ def configure_logging():
 
 configure_logging()
 
-@route('/static/:path#.+#', name='static')
+@route(base_url + '/static/:path#.+#', name='static')
 def static(path):
     return static_file(path, root='static')
 
-@route('/image_proxy/<url:path>', method='GET')
+@route(base_url + '/image_proxy/<url:path>', method='GET')
 def image_proxy(url):
     img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
     img_buffer = BytesIO()
@@ -76,7 +76,7 @@ def image_proxy(url):
     img_buffer.seek(0)
     return send_file(img_buffer, ctype=img_pil.format)
 
-@route('/')
+@route(base_url + '/')
 def series():
     db = sqlite3.connect('bazarr.db')
     db.create_function("path_substitution", 1, path_replace)
@@ -86,11 +86,13 @@ def series():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('series', rows=data, languages=languages)
+    output = template('series', rows=data, languages=languages, base_url=base_url)
     return output
 
-@route('/edit_series/<no:int>', method='POST')
+@route(base_url + '/edit_series/<no:int>', method='POST')
 def edit_series(no):
+    ref = request.environ['HTTP_REFERER']
+
     lang = request.forms.getall('languages')
     if len(lang) > 0:
         if lang[0] == '':
@@ -114,27 +116,33 @@ def edit_series(no):
 
     list_missing_subtitles(no)
 
-    redirect('/')
+    redirect(ref)
 
-@route('/update_series')
+@route(base_url + '/update_series')
 def update_series_list():
+    ref = request.environ['HTTP_REFERER']
+
     update_series()
 
-    redirect('/')
+    redirect(ref)
 
-@route('/update_all_episodes')
+@route(base_url + '/update_all_episodes')
 def update_all_episodes_list():
+    ref = request.environ['HTTP_REFERER']
+
     update_all_episodes()
 
-    redirect('/')
+    redirect(ref)
 
-@route('/add_new_episodes')
+@route(base_url + '/add_new_episodes')
 def add_new_episodes_list():
+    ref = request.environ['HTTP_REFERER']
+
     add_new_episodes()
 
-    redirect('/')
+    redirect(ref)
 
-@route('/episodes/<no:int>', method='GET')
+@route(base_url + '/episodes/<no:int>', method='GET')
 def episodes(no):
     conn = sqlite3.connect('bazarr.db')
     conn.create_function("path_substitution", 1, path_replace)
@@ -150,9 +158,9 @@ def episodes(no):
         seasons_list.append(list(season))
     c.close()
     
-    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short)
+    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url)
 
-@route('/scan_disk/<no:int>', method='GET')
+@route(base_url + '/scan_disk/<no:int>', method='GET')
 def scan_disk(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -160,7 +168,7 @@ def scan_disk(no):
 
     redirect(ref)
 
-@route('/search_missing_subtitles/<no:int>', method='GET')
+@route(base_url + '/search_missing_subtitles/<no:int>', method='GET')
 def search_missing_subtitles(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -168,7 +176,7 @@ def search_missing_subtitles(no):
 
     redirect(ref)
 
-@route('/history')
+@route(base_url + '/history')
 def history():
     db = sqlite3.connect('bazarr.db')
     c = db.cursor()
@@ -186,9 +194,9 @@ def history():
     data = c.fetchall()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
     c.close()
-    return template('history', rows=data, row_count=row_count, page=page, max_page=max_page)
+    return template('history', rows=data, row_count=row_count, page=page, max_page=max_page, base_url=base_url)
 
-@route('/wanted')
+@route(base_url + '/wanted')
 def wanted():
     db = sqlite3.connect('bazarr.db')
     db.create_function("path_substitution", 1, path_replace)
@@ -206,9 +214,9 @@ def wanted():
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.close()
-    return template('wanted', rows=data, missing_count=missing_count, page=page, max_page=max_page)
+    return template('wanted', rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
 
-@route('/wanted_search_missing_subtitles')
+@route(base_url + '/wanted_search_missing_subtitles')
 def wanted_search_missing_subtitles():
     ref = request.environ['HTTP_REFERER']
 
@@ -225,7 +233,7 @@ def wanted_search_missing_subtitles():
     
     redirect(ref)
 
-@route('/settings')
+@route(base_url + '/settings')
 def settings():
     db = sqlite3.connect('bazarr.db')
     c = db.cursor()
@@ -238,10 +246,12 @@ def settings():
     c.execute("SELECT * FROM table_settings_sonarr")
     settings_sonarr = c.fetchone()
     c.close()
-    return template('settings', settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr)
+    return template('settings', settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, base_url=base_url)
 
-@route('/save_settings', method='POST')
+@route(base_url + '/save_settings', method='POST')
 def save_settings():
+    ref = request.environ['HTTP_REFERER']
+
     conn = sqlite3.connect('bazarr.db')
     c = conn.cursor()    
 
@@ -278,9 +288,9 @@ def save_settings():
     conn.commit()
     c.close()
     
-    redirect('/settings')
+    redirect(ref)
 
-@route('/system')
+@route(base_url + '/system')
 def system():
     db = sqlite3.connect('bazarr.db')
     c = db.cursor()
@@ -292,9 +302,9 @@ def system():
     for line in reversed(open('bazarr.log').readlines()):
         logs.append(line.rstrip())
     
-    return template('system', tasks=tasks, logs=logs)
+    return template('system', tasks=tasks, logs=logs, base_url=base_url)
 
-@route('/remove_subtitles', method='POST')
+@route(base_url + '/remove_subtitles', method='POST')
 def remove_subtitles():
         episodePath = request.forms.get('episodePath')
         language = request.forms.get('language')
@@ -311,7 +321,7 @@ def remove_subtitles():
         store_subtitles(episodePath)
         list_missing_subtitles(sonarrSeriesId)
         
-@route('/get_subtitle', method='POST')
+@route(base_url + '/get_subtitle', method='POST')
 def get_subtitle():
         ref = request.environ['HTTP_REFERER']
 

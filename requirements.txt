@@ -3,6 +3,7 @@ bottle
 bottle-fdsend
 dogpile.cache
 enzyme
+Pillow
 py-pretty
 pycountry
 requests
