@@ -143,7 +143,7 @@
 					</div>
 				</div>
 
-				<div class="ui dividing header">Remote Path Mappings</div>
+				<div class="ui dividing header">Path Mappings</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
 						%import ast
@@ -152,6 +152,28 @@
 						%else:
 						%	path_substitutions = []
 						%end
+						<div class="middle aligned row">
+					    	<div class="right aligned four wide column">
+					    		
+					    	</div>
+							<div class="four wide column">
+								<div class="ui fluid input">
+									<h4 class="ui header">
+										Path for Sonarr:
+									</h4>
+								</div>
+							</div>
+							<div class="center aligned column">
+								
+							</div>
+							<div class="four wide column">
+								<div class="ui fluid input">
+									<h4 class="ui header">
+										Path for Bazarr:
+									</h4>
+								</div>
+							</div>
+						</div>
 						%for x in range(0, 5):
 						%	path = []
 						%	try:

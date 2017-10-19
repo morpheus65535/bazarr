@@ -152,7 +152,11 @@
 										<td>{{episode[3]}}</td>
 										<td>{{episode[0]}}</td>
 										<td>
-										%actual_languages = ast.literal_eval(episode[4])
+										%if episode[4] is not None:
+										%	actual_languages = ast.literal_eval(episode[4])
+										%else:
+											actual_languages = '[]'
+										%end
 										%if actual_languages is not None:
 											%for language in actual_languages:
 											%if language[1] is not None:
@@ -169,7 +173,11 @@
 										%end
 										</td>
 										<td>
-										%missing_languages = ast.literal_eval(episode[6])
+										%if episode[6] is not None:
+										%	missing_languages = ast.literal_eval(episode[6])
+										%else:
+											missing_languages = '[]'
+										%end
 										%if missing_languages is not None:
 											%for language in missing_languages:
 											<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
