@@ -81,8 +81,9 @@ def list_missing_subtitles(*no):
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        actual_subtitles = ast.literal_eval(episode_subtitles[1])
-        desired_subtitles = ast.literal_eval(episode_subtitles[2])
+        if episode_subtitles[1] != None:
+            actual_subtitles = ast.literal_eval(episode_subtitles[1])
+            desired_subtitles = ast.literal_eval(episode_subtitles[2])
         actual_subtitles_list = []
         if desired_subtitles == None:
             pass

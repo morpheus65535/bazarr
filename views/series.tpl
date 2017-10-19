@@ -98,7 +98,7 @@
 				%import ast
 				%import os
 				%for row in rows:
-					<tr class="selectable" {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
+					<tr class="selectable">
 						<td><a href="{{base_url}}/episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 						{{row[2]}}
@@ -112,7 +112,7 @@
 							%end
 						</td>
 						<td>{{row[4]}}</td>
-						<td>
+						<td {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
 							<%
 							subs_languages_list = []
 							if subs_languages is not None:
