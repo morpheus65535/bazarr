@@ -1,9 +1,9 @@
 *.pyc
-bazarr.db
+data/db/bazarr.db
 cachefile.dbm
 *.log
 *.log.*
 *.db
 *.pyc
 *.pyc
-bazarr.db
+data/db/bazarr.db

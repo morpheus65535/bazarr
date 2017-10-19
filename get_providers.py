@@ -5,7 +5,7 @@ from subliminal import *
 providers_list = sorted(provider_manager.names())
 
 # Open database connection
-db = sqlite3.connect('bazarr.db')
+db = sqlite3.connect('data/db/bazarr.db')
 c = db.cursor()
 
 # Insert providers in database table

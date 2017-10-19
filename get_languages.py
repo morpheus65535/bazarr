@@ -7,7 +7,7 @@ langs = [[lang.alpha_3,lang.alpha_2,lang.name]
     if hasattr(lang, 'alpha_2')]
 
 # Open database connection
-db = sqlite3.connect('bazarr.db')
+db = sqlite3.connect('data/db/bazarr.db')
 c = db.cursor()
 
 # Insert languages in database table

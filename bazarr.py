@@ -28,7 +28,7 @@ from utils import *
 import logging
 from logging.handlers import TimedRotatingFileHandler
 logger = logging.getLogger('waitress')
-db = sqlite3.connect('bazarr.db')
+db = sqlite3.connect('data/db/bazarr.db')
 c = db.cursor()
 c.execute("SELECT log_level FROM table_settings_general")
 log_level = c.fetchone()
@@ -53,7 +53,7 @@ class OneLineExceptionFormatter(logging.Formatter):
         return s
 
 def configure_logging():
-    fh = TimedRotatingFileHandler('bazarr.log', when="midnight", interval=1, backupCount=7)
+    fh = TimedRotatingFileHandler('data/log/bazarr.log', when="midnight", interval=1, backupCount=7)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
@@ -78,7 +78,7 @@ def image_proxy(url):
 
 @route(base_url + '/')
 def series():
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
     c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster FROM table_shows ORDER BY title")
@@ -108,7 +108,7 @@ def edit_series(no):
     else:
         hi = "False"
 
-    conn = sqlite3.connect('bazarr.db')
+    conn = sqlite3.connect('data/db/bazarr.db')
     c = conn.cursor()
     c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE tvdbId LIKE ?", (str(lang), hi, no))
     conn.commit()
@@ -144,7 +144,7 @@ def add_new_episodes_list():
 
 @route(base_url + '/episodes/<no:int>', method='GET')
 def episodes(no):
-    conn = sqlite3.connect('bazarr.db')
+    conn = sqlite3.connect('data/db/bazarr.db')
     conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()
 
@@ -178,7 +178,7 @@ def search_missing_subtitles(no):
 
 @route(base_url + '/history')
 def history():
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
     
     c.execute("SELECT COUNT(*) FROM table_history")
@@ -198,7 +198,7 @@ def history():
 
 @route(base_url + '/wanted')
 def wanted():
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -220,7 +220,7 @@ def wanted():
 def wanted_search_missing_subtitles():
     ref = request.environ['HTTP_REFERER']
 
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -235,7 +235,7 @@ def wanted_search_missing_subtitles():
 
 @route(base_url + '/settings')
 def settings():
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_general")
     settings_general = c.fetchone()
@@ -252,7 +252,7 @@ def settings():
 def save_settings():
     ref = request.environ['HTTP_REFERER']
 
-    conn = sqlite3.connect('bazarr.db')
+    conn = sqlite3.connect('data/db/bazarr.db')
     c = conn.cursor()    
 
     settings_general_ip = request.forms.get('settings_general_ip')
@@ -292,14 +292,14 @@ def save_settings():
 
 @route(base_url + '/system')
 def system():
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
     c.execute("SELECT * FROM table_scheduler")
     tasks = c.fetchall()
     c.close()
 
     logs = []
-    for line in reversed(open('bazarr.log').readlines()):
+    for line in reversed(open('data/log/bazarr.log').readlines()):
         logs.append(line.rstrip())
     
     return template('system', tasks=tasks, logs=logs, base_url=base_url)
@@ -331,7 +331,7 @@ def get_subtitle():
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
-        db = sqlite3.connect('bazarr.db')
+        db = sqlite3.connect('data/db/bazarr.db')
         c = db.cursor()
         c.execute("SELECT name FROM table_settings_providers WHERE enabled = 1")
         providers = c.fetchall()

@@ -6,7 +6,7 @@ from list_subtitles import *
 
 def update_all_episodes():
     # Open database connection
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
 
     # Get Sonarr API URL from database config table
@@ -65,7 +65,7 @@ def update_all_episodes():
 
 def add_new_episodes():
     # Open database connection
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
 
     # Get Sonarr API URL from database config table

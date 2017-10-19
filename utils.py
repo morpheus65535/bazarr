@@ -3,7 +3,7 @@ import time
 
 def history_log(action, sonarrSeriesId, sonarrEpisodeId, description):
     # Open database connection
-    db = sqlite3.connect('bazarr.db')
+    db = sqlite3.connect('data/db/bazarr.db')
     c = db.cursor()
 
     # Get Sonarr API URL from database config table

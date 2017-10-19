@@ -1,7 +1,7 @@
 FROM lsiobase/alpine.python
 
 EXPOSE  6767
-VOLUME /bazarr /tv
+VOLUME /bazarr/data /tv
 
 # Update
 RUN apk add --update build-base python-dev py2-pip py-setuptools jpeg-dev zlib-dev git
