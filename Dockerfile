@@ -12,6 +12,6 @@ RUN git clone -b development --single-branch https://github.com/morpheus65535/ba
 WORKDIR /bazarr
 
 # Install app dependencies
-RUN pip install -r requirements.txt
+RUN pip install -r /bazarr/requirements.txt
 
 CMD ["python", "bazarr.py"]
