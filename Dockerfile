@@ -13,7 +13,7 @@ RUN git init
 RUN git remote add origin https://github.com/morpheus65535/bazarr.git
 RUN git fetch
 RUN git reset origin/master  # this is required if files in the non-empty directory are in the repo
-RUN git checkout -t origin/master
+RUN git checkout -t master
 #RUN git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr
 
 RUN ls /
