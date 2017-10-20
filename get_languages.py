@@ -1,5 +1,6 @@
 import sqlite3
 import pycountry
+import os
 
 # Get languages list in langs tuple
 langs = [[lang.alpha_3,lang.alpha_2,lang.name]
@@ -7,7 +8,7 @@ langs = [[lang.alpha_3,lang.alpha_2,lang.name]
     if hasattr(lang, 'alpha_2')]
 
 # Open database connection
-db = sqlite3.connect('data/db/bazarr.db')
+db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
 
 # Insert languages in database table

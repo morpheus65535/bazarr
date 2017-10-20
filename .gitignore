@@ -1,9 +1,9 @@
 *.pyc
-data/db/bazarr.db
+os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')
 cachefile.dbm
 *.log
 *.log.*
 *.db
 *.pyc
 *.pyc
-data/db/bazarr.db
+os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')

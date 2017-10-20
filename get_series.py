@@ -6,7 +6,7 @@ from get_sonarr_settings import *
 
 def update_series():
     # Open database connection
-    db = sqlite3.connect('data/db/bazarr.db')
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c = db.cursor()
 
     # Get shows data from Sonarr

@@ -1,11 +1,12 @@
 import sqlite3
+import os
 from subliminal import *
 
 # Get providers list from subliminal
 providers_list = sorted(provider_manager.names())
 
 # Open database connection
-db = sqlite3.connect('data/db/bazarr.db')
+db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
 
 # Insert providers in database table
