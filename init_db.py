@@ -6,7 +6,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     pass
 else:
     # Get SQL script from file
-    fd = open('create_db.sql', 'r')
+    fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
     script = fd.read()
     
     # Open database connection
