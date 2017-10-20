@@ -13,9 +13,6 @@ RUN git clone -b master --single-branch https://github.com/morpheus65535/bazarr.
 
 VOLUME /bazarr/data
 
-RUN ls /
-RUN ls /bazarr
-
 # Install app dependencies
 RUN pip install -r /bazarr/requirements.txt
 
