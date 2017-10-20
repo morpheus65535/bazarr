@@ -16,4 +16,5 @@ VOLUME /bazarr/data
 # Install app dependencies
 RUN pip install -r /bazarr/requirements.txt
 
+WORKDIR /bazarr
 CMD ["python", "bazarr.py"]
