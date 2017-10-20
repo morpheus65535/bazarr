@@ -9,7 +9,7 @@ from list_subtitles import *
 from utils import *
 
 # configure the cache
-region.configure('dogpile.cache.dbm', arguments={'filename': 'cachefile.dbm'})
+region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
 def download_subtitle(path, language, hi, providers):
     video = scan_video(path)
