@@ -10,7 +10,6 @@ else:
     script = fd.read()
     
     # Open database connection
-    print os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c = db.cursor()
 	
