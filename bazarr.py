@@ -2,6 +2,7 @@ from bottle import route, run, template, static_file, request, redirect
 import bottle
 bottle.debug(True)
 bottle.TEMPLATES.clear()
+bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 
 import sqlite3
 import os
