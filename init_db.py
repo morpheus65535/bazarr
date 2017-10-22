@@ -6,10 +6,25 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     pass
 else:
     # Create data directory tree
-    os.mkdir(os.path.join(os.path.dirname(__file__), 'data'))
-    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/cache'))
-    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/db'))
-    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/log'))
+    try:
+        os.mkdir(os.path.join(os.path.dirname(__file__), 'data'))
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(os.path.join(os.path.dirname(__file__), 'data/cache'))
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(os.path.join(os.path.dirname(__file__), 'data/db'))
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(os.path.join(os.path.dirname(__file__), 'data/log'))
+    except OSError:
+        pass
 
     # Get SQL script from file
     fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
