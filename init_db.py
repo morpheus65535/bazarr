@@ -5,6 +5,12 @@ import sqlite3
 if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) == True:
     pass
 else:
+    # Create data directory tree
+    os.mkdir(os.path.join(os.path.dirname(__file__), 'data'))
+    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/cache'))
+    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/db'))
+    os.mkdir(os.path.join(os.path.dirname(__file__), 'data/log'))
+
     # Get SQL script from file
     fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
     script = fd.read()
