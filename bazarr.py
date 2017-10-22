@@ -68,7 +68,7 @@ configure_logging()
 
 @route(base_url + '/static/:path#.+#', name='static')
 def static(path):
-    return static_file(path, root='static')
+    return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
 
 @route(base_url + '/image_proxy/<url:path>', method='GET')
 def image_proxy(url):
