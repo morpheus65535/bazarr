@@ -176,7 +176,7 @@
 										%if episode[6] is not None:
 										%	missing_languages = ast.literal_eval(episode[6])
 										%else:
-											missing_languages = '[]'
+										%	missing_languages = None
 										%end
 										%if missing_languages is not None:
 											%for language in missing_languages:
