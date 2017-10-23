@@ -1,12 +1,11 @@
-import datetime, threading, time
+from get_series import *
+from get_episodes import *
+from get_subtitle import *
 
-def foo():
-    next_call = time.time()
-    while True:
-        print datetime.datetime.now()
-        next_call = next_call+1;
-        time.sleep(next_call - time.time())
+from apscheduler.schedulers.background import BackgroundScheduler
 
-timerThread = threading.Thread(target=foo)
-timerThread.daemon = True
-timerThread.start()
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_series, 'interval', minutes=1, id='update_series', name='Update series list from Sonarr')
+scheduler.add_job(add_new_episodes, 'interval', minutes=1, id='add_new_episodes', name='Add new episodes from Sonarr')
+scheduler.add_job(wanted_search_missing_subtitles, 'interval', minutes=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
+scheduler.start()

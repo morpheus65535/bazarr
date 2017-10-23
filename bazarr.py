@@ -11,6 +11,8 @@ import itertools
 import operator
 import requests
 import pycountry
+import pretty
+import datetime
 from PIL import Image
 from io import BytesIO
 from fdsend import send_file
@@ -27,6 +29,7 @@ from get_sonarr_settings import *
 from list_subtitles import *
 from get_subtitle import *
 from utils import *
+from scheduler import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -223,16 +226,7 @@ def wanted():
 def wanted_search_missing_subtitles():
     ref = request.environ['HTTP_REFERER']
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
-
-    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE table_episodes.missing_subtitles != '[]'")
-    data = c.fetchall()
-    c.close()
-
-    for episode in data:
-        wanted_download_subtitles(episode[0])
+    wanted_search_missing_subtitles()
     
     redirect(ref)
 
@@ -304,8 +298,12 @@ def system():
     logs = []
     for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
         logs.append(line.rstrip())
+
+    task_list = []
+    for job in scheduler.get_jobs():
+        task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None))])
     
-    return template('system', tasks=tasks, logs=logs, base_url=base_url)
+    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list)
 
 @route(base_url + '/remove_subtitles', method='POST')
 def remove_subtitles():

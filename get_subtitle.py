@@ -65,3 +65,14 @@ def wanted_download_subtitles(path):
                 list_missing_subtitles(episode[3])
                 history_log(1, episode[3], episode[2], message)
 
+def wanted_search_missing_subtitles():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    db.create_function("path_substitution", 1, path_replace)
+    c = db.cursor()
+
+    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE table_episodes.missing_subtitles != '[]'")
+    data = c.fetchall()
+    c.close()
+
+    for episode in data:
+        wanted_download_subtitles(episode[0])

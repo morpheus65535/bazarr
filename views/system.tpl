@@ -78,7 +78,26 @@
 				<a class="item" data-tab="about">About</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
-				Tasks
+				<div class="content">
+					<table class="ui very basic selectable table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Interval</th>
+								<th>Next Execution</th>
+							</tr>
+						</thead>
+						<tbody>
+						%for task in task_list:
+							<tr>
+								<td>{{task[0]}}</td>
+								<td>{{task[1]}}</td>
+								<td>{{task[2]}}</td>
+							</tr>
+						%end
+						</tbody>
+					</table>
+				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
 				<div class="content">
