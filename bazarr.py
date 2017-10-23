@@ -223,7 +223,7 @@ def wanted():
     return template('wanted', rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
 
 @route(base_url + '/wanted_search_missing_subtitles')
-def wanted_search_missing_subtitles():
+def wanted_search_missing_subtitles_list():
     ref = request.environ['HTTP_REFERER']
 
     wanted_search_missing_subtitles()
