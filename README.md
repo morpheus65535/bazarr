@@ -4,11 +4,24 @@ Bazarr is a companion application to Sonarr. It manage and download subtitles ba
 ## Major Features Include:
 
 * Support for major platforms: Windows, Linux, macOS, Raspberry Pi, etc.
-* Automatically add new episodes from Sonarr
+* Automatically add new series and episodes from Sonarr
+* Series based configuration for subtitles languages
 * Scan your existing library for internal and external subtitles and download any missing
+* Keep history of what was downloaded from where and when
 * Manual search so you can download subtitles on demand
 * Ability to delete external subtitles from disk
+* Currently support 184 subtitles languages
 * And a beautiful UI based on Sonarr
+
+## Supported subtitles providers:
+* addic7ed
+* legendastv
+* opensubtitles
+* podnapisi
+* shooter
+* subscenter
+* thesubdb
+* tvsubtitles
 
 ## Running from Source
 
@@ -44,7 +57,7 @@ Linux:
 * You can now start bazarr via `bazarr.py` to start bazarr.
 * Open your browser and go to `http://localhost:6767/`
 
-Docker:
+## Docker:
 * You can use [this image](https://hub.docker.com/r/morpheus65535/bazarr) to quickly build your own isolated app container. It's based on the Linux instructions above. For more info about Docker check out the [official website](https://www.docker.com).
 
 ### License
