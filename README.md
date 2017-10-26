@@ -16,6 +16,7 @@ bazarr require Python 2.7 and can be run from source. This will use *git* as upd
 
 Windows:
 
+* Install [GIT](http://git-scm.com/)
 * Install [Python 2.7](http://www.python.org/download/releases/2.7.3/)
 * Open up CMD and go to the folder you want to install bazarr. Something like Program Files.
 * Run `git clone https://github.com/morpheus65535/bazarr.git`.
