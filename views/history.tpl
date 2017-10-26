@@ -158,22 +158,22 @@
 	    sessionStorage.clear();
 	}
 
-	$('a, i').click(function(){
+	$('a, i').on('click touch', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#loader').addClass('active');
 	})
 
-	$('.backward').click(function(){
+	$('.backward').on('click touch', function(){
 		location.href="?page={{int(page)-1}}";
 	})
-	$('.fast.backward').click(function(){
+	$('.fast.backward').on('click touch', function(){
 		location.href="?page=1";
 	})
-	$('.forward').click(function(){
+	$('.forward').on('click touch', function(){
 		location.href="?page={{int(page)+1}}";
 	})
-	$('.fast.forward').click(function(){
+	$('.fast.forward').on('click touch', function(){
 		location.href="?page={{int(max_page)}}";
 	})
 </script>

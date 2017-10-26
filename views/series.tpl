@@ -190,7 +190,7 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').click(function(){
+	$('a, button:not(.cancel)').on('click touch', function(){
 		$('#loader').addClass('active');
 	})
 
@@ -200,19 +200,19 @@
 		})
 	;
 
-	$('#update_series').click(function(){
+	$('#update_series').on('click touch', function(){
 		window.location = '{{base_url}}/update_series';
 	})
 
-	$('#update_all_episodes').click(function(){
+	$('#update_all_episodes').on('click touch', function(){
 		window.location = '{{base_url}}/update_all_episodes';
 	})
 
-	$('#add_new_episodes').click(function(){
+	$('#add_new_episodes').on('click touch', function(){
 		window.location = '{{base_url}}/add_new_episodes';
 	})
 
-	$('.config').click(function(){
+	$('.config').on('click touch', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));
