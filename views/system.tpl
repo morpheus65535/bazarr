@@ -73,9 +73,9 @@
 			
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
-				<a class="item active" data-tab="tasks">Tasks</a>
-				<a class="item" data-tab="logs">Logs</a>
-				<a class="item" data-tab="about">About</a>
+				<a class="tabs item active" data-tab="tasks">Tasks</a>
+				<a class="tabs item" data-tab="logs">Logs</a>
+				<a class="tabs item" data-tab="about">About</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
 				<div class="content">
@@ -179,7 +179,7 @@ icon"></i></td>
 		$('.small.modal').modal('show');
 	})
 
-	$('a, button:not(.cancel)').click(function(){
+	$('a:not(.tabs), button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 </script>
