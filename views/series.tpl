@@ -191,7 +191,7 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').bind('vtouch', function(e){
+	$('a, button:not(.cancel)').bind('click vtouch', function(e){
 		e.preventDefault();
 		$('#loader').addClass('active');
 	})
@@ -202,22 +202,22 @@
 		})
 	;
 
-	$('#update_series').bind('vtouch', function(e){
+	$('#update_series').bind('click vtouch', function(e){
 		e.preventDefault();
 		window.location = '{{base_url}}/update_series';
 	})
 
-	$('#update_all_episodes').bind('vtouch', function(e){
+	$('#update_all_episodes').bind('click vtouch', function(e){
 		e.preventDefault();
 		window.location = '{{base_url}}/update_all_episodes';
 	})
 
-	$('#add_new_episodes').bind('vtouch', function(e){
+	$('#add_new_episodes').bind('click vtouch', function(e){
 		e.preventDefault();
 		window.location = '{{base_url}}/add_new_episodes';
 	})
 
-	$('.config').bind('vtouch', function(e){
+	$('.config').bind('click vtouch', function(e){
 		e.preventDefault();
 		sessionStorage.scrolly=$(window).scrollTop();
 
