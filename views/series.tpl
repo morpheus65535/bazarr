@@ -191,7 +191,8 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').bind('click touchend', function(){
+	$('a, button:not(.cancel)').bind('click touchend', function(e){
+		e.preventDefault();
 		$('#loader').addClass('active');
 	})
 
