@@ -74,9 +74,9 @@
 		<div id="fondblanc" class="ui container">
 			<form name="settings_form" id="settings_form" action="{{base_url}}/save_settings" method="post" class="ui form">
 			<div class="ui top attached tabular menu">
-				<a class="item active" data-tab="general">General</a>
-				<a class="item" data-tab="sonarr">Sonarr</a>
-				<a class="item" data-tab="subliminal">Subliminal</a>
+				<a class="tabs item active" data-tab="general">General</a>
+				<a class="tabs item" data-tab="sonarr">Sonarr</a>
+				<a class="tabs item" data-tab="subliminal">Subliminal</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="general">
 				<div class="ui container"><button class="ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
@@ -332,7 +332,7 @@
 		.tab()
 	;
 
-	$('a, button:not(.cancel)').click(function(){
+	$('a:not(.tabs), button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
