@@ -191,7 +191,7 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').bind('click vtouch', function(){
+	$('a, button:not(.cancel)').bind('click touchend', function(){
 		$('#loader').addClass('active');
 	})
 
@@ -201,19 +201,19 @@
 		})
 	;
 
-	$('#update_series').bind('click vtouch', function(){
+	$('#update_series').bind('click touchend', function(){
 		window.location = '{{base_url}}/update_series';
 	})
 
-	$('#update_all_episodes').bind('click vtouch', function(){
+	$('#update_all_episodes').bind('click touchend', function(){
 		window.location = '{{base_url}}/update_all_episodes';
 	})
 
-	$('#add_new_episodes').bind('click vtouch', function(){
+	$('#add_new_episodes').bind('click touchend', function(){
 		window.location = '{{base_url}}/add_new_episodes';
 	})
 
-	$('.config').bind('click vtouch', function(){
+	$('.config').bind('click touchend', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));
