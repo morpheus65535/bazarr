@@ -332,7 +332,7 @@
 		.tab()
 	;
 
-	$('a.menu').on('click touch', function(){
+	$('a.menu').click(function(){
 		$('#loader').addClass('active');
 	})
 

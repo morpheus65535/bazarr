@@ -173,13 +173,13 @@ icon"></i></td>
 		.tab()
 	;
 
-	$('.log').on('click touch', function(){
+	$('.log').click(function(){
 		$("#message").html($(this).data("message"));
 		$("#exception").html($(this).data("exception"));
 		$('.small.modal').modal('show');
 	})
 
-	$('a.menu').on('click touch', function(){
+	$('a.menu').click(function(){
 		$('#loader').addClass('active');
 	})
 </script>

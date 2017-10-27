@@ -153,28 +153,28 @@
 
 
 <script>
-	$('a, button').on('click touch', function(){
+	$('a, button').click(function(){
 		$('#loader').addClass('active');
 	})
 
-	$('.fast.backward').on('click touch', function(){
+	$('.fast.backward').click(function(){
 		location.href="?page=1";
 	})
-	$('.backward').on('click touch', function(){
+	$('.backward').click(function(){
 		location.href="?page={{int(page)-1}}";
 	})
-	$('.forward').on('click touch', function(){
+	$('.forward').click(function(){
 		location.href="?page={{int(page)+1}}";
 	})
-	$('.fast.forward').on('click touch', function(){
+	$('.fast.forward').click(function(){
 		location.href="?page={{int(max_page)}}";
 	})
 
-	$('#wanted_search_missing_subtitles').on('click touch', function(){
+	$('#wanted_search_missing_subtitles').click(function(){
 		window.location = '{{base_url}}/wanted_search_missing_subtitles';
 	})
 
-	$('.get_subtitle').on('click touch', function(){
+	$('.get_subtitle').click(function(){
 		    var values = {
 		            episodePath: $(this).attr("data-episodePath"),
 		            language: $(this).attr("data-language"),

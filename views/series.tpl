@@ -191,11 +191,15 @@
 	$('table').tablesort();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	$('a, button:not(.cancel)').bind('click touchend', function(e){
 		e.preventDefault();
 =======
 	$('a, button:not(.cancel)').on('click touch', function(){
 >>>>>>> parent of 5ad908b... Add JQM for compatibility with touch
+=======
+	$('a, button:not(.cancel)').click(function(){
+>>>>>>> parent of 7368f13... Add support for javascript mobile touch instead of click event
 		$('#loader').addClass('active');
 	})
 
@@ -205,6 +209,7 @@
 		})
 	;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	$('#update_series').bind('click touchend', function(){
 		window.location = '{{base_url}}/update_series';
@@ -221,19 +226,26 @@
 	$('.config').bind('click touchend', function(){
 =======
 	$('#update_series').on('click touch', function(){
+=======
+	$('#update_series').click(function(){
+>>>>>>> parent of 7368f13... Add support for javascript mobile touch instead of click event
 		window.location = '{{base_url}}/update_series';
 	})
 
-	$('#update_all_episodes').on('click touch', function(){
+	$('#update_all_episodes').click(function(){
 		window.location = '{{base_url}}/update_all_episodes';
 	})
 
-	$('#add_new_episodes').on('click touch', function(){
+	$('#add_new_episodes').click(function(){
 		window.location = '{{base_url}}/add_new_episodes';
 	})
 
+<<<<<<< HEAD
 	$('.config').on('click touch', function(){
 >>>>>>> parent of 5ad908b... Add JQM for compatibility with touch
+=======
+	$('.config').click(function(){
+>>>>>>> parent of 7368f13... Add support for javascript mobile touch instead of click event
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));

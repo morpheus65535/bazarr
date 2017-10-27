@@ -200,15 +200,15 @@
 </html>
 
 <script>
-	$('#scan_disk').on('click touch', function(){
+	$('#scan_disk').click(function(){
 		window.location = '{{base_url}}/scan_disk/{{no}}';
 	})
 
-	$('#search_missing_subtitles').on('click touch', function(){
+	$('#search_missing_subtitles').click(function(){
 		window.location = '{{base_url}}/search_missing_subtitles/{{no}}';
 	})
 
-	$('.remove_subtitles').on('click touch', function(){
+	$('.remove_subtitles').click(function(){
 		    var values = {
 		            episodePath: $(this).attr("data-episodePath"),
 		            language: $(this).attr("data-language"),
@@ -225,7 +225,7 @@
 		    $('#loader').addClass('active');
 	})
 
-	$('.get_subtitle').on('click touch', function(){
+	$('.get_subtitle').click(function(){
 		    var values = {
 		            episodePath: $(this).attr("data-episodePath"),
 		            language: $(this).attr("data-language"),
