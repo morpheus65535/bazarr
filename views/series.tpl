@@ -2,6 +2,7 @@
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}/static/jquery/jquery-latest.min.js"></script>
+		<script src="{{base_url}}/static/jquery/jquery.mobile.vmouse.min.js"></script>
 		<script src="{{base_url}}/static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}/static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}/static/semantic/semantic.min.css">
@@ -190,7 +191,8 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').on('click touch', function(){
+	$('a, button:not(.cancel)').bind('vtouch', function(e){
+		e.preventDefault();
 		$('#loader').addClass('active');
 	})
 
@@ -200,19 +202,23 @@
 		})
 	;
 
-	$('#update_series').on('click touch', function(){
+	$('#update_series').bind('vtouch', function(e){
+		e.preventDefault();
 		window.location = '{{base_url}}/update_series';
 	})
 
-	$('#update_all_episodes').on('click touch', function(){
+	$('#update_all_episodes').bind('vtouch', function(e){
+		e.preventDefault();
 		window.location = '{{base_url}}/update_all_episodes';
 	})
 
-	$('#add_new_episodes').on('click touch', function(){
+	$('#add_new_episodes').bind('vtouch', function(e){
+		e.preventDefault();
 		window.location = '{{base_url}}/add_new_episodes';
 	})
 
-	$('.config').on('click touch', function(){
+	$('.config').bind('vtouch', function(e){
+		e.preventDefault();
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));
