@@ -179,7 +179,7 @@ icon"></i></td>
 		$('.small.modal').modal('show');
 	})
 
-	$('a.menu').click(function(){
+	$('a, button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 </script>

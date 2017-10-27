@@ -332,7 +332,7 @@
 		.tab()
 	;
 
-	$('a.menu').click(function(){
+	$('a, button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
