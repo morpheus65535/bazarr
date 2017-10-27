@@ -2,7 +2,6 @@
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}/static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}/static/jquery/jquery.mobile.vmouse.min.js"></script>
 		<script src="{{base_url}}/static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}/static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}/static/semantic/semantic.min.css">
@@ -191,8 +190,12 @@
 
 	$('table').tablesort();
 
+<<<<<<< HEAD
 	$('a, button:not(.cancel)').bind('click touchend', function(e){
 		e.preventDefault();
+=======
+	$('a, button:not(.cancel)').on('click touch', function(){
+>>>>>>> parent of 5ad908b... Add JQM for compatibility with touch
 		$('#loader').addClass('active');
 	})
 
@@ -202,6 +205,7 @@
 		})
 	;
 
+<<<<<<< HEAD
 	$('#update_series').bind('click touchend', function(){
 		window.location = '{{base_url}}/update_series';
 	})
@@ -215,6 +219,21 @@
 	})
 
 	$('.config').bind('click touchend', function(){
+=======
+	$('#update_series').on('click touch', function(){
+		window.location = '{{base_url}}/update_series';
+	})
+
+	$('#update_all_episodes').on('click touch', function(){
+		window.location = '{{base_url}}/update_all_episodes';
+	})
+
+	$('#add_new_episodes').on('click touch', function(){
+		window.location = '{{base_url}}/add_new_episodes';
+	})
+
+	$('.config').on('click touch', function(){
+>>>>>>> parent of 5ad908b... Add JQM for compatibility with touch
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#series_form').attr('action', '{{base_url}}/edit_series/' + $(this).data("tvdbid"));
