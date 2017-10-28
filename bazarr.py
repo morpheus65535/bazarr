@@ -19,6 +19,7 @@ from fdsend import send_file
 import urllib
 
 from init_db import *
+from check_update import *
 from get_languages import *
 from get_providers import *
 
