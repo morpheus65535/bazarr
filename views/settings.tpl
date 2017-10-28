@@ -224,7 +224,7 @@
 								<label>Automatic</label>
 							</div>
 							<div class="eleven wide column">
-								<div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings_sonarr[6]}}>
+								<div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings_general[6]}}>
 							    	<input name="settings_general_automatic" type="checkbox">
 							    	<label></label>
 							    </div>
