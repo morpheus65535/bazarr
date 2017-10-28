@@ -36,9 +36,11 @@ CREATE TABLE "table_settings_general" (
 	`port`	INTEGER NOT NULL,
 	`base_url`	TEXT,
 	`path_mapping`	TEXT,
-	`log_level`	TEXT
+	`log_level`	TEXT,
+	`branch`	TEXT,
+	`auto_update`	INTEGER
 );
-INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level) VALUES ('0.0.0.0',6767,'/',Null,'WARNING');
+INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update) VALUES ('0.0.0.0',6767,'/',Null,'WARNING','master','True');
 CREATE TABLE `table_scheduler` (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`name`	TEXT NOT NULL,

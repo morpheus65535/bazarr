@@ -202,6 +202,36 @@
 						%end
 					</div>
 				</div>
+
+				<div class="ui dividing header">Updates</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Branch</label>
+							</div>
+							<div class="eleven wide column">
+								<select name="settings_general_branch" id="settings_branch" class="ui fluid selection dropdown">
+									<option value="">Branch</option>
+									<option value="master">master</option>
+									<option value="development">development</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>Automatic</label>
+							</div>
+							<div class="eleven wide column">
+								<div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings_sonarr[6]}}>
+							    	<input name="settings_general_automatic" type="checkbox">
+							    	<label></label>
+							    </div>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="sonarr">
 				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
@@ -341,6 +371,12 @@
 			} else {
 				$("#sonarr_ssl_div").checkbox('uncheck');
 			}
+
+	if ($('#settings_automatic_div').data("automatic") == "True") {
+				$("#settings_automatic_div").checkbox('check');
+			} else {
+				$("#settings_automatic_div").checkbox('uncheck');
+			}
 	
 	$('#settings_loglevel').dropdown('clear');
 	$('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
@@ -348,8 +384,11 @@
 	$('#settings_providers').dropdown('set selected',{{!enabled_providers}});
 	$('#settings_languages').dropdown('clear');
 	$('#settings_languages').dropdown('set selected',{{!enabled_languages}});
+	$('#settings_branch').dropdown('clear');
+	$('#settings_branch').dropdown('set selected',{{!settings_general[5]}});
 
 	$('#settings_loglevel').dropdown();
 	$('#settings_providers').dropdown();
 	$('#settings_languages').dropdown();
+	$('#settings_branch').dropdown();
 </script>
