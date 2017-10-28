@@ -22,6 +22,9 @@ if general_settings[3] is None:
    path_mappings = []
 else:
    path_mappings = ast.literal_eval(general_settings[3])
+log_level = general_settings[4]
+branch = general_settings[5]
+automatic = general_settings[6]
 
 def path_replace(path):
    for path_mapping in path_mappings:
@@ -48,5 +51,3 @@ def path_replace_reverse(path):
          path = path.replace('\\', '/')
          
    return path
-
-#print path_replace_reverse(r'\\\\serveur\\media\\Series TV\\Vikings\\Season 03\\Vikings.S03E01.720p.HDTV.x264-KILLERS.mkv')
