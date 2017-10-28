@@ -385,7 +385,7 @@
 	$('#settings_languages').dropdown('clear');
 	$('#settings_languages').dropdown('set selected',{{!enabled_languages}});
 	$('#settings_branch').dropdown('clear');
-	$('#settings_branch').dropdown('set selected',{{!settings_general[5]}});
+	$('#settings_branch').dropdown('set selected','{{!settings_general[5]}}');
 
 	$('#settings_loglevel').dropdown();
 	$('#settings_providers').dropdown();
