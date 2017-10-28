@@ -262,6 +262,10 @@ def save_settings():
     settings_general_pathmapping.extend([list(a) for a in zip(settings_general_sourcepath, settings_general_destpath)])
     settings_general_branch = request.forms.get('settings_general_branch')
     settings_general_automatic = request.forms.get('settings_general_automatic')
+    if settings_general_automatic is None:
+        settings_general_automatic = 'False'
+    else:
+        settings_general_automatic = 'True'
     c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?", (settings_general_ip, settings_general_port, settings_general_baseurl, str(settings_general_pathmapping), settings_general_loglevel, settings_general_branch, settings_general_automatic))
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
