@@ -23,6 +23,12 @@ Bazarr is a companion application to Sonarr. It manage and download subtitles ba
 * thesubdb
 * tvsubtitles
 
+## Screenshot
+
+You can get more in the screenshot directory but it should look familiar:
+
+![Series](/screenshot/series.png?raw=true "Series")
+
 ## Running from Source
 
 bazarr require Python 2.7 and can be run from source. This will use *git* as updater, so make sure that is installed.
