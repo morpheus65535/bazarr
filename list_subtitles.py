@@ -85,9 +85,12 @@ def list_missing_subtitles(*no):
             actual_subtitles = ast.literal_eval(episode_subtitles[1])
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
         actual_subtitles_list = []
-        for item in actual_subtitles:
-            actual_subtitles_list.append(item[0])
-        missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
+        if desired_subtitles == None:
+            missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
+        else:
+            for item in actual_subtitles:
+                actual_subtitles_list.append(item[0])
+            missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
         missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
 
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
