@@ -25,7 +25,7 @@ Bazarr is a companion application to Sonarr. It manage and download subtitles ba
 
 ## Screenshot
 
-You can get more in the screenshot directory but it should look familiar:
+You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tree/master/screenshot) directory but it should look familiar:
 
 ![Series](/screenshot/series.png?raw=true "Series")
 
