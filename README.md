@@ -64,7 +64,7 @@ Linux:
 * Open your browser and go to `http://localhost:6767/`
 
 ## Docker:
-* You can use [this image](https://hub.docker.com/r/morpheus65535/bazarr) to quickly build your own isolated app container. It's based on the Linux instructions above. For more info about Docker check out the [official website](https://www.docker.com).
+* You can use [this image](https://hub.docker.com/r/morpheus65535/bazarr) to quickly build your own isolated app container. Thanks to [Linux Server](https://github.com/linuxserver) for the base image. It's based on the Linux instructions above. For more info about Docker check out the [official website](https://www.docker.com).
 
 ### License
 
