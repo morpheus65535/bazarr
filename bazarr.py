@@ -299,7 +299,7 @@ def save_settings():
     redirect(ref)
 
 @route(base_url + 'check_update')
-def check_update():
+def manual_update():
     ref = request.environ['HTTP_REFERER']
 
     root.warning(check_and_apply_update())
