@@ -302,7 +302,7 @@ def save_settings():
 def check_update():
     ref = request.environ['HTTP_REFERER']
 
-    root.info(check_and_apply_update())
+    root.warning(check_and_apply_update())
     
     redirect(ref)
 
