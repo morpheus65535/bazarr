@@ -1,18 +1,18 @@
 <html>
 	<head>
 		<!DOCTYPE html>
-		<script src="{{base_url}}/static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}/static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}/static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}/static/semantic/semantic.min.css">
+		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
+		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
+		<script src="{{base_url}}static/jquery/tablesort.js"></script>
+		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
 		
-		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}/static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}/static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}/static/favicon-16x16.png">
-		<link rel="manifest" href="{{base_url}}/static/manifest.json">
-		<link rel="mask-icon" href="{{base_url}}/static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="{{base_url}}/static/favicon.ico">
-		<meta name="msapplication-config" content="{{base_url}}/static/browserconfig.xml">
+		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
+		<link rel="manifest" href="{{base_url}}static/manifest.json">
+		<link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
+		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
+		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 		
 		<title>History - Bazarr</title>
@@ -48,25 +48,25 @@
 		</div>
 		<div id="divmenu" class="ui container">
 			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
-				<a href="{{base_url}}/"><img style="margin-right:32px;" class="logo" src="{{base_url}}/static/logo128.png"></a>
+				<a href="{{base_url}}"><img style="margin-right:32px;" class="logo" src="{{base_url}}static/logo128.png"></a>
 				<div style="height:80px;" class="ui container">
-					<a class="item" href="{{base_url}}/">
+					<a class="item" href="{{base_url}}">
 						<i class="play icon"></i>
 						Series
 					</a>
-					<a class="item" href="{{base_url}}/history">
+					<a class="item" href="{{base_url}}history">
 						<i class="wait icon"></i>
 						History
 					</a>
-					<a class="item" href="{{base_url}}/wanted">
+					<a class="item" href="{{base_url}}wanted">
 						<i class="warning sign icon"></i>
 						Wanted
 					</a>
-					<a class="item" href="{{base_url}}/settings">
+					<a class="item" href="{{base_url}}settings">
 						<i class="settings icon"></i>
 						Settings
 					</a>
-					<a class="item" href="{{base_url}}/system">
+					<a class="item" href="{{base_url}}system">
 						<i class="laptop icon"></i>
 						System
 					</a>
@@ -102,7 +102,7 @@
 							</div>
 						%end
 						</td>
-						<td><a href="{{base_url}}/episodes/{{row[6]}}">{{row[1]}}</a></td>
+						<td><a href="{{base_url}}episodes/{{row[6]}}">{{row[1]}}</a></td>
 						<td class="collapsing">
 							<%episode = row[2].split('x')%>
 							{{episode[0] + 'x' + episode[1].zfill(2)}}
