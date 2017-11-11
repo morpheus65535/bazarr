@@ -7,6 +7,7 @@ enzyme
 Pillow
 py-pretty
 pycountry
+pygit2==0.25.0
 requests
 subliminal
 urllib3
