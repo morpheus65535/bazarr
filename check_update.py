@@ -1,13 +1,27 @@
 from get_general_settings import *
 
 import os
-import subprocess
+import pygit2
 
-def check_and_apply_update():
-    result =  subprocess.check_output(["git", "pull", '--dry-run', 'origin', branch], stderr=subprocess.STDOUT, shell=True, cwd=os.path.join(os.path.dirname(__file__))).split('\n')
+current_working_directory = os.getcwd()
+repository_path = pygit2.discover_repository(current_working_directory)
+local_repo = pygit2.Repository(repository_path)
 
-    if result[2] is not '':
-        subprocess.check_output(["git", "pull", 'origin', branch], shell=True, cwd=os.path.join(os.path.dirname(__file__)))
-        os.execlp('python', 'python ' + os.path.join(os.path.dirname(__file__), 'bazarr.py'))
-
-    return result
+def check_and_apply_update(repo=local_repo, remote_name='origin'):
+    for remote in repo.remotes:
+        if remote.name == remote_name:
+            remote.fetch()
+            remote_id = repo.lookup_reference('refs/remotes/origin/' + branch).target
+            merge_result, _ = repo.merge_analysis(remote_id)
+            # Up to date, do nothing
+            if merge_result & pygit2.GIT_MERGE_ANALYSIS_UP_TO_DATE:
+                print 'Up to date'
+                return
+            # We can just fastforward
+            elif merge_result & pygit2.GIT_MERGE_ANALYSIS_FASTFORWARD:
+                repo.checkout_tree(repo.get(remote_id))
+                master_ref = repo.lookup_reference('refs/heads/master')
+                master_ref.set_target(remote_id)
+                repo.head.set_target(remote_id)
+            else:
+                raise AssertionError('Unknown merge analysis result')
