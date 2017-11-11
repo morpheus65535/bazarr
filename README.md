@@ -68,21 +68,23 @@ Linux:
 
 ## First run (important to read!!!):
 
-1 - Go in "Settings"
-2 - In "General" tab:
-*	Configure Bazarr settings (listening ip and port, base url and log level)
+### 1 - Go to "Settings" page.
+### 2 - In "General" tab:
+*	Configure Bazarr settings (listening ip and port, base url and log level).
 *	Configure Path Mappings only if you need it. Typical use case: Sonarr access episode files trough local path (D:\episodes\file.mkv) but Bazarr access those same episode files trough a network shared (\\server\episodes\file.mkv). In this case, you would be configuring Path Substitutions like this: D:\episodes --> \\server\episodes. If you don't set this correctly, you'll get http error 500 later down the road.
 *	Configure updates. Recommended values are "master" and automatic enabled.
-3 - In "Sonarr" tab:
+### 3 - In "Sonarr" tab:
 *	Configure Sonarr ip, port, base url, SSL and API key.
-4 - In "Subliminal" tab:
+### 4 - In "Subliminal" tab:
 *	Configure enabled providers and enabled languages. Enabled languages are those that you are going to be able to assign to a series later.
-5 - Save those settings and restart Bazarr.
-6 - On the "Series" page, click on "Update Series"
-7 - You should now see all your series listed with a wrench icon on yellow background. Those are the series that need to be configured. Click on each one and select desired languages. You have to do this even if you don't want subtitles for a series. Just click on the wrench icon and then on "Save".
-8 - When you've finished going trough all those series to configure desired languages, you have to "Update All Episodes" from the "Series" page. Don't be impatient, it will take about 1 minute by 1000 episodes Bazarr need to scan for existing internal and external subtitles. If Bazarr is accessing those episodes trough a network share, it's going to take much more longer than that. Keep in mind that Bazarr have to open each and every episode files to analyze the content.
-9 - Once the scan is finished, you should be able to access episodes list for each series and see those missing subtitles on the wanted page.
-10 - Have fun and keep in mind that providers may temporary refuse connection due to connection limit exceeded or problem on the provider web service.
+### 5 - Save those settings and restart Bazarr.
+
+### 6 - On the "Series" page, click on "Update Series"
+* You should now see all your series listed with a wrench icon on yellow background. Those are the series that need to be configured. Click on each one and select desired languages. You have to do this even if you don't want subtitles for a series. Just click on the wrench icon and then on "Save".
+* When you've finished going trough all those series to configure desired languages, you have to "Update All Episodes" from the "Series" page. Don't be impatient, it will take about 1 minute by 1000 episodes Bazarr need to scan for existing internal and external subtitles. If Bazarr is accessing those episodes trough a network share, it's going to take much more longer than that. Keep in mind that Bazarr have to open each and every episode files to analyze the content.
+* Once the scan is finished, you should be able to access episodes list for each series and see those missing subtitles on the wanted page.
+
+### 10 - Have fun and keep in mind that providers may temporary refuse connection due to connection limit exceeded or problem on the provider web service.
 
 ### License
 
