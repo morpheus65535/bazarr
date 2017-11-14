@@ -1,4 +1,4 @@
-FROM lsiobase/alpine.python
+FROM python:2
 
 EXPOSE  6767
 

@@ -120,4 +120,7 @@ def add_new_episodes():
 
     # Store substitles from episodes we've just added
     new_scan_subtitles()
-    list_missing_subtitles()
+    try:
+        list_missing_subtitles()
+    except:
+        pass

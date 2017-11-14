@@ -155,36 +155,43 @@
 										%if episode[4] is not None:
 										%	actual_languages = ast.literal_eval(episode[4])
 										%else:
-											actual_languages = '[]'
+										%	actual_languages = '[]'
 										%end
-										%if actual_languages is not None:
+
+										%try:
 											%for language in actual_languages:
-											%if language[1] is not None:
-											<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
-												{{language[0]}}
-												<i class="delete icon"></i>
-											</a>
-											%else:
-											<div class="ui tiny label">
-												{{language[0]}}
-											</div>
+												%if language[1] is not None:
+												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
+													{{language[0]}}
+													<i class="delete icon"></i>
+												</a>
+												%else:
+												<div class="ui tiny label">
+													{{language[0]}}
+												</div>
+												%end
 											%end
-											%end
+										%except:
+											%pass
 										%end
 										</td>
 										<td>
-										%if episode[6] is not None:
-										%	missing_languages = ast.literal_eval(episode[6])
-										%else:
-										%	missing_languages = None
-										%end
-										%if missing_languages is not None:
-											%for language in missing_languages:
-											<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
-												{{language}}
-												<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
-											</a>
+										%try:
+											%if episode[6] is not None:
+											%	missing_languages = ast.literal_eval(episode[6])
+											%else:
+											%	missing_languages = None
 											%end
+											%if missing_languages is not None:
+												%for language in missing_languages:
+												<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
+													{{language}}
+													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+												</a>
+												%end
+											%end
+										%except:
+											%pass
 										%end
 										</td>
 									</tr>
