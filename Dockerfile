@@ -9,7 +9,7 @@ RUN apt-get update
 RUN apt-get install -y build-essential python-dev python-pip python-setuptools libjpeg-dev zlib1g-dev git libgit2-dev libffi-dev
 
 # Get application source from Github
-RUN git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr
+RUN git clone -b development --single-branch https://github.com/morpheus65535/bazarr.git /bazarr
 
 VOLUME /bazarr/data
 

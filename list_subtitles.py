@@ -11,7 +11,7 @@ from get_general_settings import *
 def list_subtitles(file):
     languages = []
     actual_subtitles = []
-    if os.path.exists(file):
+    if os.path.exists(file.encode('utf-8')):
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
@@ -35,7 +35,7 @@ def list_subtitles(file):
 def store_subtitles(file):
     languages = []
     actual_subtitles = []
-    if os.path.exists(file):
+    if os.path.exists(file.encode('utf-8')):
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
@@ -126,7 +126,3 @@ def new_scan_subtitles():
 
     for episode in episodes:
         store_subtitles(path_replace(episode[0]))
-
-#full_scan_subtitles()
-#new_scan_subtitles()
-#list_missing_subtitles()
