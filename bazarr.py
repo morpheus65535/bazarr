@@ -320,7 +320,7 @@ def system():
 
     task_list = []
     for job in scheduler.get_jobs():
-        task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None))])
+        task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=tz))])
     
     return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list)
 
