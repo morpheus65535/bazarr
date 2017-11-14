@@ -35,9 +35,9 @@ def list_subtitles(file):
 def store_subtitles(file):
     languages = []
     actual_subtitles = []
+    print file
+    print file.encode('utf-8')
     if os.path.exists(file.encode('utf-8')):
-        print file
-        print file.encode('utf-8')
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
