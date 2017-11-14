@@ -37,6 +37,7 @@ def store_subtitles(file):
     actual_subtitles = []
     print file
     if os.path.exists(file):
+    	print "exist"
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
