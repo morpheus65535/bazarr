@@ -3,7 +3,7 @@ from get_general_settings import *
 import os
 import pygit2
 
-current_working_directory = os.getcwd()
+current_working_directory = os.path.dirname(__file__)
 repository_path = pygit2.discover_repository(current_working_directory)
 local_repo = pygit2.Repository(repository_path)
 
