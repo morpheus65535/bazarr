@@ -302,7 +302,8 @@ def save_settings():
 def check_update():
     ref = request.environ['HTTP_REFERER']
 
-    check_and_apply_update()
+    result = check_and_apply_update()
+    logging.info(result)
     
     redirect(ref)
 

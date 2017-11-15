@@ -15,13 +15,17 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
             merge_result, _ = repo.merge_analysis(remote_id)
             # Up to date, do nothing
             if merge_result & pygit2.GIT_MERGE_ANALYSIS_UP_TO_DATE:
-                print 'Up to date'
-                return
+                result = 'No new version of Bazarr available.'
+                pass
             # We can just fastforward
             elif merge_result & pygit2.GIT_MERGE_ANALYSIS_FASTFORWARD:
                 repo.checkout_tree(repo.get(remote_id))
                 master_ref = repo.lookup_reference('refs/heads/master')
                 master_ref.set_target(remote_id)
                 repo.head.set_target(remote_id)
+                result = 'Bazarr updated to latest version.'
+                os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             else:
                 raise AssertionError('Unknown merge analysis result')
+
+    return result
