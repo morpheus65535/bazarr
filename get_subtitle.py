@@ -8,9 +8,6 @@ from get_general_settings import *
 from list_subtitles import *
 from utils import *
 
-from pympler.tracker import SummaryTracker
-tracker = SummaryTracker()
-
 # configure the cache
 region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
@@ -79,4 +76,3 @@ def wanted_search_missing_subtitles():
 
     for episode in data:
         wanted_download_subtitles(episode[0])
-    tracker.print_diff()
