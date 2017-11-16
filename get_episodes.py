@@ -143,8 +143,8 @@ def add_new_episodes():
         del c
     
         # Store substitles from episodes we've just added
-        new_scan_subtitles()
-        try:
-            list_missing_subtitles()
-        except:
-            pass
+        #new_scan_subtitles()
+        #try:
+        #    list_missing_subtitles()
+        #except:
+        #    pass
