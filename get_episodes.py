@@ -60,7 +60,16 @@ def update_all_episodes():
 
     # Close database connection
     c.close()
-                
+
+    #Cleanup variables to free memory
+    del current_episodes_db
+    del current_episodes_db_list
+    del seriesIdList
+    del r
+    del current_episodes_sonarr
+    del deleted_items
+    del c
+    
     # Store substitles for all episodes
     full_scan_subtitles()
     list_missing_subtitles()
@@ -124,6 +133,15 @@ def add_new_episodes():
         # Close database connection
         c.close()
 
+        #Cleanup variables to free memory
+        del current_episodes_db
+        del current_episodes_db_list
+        del seriesIdList
+        del r
+        del current_episodes_sonarr
+        del deleted_items
+        del c
+    
         # Store substitles from episodes we've just added
         new_scan_subtitles()
         try:
