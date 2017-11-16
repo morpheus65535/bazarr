@@ -142,7 +142,8 @@ def episodes(no):
     c = conn.cursor()
 
     series_details = []
-    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    tvdbid = series_details[5]
 
     episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
@@ -151,7 +152,7 @@ def episodes(no):
         seasons_list.append(list(season))
     c.close()
     
-    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url)
+    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):
@@ -325,6 +326,7 @@ def remove_subtitles():
         subtitlesPath = request.forms.get('subtitlesPath')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+        tvdbid = request.forms.get('tvdbid')
 
         try:
             os.remove(subtitlesPath)
@@ -333,7 +335,7 @@ def remove_subtitles():
         except OSError:
             pass
         store_subtitles(episodePath)
-        list_missing_subtitles(sonarrSeriesId)
+        list_missing_subtitles(tvdbid)
         
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
@@ -344,6 +346,7 @@ def get_subtitle():
         hi = request.forms.get('hi')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+        tvdbid = request.forms.get('tvdbid')
 
         db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
         c = db.cursor()
@@ -360,9 +363,9 @@ def get_subtitle():
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)
-                list_missing_subtitles(sonarrSeriesId)
+                list_missing_subtitles(tvdbid)
             redirect(ref)
         except OSError:
-            redirect(ref + '?error=2')
+            pass
 
 run(host=ip, port=port, server='waitress')

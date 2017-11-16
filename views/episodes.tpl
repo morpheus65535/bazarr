@@ -221,7 +221,8 @@
 		            language: $(this).attr("data-language"),
 		            subtitlesPath: $(this).attr("data-subtitlesPath"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            tvdbid: {{tvdbid}}
 		    };
 		    $.ajax({
 		        url: "{{base_url}}remove_subtitles",
@@ -238,7 +239,8 @@
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            tvdbid: {{tvdbid}}
 		    };
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle",
