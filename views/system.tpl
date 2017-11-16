@@ -141,7 +141,7 @@ icon"></i></td>
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="about">
-				About
+				Bazarr version: {{bazarr_version}}
 			</div>
 		</div>
 

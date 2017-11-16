@@ -1,3 +1,5 @@
+bazarr_version = '0.1.1'
+
 from bottle import route, run, template, static_file, request, redirect
 import bottle
 bottle.debug(True)
@@ -306,7 +308,7 @@ def system():
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, job.trigger.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
     
-    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list)
+    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
 
 @route(base_url + 'execute/<taskid>')
 def execute_task(taskid):
