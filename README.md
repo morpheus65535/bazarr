@@ -64,7 +64,9 @@ Linux:
 * Open your browser and go to `http://localhost:6767/`
 
 ## Docker:
-* You can use [this image](https://hub.docker.com/r/morpheus65535/bazarr) to quickly build your own isolated app container. Thanks to [Linux Server](https://github.com/linuxserver) for the base image. It's based on the Linux instructions above. For more info about Docker check out the [official website](https://www.docker.com).
+* You can use [this image](https://hub.docker.com/r/morpheus65535/bazarr) to quickly build your own isolated app container. It's based on the Linux instructions above. For more info about Docker check out the [official website](https://www.docker.com).
+
+docker create --name=bazarr -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -v /path/to/series/directory:/tv -v /path/to/config/directory/on/host:/bazarr/data -p 6767:6767 --restart=always morpheus65535/bazarr:latest
 
 ## First run (important to read!!!):
 
@@ -77,12 +79,16 @@ Linux:
 *	Configure Sonarr ip, port, base url, SSL and API key.
 ### 4 - In "Subliminal" tab:
 *	Configure enabled providers and enabled languages. Enabled languages are those that you are going to be able to assign to a series later.
-### 5 - Save those settings and restart Bazarr.
+### 5 - Save those settings and restart (important!!!) Bazarr.
 
-### 6 - On the "Series" page, click on "Update Series"
-* You should now see all your series listed with a wrench icon on yellow background. Those are the series that need to be configured. Click on each one and select desired languages. You have to do this even if you don't want subtitles for a series. Just click on the wrench icon and then on "Save".
-* When you've finished going trough all those series to configure desired languages, you have to "Update All Episodes" from the "Series" page. Don't be impatient, it will take about 1 minute by 1000 episodes Bazarr need to scan for existing internal and external subtitles. If Bazarr is accessing those episodes trough a network share, it's going to take much more longer than that. Keep in mind that Bazarr have to open each and every episode files to analyze the content.
-* Once the scan is finished, you should be able to access episodes list for each series and see those missing subtitles on the wanted page.
+### 6 - Wait 2 minutes
+
+### 7 - On the "Series" page, you should now see all your series listed with a wrench icon on yellow background. Those are the series that need to be configured. Click on those one you want to get subtitles for and select desired languages. You don't have to do this for every series but it will looks cleaner without all this yellow ;-). If you don't want any substitles for a series, just click on the wrench icon and then on "Save" without selecting anything.
+
+### 8 - On each series page, you should see episode files available on disk, existing subtitles and missing subtitles (in case you requested some and they aren't already existing).
+* If you don't see your episodes right now, wait some more time. It take time to do the initial synchronization between Sonarr and Bazarr.
+
+### 9 - On "Wanted" page, you should see all the episodes who have missing subtitles.
 
 ### 10 - Have fun and keep in mind that providers may temporary refuse connection due to connection limit exceeded or problem on the provider web service.
 

@@ -68,32 +68,33 @@ def store_subtitles(file):
 def list_missing_subtitles(*no):
     query_string = ''
     try:
-        query_string = " WHERE table_episodes.sonarrSeriesId = " + str(no[0])
+        query_string = " WHERE table_shows.tvdbId = " + str(no[0])
     except:
         pass
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c_db = conn_db.cursor()
     episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
-
-    missing_subtitles_global = []
     
+    missing_subtitles_global = []
+
     for episode_subtitles in episodes_subtitles:
         actual_subtitles = []
+        actual_subtitles_list = []
         desired_subtitles = []
         missing_subtitles = []
         if episode_subtitles[1] != None:
             actual_subtitles = ast.literal_eval(episode_subtitles[1])
+        if episode_subtitles[2] != None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
-        actual_subtitles_list = []
-        if desired_subtitles == None:
-            missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
-        else:
             for item in actual_subtitles:
                 actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-        missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
-
+            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
+        else:
+            missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
+            
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
+
     conn_db.commit()
 
     c_db.close()

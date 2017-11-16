@@ -41,7 +41,7 @@ c.execute("SELECT log_level FROM table_settings_general")
 log_level = c.fetchone()
 log_level = log_level[0]
 if log_level is None:
-    log_level = "WARNING"
+    log_level = "INFO"
 log_level = getattr(logging, log_level)
 c.close()
 
@@ -126,30 +126,6 @@ def edit_series(no):
     c.close()
 
     list_missing_subtitles(no)
-
-    redirect(ref)
-
-@route(base_url + 'update_series')
-def update_series_list():
-    ref = request.environ['HTTP_REFERER']
-
-    update_series()
-
-    redirect(ref)
-
-@route(base_url + 'update_all_episodes')
-def update_all_episodes_list():
-    ref = request.environ['HTTP_REFERER']
-
-    update_all_episodes()
-
-    redirect(ref)
-
-@route(base_url + 'add_new_episodes')
-def add_new_episodes_list():
-    ref = request.environ['HTTP_REFERER']
-
-    add_new_episodes()
 
     redirect(ref)
 
@@ -321,9 +297,20 @@ def system():
 
     task_list = []
     for job in scheduler.get_jobs():
-        task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None))])
+        if job.trigger.__str__().startswith('interval'):
+            task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+        elif job.trigger.__str__().startswith('cron'):
+            task_list.append([job.name, job.trigger.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
     
     return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list)
+
+@route(base_url + 'execute/<taskid>')
+def execute_task(taskid):
+    ref = request.environ['HTTP_REFERER']
+
+    execute_now(taskid)
+    
+    redirect(ref)
 
 @route(base_url + 'remove_subtitles', method='POST')
 def remove_subtitles():

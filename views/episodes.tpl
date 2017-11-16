@@ -121,7 +121,7 @@
 
 			%if len(seasons) == 0:
 				<div id="fondblanc" class="ui container">
-					<h2 class="ui header">No episode file available for this series.</h2>
+					<h3 class="ui header">No episode file available for this series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
 				</div>
 			%else:
 				%for season in seasons:

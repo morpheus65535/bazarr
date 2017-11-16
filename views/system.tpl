@@ -85,6 +85,7 @@
 								<th>Name</th>
 								<th>Interval</th>
 								<th>Next Execution</th>
+								<th class="collapsing"></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -93,6 +94,11 @@
 								<td>{{task[0]}}</td>
 								<td>{{task[1]}}</td>
 								<td>{{task[2]}}</td>
+								<td class="collapsing">
+									<div class="execute ui inverted basic compact icon" data-tooltip="Execute {{task[0]}}" data-inverted="" data-taskid='{{task[3]}}'>
+										<i class="ui black refresh icon"></i>
+									</div>
+								</td>
 							</tr>
 						%end
 						</tbody>
@@ -172,6 +178,10 @@ icon"></i></td>
 	$('.menu .item')
 		.tab()
 	;
+
+	$('.execute').click(function(){
+		window.location = '{{base_url}}execute/' + $(this).data("taskid");
+	})
 
 	$('.log').click(function(){
 		$("#message").html($(this).data("message"));
