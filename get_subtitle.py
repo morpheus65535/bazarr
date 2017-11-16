@@ -76,3 +76,7 @@ def wanted_search_missing_subtitles():
 
     for episode in data:
         wanted_download_subtitles(episode[0])
+
+    del db
+    del c
+    del data
