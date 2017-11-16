@@ -34,6 +34,7 @@ from scheduler import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
+
 logger = logging.getLogger('waitress')
 db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
@@ -64,6 +65,9 @@ def configure_logging():
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
+    logging.getLogger("enzyme").setLevel(logging.WARNING)
+    logging.getLogger("apscheduler").setLevel(logging.WARNING)
+    logging.getLogger("subliminal").setLevel(logging.WARNING)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
