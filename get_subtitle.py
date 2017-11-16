@@ -55,22 +55,22 @@ def series_download_subtitles(no):
 
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-    #c_db = conn_db.cursor()
-    #episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
-    #enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
-    conn_db.close()
+    c_db = conn_db.cursor()
+    episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
+    enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
+    c_db.close()
 
-    #providers_list = []
-    #for provider in enabled_providers:
-    #    providers_list.append(provider[0])
+    providers_list = []
+    for provider in enabled_providers:
+        providers_list.append(provider[0])
         
-    #for episode in episodes_details:
-    #    for language in ast.literal_eval(episode[1]):
-    #        message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list)
-    #        if message is not None:
-    #            store_subtitles(path_replace(episode[0]))
-    #            list_missing_subtitles(episode[3])
-    #            history_log(1, episode[3], episode[2], message)
+    for episode in episodes_details:
+        for language in ast.literal_eval(episode[1]):
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list)
+            if message is not None:
+                store_subtitles(path_replace(episode[0]))
+                list_missing_subtitles(episode[3])
+                history_log(1, episode[3], episode[2], message)
 
     del conn_db
     del c_db
