@@ -26,6 +26,13 @@ def download_subtitle(path, language, hi, providers):
     except:
         return None
 
+    del video
+    del best_subtitles
+    del result
+    del downloaded_provider
+    del downloaded_language
+    del message
+
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c_db = conn_db.cursor()

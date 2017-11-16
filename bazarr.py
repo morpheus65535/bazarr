@@ -20,9 +20,6 @@ from io import BytesIO
 from fdsend import send_file
 import urllib
 
-from pympler.tracker import SummaryTracker
-tracker = SummaryTracker()
-
 from init_db import *
 from get_languages import *
 from get_providers import *
@@ -218,7 +215,6 @@ def wanted_search_missing_subtitles_list():
     ref = request.environ['HTTP_REFERER']
 
     wanted_search_missing_subtitles()
-    tracker.print_diff()
     
     redirect(ref)
 
