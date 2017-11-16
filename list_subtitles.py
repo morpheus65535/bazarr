@@ -79,13 +79,13 @@ def list_missing_subtitles(*no):
 
     for episode_subtitles in episodes_subtitles:
         actual_subtitles = []
-        actual_subtitles_list = []
         desired_subtitles = []
         missing_subtitles = []
         if episode_subtitles[1] != None:
             actual_subtitles = ast.literal_eval(episode_subtitles[1])
         if episode_subtitles[2] != None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
+            actual_subtitles_list = []
             for item in actual_subtitles:
                 actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
