@@ -12,6 +12,7 @@ from utils import *
 region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
 def download_subtitle(path, language, hi, providers):
+    pass
     #video = scan_video(path)
     #best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi)
     #try:
