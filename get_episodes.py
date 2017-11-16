@@ -2,9 +2,6 @@ import os
 import sqlite3
 import requests
 
-from pympler.tracker import SummaryTracker
-tracker = SummaryTracker()
-
 from get_general_settings import *
 from list_subtitles import *
 
@@ -151,4 +148,3 @@ def add_new_episodes():
             list_missing_subtitles()
         except:
             pass
-        tracker.print_diff()

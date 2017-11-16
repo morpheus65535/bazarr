@@ -83,6 +83,7 @@ def list_missing_subtitles(*no):
         missing_subtitles = []
         if episode_subtitles[1] != None:
             actual_subtitles = ast.literal_eval(episode_subtitles[1])
+        if episode_subtitles[2] != None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
         actual_subtitles_list = []
         if desired_subtitles == None:
@@ -91,7 +92,7 @@ def list_missing_subtitles(*no):
             for item in actual_subtitles:
                 actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-        missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
+            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
             
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
 
@@ -118,7 +119,7 @@ def series_scan_subtitles(no):
         store_subtitles(path_replace(episode[0].encode('utf-8')))
 
     list_missing_subtitles(no)
-        
+
 def new_scan_subtitles():
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c_db = conn_db.cursor()

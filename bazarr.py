@@ -2,8 +2,8 @@ bazarr_version = '0.1.1'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
-bottle.debug(True)
-bottle.TEMPLATES.clear()
+#bottle.debug(True)
+#bottle.TEMPLATES.clear()
 
 import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
@@ -67,9 +67,9 @@ def configure_logging():
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
-    logging.getLogger("enzyme").setLevel(logging.WARNING)
+    logging.getLogger("enzyme").setLevel(logging.ERROR)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.WARNING)
+    logging.getLogger("subliminal").setLevel(logging.ERROR)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
