@@ -12,27 +12,26 @@ from utils import *
 region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
 def download_subtitle(path, language, hi, providers):
-    pass
-    #video = scan_video(path)
-    #best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi)
-    #try:
-    #    best_subtitle = best_subtitles[video][0]
-    #
-    #    result = save_subtitles(video, [best_subtitle])
-    #    downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
-    #    downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
-    #    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
-    #
-    #    return message
-    #except:
-    #    return None
+    video = scan_video(path)
+    best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi)
+    try:
+        best_subtitle = best_subtitles[video][0]
+    
+        result = save_subtitles(video, [best_subtitle])
+        downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
+        downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
+        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
+    
+        return message
+    except:
+        return None
 
-    #del video
-    #del best_subtitles
-    #del result
-    #del downloaded_provider
-    #del downloaded_language
-    #del message
+    del video
+    del best_subtitles
+    del result
+    del downloaded_provider
+    del downloaded_language
+    del message
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -52,7 +51,7 @@ def series_download_subtitles(no):
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 history_log(1, no, episode[2], message)
-    list_missing_subtitles(no)
+    #list_missing_subtitles(no)
 
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
