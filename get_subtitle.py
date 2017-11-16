@@ -55,7 +55,7 @@ def series_download_subtitles(no):
 
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-    c_db = conn_db.cursor()
+    #c_db = conn_db.cursor()
     #episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
     #enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
     #c_db.close()
