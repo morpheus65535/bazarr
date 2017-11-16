@@ -12,7 +12,7 @@ from utils import *
 region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
 def download_subtitle(path, language, hi, providers):
-    video = scan_video(path)
+    #video = scan_video(path)
     #best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi)
     #try:
     #    best_subtitle = best_subtitles[video][0]
@@ -26,12 +26,12 @@ def download_subtitle(path, language, hi, providers):
     #except:
     #    return None
 
-    del video
-    del best_subtitles
-    del result
-    del downloaded_provider
-    del downloaded_language
-    del message
+    #del video
+    #del best_subtitles
+    #del result
+    #del downloaded_provider
+    #del downloaded_language
+    #del message
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
