@@ -28,10 +28,13 @@ def download_subtitle(path, language, hi, providers):
 
     del video
     del best_subtitles
-    del result
-    del downloaded_provider
-    del downloaded_language
-    del message
+    try:
+        del result
+        del downloaded_provider
+        del downloaded_language
+        del message
+    except:
+        pass
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -77,7 +80,10 @@ def wanted_download_subtitles(path):
     del episodes_details
     del enabled_providers
     del providers_list
-    del message
+    try:
+        del message
+    except:
+        pass
 
 def wanted_search_missing_subtitles():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
