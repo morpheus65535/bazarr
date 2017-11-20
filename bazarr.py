@@ -302,12 +302,87 @@ def system():
     for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
         logs.append(line.rstrip())
 
+    def get_time_from_interval(interval):
+        interval_clean = interval.split('[')
+        interval_clean = interval_clean[1][:-1]
+        interval_split = interval_clean.split(':')
+
+        text = "every "
+        if interval_split[0] != "0":
+            text = text + interval_split[0]
+            if interval_split[0] == "1":
+                text = text + " hour"
+            else:
+                text = text + " hours"
+                
+            if interval_split[2] == "00":
+                text = text + " and "
+            elif interval_split[1] != "00":
+                text = text + ", "
+        if interval_split[1] != "00":
+            text = text + interval_split[1].lstrip("0")
+            if interval_split[1].lstrip("0") == "1":
+                text = text + " minute"
+            else:
+                text = text + " minutes"
+                
+            if interval_split[2] != "00":
+                text = text + " and "
+        if interval_split[1] == "00":
+            text = text + " and "
+        if interval_split[2] != "00":
+            text = text + interval_split[2].lstrip("0")
+            if interval_split[2].lstrip("0") == "1":
+                text = text + " second"
+            else:
+                text = text + " seconds"
+
+        return text
+
+    def get_time_from_cron(cron):
+        text = "at "
+        hour = str(cron[5])
+        minute = str(cron[6])
+        second = str(cron[7])
+        
+        if hour != "0" and hour != "*":
+            text = text + hour
+            if hour == "0" or hour == "1":
+                text = text + " hour"
+            else:
+                text = text + " hours"
+                
+            if minute != "*" and second != "0":
+                text = text + ", "
+            elif minute == "*" and second != "0":
+                text = text + " and "
+            elif minute != "0" and minute != "*" and second == "0":
+                text = text + " and "
+        if minute != "0" and minute != "*":
+            text = text + minute
+            if minute == "0" or minute == "1":
+                text = text + " minute"
+            else:
+                text = text + " minutes"
+                
+            if second != "0" and second != "*":
+                text = text + " and "
+        if second != "0" and second != "*":
+            text = text + second
+            if second == "0" or second == "1":
+                text = text + " second"
+            else:
+                text = text + " seconds"
+
+        return text
+    
+
     task_list = []
     for job in scheduler.get_jobs():
         if job.trigger.__str__().startswith('interval'):
-            task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+            task_list.append([job.name, get_time_from_interval(str(job.trigger)), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
         elif job.trigger.__str__().startswith('cron'):
-            task_list.append([job.name, job.trigger.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+            task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
     
     return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
 

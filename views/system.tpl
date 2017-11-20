@@ -83,7 +83,7 @@
 						<thead>
 							<tr>
 								<th>Name</th>
-								<th>Interval</th>
+								<th>Execution Frequency</th>
 								<th>Next Execution</th>
 								<th class="collapsing"></th>
 							</tr>
