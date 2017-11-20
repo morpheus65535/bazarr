@@ -2,8 +2,8 @@ bazarr_version = '0.1.1'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
-#bottle.debug(True)
-#bottle.TEMPLATES.clear()
+bottle.debug(True)
+bottle.TEMPLATES.clear()
 
 import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
