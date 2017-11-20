@@ -67,9 +67,9 @@ def configure_logging():
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
-    logging.getLogger("enzyme").setLevel(logging.ERROR)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.ERROR)
+    #logging.getLogger("enzyme").setLevel(logging.ERROR)
+    #logging.getLogger("apscheduler").setLevel(logging.WARNING)
+    #logging.getLogger("subliminal").setLevel(logging.ERROR)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
