@@ -307,32 +307,36 @@ def system():
         interval_clean = interval_clean[1][:-1]
         interval_split = interval_clean.split(':')
 
+        hour = interval_split[0]
+        minute = interval_split[1].lstrip("0")
+        second = interval_split[2].lstrip("0")
+
         text = "every "
-        if interval_split[0] != "0":
-            text = text + interval_split[0]
-            if interval_split[0] == "1":
+        if hour != "0":
+            text = text + hour
+            if hour == "1":
                 text = text + " hour"
             else:
                 text = text + " hours"
                 
-            if interval_split[2] == "00":
-                text = text + " and "
-            elif interval_split[1] != "00":
+            if minute != "" and second != "":
                 text = text + ", "
-        if interval_split[1] != "00":
-            text = text + interval_split[1].lstrip("0")
-            if interval_split[1].lstrip("0") == "1":
+            elif minute == "" and second != "":
+                text = text + " and "
+            elif minute != "" and second == "":
+                text = text + " and "
+        if minute != "":
+            text = text + minute
+            if minute == "1":
                 text = text + " minute"
             else:
                 text = text + " minutes"
                 
-            if interval_split[2] != "00":
+            if second != "":
                 text = text + " and "
-        if interval_split[1] == "00":
-            text = text + " and "
-        if interval_split[2] != "00":
-            text = text + interval_split[2].lstrip("0")
-            if interval_split[2].lstrip("0") == "1":
+        if second != "":
+            text = text + second
+            if second == "1":
                 text = text + " second"
             else:
                 text = text + " seconds"
