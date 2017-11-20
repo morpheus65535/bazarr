@@ -21,10 +21,20 @@ def download_subtitle(path, language, hi, providers):
         downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
         downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
-
+    
         return message
     except:
         return None
+
+    del video
+    del best_subtitles
+    try:
+        del result
+        del downloaded_provider
+        del downloaded_language
+        del message
+    except:
+        pass
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -65,6 +75,16 @@ def wanted_download_subtitles(path):
                 list_missing_subtitles(episode[3])
                 history_log(1, episode[3], episode[2], message)
 
+    del conn_db
+    del c_db
+    del episodes_details
+    del enabled_providers
+    del providers_list
+    try:
+        del message
+    except:
+        pass
+
 def wanted_search_missing_subtitles():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     db.create_function("path_substitution", 1, path_replace)
@@ -76,3 +96,7 @@ def wanted_search_missing_subtitles():
 
     for episode in data:
         wanted_download_subtitles(episode[0])
+
+    del db
+    del c
+    del data

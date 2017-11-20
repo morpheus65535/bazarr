@@ -236,7 +236,7 @@
 								<label>Manual update</label>
 							</div>
 							<div class="eleven wide column">
-								<button id="settings_general_check_update" class="ui blue button">Check now and update</button>
+								<a id="settings_general_check_update" class="ui blue button">Check now and update</a>
 							</div>
 						</div>
 					</div>
@@ -372,7 +372,7 @@
 	;
 
 	$('#settings_general_check_update').click(function(){
-		window.location.href = '{{base_url}}check_update';
+		window.location = '{{base_url}}check_update';
 	})
 
 	$('a:not(.tabs), button:not(.cancel)').click(function(){

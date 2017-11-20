@@ -78,12 +78,6 @@
 		</div>
 			
 		<div id="fondblanc" class="ui container">
-			<div class="ui basic buttons">
-				<button id="update_series" class="ui button"><i class="refresh icon"></i>Update Series</button>
-				<button id="update_all_episodes" class="ui button"><i class="refresh icon"></i>Update All Episodes</button>
-				<button id="add_new_episodes" class="ui button"><i class="wait icon"></i>Add New Episodes</button>
-			</div>
-
 			<table id="tableseries" class="ui very basic selectable sortable table">
 				<thead>
 					<tr>
@@ -111,7 +105,7 @@
 								%end
 							%end
 						</td>
-						<td>{{row[4]}}</td>
+						<td>{{!"" if row[4] == None else row[4]}}</td>
 						<td {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
 							<%
 							subs_languages_list = []
@@ -199,18 +193,6 @@
 	    	autofocus: false
 		})
 	;
-
-	$('#update_series').click(function(){
-		window.location = '{{base_url}}update_series';
-	})
-
-	$('#update_all_episodes').click(function(){
-		window.location = '{{base_url}}update_all_episodes';
-	})
-
-	$('#add_new_episodes').click(function(){
-		window.location = '{{base_url}}add_new_episodes';
-	})
 
 	$('.config').click(function(){
 		sessionStorage.scrolly=$(window).scrollTop();

@@ -121,7 +121,7 @@
 
 			%if len(seasons) == 0:
 				<div id="fondblanc" class="ui container">
-					<h2 class="ui header">No episode file available for this series.</h2>
+					<h3 class="ui header">No episode file available for this series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
 				</div>
 			%else:
 				%for season in seasons:
@@ -155,36 +155,43 @@
 										%if episode[4] is not None:
 										%	actual_languages = ast.literal_eval(episode[4])
 										%else:
-											actual_languages = '[]'
+										%	actual_languages = '[]'
 										%end
-										%if actual_languages is not None:
+
+										%try:
 											%for language in actual_languages:
-											%if language[1] is not None:
-											<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
-												{{language[0]}}
-												<i class="delete icon"></i>
-											</a>
-											%else:
-											<div class="ui tiny label">
-												{{language[0]}}
-											</div>
+												%if language[1] is not None:
+												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
+													{{language[0]}}
+													<i class="delete icon"></i>
+												</a>
+												%else:
+												<div class="ui tiny label">
+													{{language[0]}}
+												</div>
+												%end
 											%end
-											%end
+										%except:
+											%pass
 										%end
 										</td>
 										<td>
-										%if episode[6] is not None:
-										%	missing_languages = ast.literal_eval(episode[6])
-										%else:
-										%	missing_languages = None
-										%end
-										%if missing_languages is not None:
-											%for language in missing_languages:
-											<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
-												{{language}}
-												<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
-											</a>
+										%try:
+											%if episode[6] is not None:
+											%	missing_languages = ast.literal_eval(episode[6])
+											%else:
+											%	missing_languages = None
 											%end
+											%if missing_languages is not None:
+												%for language in missing_languages:
+												<a data-episodePath="{{episode[1]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
+													{{language}}
+													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+												</a>
+												%end
+											%end
+										%except:
+											%pass
 										%end
 										</td>
 									</tr>
@@ -214,7 +221,8 @@
 		            language: $(this).attr("data-language"),
 		            subtitlesPath: $(this).attr("data-subtitlesPath"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            tvdbid: {{tvdbid}}
 		    };
 		    $.ajax({
 		        url: "{{base_url}}remove_subtitles",
@@ -231,7 +239,8 @@
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            tvdbid: {{tvdbid}}
 		    };
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle",

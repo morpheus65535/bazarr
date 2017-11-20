@@ -1,7 +1,9 @@
+bazarr_version = '0.1.1'
+
 from bottle import route, run, template, static_file, request, redirect
 import bottle
-bottle.debug(True)
-bottle.TEMPLATES.clear()
+#bottle.debug(True)
+#bottle.TEMPLATES.clear()
 
 import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
@@ -34,6 +36,7 @@ from scheduler import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
+
 logger = logging.getLogger('waitress')
 db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
@@ -41,7 +44,7 @@ c.execute("SELECT log_level FROM table_settings_general")
 log_level = c.fetchone()
 log_level = log_level[0]
 if log_level is None:
-    log_level = "WARNING"
+    log_level = "INFO"
 log_level = getattr(logging, log_level)
 c.close()
 
@@ -64,6 +67,9 @@ def configure_logging():
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
+    logging.getLogger("enzyme").setLevel(logging.ERROR)
+    logging.getLogger("apscheduler").setLevel(logging.WARNING)
+    logging.getLogger("subliminal").setLevel(logging.ERROR)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
@@ -129,30 +135,6 @@ def edit_series(no):
 
     redirect(ref)
 
-@route(base_url + 'update_series')
-def update_series_list():
-    ref = request.environ['HTTP_REFERER']
-
-    update_series()
-
-    redirect(ref)
-
-@route(base_url + 'update_all_episodes')
-def update_all_episodes_list():
-    ref = request.environ['HTTP_REFERER']
-
-    update_all_episodes()
-
-    redirect(ref)
-
-@route(base_url + 'add_new_episodes')
-def add_new_episodes_list():
-    ref = request.environ['HTTP_REFERER']
-
-    add_new_episodes()
-
-    redirect(ref)
-
 @route(base_url + 'episodes/<no:int>', method='GET')
 def episodes(no):
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -160,7 +142,8 @@ def episodes(no):
     c = conn.cursor()
 
     series_details = []
-    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    tvdbid = series_details[5]
 
     episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
@@ -169,7 +152,7 @@ def episodes(no):
         seasons_list.append(list(season))
     c.close()
     
-    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url)
+    return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):
@@ -302,7 +285,8 @@ def save_settings():
 def check_update():
     ref = request.environ['HTTP_REFERER']
 
-    check_and_apply_update()
+    result = check_and_apply_update()
+    logging.info(result)
     
     redirect(ref)
 
@@ -318,11 +302,101 @@ def system():
     for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
         logs.append(line.rstrip())
 
+    def get_time_from_interval(interval):
+        interval_clean = interval.split('[')
+        interval_clean = interval_clean[1][:-1]
+        interval_split = interval_clean.split(':')
+
+        hour = interval_split[0]
+        minute = interval_split[1].lstrip("0")
+        second = interval_split[2].lstrip("0")
+
+        text = "every "
+        if hour != "0":
+            text = text + hour
+            if hour == "1":
+                text = text + " hour"
+            else:
+                text = text + " hours"
+                
+            if minute != "" and second != "":
+                text = text + ", "
+            elif minute == "" and second != "":
+                text = text + " and "
+            elif minute != "" and second == "":
+                text = text + " and "
+        if minute != "":
+            text = text + minute
+            if minute == "1":
+                text = text + " minute"
+            else:
+                text = text + " minutes"
+                
+            if second != "":
+                text = text + " and "
+        if second != "":
+            text = text + second
+            if second == "1":
+                text = text + " second"
+            else:
+                text = text + " seconds"
+
+        return text
+
+    def get_time_from_cron(cron):
+        text = "at "
+        hour = str(cron[5])
+        minute = str(cron[6])
+        second = str(cron[7])
+        
+        if hour != "0" and hour != "*":
+            text = text + hour
+            if hour == "0" or hour == "1":
+                text = text + " hour"
+            else:
+                text = text + " hours"
+                
+            if minute != "*" and second != "0":
+                text = text + ", "
+            elif minute == "*" and second != "0":
+                text = text + " and "
+            elif minute != "0" and minute != "*" and second == "0":
+                text = text + " and "
+        if minute != "0" and minute != "*":
+            text = text + minute
+            if minute == "0" or minute == "1":
+                text = text + " minute"
+            else:
+                text = text + " minutes"
+                
+            if second != "0" and second != "*":
+                text = text + " and "
+        if second != "0" and second != "*":
+            text = text + second
+            if second == "0" or second == "1":
+                text = text + " second"
+            else:
+                text = text + " seconds"
+
+        return text
+    
+
     task_list = []
     for job in scheduler.get_jobs():
-        task_list.append([job.name, job.trigger.interval.__str__(), pretty.date(job.next_run_time.replace(tzinfo=None))])
+        if job.trigger.__str__().startswith('interval'):
+            task_list.append([job.name, get_time_from_interval(str(job.trigger)), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+        elif job.trigger.__str__().startswith('cron'):
+            task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
     
-    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list)
+    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
+
+@route(base_url + 'execute/<taskid>')
+def execute_task(taskid):
+    ref = request.environ['HTTP_REFERER']
+
+    execute_now(taskid)
+    
+    redirect(ref)
 
 @route(base_url + 'remove_subtitles', method='POST')
 def remove_subtitles():
@@ -331,6 +405,7 @@ def remove_subtitles():
         subtitlesPath = request.forms.get('subtitlesPath')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+        tvdbid = request.forms.get('tvdbid')
 
         try:
             os.remove(subtitlesPath)
@@ -339,7 +414,7 @@ def remove_subtitles():
         except OSError:
             pass
         store_subtitles(episodePath)
-        list_missing_subtitles(sonarrSeriesId)
+        list_missing_subtitles(tvdbid)
         
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
@@ -350,6 +425,7 @@ def get_subtitle():
         hi = request.forms.get('hi')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+        tvdbid = request.forms.get('tvdbid')
 
         db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
         c = db.cursor()
@@ -366,9 +442,9 @@ def get_subtitle():
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)
-                list_missing_subtitles(sonarrSeriesId)
+                list_missing_subtitles(tvdbid)
             redirect(ref)
         except OSError:
-            redirect(ref + '?error=2')
+            pass
 
 run(host=ip, port=port, server='waitress')
