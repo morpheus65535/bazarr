@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 bazarr_version = '0.1.2'
 
 from bottle import route, run, template, static_file, request, redirect
@@ -408,7 +411,7 @@ def remove_subtitles():
         except OSError:
             pass
         store_subtitles(episodePath)
-        list_missing_subtitles(tvdbid)
+        list_missing_subtitles(sonarrSeriesId)
         
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
@@ -436,7 +439,7 @@ def get_subtitle():
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)
-                list_missing_subtitles(tvdbid)
+                list_missing_subtitles(sonarrSeriesId)
             redirect(ref)
         except OSError:
             pass

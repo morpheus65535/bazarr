@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 from get_general_settings import *
 from get_series import *
 from get_episodes import *

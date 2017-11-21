@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 import os
 import enzyme
 import babelfish
@@ -68,7 +71,7 @@ def store_subtitles(file):
 def list_missing_subtitles(*no):
     query_string = ''
     try:
-        query_string = " WHERE table_shows.tvdbId = " + str(no[0])
+        query_string = " WHERE table_shows.sonarrSeriesId = " + str(no[0])
     except:
         pass
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))

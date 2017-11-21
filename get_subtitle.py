@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 import os
 import sqlite3
 import ast
@@ -29,7 +32,7 @@ def download_subtitle(path, language, hi, providers):
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c_db = conn_db.cursor()
-    episodes_details = c_db.execute("SELECT path, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE path = ?", (no,)).fetchall()
+    episodes_details = c_db.execute("SELECT path, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
     series_details = c_db.execute("SELECT hearing_impaired FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
     enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
