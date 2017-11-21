@@ -40,8 +40,9 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                                             user,
                                             'Merge!',
                                             tree,
-                                            [repo.head.target, remote_master_id])
+                                            [repo.head.target, remote_id])
                 repo.state_cleanup()
             else:
                 raise AssertionError('Unknown merge analysis result')
+                
     return result
