@@ -1,4 +1,4 @@
-bazarr_version = '0.1.1'
+bazarr_version = '0.1.2'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
@@ -292,12 +292,6 @@ def check_update():
 
 @route(base_url + 'system')
 def system():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-    c = db.cursor()
-    c.execute("SELECT * FROM table_scheduler")
-    tasks = c.fetchall()
-    c.close()
-
     logs = []
     for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
         logs.append(line.rstrip())
@@ -388,7 +382,7 @@ def system():
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
     
-    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
+    return template('system', logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
 
 @route(base_url + 'execute/<taskid>')
 def execute_task(taskid):

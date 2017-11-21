@@ -36,7 +36,7 @@ def update_all_episodes():
         url_sonarr_api_episode = protocol_sonarr + "://" + config_sonarr[0] + ":" + str(config_sonarr[1]) + base_url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         r = requests.get(url_sonarr_api_episode)
         for episode in r.json():
-            if episode['hasFile']:
+            if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
                 # Add shows in Sonarr to current shows list
                 current_episodes_sonarr.append(episode['id'])
 
@@ -60,15 +60,6 @@ def update_all_episodes():
 
     # Close database connection
     c.close()
-
-    #Cleanup variables to free memory
-    del current_episodes_db
-    del current_episodes_db_list
-    del seriesIdList
-    del r
-    del current_episodes_sonarr
-    del deleted_items
-    del c
     
     # Store substitles for all episodes
     full_scan_subtitles()
@@ -110,7 +101,7 @@ def add_new_episodes():
             url_sonarr_api_episode = protocol_sonarr + "://" + config_sonarr[0] + ":" + str(config_sonarr[1]) + base_url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
             r = requests.get(url_sonarr_api_episode)
             for episode in r.json():
-                if episode['hasFile']:
+                if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
                     # Add shows in Sonarr to current shows list
                     current_episodes_sonarr.append(episode['id'])
 
@@ -132,15 +123,6 @@ def add_new_episodes():
 
         # Close database connection
         c.close()
-
-        #Cleanup variables to free memory
-        del current_episodes_db
-        del current_episodes_db_list
-        del seriesIdList
-        del r
-        del current_episodes_sonarr
-        del deleted_items
-        del c
     
         # Store substitles from episodes we've just added
         new_scan_subtitles()
