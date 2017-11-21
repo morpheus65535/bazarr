@@ -1,7 +1,7 @@
 # coding: utf-8 
 from __future__ import unicode_literals
 
-bazarr_version = '0.1.2'
+bazarr_version = '0.1.3'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
