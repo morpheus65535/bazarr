@@ -52,18 +52,17 @@ def store_subtitles(file):
             except:
                 pass
 
-        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-        c_db = conn_db.cursor()
-        
         subtitles = core.search_external_subtitles(file)
         
         for subtitle, language in subtitles.iteritems():
             actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-        try:
-            c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
-            conn_db.commit()
-        except:
-            pass
+        
+        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+        c_db = conn_db.cursor()
+        
+        c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
+        conn_db.commit()
+        
         c_db.close()
 
     return actual_subtitles
