@@ -295,10 +295,6 @@ def check_update():
 
 @route(base_url + 'system')
 def system():
-    logs = []
-    for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
-        logs.append(line.rstrip())
-
     def get_time_from_interval(interval):
         interval_clean = interval.split('[')
         interval_clean = interval_clean[1][:-1]
@@ -384,8 +380,26 @@ def system():
             task_list.append([job.name, get_time_from_interval(str(job.trigger)), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+
+    with open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')) as f:
+        for i, l in enumerate(f, 1):
+            pass
+        row_count = i
+        max_page = (row_count / 50) + 1
     
-    return template('system', logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
+    return template('system', base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, bazarr_version=bazarr_version)
+
+@route(base_url + 'logs/<page:int>')
+def get_logs(page):
+    page_size = 50
+    begin = (page * page_size) - page_size
+    end = (page * page_size) - 1
+    logs_complete = []
+    for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
+        logs_complete.append(line.rstrip())
+    logs = logs_complete[begin:end]
+
+    return template('logs', logs=logs, base_url=base_url)
 
 @route(base_url + 'execute/<taskid>')
 def execute_task(taskid):

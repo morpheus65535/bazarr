@@ -43,6 +43,8 @@
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
 			}
+			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
+			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
 		</style>
 	</head>
 	<body>

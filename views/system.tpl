@@ -37,6 +37,11 @@
 				margin-bottom: 3em;
 				padding: 1em;
 			}
+			.fast.backward, .backward, .forward, .fast.forward {
+    			cursor: pointer;
+			}
+			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
+			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
 		</style>
 	</head>
 	<body>
@@ -107,61 +112,25 @@
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
 				<div class="content">
-					<table class="ui very basic selectable table">
-						<thead>
-							<tr>
-								<th class="collapsing"></th>
-								<th>Message</th>
-								<th class="collapsing">Time</th>
-							</tr>
-						</thead>
-						<tbody>
-						%import time
-						%import datetime
-						%import pretty
-						%for log in logs:
-							%line = []
-							%line = log.split('|')
-							<tr class='log' data-message='{{line[2]}}' data-exception='{{line[3].replace("\\n", "<br />")}}'>
-								<td class="collapsing"><i class="\\
-								%if line[1] == 'INFO':
-blue info circle \\
-								%elif line[1] == 'WARNING':
-yellow warning circle \\
-								%elif line[1] == 'ERROR':
-red bug \\
-								%end
-icon"></i></td>
-								<td>{{line[2]}}</td>
-								<td title='{{line[0]}}' class="collapsing">{{pretty.date(int(time.mktime(datetime.datetime.strptime(line[0], "%d/%m/%Y %H:%M:%S").timetuple())))}}</td>
-							</tr>
-						%end
-						</tbody>
-					</table>
+					<div id="logs"></div>
+
+					<div class="ui grid">
+						<div class="three column row">
+					    	<div class="column"></div>
+					    	<div class="center aligned column">
+					    		<i class="fast backward icon"></i>
+					    		<i class="backward icon"></i>
+					    		<span id="page"></span> / {{max_page}}
+					    		<i class="forward icon"></i>
+					    		<i class="fast forward icon"></i>
+					    	</div>
+					    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="about">
 				Bazarr version: {{bazarr_version}}
-			</div>
-		</div>
-
-		<div class="ui small modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<div>Details</div>
-			</div>
-			<div class="content">
-				Message
-				<div id='message' class="ui segment">
-					<p></p>
-				</div>
-				Exception
-				<div id='exception' class="ui segment">
-					<p></p>
-				</div>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Close</button>
 			</div>
 		</div>
 	</body>
@@ -169,24 +138,50 @@ icon"></i></td>
 
 
 <script>
-	$('.modal')
-		.modal({
-	    	autofocus: false
-		})
-	;
-
 	$('.menu .item')
 		.tab()
 	;
 
-	$('.execute').click(function(){
-		window.location = '{{base_url}}execute/' + $(this).data("taskid");
+	function loadURL(page) {
+		$.ajax({
+	        url: "{{base_url}}logs/" + page,
+	        cache: false
+	    }).done(function(data) {
+	    	$("#logs").html(data);
+	    });
+
+	    current_page = page;
+	    
+	    $("#page").text(current_page);
+	    if (current_page == 1) {
+	    	$(".backward, .fast.backward").addClass("disabled");
+	    }
+	    if (current_page == {{int(max_page)}}) {
+	    	$(".forward, .fast.forward").addClass("disabled");
+	    }
+	    if (current_page > 1 && current_page < {{int(max_page)}}) {
+	    	$(".backward, .fast.backward").removeClass("disabled");
+	    	$(".forward, .fast.forward").removeClass("disabled");
+	    }
+	}
+
+	loadURL(1);
+
+	$('.backward').click(function(){
+		loadURL(current_page - 1);
+	})
+	$('.fast.backward').click(function(){
+		loadURL(1);
+	})
+	$('.forward').click(function(){
+		loadURL(current_page + 1);
+	})
+	$('.fast.forward').click(function(){
+		loadURL({{int(max_page)}});
 	})
 
-	$('.log').click(function(){
-		$("#message").html($(this).data("message"));
-		$("#exception").html($(this).data("exception"));
-		$('.small.modal').modal('show');
+	$('.execute').click(function(){
+		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	})
 
 	$('a:not(.tabs), button:not(.cancel)').click(function(){
