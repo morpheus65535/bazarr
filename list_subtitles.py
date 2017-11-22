@@ -118,7 +118,7 @@ def series_scan_subtitles(no):
     c_db.close()
     
     for episode in episodes:
-        store_subtitles(path_replace(episode[0].encode('utf-8')))
+        store_subtitles(path_replace(episode[0]))
 
     list_missing_subtitles(no)
 
