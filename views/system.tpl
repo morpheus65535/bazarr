@@ -145,6 +145,8 @@
 	function loadURL(page) {
 		$.ajax({
 	        url: "{{base_url}}logs/" + page,
+	        beforeSend: function() { $('#loader').addClass('active'); },
+        	complete: function() { $('#loader').removeClass('active'); },
 	        cache: false
 	    }).done(function(data) {
 	    	$("#logs").html(data);

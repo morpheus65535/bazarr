@@ -13,6 +13,9 @@
 		</style>
 	</head>
 	<body>
+		<div id='logs_loader' class="ui page dimmer">
+		   	<div class="ui indeterminate text loader">Loading...</div>
+		</div>
 		<div class="content">
 			<table class="ui very basic selectable table">
 				<thead>
