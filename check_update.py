@@ -42,6 +42,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                                             tree,
                                             [repo.head.target, remote_id])
                 repo.state_cleanup()
+                result = 'Conflict detected when trying to update.'
             else:
                 raise AssertionError('Unknown merge analysis result')
                 
