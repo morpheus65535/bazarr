@@ -1,9 +1,12 @@
-bazarr_version = '0.1.1'
+# coding: utf-8 
+from __future__ import unicode_literals
+
+bazarr_version = '0.1.4'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
-#bottle.debug(True)
-#bottle.TEMPLATES.clear()
+bottle.debug(True)
+bottle.TEMPLATES.clear()
 
 import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
@@ -292,16 +295,6 @@ def check_update():
 
 @route(base_url + 'system')
 def system():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-    c = db.cursor()
-    c.execute("SELECT * FROM table_scheduler")
-    tasks = c.fetchall()
-    c.close()
-
-    logs = []
-    for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
-        logs.append(line.rstrip())
-
     def get_time_from_interval(interval):
         interval_clean = interval.split('[')
         interval_clean = interval_clean[1][:-1]
@@ -387,8 +380,26 @@ def system():
             task_list.append([job.name, get_time_from_interval(str(job.trigger)), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+
+    with open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')) as f:
+        for i, l in enumerate(f, 1):
+            pass
+        row_count = i
+        max_page = (row_count / 50) + 1
     
-    return template('system', tasks=tasks, logs=logs, base_url=base_url, task_list=task_list, bazarr_version=bazarr_version)
+    return template('system', base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, bazarr_version=bazarr_version)
+
+@route(base_url + 'logs/<page:int>')
+def get_logs(page):
+    page_size = 50
+    begin = (page * page_size) - page_size
+    end = (page * page_size) - 1
+    logs_complete = []
+    for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
+        logs_complete.append(line.rstrip())
+    logs = logs_complete[begin:end]
+
+    return template('logs', logs=logs, base_url=base_url)
 
 @route(base_url + 'execute/<taskid>')
 def execute_task(taskid):
@@ -414,7 +425,7 @@ def remove_subtitles():
         except OSError:
             pass
         store_subtitles(episodePath)
-        list_missing_subtitles(tvdbid)
+        list_missing_subtitles(sonarrSeriesId)
         
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
@@ -442,7 +453,7 @@ def get_subtitle():
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)
-                list_missing_subtitles(tvdbid)
+                list_missing_subtitles(sonarrSeriesId)
             redirect(ref)
         except OSError:
             pass

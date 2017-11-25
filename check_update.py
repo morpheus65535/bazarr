@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 from get_general_settings import *
 
 import os
@@ -25,7 +28,25 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                 repo.head.set_target(remote_id)
                 result = 'Bazarr updated to latest version and restarting.'
                 os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
-            else:
-                raise AssertionError('Unknown merge analysis result')
+            # We can just do it normally
+            elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
+                repo.merge(remote_id)
+                print repo.index.conflicts
 
+                assert repo.index.conflicts is None, 'Conflicts, ahhhh!'
+                user = repo.default_signature
+                tree = repo.index.write_tree()
+                commit = repo.create_commit('HEAD',
+                                            user,
+                                            user,
+                                            'Merge!',
+                                            tree,
+                                            [repo.head.target, remote_id])
+                repo.state_cleanup()
+                result = 'Conflict detected when trying to update.'
+                os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
+            # We can't do it
+            else:
+                result = 'Bazarr cannot be updated: Unknown merge analysis result'
+                
     return result

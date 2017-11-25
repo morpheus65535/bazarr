@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 import sqlite3
 import os
 import ast
@@ -27,27 +30,23 @@ branch = general_settings[5]
 automatic = general_settings[6]
 
 def path_replace(path):
-   for path_mapping in path_mappings:
-      path = path.replace(path_mapping[0], path_mapping[1], 1)
-      
-      if '\\' in path:
-         path = path.replace('/', '\\')
-   
-   return path
+    for path_mapping in path_mappings:
+        if path_mapping[0] in path:
+            path = path.replace(path_mapping[0], path_mapping[1])
+            if path.startswith('\\\\'):
+                path = path.replace('/', '\\')
+            elif path.startswith('/'):
+                path = path.replace('\\', '/')
+            break
+    return path
 
 def path_replace_reverse(path):
-   for path_mapping in path_mappings:
-      if path.startswith('\\\\\\\\'):
-         if '\\\\' in path:
-            path = path.replace('\\\\', '\\')
-         elif '\\' in path:
-            path = path.replace('\\\\', '\\')
-         
-         path = path.replace(path_mapping[1], path_mapping[0], 1)
-      elif path.startswith('\\\\'):
-         path = path.replace(path_mapping[1], path_mapping[0], 1)
-
-      if '\\' in path:
-         path = path.replace('\\', '/')
-         
-   return path
+    for path_mapping in path_mappings:
+        if path_mapping[1] in path:
+            path = path.replace(path_mapping[1], path_mapping[0])
+            if path.startswith('\\\\'):
+                path = path.replace('/', '\\')
+            elif path.startswith('/'):
+                path = path.replace('\\', '/')
+            break
+    return path

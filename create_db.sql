@@ -41,11 +41,6 @@ CREATE TABLE "table_settings_general" (
 	`auto_update`	INTEGER
 );
 INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update) VALUES ('0.0.0.0',6767,'/',Null,'INFO','master','True');
-CREATE TABLE `table_scheduler` (
-	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-	`name`	TEXT NOT NULL,
-	`frequency`	TEXT NOT NULL
-);
 CREATE TABLE "table_history" (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`action`	INTEGER NOT NULL,

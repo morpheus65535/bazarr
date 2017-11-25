@@ -1,3 +1,6 @@
+# coding: utf-8 
+from __future__ import unicode_literals
+
 import os
 import enzyme
 import babelfish
@@ -49,18 +52,17 @@ def store_subtitles(file):
             except:
                 pass
 
-        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
-        c_db = conn_db.cursor()
-        
         subtitles = core.search_external_subtitles(file)
         
         for subtitle, language in subtitles.iteritems():
             actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-        try:
-            c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
-            conn_db.commit()
-        except:
-            pass
+        
+        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+        c_db = conn_db.cursor()
+        
+        c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
+        conn_db.commit()
+        
         c_db.close()
 
     return actual_subtitles
@@ -68,7 +70,7 @@ def store_subtitles(file):
 def list_missing_subtitles(*no):
     query_string = ''
     try:
-        query_string = " WHERE table_shows.tvdbId = " + str(no[0])
+        query_string = " WHERE table_shows.sonarrSeriesId = " + str(no[0])
     except:
         pass
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -107,7 +109,7 @@ def full_scan_subtitles():
     c_db.close()
 
     for episode in episodes:
-        store_subtitles(path_replace(episode[0].encode('utf-8')))
+        store_subtitles(path_replace(episode[0]))
 
 def series_scan_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -116,7 +118,7 @@ def series_scan_subtitles(no):
     c_db.close()
     
     for episode in episodes:
-        store_subtitles(path_replace(episode[0].encode('utf-8')))
+        store_subtitles(path_replace(episode[0]))
 
     list_missing_subtitles(no)
 
@@ -127,4 +129,4 @@ def new_scan_subtitles():
     c_db.close()
 
     for episode in episodes:
-        store_subtitles(path_replace(episode[0].encode('utf-8')))
+        store_subtitles(path_replace(episode[0]))
