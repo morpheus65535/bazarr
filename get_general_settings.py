@@ -38,7 +38,7 @@ def path_replace(path):
             elif path.startswith('/'):
                 path = path.replace('\\', '/')
             break
-    return path
+    return path.encode('string_escape')
 
 def path_replace_reverse(path):
     print path
@@ -51,4 +51,4 @@ def path_replace_reverse(path):
                 path = path.replace('\\', '/')
             break
     print path
-    return path
+    return path.encode('string_escape')
