@@ -10,6 +10,7 @@ RUN apt-get install -y build-essential python-dev python-pip python-setuptools l
 
 # Get application source from Github
 RUN git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr
+RNU git config --global user.name "Bazarr" && git config --global user.email "bazarr@fake.email"
 
 VOLUME /bazarr/data
 
