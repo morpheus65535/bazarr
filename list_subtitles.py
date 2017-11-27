@@ -109,7 +109,7 @@ def full_scan_subtitles():
     c_db.close()
 
     for episode in episodes:
-        store_subtitles(path_replace(episode[0]))
+        store_subtitles(path_replace(episode[0]).encode('utf8'))
 
 def series_scan_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
@@ -118,7 +118,7 @@ def series_scan_subtitles(no):
     c_db.close()
     
     for episode in episodes:
-        store_subtitles(path_replace(episode[0]))
+        store_subtitles(path_replace(episode[0]).encode('utf8'))
 
     list_missing_subtitles(no)
 
@@ -129,4 +129,4 @@ def new_scan_subtitles():
     c_db.close()
 
     for episode in episodes:
-        store_subtitles(path_replace(episode[0]))
+        store_subtitles(path_replace(episode[0]).encode('utf8'))
