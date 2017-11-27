@@ -60,7 +60,7 @@ def store_subtitles(file):
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
         c_db = conn_db.cursor()
         
-        c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles).encode('string_escape'), path_replace_reverse(file)))
+        c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (actual_subtitles.encode('string_escape'), path_replace_reverse(file)))
         conn_db.commit()
         
         c_db.close()
