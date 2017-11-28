@@ -38,10 +38,9 @@ def path_replace(path):
             elif path.startswith('/'):
                 path = path.replace('\\', '/')
             break
-    return path.encode('utf8')
+    return path
 
 def path_replace_reverse(path):
-    print path
     for path_mapping in path_mappings:
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
@@ -50,5 +49,4 @@ def path_replace_reverse(path):
             elif path.startswith('/'):
                 path = path.replace('\\', '/')
             break
-    print path
-    return path.encode('utf8')
+    return path
