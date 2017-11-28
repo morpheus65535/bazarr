@@ -11,7 +11,7 @@ from get_general_settings import *
 def list_subtitles(file):
     languages = []
     actual_subtitles = []
-    if os.path.exists(unicode(file)):
+    if os.path.exists(file):
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
@@ -35,8 +35,7 @@ def list_subtitles(file):
 def store_subtitles(file):
     languages = []
     actual_subtitles = []
-    print type(file)
-    if os.path.exists(unicode(file)):
+    if os.path.exists(file):
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:

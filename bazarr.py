@@ -1,6 +1,3 @@
-# coding: utf-8 
-from __future__ import unicode_literals
-
 bazarr_version = '0.1.4'
 
 from bottle import route, run, template, static_file, request, redirect
