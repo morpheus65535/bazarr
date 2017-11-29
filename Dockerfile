@@ -1,23 +1,17 @@
-FROM debian:buster
-
-ENV LANG C.UTF-8  
-ENV LC_ALL C.UTF-8
-
-EXPOSE  6767
+FROM lsiobase/alpine:3.6
 
 VOLUME /tv
+VOLUME /config
 
-# Update
-RUN apt-get update
-RUN apt-get install -y build-essential python-dev python-pip python-setuptools libjpeg-dev zlib1g-dev git libgit2-dev libffi-dev
+RUN apk add --update git python2 py-pip py-pygit2 jpeg-dev && \
+    apk add --update --virtual build-dependencies g++ python-dev libffi-dev zlib-dev  && \
+    git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /app && \
+    pip install -r /app/requirements.txt && \
+    apk del --purge build-dependencies
 
-# Get application source from Github
-RUN git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr
-RUN git config --global user.name "Bazarr" && git config --global user.email "bazarr@fake.email"
+COPY root /
 
-VOLUME /bazarr/data
+LABEL MAINTAINER="peter.varsanyi@gwelican.eu"
+LABEL org.label-schema.vcs-ref=$VCS_REF org.label-schema.build-date=$BUILD_DATE
 
-# Install app dependencies
-RUN pip install -r /bazarr/requirements.txt
-
-CMD ["python", "/bazarr/bazarr.py"]
+EXPOSE 6767
