@@ -1,6 +1,3 @@
-# coding: utf-8 
-from __future__ import unicode_literals
-
 from get_general_settings import *
 
 import os
@@ -14,7 +11,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
     for remote in repo.remotes:
         if remote.name == remote_name:
             remote.fetch()
-            remote_id = repo.lookup_reference('refs/remotes/origin/' + branch).target
+            remote_id = repo.lookup_reference('refs/remotes/origin/' + str(branch)).target
             merge_result, _ = repo.merge_analysis(remote_id)
             # Up to date, do nothing
             if merge_result & pygit2.GIT_MERGE_ANALYSIS_UP_TO_DATE:
