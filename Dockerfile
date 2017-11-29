@@ -1,6 +1,7 @@
 FROM debian:buster
 
-RUN locale-gen en_US.UTF-8  
+RUN sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+RUN locale-gen  
 ENV LANG en_US.UTF-8  
 ENV LANGUAGE en_US:en  
 ENV LC_ALL en_US.UTF-8 
