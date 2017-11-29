@@ -9,9 +9,4 @@ RUN apk add --update git python2 py-pip py-pygit2 jpeg-dev && \
     pip install -r /app/requirements.txt && \
     apk del --purge build-dependencies
 
-COPY root /
-
-LABEL MAINTAINER="peter.varsanyi@gwelican.eu"
-LABEL org.label-schema.vcs-ref=$VCS_REF org.label-schema.build-date=$BUILD_DATE
-
 EXPOSE 6767
