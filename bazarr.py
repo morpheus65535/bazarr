@@ -41,8 +41,8 @@ logger = logging.getLogger('waitress')
 db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
 c.execute("SELECT log_level FROM table_settings_general")
-c.close()
 log_level = c.fetchone()
+c.close()
 log_level = log_level[0]
 if log_level is None:
     log_level = "INFO"
