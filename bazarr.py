@@ -1,4 +1,4 @@
-bazarr_version = '0.1.4'
+bazarr_version = '0.1.5'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
@@ -378,6 +378,7 @@ def system():
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
 
+    i = 0
     with open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')) as f:
         for i, l in enumerate(f, 1):
             pass
