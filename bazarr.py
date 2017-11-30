@@ -41,12 +41,13 @@ logger = logging.getLogger('waitress')
 db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
 c = db.cursor()
 c.execute("SELECT log_level FROM table_settings_general")
+c.close()
 log_level = c.fetchone()
 log_level = log_level[0]
 if log_level is None:
     log_level = "INFO"
 log_level = getattr(logging, log_level)
-c.close()
+
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -146,11 +147,11 @@ def episodes(no):
     tvdbid = series_details[5]
 
     episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    c.close()
     episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
     seasons_list = []
     for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
-    c.close()
     
     return template('episodes', no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
 
@@ -186,8 +187,8 @@ def history():
 
     c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
-    data = reversed(sorted(data, key=operator.itemgetter(4)))
     c.close()
+    data = reversed(sorted(data, key=operator.itemgetter(4)))
     return template('history', rows=data, row_count=row_count, page=page, max_page=max_page, base_url=base_url)
 
 @route(base_url + 'wanted')

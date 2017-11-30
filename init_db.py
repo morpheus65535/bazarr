@@ -30,6 +30,9 @@ else:
     fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
     script = fd.read()
     
+    # Close SQL script file
+    fd.close()
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c = db.cursor()
@@ -39,6 +42,3 @@ else:
 	
     # Close database connection
     db.close()
-	
-    # Close SQL script file
-    fd.close()

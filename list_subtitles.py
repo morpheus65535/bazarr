@@ -73,7 +73,8 @@ def list_missing_subtitles(*no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
     c_db = conn_db.cursor()
     episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
-    
+    c_db.close()
+
     missing_subtitles_global = []
 
     for episode_subtitles in episodes_subtitles:
@@ -93,10 +94,10 @@ def list_missing_subtitles(*no):
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
             
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    c_db = conn_db.cursor()
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
-
     conn_db.commit()
-
     c_db.close()
 
 def full_scan_subtitles():
