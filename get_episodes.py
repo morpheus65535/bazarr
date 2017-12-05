@@ -42,10 +42,10 @@ def update_all_episodes():
 
                 try:
                     c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode) VALUES (?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber']))
-                	db.commit()
+                    db.commit()
                 except sqlite3.Error:
                     c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ? WHERE sonarrEpisodeId = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], episode['id']))
-            		db.commit()
+                    db.commit()
             else:
                 continue
         continue
