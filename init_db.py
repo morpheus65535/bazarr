@@ -34,7 +34,7 @@ else:
     fd.close()
     
     # Open database connection
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
 	
     # Execute script and commit change to database

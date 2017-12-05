@@ -54,7 +54,7 @@ def store_subtitles(file):
         for subtitle, language in subtitles.iteritems():
             actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         
-        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
         
         c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
@@ -70,7 +70,7 @@ def list_missing_subtitles(*no):
         query_string = " WHERE table_shows.sonarrSeriesId = " + str(no[0])
     except:
         pass
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
     c_db.close()
@@ -94,14 +94,14 @@ def list_missing_subtitles(*no):
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
             
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
     conn_db.commit()
     c_db.close()
 
 def full_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
@@ -110,7 +110,7 @@ def full_scan_subtitles():
         store_subtitles(path_replace(episode[0]))
 
 def series_scan_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
     c_db.close()
@@ -121,7 +121,7 @@ def series_scan_subtitles(no):
     list_missing_subtitles(no)
 
 def new_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes WHERE subtitles is null").fetchall()
     c_db.close()

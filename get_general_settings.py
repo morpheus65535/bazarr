@@ -3,7 +3,7 @@ import os
 import ast
 
 # Open database connection
-db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
 c = db.cursor()
 
 # Get general settings from database table

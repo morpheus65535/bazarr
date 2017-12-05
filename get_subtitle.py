@@ -30,7 +30,7 @@ def download_subtitle(path, language, hi, providers):
         return None
 
 def series_download_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), tmieout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute("SELECT path, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
     series_details = c_db.execute("SELECT hearing_impaired FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
@@ -50,7 +50,7 @@ def series_download_subtitles(no):
     list_missing_subtitles(no)
 
 def wanted_download_subtitles(path):
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
     enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
@@ -69,7 +69,7 @@ def wanted_download_subtitles(path):
                 history_log(1, episode[3], episode[2], message)
 
 def wanted_search_missing_subtitles():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'))
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
