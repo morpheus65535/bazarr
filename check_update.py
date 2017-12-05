@@ -9,7 +9,7 @@ local_repo = pygit2.Repository(repository_path)
 
 def check_and_apply_update(repo=local_repo, remote_name='origin'):
     repo.config['remote.origin.fetch'] = '+refs/heads/*:refs/remotes/origin/*'
-    repo.remote.update()
+    repo.remotes[remote_name].fetch()
     repo.config['user.name'] = 'Bazarr user'
     repo.config['user.email'] ='bazarr@fakeuser.com'
 
