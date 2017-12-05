@@ -42,8 +42,10 @@ def update_all_episodes():
 
                 try:
                     c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode) VALUES (?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber']))
+                	db.commit()
                 except sqlite3.Error:
                     c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ? WHERE sonarrEpisodeId = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], episode['id']))
+            		db.commit()
             else:
                 continue
         continue
@@ -54,8 +56,6 @@ def update_all_episodes():
         if item not in current_episodes_sonarr:
             deleted_items.append(tuple([item]))
     c.executemany('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?',deleted_items)
-    
-    # Commit changes to database table
     db.commit()
 
     # Close database connection
