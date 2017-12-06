@@ -43,6 +43,11 @@
 			#divdetails {
 				min-height: 250px;
 			}
+			.fast.backward, .backward, .forward, .fast.forward {
+    			cursor: pointer;
+			}
+			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
+			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
 		</style>
 	</head>
 	<body>
@@ -123,6 +128,35 @@
 				%end
 				</tbody>
 			</table>
+			<div class="ui grid">
+				<div class="three column row">
+			    	<div class="column"></div>
+			    	<div class="center aligned column">
+			    		<i class="\\
+			    		%if page == "1":
+			    		disabled\\
+			    		%end
+			    		 fast backward icon"></i>
+			    		<i class="\\
+			    		%if page == "1":
+			    		disabled\\
+			    		%end
+			    		 backward icon"></i>
+			    		{{page}} / {{max_page}}
+			    		<i class="\\
+			    		%if int(page) == int(max_page):
+			    		disabled\\
+			    		%end
+			    		 forward icon"></i>
+			    		<i class="\\
+			    		%if int(page) == int(max_page):
+			    		disabled\\
+			    		%end
+			    		 fast forward icon"></i>
+			    	</div>
+			    	<div class="right floated right aligned column">Total records: {{missing_count}}</div>
+				</div>
+			</div>
 		</div>
 
 		<div class="ui small modal">
@@ -186,6 +220,19 @@
 
 	$('a, button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
+	})
+
+	$('.fast.backward').click(function(){
+		location.href="?page=1";
+	})
+	$('.backward').click(function(){
+		location.href="?page={{int(page)-1}}";
+	})
+	$('.forward').click(function(){
+		location.href="?page={{int(page)+1}}";
+	})
+	$('.fast.forward').click(function(){
+		location.href="?page={{int(max_page)}}";
 	})
 
 	$('.modal')

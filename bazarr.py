@@ -100,12 +100,22 @@ def series():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
-    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster FROM table_shows ORDER BY title")
+
+    c.execute("SELECT COUNT(*) FROM table_shows")
+    missing_count = c.fetchone()
+    missing_count = missing_count[0]
+    page = request.GET.page
+    if page == "":
+        page = "1"
+    offset = (int(page) - 1) * 15
+    max_page = (missing_count / 15) + 1
+
+    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster FROM table_shows ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('series', rows=data, languages=languages, base_url=base_url)
+    output = template('series', rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
     return output
 
 @route(base_url + 'edit_series/<no:int>', method='POST')
