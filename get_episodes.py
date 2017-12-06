@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import requests
+import logging
 
 from get_general_settings import *
 from list_subtitles import *
@@ -60,10 +61,14 @@ def update_all_episodes():
 
     # Close database connection
     c.close()
+
+    logging.info('All episodes updated in database.')
     
     # Store substitles for all episodes
     full_scan_subtitles()
+    logging.info('All existing subtitles indexed from disk.')
     list_missing_subtitles()
+    logging.info('All missing subtitles updated in database.')
 
 def add_new_episodes():
     # Open database connection

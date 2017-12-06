@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import logging
 
 # Check if database exist
 if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) == True:
@@ -42,3 +43,5 @@ else:
 	
     # Close database connection
     db.close()
+
+    logging.info('Database created successfully')

@@ -2,6 +2,7 @@ from get_general_settings import *
 
 import os
 import pygit2
+import logging
 
 current_working_directory = os.path.dirname(__file__)
 repository_path = pygit2.discover_repository(current_working_directory)
@@ -20,7 +21,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
             merge_result, _ = repo.merge_analysis(remote_id)
             # Up to date, do nothing
             if merge_result & pygit2.GIT_MERGE_ANALYSIS_UP_TO_DATE:
-                result = 'No new version of Bazarr available.'
+                logging.info('No new version of Bazarr available.')
                 pass
             # We can just fastforward
             elif merge_result & pygit2.GIT_MERGE_ANALYSIS_FASTFORWARD:
@@ -28,7 +29,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                 master_ref = repo.lookup_reference('refs/remotes/origin/' + str(branch))
                 master_ref.set_target(remote_id)
                 repo.head.set_target(remote_id)
-                result = 'Bazarr updated to latest version and restarting.'
+                logging.info('Bazarr updated to latest version and restarting.')
                 os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             # We can just do it normally
             elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
@@ -45,10 +46,8 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                                             tree,
                                             [repo.head.target, remote_id])
                 repo.state_cleanup()
-                result = 'Conflict detected when trying to update.'
+                logging.error('Conflict detected when trying to update.')
                 os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             # We can't do it
             else:
-                result = 'Bazarr cannot be updated: Unknown merge analysis result'
-                
-    return result
+                logging.error('Bazarr cannot be updated: Unknown merge analysis result')

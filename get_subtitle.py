@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import ast
+import logging
 from babelfish import *
 from subliminal import *
 from pycountry import *
@@ -79,3 +80,5 @@ def wanted_search_missing_subtitles():
 
     for episode in data:
         wanted_download_subtitles(episode[0])
+
+    logging.info('Finished searching for missing subtitles. Check history for more information.')

@@ -290,6 +290,8 @@ def save_settings():
     
     conn.commit()
     c.close()
+
+    logging.info('Settings saved succefully. You must restart Bazarr.')
     
     redirect(ref)
 
@@ -297,8 +299,7 @@ def save_settings():
 def check_update():
     ref = request.environ['HTTP_REFERER']
 
-    result = check_and_apply_update()
-    logging.info(result)
+    check_and_apply_update()
     
     redirect(ref)
 
