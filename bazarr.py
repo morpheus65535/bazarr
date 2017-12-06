@@ -1,4 +1,4 @@
-bazarr_version = '0.1.5'
+bazarr_version = '0.1.7'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
