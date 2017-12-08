@@ -162,10 +162,10 @@
 	$('.fast.backward').click(function(){
 		location.href="?page=1";
 	})
-	$('.backward').click(function(){
+	$('.backward:not(.fast)').click(function(){
 		location.href="?page={{int(page)-1}}";
 	})
-	$('.forward').click(function(){
+	$('.forward:not(.fast)').click(function(){
 		location.href="?page={{int(page)+1}}";
 	})
 	$('.fast.forward').click(function(){
