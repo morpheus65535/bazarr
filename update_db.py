@@ -10,11 +10,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     # Execute table modification
     try:
         c.execute('alter table table_settings_providers add column "username" "text"')
+        c.execute('UPDATE table_settings_providers SET username=""')
     except:
         pass
 
     try:
         c.execute('alter table table_settings_providers add column "password" "text"')
+        c.execute('UPDATE table_settings_providers SET password=""')
     except:
         pass
     
