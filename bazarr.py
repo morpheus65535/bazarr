@@ -21,7 +21,7 @@ from fdsend import send_file
 import urllib
 
 from init_db import *
-from update_db import *
+import update_db
 from get_languages import *
 from get_providers import *
 
@@ -278,11 +278,22 @@ def save_settings():
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
     c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey))
-    
+
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")
     for item in settings_subliminal_providers:
         c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+
+    settings_addic7ed_username = request.forms.get('settings_addic7ed_username')
+    settings_addic7ed_password = request.forms.get('settings_addic7ed_password')
+    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'addic7ed'", (settings_addic7ed_username, settings_addic7ed_password))
+    settings_legendastv_username = request.forms.get('settings_legendastv_username')
+    settings_legendastv_password = request.forms.get('settings_legendastv_password')
+    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'legendastv'", (settings_legendastv_username, settings_legendastv_password))
+    settings_opensubtitles_username = request.forms.get('settings_opensubtitles_username')
+    settings_opensubtitles_password = request.forms.get('settings_opensubtitles_password')
+    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'opensubtitles'", (settings_opensubtitles_username, settings_opensubtitles_password))
+
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
     for item in settings_subliminal_languages:
@@ -451,16 +462,29 @@ def get_subtitle():
 
         db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c = db.cursor()
-        c.execute("SELECT name FROM table_settings_providers WHERE enabled = 1")
-        providers = c.fetchall()
+        c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+        enabled_providers = c.fetchall()
         c.close()
 
         providers_list = []
-        for provider in providers:
-            providers_list.append(provider[0])
+        providers_auth = {}
+        if len(enabled_providers) > 0:
+            for provider in enabled_providers:
+                providers_list.append(provider[0])
+                try:
+                    if provider[2] is not '' and provider[3] is not '':
+                        provider_auth = providers_auth.append(provider[0])
+                        provider_auth.update({'username':providers[2], 'password':providers[3]})
+                    else:
+                        providers_auth = None
+                except:
+                    providers_auth = None
+        else:
+            providers_list = None
+            providers_auth = None
         
         try:
-            result = download_subtitle(episodePath, language, hi, providers_list)
+            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth)
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)

@@ -230,15 +230,6 @@
 							    </div>
 							</div>
 						</div>
-
-						<div class="middle aligned row">
-							<div class="right aligned four wide column">
-								<label>Manual update</label>
-							</div>
-							<div class="eleven wide column">
-								<a id="settings_general_check_update" class="ui blue button">Check now and update</a>
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>
@@ -333,6 +324,90 @@
 									%end
 									%end
 								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="ui dividing header">Providers authentication (optionnal)</div>
+				<div class="twelve wide column">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<h4 class="ui header">Username</h4>
+								</div>
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<h4 class="ui header">Password (stored in clear text)</h4>
+								</div>
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>addic7ed</label>
+							</div>
+							%for provider in settings_providers:
+							%	if provider[0] == 'addic7ed':
+							%		addic7ed_username = provider[2]
+							%		addic7ed_password = provider[3]
+							%	end
+							%end
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_addic7ed_username" type="text" value="{{addic7ed_username}}">
+								</div>
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_addic7ed_password" type="password" value="{{addic7ed_password}}">
+								</div>
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>legendastv</label>
+							</div>
+							%for provider in settings_providers:
+							%	if provider[0] == 'legendastv':
+							%		legendastv_username = provider[2]
+							%		legendastv_password = provider[3]
+							%	end
+							%end
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_legendastv_username" type="text" value="{{legendastv_username}}">
+								</div>
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_legendastv_password" type="password" value="{{legendastv_password}}">
+								</div>
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
+								<label>opensubtitles</label>
+							</div>
+							%for provider in settings_providers:
+							%	if provider[0] == 'opensubtitles':
+							%		opensubtitles_username = provider[2]
+							%		opensubtitles_password = provider[3]
+							%	end
+							%end
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_opensubtitles_username" type="text" value="{{opensubtitles_username}}">
+								</div>
+							</div>
+							<div class="five wide column">
+								<div class="ui fluid input">
+									<input name="settings_opensubtitles_password" type="password" value="{{opensubtitles_password}}">
+								</div>
 							</div>
 						</div>
 					</div>

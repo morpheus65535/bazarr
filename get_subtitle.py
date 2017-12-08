@@ -15,9 +15,9 @@ if os.name == 'nt':
 else:
     region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
-def download_subtitle(path, language, hi, providers):
+def download_subtitle(path, language, hi, providers, providers_auth):
     video = scan_video(path)
-    best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi)
+    best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
     try:
         best_subtitle = best_subtitles[video][0]
     
@@ -31,20 +31,33 @@ def download_subtitle(path, language, hi, providers):
         return None
 
 def series_download_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), tmieout=30)
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute("SELECT path, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
     series_details = c_db.execute("SELECT hearing_impaired FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
-    enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
+    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
     
     providers_list = []
-    for provider in enabled_providers:
-        providers_list.append(provider[0])
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
             
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list)
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth)
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 history_log(1, no, episode[2], message)
@@ -54,16 +67,29 @@ def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
-    enabled_providers = c_db.execute("SELECT name FROM table_settings_providers WHERE enabled = 1").fetchall()
+    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
     providers_list = []
-    for provider in enabled_providers:
-        providers_list.append(provider[0])
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
         
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list)
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth)
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 list_missing_subtitles(episode[3])
