@@ -65,6 +65,7 @@ class OneLineExceptionFormatter(logging.Formatter):
         return s
 
 def configure_logging():
+    global fh
     fh = TimedRotatingFileHandler(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log'), when="midnight", interval=1, backupCount=7)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
@@ -78,6 +79,7 @@ def configure_logging():
 
 configure_logging()
 
+
 @route('/')
 def redirect_root():
     redirect (base_url)
@@ -85,6 +87,19 @@ def redirect_root():
 @route(base_url + 'static/:path#.+#', name='static')
 def static(path):
     return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
+
+@route(base_url + 'emptylog')
+def emptylog():
+    ref = request.environ['HTTP_REFERER']
+    
+    fh.doRollover()
+    logging.info('Log file emptied')
+
+    redirect(ref)
+
+@route(base_url + 'bazarr.log')
+def download_log():
+    return static_file('bazarr.log', root='data/log/', download='bazarr.log')
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
 def image_proxy(url):
@@ -493,4 +508,6 @@ def get_subtitle():
         except OSError:
             pass
 
+logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress')
+logging.info('Bazarr has been stopped.')

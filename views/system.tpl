@@ -37,6 +37,9 @@
 				margin-bottom: 3em;
 				padding: 1em;
 			}
+			#logs {
+				margin-top: 4em;
+			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
 			}
@@ -111,6 +114,11 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
+				<div class="ui right floated basic buttons">
+					<button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
+					<button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
+				</div>
+				
 				<div class="content">
 					<div id="logs"></div>
 
@@ -182,11 +190,19 @@
 		loadURL({{int(max_page)}});
 	})
 
+	$('#download_log').click(function(){
+		window.location = '{{base_url}}bazarr.log';
+	})
+
+	$('#empty_log').click(function(){
+		window.location = '{{base_url}}emptylog';
+	})
+
 	$('.execute').click(function(){
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	})
 
-	$('a:not(.tabs), button:not(.cancel)').click(function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
 		$('#loader').addClass('active');
 	})
 </script>
