@@ -99,7 +99,7 @@ def emptylog():
 
 @route(base_url + 'bazarr.log')
 def download_log():
-    return static_file('bazarr.log', root='data/log/', download='bazarr.log')
+    return static_file('bazarr.log', root=os.path.join(os.path.dirname(__file__), 'data/log/'), download='bazarr.log')
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
 def image_proxy(url):
