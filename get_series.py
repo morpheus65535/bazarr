@@ -2,8 +2,8 @@ import os
 import sqlite3
 import requests
 
+from get_general_settings import *
 from get_sonarr_settings import *
-from get_sonarr_settings_settings import *
 
 def update_series():
     # Open database connection
