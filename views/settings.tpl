@@ -237,9 +237,6 @@
 				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
 				<br>
 				<div class="ui dividing header">Sonarr settings</div>
-				<div class="ui negative message">
-					<p>These changes require that you restart Bazarr.</p>
-				</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
 						<div class="middle aligned row">
