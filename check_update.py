@@ -29,8 +29,8 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                 master_ref = repo.lookup_reference('refs/remotes/origin/' + str(branch))
                 master_ref.set_target(remote_id)
                 repo.head.set_target(remote_id)
-                logging.info('Bazarr updated to latest version and restarting.')
-                os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
+                logging.info('Bazarr updated to latest version and need to be restarted.')
+                #os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             # We can just do it normally
             elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
                 repo.merge(remote_id)
@@ -47,7 +47,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                                             [repo.head.target, remote_id])
                 repo.state_cleanup()
                 logging.error('Conflict detected when trying to update.')
-                os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
+                #os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             # We can't do it
             else:
                 logging.error('Bazarr cannot be updated: Unknown merge analysis result')
