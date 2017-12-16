@@ -4,7 +4,7 @@ import requests
 import logging
 
 from get_general_settings import *
-from get_sonarr_settings_settings import *
+from get_sonarr_settings import *
 from list_subtitles import *
 
 def update_all_episodes():
