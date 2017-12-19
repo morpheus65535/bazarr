@@ -88,7 +88,8 @@
 					<tr>
 						<th class="sorted ascending">Name</th>
 						<th>Path</th>
-						<th>Language</th>
+						<th>Audio language</th>
+						<th>Subtitles language</th>
 						<th>Hearing-impaired</th>
 						<th class="no-sort"></th>
 					</tr>
@@ -102,6 +103,7 @@
 						<td>
 						{{row[2]}}
 						</td>
+						<td>{{row[7]}}</td>
 						<td>
 							%subs_languages = ast.literal_eval(str(row[3]))
 							%if subs_languages is not None:
@@ -120,7 +122,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -174,7 +176,15 @@
 							<div class="ui grid">
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Languages</label>
+										<label>Audio languages</label>
+									</div>
+									<div class="nine wide column">
+										<div id="series_audio_language"></div>
+									</div>
+								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Subtitle languages</label>
 									</div>
 									<div class="nine wide column">
 										<select name="languages" id="series_languages" multiple="" class="ui fluid selection dropdown">
@@ -249,6 +259,8 @@
 		$("#series_title").html($(this).data("title"));
 		$("#series_poster").attr("src", "{{base_url}}image_proxy" + $(this).data("poster"));
 		
+		$("#series_audio_language").html($(this).data("audio"));
+
 		$('#series_languages').dropdown('clear');
 		var languages_array = eval($(this).data("languages"));
 		$('#series_languages').dropdown('set selected',languages_array);

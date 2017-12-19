@@ -19,7 +19,12 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('UPDATE table_settings_providers SET password=""')
     except:
         pass
-    
+
+    try:
+        c.execute('alter table table_shows add column "audio_language" "text"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

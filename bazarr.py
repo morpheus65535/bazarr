@@ -125,7 +125,7 @@ def series():
     offset = (int(page) - 1) * 15
     max_page = (missing_count / 15) + 1
 
-    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster FROM table_shows ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
