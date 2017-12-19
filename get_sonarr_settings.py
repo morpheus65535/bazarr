@@ -24,7 +24,7 @@ if ssl_sonarr == 1:
     protocol_sonarr = "https"
 else:
     protocol_sonarr = "http"
-if baseurl_sonarr == "":
+if baseurl_sonarr == "/":
     base_url_sonarr = ""
 else:
     base_url_sonarr = "/" + baseurl_sonarr.strip("/")
