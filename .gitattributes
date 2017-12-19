@@ -1,2 +1,3 @@
 static/jquery/* linguist-vendored
 static/semantic/* linguist-vendored
+*.tpl linguist-language=HTML
