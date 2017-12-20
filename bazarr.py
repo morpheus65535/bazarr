@@ -115,6 +115,8 @@ def image_proxy(url):
 
 @route(base_url)
 def series():
+    import update_db
+    
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
