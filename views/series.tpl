@@ -89,7 +89,7 @@
 						<th class="sorted ascending">Name</th>
 						<th>Path</th>
 						<th>Audio language</th>
-						<th>Subtitles language</th>
+						<th>Subtitles languages</th>
 						<th>Hearing-impaired</th>
 						<th class="no-sort"></th>
 					</tr>
@@ -113,7 +113,7 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] == None else row[4]}}</td>
-						<td {{!"style='background-color: yellow;'" if row[4] == None else ""}}>
+						<td {{!"style='background-color: #e8e8e8;'" if row[4] == None else ""}}>
 							<%
 							subs_languages_list = []
 							if subs_languages is not None:
@@ -176,7 +176,7 @@
 							<div class="ui grid">
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Audio languages</label>
+										<label>Audio language</label>
 									</div>
 									<div class="nine wide column">
 										<div id="series_audio_language"></div>
@@ -184,7 +184,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Subtitle languages</label>
+										<label>Subtitles languages</label>
 									</div>
 									<div class="nine wide column">
 										<select name="languages" id="series_languages" multiple="" class="ui fluid selection dropdown">
