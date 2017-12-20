@@ -82,18 +82,26 @@
 				<div class="ui container"><button class="ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
 				<br>
 				<div class="ui dividing header">Bazarr settings</div>
-				<div class="ui negative message">
-					<p>These changes require that you restart Bazarr.</p>
-				</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
 						<div class="middle aligned row">
 							<div class="right aligned four wide column">
 								<label>Listening IP address</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									<input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
+								</div>
+							</div>
+
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+									<i class="yellow warning sign icon"></i>
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Valid IP4 address or '0.0.0.0' for all interfaces" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
@@ -102,9 +110,20 @@
 							<div class="right aligned four wide column">
 								<label>Listening port</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									<input name="settings_general_port" type="text" value="{{settings_general[1]}}">
+								</div>
+							</div>
+
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+									<i class="yellow warning sign icon"></i>
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Valid TCP port (default: 6767)" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
@@ -113,8 +132,8 @@
 							<div class="right aligned four wide column">
 								<label>Base URL</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									%if settings_general[2] == None:
 									%	base_url = "/"
 									%else:
@@ -123,13 +142,24 @@
 									<input name="settings_general_baseurl" type="text" value="{{base_url}}">
 								</div>
 							</div>
+
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+									<i class="yellow warning sign icon"></i>
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="For reverse proxy support, default is '/'" data-inverted="">
+									<i class="help circle large icon"></i>
+								</div>
+							</div>
 						</div>
 
 						<div class="middle aligned row">
 							<div class="right aligned four wide column">
 								<label>Log Level</label>
 							</div>
-							<div class="eleven wide column">
+							<div class="five wide column">
 								<select name="settings_general_loglevel" id="settings_loglevel" class="ui fluid selection dropdown">
 									<option value="">Log Level</option>
 									<option value="DEBUG">Debug</option>
@@ -138,6 +168,17 @@
 									<option value="ERROR">Error</option>
 									<option value="CRITICAL">Critical</option>
 								</select>
+							</div>
+
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+									<i class="yellow warning sign icon"></i>
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Debug logging should only be enabled temporarily" data-inverted="">
+									<i class="help circle large icon"></i>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -156,21 +197,35 @@
 					    	<div class="right aligned four wide column">
 					    		
 					    	</div>
-							<div class="four wide column">
+							<div class="two wide column">
 								<div class="ui fluid input">
 									<h4 class="ui header">
 										Path for Sonarr:
 									</h4>
 								</div>
 							</div>
-							<div class="center aligned column">
+							<div class="collapsed column">
+								<div class="collapsed center aligned column">
+									<div class="ui basic icon" data-tooltip="Root path to the directory Sonarr accesses." data-inverted="">
+										<i class="help circle large icon"></i>
+									</div>
+								</div>
+							</div>
+							<div class="two wide center aligned column">
 								
 							</div>
-							<div class="four wide column">
+							<div class="two wide column">
 								<div class="ui fluid input">
 									<h4 class="ui header">
 										Path for Bazarr:
 									</h4>
+								</div>
+							</div>
+							<div class="collapsed column">
+								<div class="collapsed center aligned column">
+									<div class="ui basic icon" data-tooltip="Path that Bazarr should use to access the same directory remotely." data-inverted="">
+										<i class="help circle large icon"></i>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -210,12 +265,19 @@
 							<div class="right aligned four wide column">
 								<label>Branch</label>
 							</div>
-							<div class="eleven wide column">
+							<div class="five wide column">
 								<select name="settings_general_branch" id="settings_branch" class="ui fluid selection dropdown">
 									<option value="">Branch</option>
 									<option value="master">master</option>
 									<option value="development">development</option>
 								</select>
+							</div>
+							<div class="collapsed column">
+								<div class="collapsed center aligned column">
+									<div class="ui basic icon" data-tooltip="Only select development branch if you want to live on the edge." data-inverted="">
+										<i class="help circle large icon"></i>
+									</div>
+								</div>
 							</div>
 						</div>
 
@@ -223,11 +285,18 @@
 							<div class="right aligned four wide column">
 								<label>Automatic</label>
 							</div>
-							<div class="eleven wide column">
+							<div class="one wide column">
 								<div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings_general[6]}}>
 							    	<input name="settings_general_automatic" type="checkbox">
 							    	<label></label>
 							    </div>
+							</div>
+							<div class="collapsed column">
+								<div class="collapsed center aligned column">
+									<div class="ui basic icon" data-tooltip="Automatically download and install updates. You will still be able to install from System: Tasks" data-inverted="">
+										<i class="help circle large icon"></i>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -243,9 +312,14 @@
 							<div class="right aligned four wide column">
 								<label>Listening IP address</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									<input name="settings_sonarr_ip" type="text" value="{{settings_sonarr[0]}}">
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="IP4 address of Sonarr" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
@@ -254,9 +328,14 @@
 							<div class="right aligned four wide column">
 								<label>Listening port</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									<input name="settings_sonarr_port" type="text" value="{{settings_sonarr[1]}}">
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="TCP port of Sonarr" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
@@ -265,9 +344,14 @@
 							<div class="right aligned four wide column">
 								<label>Base URL</label>
 							</div>
-							<div class="eleven wide column">
-								<div class="ui input">
+							<div class="five wide column">
+								<div class="ui fluid input">
 									<input name="settings_sonarr_baseurl" type="text" value="{{settings_sonarr[2]}}">
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="Base URL for Sonarr (default: '/')" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
@@ -276,7 +360,7 @@
 							<div class="right aligned four wide column">
 								<label>SSL enabled</label>
 							</div>
-							<div class="eleven wide column">
+							<div class="one wide column">
 								<div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_sonarr[3]}}>
 							    	<input name="settings_sonarr_ssl" type="checkbox">
 							    	<label></label>
@@ -291,6 +375,11 @@
 							<div class="five wide column">
 								<div class="ui fluid input">
 									<input name="settings_sonarr_apikey" type="text" value="{{settings_sonarr[4]}}">
+								</div>
+							</div>
+							<div class="collapsed center aligned column">
+								<div class="ui basic icon" data-tooltip="API key for Sonarr (32 alphanumeric characters)" data-inverted="">
+									<i class="help circle large icon"></i>
 								</div>
 							</div>
 						</div>
