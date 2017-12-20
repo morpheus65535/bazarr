@@ -1,4 +1,4 @@
-bazarr_version = '0.2.0'
+bazarr_version = '0.2.1'
 
 from bottle import route, run, template, static_file, request, redirect
 import bottle
@@ -103,6 +103,9 @@ def download_log():
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
 def image_proxy(url):
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr_short = get_sonarr_settings()[1]
+
     img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
@@ -164,6 +167,9 @@ def edit_series(no):
 
 @route(base_url + 'episodes/<no:int>', method='GET')
 def episodes(no):
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr_short = get_sonarr_settings()[1]
+    
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()

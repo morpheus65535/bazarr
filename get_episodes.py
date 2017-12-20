@@ -4,10 +4,14 @@ import requests
 import logging
 
 from get_general_settings import *
-from get_sonarr_settings import *
 from list_subtitles import *
-
+    
 def update_all_episodes():
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[0]
+    url_sonarr_short = get_sonarr_settings()[1]
+    apikey_sonarr = get_sonarr_settings()[2]
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -72,6 +76,11 @@ def update_all_episodes():
     logging.info('All missing subtitles updated in database.')
 
 def add_new_episodes():
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[0]
+    url_sonarr_short = get_sonarr_settings()[1]
+    apikey_sonarr = get_sonarr_settings()[2]
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()

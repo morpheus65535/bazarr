@@ -3,9 +3,13 @@ import sqlite3
 import requests
 
 from get_general_settings import *
-from get_sonarr_settings import *
 
 def update_series():
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[0]
+    url_sonarr_short = get_sonarr_settings()[1]
+    apikey_sonarr = get_sonarr_settings()[2]
+
     get_profile_list()
 
     # Open database connection
@@ -62,6 +66,11 @@ def update_series():
     db.close()
 
 def get_profile_list():
+    from get_sonarr_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[0]
+    url_sonarr_short = get_sonarr_settings()[1]
+    apikey_sonarr = get_sonarr_settings()[2]
+
     # Get profiles data from Sonarr
     url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
     profiles_json = requests.get(url_sonarr_api_series)
