@@ -21,14 +21,6 @@
 			body {
 				background-color: #272727;
 			}
-			#divmenu {
-				background-color: #272727;
-				opacity: 0.9;
-				padding-top: 2em;
-				padding-bottom: 1em;
-				padding-left: 1em;
-				padding-right: 128px;
-			}
 			#fondblanc {
 				background-color: #ffffff;
 				border-radius: 0px;
@@ -51,33 +43,7 @@
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
-		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
-				<a href="{{base_url}}"><img style="margin-right:32px;" class="logo" src="{{base_url}}static/logo128.png"></a>
-				<div style="height:80px;" class="ui container">
-					<a class="item" href="{{base_url}}">
-						<i class="play icon"></i>
-						Series
-					</a>
-					<a class="item" href="{{base_url}}history">
-						<i class="wait icon"></i>
-						History
-					</a>
-					<a class="item" href="{{base_url}}wanted">
-						<i class="warning sign icon"></i>
-						Wanted
-					</a>
-					<a class="item" href="{{base_url}}settings">
-						<i class="settings icon"></i>
-						Settings
-					</a>
-					<a class="item" href="{{base_url}}system">
-						<i class="laptop icon"></i>
-						System
-					</a>
-				</div>
-			</div>
-		</div>
+		% include('menu.tpl')
 			
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
@@ -141,6 +107,7 @@
 				Bazarr version: {{bazarr_version}}
 			</div>
 		</div>
+		% include('footer.tpl')
 	</body>
 </html>
 

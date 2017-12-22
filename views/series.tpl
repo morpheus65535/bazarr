@@ -5,7 +5,7 @@
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
-		
+
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
@@ -14,20 +14,12 @@
 		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
 		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
-		
+
 		<title>Bazarr</title>
-		
+
 		<style>
 			body {
 				background-color: #272727;
-			}
-			#divmenu {
-				background-color: #272727;
-				opacity: 0.9;
-				padding-top: 2em;
-				padding-bottom: 1em;
-				padding-left: 1em;
-				padding-right: 128px;
 			}
 			#fondblanc {
 				background-color: #ffffff;
@@ -44,7 +36,7 @@
 				min-height: 250px;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
-    			cursor: pointer;
+				cursor: pointer;
 			}
 			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
 			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
@@ -52,36 +44,10 @@
 	</head>
 	<body>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+			<div class="ui indeterminate text loader">Loading...</div>
 		</div>
-		<div id="divmenu" class="ui container">
-			<div style="background-color:#272727;" class="ui inverted borderless labeled icon huge menu five item">
-				<a href="{{base_url}}"><img style="margin-right:32px;" class="logo" src="{{base_url}}static/logo128.png"></a>
-				<div style="height:80px;" class="ui container">
-					<a class="item" href="{{base_url}}">
-						<i class="play icon"></i>
-						Series
-					</a>
-					<a class="item" href="{{base_url}}history">
-						<i class="wait icon"></i>
-						History
-					</a>
-					<a class="item" href="{{base_url}}wanted">
-						<i class="warning sign icon"></i>
-						Wanted
-					</a>
-					<a class="item" href="{{base_url}}settings">
-						<i class="settings icon"></i>
-						Settings
-					</a>
-					<a class="item" href="{{base_url}}system">
-						<i class="laptop icon"></i>
-						System
-					</a>
-				</div>
-			</div>
-		</div>
-			
+		% include('menu.tpl')
+
 		<div id="fondblanc" class="ui container">
 			<table id="tableseries" class="ui very basic selectable sortable table">
 				<thead>
@@ -132,31 +98,31 @@
 			</table>
 			<div class="ui grid">
 				<div class="three column row">
-			    	<div class="column"></div>
-			    	<div class="center aligned column">
-			    		<i class="\\
-			    		%if page == "1":
-			    		disabled\\
-			    		%end
-			    		 fast backward icon"></i>
-			    		<i class="\\
-			    		%if page == "1":
-			    		disabled\\
-			    		%end
-			    		 backward icon"></i>
-			    		{{page}} / {{max_page}}
-			    		<i class="\\
-			    		%if int(page) == int(max_page):
-			    		disabled\\
-			    		%end
-			    		 forward icon"></i>
-			    		<i class="\\
-			    		%if int(page) == int(max_page):
-			    		disabled\\
-			    		%end
-			    		 fast forward icon"></i>
-			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{missing_count}}</div>
+					<div class="column"></div>
+					<div class="center aligned column">
+						<i class="\\
+						%if page == "1":
+						disabled\\
+						%end
+						 fast backward icon"></i>
+						<i class="\\
+						%if page == "1":
+						disabled\\
+						%end
+						 backward icon"></i>
+						{{page}} / {{max_page}}
+						<i class="\\
+						%if int(page) == int(max_page):
+						disabled\\
+						%end
+						 forward icon"></i>
+						<i class="\\
+						%if int(page) == int(max_page):
+						disabled\\
+						%end
+						 fast forward icon"></i>
+					</div>
+					<div class="right floated right aligned column">Total records: {{missing_count}}</div>
 				</div>
 			</div>
 		</div>
@@ -201,9 +167,9 @@
 									</div>
 									<div class="nine wide column">
 										<div id="series_hearing-impaired_div" class="ui toggle checkbox">
-									    	<input name="hearing_impaired" id="series_hearing-impaired" type="checkbox">
-									    	<label></label>
-									    </div>
+											<input name="hearing_impaired" id="series_hearing-impaired" type="checkbox">
+											<label></label>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -216,14 +182,16 @@
 				<button type="submit" name="save" value="save" form="series_form" class="ui blue approve button">Save</button>
 			</div>
 		</div>
+
+		% include('footer.tpl')
 	</body>
 </html>
 
 
 <script>
 	if (sessionStorage.scrolly) {
-	    $(window).scrollTop(sessionStorage.scrolly);
-	    sessionStorage.clear();
+		$(window).scrollTop(sessionStorage.scrolly);
+		sessionStorage.clear();
 	}
 
 	$('table').tablesort();
@@ -247,7 +215,7 @@
 
 	$('.modal')
 		.modal({
-	    	autofocus: false
+			autofocus: false
 		})
 	;
 
@@ -258,22 +226,21 @@
 
 		$("#series_title").html($(this).data("title"));
 		$("#series_poster").attr("src", "{{base_url}}image_proxy" + $(this).data("poster"));
-		
+
 		$("#series_audio_language").html($(this).data("audio"));
 
 		$('#series_languages').dropdown('clear');
 		var languages_array = eval($(this).data("languages"));
 		$('#series_languages').dropdown('set selected',languages_array);
-		
+
 		if ($(this).data("hearing-impaired") == "True") {
 			$("#series_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#series_hearing-impaired_div").checkbox('uncheck');
 		}
-		
+
 		$('.small.modal').modal('show');
 	})
 
 	$('#series_languages').dropdown();
-
 </script>
