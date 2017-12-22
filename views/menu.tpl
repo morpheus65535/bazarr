@@ -3,8 +3,8 @@
         <!DOCTYPE html>
 		<style>
             #divmenu {
-				background-color: #272727;
-				opacity: 0.9;
+				background-color: #000000;
+				opacity: 0.8;
 				padding-top: 2em;
 				padding-bottom: 1em;
 				padding-left: 1em;
@@ -32,7 +32,7 @@
 						<div class="ui grid">
 								<div class="row">
 								<div class="sixteen wide column">
-									<div style="background-color:#272727;" class="ui inverted borderless labeled icon massive menu five item">
+									<div class="ui inverted borderless labeled icon massive menu five item">
 										<div class="ui container">
 											<a class="item" href="{{base_url}}">
 												<i class="play icon"></i>
@@ -102,4 +102,13 @@
             minCharacters : 2
         })
     ;
+
+    if (window.location.href.indexOf("episodes") > -1) {
+    	$('.menu').css('background', '#000000');
+    	$('#divmenu').css('background', '#000000');
+    }
+    else {
+    	$('.menu').css('background', '#272727');
+    	$('#divmenu').css('background', '#272727');
+    }
 </script>
