@@ -151,16 +151,14 @@
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
 		    };
+		    $('#loader').addClass('active');
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle",
 		        type: "POST",
 		        dataType: "json",
 				data: values
-		    });
-		    $('#loader').addClass('active');
+		    }).always(function () {
+				window.location.reload();
+			});
 	})
-
-	$(document).ajaxStop(function(){
-	    window.location.reload();
-	});
 </script>
