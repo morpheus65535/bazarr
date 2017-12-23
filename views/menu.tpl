@@ -15,7 +15,7 @@
 				color: white !important;
 				border-radius: 3px !important;
 			}
-			.search.icon {
+			.searchicon {
 				color: white !important;
 			}
         </style>
@@ -78,7 +78,7 @@
 									<div class="ui search">
 										<div class="ui left icon fluid input">
 											<input class="prompt" type="text" placeholder="Search the series in your library">
-											<i class="search icon"></i>
+											<i class="searchicon search icon"></i>
 										</div>
 									</div>
 								</div>
