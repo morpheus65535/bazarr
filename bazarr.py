@@ -143,7 +143,7 @@ def series():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('series', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
     return output
 
 @route(base_url + 'series_json/<query>', method='GET')
@@ -211,7 +211,7 @@ def episodes(no):
     for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
     
-    return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
+    return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):
@@ -247,7 +247,7 @@ def history():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('history', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, base_url=base_url)
+    return template('history', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, base_url=base_url)
 
 @route(base_url + 'wanted')
 def wanted():
@@ -267,7 +267,7 @@ def wanted():
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.close()
-    return template('wanted', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+    return template('wanted', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
 
 @route(base_url + 'wanted_search_missing_subtitles')
 def wanted_search_missing_subtitles_list():
@@ -290,7 +290,7 @@ def settings():
     c.execute("SELECT * FROM table_settings_sonarr")
     settings_sonarr = c.fetchone()
     c.close()
-    return template('settings', bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
 def save_settings():
@@ -463,7 +463,7 @@ def system():
         row_count = i
         max_page = (row_count / 50) + 1
     
-    return template('system', bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page)
+    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page)
 
 @route(base_url + 'logs/<page:int>')
 def get_logs(page):

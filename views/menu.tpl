@@ -10,9 +10,6 @@
 				padding-left: 1em;
 				padding-right: 128px;
 			}
-			.item .icon {
-				color: LightGray;
-			}
 			.prompt {
 				background-color: #333333 !important;
 				color: white !important;
@@ -24,9 +21,10 @@
         </style>
     </head>
     <body>
+		% import os
 		% import sqlite3
 
-		% conn = sqlite3.connect('data/db/bazarr.db', timeout=30)
+		% conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     	% c = conn.cursor()
 		% wanted = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
 
