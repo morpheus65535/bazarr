@@ -10,7 +10,7 @@
 				padding-left: 1em;
 				padding-right: 128px;
 			}
-			.icon {
+			.item .icon {
 				color: LightGray;
 			}
 			.prompt {
