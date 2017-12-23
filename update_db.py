@@ -25,6 +25,12 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_general add column "configured" "integer"')
+        c.execute('alter table table_settings_general add column "updated" "integer"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

@@ -23,6 +23,13 @@ import urllib
 
 from init_db import *
 import update_db
+
+conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+c = conn.cursor()
+c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
+conn.commit()
+c.close()
+
 from get_languages import *
 from get_providers import *
 
@@ -306,7 +313,13 @@ def save_settings():
         settings_general_automatic = 'False'
     else:
         settings_general_automatic = 'True'
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?", (settings_general_ip, settings_general_port, settings_general_baseurl, str(settings_general_pathmapping), settings_general_loglevel, settings_general_branch, settings_general_automatic))
+
+    before = c.execute("SELECT ip, port, base_url FROM table_settings_general").fetchone()
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic)))
+    conn.commit()
+    if after != before:
+        configured()
     get_general_settings()
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
@@ -343,7 +356,7 @@ def save_settings():
     conn.commit()
     c.close()
 
-    logging.info('Settings saved succefully. You must restart Bazarr.')
+    logging.info('Settings saved succefully.')
     
     redirect(ref)
 
@@ -533,6 +546,13 @@ def get_subtitle():
             redirect(ref)
         except OSError:
             pass
+
+def configured():
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+    c.execute("UPDATE table_settings_general SET configured = 1")
+    conn.commit()
+    c.close()
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress')

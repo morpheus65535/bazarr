@@ -18,10 +18,19 @@
 				color: white !important;
 				border-radius: 3px !important;
 			}
+			.search.icon {
+				color: white !important;
+			}
         </style>
     </head>
     <body>
-        <div id="divmenu" class="ui container">
+		% import sqlite3
+
+		% conn = sqlite3.connect('data/db/bazarr.db', timeout=30)
+    	% c = conn.cursor()
+		% wanted = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
+
+		<div id="divmenu" class="ui container">
 			<div class="ui grid">
 				<div class="middle aligned row">
 					<div class="three wide column">
@@ -44,6 +53,11 @@
 											</a>
 											<a class="item" href="{{base_url}}wanted">
 												<i class="warning sign icon"></i>
+												% if wanted[0] > 0:
+													<div class="floating ui tiny yellow label">
+														{{wanted[0]}}
+													</div>
+												% end
 												Wanted
 											</a>
 											<a class="item" href="{{base_url}}settings">
@@ -78,6 +92,18 @@
                 </div>
             </div>
 		</div>
+
+    	% restart_required = c.execute("SELECT updated, configured FROM table_settings_general").fetchone()
+    	% conn.commit()
+    	% c.close()
+
+		% if restart_required[0] == 1 and restart_required[1] == 1:
+			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings.</div></div></div>
+		% elif restart_required[0] == 1:
+			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update.</div></div></div>
+		% elif restart_required[1] == 1:
+			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings.</div></div></div>
+		% end
     </body>
 </html>
 

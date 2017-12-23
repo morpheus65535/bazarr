@@ -3,6 +3,7 @@ from get_general_settings import *
 import os
 import pygit2
 import logging
+import sqlite3
 
 current_working_directory = os.path.dirname(__file__)
 repository_path = pygit2.discover_repository(current_working_directory)
@@ -30,7 +31,7 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                 master_ref.set_target(remote_id)
                 repo.head.set_target(remote_id)
                 logging.info('Bazarr updated to latest version and need to be restarted.')
-                #os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
+                updated()
             # We can just do it normally
             elif merge_result & pygit2.GIT_MERGE_ANALYSIS_NORMAL:
                 repo.merge(remote_id)
@@ -47,7 +48,13 @@ def check_and_apply_update(repo=local_repo, remote_name='origin'):
                                             [repo.head.target, remote_id])
                 repo.state_cleanup()
                 logging.error('Conflict detected when trying to update.')
-                #os.execlp('python', 'python', os.path.join(os.path.dirname(__file__), 'bazarr.py'))
             # We can't do it
             else:
                 logging.error('Bazarr cannot be updated: Unknown merge analysis result')
+
+def updated():
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+    c.execute("UPDATE table_settings_general SET updated = 1")
+    conn.commit()
+    c.close()
