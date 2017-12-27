@@ -46,7 +46,7 @@ Windows:
 * You can now start bazarr via `bazarr.py` to start bazarr.
 * Open your browser and go to `http://localhost:6767/`
 
-OS X:
+OS X (untested):
 
 * Install [GIT](http://git-scm.com/)
 * Open up `Terminal`
@@ -60,6 +60,7 @@ Linux:
 
 * (Ubuntu / Debian) Install [GIT](http://git-scm.com/) with `apt-get install git-core`
 * (Fedora / CentOS) Install [GIT](http://git-scm.com/) with `yum install git`
+* (Ubuntu / Debian) Install OS requirements: `apt-get install -y build-essential python-dev python-pip python-setuptools libjpeg-dev zlib1g-dev git libgit2-dev libffi-dev`
 * 'cd' to the folder of your choosing.
 * Run `git clone https://github.com/morpheus65535/bazarr.git`
 * Run `pip install -r requirements.txt` to install dependencies.
