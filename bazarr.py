@@ -80,7 +80,7 @@ def configure_logging():
     fh.setFormatter(f)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.ERROR)
+    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
