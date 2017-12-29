@@ -20,6 +20,7 @@ from PIL import Image
 from io import BytesIO
 from fdsend import send_file
 import urllib
+import math
 
 from init_db import *
 import update_db
@@ -136,7 +137,7 @@ def series():
     if page == "":
         page = "1"
     offset = (int(page) - 1) * 15
-    max_page = (missing_count / 15) + 1
+    max_page = int(math.ceil(missing_count / 15.0))
 
     c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
@@ -241,7 +242,7 @@ def history():
     if page == "":
         page = "1"
     offset = (int(page) - 1) * 15
-    max_page = (row_count / 15) + 1
+    max_page = int(math.ceil(row_count / 15.0))
 
     c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
@@ -262,7 +263,7 @@ def wanted():
     if page == "":
         page = "1"
     offset = (int(page) - 1) * 15
-    max_page = (missing_count / 15) + 1
+    max_page = int(math.ceil(missing_count / 15.0))
 
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
@@ -461,7 +462,7 @@ def system():
         for i, l in enumerate(f, 1):
             pass
         row_count = i
-        max_page = (row_count / 50) + 1
+        max_page = int(math.ceil(row_count / 50.0))
     
     return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page)
 
