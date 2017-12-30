@@ -12,7 +12,8 @@ def check_and_apply_update():
     g = git.cmd.Git(current_working_directory)
     result = g.pull('origin', branch)
     if result != 'Already up-to-date.':
-        logging.info('Bazarr updated to latest version and need to be restarted.')
+        #logging.info('Bazarr updated to latest version and need to be restarted.')
+        logging.info(result)
         updated()
     else:
         logging.info('No new version of Bazarr available.')
