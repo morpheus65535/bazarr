@@ -4,10 +4,10 @@ bottle
 bottle-fdsend
 dogpile.cache
 enzyme
+gitpython
 Pillow
 py-pretty
 pycountry
-pygit2
 requests
 subliminal
 urllib3

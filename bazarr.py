@@ -1,4 +1,4 @@
-bazarr_version = '0.2.2'
+bazarr_version = '0.2.3'
 
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
@@ -24,6 +24,7 @@ import math
 
 from init_db import *
 import update_db
+import update_modules
 
 conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
 c = conn.cursor()
