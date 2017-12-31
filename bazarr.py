@@ -9,41 +9,6 @@ import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 
 import sqlite3
-import json
-import itertools
-import operator
-import requests
-import pycountry
-import pretty
-import datetime
-from PIL import Image
-from io import BytesIO
-from fdsend import send_file
-import urllib
-import math
-
-from init_db import *
-import update_db
-import update_modules
-
-conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-c = conn.cursor()
-c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
-conn.commit()
-c.close()
-
-from get_languages import *
-from get_providers import *
-
-from get_series import *
-from get_episodes import *
-from get_general_settings import *
-from get_sonarr_settings import *
-from check_update import *
-from list_subtitles import *
-from get_subtitle import *
-from utils import *
-from scheduler import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -89,6 +54,41 @@ def configure_logging():
 
 configure_logging()
 
+import json
+import itertools
+import operator
+import requests
+import pycountry
+import pretty
+import datetime
+from PIL import Image
+from io import BytesIO
+from fdsend import send_file
+import urllib
+import math
+
+from init_db import *
+import update_db
+import update_modules
+
+conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+c = conn.cursor()
+c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
+conn.commit()
+c.close()
+
+from get_languages import *
+from get_providers import *
+
+from get_series import *
+from get_episodes import *
+from get_general_settings import *
+from get_sonarr_settings import *
+from check_update import *
+from list_subtitles import *
+from get_subtitle import *
+from utils import *
+from scheduler import *
 
 @route('/')
 def redirect_root():
@@ -358,7 +358,7 @@ def save_settings():
     conn.commit()
     c.close()
 
-    logging.info('Settings saved succefully.')
+    logging.info('Settings saved succesfully.')
     
     redirect(ref)
 
