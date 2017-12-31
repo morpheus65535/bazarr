@@ -21,9 +21,11 @@ def list_subtitles(file):
                     try:
                         languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
                     except:
-                        pass
+                        print subtitle_track.language
+                        #pass
             except:
-                pass
+                print file
+                #pass
 
         subtitles = core.search_external_subtitles(file)
         
@@ -43,11 +45,12 @@ def store_subtitles(file):
                 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
+                        actual_subtitles.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
                     except:
                         pass
             except:
                 pass
+
 
         subtitles = core.search_external_subtitles(file)
         
@@ -59,7 +62,7 @@ def store_subtitles(file):
         
         c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
         conn_db.commit()
-        
+
         c_db.close()
 
     return actual_subtitles
