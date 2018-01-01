@@ -46,14 +46,18 @@
 %end
 ">
 						<td class="collapsing"><i class="\\
-						%if line[1] == 'INFO':
-blue info circle \\
-						%elif line[1] == 'WARNING':
-yellow warning circle \\
-						%elif line[1] == 'ERROR':
-red bug \\
-						%end
-icon"></i></td>
+%try:
+%if line[1] == 'INFO':
+blue info circle icon \\
+%elif line[1] == 'WARNING':
+yellow warning circle icon \\
+%elif line[1] == 'ERROR':
+red bug icon \\
+%end
+%except:
+%pass
+%end
+"></i></td>
 						<td>\\
 %try:
 {{line[2]}}\\
