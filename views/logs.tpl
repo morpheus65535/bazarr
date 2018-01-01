@@ -32,7 +32,13 @@
 				%for log in logs:
 					%line = []
 					%line = log.split('|')
-					<tr class='log' data-message='{{line[2]}}' data-exception="{{line[3]}}">
+					<tr class='log' data-message='{{line[2]}}' data-exception="\\
+%try:
+{{line[3]}}\\
+%except:
+\\
+%end
+">
 						<td class="collapsing"><i class="\\
 						%if line[1] == 'INFO':
 blue info circle \\
