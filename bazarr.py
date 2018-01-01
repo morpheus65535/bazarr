@@ -9,6 +9,22 @@ import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 
 import sqlite3
+import json
+import itertools
+import operator
+import requests
+import pycountry
+import pretty
+import datetime
+from PIL import Image
+from io import BytesIO
+from fdsend import send_file
+import urllib
+import math
+
+from init_db import *
+import update_db
+import update_modules
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -54,29 +70,6 @@ def configure_logging():
 
 configure_logging()
 
-import json
-import itertools
-import operator
-import requests
-import pycountry
-import pretty
-import datetime
-from PIL import Image
-from io import BytesIO
-from fdsend import send_file
-import urllib
-import math
-
-from init_db import *
-import update_db
-import update_modules
-
-conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-c = conn.cursor()
-c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
-conn.commit()
-c.close()
-
 from get_languages import *
 from get_providers import *
 
@@ -89,6 +82,14 @@ from list_subtitles import *
 from get_subtitle import *
 from utils import *
 from scheduler import *
+
+# Reset restart required warning on start
+conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+c = conn.cursor()
+c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
+conn.commit()
+c.close()
+
 
 @route('/')
 def redirect_root():
