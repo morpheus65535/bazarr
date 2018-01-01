@@ -45,8 +45,7 @@
 				<a class="tabs item" data-tab="subliminal">Subliminal</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="general">
-				<div class="ui container"><button class="ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-				<br>
+				<div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
 				<div class="ui dividing header">Bazarr settings</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
@@ -55,8 +54,10 @@
 								<label>Listening IP address</label>
 							</div>
 							<div class="five wide column">
-								<div class="ui fluid input">
-									<input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
+								<div class='field'>
+									<div class="ui fluid input">
+										<input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
+									</div>
 								</div>
 							</div>
 
@@ -77,8 +78,10 @@
 								<label>Listening port</label>
 							</div>
 							<div class="five wide column">
-								<div class="ui fluid input">
-									<input name="settings_general_port" type="text" value="{{settings_general[1]}}">
+								<div class='field'>
+									<div class="ui fluid input">
+										<input name="settings_general_port" type="text" value="{{settings_general[1]}}">
+									</div>
 								</div>
 							</div>
 
@@ -269,8 +272,7 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="sonarr">
-				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
-				<br>
+				<div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
 				<div class="ui dividing header">Sonarr settings</div>
 				<div class="twelve wide column">
 					<div class="ui grid">
@@ -279,8 +281,10 @@
 								<label>Listening IP address</label>
 							</div>
 							<div class="five wide column">
-								<div class="ui fluid input">
-									<input name="settings_sonarr_ip" type="text" value="{{settings_sonarr[0]}}">
+								<div class='field'>
+									<div class="ui fluid input">
+										<input name="settings_sonarr_ip" type="text" value="{{settings_sonarr[0]}}">
+									</div>
 								</div>
 							</div>
 							<div class="collapsed center aligned column">
@@ -295,8 +299,10 @@
 								<label>Listening port</label>
 							</div>
 							<div class="five wide column">
-								<div class="ui fluid input">
-									<input name="settings_sonarr_port" type="text" value="{{settings_sonarr[1]}}">
+								<div class='field'>
+									<div class="ui fluid input">
+										<input name="settings_sonarr_port" type="text" value="{{settings_sonarr[1]}}">
+									</div>
 								</div>
 							</div>
 							<div class="collapsed center aligned column">
@@ -339,8 +345,10 @@
 								<label>API key</label>
 							</div>
 							<div class="five wide column">
-								<div class="ui fluid input">
-									<input name="settings_sonarr_apikey" type="text" value="{{settings_sonarr[4]}}">
+								<div class='field'>
+									<div class="ui fluid input">
+										<input name="settings_sonarr_apikey" type="text" value="{{settings_sonarr[4]}}">
+									</div>
 								</div>
 							</div>
 							<div class="collapsed center aligned column">
@@ -353,11 +361,10 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="subliminal">
-				<div class="ui container"><button class="ui blue right floated button">Save</button></div>
-				<br>
+				<div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
 				<div class="ui dividing header">Subtitles providers</div>
 				<div class="twelve wide column">
-					<div class="ui negative message">
+					<div class="ui info message">
 						<p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
 					</div>
 					<div class="ui grid">
@@ -366,16 +373,18 @@
 								<label>Enabled providers</label>
 							</div>
 							<div class="eleven wide column">
-								<select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
-									<option value="">Providers</option>
-									%enabled_providers = []
-									%for provider in settings_providers:
-									<option value="{{provider[0]}}">{{provider[0]}}</option>
-									%if provider[1] == True:
-									%	enabled_providers.append(str(provider[0]))
-									%end
-									%end
-								</select>
+								<div class='field'>
+									<select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
+										<option value="">Providers</option>
+										%enabled_providers = []
+										%for provider in settings_providers:
+										<option value="{{provider[0]}}">{{provider[0]}}</option>
+										%if provider[1] == True:
+										%	enabled_providers.append(str(provider[0]))
+										%end
+										%end
+									</select>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -472,16 +481,18 @@
 								<label>Enabled languages</label>
 							</div>
 							<div class="eleven wide column">
-								<select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
-									<option value="">Languages</option>
-									%enabled_languages = []
-									%for language in settings_languages:
-									<option value="{{language[1]}}">{{language[2]}}</option>
-									%if language[3] == True:
-									%	enabled_languages.append(str(language[1]))
-									%end
-									%end
-								</select>
+								<div class='field'>
+									<select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
+										<option value="">Languages</option>
+										%enabled_languages = []
+										%for language in settings_languages:
+										<option value="{{language[1]}}">{{language[2]}}</option>
+										%if language[3] == True:
+										%	enabled_languages.append(str(language[1]))
+										%end
+										%end
+									</select>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -499,11 +510,7 @@
 		.tab()
 	;
 
-	$('#settings_general_check_update').click(function(){
-		window.location = '{{base_url}}check_update';
-	})
-
-	$('a:not(.tabs), button:not(.cancel)').click(function(){
+	$('a:not(.tabs), button:not(.cancel, .submit)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -532,4 +539,39 @@
 	$('#settings_providers').dropdown();
 	$('#settings_languages').dropdown();
 	$('#settings_branch').dropdown();
+</script>
+
+<script>
+	// form validation
+	$('#settings_form')
+		.form({
+			fields: {
+	      		settings_general_ip     		: ['regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]', 'empty'],
+	      		settings_general_port   		: ['integer[1..65535]', 'empty'],
+	      		
+				settings_sonarr_ip 				: ['regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]', 'empty'],
+	      		settings_sonarr_port			: ['integer[1..65535]', 'empty'],
+				settings_sonarr_apikey			: ['exactLength[32]', 'empty'],
+
+				settings_subliminal_providers	: ['minCount[1]', 'empty'],
+				settings_subliminal_languages	: ['minCount[1]', 'empty']
+	    	},
+		    inline : true,
+		    on     : 'blur',
+		    onFailure: function(){
+		    	return false;
+		    	alert('Some fields are in error');
+		    },
+			onSuccess: function(){
+				$('#loader').addClass('active');
+			}
+	  	})
+	;
+
+	$('#settings_providers').dropdown('setting', 'onChange', function(){
+		$('.form').form('validate field', 'settings_subliminal_providers');
+	});
+	$('#settings_languages').dropdown('setting', 'onChange', function(){
+		$('.form').form('validate field', 'settings_subliminal_languages');
+	});
 </script>
