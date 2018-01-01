@@ -54,8 +54,19 @@ yellow warning circle \\
 red bug \\
 						%end
 icon"></i></td>
-						<td>{{line[2]}}</td>
-						<td title='{{line[0]}}' class="collapsing">{{pretty.date(int(time.mktime(datetime.datetime.strptime(line[0], "%d/%m/%Y %H:%M:%S").timetuple())))}}</td>
+						<td>\\
+%try:
+{{line[2]}}\\
+%except:
+\\
+%end
+</td>
+						<td title="\\
+%try:
+{{line[0]}}" class="collapsing">{{pretty.date(int(time.mktime(datetime.datetime.strptime(line[0], "%d/%m/%Y %H:%M:%S").timetuple())))}}</td>
+%except:
+" class="collapsing"></td>
+%end
 					</tr>
 				%end
 				</tbody>
