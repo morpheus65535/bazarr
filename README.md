@@ -53,7 +53,6 @@ OS X:
 * Go to your App folder `cd /Applications`
 * Run `git clone https://github.com/morpheus65535/bazarr.git`
 * Go to bazarr folder `cd bazarr`
-* Be sure you have updated [pygit2](http://www.pygit2.org/install.html#installing-on-os-x)
 * Run `pip install -r requirements.txt` to install dependencies.
 * You can now start bazarr via `python bazarr.py` to start bazarr.
 * Open your browser and go to `http://localhost:6767/`
