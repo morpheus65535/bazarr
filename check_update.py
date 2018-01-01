@@ -13,8 +13,9 @@ def check_and_apply_update():
     result = g.pull('origin', branch)
     if result.startswith('Already'):
         logging.info('No new version of Bazarr available.')
+    elif result.startswith('Updating'):
+        logging.info('Bazarr updated to latest version and need to be restarted.')
     else:
-        #logging.info('Bazarr updated to latest version and need to be restarted.')
         logging.info(result)
         updated()
 
