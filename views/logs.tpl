@@ -32,7 +32,13 @@
 				%for log in logs:
 					%line = []
 					%line = log.split('|')
-					<tr class='log' data-message='{{line[2]}}' data-exception="\\
+					<tr class='log' data-message="\\
+%try:
+{{line[2]}}\\
+%except:
+\\
+%end
+" data-exception="\\
 %try:
 {{line[3]}}\\
 %except:
