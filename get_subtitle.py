@@ -16,19 +16,24 @@ else:
     region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
 
 def download_subtitle(path, language, hi, providers, providers_auth):
-    video = scan_video(path)
-    best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
     try:
-        best_subtitle = best_subtitles[video][0]
-    
-        result = save_subtitles(video, [best_subtitle], encoding='utf-8')
-        downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
-        downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
-        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
-    
-        return message
-    except:
+        video = scan_video(path)
+    except Exception as e:
+        logging.exception('Error trying to extract information from this filename: ' + path)
         return None
+    else:
+        best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
+        try:
+            best_subtitle = best_subtitles[video][0]
+        
+            result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+            downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
+            downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
+            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
+        
+            return message
+        except:
+            return None
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
