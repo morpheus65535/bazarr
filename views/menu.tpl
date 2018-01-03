@@ -50,12 +50,13 @@
 												History
 											</a>
 											<a class="item" href="{{base_url}}wanted">
-												<i class="warning sign icon"></i>
+												<i class="warning sign icon">
 												% if wanted[0] > 0:
 													<div class="floating ui tiny yellow label">
 														{{wanted[0]}}
 													</div>
 												% end
+												</i>
 												Wanted
 											</a>
 											<a class="item" href="{{base_url}}settings">
