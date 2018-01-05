@@ -28,14 +28,23 @@ def download_subtitle(path, language, hi, providers, providers_auth):
             logging.exception('Error trying to best subtitles for this file: ' + path)
             return None
         else:
-            best_subtitle = best_subtitles[video][0]
-        
-            result = save_subtitles(video, [best_subtitle], encoding='utf-8')
-            downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
-            downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
-            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
-        
-            return message
+            try:
+            	best_subtitle = best_subtitles[video][0]
+        	except:
+        		return None
+            
+            else:
+            	try:
+            		result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+            	except:
+            		logging.error('Error saving subtitles file to disk.')
+            		return None
+	            else:
+	            	downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
+		            downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
+		            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
+		        
+		            return message
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
