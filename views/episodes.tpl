@@ -48,6 +48,18 @@
 				padding-right: 2em;
 				padding-bottom: 1em;
 			}
+			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
+				background: transparent !important;
+			}
+			.ui.basic.button:active, .ui.basic.buttons .button:active {
+				background: transparent !important;
+			}
+			.ui.basic.button:focus, .ui.basic.buttons .button:focus {
+				background: transparent !important;
+			}
+			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
+				background: transparent !important;
+			}
 		</style>
 
 		<script>
@@ -77,17 +89,37 @@
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
 			<div id="divdetails" class="ui container">
 				<img class="left floated ui image" src="{{base_url}}image_proxy{{details[2]}}">
-				<div class="ui right floated inverted basic buttons">
-					<button id="scan_disk" class="ui button"><i class="refresh icon"></i>Scan disk for subtitles</button>
-					<button id="search_missing_subtitles" class="ui button"><i class="download icon"></i>Download missing subtitles</button>
+				<div class="ui right floated basic icon buttons">
+					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
+					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+					<%
+					subs_languages = ast.literal_eval(str(details[7]))
+					subs_languages_list = []
+					if subs_languages is not None:
+						for subs_language in subs_languages:
+							subs_languages_list.append(subs_language)
+						end
+					end
+					%>
+					<button id="config" class="ui button" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
 				<h2>{{details[0]}}</h2>
 				<p>{{details[1]}}</p>
+				<p style='margin-top: 3em;'>
+					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
+					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{number}} files</div>
+				</p>
+				<p style='margin-top: 2em;'>
+					%for language in subs_languages_list:
+					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
+					%end
+				</p>
 			</div>
 
 			%if len(seasons) == 0:
 				<div id="fondblanc" class="ui container">
-					<h3 class="ui header">No episode file available for this series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
+					<h3 class="ui header">No episode files available for this series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
 				</div>
 			%else:
 				%for season in seasons:
@@ -170,6 +202,63 @@
 				%end
 			%end
 		</div>
+
+		<div class="ui small modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<div id="series_title"></div>
+			</div>
+			<div class="content">
+				<form name="series_form" id="series_form" action="" method="post" class="ui form">
+					<div class="ui grid">
+						<div class="four wide column">
+							<img id="series_poster" class="ui image" src="">
+						</div>
+						<div class="twelve wide column">
+							<div class="ui grid">
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Audio language</label>
+									</div>
+									<div class="nine wide column">
+										<div id="series_audio_language"></div>
+									</div>
+								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Subtitles languages</label>
+									</div>
+									<div class="nine wide column">
+										<select name="languages" id="series_languages" multiple="" class="ui fluid selection dropdown">
+											<option value="">Languages</option>
+											%for language in languages:
+											<option value="{{language[0]}}">{{language[1]}}</option>
+											%end
+										</select>
+									</div>
+								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Hearing-impaired</label>
+									</div>
+									<div class="nine wide column">
+										<div id="series_hearing-impaired_div" class="ui toggle checkbox">
+											<input name="hearing_impaired" id="series_hearing-impaired" type="checkbox">
+											<label></label>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
+				<button type="submit" name="save" value="save" form="series_form" class="ui blue approve button">Save</button>
+			</div>
+		</div>
+
 		% include('footer.tpl')
 	</body>
 </html>
@@ -222,4 +311,31 @@
 	$(document).ajaxStop(function(){
 	    window.location.reload();
 	});
+
+	$('.modal')
+		.modal({
+			autofocus: false
+		})
+	;
+
+	$('#config').click(function(){
+		$('#series_form').attr('action', '{{base_url}}edit_series/{{no}}');
+
+		$("#series_title").html($(this).data("title"));
+		$("#series_poster").attr("src", "{{base_url}}image_proxy" + $(this).data("poster"));
+
+		$("#series_audio_language").html($(this).data("audio"));
+
+		$('#series_languages').dropdown('clear');
+		var languages_array = eval($(this).data("languages"));
+		$('#series_languages').dropdown('set selected',languages_array);
+
+		if ($(this).data("hearing-impaired") == "True") {
+			$("#series_hearing-impaired_div").checkbox('check');
+		} else {
+			$("#series_hearing-impaired_div").checkbox('uncheck');
+		}
+
+		$('.small.modal').modal('show');
+	})
 </script>

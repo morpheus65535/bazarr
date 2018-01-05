@@ -1,4 +1,4 @@
-bazarr_version = '0.2.3'
+bazarr_version = '0.2.5'
 
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
@@ -23,8 +23,8 @@ import urllib
 import math
 
 from init_db import *
-import update_db
-import update_modules
+from update_db import *
+from update_modules import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -204,17 +204,19 @@ def episodes(no):
     c = conn.cursor()
 
     series_details = []
-    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
+    series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path) FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
     tvdbid = series_details[5]
 
     episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    number = len(episodes)
+    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
     episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
     seasons_list = []
     for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
     
-    return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid)
+    return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):

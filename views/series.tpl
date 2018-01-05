@@ -88,7 +88,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{row[0]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -222,7 +222,7 @@
 	$('.config').click(function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
-		$('#series_form').attr('action', '{{base_url}}edit_series/' + $(this).data("tvdbid"));
+		$('#series_form').attr('action', '{{base_url}}edit_series/' + $(this).data("no"));
 
 		$("#series_title").html($(this).data("title"));
 		$("#series_poster").attr("src", "{{base_url}}image_proxy" + $(this).data("poster"));
