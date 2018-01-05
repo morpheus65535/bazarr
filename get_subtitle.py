@@ -22,8 +22,12 @@ def download_subtitle(path, language, hi, providers, providers_auth):
         logging.exception('Error trying to extract information from this filename: ' + path)
         return None
     else:
-        best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
         try:
+            best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
+        except Exception as e:
+            logging.exception('Error trying to best subtitles for this file: ' + path)
+            return None
+        else:
             best_subtitle = best_subtitles[video][0]
         
             result = save_subtitles(video, [best_subtitle], encoding='utf-8')
@@ -32,8 +36,6 @@ def download_subtitle(path, language, hi, providers, providers_auth):
             message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
         
             return message
-        except:
-            return None
 
 def series_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
