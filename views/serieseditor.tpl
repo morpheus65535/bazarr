@@ -40,6 +40,11 @@
 				box-shadow: 0 0 10px 1px #333;
 				padding: 10px;
 			}
+			#bottomform {
+				width: 100%;
+				padding-left: 8em;
+				margin-bottom: -1em !important;
+			}
 		</style>
 	</head>
 	<body>
@@ -92,7 +97,7 @@
 			</table>
 		</div>
 		<div id='bottommenu' class="ui inverted bottom fixed menu">
-			<form style='width: 100%; padding-left: 8em;' action="{{base_url}}edit_serieseditor" method="POST" class="ui form">
+			<form id='bottomform' action="{{base_url}}edit_serieseditor" method="POST" class="ui form">
 				<input type="hidden" name="series" id="checked" />
 				<div class="fields">
 			    	<div class="eight wide field">
