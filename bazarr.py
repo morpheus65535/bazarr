@@ -21,6 +21,7 @@ from io import BytesIO
 from fdsend import send_file
 import urllib
 import math
+import ast
 
 from init_db import *
 from update_db import *
@@ -149,6 +150,24 @@ def series():
     output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
     return output
 
+@route(base_url + 'serieseditor')
+def serieseditor():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db.create_function("path_substitution", 1, path_replace)
+    c = db.cursor()
+
+    c.execute("SELECT COUNT(*) FROM table_shows")
+    missing_count = c.fetchone()
+    missing_count = missing_count[0]
+
+    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY title ASC")
+    data = c.fetchall()
+    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
+    languages = c.fetchall()
+    c.close()
+    output = template('serieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url)
+    return output
+
 @route(base_url + 'series_json/<query>', method='GET')
 def series_json(query):
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -171,12 +190,10 @@ def edit_series(no):
 
     lang = request.forms.getall('languages')
     if len(lang) > 0:
-        if lang[0] == '':
-            lang = None
-        else:
-            pass
+        pass
     else:
-        lang = None
+        lang = 'None'
+    
     hi = request.forms.get('hearing_impaired')
 
     if hi == "on":
@@ -186,11 +203,41 @@ def edit_series(no):
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = conn.cursor()
-    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE tvdbId LIKE ?", (str(lang), hi, no))
+    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (str(lang), hi, no))
     conn.commit()
     c.close()
 
     list_missing_subtitles(no)
+
+    redirect(ref)
+
+@route(base_url + 'edit_serieseditor', method='POST')
+def edit_serieseditor():
+    ref = request.environ['HTTP_REFERER']
+
+    series = request.forms.get('series')
+    series = ast.literal_eval(str('[' + series + ']'))
+    lang = request.forms.getall('languages')
+    hi = request.forms.get('hearing_impaired')
+
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+
+    for serie in series:
+        if len(lang) > 0:
+            if str(lang) == "['None']":
+                lang = 'None'
+            else:
+                lang = str(lang)
+            c.execute("UPDATE table_shows SET languages = ? WHERE sonarrSeriesId LIKE ?", (lang, serie))
+        if hi != '':
+            c.execute("UPDATE table_shows SET hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (hi, serie))
+
+    conn.commit()
+    c.close()
+        
+    for serie in series:
+        list_missing_subtitles(serie)
 
     redirect(ref)
 

@@ -49,6 +49,9 @@
 		% include('menu.tpl')
 
 		<div id="fondblanc" class="ui container">
+			<div class="ui basic buttons">
+				<button id="serieseditor" class="ui button"><i class="configure icon"></i>Series Editor</button>
+			</div>
 			<table id="tableseries" class="ui very basic selectable sortable table">
 				<thead>
 					<tr>
@@ -211,6 +214,10 @@
 	})
 	$('.fast.forward').click(function(){
 		location.href="?page={{int(max_page)}}";
+	})
+
+	$('#serieseditor').click(function(){
+		window.location = '{{base_url}}serieseditor';
 	})
 
 	$('.modal')
