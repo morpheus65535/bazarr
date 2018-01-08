@@ -1,4 +1,4 @@
-bazarr_version = '0.2.5'
+bazarr_version = '0.3.0'
 
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
@@ -15,7 +15,7 @@ import operator
 import requests
 import pycountry
 import pretty
-import datetime
+from datetime import datetime, timedelta
 from PIL import Image
 from io import BytesIO
 from fdsend import send_file
@@ -295,11 +295,26 @@ def history():
     offset = (int(page) - 1) * 15
     max_page = int(math.ceil(row_count / 15.0))
 
+    now = datetime.now()
+    today = []
+    thisweek = []
+    thisyear = []
+    stats = c.execute("SELECT timestamp FROM table_history WHERE action LIKE '1'").fetchall()
+    total = len(stats)
+    for stat in stats:
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
+            today.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
+            thisweek.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
+            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+    stats = [len(today), len(thisweek), len(thisyear), total]
+
     c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('history', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, base_url=base_url)
+    return template('history', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
 
 @route(base_url + 'wanted')
 def wanted():

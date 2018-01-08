@@ -34,6 +34,15 @@
 			}
 			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
 			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
+			#bottommenu {
+				background-color: #333333;
+				box-shadow: 0 0 10px 1px #333;
+				padding: 10px;
+				margin-bottom: -2em !important;
+			}
+			.label, .value {
+				color: white !important;
+			}
 		</style>
 	</head>
 	<body>
@@ -116,7 +125,54 @@
 				</div>
 			</div>
 		</div>
+		<div id='bottommenu' class="ui fluid inverted bottom fixed five item menu">
+			<div class="ui statistics">
+				<div class="statistic">
+			    	<div class="text value">
+			    		<br>
+			    		Statistics
+			    	</div>
+			    	<div class="label">
+			    		
+			    	</div>
+			    </div>
+			    <div class="statistic">
+			    	<div class="value">
+			    		{{stats[0]}}
+			    	</div>
+			    	<div class="label">
+			    		Today
+			    	</div>
+			    </div>
+			    <div class="statistic">
+			    	<div class="value">
+			    		{{stats[1]}}
+			    	</div>
+			    	<div class="label">
+			    		This week
+			    	</div>
+			    </div>
+			    <div class="statistic">
+			    	<div class="value">
+			    		{{stats[2]}}
+			    	</div>
+			    	<div class="label">
+			    		This year
+		    		</div>
+			    </div>
+			    <div class="statistic">
+			    	<div class="value">
+			    		{{stats[3]}}
+			    	</div>
+			    	<div class="label">
+			    		Total
+			    	</div>
+			    </div>
+			</div>
+		</div>
+
 		% include('footer.tpl')
+		<br><br><br><br>
 	</body>
 </html>
 
