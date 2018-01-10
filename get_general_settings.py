@@ -26,8 +26,9 @@ def get_general_settings():
     log_level = general_settings[4]
     branch = general_settings[5]
     automatic = general_settings[6]
+    single_language = general_settings[9]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -59,3 +60,4 @@ path_mappings = result[3]
 log_level = result[4]
 branch = result[5]
 automatic = result[6]
+single_language = result[7]

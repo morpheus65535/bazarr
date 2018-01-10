@@ -34,8 +34,12 @@ def download_subtitle(path, language, hi, providers, providers_auth):
                 pass
                 return None
             else:
+                single = get_general_settings()[7]
                 try:
-                    result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                    if single == 'True':
+                        result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                    else:
+                        result = save_subtitles(video, [best_subtitle], encoding='utf-8')
                 except:
                     logging.error('Error saving subtitles file to disk.')
                     return None

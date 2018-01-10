@@ -5,6 +5,7 @@ from subliminal import *
 import pycountry
 import sqlite3
 import ast
+import langdetect
 
 from get_general_settings import *
 
@@ -21,8 +22,7 @@ def list_subtitles(file):
                     try:
                         languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
                     except:
-                        print subtitle_track.language
-                        #pass
+                        pass
             except:
                 print file
                 #pass
@@ -30,7 +30,15 @@ def list_subtitles(file):
         subtitles = core.search_external_subtitles(file)
         
         for subtitle, language in subtitles.iteritems():
-            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            if str(language) != 'und':
+                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            else:
+                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                    text = [next(f) for x in xrange(5)]
+                    text = ' '.join(text).decode('iso-8859-1')
+                    detected_language = langdetect.detect(text)
+                    if len(detected_language) > 0:
+                        actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
 
     return actual_subtitles
 
@@ -55,7 +63,15 @@ def store_subtitles(file):
         subtitles = core.search_external_subtitles(file)
         
         for subtitle, language in subtitles.iteritems():
-            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            if str(language) != 'und':
+                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            else:
+                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                    text = [next(f) for x in xrange(5)]
+                    text = ' '.join(text).decode('iso-8859-1')
+                    detected_language = langdetect.detect(text)
+                    if len(detected_language) > 0:
+                        actual_subtitles.append([str(detected_language), unicode(path_replace_reverse(os.path.join(os.path.dirname(file), subtitle)))])
         
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()

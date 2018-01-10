@@ -7,18 +7,20 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
     
-    # Execute table modification
+    # Execute tables modifications
     try:
         c.execute('alter table table_settings_providers add column "username" "text"')
-        c.execute('UPDATE table_settings_providers SET username=""')
     except:
         pass
+    else:
+        c.execute('UPDATE table_settings_providers SET username=""')
 
     try:
         c.execute('alter table table_settings_providers add column "password" "text"')
-        c.execute('UPDATE table_settings_providers SET password=""')
     except:
         pass
+    else:
+        c.execute('UPDATE table_settings_providers SET password=""')
 
     try:
         c.execute('alter table table_shows add column "audio_language" "text"')
@@ -30,6 +32,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('alter table table_settings_general add column "updated" "integer"')
     except:
         pass
+
+    try:
+        c.execute('alter table table_settings_general add column "single_language" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET single_language="False"')
 
     # Commit change to db
     db.commit()
