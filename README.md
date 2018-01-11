@@ -2,7 +2,7 @@
 Bazarr is a companion application to Sonarr. It manage and download subtitles based on your requirements. You defined your preferences by TV show and Bazarr take care of everything for you.
 
 # Support
-For installation and configuration instructions, see wiki.
+For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
 
 If you find a bug or want to submit a feature request, please open an issue on Github. You can also reach me on Discord: https://discord.gg/MH2e2eb
 
