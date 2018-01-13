@@ -6,6 +6,7 @@ import pycountry
 import sqlite3
 import ast
 import langdetect
+import chardet
 
 from get_general_settings import *
 
@@ -35,7 +36,9 @@ def list_subtitles(file):
             else:
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
                     text = [next(f) for x in xrange(5)]
-                    text = ' '.join(text).decode('iso-8859-1')
+                    text = ' '.join(text)
+                    encoding = chardet.detect(text)['encoding']
+                    text = text.decode(encoding)
                     detected_language = langdetect.detect(text)
                     if len(detected_language) > 0:
                         actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
@@ -67,7 +70,7 @@ def store_subtitles(file):
                 actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
             else:
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = [next(f) for x in xrange(5)]
+                    text = [next(f) for x in xrange(20)]
                     text = ' '.join(text).decode('iso-8859-1')
                     detected_language = langdetect.detect(text)
                     if len(detected_language) > 0:
