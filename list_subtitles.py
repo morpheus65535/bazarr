@@ -39,10 +39,14 @@ def store_subtitles(file):
                     text = list(islice(f, 20))
                     text = ' '.join(text)
                     encoding = chardet.detect(text)['encoding']
-                    text = text.decode(encoding)
-                    detected_language = langdetect.detect(text)
-                    if len(detected_language) > 0:
-                        actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                    try:
+                        text = text.decode(encoding)
+                    except Exception as e:
+                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)))
+                    else:
+                        detected_language = langdetect.detect(text)
+                        if len(detected_language) > 0:
+                            actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
