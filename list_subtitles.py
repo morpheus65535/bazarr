@@ -7,6 +7,7 @@ import sqlite3
 import ast
 import langdetect
 import chardet
+from itertools import islice
 
 from get_general_settings import *
 
@@ -35,7 +36,7 @@ def store_subtitles(file):
                 actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
             else:
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = [next(f) for x in xrange(20)]
+                    text = list(islice(f, 20))
                     text = ' '.join(text)
                     encoding = chardet.detect(text)['encoding']
                     text = text.decode(encoding)
