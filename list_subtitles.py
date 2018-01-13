@@ -10,41 +10,6 @@ import chardet
 
 from get_general_settings import *
 
-def list_subtitles(file):
-    languages = []
-    actual_subtitles = []
-    if os.path.exists(file):
-        if os.path.splitext(file)[1] == '.mkv':
-            try:
-                with open(file, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                
-                for subtitle_track in mkv.subtitle_tracks:
-                    try:
-                        languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
-                    except:
-                        pass
-            except:
-                print file
-                #pass
-
-        subtitles = core.search_external_subtitles(file)
-        
-        for subtitle, language in subtitles.iteritems():
-            if str(language) != 'und':
-                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-            else:
-                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = [next(f) for x in xrange(5)]
-                    text = ' '.join(text)
-                    encoding = chardet.detect(text)['encoding']
-                    text = text.decode(encoding)
-                    detected_language = langdetect.detect(text)
-                    if len(detected_language) > 0:
-                        actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-
-    return actual_subtitles
-
 def store_subtitles(file):
     languages = []
     actual_subtitles = []
@@ -71,10 +36,12 @@ def store_subtitles(file):
             else:
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
                     text = [next(f) for x in xrange(20)]
-                    text = ' '.join(text).decode('iso-8859-1')
+                    text = ' '.join(text)
+                    encoding = chardet.detect(text)['encoding']
+                    text = text.decode(encoding)
                     detected_language = langdetect.detect(text)
                     if len(detected_language) > 0:
-                        actual_subtitles.append([str(detected_language), unicode(path_replace_reverse(os.path.join(os.path.dirname(file), subtitle)))])
+                        actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
