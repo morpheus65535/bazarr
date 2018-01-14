@@ -6,7 +6,7 @@ import pycountry
 import sqlite3
 import ast
 import langdetect
-import chardet
+from bs4 import UnicodeDammit
 from itertools import islice
 
 from get_general_settings import *
@@ -38,9 +38,9 @@ def store_subtitles(file):
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
                     text = list(islice(f, 20))
                     text = ' '.join(text)
-                    encoding = chardet.detect(text)['encoding']
+                    encoding = UnicodeDammit(text)
                     try:
-                        text = text.decode(encoding)
+                        text = text.decode(encoding.original_encoding)
                     except Exception as e:
                         logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)))
                     else:
