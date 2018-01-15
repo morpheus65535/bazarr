@@ -42,7 +42,7 @@ def store_subtitles(file):
                     try:
                         text = text.decode(encoding.original_encoding)
                     except Exception as e:
-                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)))
+                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                     else:
                         detected_language = langdetect.detect(text)
                         if len(detected_language) > 0:
