@@ -1,16 +1,18 @@
-FROM debian:buster
+FROM python:2.7.14-alpine3.6
 
 ENV LANG C.UTF-8  
 ENV LC_ALL C.UTF-8
 
-EXPOSE  6767
-
 VOLUME /tv
 
-RUN apt-get update && \
-	apt-get install -y python-dev python-pip python-setuptools libjpeg-dev zlib1g-dev git libffi-dev && \
-	pip install -r /bazarr/requirements.txt
+RUN apk add --update git py-pip jpeg-dev && \
+    apk add --update --virtual build-dependencies build-base python-dev libffi-dev zlib-dev  && \
+    git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr && \
+    pip install -r /bazarr/requirements.txt && \
+    apk del --purge build-dependencies
 
 VOLUME /bazarr/data
+
+EXPOSE 6767
 
 CMD ["python", "/bazarr/bazarr.py"]
