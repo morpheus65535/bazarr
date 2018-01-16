@@ -5,34 +5,11 @@ from subliminal import *
 import pycountry
 import sqlite3
 import ast
+import langdetect
+from bs4 import UnicodeDammit
+from itertools import islice
 
 from get_general_settings import *
-
-def list_subtitles(file):
-    languages = []
-    actual_subtitles = []
-    if os.path.exists(file):
-        if os.path.splitext(file)[1] == '.mkv':
-            try:
-                with open(file, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                
-                for subtitle_track in mkv.subtitle_tracks:
-                    try:
-                        languages.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
-                    except:
-                        print subtitle_track.language
-                        #pass
-            except:
-                print file
-                #pass
-
-        subtitles = core.search_external_subtitles(file)
-        
-        for subtitle, language in subtitles.iteritems():
-            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-
-    return actual_subtitles
 
 def store_subtitles(file):
     languages = []
@@ -55,7 +32,21 @@ def store_subtitles(file):
         subtitles = core.search_external_subtitles(file)
         
         for subtitle, language in subtitles.iteritems():
-            actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            if str(language) != 'und':
+                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            else:
+                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                    text = list(islice(f, 20))
+                    text = ' '.join(text)
+                    encoding = UnicodeDammit(text)
+                    try:
+                        text = text.decode(encoding.original_encoding)
+                    except Exception as e:
+                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                    else:
+                        detected_language = langdetect.detect(text)
+                        if len(detected_language) > 0:
+                            actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()

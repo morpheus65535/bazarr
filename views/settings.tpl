@@ -478,6 +478,25 @@
 					<div class="ui grid">
 						<div class="middle aligned row">
 							<div class="right aligned four wide column">
+								<label>Single language</label>
+							</div>
+							<div class="one wide column">
+								<div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings_general[9]}}>
+							    	<input name="settings_general_single_language" type="checkbox">
+							    	<label></label>
+							    </div>
+							</div>
+							<div class="collapsed column">
+								<div class="collapsed center aligned column">
+									<div class="ui basic icon" data-tooltip="Download a single subtitles file and don't add the language code to the filename." data-inverted="">
+										<i class="help circle large icon"></i>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="middle aligned row">
+							<div class="right aligned four wide column">
 								<label>Enabled languages</label>
 							</div>
 							<div class="eleven wide column">
@@ -524,6 +543,12 @@
 				$("#settings_automatic_div").checkbox('check');
 			} else {
 				$("#settings_automatic_div").checkbox('uncheck');
+			}
+	
+	if ($('#settings_single_language').data("single-language") == "True") {
+				$("#settings_single_language").checkbox('check');
+			} else {
+				$("#settings_single_language").checkbox('uncheck');
 			}
 	
 	$('#settings_loglevel').dropdown('clear');

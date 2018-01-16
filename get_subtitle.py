@@ -10,10 +10,7 @@ from list_subtitles import *
 from utils import *
 
 # configure the cache
-if os.name == 'nt':
-    region.configure('dogpile.cache.memory')
-else:
-    region.configure('dogpile.cache.dbm', arguments={'filename': os.path.join(os.path.dirname(__file__), 'data/cache/cachefile.dbm')})
+region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth):
     try:
@@ -34,8 +31,12 @@ def download_subtitle(path, language, hi, providers, providers_auth):
                 pass
                 return None
             else:
+                single = get_general_settings()[7]
                 try:
-                    result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                    if single == 'True':
+                        result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                    else:
+                        result = save_subtitles(video, [best_subtitle], encoding='utf-8')
                 except:
                     logging.error('Error saving subtitles file to disk.')
                     return None

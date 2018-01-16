@@ -10,8 +10,6 @@ def update_series():
     url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
 
-    get_profile_list()
-
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -19,6 +17,8 @@ def update_series():
     if apikey_sonarr == None:
         pass
     else:
+        get_profile_list()
+    
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         r = requests.get(url_sonarr_api_series)
@@ -50,7 +50,7 @@ def update_series():
             try:
                 c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId'])))
             except:
-                c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,profile_id_to_language(show['qualityProfileId']),show["tvdbId"]))
+                c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),show["tvdbId"]))
 
         # Delete shows not in Sonarr anymore
         deleted_items = []
@@ -74,14 +74,25 @@ def get_profile_list():
     # Get profiles data from Sonarr
     url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
     profiles_json = requests.get(url_sonarr_api_series)
+    url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+    profiles_json_v3 = requests.get(url_sonarr_api_series_v3)
     global profiles_list
     profiles_list = []
 
     # Parsing data returned from Sonarr
-    for profile in profiles_json.json():
-        profiles_list.append([profile['id'], profile['language'].capitalize()])
+    global sonarr_version
+    if type(profiles_json_v3.json()) != list:
+        sonarr_version = 2
+        for profile in profiles_json.json():
+            profiles_list.append([profile['id'], profile['language'].capitalize()])
+    else:
+        sonarr_version = 3
+        for profile in profiles_json_v3.json():
+            profiles_list.append([profile['id'], profile['name'].capitalize()])
 
 def profile_id_to_language(id):
     for profile in profiles_list:
         if id == profile[0]:
             return profile[1]
+
+update_series()
