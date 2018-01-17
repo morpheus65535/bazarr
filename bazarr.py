@@ -227,7 +227,7 @@ def edit_serieseditor():
     c = conn.cursor()
 
     for serie in series:
-        if len(lang) > 0:
+        if str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
