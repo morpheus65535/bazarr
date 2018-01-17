@@ -77,7 +77,7 @@ red bug icon \\
 			</table>
 		</div>
 
-		<div class="ui small modal">
+		<div id="modal" class="ui small modal">
 			<i class="close icon"></i>
 			<div class="header">
 				<div>Details</div>
@@ -109,6 +109,6 @@ red bug icon \\
 	$('.log').click(function(){
 		$("#message").html($(this).data("message"));
 		$("#exception").html($(this).data("exception"));
-		$('.small.modal').modal('show');
+		$('#modal').modal('show');
 	})
 </script>

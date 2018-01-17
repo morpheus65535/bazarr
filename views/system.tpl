@@ -80,6 +80,9 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
+				<div class="ui left floated basic buttons">
+					<button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
+				</div>
 				<div class="ui right floated basic buttons">
 					<button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
 					<button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
@@ -155,6 +158,10 @@
 	})
 	$('.fast.forward').click(function(){
 		loadURL({{int(max_page)}});
+	})
+
+	$('#refresh_log').click(function(){
+		loadURL(current_page);
 	})
 
 	$('#download_log').click(function(){
