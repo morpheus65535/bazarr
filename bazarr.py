@@ -2,7 +2,7 @@ bazarr_version = '0.3.2'
 
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), 'libs/'))
+sys.path.insert(0,os.path.join(os.path.dirname(__file__), 'libs/'))
 
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
