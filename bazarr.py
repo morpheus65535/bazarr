@@ -1,11 +1,14 @@
 bazarr_version = '0.3.2'
 
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), 'libs/'))
+
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
-import os
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 
 import sqlite3
