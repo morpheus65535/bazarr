@@ -39,6 +39,9 @@
 			
 		<div id="fondblanc" class="ui container">
 			<form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form">
+			<div id="form_validation_error" class="ui error message">
+				<p>Some fields are in error and you can't save settings until you have corrected them.</p>
+			</div>
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="general">General</a>
 				<a class="tabs item" data-tab="sonarr">Sonarr</a>
@@ -420,12 +423,12 @@
 							%end
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_addic7ed_username" type="text" value="{{addic7ed_username}}">
+									<input name="settings_addic7ed_username" type="text" value="{{addic7ed_username if addic7ed_username != None else ''}}">
 								</div>
 							</div>
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_addic7ed_password" type="password" value="{{addic7ed_password}}">
+									<input name="settings_addic7ed_password" type="password" value="{{addic7ed_password if addic7ed_password != None else ''}}">
 								</div>
 							</div>
 						</div>
@@ -441,12 +444,12 @@
 							%end
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_legendastv_username" type="text" value="{{legendastv_username}}">
+									<input name="settings_legendastv_username" type="text" value="{{legendastv_username if legendastv_username != None else ''}}">
 								</div>
 							</div>
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_legendastv_password" type="password" value="{{legendastv_password}}">
+									<input name="settings_legendastv_password" type="password" value="{{legendastv_password if legendastv_password != None else ''}}">
 								</div>
 							</div>
 						</div>
@@ -462,12 +465,12 @@
 							%end
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_opensubtitles_username" type="text" value="{{opensubtitles_username}}">
+									<input name="settings_opensubtitles_username" type="text" value="{{opensubtitles_username if opensubtitles_username != None else ''}}">
 								</div>
 							</div>
 							<div class="five wide column">
 								<div class="ui fluid input">
-									<input name="settings_opensubtitles_password" type="password" value="{{opensubtitles_password}}">
+									<input name="settings_opensubtitles_password" type="password" value="{{opensubtitles_password if opensubtitles_password != None else ''}}">
 								</div>
 							</div>
 						</div>
@@ -529,7 +532,7 @@
 		.tab()
 	;
 
-	$('a:not(.tabs), button:not(.cancel, .submit)').click(function(){
+	$('a:not(.tabs), button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -583,9 +586,16 @@
 	    	},
 		    inline : true,
 		    on     : 'blur',
+		    onValid: function(){
+		    	$('#form_validation_error').hide();
+		    	$('.submit').removeClass('disabled');
+		    },
+		    onInvalid: function(){
+		    	$('#form_validation_error').show();
+		    	$('.submit').addClass('disabled');
+		    },
 		    onFailure: function(){
 		    	return false;
-		    	alert('Some fields are in error');
 		    },
 			onSuccess: function(){
 				$('#loader').addClass('active');
@@ -598,5 +608,14 @@
 	});
 	$('#settings_languages').dropdown('setting', 'onChange', function(){
 		$('.form').form('validate field', 'settings_subliminal_languages');
+	});
+
+	$('.submit').click(function() {
+		alert('Settings saved.');
+	})
+
+	$( document ).ready(function() {
+	    $('.form').form('validate form');
+	    $('#loader').removeClass('active');
 	});
 </script>
