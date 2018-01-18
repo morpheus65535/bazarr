@@ -94,5 +94,3 @@ def profile_id_to_language(id):
     for profile in profiles_list:
         if id == profile[0]:
             return profile[1]
-
-update_series()
