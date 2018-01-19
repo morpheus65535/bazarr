@@ -16,19 +16,6 @@ def update_all_episodes():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
 
-    # Get Sonarr API URL from database config table
-    c.execute('''SELECT * FROM table_settings_sonarr''')
-    config_sonarr = c.fetchone()
-    if config_sonarr[3] == 1:
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-    if config_sonarr[2] == "":
-        base_url_sonarr = ""
-    else:
-        base_url_sonarr = "/" + config_sonarr[2].strip("/")
-    apikey_sonarr = config_sonarr[4]
-
     # Get current episodes id in DB
     current_episodes_db = c.execute('SELECT sonarrEpisodeId FROM table_episodes').fetchall()
     current_episodes_db_list = [x[0] for x in current_episodes_db]
@@ -39,7 +26,7 @@ def update_all_episodes():
     seriesIdList = c.fetchall()
     for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = protocol_sonarr + "://" + config_sonarr[0] + ":" + str(config_sonarr[1]) + base_url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
+        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         r = requests.get(url_sonarr_api_episode)
         for episode in r.json():
             if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
@@ -85,19 +72,6 @@ def add_new_episodes():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
 
-    # Get Sonarr API URL from database config table
-    c.execute('''SELECT * FROM table_settings_sonarr''')
-    config_sonarr = c.fetchone()
-    if config_sonarr[3] == 1:
-        protocol_sonarr = "https"
-    else:
-        protocol_sonarr = "http"
-    if config_sonarr[2] == "":
-        base_url_sonarr = ""
-    else:
-        base_url_sonarr = "/" + config_sonarr[2].strip("/")
-    apikey_sonarr = config_sonarr[4]
-
     if apikey_sonarr == None:
         # Close database connection
         c.close()
@@ -113,7 +87,7 @@ def add_new_episodes():
         seriesIdList = c.fetchall()
         for seriesId in seriesIdList:
             # Get episodes data for a series from Sonarr
-            url_sonarr_api_episode = protocol_sonarr + "://" + config_sonarr[0] + ":" + str(config_sonarr[1]) + base_url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
+            url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
             r = requests.get(url_sonarr_api_episode)
             for episode in r.json():
                 if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
