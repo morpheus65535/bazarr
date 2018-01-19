@@ -230,7 +230,7 @@ def edit_serieseditor():
     c = conn.cursor()
 
     for serie in series:
-        if str(lang) != "['']":
+        if str(lang) != "[]" and str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
