@@ -8,6 +8,7 @@ from pycountry import *
 from get_general_settings import *
 from list_subtitles import *
 from utils import *
+from notifier import send_notifications
 
 # configure the cache
 region.configure('dogpile.cache.memory')
@@ -44,7 +45,7 @@ def download_subtitle(path, language, hi, providers, providers_auth):
                     downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                     downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
                     message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
-                
+
                     return message
 
 def series_download_subtitles(no):
@@ -78,6 +79,7 @@ def series_download_subtitles(no):
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 history_log(1, no, episode[2], message)
+                send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
 
 def wanted_download_subtitles(path):
@@ -111,6 +113,7 @@ def wanted_download_subtitles(path):
                 store_subtitles(path_replace(episode[0]))
                 list_missing_subtitles(episode[3])
                 history_log(1, episode[3], episode[2], message)
+                send_notifications(episode[3], episode[2], message)
 
 def wanted_search_missing_subtitles():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)

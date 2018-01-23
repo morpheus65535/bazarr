@@ -86,6 +86,7 @@ from list_subtitles import *
 from get_subtitle import *
 from utils import *
 from scheduler import *
+from notifier import send_notifications
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -362,8 +363,10 @@ def settings():
     settings_providers = c.fetchall()
     c.execute("SELECT * FROM table_settings_sonarr")
     settings_sonarr = c.fetchone()
+    c.execute("SELECT * FROM table_settings_notifier")
+    settings_notifier = c.fetchall()
     c.close()
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
 def save_settings():
@@ -430,7 +433,152 @@ def save_settings():
     c.execute("UPDATE table_settings_languages SET enabled = 0")
     for item in settings_subliminal_languages:
         c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
-    
+
+    settings_notifier_Boxcar_enabled = request.forms.get('settings_notifier_Boxcar_enabled')
+    if settings_notifier_Boxcar_enabled == 'on':
+        settings_notifier_Boxcar_enabled = 1
+    else:
+        settings_notifier_Boxcar_enabled = 0
+    settings_notifier_Boxcar_url = request.forms.get('settings_notifier_Boxcar_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Boxcar'", (settings_notifier_Boxcar_enabled, settings_notifier_Boxcar_url))
+
+    settings_notifier_Faast_enabled = request.forms.get('settings_notifier_Faast_enabled')
+    if settings_notifier_Faast_enabled == 'on':
+        settings_notifier_Faast_enabled = 1
+    else:
+        settings_notifier_Faast_enabled = 0
+    settings_notifier_Faast_url = request.forms.get('settings_notifier_Faast_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Faast'", (settings_notifier_Faast_enabled, settings_notifier_Faast_url))
+
+    settings_notifier_Growl_enabled = request.forms.get('settings_notifier_Growl_enabled')
+    if settings_notifier_Growl_enabled == 'on':
+        settings_notifier_Growl_enabled = 1
+    else:
+        settings_notifier_Growl_enabled = 0
+    settings_notifier_Growl_url = request.forms.get('settings_notifier_Growl_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Growl'", (settings_notifier_Growl_enabled, settings_notifier_Growl_url))
+
+    settings_notifier_Join_enabled = request.forms.get('settings_notifier_Join_enabled')
+    if settings_notifier_Join_enabled == 'on':
+        settings_notifier_Join_enabled = 1
+    else:
+        settings_notifier_Join_enabled = 0
+    settings_notifier_Join_url = request.forms.get('settings_notifier_Join_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Join'", (settings_notifier_Join_enabled, settings_notifier_Join_url))
+
+    settings_notifier_KODI_enabled = request.forms.get('settings_notifier_KODI_enabled')
+    if settings_notifier_KODI_enabled == 'on':
+        settings_notifier_KODI_enabled = 1
+    else:
+        settings_notifier_KODI_enabled = 0
+    settings_notifier_KODI_url = request.forms.get('settings_notifier_KODI_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'KODI'", (settings_notifier_KODI_enabled, settings_notifier_KODI_url))
+
+    settings_notifier_Mattermost_enabled = request.forms.get('settings_notifier_Mattermost_enabled')
+    if settings_notifier_Mattermost_enabled == 'on':
+        settings_notifier_Mattermost_enabled = 1
+    else:
+        settings_notifier_Mattermost_enabled = 0
+    settings_notifier_Mattermost_url = request.forms.get('settings_notifier_Mattermost_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Mattermost'", (settings_notifier_Mattermost_enabled, settings_notifier_Mattermost_url))
+
+    settings_notifier_NMA_enabled = request.forms.get('settings_notifier_Notify My Android_enabled')
+    if settings_notifier_NMA_enabled == 'on':
+        settings_notifier_NMA_enabled = 1
+    else:
+        settings_notifier_NMA_enabled = 0
+    settings_notifier_NMA_url = request.forms.get('settings_notifier_Notify My Android_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Notify My Android'", (settings_notifier_NMA_enabled, settings_notifier_NMA_url))
+
+    settings_notifier_Prowl_enabled = request.forms.get('settings_notifier_Prowl_enabled')
+    if settings_notifier_Prowl_enabled == 'on':
+        settings_notifier_Prowl_enabled = 1
+    else:
+        settings_notifier_Prowl_enabled = 0
+    settings_notifier_Prowl_url = request.forms.get('settings_notifier_Prowl_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Prowl'", (settings_notifier_Prowl_enabled, settings_notifier_Prowl_url))
+
+    settings_notifier_Pushalot_enabled = request.forms.get('settings_notifier_Pushalot_enabled')
+    if settings_notifier_Pushalot_enabled == 'on':
+        settings_notifier_Pushalot_enabled = 1
+    else:
+        settings_notifier_Pushalot_enabled = 0
+    settings_notifier_Pushalot_url = request.forms.get('settings_notifier_Pushalot_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushalot'", (settings_notifier_Pushalot_enabled, settings_notifier_Pushalot_url))
+
+    settings_notifier_PushBullet_enabled = request.forms.get('settings_notifier_PushBullet_enabled')
+    if settings_notifier_PushBullet_enabled == 'on':
+        settings_notifier_PushBullet_enabled = 1
+    else:
+        settings_notifier_PushBullet_enabled = 0
+    settings_notifier_PushBullet_url = request.forms.get('settings_notifier_PushBullet_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'PushBullet'", (settings_notifier_PushBullet_enabled, settings_notifier_PushBullet_url))
+
+    settings_notifier_Pushjet_enabled = request.forms.get('settings_notifier_Pushjet_enabled')
+    if settings_notifier_Pushjet_enabled == 'on':
+        settings_notifier_Pushjet_enabled = 1
+    else:
+        settings_notifier_Pushjet_enabled = 0
+    settings_notifier_Pushjet_url = request.forms.get('settings_notifier_Pushjet_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushjet'", (settings_notifier_Pushjet_enabled, settings_notifier_Pushjet_url))
+
+    settings_notifier_Pushover_enabled = request.forms.get('settings_notifier_Pushover_enabled')
+    if settings_notifier_Pushover_enabled == 'on':
+        settings_notifier_Pushover_enabled = 1
+    else:
+        settings_notifier_Pushover_enabled = 0
+    settings_notifier_Pushover_url = request.forms.get('settings_notifier_Pushover_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushover'", (settings_notifier_Pushover_enabled, settings_notifier_Pushover_url))
+
+    settings_notifier_RocketChat_enabled = request.forms.get('settings_notifier_Rocket.Chat_enabled')
+    if settings_notifier_RocketChat_enabled == 'on':
+        settings_notifier_RocketChat_enabled = 1
+    else:
+        settings_notifier_RocketChat_enabled = 0
+    settings_notifier_RocketChat_url = request.forms.get('settings_notifier_Rocket.Chat_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Rocket.Chat'", (settings_notifier_RocketChat_enabled, settings_notifier_RocketChat_url))
+
+    settings_notifier_Slack_enabled = request.forms.get('settings_notifier_Slack_enabled')
+    if settings_notifier_Slack_enabled == 'on':
+        settings_notifier_Slack_enabled = 1
+    else:
+        settings_notifier_Slack_enabled = 0
+    settings_notifier_Slack_url = request.forms.get('settings_notifier_Slack_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Slack'", (settings_notifier_Slack_enabled, settings_notifier_Slack_url))
+
+    settings_notifier_SuperToasty_enabled = request.forms.get('settings_notifier_Super Toasty_enabled')
+    if settings_notifier_SuperToasty_enabled == 'on':
+        settings_notifier_SuperToasty_enabled = 1
+    else:
+        settings_notifier_SuperToasty_enabled = 0
+    settings_notifier_SuperToasty_url = request.forms.get('settings_notifier_Super Toasty_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Super Toasty'", (settings_notifier_SuperToasty_enabled, settings_notifier_SuperToasty_url))
+
+    settings_notifier_Telegram_enabled = request.forms.get('settings_notifier_Telegram_enabled')
+    if settings_notifier_Telegram_enabled == 'on':
+        settings_notifier_Telegram_enabled = 1
+    else:
+        settings_notifier_Telegram_enabled = 0
+    settings_notifier_Telegram_url = request.forms.get('settings_notifier_Telegram_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Telegram'", (settings_notifier_Telegram_enabled, settings_notifier_Telegram_url))
+
+    settings_notifier_Twitter_enabled = request.forms.get('settings_notifier_Twitter_enabled')
+    if settings_notifier_Twitter_enabled == 'on':
+        settings_notifier_Twitter_enabled = 1
+    else:
+        settings_notifier_Twitter_enabled = 0
+    settings_notifier_Twitter_url = request.forms.get('settings_notifier_Twitter_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Twitter'", (settings_notifier_Twitter_enabled, settings_notifier_Twitter_url))
+
+    settings_notifier_XBMC_enabled = request.forms.get('settings_notifier_XBMC_enabled')
+    if settings_notifier_XBMC_enabled == 'on':
+        settings_notifier_XBMC_enabled = 1
+    else:
+        settings_notifier_XBMC_enabled = 0
+    settings_notifier_XBMC_url = request.forms.get('settings_notifier_XBMC_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'XBMC'", (settings_notifier_XBMC_enabled, settings_notifier_XBMC_url))
+
+
     conn.commit()
     c.close()
 
@@ -619,6 +767,7 @@ def get_subtitle():
             result = download_subtitle(episodePath, language, hi, providers_list, providers_auth)
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
+                send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(episodePath)
                 list_missing_subtitles(sonarrSeriesId)
             redirect(ref)
