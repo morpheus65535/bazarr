@@ -1,7 +1,7 @@
-FROM python:2.7.14-alpine3.6
+FROM lsiobase/alpine.python:3.7
 
-ENV LANG C.UTF-8  
-ENV LC_ALL C.UTF-8
+# set python to use utf-8 rather than ascii.
+ENV PYTHONIOENCODING="UTF-8"
 
 VOLUME /tv
 
