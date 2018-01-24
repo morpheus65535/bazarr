@@ -36,7 +36,7 @@ def store_subtitles(file):
                 actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
             else:
                 with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = list(islice(f, 20))
+                    text = list(islice(f, 100))
                     text = ' '.join(text)
                     encoding = UnicodeDammit(text)
                     try:
