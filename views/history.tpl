@@ -141,7 +141,7 @@
 			    		{{stats[0]}}
 			    	</div>
 			    	<div class="label">
-			    		Today
+			    		Since 24 hours
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -149,7 +149,7 @@
 			    		{{stats[1]}}
 			    	</div>
 			    	<div class="label">
-			    		This week
+			    		Since one week
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -157,7 +157,7 @@
 			    		{{stats[2]}}
 			    	</div>
 			    	<div class="label">
-			    		This year
+			    		Since one year
 		    		</div>
 			    </div>
 			    <div class="statistic">
