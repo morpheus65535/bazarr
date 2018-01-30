@@ -12,7 +12,7 @@ bottle.TEMPLATES.clear()
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 
 import sqlite3
-import json
+from json import dumps
 import itertools
 import operator
 import requests
@@ -780,6 +780,23 @@ def configured():
     c.execute("UPDATE table_settings_general SET configured = 1")
     conn.commit()
     c.close()
+
+@route(base_url + 'api/wanted')
+def api_wanted():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC").fetchall()
+    c.close()
+    return dict(subtitles=data)
+
+@route(base_url + 'api/history')
+def api_history():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')) FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
+    c.close()
+    return dict(subtitles=data)
+
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress')
