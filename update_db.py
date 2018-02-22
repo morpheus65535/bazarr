@@ -49,6 +49,15 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         for provider in providers:
             c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider,'0'))
 
+    try:
+        c.execute('alter table table_episodes add column "scene_name" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from get_episodes import update_all_episodes
+        update_all_episodes()
+
     # Commit change to db
     db.commit()
 

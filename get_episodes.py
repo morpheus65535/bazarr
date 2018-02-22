@@ -32,12 +32,15 @@ def update_all_episodes():
             if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
                 # Add shows in Sonarr to current shows list
                 current_episodes_sonarr.append(episode['id'])
-
+                if 'sceneName' in episode['episodeFile']:
+                    sceneName = episode['episodeFile']['sceneName']
+                else:
+                    sceneName = None
                 try:
-                    c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode) VALUES (?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber']))
+                    c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
                     db.commit()
                 except sqlite3.Error:
-                    c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ? WHERE sonarrEpisodeId = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], episode['id']))
+                    c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ?, scene_name = ? WHERE sonarrEpisodeId = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, episode['id']))
                     db.commit()
             else:
                 continue
@@ -93,9 +96,12 @@ def add_new_episodes():
                 if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
                     # Add shows in Sonarr to current shows list
                     current_episodes_sonarr.append(episode['id'])
-
+                    if 'sceneName' in episode['episodeFile']:
+                        sceneName = episode['episodeFile']['sceneName']
+                    else:
+                        sceneName = None
                     try:
-                        c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode) VALUES (?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber']))
+                        c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
                     except:
                         pass
             db.commit()
