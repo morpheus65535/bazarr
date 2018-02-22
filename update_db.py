@@ -55,8 +55,8 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
     else:
-        from get_episodes import update_all_episodes
-        update_all_episodes()
+        from scheduler import execute_now
+        execute_now('update_all_episodes')
 
     # Commit change to db
     db.commit()
