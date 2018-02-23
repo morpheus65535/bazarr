@@ -50,7 +50,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
                 else:
                     downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                     downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
-                    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + "."
+                    if sceneName is not None:
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using scene name from Sonarr guessing."
+                    else:
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using filename guessing."
 
                     return message
 
