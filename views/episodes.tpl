@@ -294,6 +294,7 @@
 	$('.get_subtitle').click(function(){
 		    var values = {
 		            episodePath: $(this).attr("data-episodePath"),
+		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
