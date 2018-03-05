@@ -70,7 +70,12 @@
 					<tr class="selectable">
 						<td><a href="{{base_url}}episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
-						{{row[2]}}
+							%if os.path.isdir(row[2]):
+							<span data-tooltip="This path seems to be valid." data-inverted=""><i class="checkmark icon"></i></span>
+							%else:
+							<span data-tooltip="This path doesn't seems to be valid." data-inverted=""><i class="warning sign icon"></i></span>
+							%end
+							{{row[2]}}
 						</td>
 						<td>{{row[7]}}</td>
 						<td>

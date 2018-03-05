@@ -53,7 +53,7 @@ CREATE TABLE "table_episodes" (
 	`sonarrSeriesId`	INTEGER NOT NULL,
 	`sonarrEpisodeId`	INTEGER NOT NULL UNIQUE,
 	`title`	TEXT NOT NULL,
-	`path`	TEXT NOT NULL UNIQUE,
+	`path`	TEXT NOT NULL,
 	`season`	INTEGER NOT NULL,
 	`episode`	INTEGER NOT NULL,
 	`subtitles`	TEXT,

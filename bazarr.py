@@ -1,4 +1,4 @@
-bazarr_version = '0.3.2'
+bazarr_version = '0.3.5'
 
 import os
 import sys
@@ -261,7 +261,7 @@ def episodes(no):
     series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path) FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
     tvdbid = series_details[5]
 
-    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     number = len(episodes)
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
@@ -317,7 +317,7 @@ def history():
             thisyear.append(datetime.fromtimestamp(stat[0]).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
 
-    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
@@ -726,7 +726,7 @@ def remove_subtitles():
             history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
         except OSError:
             pass
-        store_subtitles(episodePath)
+        store_subtitles(unicode(episodePath))
         list_missing_subtitles(sonarrSeriesId)
         
 @route(base_url + 'get_subtitle', method='POST')
@@ -734,6 +734,7 @@ def get_subtitle():
         ref = request.environ['HTTP_REFERER']
 
         episodePath = request.forms.get('episodePath')
+        sceneName = request.forms.get('sceneName')
         language = request.forms.get('language')
         hi = request.forms.get('hi')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
@@ -764,11 +765,11 @@ def get_subtitle():
             providers_auth = None
         
         try:
-            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth)
+            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName)
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
-                store_subtitles(episodePath)
+                store_subtitles(unicode(episodePath))
                 list_missing_subtitles(sonarrSeriesId)
             redirect(ref)
         except OSError:

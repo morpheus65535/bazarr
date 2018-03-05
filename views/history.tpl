@@ -79,14 +79,24 @@
 							</div>
 						%end
 						</td>
-						<td><a href="{{base_url}}episodes/{{row[6]}}">{{row[1]}}</a></td>
-						<td class="collapsing">
-							<%episode = row[2].split('x')%>
-							{{episode[0] + 'x' + episode[1].zfill(2)}}
+						<td>
+							<a href="{{base_url}}episodes/{{row[6]}}">{{row[1]}}</a>
 						</td>
-						<td>{{row[3]}}</td>
 						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%A, %B %d %Y %H:%M', time.localtime(row[4]))}}" data-inverted="">
+							%if row[2] is not None:
+							%	episode = row[2].split('x')
+							{{episode[0] + 'x' + episode[1].zfill(2)}}
+							%end
+						</td>
+						<td>
+							%if row[3] is not None:
+							{{row[3]}}
+							%else:
+							<em>Deleted episode</em>
+							%end
+						</td>
+						<td class="collapsing">
+							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[4]))}}" data-inverted="">
 								{{pretty.date(int(row[4]))}}
 							</div>
 						</td>
