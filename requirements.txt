@@ -1,3 +1,4 @@
+apprise
 apscheduler
 babelfish
 bottle
@@ -5,6 +6,7 @@ bottle-fdsend
 dogpile.cache
 enzyme
 gitpython
+langdetect
 Pillow
 py-pretty
 pycountry
