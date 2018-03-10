@@ -12,5 +12,6 @@ py-pretty
 pycountry
 requests
 subliminal
+tzlocal
 urllib3
 waitress

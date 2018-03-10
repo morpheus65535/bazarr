@@ -7,8 +7,13 @@ from check_update import *
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
+from tzlocal import get_localzone
 
-scheduler = BackgroundScheduler()
+if str(get_localzone()) == "local":
+    scheduler = BackgroundScheduler(timezone=utc)
+else:
+    scheduler = BackgroundScheduler()
+
 if automatic == 'True':
     scheduler.add_job(check_and_apply_update, 'interval', hours=6, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
 else:
