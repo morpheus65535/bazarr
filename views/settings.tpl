@@ -682,5 +682,6 @@
 
     $('#settings_form').focusout(function() {
         $('.form').form('validate form');
+        $('#loader').removeClass('active');
     })
 </script>
