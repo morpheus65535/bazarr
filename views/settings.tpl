@@ -282,7 +282,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening IP address</label>
+                                <label>Hostname or IP address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -292,7 +292,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="IP4 address of Sonarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Hostname or IP4 address of Sonarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -638,7 +638,7 @@
                 settings_general_ip     		: ['regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]', 'empty'],
                 settings_general_port   		: ['integer[1..65535]', 'empty'],
 
-                settings_sonarr_ip 				: ['regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]', 'empty'],
+                settings_sonarr_ip 				: ['empty'],
                 settings_sonarr_port			: ['integer[1..65535]', 'empty'],
                 settings_sonarr_apikey			: ['exactLength[32]', 'empty'],
 
