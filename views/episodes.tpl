@@ -70,10 +70,6 @@
             	var first_season_acc_content = document.getElementsByClassName("content")[0];
             	first_season_acc_content.className += " active";
             });
-
-            $(window).on('beforeunload',function(){
-			    $('#loader').addClass('active');
-			});
 		</script>
 	</head>
 	<body>
@@ -288,7 +284,12 @@
 		        dataType: "json",
 				data: values
 		    });
-		    $('#loader').addClass('active');
+		    $(document).ajaxStart(function(){
+				$('#loader').addClass('active');
+			});
+		    $(document).ajaxStop(function(){
+				window.location.reload();
+			});
 	})
 
 	$('.get_subtitle').click(function(){
@@ -307,12 +308,17 @@
 		        dataType: "json",
 				data: values
 		    });
-		    $('#loader').addClass('active');
+		    $(document).ajaxStart(function(){
+				$('#loader').addClass('active');
+			});
+		    $(document).ajaxStop(function(){
+				window.location.reload();
+			});
 	})
 
-	$(document).ajaxStop(function(){
-	    window.location.reload();
-	});
+	$('a, i').click(function(){
+		$('#loader').addClass('active');
+	})
 
 	$('.modal')
 		.modal({
