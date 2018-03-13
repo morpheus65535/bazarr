@@ -7,10 +7,11 @@ from check_update import *
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
+import pytz
 from tzlocal import get_localzone
 
 if str(get_localzone()) == "local":
-    scheduler = BackgroundScheduler(timezone=utc)
+    scheduler = BackgroundScheduler(timezone=pytz.timezone('UTC'))
 else:
     scheduler = BackgroundScheduler()
 

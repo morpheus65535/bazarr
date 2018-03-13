@@ -10,6 +10,7 @@ langdetect
 Pillow
 py-pretty
 pycountry
+pytz
 requests
 subliminal
 tzlocal
