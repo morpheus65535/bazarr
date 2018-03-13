@@ -1,4 +1,4 @@
-bazarr_version = '0.3.5'
+bazarr_version = '0.3.6'
 
 import os
 import sys
