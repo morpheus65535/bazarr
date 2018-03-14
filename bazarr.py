@@ -1,4 +1,4 @@
-bazarr_version = '0.3.6'
+bazarr_version = '0.3.7'
 
 import os
 import sys
@@ -394,10 +394,16 @@ def save_settings():
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
+    settings_general_scenename = request.forms.get('settings_general_scenename')
+    if settings_general_scenename is None:
+        settings_general_scenename = 'False'
+    else:
+        settings_general_scenename = 'True'
+    settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
 
     before = c.execute("SELECT ip, port, base_url FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language)))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename) ))
     conn.commit()
     if after != before:
         configured()

@@ -58,6 +58,20 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         from scheduler import execute_now
         execute_now('update_all_episodes')
 
+    try:
+        c.execute('alter table table_settings_general add column "minimum_score" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET minimum_score="0"')
+
+    try:
+        c.execute('alter table table_settings_general add column "use_scenename" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET use_scenename="True"')
+
     # Commit change to db
     db.commit()
 

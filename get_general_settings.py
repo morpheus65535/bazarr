@@ -27,8 +27,10 @@ def get_general_settings():
     branch = general_settings[5]
     automatic = general_settings[6]
     single_language = general_settings[9]
+    minimum_score = general_settings[10]
+    use_scenename = general_settings[11]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -61,3 +63,5 @@ log_level = result[4]
 branch = result[5]
 automatic = result[6]
 single_language = result[7]
+minimum_score = result[8]
+use_scenename = result[9]
