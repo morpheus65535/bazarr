@@ -14,7 +14,7 @@ from notifier import send_notifications
 region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
-    minimum_score = int(get_general_settings()[8])
+    minimum_score = float(get_general_settings()[8]) / 100 * 360
     use_scenename = get_general_settings()[9]
     try:
         if sceneName is None or use_scenename == "False":
@@ -41,6 +41,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
             else:
                 single = get_general_settings()[7]
                 try:
+                    score = round(float(compute_score(best_subtitle, video)) / 360 * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single == 'True':
@@ -54,9 +55,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
                     downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                     downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
                     if used_sceneName == True:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using this scene name obtained from Sonarr: " + sceneName
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
                     else:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using filename guessing."
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
 
                     return message
 
