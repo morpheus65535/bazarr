@@ -14,31 +14,35 @@ from notifier import send_notifications
 region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
+    minimum_score = float(get_general_settings()[8]) / 100 * 360
+    use_scenename = get_general_settings()[9]
     try:
-        if sceneName is None:
+        if sceneName is None or use_scenename == "False":
+            used_sceneName = False
             video = scan_video(path)
         else:
+            used_sceneName = True
             video = Video.fromname(sceneName)
     except Exception as e:
         logging.exception('Error trying to extract information from this filename: ' + path)
         return None
     else:
         try:
-            best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, hearing_impaired=hi, provider_configs=providers_auth)
-
+            best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, min_score=minimum_score, hearing_impaired=hi, provider_configs=providers_auth)
         except Exception as e:
-            logging.exception('Error trying to best subtitles for this file: ' + path)
+            logging.exception('Error trying to get the best subtitles for this file: ' + path)
             return None
         else:
             try:
                 best_subtitle = best_subtitles[video][0]
             except:
-                pass
+                logging.debug('No subtitles found for ' + path)
                 return None
             else:
                 single = get_general_settings()[7]
                 try:
-                    if sceneName is not None:
+                    score = round(float(compute_score(best_subtitle, video)) / 360 * 100, 2)
+                    if used_sceneName == True:
                         video = scan_video(path)
                     if single == 'True':
                         result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
@@ -50,10 +54,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
                 else:
                     downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                     downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
-                    if sceneName is not None:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using scene name from Sonarr guessing."
+                    if used_sceneName == True:
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
                     else:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " using filename guessing."
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
 
                     return message
 

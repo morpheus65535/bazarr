@@ -366,11 +366,57 @@
             </div>
             <div class="ui bottom attached tab segment" data-tab="subliminal">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                <div class="ui dividing header">Subtitles providers</div>
-                <div class="twelve wide column">
+                <br><br><br>
+                <div class="ui container">
                     <div class="ui info message">
                         <p>Thanks to Diaoul for his work on <a href="https://github.com/Diaoul/subliminal" target="_blank">Subliminal</a> on which Bazarr is based.</p>
                     </div>
+                </div>
+                <div class="ui dividing header">Subtitles options</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use Sonarr scene naming</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[11]}}>
+                                    <input name="settings_general_scenename" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Use the scene name from Sonarr if available to circumvent usage of episode file renaming." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Minimum score</label>
+                            </div>
+                            <div class="two wide column">
+                                <div class='field'>
+                                    <div class="ui input">
+                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[10]}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Minimum score for a subtitle to be downloaded (0 to 100)." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui dividing header">Subtitles providers</div>
+                <div class="twelve wide column">
                     <div class="ui orange message">
                         <p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
                     </div>
@@ -396,7 +442,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="ui dividing header">Providers authentication (optionnal)</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
@@ -594,6 +639,12 @@
                 $("#settings_single_language").checkbox('check');
             } else {
                 $("#settings_single_language").checkbox('uncheck');
+            }
+
+    if ($('#settings_scenename').data("scenename") == "True") {
+                $("#settings_scenename").checkbox('check');
+            } else {
+                $("#settings_scenename").checkbox('uncheck');
             }
 
     $('.notifier_enabled').each(function(i, obj) {
