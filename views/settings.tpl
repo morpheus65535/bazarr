@@ -231,6 +231,48 @@
                     </div>
                 </div>
 
+                <div class="ui dividing header">Post-processing</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use post-processing</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings_general[12]}}>
+                                    <input name="settings_general_use_postprocessing" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enable the post-processing execution after downloading a subtitles." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Post-processing command</label>
+                            </div>
+                            <div class="five wide column">
+                                <div id="settings_general_postprocessing_cmd_div" class="ui fluid input">
+                                    <input name="settings_general_postprocessing_cmd" type="text" value="{{settings_general[13] if settings_general[13] != None else ''}}">
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="You can use those variables in your command (include the double curly brace): &lbrace;&lbrace;episode&rbrace;&rbrace; &lbrace;&lbrace;subtitles&rbrace;&rbrace; &lbrace;&lbrace;language&rbrace;&rbrace; &lbrace;&lbrace;language-code2&rbrace;&rbrace; &lbrace;&lbrace;language-code3&rbrace;&rbrace;" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ui dividing header">Updates</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
@@ -646,6 +688,22 @@
             } else {
                 $("#settings_scenename").checkbox('uncheck');
             }
+
+    if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
+                $("#settings_use_postprocessing").checkbox('check');
+                $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
+            } else {
+                $("#settings_use_postprocessing").checkbox('uncheck');
+                $("#settings_general_postprocessing_cmd_div").addClass('disabled');
+            }
+
+    $("#settings_use_postprocessing").change(function(i, obj) {
+        if ($("#settings_use_postprocessing").checkbox('is checked')) {
+                $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
+            } else {
+                $("#settings_general_postprocessing_cmd_div").addClass('disabled');
+            }
+    });
 
     $('.notifier_enabled').each(function(i, obj) {
         if ($(this).data("enabled") == 1) {

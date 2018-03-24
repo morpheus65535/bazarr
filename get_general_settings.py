@@ -29,8 +29,10 @@ def get_general_settings():
     single_language = general_settings[9]
     minimum_score = general_settings[10]
     use_scenename = general_settings[11]
+    use_postprocessing = general_settings[12]
+    postprocessing_cmd = general_settings[13]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -54,6 +56,14 @@ def path_replace_reverse(path):
             break
     return path
 
+def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3):
+    pp_command = pp_command.replace('{{episode}}', episode)
+    pp_command = pp_command.replace('{{subtitles}}', subtitles)
+    pp_command = pp_command.replace('{{language}}', language)
+    pp_command = pp_command.replace('{{language_code2}}', language_code2)
+    pp_command = pp_command.replace('{{language_code3}}', language_code3)
+    return pp_command
+
 result = get_general_settings()
 ip = result[0]
 port = result[1]
@@ -65,3 +75,5 @@ automatic = result[6]
 single_language = result[7]
 minimum_score = result[8]
 use_scenename = result[9]
+use_processing = result[10]
+postprocessing_cmd = result[11]

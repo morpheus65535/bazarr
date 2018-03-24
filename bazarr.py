@@ -400,10 +400,16 @@ def save_settings():
     else:
         settings_general_scenename = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
+    settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
+    if settings_general_use_postprocessing is None:
+        settings_general_use_postprocessing = 'False'
+    else:
+        settings_general_use_postprocessing = 'True'
+    settings_general_postprocessing_cmd = request.forms.get('settings_general_postprocessing_cmd')
 
     before = c.execute("SELECT ip, port, base_url FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename) ))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd) ))
     conn.commit()
     if after != before:
         configured()

@@ -2,9 +2,11 @@ import os
 import sqlite3
 import ast
 import logging
+import subprocess
 from babelfish import *
 from subliminal import *
 from pycountry import *
+from bs4 import UnicodeDammit
 from get_general_settings import *
 from list_subtitles import *
 from utils import *
@@ -16,6 +18,8 @@ region.configure('dogpile.cache.memory')
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
     minimum_score = float(get_general_settings()[8]) / 100 * 360
     use_scenename = get_general_settings()[9]
+    use_postprocessing = get_general_settings()[10]
+    postprocessing_cmd = get_general_settings()[11]
     try:
         if sceneName is None or use_scenename == "False":
             used_sceneName = False
@@ -52,12 +56,42 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
                     logging.error('Error saving subtitles file to disk.')
                     return None
                 else:
-                    downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
-                    downloaded_language = pycountry.languages.lookup(str(str(result[0]).strip('<>').split(' ')[2].strip('[]'))).name
+                    downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]
+                    downloaded_language = pycountry.languages.lookup(str(str(result[0][0]).strip('<>').split(' ')[2].strip('[]'))).name
+                    downloaded_language_code2 = pycountry.languages.lookup(downloaded_language).alpha_2
+                    downloaded_language_code3 = pycountry.languages.lookup(downloaded_language).alpha_3
+                    downloaded_path = result[1]
                     if used_sceneName == True:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
                     else:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
+
+                    if use_postprocessing == "True":
+                        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
+                        try:
+                            if os.name == 'nt':
+                                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                # wait for the process to terminate
+                                out_codepage, err_codepage = codepage.communicate()
+                                encoding = out_codepage.split(':')[-1].strip()
+
+                            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            # wait for the process to terminate
+                            out, err = process.communicate()
+
+                            if os.name == 'nt':
+                                out = out.decode(encoding)
+
+                        except:
+                            if out == "":
+                                logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                            else:
+                                logging.error('Post-processing result for file ' + path + ' : ' + out)
+                        else:
+                            if out == "":
+                                logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                            else:
+                                logging.info('Post-processing result for file ' + path + ' : ' + out)
 
                     return message
 

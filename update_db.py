@@ -72,6 +72,18 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('UPDATE table_settings_general SET use_scenename="True"')
 
+    try:
+        c.execute('alter table table_settings_general add column "use_postprocessing" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET use_postprocessing="False"')
+
+    try:
+        c.execute('alter table table_settings_general add column "postprocessing_cmd" "text"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 
