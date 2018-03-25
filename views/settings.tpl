@@ -264,7 +264,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="You can use those variables in your command (include the double curly brace): &lbrace;&lbrace;episode&rbrace;&rbrace; &lbrace;&lbrace;subtitles&rbrace;&rbrace; &lbrace;&lbrace;language&rbrace;&rbrace; &lbrace;&lbrace;language-code2&rbrace;&rbrace; &lbrace;&lbrace;language-code3&rbrace;&rbrace;" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="You can use those variables in your command (include the double curly brace): \n&lbrace;&lbrace;directory&rbrace;&rbrace; \n&lbrace;&lbrace;episode&rbrace;&rbrace; \n&lbrace;&lbrace;episode_name&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language_code3&rbrace;&rbrace;" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>

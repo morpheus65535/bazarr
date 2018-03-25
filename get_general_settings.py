@@ -57,11 +57,13 @@ def path_replace_reverse(path):
     return path
 
 def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3):
+    pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
+    pp_command = pp_command.replace('{{episode_name}}', os.path.splitext(os.path.basename(episode))[0])
     pp_command = pp_command.replace('{{subtitles}}', subtitles)
-    pp_command = pp_command.replace('{{language}}', language)
-    pp_command = pp_command.replace('{{language_code2}}', language_code2)
-    pp_command = pp_command.replace('{{language_code3}}', language_code3)
+    pp_command = pp_command.replace('{{subtitles_language}}', language)
+    pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2)
+    pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3)
     return pp_command
 
 result = get_general_settings()
