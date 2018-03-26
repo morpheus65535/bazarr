@@ -262,10 +262,41 @@
                                     <input name="settings_general_postprocessing_cmd" type="text" value="{{settings_general[13] if settings_general[13] != None else ''}}">
                                 </div>
                             </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="You can use those variables in your command (include the double curly brace): \n&lbrace;&lbrace;directory&rbrace;&rbrace; \n&lbrace;&lbrace;episode&rbrace;&rbrace; \n&lbrace;&lbrace;episode_name&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace; \n&lbrace;&lbrace;subtitles_language_code3&rbrace;&rbrace;" data-inverted="">
-                                        <i class="help circle large icon"></i>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Variables you can use in your command (include the double curly brace):</label>
+                            </div>
+                            <div class="ten wide column">
+                                <div class="ui list">
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;directory&rbrace;&rbrace;</div>
+                                        The full path of the episode file parent directory.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;episode&rbrace;&rbrace;</div>
+                                        The full path of the episode file.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;episode_name&rbrace;&rbrace;</div>
+                                        The filename of the episode without parent directory or extension.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;subtitles&rbrace;&rbrace;</div>
+                                        Teh full path of the subtitles file.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;subtitles_language&rbrace;&rbrace;</div>
+                                        The language of the subtitles file.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">;&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace;</div>
+                                        The 2-letter ISO-639 language code of the subtitles language.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;subtitles_language_code3&rbrace;&rbrace;</div>
+                                        The 3-letter ISO-639 language code of the subtitles language.
                                     </div>
                                 </div>
                             </div>
