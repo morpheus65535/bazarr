@@ -284,14 +284,14 @@
                                     </div>
                                     <div class="item">
                                         <div class="header">&lbrace;&lbrace;subtitles&rbrace;&rbrace;</div>
-                                        Teh full path of the subtitles file.
+                                        The full path of the subtitles file.
                                     </div>
                                     <div class="item">
                                         <div class="header">&lbrace;&lbrace;subtitles_language&rbrace;&rbrace;</div>
                                         The language of the subtitles file.
                                     </div>
                                     <div class="item">
-                                        <div class="header">;&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace;</div>
+                                        <div class="header">&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace;</div>
                                         The 2-letter ISO-639 language code of the subtitles language.
                                     </div>
                                     <div class="item">
