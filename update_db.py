@@ -50,15 +50,6 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
             c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider,'0'))
 
     try:
-        c.execute('alter table table_episodes add column "scene_name" TEXT')
-        db.commit()
-    except:
-        pass
-    else:
-        from scheduler import execute_now
-        execute_now('update_all_episodes')
-
-    try:
         c.execute('alter table table_settings_general add column "minimum_score" "text"')
     except:
         pass
@@ -86,6 +77,15 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
 
     # Commit change to db
     db.commit()
+
+    try:
+        c.execute('alter table table_episodes add column "scene_name" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from scheduler import execute_now
+        execute_now('update_all_episodes')
 
     # Close database connection
     db.close()
