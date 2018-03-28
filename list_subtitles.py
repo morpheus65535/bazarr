@@ -12,6 +12,8 @@ from itertools import islice
 
 from get_general_settings import *
 
+gc.enable()
+
 def store_subtitles(file):
     languages = []
     actual_subtitles = []
