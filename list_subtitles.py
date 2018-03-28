@@ -1,3 +1,4 @@
+import gc
 import os
 import enzyme
 import babelfish
@@ -102,6 +103,8 @@ def full_scan_subtitles():
 
     for episode in episodes:
         store_subtitles(path_replace(episode[0]))
+
+    gc.collect()
 
 def series_scan_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)

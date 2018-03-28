@@ -1,5 +1,6 @@
 bazarr_version = '0.4.0'
 
+import gc
 import os
 import sys
 sys.path.insert(0,os.path.join(os.path.dirname(__file__), 'libs/'))
@@ -25,10 +26,6 @@ from fdsend import send_file
 import urllib
 import math
 import ast
-
-from init_db import *
-from update_db import *
-from update_modules import *
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -74,6 +71,10 @@ def configure_logging():
 
 configure_logging()
 
+from init_db import *
+from update_db import *
+from update_modules import *
+
 from get_languages import *
 from get_providers import *
 
@@ -107,7 +108,7 @@ def static(path):
 @route(base_url + 'emptylog')
 def emptylog():
     ref = request.environ['HTTP_REFERER']
-    
+
     fh.doRollover()
     logging.info('Log file emptied')
 
@@ -133,7 +134,7 @@ def image_proxy(url):
 def series():
     import update_db
     single_language = get_general_settings()[7]
-    
+
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
@@ -200,7 +201,7 @@ def edit_series(no):
         pass
     else:
         lang = 'None'
-    
+
     hi = request.forms.get('hearing_impaired')
 
     if hi == "on":
@@ -242,7 +243,7 @@ def edit_serieseditor():
 
     conn.commit()
     c.close()
-        
+
     for serie in series:
         list_missing_subtitles(serie)
 
@@ -252,7 +253,7 @@ def edit_serieseditor():
 def episodes(no):
     single_language = get_general_settings()[7]
     url_sonarr_short = get_sonarr_settings()[1]
-    
+
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()
@@ -269,7 +270,7 @@ def episodes(no):
     seasons_list = []
     for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
-    
+
     return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
@@ -292,7 +293,7 @@ def search_missing_subtitles(no):
 def history():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
-    
+
     c.execute("SELECT COUNT(*) FROM table_history")
     row_count = c.fetchone()
     row_count = row_count[0]
@@ -348,7 +349,7 @@ def wanted_search_missing_subtitles_list():
     ref = request.environ['HTTP_REFERER']
 
     wanted_search_missing_subtitles()
-    
+
     redirect(ref)
 
 @route(base_url + 'settings')
@@ -373,7 +374,7 @@ def save_settings():
     ref = request.environ['HTTP_REFERER']
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    c = conn.cursor()    
+    c = conn.cursor()
 
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
@@ -414,7 +415,7 @@ def save_settings():
     if after != before:
         configured()
     get_general_settings()
-    
+
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
@@ -595,7 +596,7 @@ def save_settings():
     c.close()
 
     logging.info('Settings saved succesfully.')
-    
+
     redirect(ref)
 
 @route(base_url + 'check_update')
@@ -603,7 +604,7 @@ def check_update():
     ref = request.environ['HTTP_REFERER']
 
     check_and_apply_update()
-    
+
     redirect(ref)
 
 @route(base_url + 'system')
@@ -624,7 +625,7 @@ def system():
                 text = text + " hour"
             else:
                 text = text + " hours"
-                
+
             if minute != "" and second != "":
                 text = text + ", "
             elif minute == "" and second != "":
@@ -637,7 +638,7 @@ def system():
                 text = text + " minute"
             else:
                 text = text + " minutes"
-                
+
             if second != "":
                 text = text + " and "
         if second != "":
@@ -654,14 +655,14 @@ def system():
         hour = str(cron[5])
         minute = str(cron[6])
         second = str(cron[7])
-        
+
         if hour != "0" and hour != "*":
             text = text + hour
             if hour == "0" or hour == "1":
                 text = text + " hour"
             else:
                 text = text + " hours"
-                
+
             if minute != "*" and second != "0":
                 text = text + ", "
             elif minute == "*" and second != "0":
@@ -674,7 +675,7 @@ def system():
                 text = text + " minute"
             else:
                 text = text + " minutes"
-                
+
             if second != "0" and second != "*":
                 text = text + " and "
         if second != "0" and second != "*":
@@ -685,7 +686,7 @@ def system():
                 text = text + " seconds"
 
         return text
-    
+
 
     task_list = []
     for job in scheduler.get_jobs():
@@ -700,7 +701,7 @@ def system():
             pass
         row_count = i
         max_page = int(math.ceil(row_count / 50.0))
-    
+
     return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page)
 
 @route(base_url + 'logs/<page:int>')
@@ -720,7 +721,7 @@ def execute_task(taskid):
     ref = request.environ['HTTP_REFERER']
 
     execute_now(taskid)
-    
+
     redirect(ref)
 
 @route(base_url + 'remove_subtitles', method='POST')
@@ -740,7 +741,7 @@ def remove_subtitles():
             pass
         store_subtitles(unicode(episodePath))
         list_missing_subtitles(sonarrSeriesId)
-        
+
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
         ref = request.environ['HTTP_REFERER']
@@ -775,7 +776,7 @@ def get_subtitle():
         else:
             providers_list = None
             providers_auth = None
-        
+
         try:
             result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName)
             if result is not None:
@@ -809,7 +810,6 @@ def api_history():
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
     c.close()
     return dict(subtitles=data)
-
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress')
