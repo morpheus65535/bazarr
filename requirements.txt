@@ -8,7 +8,6 @@ enzyme
 gitpython
 langdetect
 Pillow
-pip<=9.0.1
 py-pretty
 pycountry
 pytz
