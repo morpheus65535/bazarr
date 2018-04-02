@@ -233,6 +233,9 @@
 
                 <div class="ui dividing header">Post-processing</div>
                 <div class="twelve wide column">
+                    <div class="ui orange message">
+                        <p>Be aware that the execution of post-processing command will prevent the user interface from being accessible until completion when downloading subtitles in interactive mode (meaning you'll see a loader during post-processing).</p>
+                    </div>
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
