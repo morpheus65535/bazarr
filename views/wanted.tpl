@@ -75,7 +75,7 @@
 						%missing_languages = ast.literal_eval(row[3])
 						%if missing_languages is not None:
 							%for language in missing_languages:
-							<a data-episodePath="{{row[5]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
+							<a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
 								{{language}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>
@@ -146,6 +146,7 @@
 	$('.get_subtitle').click(function(){
 		    var values = {
 		            episodePath: $(this).attr("data-episodePath"),
+		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
