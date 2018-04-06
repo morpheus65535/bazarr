@@ -16,7 +16,7 @@ from notifier import send_notifications
 region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
-    minimum_score = float(get_general_settings()[8]) / 100 * 360
+    minimum_score = float(get_general_settings()[8]) / 100 * 359
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
@@ -45,7 +45,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
             else:
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / 360 * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video)) / 359 * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single == 'True':
