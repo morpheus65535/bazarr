@@ -112,6 +112,7 @@
 					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
 					%end
 				</p>
+				<div style='clear:both;'></div>
 			</div>
 
 			%if len(seasons) == 0:
