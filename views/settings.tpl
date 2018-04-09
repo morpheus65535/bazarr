@@ -353,7 +353,7 @@
             </div>
             <div class="ui bottom attached tab segment" data-tab="sonarr">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                <div class="ui dividing header">Sonarr settings</div>
+                <div class="ui dividing header">Connection settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -434,6 +434,26 @@
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="API key for Sonarr (32 alphanumeric characters)" data-inverted="">
                                     <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Synchronization</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Full sync frequency</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <select name="settings_sonarr_sync" id="settings_sync" class="ui fluid selection dropdown">
+                                        <option value="Manually">Manually</option>
+                                        <option value="Daily">Daily (at 4am)</option>
+                                        <option value="Weekly">Weekly (sunday at 4am)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -766,11 +786,14 @@
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
     $('#settings_branch').dropdown('clear');
     $('#settings_branch').dropdown('set selected','{{!settings_general[5]}}');
+    $('#settings_sync').dropdown('clear');
+    $('#settings_sync').dropdown('set selected','{{!settings_sonarr[5]}}');
 
     $('#settings_loglevel').dropdown();
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
     $('#settings_branch').dropdown();
+    $('#settings_sync').dropdown();
 </script>
 
 <script>

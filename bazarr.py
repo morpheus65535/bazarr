@@ -1,4 +1,4 @@
-bazarr_version = '0.4.0'
+bazarr_version = '0.4.1'
 
 import gc
 gc.enable()
@@ -427,7 +427,8 @@ def save_settings():
     else:
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
-    c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey))
+    settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
+    c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync))
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")
@@ -599,6 +600,9 @@ def save_settings():
 
     logging.info('Settings saved succesfully.')
 
+    # reschedule full update task according to settings
+    sonarr_full_update()
+
     redirect(ref)
 
 @route(base_url + 'check_update')
@@ -692,10 +696,15 @@ def system():
 
     task_list = []
     for job in scheduler.get_jobs():
+        if job.next_run_time is not None:
+            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+        else:
+            next_run = "Never"
+
         if job.trigger.__str__().startswith('interval'):
-            task_list.append([job.name, get_time_from_interval(str(job.trigger)), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+            task_list.append([job.name, get_time_from_interval(str(job.trigger)), next_run, job.id])
         elif job.trigger.__str__().startswith('cron'):
-            task_list.append([job.name, get_time_from_cron(job.trigger.fields), pretty.date(job.next_run_time.replace(tzinfo=None)), job.id])
+            task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
     i = 0
     with open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')) as f:

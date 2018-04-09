@@ -75,6 +75,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_sonarr add column "full_update" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_sonarr SET full_update="Daily"')
+
     # Commit change to db
     db.commit()
 

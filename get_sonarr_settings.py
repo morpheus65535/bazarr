@@ -20,6 +20,7 @@ def get_sonarr_settings():
     baseurl_sonarr = config_sonarr[2]
     ssl_sonarr = config_sonarr[3]
     apikey_sonarr = config_sonarr[4]
+    full_update = config_sonarr[5]
 
     if ssl_sonarr == 1:
         protocol_sonarr = "https"
@@ -36,4 +37,4 @@ def get_sonarr_settings():
     url_sonarr = protocol_sonarr + "://" + ip_sonarr + ":" + port_sonarr + baseurl_sonarr
     url_sonarr_short = protocol_sonarr + "://" + ip_sonarr + ":" + port_sonarr
 
-    return [url_sonarr, url_sonarr_short, apikey_sonarr]
+    return [url_sonarr, url_sonarr_short, apikey_sonarr, full_update]
