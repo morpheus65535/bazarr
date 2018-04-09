@@ -7,9 +7,14 @@ from get_general_settings import *
 from list_subtitles import *
     
 def update_all_episodes():
+    full_scan_subtitles()
+    logging.info('All existing subtitles indexed from disk.')
+    list_missing_subtitles()
+    logging.info('All missing subtitles updated in database.')
+
+def sync_episodes():
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[0]
-    url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
     
     # Open database connection
@@ -17,13 +22,11 @@ def update_all_episodes():
     c = db.cursor()
 
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrEpisodeId FROM table_episodes').fetchall()
-    current_episodes_db_list = [x[0] for x in current_episodes_db]
-    
+    current_episodes_db = c.execute('SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name FROM table_episodes').fetchall()
+
     # Get sonarrId for each series from database
     current_episodes_sonarr = []
-    c.execute("SELECT sonarrSeriesId FROM table_shows")
-    seriesIdList = c.fetchall()
+    seriesIdList = c.execute("SELECT sonarrSeriesId FROM table_shows").fetchall()
     for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
@@ -31,97 +34,28 @@ def update_all_episodes():
         for episode in r.json():
             if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
                 # Add shows in Sonarr to current shows list
-                current_episodes_sonarr.append(episode['id'])
                 if 'sceneName' in episode['episodeFile']:
                     sceneName = episode['episodeFile']['sceneName']
                 else:
                     sceneName = None
-                try:
-                    c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
-                    db.commit()
-                except sqlite3.Error:
-                    c.execute('''UPDATE table_episodes SET sonarrSeriesId = ?, sonarrEpisodeId = ?, title = ?, path = ?, season = ?, episode = ?, scene_name = ? WHERE sonarrEpisodeId = ?''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, episode['id']))
-                    db.commit()
-            else:
-                continue
-        continue
+                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
 
-    # Delete episodes not in Sonarr anymore
-    deleted_items = []
-    for item in current_episodes_db_list:
-        if item not in current_episodes_sonarr:
-            deleted_items.append(tuple([item]))
-    c.executemany('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?',deleted_items)
-    db.commit()
+    added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
+    removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))
+
+    for removed_episode in removed_episodes:
+        c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode[1],))
+        db.commit()
+
+    for added_episode in added_episodes:
+        c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', added_episode)
+        db.commit()
+        store_subtitles(path_replace(added_episode[3]))
 
     # Close database connection
     c.close()
 
-    logging.info('All episodes updated in database.')
-    
-    # Store substitles for all episodes
-    full_scan_subtitles()
-    logging.info('All existing subtitles indexed from disk.')
+    logging.debug('All episodes synced from Sonarr into database.')
+
     list_missing_subtitles()
-    logging.info('All missing subtitles updated in database.')
-
-def add_new_episodes():
-    from get_sonarr_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[0]
-    url_sonarr_short = get_sonarr_settings()[1]
-    apikey_sonarr = get_sonarr_settings()[2]
-    
-    # Open database connection
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    c = db.cursor()
-
-    if apikey_sonarr == None:
-        # Close database connection
-        c.close()
-        pass
-    else:
-        # Get current episodes in DB
-        current_episodes_db = c.execute('SELECT sonarrEpisodeId FROM table_episodes').fetchall()
-        current_episodes_db_list = [x[0] for x in current_episodes_db]
-        current_episodes_sonarr = []
-
-        # Get sonarrId for each series from database
-        c.execute("SELECT sonarrSeriesId FROM table_shows")
-        seriesIdList = c.fetchall()
-        for seriesId in seriesIdList:
-            # Get episodes data for a series from Sonarr
-            url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
-            r = requests.get(url_sonarr_api_episode)
-            for episode in r.json():
-                if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
-                    # Add shows in Sonarr to current shows list
-                    current_episodes_sonarr.append(episode['id'])
-                    if 'sceneName' in episode['episodeFile']:
-                        sceneName = episode['episodeFile']['sceneName']
-                    else:
-                        sceneName = None
-                    try:
-                        c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', (episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
-                    except:
-                        pass
-            db.commit()
-
-        # Delete episodes not in Sonarr anymore
-        deleted_items = []
-        for item in current_episodes_db_list:
-            if item not in current_episodes_sonarr:
-                deleted_items.append(tuple([item]))
-        c.executemany('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?',deleted_items)
-        
-        # Commit changes to database table
-        db.commit()
-
-        # Close database connection
-        c.close()
-    
-        # Store substitles from episodes we've just added
-        new_scan_subtitles()
-        try:
-            list_missing_subtitles()
-        except:
-            pass
+    logging.debug('All missing subtitles updated in database.')
