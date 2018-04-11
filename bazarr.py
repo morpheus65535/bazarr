@@ -29,6 +29,9 @@ import urllib
 import math
 import ast
 
+from init_db import *
+from update_db import *
+
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -73,8 +76,6 @@ def configure_logging():
 
 configure_logging()
 
-from init_db import *
-from update_db import *
 from update_modules import *
 
 from get_languages import *
