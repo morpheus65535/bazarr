@@ -7,28 +7,7 @@ import os
 import sys
 sys.path.insert(0,os.path.join(os.path.dirname(__file__), 'libs/'))
 
-from bottle import route, run, template, static_file, request, redirect, response
-import bottle
-bottle.debug(True)
-bottle.TEMPLATES.clear()
-
-bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
-
 import sqlite3
-from json import dumps
-import itertools
-import operator
-import requests
-import pycountry
-import pretty
-from datetime import datetime, timedelta
-from PIL import Image
-from io import BytesIO
-from fdsend import send_file
-import urllib
-import math
-import ast
-
 from init_db import *
 from update_db import *
 
@@ -45,7 +24,6 @@ log_level = log_level[0]
 if log_level is None:
     log_level = "INFO"
 log_level = getattr(logging, log_level)
-
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -77,6 +55,24 @@ def configure_logging():
 configure_logging()
 
 from update_modules import *
+
+from bottle import route, run, template, static_file, request, redirect, response
+import bottle
+bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
+
+from json import dumps
+import itertools
+import operator
+import requests
+import pycountry
+import pretty
+from datetime import datetime, timedelta
+from PIL import Image
+from io import BytesIO
+from fdsend import send_file
+import urllib
+import math
+import ast
 
 from get_languages import *
 from get_providers import *
