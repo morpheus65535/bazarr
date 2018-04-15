@@ -317,7 +317,7 @@
 			});
 	})
 
-	$('a, i').click(function(){
+	$('a, i:not(.dropdown)').click(function(){
 		$('#loader').addClass('active');
 	})
 
