@@ -317,7 +317,7 @@
 			});
 	})
 
-	$('a, i:not(.dropdown)').click(function(){
+	$('a, .menu .item, button:not(#config, .cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
