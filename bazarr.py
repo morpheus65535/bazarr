@@ -1,4 +1,4 @@
-bazarr_version = '0.4.1'
+bazarr_version = '0.4.5 dev'
 
 import gc
 gc.enable()
@@ -59,6 +59,8 @@ from update_modules import *
 from bottle import route, run, template, static_file, request, redirect, response
 import bottle
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
+bottle.debug(True)
+bottle.TEMPLATES.clear()
 
 from json import dumps
 import itertools
@@ -123,6 +125,18 @@ def image_proxy(url):
     url_sonarr_short = get_sonarr_settings()[1]
 
     img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
+    img_buffer = BytesIO()
+    img_pil.tobytes()
+    img_pil.save(img_buffer, img_pil.format)
+    img_buffer.seek(0)
+    return send_file(img_buffer, ctype=img_pil.format)
+
+@route(base_url + 'image_proxy_movies/<url:path>', method='GET')
+def image_proxy_movies(url):
+    from get_radarr_settings import get_radarr_settings
+    url_radarr_short = get_radarr_settings()[1]
+
+    img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/' + url).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
     img_pil.save(img_buffer, img_pil.format)
@@ -271,6 +285,51 @@ def episodes(no):
         seasons_list.append(list(season))
 
     return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
+
+@route(base_url + 'movies')
+def movies():
+    import update_db
+    single_language = get_general_settings()[7]
+
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db.create_function("path_substitution", 1, path_replace)
+    c = db.cursor()
+
+    c.execute("SELECT COUNT(*) FROM table_movies")
+    missing_count = c.fetchone()
+    missing_count = missing_count[0]
+    page = request.GET.page
+    if page == "":
+        page = "1"
+    offset = (int(page) - 1) * 15
+    max_page = int(math.ceil(missing_count / 15.0))
+
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
+    data = c.fetchall()
+    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
+    languages = c.fetchall()
+    c.close()
+    output = template('movies', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
+    return output
+
+@route(base_url + 'movie/<no:int>', method='GET')
+def movie(no):
+    from get_radarr_settings import get_radarr_settings
+    single_language = get_general_settings()[7]
+    url_radarr_short = get_radarr_settings()[1]
+
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn.create_function("path_substitution", 1, path_replace)
+    c = conn.cursor()
+
+    movies_details = []
+    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path) FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
+    tmdbid = movies_details[5]
+
+    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
+    c.close()
+
+    return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):

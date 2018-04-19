@@ -39,11 +39,15 @@
 						<div class="ui grid">
 								<div class="row">
 								<div class="sixteen wide column">
-									<div class="ui inverted borderless labeled icon massive menu five item">
+									<div class="ui inverted borderless labeled icon massive menu six item">
 										<div class="ui container">
 											<a class="item" href="{{base_url}}">
 												<i class="play icon"></i>
 												Series
+											</a>
+											<a class="item" href="{{base_url}}movies">
+												<i class="film icon"></i>
+												Movies
 											</a>
 											<a class="item" href="{{base_url}}history">
 												<i class="wait icon"></i>

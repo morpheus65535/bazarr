@@ -82,6 +82,19 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('UPDATE table_settings_sonarr SET full_update="Daily"')
 
+    try:
+        c.execute('CREATE TABLE "table_settings_radarr" ( `ip` TEXT NOT NULL, `port` INTEGER NOT NULL, `base_url` TEXT, `ssl` INTEGER, `apikey` TEXT , "full_update" "text")')
+    except:
+        pass
+    else:
+        db.commit()
+        c.execute('INSERT INTO `table_settings_radarr` (ip,port,base_url,ssl,apikey,full_update) VALUES ("127.0.0.1",7878,"/","False",Null,"Daily")')
+
+    try:
+        c.execute('CREATE TABLE "table_movies" ( `tmdbId` TEXT NOT NULL UNIQUE, `title` TEXT NOT NULL, `path` TEXT NOT NULL UNIQUE, `languages` TEXT, `subtitles` TEXT, `missing_subtitles` TEXT, `hearing_impaired` TEXT, `radarrId` INTEGER NOT NULL UNIQUE, `overview` TEXT, `poster` TEXT, `fanart` TEXT, "audio_language" "text", `sceceName` TEXT, PRIMARY KEY(`tmdbId`) )')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

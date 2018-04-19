@@ -60,7 +60,55 @@ def store_subtitles(file):
         c_db.close()
 
     return actual_subtitles
-    
+
+
+def store_subtitles_movie(file):
+    languages = []
+    actual_subtitles = []
+    if os.path.exists(file):
+        if os.path.splitext(file)[1] == '.mkv':
+            try:
+                with open(file, 'rb') as f:
+                    mkv = enzyme.MKV(f)
+
+                for subtitle_track in mkv.subtitle_tracks:
+                    try:
+                        actual_subtitles.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2), None])
+                    except:
+                        pass
+            except:
+                pass
+
+        subtitles = core.search_external_subtitles(file)
+
+        for subtitle, language in subtitles.iteritems():
+            if str(language) != 'und':
+                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+            else:
+                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                    text = list(islice(f, 100))
+                    text = ' '.join(text)
+                    encoding = UnicodeDammit(text)
+                    try:
+                        text = text.decode(encoding.original_encoding)
+                    except Exception as e:
+                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                    else:
+                        detected_language = langdetect.detect(text)
+                        if len(detected_language) > 0:
+                            actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+
+        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+        c_db = conn_db.cursor()
+
+        c_db.execute("UPDATE table_movies SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
+        conn_db.commit()
+
+        c_db.close()
+
+    return actual_subtitles
+
+
 def list_missing_subtitles(*no):
     query_string = ''
     try:
@@ -105,6 +153,13 @@ def full_scan_subtitles():
 
     for episode in episodes:
         store_subtitles(path_replace(episode[0]))
+
+    c_db = conn_db.cursor()
+    movies = c_db.execute("SELECT path FROM table_movies").fetchall()
+    c_db.close()
+
+    for movie in movies:
+        store_subtitles_movie(path_replace(movie[0]))
 
     gc.collect()
 
