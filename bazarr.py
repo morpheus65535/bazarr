@@ -121,8 +121,9 @@ def download_log():
 def image_proxy(url):
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr_short = get_sonarr_settings()[1]
+    apikey = get_sonarr_settings()[2]
 
-    img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url).content))
+    img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/' + url + '?apikey=' + apikey).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
     img_pil.save(img_buffer, img_pil.format)
