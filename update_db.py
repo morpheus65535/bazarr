@@ -82,6 +82,11 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('UPDATE table_settings_sonarr SET full_update="Daily"')
 
+    try:
+        c.execute('alter table table_shows add column "sortTitle" "text"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 
