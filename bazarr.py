@@ -136,9 +136,11 @@ def image_proxy(url):
 @route(base_url + 'image_proxy_movies/<url:path>', method='GET')
 def image_proxy_movies(url):
     from get_radarr_settings import get_radarr_settings
+    url_radarr = get_radarr_settings()[0]
     url_radarr_short = get_radarr_settings()[1]
-
-    img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/' + url).content))
+    apikey = get_radarr_settings()[2]
+    url_image = url_radarr_short + '/' + url + '?apikey=' + apikey
+    img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1]).content))
     img_buffer = BytesIO()
     img_pil.tobytes()
     img_pil.save(img_buffer, img_pil.format)
