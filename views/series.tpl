@@ -3,7 +3,6 @@
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
 
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
@@ -40,6 +39,7 @@
 			}
 			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
 			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
+			.ui.progress:last-child {margin: 0 0 0em !important;}
 		</style>
 	</head>
 	<body>
@@ -52,15 +52,16 @@
 			<div class="ui basic buttons">
 				<button id="serieseditor" class="ui button"><i class="configure icon"></i>Series Editor</button>
 			</div>
-			<table id="tableseries" class="ui very basic selectable sortable table">
+			<table id="tableseries" class="ui very basic selectable table">
 				<thead>
 					<tr>
-						<th class="sorted ascending">Name</th>
+						<th>Name</th>
 						<th>Path</th>
 						<th>Audio language</th>
 						<th>Subtitles languages</th>
 						<th>Hearing-impaired</th>
-						<th class="no-sort"></th>
+						<th class="two wide">Subtitles</th>
+						<th></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -87,6 +88,24 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] == None else row[4]}}</td>
+						<td>
+							%for total_subtitles in total_subtitles_list:
+							%	if total_subtitles[0] == row[5]:
+							%		total_subs = total_subtitles[1]
+							%	end
+							%end
+							%missing_subs = 0
+							%for missing_subtitles in missing_subtitles_list:
+							%	if missing_subtitles[0] == row[5]:
+							%		missing_subs = missing_subtitles[1]
+							%	end
+							%end
+							<div class="ui progress" data-value="{{total_subs - missing_subs}}" data-total="{{total_subs}}">
+								<div class="bar">
+									<div class="progress"></div>
+								</div>
+							</div>
+						</td>
 						<td {{!"style='background-color: #e8e8e8;'" if row[4] == None else ""}}>
 							<%
 							subs_languages_list = []
@@ -202,8 +221,6 @@
 		sessionStorage.clear();
 	}
 
-	$('table').tablesort();
-
 	$('a, button:not(.cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
@@ -255,4 +272,22 @@
 	})
 
 	$('#series_languages').dropdown();
+
+	$('.progress').progress({
+		label: 'ratio',
+		text: {
+			ratio: '{value} / {total}'
+		},
+		showActivity: false
+	});
+
+	$( ".progress" ).each(function() {
+		if ($(this).progress('is complete') != true) {
+			$(this).progress('set warning');
+		}
+		if ($(this).progress('get total') == 0) {
+			$(this).progress('set success');
+			$(this).progress('set bar label', '0 / 0');
+		}
+	});
 </script>

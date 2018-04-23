@@ -331,6 +331,7 @@ def refine(video, **kwargs):
     # add series information
     logger.debug('Found series %r', series)
     video.series = matching_result['match']['series']
+    video.alternative_series.extend(series['aliases'])
     video.year = matching_result['match']['year']
     video.original_series = matching_result['match']['original_series']
     video.series_tvdb_id = series['id']
