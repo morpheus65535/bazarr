@@ -153,8 +153,12 @@ def series():
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
+    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles IS NOT '[]' GROUP BY table_shows.sonarrSeriesId")
+    missing_subtitles_list = c.fetchall()
+    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId GROUP BY table_shows.sonarrSeriesId")
+    total_subtitles_list = c.fetchall()
     c.close()
-    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
+    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
     return output
 
 @route(base_url + 'serieseditor')

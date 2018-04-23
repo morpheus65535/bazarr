@@ -122,7 +122,9 @@
 			%else:
 				%for season in seasons:
 				<div id="fondblanc" class="ui container">
-					<h1 class="ui header">Season {{season[0][2]}}</h1>
+					%missing_subs = len([i for i in season if i[6] != "[]"])
+					%total_subs = len(season)
+					<h1 class="ui header">Season {{season[0][2]}}<div class="ui tiny {{!'green' if missing_subs == 0 else 'yellow'}} circular label">{{!total_subs - missing_subs}} / {{total_subs}}</div></h1>
 					<div class="ui accordion">
 						<div class="title">
 							<div class="ui one column stackable center aligned page grid">
