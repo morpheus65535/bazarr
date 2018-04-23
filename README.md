@@ -29,7 +29,6 @@ You can also reach me on [Discord](https://discord.gg/MH2e2eb).
 * opensubtitles
 * podnapisi
 * shooter
-* subscenter
 * thesubdb
 * tvsubtitles
 

@@ -19,8 +19,8 @@ class AuthenticationError(ProviderError):
     pass
 
 
-class TooManyRequests(ProviderError):
-    """Exception raised by providers when too many requests are made."""
+class ServiceUnavailable(ProviderError):
+    """Exception raised when status is '503 Service Unavailable'."""
     pass
 
 

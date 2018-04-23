@@ -48,6 +48,7 @@ def configure_logging():
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("subliminal").setLevel(logging.CRITICAL)
+    logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)

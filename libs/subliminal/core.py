@@ -6,14 +6,18 @@ import io
 import itertools
 import logging
 import operator
-import os.path
+import os
 import socket
 
 from babelfish import Language, LanguageReverseError
 from guessit import guessit
-from rarfile import NotRarFile, RarCannotExec, RarFile
+from six.moves.xmlrpc_client import ProtocolError
+from rarfile import BadRarFile, NotRarFile, RarCannotExec, RarFile
+from zipfile import BadZipfile
+from ssl import SSLError
 import requests
 
+from .exceptions import ServiceUnavailable
 from .extensions import provider_manager, refiner_manager
 from .score import compute_score as default_compute_score
 from .subtitle import SUBTITLE_EXTENSIONS, get_subtitle_path
@@ -79,6 +83,18 @@ class ProviderPool(object):
             self.initialized_providers[name].terminate()
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out, improperly terminated', name)
+        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
+            logger.error('Provider %r unavailable, improperly terminated', name)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in range(500, 600):
+                logger.error('Provider %r unavailable, improperly terminated', name)
+            else:
+                logger.exception('Provider %r http error %r, improperly terminated', name, e.response.status_code)
+        except SSLError as e:
+            if e.args[0] == 'The read operation timed out':
+                logger.error('Provider %r unavailable, improperly terminated', name)
+            else:
+                logger.exception('Provider %r SSL error %r, improperly terminated', name, e.args[0])
         except:
             logger.exception('Provider %r terminated unexpectedly', name)
 
@@ -118,6 +134,18 @@ class ProviderPool(object):
             return self[provider].list_subtitles(video, provider_languages)
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out', provider)
+        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
+            logger.error('Provider %r unavailable', provider)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in range(500, 600):
+                logger.error('Provider %r unavailable', provider)
+            else:
+                logger.exception('Provider %r http error %r', provider, e.response.status_code)
+        except SSLError as e:
+            if e.args[0] == 'The read operation timed out':
+                logger.error('Provider %r unavailable', provider)
+            else:
+                logger.exception('Provider %r SSL error %r', provider, e.args[0])
         except:
             logger.exception('Unexpected error in provider %r', provider)
 
@@ -172,6 +200,28 @@ class ProviderPool(object):
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out, discarding it', subtitle.provider_name)
             self.discarded_providers.add(subtitle.provider_name)
+            return False
+        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
+            logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
+            self.discarded_providers.add(subtitle.provider_name)
+            return False
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in range(500, 600):
+                logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
+            else:
+                logger.exception('Provider %r http error %r, discarding it', subtitle.provider_name,
+                                 e.response.status_code)
+            self.discarded_providers.add(subtitle.provider_name)
+            return False
+        except SSLError as e:
+            if e.args[0] == 'The read operation timed out':
+                logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
+            else:
+                logger.exception('Provider %r SSL error %r, discarding it', subtitle.provider_name, e.args[0])
+            self.discarded_providers.add(subtitle.provider_name)
+            return False
+        except (BadRarFile, BadZipfile):
+            logger.error('Bad archive for %r', subtitle)
             return False
         except:
             logger.exception('Unexpected error in provider %r, discarding it', subtitle.provider_name)
@@ -338,7 +388,7 @@ def search_external_subtitles(path, directory=None):
     subtitles = {}
     for p in os.listdir(directory or dirpath):
         # keep only valid subtitle filenames
-        if not p.startswith(fileroot) or not p.endswith(SUBTITLE_EXTENSIONS):
+        if not p.startswith(fileroot) or not p.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
         # extract the potential language code
@@ -370,7 +420,7 @@ def scan_video(path):
         raise ValueError('Path does not exist')
 
     # check video extension
-    if not path.endswith(VIDEO_EXTENSIONS):
+    if not path.lower().endswith(VIDEO_EXTENSIONS):
         raise ValueError('%r is not a valid video extension' % os.path.splitext(path)[1])
 
     dirpath, filename = os.path.split(path)
@@ -418,7 +468,7 @@ def scan_archive(path):
         rar = RarFile(path)
 
         # filter on video extensions
-        rar_filenames = [f for f in rar.namelist() if f.endswith(VIDEO_EXTENSIONS)]
+        rar_filenames = [f for f in rar.namelist() if f.lower().endswith(VIDEO_EXTENSIONS)]
 
         # no video found
         if not rar_filenames:
@@ -471,16 +521,25 @@ def scan_videos(path, age=None, archives=True):
             if dirname.startswith('.'):
                 logger.debug('Skipping hidden dirname %r in %r', dirname, dirpath)
                 dirnames.remove(dirname)
+            # Skip Sample folder
+            if dirname.lower() == 'sample':
+                logger.debug('Skipping sample dirname %r in %r', dirname, dirpath)
+                dirnames.remove(dirname)
 
         # scan for videos
         for filename in filenames:
             # filter on videos and archives
-            if not (filename.endswith(VIDEO_EXTENSIONS) or archives and filename.endswith(ARCHIVE_EXTENSIONS)):
+            if not (filename.lower().endswith(VIDEO_EXTENSIONS) or
+                    archives and filename.lower().endswith(ARCHIVE_EXTENSIONS)):
                 continue
 
             # skip hidden files
             if filename.startswith('.'):
                 logger.debug('Skipping hidden filename %r in %r', filename, dirpath)
+                continue
+            # skip 'sample' media files
+            if os.path.splitext(filename)[0].lower() == 'sample':
+                logger.debug('Skipping sample filename %r in %r', filename, dirpath)
                 continue
 
             # reconstruct the file path
@@ -492,18 +551,24 @@ def scan_videos(path, age=None, archives=True):
                 continue
 
             # skip old files
-            if age and datetime.utcnow() - datetime.utcfromtimestamp(os.path.getmtime(filepath)) > age:
-                logger.debug('Skipping old file %r in %r', filename, dirpath)
+            try:
+                file_age = datetime.utcfromtimestamp(os.path.getmtime(filepath))
+            except ValueError:
+                logger.warning('Could not get age of file %r in %r', filename, dirpath)
                 continue
+            else:
+                if age and datetime.utcnow() - file_age > age:
+                    logger.debug('Skipping old file %r in %r', filename, dirpath)
+                    continue
 
             # scan
-            if filename.endswith(VIDEO_EXTENSIONS):  # video
+            if filename.lower().endswith(VIDEO_EXTENSIONS):  # video
                 try:
                     video = scan_video(filepath)
                 except ValueError:  # pragma: no cover
                     logger.exception('Error scanning video')
                     continue
-            elif archives and filename.endswith(ARCHIVE_EXTENSIONS):  # archive
+            elif archives and filename.lower().endswith(ARCHIVE_EXTENSIONS):  # archive
                 try:
                     video = scan_archive(filepath)
                 except (NotRarFile, RarCannotExec, ValueError):  # pragma: no cover
@@ -541,7 +606,8 @@ def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
         try:
             refiner_manager[refiner].plugin(video, **kwargs)
         except:
-            logger.exception('Failed to refine video')
+            logger.error('Failed to refine video %r', video.name)
+            logger.debug('Refiner exception:', exc_info=True)
 
 
 def list_subtitles(videos, languages, pool_class=ProviderPool, **kwargs):
