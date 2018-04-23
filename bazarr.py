@@ -203,6 +203,9 @@ def edit_series(no):
     else:
         lang = 'None'
 
+    if str(lang) == "['']":
+        lang = '[]'
+
     hi = request.forms.get('hearing_impaired')
 
     if hi == "on":
