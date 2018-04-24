@@ -88,7 +88,12 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         pass
 
     try:
-        c.execute('CREATE TABLE "table_movies" ( `tmdbId` TEXT NOT NULL UNIQUE, `title` TEXT NOT NULL, `path` TEXT NOT NULL UNIQUE, `languages` TEXT, `subtitles` TEXT, `missing_subtitles` TEXT, `hearing_impaired` TEXT, `radarrId` INTEGER NOT NULL UNIQUE, `overview` TEXT, `poster` TEXT, `fanart` TEXT, "audio_language" "text", `sceceName` TEXT, PRIMARY KEY(`tmdbId`) )')
+        c.execute('CREATE TABLE "table_movies" ( `tmdbId` TEXT NOT NULL UNIQUE, `title` TEXT NOT NULL, `path` TEXT NOT NULL UNIQUE, `languages` TEXT, `subtitles` TEXT, `missing_subtitles` TEXT, `hearing_impaired` TEXT, `radarrId` INTEGER NOT NULL UNIQUE, `overview` TEXT, `poster` TEXT, `fanart` TEXT, "audio_language" "text", `sceneName` TEXT, PRIMARY KEY(`tmdbId`) )')
+    except:
+        pass
+
+    try:
+        c.execute('CREATE TABLE "table_history_movie" ( `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `action` INTEGER NOT NULL, `radarrId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `description` TEXT NOT NULL )')
     except:
         pass
 

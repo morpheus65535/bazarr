@@ -44,14 +44,25 @@ def update_movies():
                 except:
                     fanart = ""
 
+                if 'sceneName' in movie['movieFile']:
+                    sceneName = movie['movieFile']['sceneName']
+                else:
+                    sceneName = None
+
                 # Add movies in radarr to current movies list
                 current_movies_radarr.append(unicode(movie['tmdbId']))
 
+                # Detect file separator
+                if movie['path'][0] == "/":
+                    separator = "/"
+                else:
+                    separator == "\\"
+
                 # Update or insert movies list in database table
                 try:
-                    c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?)''', (movie["title"], os.path.join(movie["path"], movie['movieFile']['relativePath']), movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId'])))
+                    c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
                 except:
-                    c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? WHERE tmdbid = ?''', (movie["title"],os.path.join(movie["path"], movie['movieFile']['relativePath']),movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),movie["tmdbId"]))
+                    c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,movie["tmdbId"]))
 
         # Delete movies not in radarr anymore
         deleted_items = []

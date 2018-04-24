@@ -234,7 +234,7 @@
 	$('.config').click(function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
-		$('#movies_form').attr('action', '{{base_url}}edit_movies/' + $(this).data("no"));
+		$('#movies_form').attr('action', '{{base_url}}edit_movie/' + $(this).data("no"));
 
 		$("#movies_title").html($(this).data("title"));
 		$("#movies_poster").attr("src", "{{base_url}}image_proxy_movies" + $(this).data("poster"));

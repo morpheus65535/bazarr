@@ -114,7 +114,7 @@
     $('.ui.search')
         .search({
             apiSettings: {
-                url: '{{base_url}}series_json/{query}',
+                url: '{{base_url}}search_json/{query}',
                 onResponse: function(results) {
                     var response = {
                         results : []

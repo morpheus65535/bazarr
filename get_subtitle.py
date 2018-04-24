@@ -10,7 +10,7 @@ from bs4 import UnicodeDammit
 from get_general_settings import *
 from list_subtitles import *
 from utils import *
-from notifier import send_notifications
+from notifier import send_notifications, send_notifications_movie
 
 # configure the cache
 region.configure('dogpile.cache.memory')
@@ -128,6 +128,40 @@ def series_download_subtitles(no):
                 history_log(1, no, episode[2], message)
                 send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
+
+
+def movies_download_subtitles(no):
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    movie = c_db.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired FROM table_movies WHERE radarrId = ?", (no,)).fetchone()
+    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
+    c_db.close()
+
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username': providers[2], 'password': providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
+
+    for language in ast.literal_eval(movie[1]):
+        message = download_subtitle(path_replace(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3])
+        if message is not None:
+            store_subtitles_movie(path_replace(movie[0]))
+            history_log_movie(1, no, message)
+            send_notifications_movie(no, message)
+    list_missing_subtitles_movies(no)
+
 
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)

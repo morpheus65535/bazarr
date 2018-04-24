@@ -473,7 +473,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use Sonarr scene naming</label>
+                                <label>Use scene name when available</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[11]}}>

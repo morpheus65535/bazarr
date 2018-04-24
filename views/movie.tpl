@@ -19,7 +19,7 @@
 		<style>
 			body {
 				background-color: #1b1c1d;
-				background-image: url("{{base_url}}image_proxy{{details[3]}}");
+				background-image: url("{{base_url}}image_proxy_movies{{details[3]}}");
 				background-repeat: no-repeat;
 				background-attachment: fixed;
 				background-size: cover;
@@ -67,13 +67,13 @@
 		%import pycountry
 		%from get_general_settings import *
 		%single_language = get_general_settings()[7]
-		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
+		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 		
-		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
+		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>
 			<div id="divdetails" class="ui container">
 				<img class="left floated ui image" src="{{base_url}}image_proxy_movies{{details[2]}}">
 				<div class="ui right floated basic icon buttons">
@@ -102,6 +102,22 @@
 					%end
 				</p>
 				<div style='clear:both;'></div>
+
+				<div id="fondblanc" class="ui container">
+					<h1 class="ui header">Subtitles</h1>
+					<table class="ui very basic single line selectable table">
+						<thead>
+							<tr>
+								<th>Existing subtitles</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>{{details[9]}}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
 
@@ -167,11 +183,11 @@
 
 <script>
 	$('#scan_disk').click(function(){
-		window.location = '{{base_url}}scan_disk/{{no}}';
+		window.location = '{{base_url}}scan_disk_movie/{{no}}';
 	})
 
 	$('#search_missing_subtitles').click(function(){
-		window.location = '{{base_url}}search_missing_subtitles/{{no}}';
+		window.location = '{{base_url}}search_missing_subtitles_movie/{{no}}';
 	})
 
 	$('.remove_subtitles').click(function(){
@@ -221,7 +237,7 @@
 			});
 	})
 
-	$('a, i').click(function(){
+	$('a, .menu .item, button:not(#config, .cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
