@@ -92,6 +92,7 @@
 							%if not total_subtitles_list:
 							%	pass
 							%else:
+							%	total_subs = 0
 							%	for total_subtitles in total_subtitles_list:
 							%		if total_subtitles[0] == row[5]:
 							%			total_subs = total_subtitles[1]
