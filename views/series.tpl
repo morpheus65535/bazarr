@@ -287,10 +287,11 @@
 
 	$( ".progress" ).each(function() {
 		if ($(this).progress('is complete') != true) {
-			$(this).progress('set warning');
+			$(this).addClass('yellow');
 		}
 		if ($(this).progress('get total') == 0) {
-			$(this).progress('set success');
+			$(this).progress('update progress', '99');
+			$(this).addClass('grey disabled');
 			$(this).progress('set bar label', '0 / 0');
 		}
 	});
