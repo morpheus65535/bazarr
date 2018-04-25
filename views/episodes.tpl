@@ -124,7 +124,17 @@
 				<div id="fondblanc" class="ui container">
 					%missing_subs = len([i for i in season if i[6] != "[]"])
 					%total_subs = len(season)
-					<h1 class="ui header">Season {{season[0][2]}}<div class="ui tiny {{!'green' if missing_subs == 0 else 'yellow'}} circular label">{{!total_subs - missing_subs}} / {{total_subs}}</div></h1>
+					%subs_label = ''
+					%if subs_languages is not None:
+					%	subs_label = '<div class="ui tiny '
+					%	if missing_subs == 0:
+					%		subs_label = subs_label + 'green'
+					%	else:
+					%		subs_label = subs_label + 'yellow'
+					%	end
+					%	subs_label = subs_label + ' circular label">' + str(total_subs - missing_subs) + ' / ' + str(total_subs) + '</div>'
+					%end
+					<h1 class="ui header">Season {{season[0][2]}}{{!subs_label}}</h1>
 					<div class="ui accordion">
 						<div class="title">
 							<div class="ui one column stackable center aligned page grid">
