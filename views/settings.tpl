@@ -801,33 +801,86 @@
     $('#settings_form')
         .form({
             fields: {
-                settings_general_ip     		: ['regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]', 'empty'],
-                settings_general_port   		: ['integer[1..65535]', 'empty'],
-
-                settings_sonarr_ip 				: ['empty'],
-                settings_sonarr_port			: ['integer[1..65535]', 'empty'],
-                settings_sonarr_apikey			: ['exactLength[32]', 'empty'],
-
-                settings_subliminal_providers	: ['minCount[1]', 'empty'],
-                settings_subliminal_languages	: ['minCount[1]', 'empty']
+                settings_general_ip	: {
+                    rules : [
+                        {
+                            type : 'regExp[/^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_general_port : {
+                    rules : [
+                        {
+                            type : 'integer[1..65535]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_sonarr_ip : {
+                    rules : [
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_sonarr_port : {
+                    rules : [
+                        {
+                            type : 'integer[1..65535]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_sonarr_apikey : {
+                    rules : [
+                        {
+                            type : 'exactLength[32]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_subliminal_providers : {
+                    rules : [
+                        {
+                            type : 'minCount[1]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_subliminal_languages : {
+                    rules : [
+                        {
+                            type : 'minCount[1]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                }
             },
             inline : true,
             on     : 'blur',
-            onValid: function(){
-                $('#form_validation_error').hide();
-                $('.submit').removeClass('disabled');
-            },
-            onInvalid: function(){
-                $('#form_validation_error').show();
-                $('.submit').addClass('disabled');
-            },
             onFailure: function(){
+                $('#form_validation_error').show();
                 $('.submit').addClass('disabled');
                 return false;
             },
             onSuccess: function(){
+                $('#form_validation_error').hide();
                 $('.submit').removeClass('disabled');
                 $('#loader').addClass('active');
+                return false;
             }
         })
     ;
