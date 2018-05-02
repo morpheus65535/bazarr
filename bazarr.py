@@ -1,4 +1,4 @@
-bazarr_version = '0.4.5 dev'
+bazarr_version = '0.5.0 dev'
 
 import gc
 gc.enable()
@@ -339,24 +339,55 @@ def movies():
     output = template('movies', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
     return output
 
-@route(base_url + 'movie/<no:int>', method='GET')
-def movie(no):
-    from get_radarr_settings import get_radarr_settings
+@route(base_url + 'movieseditor')
+def movieseditor():
     single_language = get_general_settings()[7]
-    url_radarr_short = get_radarr_settings()[1]
+
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db.create_function("path_substitution", 1, path_replace)
+    c = db.cursor()
+
+    c.execute("SELECT COUNT(*) FROM table_movies")
+    missing_count = c.fetchone()
+    missing_count = missing_count[0]
+
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC")
+    data = c.fetchall()
+    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
+    languages = c.fetchall()
+    c.close()
+    output = template('movieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language)
+    return output
+
+@route(base_url + 'edit_movieseditor', method='POST')
+def edit_movieseditor():
+    ref = request.environ['HTTP_REFERER']
+
+    movies = request.forms.get('movies')
+    movies = ast.literal_eval(str('[' + movies + ']'))
+    lang = request.forms.getall('languages')
+    hi = request.forms.get('hearing_impaired')
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()
 
-    movies_details = []
-    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
-    tmdbid = movies_details[5]
+    for movie in movies:
+        if str(lang) != "[]" and str(lang) != "['']":
+            if str(lang) == "['None']":
+                lang = 'None'
+            else:
+                lang = str(lang)
+            c.execute("UPDATE table_movies SET languages = ? WHERE radarrId LIKE ?", (lang, movie))
+        if hi != '':
+            c.execute("UPDATE table_movies SET hearing_impaired = ? WHERE radarrId LIKE ?", (hi, movie))
 
-    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
+    conn.commit()
     c.close()
 
-    return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid)
+    for movie in movies:
+        list_missing_subtitles_movies(movie)
+
+    redirect(ref)
 
 @route(base_url + 'edit_movie/<no:int>', method='POST')
 def edit_movie(no):
@@ -387,6 +418,25 @@ def edit_movie(no):
     list_missing_subtitles_movies(no)
 
     redirect(ref)
+
+@route(base_url + 'movie/<no:int>', method='GET')
+def movie(no):
+    from get_radarr_settings import get_radarr_settings
+    single_language = get_general_settings()[7]
+    url_radarr_short = get_radarr_settings()[1]
+
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn.create_function("path_substitution", 1, path_replace)
+    c = conn.cursor()
+
+    movies_details = []
+    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
+    tmdbid = movies_details[5]
+
+    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
+    c.close()
+
+    return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 def scan_disk(no):
@@ -422,6 +472,10 @@ def search_missing_subtitles_movie(no):
 
 @route(base_url + 'history')
 def history():
+    return template('history', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
+
+@route(base_url + 'historyseries')
+def historyseries():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
 
@@ -453,10 +507,49 @@ def history():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('history', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
+    return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
+
+@route(base_url + 'historymovies')
+def historymovies():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = db.cursor()
+
+    c.execute("SELECT COUNT(*) FROM table_history_movie")
+    row_count = c.fetchone()
+    row_count = row_count[0]
+    page = request.GET.page
+    if page == "":
+        page = "1"
+    offset = (int(page) - 1) * 15
+    max_page = int(math.ceil(row_count / 15.0))
+
+    now = datetime.now()
+    today = []
+    thisweek = []
+    thisyear = []
+    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action LIKE '1'").fetchall()
+    total = len(stats)
+    for stat in stats:
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
+            today.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
+            thisweek.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
+            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+    stats = [len(today), len(thisweek), len(thisyear), total]
+
+    c.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
+    data = c.fetchall()
+    c.close()
+    data = reversed(sorted(data, key=operator.itemgetter(2)))
+    return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
 
 @route(base_url + 'wanted')
 def wanted():
+    return template('wanted', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
+
+@route(base_url + 'wantedseries')
+def wantedseries():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
@@ -473,7 +566,27 @@ def wanted():
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
     data = c.fetchall()
     c.close()
-    return template('wanted', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+    return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+
+@route(base_url + 'wantedmovies')
+def wantedmovies():
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db.create_function("path_substitution", 1, path_replace)
+    c = db.cursor()
+
+    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'")
+    missing_count = c.fetchone()
+    missing_count = missing_count[0]
+    page = request.GET.page
+    if page == "":
+        page = "1"
+    offset = (int(page) - 1) * 15
+    max_page = int(math.ceil(missing_count / 15.0))
+
+    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]' ORDER BY _rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
+    data = c.fetchall()
+    c.close()
+    return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
 
 @route(base_url + 'wanted_search_missing_subtitles')
 def wanted_search_missing_subtitles_list():
@@ -864,6 +977,7 @@ def execute_task(taskid):
 
     redirect(ref)
 
+
 @route(base_url + 'remove_subtitles', method='POST')
 def remove_subtitles():
         episodePath = request.forms.get('episodePath')
@@ -871,7 +985,6 @@ def remove_subtitles():
         subtitlesPath = request.forms.get('subtitlesPath')
         sonarrSeriesId = request.forms.get('sonarrSeriesId')
         sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-        tvdbid = request.forms.get('tvdbid')
 
         try:
             os.remove(subtitlesPath)
@@ -881,6 +994,24 @@ def remove_subtitles():
             pass
         store_subtitles(unicode(episodePath))
         list_missing_subtitles(sonarrSeriesId)
+
+
+@route(base_url + 'remove_subtitles_movie', method='POST')
+def remove_subtitles_movie():
+        moviePath = request.forms.get('moviePath')
+        language = request.forms.get('language')
+        subtitlesPath = request.forms.get('subtitlesPath')
+        radarrId = request.forms.get('radarrId')
+
+        try:
+            os.remove(subtitlesPath)
+            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            history_log_movie(0, radarrId, result)
+        except OSError:
+            pass
+        store_subtitles_movie(unicode(moviePath))
+        list_missing_subtitles_movies(radarrId)
+
 
 @route(base_url + 'get_subtitle', method='POST')
 def get_subtitle():
@@ -918,12 +1049,57 @@ def get_subtitle():
             providers_auth = None
 
         try:
-            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName)
+            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
             if result is not None:
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
                 store_subtitles(unicode(episodePath))
                 list_missing_subtitles(sonarrSeriesId)
+            redirect(ref)
+        except OSError:
+            pass
+
+@route(base_url + 'get_subtitle_movie', method='POST')
+def get_subtitle_movie():
+        ref = request.environ['HTTP_REFERER']
+
+        moviePath = request.forms.get('moviePath')
+        sceneName = request.forms.get('sceneName')
+        language = request.forms.get('language')
+        hi = request.forms.get('hi')
+        radarrId = request.forms.get('radarrId')
+        tmdbid = request.forms.get('tmdbid')
+
+        db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+        c = db.cursor()
+        c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+        enabled_providers = c.fetchall()
+        c.close()
+
+        providers_list = []
+        providers_auth = {}
+        if len(enabled_providers) > 0:
+            for provider in enabled_providers:
+                providers_list.append(provider[0])
+                try:
+                    if provider[2] is not '' and provider[3] is not '':
+                        provider_auth = providers_auth.append(provider[0])
+                        provider_auth.update({'username':providers[2], 'password':providers[3]})
+                    else:
+                        providers_auth = None
+                except:
+                    providers_auth = None
+        else:
+            providers_list = None
+            providers_auth = None
+
+        try:
+            result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movies')
+            if result is not None:
+                history_log_movie(1, radarrId, result)
+                send_notifications_movie(radarrId, result)
+                store_subtitles_movie(unicode(moviePath))
+                list_missing_subtitles_movies(radarrId)
             redirect(ref)
         except OSError:
             pass

@@ -107,7 +107,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         pass
     else:
         from scheduler import execute_now
-        execute_now('update_all_episodes')
+        execute_now('update_all_episodes_and_movies')
 
     # Close database connection
     db.close()

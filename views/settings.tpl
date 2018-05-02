@@ -822,9 +822,11 @@
                 $('.submit').addClass('disabled');
             },
             onFailure: function(){
+                $('.submit').addClass('disabled');
                 return false;
             },
             onSuccess: function(){
+                $('.submit').removeClass('disabled');
                 $('#loader').addClass('active');
             }
         })

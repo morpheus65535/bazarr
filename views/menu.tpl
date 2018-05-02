@@ -26,7 +26,8 @@
 
 		% conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     	% c = conn.cursor()
-		% wanted = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
+		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
+		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'").fetchone()
 
 		<div id="divmenu" class="ui container">
 			<div class="ui grid">
@@ -55,11 +56,12 @@
 											</a>
 											<a class="item" href="{{base_url}}wanted">
 												<i class="warning sign icon">
-												% if wanted[0] > 0:
-													<div class="floating ui tiny yellow label">
-														{{wanted[0]}}
+													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+														{{wanted_series[0]}}
 													</div>
-												% end
+													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
+														{{wanted_movies[0]}}
+													</div>
 												</i>
 												Wanted
 											</a>

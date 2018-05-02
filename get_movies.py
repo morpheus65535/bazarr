@@ -36,7 +36,7 @@ def update_movies():
                     overview = ""
                 try:
                     poster_big = movie['images'][0]['url']
-                    poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+                    poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
                 except:
                     poster = ""
                 try:

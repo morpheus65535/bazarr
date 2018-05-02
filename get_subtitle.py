@@ -15,8 +15,12 @@ from notifier import send_notifications, send_notifications_movie
 # configure the cache
 region.configure('dogpile.cache.memory')
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
-    minimum_score = float(get_general_settings()[8]) / 100 * 359
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
+    if type == 'series':
+        type_of_score = 359
+    elif type == 'movies':
+        type_of_score = 119
+    minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
@@ -45,7 +49,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
             else:
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / 359 * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single == 'True':
@@ -122,7 +126,7 @@ def series_download_subtitles(no):
             
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth, episode[3])
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth, episode[3], 'series')
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 history_log(1, no, episode[2], message)
@@ -155,7 +159,7 @@ def movies_download_subtitles(no):
         providers_auth = None
 
     for language in ast.literal_eval(movie[1]):
-        message = download_subtitle(path_replace(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3])
+        message = download_subtitle(path_replace(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3], 'movies')
         if message is not None:
             store_subtitles_movie(path_replace(movie[0]))
             history_log_movie(1, no, message)
@@ -189,7 +193,7 @@ def wanted_download_subtitles(path):
         
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth, episode[5])
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth, episode[5], 'series')
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 list_missing_subtitles(episode[3])
@@ -201,11 +205,15 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE table_episodes.missing_subtitles != '[]'")
-    data = c.fetchall()
+    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'")
+    episodes = c.fetchall()
+
+    c.execute("SELECT path_substitution(path) FROM table_movies WHERE missing_subtitles != '[]'")
+    movies = c.fetchall()
+
     c.close()
 
-    for episode in data:
+    for episode in episodes:
         wanted_download_subtitles(episode[0])
 
-    logging.info('Finished searching for missing subtitles. Check history for more information.')
+    logging.info('Finished searching for missing subtitles. Check histories for more information.')

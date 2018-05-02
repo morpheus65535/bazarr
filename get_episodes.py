@@ -6,7 +6,7 @@ import logging
 from get_general_settings import *
 from list_subtitles import *
     
-def update_all_episodes():
+def update_all_episodes_and_movies():
     full_scan_subtitles()
     logging.info('All existing subtitles indexed from disk.')
     list_missing_subtitles()

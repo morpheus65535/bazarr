@@ -47,6 +47,7 @@
 				padding-left: 2em;
 				padding-right: 2em;
 				padding-bottom: 1em;
+				text-color: black;
 			}
 			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
 				background: transparent !important;
@@ -75,7 +76,7 @@
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" src="{{base_url}}image_proxy_movies{{details[2]}}">
+				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
 				<div class="ui right floated basic icon buttons">
 					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
 					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
@@ -104,19 +105,65 @@
 				<div style='clear:both;'></div>
 
 				<div id="fondblanc" class="ui container">
-					<h1 class="ui header">Subtitles</h1>
 					<table class="ui very basic single line selectable table">
 						<thead>
 							<tr>
-								<th>Existing subtitles</th>
+								<th>Subtitles path</th>
+								<th>Language</th>
+								<th></th>
 							</tr>
 						</thead>
 						<tbody>
+							<%
+							subtitles_files = ast.literal_eval(str(details[9]))
+							if subtitles_files is not None:
+								for subtitles_file in subtitles_files:
+							%>
 							<tr>
-								<td>{{details[9]}}</td>
+								<td>{{path_replace(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
+								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{pycountry.languages.lookup(str(subtitles_file[0])).name}}</div></td>
+								<td>
+									%if subtitles_file[1] is not None:
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace(subtitles_file[1])}}" data-language="{{pycountry.languages.lookup(str(subtitles_file[0])).alpha_3}}" data-radarrId={{details[10]}}>
+										<i class="ui black delete icon"></i>
+									</a>
+									%end
+								</td>
 							</tr>
+							<%
+								end
+								if len(subtitles_files) == 0:
+							%>
+							<tr><td colspan="3">No subtitles detected for this movie.</td></tr>
+							<%
+								end
+							end
+							%>
 						</tbody>
 					</table>
+					<%
+					missing_subs_languages = ast.literal_eval(str(details[11]))
+					missing_subs_languages_list = []
+					if missing_subs_languages is not None:
+					%>
+					<table class="ui very basic single line selectable table">
+						<thead>
+							<tr>
+								<th>Missing subtitles</th>
+							</tr>
+						</thead>
+					</table>
+					<%
+						for missing_subs_language in missing_subs_languages:
+					%>
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{pycountry.languages.lookup(str(missing_subs_language)).alpha_3}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{pycountry.languages.lookup(str(missing_subs_language)).name}}
+								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							</a>
+					<%
+						end
+					end
+					%>
 				</div>
 			</div>
 		</div>
@@ -192,15 +239,14 @@
 
 	$('.remove_subtitles').click(function(){
 		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
+		            moviePath: $(this).attr("data-moviePath"),
 		            language: $(this).attr("data-language"),
 		            subtitlesPath: $(this).attr("data-subtitlesPath"),
-		            sonarrmovieId: $(this).attr("data-sonarrmovieId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            radarrId: $(this).attr("data-radarrId"),
 		            tmdbid: {{tmdbid}}
 		    };
 		    $.ajax({
-		        url: "{{base_url}}remove_subtitles",
+		        url: "{{base_url}}remove_subtitles_movie",
 		        type: "POST",
 		        dataType: "json",
 				data: values
@@ -215,16 +261,15 @@
 
 	$('.get_subtitle').click(function(){
 		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
+		            moviePath: $(this).attr("data-moviePath"),
 		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
-		            sonarrmovieId: $(this).attr("data-sonarrmovieId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+		            radarrId: $(this).attr("data-radarrId"),
 		            tmdbid: {{tmdbid}}
 		    };
 		    $.ajax({
-		        url: "{{base_url}}get_subtitle",
+		        url: "{{base_url}}get_subtitle_movie",
 		        type: "POST",
 		        dataType: "json",
 				data: values
