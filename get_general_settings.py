@@ -31,8 +31,10 @@ def get_general_settings():
     use_scenename = general_settings[11]
     use_postprocessing = general_settings[12]
     postprocessing_cmd = general_settings[13]
+    use_sonarr = general_settings[14]
+    use_radarr = general_settings[15]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -79,3 +81,5 @@ minimum_score = result[8]
 use_scenename = result[9]
 use_processing = result[10]
 postprocessing_cmd = result[11]
+use_sonarr = result[12]
+use_radarr = result[13]

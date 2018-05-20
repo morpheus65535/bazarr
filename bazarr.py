@@ -608,10 +608,12 @@ def settings():
     settings_providers = c.fetchall()
     c.execute("SELECT * FROM table_settings_sonarr")
     settings_sonarr = c.fetchone()
+    c.execute("SELECT * FROM table_settings_radarr")
+    settings_radarr = c.fetchone()
     c.execute("SELECT * FROM table_settings_notifier")
     settings_notifier = c.fetchall()
     c.close()
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
 def save_settings():
@@ -651,10 +653,23 @@ def save_settings():
     else:
         settings_general_use_postprocessing = 'True'
     settings_general_postprocessing_cmd = request.forms.get('settings_general_postprocessing_cmd')
+    print "toto"
+    settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
+    print settings_general_use_sonarr
+    if settings_general_use_sonarr is None:
+        settings_general_use_sonarr = 'False'
+    else:
+        settings_general_use_sonarr = 'True'
+    settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
+    print settings_general_use_radarr
+    if settings_general_use_radarr is None:
+        settings_general_use_radarr = 'False'
+    else:
+        settings_general_use_radarr = 'True'
 
-    before = c.execute("SELECT ip, port, base_url FROM table_settings_general").fetchone()
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd) ))
+    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping FROM table_settings_general").fetchone()
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr)))
     conn.commit()
     if after != before:
         configured()
@@ -671,6 +686,19 @@ def save_settings():
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
     c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync))
+
+    settings_radarr_ip = request.forms.get('settings_radarr_ip')
+    settings_radarr_port = request.forms.get('settings_radarr_port')
+    settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
+    settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
+    if settings_radarr_ssl is None:
+        settings_radarr_ssl = 'False'
+    else:
+        settings_radarr_ssl = 'True'
+    settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    settings_radarr_sync = request.forms.get('settings_radarr_sync')
+    c.execute("UPDATE table_settings_radarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_radarr_ip, settings_radarr_port, settings_radarr_baseurl, settings_radarr_ssl, settings_radarr_apikey, settings_radarr_sync))
+
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")

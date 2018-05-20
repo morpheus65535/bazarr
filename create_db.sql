@@ -38,9 +38,18 @@ CREATE TABLE "table_settings_general" (
 	`path_mapping`	TEXT,
 	`log_level`	TEXT,
 	`branch`	TEXT,
-	`auto_update`	INTEGER
+	`auto_update`	INTEGER,
+	`configured`	INTEGER,
+    `updated`	INTEGER,
+	`single_language`	TEXT,
+	`minimum_score`	TEXT,
+	`use_scenename`	TEXT,
+	`use_postprocessing`	TEXT,
+	`postprocessing_cmd`	TEXT,
+    `use_sonarr`	TEXT,
+	`use_radarr`	TEXT
 );
-INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update) VALUES ('0.0.0.0',6767,'/',Null,'INFO','master','True');
+INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update, configured, updated, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr) VALUES ('0.0.0.0',6767,'/',Null,'INFO','master','True',0,0,'False','0','False','False',Null);
 CREATE TABLE "table_history" (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`action`	INTEGER NOT NULL,

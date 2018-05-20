@@ -45,6 +45,7 @@
             <div class="ui top attached tabular menu">
                 <a class="tabs item active" data-tab="general">General</a>
                 <a class="tabs item" data-tab="sonarr">Sonarr</a>
+                <a class="tabs item" data-tab="radarr">Radarr</a>
                 <a class="tabs item" data-tab="subliminal">Subliminal</a>
                 <a class="tabs item" data-tab="notifier">Notifications</a>
             </div>
@@ -151,6 +152,49 @@
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="Debug logging should only be enabled temporarily" data-inverted="">
                                     <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Integration settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use Sonarr</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings_general[14]}}>
+                                    <input name="settings_general_use_sonarr" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enable Sonarr integration." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use Radarr</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings_general[15]}}>
+                                    <input name="settings_general_use_radarr" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enable Radarr integration." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -449,7 +493,116 @@
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
-                                    <select name="settings_sonarr_sync" id="settings_sync" class="ui fluid selection dropdown">
+                                    <select name="settings_sonarr_sync" id="settings_sonarr_sync" class="ui fluid selection dropdown">
+                                        <option value="Manually">Manually</option>
+                                        <option value="Daily">Daily (at 4am)</option>
+                                        <option value="Weekly">Weekly (sunday at 4am)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui bottom attached tab segment" data-tab="radarr">
+                <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
+                <div class="ui dividing header">Connection settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Hostname or IP address</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input name="settings_radarr_ip" type="text" value="{{settings_radarr[0]}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Hostname or IP4 address of Radarr" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Listening port</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input name="settings_radarr_port" type="text" value="{{settings_radarr[1]}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="TCP port of Radarr" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Base URL</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class="ui fluid input">
+                                    <input name="settings_radarr_baseurl" type="text" value="{{settings_radarr[2]}}">
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Base URL for Radarr (default: '/')" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>SSL enabled</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_radarr[3]}}>
+                                    <input name="settings_radarr_ssl" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>API key</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input name="settings_radarr_apikey" type="text" value="{{settings_radarr[4]}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="API key for Radarr (32 alphanumeric characters)" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Synchronization</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Full sync frequency</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <select name="settings_radarr_sync" id="settings_radarr_sync" class="ui fluid selection dropdown">
                                         <option value="Manually">Manually</option>
                                         <option value="Daily">Daily (at 4am)</option>
                                         <option value="Weekly">Weekly (sunday at 4am)</option>
@@ -483,7 +636,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use the scene name from Sonarr if available to circumvent usage of episode file renaming." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use the scene name from Sonarr/Radarr if available to circumvent usage of episode file renaming." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -725,6 +878,12 @@
                 $("#sonarr_ssl_div").checkbox('uncheck');
             }
 
+    if ($('#radarr_ssl_div').data("ssl") == "True") {
+                $("#radarr_ssl_div").checkbox('check');
+            } else {
+                $("#radarr_ssl_div").checkbox('uncheck');
+            }
+
     if ($('#settings_automatic_div').data("automatic") == "True") {
                 $("#settings_automatic_div").checkbox('check');
             } else {
@@ -759,6 +918,18 @@
             }
     });
 
+    if ($('#settings_use_sonarr').data("enabled") == "True") {
+                $("#settings_use_sonarr").checkbox('check');
+            } else {
+                $("#settings_use_sonarr").checkbox('uncheck');
+            }
+
+    if ($('#settings_use_radarr').data("enabled") == "True") {
+                $("#settings_use_radarr").checkbox('check');
+            } else {
+                $("#settings_use_radarr").checkbox('uncheck');
+            }
+
     $('.notifier_enabled').each(function(i, obj) {
         if ($(this).data("enabled") == 1) {
                 $(this).checkbox('check');
@@ -786,14 +957,17 @@
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
     $('#settings_branch').dropdown('clear');
     $('#settings_branch').dropdown('set selected','{{!settings_general[5]}}');
-    $('#settings_sync').dropdown('clear');
-    $('#settings_sync').dropdown('set selected','{{!settings_sonarr[5]}}');
+    $('#settings_sonarr_sync').dropdown('clear');
+    $('#settings_sonarr_sync').dropdown('set selected','{{!settings_sonarr[5]}}');
+    $('#settings_radarr_sync').dropdown('clear');
+    $('#settings_radarr_sync').dropdown('set selected','{{!settings_radarr[5]}}');
 
     $('#settings_loglevel').dropdown();
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
     $('#settings_branch').dropdown();
-    $('#settings_sync').dropdown();
+    $('#settings_sonarr_sync').dropdown();
+    $('#settings_radarr_sync').dropdown();
 </script>
 
 <script>
@@ -839,6 +1013,33 @@
                     ]
                 },
                 settings_sonarr_apikey : {
+                    rules : [
+                        {
+                            type : 'exactLength[32]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_radarr_ip : {
+                    rules : [
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_radarr_port : {
+                    rules : [
+                        {
+                            type : 'integer[1..65535]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_radarr_apikey : {
                     rules : [
                         {
                             type : 'exactLength[32]'
