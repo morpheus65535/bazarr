@@ -157,7 +157,23 @@ def image_proxy_movies(url):
     img_buffer.seek(0)
     return send_file(img_buffer, ctype=img_pil.format)
 
+
 @route(base_url)
+def redirect_root():
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+    integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
+    c.close()
+
+    if integration[0] == "True":
+        redirect(base_url + 'series')
+    elif integration[1] == "True":
+        redirect(base_url + 'movies')
+    else:
+        redirect(base_url + 'settings')
+
+
+@route(base_url + 'series')
 def series():
     import update_db
     single_language = get_general_settings()[7]
@@ -653,22 +669,19 @@ def save_settings():
     else:
         settings_general_use_postprocessing = 'True'
     settings_general_postprocessing_cmd = request.forms.get('settings_general_postprocessing_cmd')
-    print "toto"
     settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
-    print settings_general_use_sonarr
     if settings_general_use_sonarr is None:
         settings_general_use_sonarr = 'False'
     else:
         settings_general_use_sonarr = 'True'
     settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
-    print settings_general_use_radarr
     if settings_general_use_radarr is None:
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
 
-    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping FROM table_settings_general").fetchone()
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping))
+    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr FROM table_settings_general").fetchone()
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr))
     c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr)))
     conn.commit()
     if after != before:

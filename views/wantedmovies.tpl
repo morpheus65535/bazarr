@@ -48,7 +48,7 @@
 
 		<div class="ui container">
 			<div class="ui right floated basic buttons">
-				<button id="wanted_search_missing_subtitles" class="ui button"><i class="download icon"></i>Download wanted movies subtitles</button>
+				<button id="wanted_search_missing_subtitles_movies" class="ui button"><i class="download icon"></i>Download wanted subtitles</button>
 			</div>
 			<table id="tablehistory" class="ui very basic selectable table">
 				<thead>
@@ -135,8 +135,8 @@
 		loadURLmovies({{int(max_page)}});
 	})
 
-	$('#wanted_search_missing_subtitles').click(function(){
-		window.location = '{{base_url}}wanted_search_missing_subtitles_movies';
+	$('#wanted_search_missing_subtitles_movies').click(function(){
+		window.location = '{{base_url}}wanted_search_missing_subtitles';
 	})
 
 	$('.get_subtitle').click(function(){

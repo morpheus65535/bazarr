@@ -48,7 +48,7 @@
 
 		<div class="ui container">
 			<div class="ui right floated basic buttons">
-				<button id="wanted_search_missing_subtitles" class="ui button"><i class="download icon"></i>Download wanted series subtitles</button>
+				<button id="wanted_search_missing_subtitles" class="ui button"><i class="download icon"></i>Download wanted subtitles</button>
 			</div>
 			<table id="tablehistory" class="ui very basic selectable table">
 				<thead>

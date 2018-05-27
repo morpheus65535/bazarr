@@ -29,6 +29,10 @@
                 margin-bottom: 3em;
                 padding: 1em;
             }
+            .ui.tabular.menu > .disabled.item {
+                opacity: 0.45 !important;
+                pointer-events: none !important;
+            }
         </style>
     </head>
     <body>
@@ -40,12 +44,12 @@
         <div id="fondblanc" class="ui container">
             <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form">
             <div id="form_validation_error" class="ui error message">
-                <p>Some fields are in error and you can't save settings until you have corrected them.</p>
+                <p>Some fields are in error and you can't save settings until you have corrected them. Be sure to check in every tabs.</p>
             </div>
             <div class="ui top attached tabular menu">
                 <a class="tabs item active" data-tab="general">General</a>
-                <a class="tabs item" data-tab="sonarr">Sonarr</a>
-                <a class="tabs item" data-tab="radarr">Radarr</a>
+                <a class="tabs item" id="sonarr_tab" data-tab="sonarr">Sonarr</a>
+                <a class="tabs item" id="radarr_tab" data-tab="radarr">Radarr</a>
                 <a class="tabs item" data-tab="subliminal">Subliminal</a>
                 <a class="tabs item" data-tab="notifier">Notifications</a>
             </div>
@@ -604,8 +608,8 @@
                                 <div class='field'>
                                     <select name="settings_radarr_sync" id="settings_radarr_sync" class="ui fluid selection dropdown">
                                         <option value="Manually">Manually</option>
-                                        <option value="Daily">Daily (at 4am)</option>
-                                        <option value="Weekly">Weekly (sunday at 4am)</option>
+                                        <option value="Daily">Daily (at 5am)</option>
+                                        <option value="Weekly">Weekly (sunday at 5am)</option>
                                     </select>
                                 </div>
                             </div>
@@ -920,15 +924,37 @@
 
     if ($('#settings_use_sonarr').data("enabled") == "True") {
                 $("#settings_use_sonarr").checkbox('check');
+                $("#sonarr_tab").removeClass('disabled');
             } else {
                 $("#settings_use_sonarr").checkbox('uncheck');
+                $("#sonarr_tab").addClass('disabled');
             }
+
+    $('#settings_use_sonarr').checkbox({
+        onChecked: function() {
+            $("#sonarr_tab").removeClass('disabled');
+        },
+        onUnchecked: function() {
+            $("#sonarr_tab").addClass('disabled');
+        }
+    });
 
     if ($('#settings_use_radarr').data("enabled") == "True") {
                 $("#settings_use_radarr").checkbox('check');
+                $("#radarr_tab").removeClass('disabled');
             } else {
                 $("#settings_use_radarr").checkbox('uncheck');
+                $("#radarr_tab").addClass('disabled');
             }
+
+    $('#settings_use_radarr').checkbox({
+        onChecked: function() {
+            $("#radarr_tab").removeClass('disabled');
+        },
+        onUnchecked: function() {
+            $("#radarr_tab").addClass('disabled');
+        }
+    });
 
     $('.notifier_enabled').each(function(i, obj) {
         if ($(this).data("enabled") == 1) {
@@ -996,6 +1022,7 @@
                     ]
                 },
                 settings_sonarr_ip : {
+                    depends: 'settings_general_use_sonarr',
                     rules : [
                         {
                             type : 'empty'
@@ -1003,6 +1030,7 @@
                     ]
                 },
                 settings_sonarr_port : {
+                    depends: 'settings_general_use_sonarr',
                     rules : [
                         {
                             type : 'integer[1..65535]'
@@ -1013,6 +1041,7 @@
                     ]
                 },
                 settings_sonarr_apikey : {
+                    depends: 'settings_general_use_sonarr',
                     rules : [
                         {
                             type : 'exactLength[32]'
@@ -1023,6 +1052,7 @@
                     ]
                 },
                 settings_radarr_ip : {
+                    depends: 'settings_general_use_radarr',
                     rules : [
                         {
                             type : 'empty'
@@ -1030,6 +1060,7 @@
                     ]
                 },
                 settings_radarr_port : {
+                    depends: 'settings_general_use_radarr',
                     rules : [
                         {
                             type : 'integer[1..65535]'
@@ -1040,6 +1071,7 @@
                     ]
                 },
                 settings_radarr_apikey : {
+                    depends: 'settings_general_use_radarr',
                     rules : [
                         {
                             type : 'exactLength[32]'
@@ -1081,7 +1113,6 @@
                 $('#form_validation_error').hide();
                 $('.submit').removeClass('disabled');
                 $('#loader').addClass('active');
-                return false;
             }
         })
     ;

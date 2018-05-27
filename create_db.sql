@@ -49,7 +49,7 @@ CREATE TABLE "table_settings_general" (
     `use_sonarr`	TEXT,
 	`use_radarr`	TEXT
 );
-INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update, configured, updated, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr) VALUES ('0.0.0.0',6767,'/',Null,'INFO','master','True',0,0,'False','0','False','False',Null);
+INSERT INTO `table_settings_general` (ip,port,base_url,path_mapping,log_level, branch, auto_update, configured, updated, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr) VALUES ('0.0.0.0',6767,'/',Null,'INFO','master','True',0,0,'False','0','False','False',Null,'False','False');
 CREATE TABLE "table_history" (
 	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
 	`action`	INTEGER NOT NULL,

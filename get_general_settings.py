@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import ast
+import re
 
 def get_general_settings():
     # Open database connection
@@ -40,7 +41,7 @@ def path_replace(path):
     for path_mapping in path_mappings:
         if path_mapping[0] in path:
             path = path.replace(path_mapping[0], path_mapping[1])
-            if path.startswith('\\\\'):
+            if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
                 path = path.replace('/', '\\')
             elif path.startswith('/'):
                 path = path.replace('\\', '/')
@@ -51,7 +52,7 @@ def path_replace_reverse(path):
     for path_mapping in path_mappings:
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
-            if path.startswith('\\\\'):
+            if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
                 path = path.replace('/', '\\')
             elif path.startswith('/'):
                 path = path.replace('\\', '/')

@@ -88,6 +88,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         pass
 
     try:
+        c.execute('CREATE TABLE "table_settings_radarr" ( `ip` TEXT NOT NULL, `port` INTEGER NOT NULL, `base_url` TEXT, `ssl` INTEGER, `apikey` TEXT , "full_update" TEXT)')
+    except:
+        pass
+    else:
+        c.execute('INSERT INTO `table_settings_radarr` (ip, port, base_url, ssl, apikey, full_update) VALUES ("0.0.0.0", "7878", "/", "False", Null, "Daily")')
+
+    try:
         c.execute('CREATE TABLE "table_movies" ( `tmdbId` TEXT NOT NULL UNIQUE, `title` TEXT NOT NULL, `path` TEXT NOT NULL UNIQUE, `languages` TEXT, `subtitles` TEXT, `missing_subtitles` TEXT, `hearing_impaired` TEXT, `radarrId` INTEGER NOT NULL UNIQUE, `overview` TEXT, `poster` TEXT, `fanart` TEXT, "audio_language" "text", `sceneName` TEXT, PRIMARY KEY(`tmdbId`) )')
     except:
         pass
@@ -118,10 +125,14 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('alter table table_episodes add column "scene_name" TEXT')
         db.commit()
     except:
+        db.close()
         pass
     else:
+        db.close()
         from scheduler import execute_now
-        execute_now('update_all_episodes_and_movies')
-
-    # Close database connection
-    db.close()
+        from get_general_settings import get_general_settings
+        integration = get_general_settings()
+        if integration[12] == "True":
+            execute_now('update_all_episodes')
+        if integration[13] == "True":
+            execute_now('update_all_movies')
