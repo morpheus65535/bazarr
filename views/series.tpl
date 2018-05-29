@@ -14,7 +14,7 @@
 		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 
-		<title>Bazarr</title>
+		<title>Series - Bazarr</title>
 
 		<style>
 			body {

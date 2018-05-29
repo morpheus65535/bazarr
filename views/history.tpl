@@ -27,22 +27,20 @@
 				box-shadow: 0px 0px 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
-				padding: 3em;
+				padding: 1em;
+			}
+			#logs {
+				margin-top: 4em;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
 			}
 			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
 			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
-			#bottommenu {
-				background-color: #333333;
-				box-shadow: 0 0 10px 1px #333;
-				padding: 10px;
-				margin-bottom: -2em !important;
-			}
-			.label, .value {
-				color: white !important;
-			}
+            .ui.tabular.menu > .disabled.item {
+                opacity: 0.45 !important;
+                pointer-events: none !important;
+            }
 		</style>
 	</head>
 	<body>
@@ -50,165 +48,91 @@
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
-			
+
+        % import os
+		% import sqlite3
+
+		% conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    	% c = conn.cursor()
+
+		% integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
+
+        % c.close()
 		<div id="fondblanc" class="ui container">
-			<table id="tablehistory" class="ui very basic selectable table">
-				<thead>
-					<tr>
-						<th></th>
-						<th>Series</th>
-						<th>Episode</th>
-						<th>Episode Title</th>
-						<th>Date</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-				%import time
-				%import pretty
-				%for row in rows:
-					<tr class="selectable">
-						<td class="collapsing">
-						%if row[0] == 0:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been erased." data-inverted="">
-								<i class="ui trash icon"></i>
-							</div>
-						%elif row[0] == 1:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="">
-								<i class="ui download icon"></i>
-							</div>
-						%end
-						</td>
-						<td>
-							<a href="{{base_url}}episodes/{{row[6]}}">{{row[1]}}</a>
-						</td>
-						<td class="collapsing">
-							%if row[2] is not None:
-							%	episode = row[2].split('x')
-							{{episode[0] + 'x' + episode[1].zfill(2)}}
-							%end
-						</td>
-						<td>
-							%if row[3] is not None:
-							{{row[3]}}
-							%else:
-							<em>Deleted episode</em>
-							%end
-						</td>
-						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[4]))}}" data-inverted="">
-								{{pretty.date(int(row[4]))}}
-							</div>
-						</td>
-						<td>{{row[5]}}</td>
-					</tr>
-				%end
-				</tbody>
-			</table>
-			<div class="ui grid">
-				<div class="three column row">
-			    	<div class="column"></div>
-			    	<div class="center aligned column">
-			    		<i class="\\
-			    		%if page == '1':
-			    		disabled\\
-			    		%end
-			    		 fast backward icon"></i>
-			    		<i class="\\
-			    		%if page == '1':
-			    		disabled\\
-			    		%end
-			    		 backward icon"></i>
-			    		{{page}} / {{max_page}}
-			    		<i class="\\
-			    		%if int(page) == int(max_page):
-			    		disabled\\
-			    		%end
-			    		 forward icon"></i>
-			    		<i class="\\
-			    		%if int(page) == int(max_page):
-			    		disabled\\
-			    		%end
-			    		 fast forward icon"></i>
-			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
+			<div class="ui top attached tabular menu">
+				<a id="series_tab" class="tabs item active" data-enabled="{{integration[0]}}" data-tab="series">Series</a>
+				<a id="movies_tab" class="tabs item" data-enabled="{{integration[1]}}" data-tab="movies">Movies</a>
+			</div>
+			<div class="ui bottom attached tab segment" data-tab="series">
+				<div class="content">
+					<div id="content_series"></div>
+				</div>
+			</div>
+			<div class="ui bottom attached tab segment" data-tab="movies">
+				<div class="content">
+					<div id="content_movies"></div>
 				</div>
 			</div>
 		</div>
-		<div id='bottommenu' class="ui fluid inverted bottom fixed five item menu">
-			<div class="ui statistics">
-				<div class="statistic">
-			    	<div class="text value">
-			    		<br>
-			    		Statistics
-			    	</div>
-			    	<div class="label">
-			    		
-			    	</div>
-			    </div>
-			    <div class="statistic">
-			    	<div class="value">
-			    		{{stats[0]}}
-			    	</div>
-			    	<div class="label">
-			    		Since 24 hours
-			    	</div>
-			    </div>
-			    <div class="statistic">
-			    	<div class="value">
-			    		{{stats[1]}}
-			    	</div>
-			    	<div class="label">
-			    		Since one week
-			    	</div>
-			    </div>
-			    <div class="statistic">
-			    	<div class="value">
-			    		{{stats[2]}}
-			    	</div>
-			    	<div class="label">
-			    		Since one year
-		    		</div>
-			    </div>
-			    <div class="statistic">
-			    	<div class="value">
-			    		{{stats[3]}}
-			    	</div>
-			    	<div class="label">
-			    		Total
-			    	</div>
-			    </div>
-			</div>
-		</div>
-
 		% include('footer.tpl')
-		<br><br><br><br>
 	</body>
 </html>
 
 
 <script>
-	if (sessionStorage.scrolly) {
-	    $(window).scrollTop(sessionStorage.scrolly);
-	    sessionStorage.clear();
+	$('.menu .item')
+		.tab()
+	;
+
+	$('#series_tab').click(function() {
+	    loadURLseries(1);
+	})
+
+	$('#movies_tab').click(function() {
+	    loadURLmovies(1);
+	})
+
+	function loadURLseries(page) {
+		$.ajax({
+	        url: "{{base_url}}historyseries?page=" + page,
+	        beforeSend: function() { $('#loader').addClass('active'); },
+        	complete: function() { $('#loader').removeClass('active'); },
+	        cache: false
+	    }).done(function(data) {
+	    	$("#content_series").html(data);
+	    });
 	}
 
-	$('a, i').click(function(){
-		sessionStorage.scrolly=$(window).scrollTop();
+	function loadURLmovies(page) {
+		$.ajax({
+	        url: "{{base_url}}historymovies?page=" + page,
+	        beforeSend: function() { $('#loader').addClass('active'); },
+        	complete: function() { $('#loader').removeClass('active'); },
+	        cache: false
+	    }).done(function(data) {
+	    	$("#content_movies").html(data);
+	    });
+	}
 
+	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
 		$('#loader').addClass('active');
 	})
 
-	$('.backward').click(function(){
-		location.href="?page={{int(page)-1}}";
-	})
-	$('.fast.backward').click(function(){
-		location.href="?page=1";
-	})
-	$('.forward').click(function(){
-		location.href="?page={{int(page)+1}}";
-	})
-	$('.fast.forward').click(function(){
-		location.href="?page={{int(max_page)}}";
-	})
+	if ($('#series_tab').data("enabled") == "True") {
+        $("#series_tab").removeClass('disabled');
+    } else {
+        $("#series_tab").addClass('disabled');
+    }
+
+    if ($('#movies_tab').data("enabled") == "True") {
+        $("#movies_tab").removeClass('disabled');
+    } else {
+        $("#movies_tab").addClass('disabled');
+    }
+	if ($('#series_tab').data("enabled") == "True") {
+        $( "#series_tab" ).trigger( "click" );
+    }
+    if ($('#series_tab').data("enabled") == "False" && $('#movies_tab').data("enabled") == "True") {
+        $( "#movies_tab" ).trigger( "click" );
+    }
 </script>

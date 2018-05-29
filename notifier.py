@@ -26,6 +26,14 @@ def get_episode_name(sonarrEpisodeId):
 
     return data[0]
 
+def get_movies_name(radarrId):
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    data = c_db.execute('SELECT title FROM table_movies WHERE radarrId = ?', (radarrId,)).fetchone()
+    c_db.close()
+
+    return data[0]
+
 def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     providers = get_notifier_providers()
     series = get_series_name(sonarrSeriesId)
@@ -40,4 +48,20 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     apobj.notify(
         title='Bazarr notification',
         body=series + ' - ' + episode + ' : ' + message,
+    )
+
+
+def send_notifications_movie(radarrId, message):
+    providers = get_notifier_providers()
+    movie = get_movies_name(radarrId)
+
+    apobj = apprise.Apprise()
+
+    for provider in providers:
+        if provider[1] is not None:
+            apobj.add(provider[1])
+
+    apobj.notify(
+        title='Bazarr notification',
+        body=movie + ' : ' + message,
     )

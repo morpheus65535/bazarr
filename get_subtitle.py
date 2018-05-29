@@ -10,13 +10,17 @@ from bs4 import UnicodeDammit
 from get_general_settings import *
 from list_subtitles import *
 from utils import *
-from notifier import send_notifications
+from notifier import send_notifications, send_notifications_movie
 
 # configure the cache
 region.configure('dogpile.cache.memory')
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
-    minimum_score = float(get_general_settings()[8]) / 100 * 359
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
+    if type == 'series':
+        type_of_score = 359
+    elif type == 'movies':
+        type_of_score = 119
+    minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
@@ -45,7 +49,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName):
             else:
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / 359 * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single == 'True':
@@ -122,12 +126,46 @@ def series_download_subtitles(no):
             
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth, episode[3])
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth, episode[3], 'series')
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 history_log(1, no, episode[2], message)
                 send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
+
+
+def movies_download_subtitles(no):
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    movie = c_db.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired FROM table_movies WHERE radarrId = ?", (no,)).fetchone()
+    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
+    c_db.close()
+
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username': providers[2], 'password': providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
+
+    for language in ast.literal_eval(movie[1]):
+        message = download_subtitle(path_replace(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3], 'movies')
+        if message is not None:
+            store_subtitles_movie(path_replace(movie[0]))
+            history_log_movie(1, no, message)
+            send_notifications_movie(no, message)
+    list_missing_subtitles_movies(no)
+
 
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -155,7 +193,7 @@ def wanted_download_subtitles(path):
         
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth, episode[5])
+            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth, episode[5], 'series')
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 list_missing_subtitles(episode[3])
@@ -167,11 +205,15 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE table_episodes.missing_subtitles != '[]'")
-    data = c.fetchall()
+    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'")
+    episodes = c.fetchall()
+
+    c.execute("SELECT path_substitution(path) FROM table_movies WHERE missing_subtitles != '[]'")
+    movies = c.fetchall()
+
     c.close()
 
-    for episode in data:
+    for episode in episodes:
         wanted_download_subtitles(episode[0])
 
-    logging.info('Finished searching for missing subtitles. Check history for more information.')
+    logging.info('Finished searching for missing subtitles. Check histories for more information.')

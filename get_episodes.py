@@ -7,7 +7,13 @@ from get_general_settings import *
 from list_subtitles import *
     
 def update_all_episodes():
-    full_scan_subtitles()
+    series_full_scan_subtitles()
+    logging.info('All existing subtitles indexed from disk.')
+    list_missing_subtitles()
+    logging.info('All missing subtitles updated in database.')
+
+def update_all_movies():
+    movies_full_scan_subtitles()
     logging.info('All existing subtitles indexed from disk.')
     list_missing_subtitles()
     logging.info('All missing subtitles updated in database.')

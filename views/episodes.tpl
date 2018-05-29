@@ -85,7 +85,7 @@
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" src="{{base_url}}image_proxy{{details[2]}}">
+				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy{{details[2]}}">
 				<div class="ui right floated basic icon buttons">
 					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
 					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>

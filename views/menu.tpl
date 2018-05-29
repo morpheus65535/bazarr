@@ -26,7 +26,9 @@
 
 		% conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     	% c = conn.cursor()
-		% wanted = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
+		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'").fetchone()
+		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'").fetchone()
+		% integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
 
 		<div id="divmenu" class="ui container">
 			<div class="ui grid">
@@ -39,23 +41,36 @@
 						<div class="ui grid">
 								<div class="row">
 								<div class="sixteen wide column">
-									<div class="ui inverted borderless labeled icon massive menu five item">
+									<div class="ui inverted borderless labeled icon massive menu six item">
 										<div class="ui container">
-											<a class="item" href="{{base_url}}">
+											% if integration[0] == "True":
+											<a class="item" href="{{base_url}}series">
 												<i class="play icon"></i>
 												Series
 											</a>
+                                            % end
+											% if integration[1] == "True":
+											<a class="item" href="{{base_url}}movies">
+												<i class="film icon"></i>
+												Movies
+											</a>
+                                            % end
 											<a class="item" href="{{base_url}}history">
 												<i class="wait icon"></i>
 												History
 											</a>
 											<a class="item" href="{{base_url}}wanted">
 												<i class="warning sign icon">
-												% if wanted[0] > 0:
-													<div class="floating ui tiny yellow label">
-														{{wanted[0]}}
+													% if integration[0] == "True":
+													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+														{{wanted_series[0]}}
 													</div>
-												% end
+													% end
+													% if integration[1] == "True":
+													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
+														{{wanted_movies[0]}}
+													</div>
+													% end
 												</i>
 												Wanted
 											</a>
@@ -93,7 +108,6 @@
 		</div>
 
     	% restart_required = c.execute("SELECT updated, configured FROM table_settings_general").fetchone()
-    	% conn.commit()
     	% c.close()
 
 		% if restart_required[0] == 1 and restart_required[1] == 1:
@@ -110,7 +124,7 @@
     $('.ui.search')
         .search({
             apiSettings: {
-                url: '{{base_url}}series_json/{query}',
+                url: '{{base_url}}search_json/{query}',
                 onResponse: function(results) {
                     var response = {
                         results : []
