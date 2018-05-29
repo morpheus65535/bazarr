@@ -54,7 +54,7 @@ if integration[12] == "True":
     scheduler.add_job(sync_episodes, 'interval', minutes=5, max_instances=1, coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr')
 
 if integration[13] == "True":
-    scheduler.add_job(update_movies, 'interval', minutes=1, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_movies', name='Update movies list from Radarr')
+    scheduler.add_job(update_movies, 'interval', minutes=5, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_movies', name='Update movies list from Radarr')
 
 if integration[12] == "True" or integration[13] == "True":
     scheduler.add_job(wanted_search_missing_subtitles, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')

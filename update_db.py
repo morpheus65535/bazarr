@@ -92,7 +92,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
     else:
-        c.execute('INSERT INTO `table_settings_radarr` (ip, port, base_url, ssl, apikey, full_update) VALUES ("0.0.0.0", "7878", "/", "False", Null, "Daily")')
+        c.execute('INSERT INTO `table_settings_radarr` (ip, port, base_url, ssl, apikey, full_update) VALUES ("127.0.0.1", "7878", "/", "False", Null, "Daily")')
 
     try:
         c.execute('CREATE TABLE "table_movies" ( `tmdbId` TEXT NOT NULL UNIQUE, `title` TEXT NOT NULL, `path` TEXT NOT NULL UNIQUE, `languages` TEXT, `subtitles` TEXT, `missing_subtitles` TEXT, `hearing_impaired` TEXT, `radarrId` INTEGER NOT NULL UNIQUE, `overview` TEXT, `poster` TEXT, `fanart` TEXT, "audio_language" "text", `sceneName` TEXT, PRIMARY KEY(`tmdbId`) )')

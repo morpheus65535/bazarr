@@ -3,6 +3,7 @@ import sqlite3
 import requests
 
 from get_general_settings import *
+from list_subtitles import *
 
 def update_movies():
     from get_radarr_settings import get_radarr_settings
@@ -64,15 +65,20 @@ def update_movies():
                 except:
                     c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,movie["tmdbId"]))
 
-        # Delete movies not in radarr anymore
-        deleted_items = []
-        for item in current_movies_db_list:
-            if item not in current_movies_radarr:
-                deleted_items.append(tuple([item]))
-        c.executemany('DELETE FROM table_movies WHERE tmdbId = ?',deleted_items)
+                # Commit changes to database table
+                db.commit()
 
-        # Commit changes to database table
-        db.commit()
+        # Delete movies not in radarr anymore
+        added_movies = list(set(current_movies_radarr) - set(current_movies_db_list))
+        removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
+
+        for removed_movie in removed_movies:
+            c.execute('DELETE FROM table_movies WHERE radarrId = ?', (removed_movie,))
+            db.commit()
+
+        for added_movie in added_movies:
+            added_path = c.execute('SELECT path FROM table_movies WHERE tmdbId = ?', (added_movie,)).fetchone()
+            store_subtitles_movie(path_replace(added_path[0]))
 
     # Close database connection
     db.close()
