@@ -4,6 +4,7 @@ FROM lsiobase/alpine.python:3.7
 ENV PYTHONIOENCODING="UTF-8"
 
 VOLUME /tv
+VOLUME /movies
 
 RUN apk add --update git py-pip jpeg-dev && \
     apk add --update --virtual build-dependencies build-base python-dev libffi-dev zlib-dev  && \
