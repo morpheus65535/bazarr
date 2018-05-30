@@ -29,11 +29,11 @@ def sonarr_full_update():
 def radarr_full_update():
     full_update = get_radarr_settings()[3]
     if full_update == "Daily":
-        scheduler.add_job(update_all_movies, 'cron', hour=4, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
+        scheduler.add_job(update_all_movies, 'cron', hour=5, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
     elif full_update == "Weekly":
-        scheduler.add_job(update_all_movies, 'cron', day_of_week='sun', hour=4, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
+        scheduler.add_job(update_all_movies, 'cron', day_of_week='sun', hour=5, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
     elif full_update == "Manually":
-        scheduler.add_job(update_all_movies, 'cron', year='2100', hour=4, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
+        scheduler.add_job(update_all_movies, 'cron', year='2100', hour=5, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_all_movies', name='Update all movies subtitles from disk', replace_existing=True)
 
 def execute_now(taskid):
     scheduler.modify_job(taskid, next_run_time=datetime.now())
