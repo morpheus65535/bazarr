@@ -701,6 +701,7 @@ def save_settings():
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
     c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync))
+    sonarr_full_update()
 
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -713,7 +714,7 @@ def save_settings():
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
     settings_radarr_sync = request.forms.get('settings_radarr_sync')
     c.execute("UPDATE table_settings_radarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_radarr_ip, settings_radarr_port, settings_radarr_baseurl, settings_radarr_ssl, settings_radarr_apikey, settings_radarr_sync))
-
+    radarr_full_update()
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")

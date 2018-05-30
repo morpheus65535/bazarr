@@ -59,4 +59,6 @@ if integration[13] == "True":
 if integration[12] == "True" or integration[13] == "True":
     scheduler.add_job(wanted_search_missing_subtitles, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
 
+sonarr_full_update()
+radarr_full_update()
 scheduler.start()
