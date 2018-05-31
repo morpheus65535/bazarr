@@ -7,7 +7,7 @@ VOLUME /tv
 
 RUN apk add --update git py-pip jpeg-dev && \
     apk add --update --virtual build-dependencies build-base python-dev libffi-dev zlib-dev  && \
-    git clone -b master --single-branch https://github.com/morpheus65535/bazarr.git /bazarr && \
+    git clone https://github.com/morpheus65535/bazarr.git /bazarr && \
     pip install -r /bazarr/requirements.txt && \
     apk del --purge build-dependencies
 
