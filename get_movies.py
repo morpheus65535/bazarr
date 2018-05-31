@@ -45,8 +45,11 @@ def update_movies():
                 except:
                     fanart = ""
 
-                if 'sceneName' in movie['movieFile']:
-                    sceneName = movie['movieFile']['sceneName']
+                if 'movieFile' in movie:
+                    if 'sceneName' in movie['movieFile']:
+                        sceneName = movie['movieFile']['sceneName']
+                    else:
+                        sceneName = None
                 else:
                     sceneName = None
 
