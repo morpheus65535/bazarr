@@ -32,13 +32,15 @@ def sync_episodes():
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         r = requests.get(url_sonarr_api_episode)
         for episode in r.json():
-            if episode['hasFile'] and episode['episodeFile']['size'] > 20480:
-                # Add shows in Sonarr to current shows list
-                if 'sceneName' in episode['episodeFile']:
-                    sceneName = episode['episodeFile']['sceneName']
-                else:
-                    sceneName = None
-                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
+            if episode['hasFile'] is True:
+                if 'episodeFile' in episode:
+                    if episode['episodeFile']['size'] > 20480:
+                        # Add shows in Sonarr to current shows list
+                        if 'sceneName' in episode['episodeFile']:
+                            sceneName = episode['episodeFile']['sceneName']
+                        else:
+                            sceneName = None
+                        current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
 
     added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
     removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))
