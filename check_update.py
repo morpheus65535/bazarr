@@ -33,7 +33,7 @@ def check_and_apply_update():
         g.reset('--hard', 'HEAD')
         g.checkout(branch)
         g.reset('--hard','origin/' + branch)
-        g.pull('origin/' + branch)
+        g.pull()
         logging.info('Bazarr updated to latest version and need to be restarted. ' + result)
         updated()
 
