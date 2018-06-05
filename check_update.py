@@ -25,6 +25,7 @@ def gitconfig():
 
 def check_and_apply_update():
     gitconfig()
+    branch = get_general_settings()[5]
     g = git.cmd.Git(current_working_directory)
     result = g.diff('--shortstat', 'origin/' + branch)
     if len(result) == 0:
