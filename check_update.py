@@ -26,14 +26,16 @@ def gitconfig():
 def check_and_apply_update():
     gitconfig()
     g = git.cmd.Git(current_working_directory)
-    result = g.pull('origin', branch)
-    if result.startswith('Already'):
+    result = g.diff('--shortstat', 'origin/' + branch)
+    if len(result) == 0:
         logging.info('No new version of Bazarr available.')
-    elif result.startswith('Updating') or result.startswith('Merge made'):
-        logging.info('Bazarr updated to latest version and need to be restarted.')
-        updated()
     else:
-        logging.info(result)
+        g.reset('--hard', 'HEAD')
+        g.checkout(branch)
+        g.reset('--hard','origin/' + branch)
+        g.pull('origin/' + branch)
+        logging.info('Bazarr updated to latest version and need to be restarted. ' + result)
+        updated()
 
 def updated():
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
