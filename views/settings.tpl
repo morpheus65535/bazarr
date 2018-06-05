@@ -221,13 +221,13 @@
                             <div class="two wide column">
                                 <div class="ui fluid input">
                                     <h4 class="ui header">
-                                        Path for Sonarr:
+                                        Path for Sonarr / Radarr:
                                     </h4>
                                 </div>
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Root path to the directory Sonarr accesses." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Root path to the directory Sonarr or Radarr accesses." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
