@@ -27,6 +27,7 @@ def check_and_apply_update():
     gitconfig()
     branch = get_general_settings()[5]
     g = git.cmd.Git(current_working_directory)
+    g.fetch('origin')
     result = g.diff('--shortstat', 'origin/' + branch)
     if len(result) == 0:
         logging.info('No new version of Bazarr available.')
