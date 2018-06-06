@@ -159,9 +159,9 @@ def movies_download_subtitles(no):
         providers_auth = None
 
     for language in ast.literal_eval(movie[1]):
-        message = download_subtitle(path_replace(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3], 'movies')
+        message = download_subtitle(path_replace_movie(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3], 'movies')
         if message is not None:
-            store_subtitles_movie(path_replace(movie[0]))
+            store_subtitles_movie(path_replace_movie(movie[0]))
             history_log_movie(1, no, message)
             send_notifications_movie(no, message)
     list_missing_subtitles_movies(no)
@@ -200,20 +200,63 @@ def wanted_download_subtitles(path):
                 history_log(1, episode[3], episode[2], message)
                 send_notifications(episode[3], episode[2], message)
 
+
+def wanted_download_subtitles_movie(path):
+    conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    movies_details = c_db.execute("SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName FROM table_movies WHERE path = ? AND missing_subtitles != '[]'", (path_replace_reverse_movie(path),)).fetchall()
+    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
+    c_db.close()
+
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username': providers[2], 'password': providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
+
+    for movie in movies_details:
+        for language in ast.literal_eval(movie[1]):
+            message = download_subtitle(path_replace_movie(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[5], 'movies')
+            if message is not None:
+                store_subtitles_movie(path_replace_movie(movie[0]))
+                list_missing_subtitles_movies(movie[3])
+                history_log_movie(1, movie[3], message)
+                send_notifications_movie(movie[3], message)
+
+
 def wanted_search_missing_subtitles():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
+    db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
     c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'")
     episodes = c.fetchall()
 
-    c.execute("SELECT path_substitution(path) FROM table_movies WHERE missing_subtitles != '[]'")
+    c.execute("SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'")
     movies = c.fetchall()
 
     c.close()
 
-    for episode in episodes:
-        wanted_download_subtitles(episode[0])
+    integration = get_general_settings()
+
+    if integration[12] == "True":
+        for episode in episodes:
+            wanted_download_subtitles(episode[0])
+
+    if integration[13] == "True":
+        for movie in movies:
+            wanted_download_subtitles_movie(movie[0])
 
     logging.info('Finished searching for missing subtitles. Check histories for more information.')

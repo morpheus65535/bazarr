@@ -34,8 +34,12 @@ def get_general_settings():
     postprocessing_cmd = general_settings[13]
     use_sonarr = general_settings[14]
     use_radarr = general_settings[15]
+    if general_settings[16] is None:
+        path_mappings_movie = []
+    else:
+        path_mappings_movie = ast.literal_eval(general_settings[16])
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -50,6 +54,28 @@ def path_replace(path):
 
 def path_replace_reverse(path):
     for path_mapping in path_mappings:
+        if path_mapping[1] in path:
+            path = path.replace(path_mapping[1], path_mapping[0])
+            if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
+                path = path.replace('/', '\\')
+            elif path.startswith('/'):
+                path = path.replace('\\', '/')
+            break
+    return path
+
+def path_replace_movie(path):
+    for path_mapping in path_mappings_movie:
+        if path_mapping[0] in path:
+            path = path.replace(path_mapping[0], path_mapping[1])
+            if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
+                path = path.replace('/', '\\')
+            elif path.startswith('/'):
+                path = path.replace('\\', '/')
+            break
+    return path
+
+def path_replace_reverse_movie(path):
+    for path_mapping in path_mappings_movie:
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -84,3 +110,4 @@ use_processing = result[10]
 postprocessing_cmd = result[11]
 use_sonarr = result[12]
 use_radarr = result[13]
+path_mappings_movie = result[14]

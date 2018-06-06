@@ -337,7 +337,7 @@ def movies():
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
+    db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_movies")
@@ -362,7 +362,7 @@ def movieseditor():
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
+    db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_movies")
@@ -444,7 +444,7 @@ def movie(no):
     url_radarr_short = get_radarr_settings()[1]
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace)
+    conn.create_function("path_substitution", 1, path_replace_movie)
     c = conn.cursor()
 
     movies_details = []
@@ -589,7 +589,7 @@ def wantedseries():
 @route(base_url + 'wantedmovies')
 def wantedmovies():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
+    db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'")
@@ -648,6 +648,10 @@ def save_settings():
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
     settings_general_pathmapping.extend([list(a) for a in zip(settings_general_sourcepath, settings_general_destpath)])
+    settings_general_sourcepath_movie = request.forms.getall('settings_general_sourcepath_movie')
+    settings_general_destpath_movie = request.forms.getall('settings_general_destpath_movie')
+    settings_general_pathmapping_movie = []
+    settings_general_pathmapping_movie.extend([list(a) for a in zip(settings_general_sourcepath_movie, settings_general_destpath_movie)])
     settings_general_branch = request.forms.get('settings_general_branch')
     settings_general_automatic = request.forms.get('settings_general_automatic')
     if settings_general_automatic is None:
@@ -682,9 +686,9 @@ def save_settings():
     else:
         settings_general_use_radarr = 'True'
 
-    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr FROM table_settings_general").fetchone()
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr)))
+    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie)))
     conn.commit()
     if after != before:
         configured()

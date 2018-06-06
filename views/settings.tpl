@@ -205,7 +205,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Path Mappings</div>
+                <div class="ui dividing header">Path Mappings for shows</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
@@ -221,13 +221,13 @@
                             <div class="two wide column">
                                 <div class="ui fluid input">
                                     <h4 class="ui header">
-                                        Path for Sonarr / Radarr:
+                                        Path for Sonarr:
                                     </h4>
                                 </div>
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Root path to the directory Sonarr or Radarr accesses." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Root path to the directory Sonarr accesses." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -272,6 +272,80 @@
                             <div class="four wide column">
                                 <div class="ui fluid input">
                                     <input name="settings_general_destpath" type="text" value="{{path[1]}}">
+                                </div>
+                            </div>
+                        </div>
+                        %end
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Path Mappings for movies</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        %import ast
+                        %if settings_general[16] is not None:
+                        %	path_substitutions_movie = ast.literal_eval(settings_general[16])
+                        %else:
+                        %	path_substitutions_movie = []
+                        %end
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+
+                            </div>
+                            <div class="two wide column">
+                                <div class="ui fluid input">
+                                    <h4 class="ui header">
+                                        Path for Radarr:
+                                    </h4>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Root path to the directory Radarr accesses." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="two wide center aligned column">
+
+                            </div>
+                            <div class="two wide column">
+                                <div class="ui fluid input">
+                                    <h4 class="ui header">
+                                        Path for Bazarr:
+                                    </h4>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Path that Bazarr should use to access the same directory remotely." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        %for x in range(0, 5):
+                        %	path_movie = []
+                        %	try:
+                        %		path_movie = path_substitutions_movie[x]
+                        %	except IndexError:
+                        %		path_movie = ["", ""]
+                        %	end
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+
+                            </div>
+                            <div class="four wide column">
+                                <div class="ui fluid input">
+                                    <input name="settings_general_sourcepath_movie" type="text" value="{{path_movie[0]}}">
+                                </div>
+                            </div>
+                            <div class="center aligned column">
+                                <i class="arrow circle right icon"></i>
+                            </div>
+                            <div class="four wide column">
+                                <div class="ui fluid input">
+                                    <input name="settings_general_destpath_movie" type="text" value="{{path_movie[1]}}">
                                 </div>
                             </div>
                         </div>

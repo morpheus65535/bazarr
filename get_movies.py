@@ -81,7 +81,7 @@ def update_movies():
 
         for added_movie in added_movies:
             added_path = c.execute('SELECT path FROM table_movies WHERE tmdbId = ?', (added_movie,)).fetchone()
-            store_subtitles_movie(path_replace(added_path[0]))
+            store_subtitles_movie(path_replace_movie(added_path[0]))
 
     # Close database connection
     db.close()

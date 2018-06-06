@@ -118,6 +118,11 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('UPDATE table_settings_general SET use_radarr="False"')
 
+    try:
+        c.execute('alter table table_settings_general add column "path_mapping_movie" "text"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

@@ -120,11 +120,11 @@
 								for subtitles_file in subtitles_files:
 							%>
 							<tr>
-								<td>{{path_replace(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
+								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
 								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{pycountry.languages.lookup(str(subtitles_file[0])).name}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace(subtitles_file[1])}}" data-language="{{pycountry.languages.lookup(str(subtitles_file[0])).alpha_3}}" data-radarrId={{details[10]}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{pycountry.languages.lookup(str(subtitles_file[0])).alpha_3}}" data-radarrId={{details[10]}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
