@@ -1,0 +1,22 @@
+language: bash
+sudo: required
+services: docker
+env:
+  global:
+  - REPO=gwelican/bazarr
+  - QEMU_VERSION=v2.11.0
+  - COMMIT=${TRAVIS_COMMIT::8}
+  - secure: p29iUgrD8tRnoWu1ZG9OpunG4/tydnnvyodDFNEMrqpY+4iO05p3LJBQfhi5OrkNMiJNLgeMB9nrLH0hJVKbiqRsaS0qMeeZwnFtU7AyoNmCbUhCKwz2xZB4djy2mt0tehTFNMzDwSX/w4YwaM60b3Dl2s2J96x7ovz/Mg6VWb195JD3WC6ags1+vmcAqOyzo+++GASJ8p/EO7MYiwkvUyXWW+RStaM+v8Pf7HN5xk+lKEaGvuL4PaxA74pRrg8roEcbOmhUcFE56PHstej3IieUUInumIbUm7ct577luPhnAfelm/xQwSFCArZCt0c7wJB284cY3FxeaRZHy7PnjyMatV/gtoea02ov0Wc3fq3KbpsGQbnr+SbkszMAfFOFSI2OVzqm51d3uNX5+KQu8hmyA2AUB+Nq09GObdMngXEIa3EsW2WtOWhYs0WKSvhmicglR10CtMP30v5T9kppcysl1cw8mc8OwJnxaeoSqreIMNMaIMc3EBG6XQMZVXkHZSELAJsf35o6Ny06rH0JtpAgDGgFZB2eUkOeu18NNIjiIV3bAF3SPKl+3o6P6OT9AQmgLTq6IsIA3UUGC6cBQMWnArjy+ZVeLZzhvDA/50x+QmOqay0XGG12xJIzYAGalJ/HpBYRcSuSQymqvzrv99CyGfDjQ4pXi5hNtzKxHZ8=
+  - secure: n4xpzgWGDdr8SSGh7R6ffoAcxywK2juhKrxftCxpaBTNIVV2lRIsaUW2fMUkbi4ohEpA8QRg6OHBYfWH/LiWG2o7jjixQFV3aPdbIqS8mI6hxBz7abxYSYmg4qbdCX7+4o/73G8HdA5W1lFLp6qvFOasjb181qvyQwpCBxvxjg5BAeOPP0+Fr4swso/JnrkqVtaacNmstMTnNhNe34nbs3yh+nOhXxQyrdKQeq+9SCTsMglDK9JL/G9in7QYsAwfGxjzwy1k93Y1eVGiLb10ik2MJStzKUvC3OBzE+7p5sScdieJuXC1/zRxgU8eSecN8ryDVVOWdIF9SjZupZOe6QdMrrSf4noQbJeqKcdTHzkKXtd3C3VV8a9evTzp2lEqxrqJ6nLMNKtry3JtB6O6kIXeXBk/c6rmG8/7ZtGzYwS97g4EV4owfcINA5LmAPyqTGeNxo5ZxhlM6fonRw8kZtPH+JY3/cxzoM3Y5jcWUlLOPf/TvHCvyFCcNW0QtIfBc+LIl9ZMk2oXANM99t6AUNSYUABSV9ZQj1xp/8FhLF9qWumt4m0ty5hm976GonngLyzh3Tfr3lTb2bODSvcaNkkzL9mk8+lEkWnIfIO6OLrh+varsUUYDWY6PLgjICetQEoN+RiaCFITms4NuwURqYMY8vDTe5JkbBL+MvQT+sM=
+  matrix:
+  - ARCH=amd64
+  - QEMU_ARCH=arm ARCH=armhf
+  - QEMU_ARCH=aarch64 ARCH=arm64
+script:
+- docker run --rm --privileged multiarch/qemu-user-static:register
+- docker build -t $REPO:$COMMIT -f Dockerfile.$ARCH .
+after_success:
+- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT $REPO:latest; fi
+- docker tag $REPO:$COMMIT $REPO:$ARCH-latest
+- docker push $REPO
