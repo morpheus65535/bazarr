@@ -14,9 +14,8 @@ env:
   - QEMU_ARCH=aarch64 ARCH=arm64
 script:
 - docker run --rm --privileged multiarch/qemu-user-static:register
-- docker build -t $REPO:$COMMIT -f Dockerfile.$ARCH .
+- docker build -t $REPO:$ARCH-latest -f Dockerfile.$ARCH .
 after_success:
 - docker login -u $DOCKER_USER -p $DOCKER_PASS
 - if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT $REPO:latest; fi
-- docker tag $REPO:$COMMIT $REPO:$ARCH-latest
 - docker push $REPO
