@@ -18,4 +18,4 @@ script:
 after_success:
 - docker login -u $DOCKER_USER -p $DOCKER_PASS
 - if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT $REPO:latest; fi
-- docker push $REPO
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then docker push $REPO; fi
