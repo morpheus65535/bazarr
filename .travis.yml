@@ -18,6 +18,6 @@ script:
 - docker build -t $REPO:$COMMIT-$ARCH -f Dockerfile.$ARCH .
 after_success:
 - docker login -u $DOCKER_USER -p $DOCKER_PASS
-- if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT $REPO:latest; fi
+- if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT-$ARCH $REPO:latest; fi
 - docker tag $REPO:$COMMIT-$ARCH $REPO:$ARCH-latest
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then docker push $REPO; fi
