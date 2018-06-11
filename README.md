@@ -1,6 +1,9 @@
 # bazarr
 Bazarr is a companion application to Sonarr. It manage and download subtitles based on your requirements. You defined your preferences by TV show and Bazarr take care of everything for you.
 
+# Build status
+![Build status](https://travis-ci.org/morpheus65535/bazarr.svg?branch=master)
+
 # Support
 For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
 
