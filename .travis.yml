@@ -3,7 +3,7 @@ sudo: required
 services: docker
 env:
   global:
-  - REPO=gwelican/bazarr
+  - REPO=morpheus65535/bazarr
   - QEMU_VERSION=v2.11.0
   - COMMIT=${TRAVIS_COMMIT::8}
   - secure: p29iUgrD8tRnoWu1ZG9OpunG4/tydnnvyodDFNEMrqpY+4iO05p3LJBQfhi5OrkNMiJNLgeMB9nrLH0hJVKbiqRsaS0qMeeZwnFtU7AyoNmCbUhCKwz2xZB4djy2mt0tehTFNMzDwSX/w4YwaM60b3Dl2s2J96x7ovz/Mg6VWb195JD3WC6ags1+vmcAqOyzo+++GASJ8p/EO7MYiwkvUyXWW+RStaM+v8Pf7HN5xk+lKEaGvuL4PaxA74pRrg8roEcbOmhUcFE56PHstej3IieUUInumIbUm7ct577luPhnAfelm/xQwSFCArZCt0c7wJB284cY3FxeaRZHy7PnjyMatV/gtoea02ov0Wc3fq3KbpsGQbnr+SbkszMAfFOFSI2OVzqm51d3uNX5+KQu8hmyA2AUB+Nq09GObdMngXEIa3EsW2WtOWhYs0WKSvhmicglR10CtMP30v5T9kppcysl1cw8mc8OwJnxaeoSqreIMNMaIMc3EBG6XQMZVXkHZSELAJsf35o6Ny06rH0JtpAgDGgFZB2eUkOeu18NNIjiIV3bAF3SPKl+3o6P6OT9AQmgLTq6IsIA3UUGC6cBQMWnArjy+ZVeLZzhvDA/50x+QmOqay0XGG12xJIzYAGalJ/HpBYRcSuSQymqvzrv99CyGfDjQ4pXi5hNtzKxHZ8=
