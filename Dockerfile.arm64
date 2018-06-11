@@ -1,4 +1,4 @@
-FROM lsiobase/alpine.python:3.7
+FROM lsiobase/alpine.python.arm64:3.7
 
 # set python to use utf-8 rather than ascii.
 ENV PYTHONIOENCODING="UTF-8"
