@@ -1,8 +1,12 @@
 # bazarr
 Bazarr is a companion application to Sonarr. It manage and download subtitles based on your requirements. You defined your preferences by TV show and Bazarr take care of everything for you.
 
-# Build status
-![Build status](https://travis-ci.org/morpheus65535/bazarr.svg?branch=master)
+# Status
+[![Build status](https://travis-ci.org/morpheus65535/bazarr.svg?branch=master)](https://travis-ci.org/morpheus65535/bazarr)
+[![GitHub issues](https://img.shields.io/github/issues/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/issues)
+[![GitHub stars](https://img.shields.io/github/stars/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/stargazers)
+[![Docker Pulls](https://img.shields.io/docker/pulls/morpheus65535/bazarr.svg?style=flat-square)](https://hub.docker.com/r/morpheus65535/bazarr/)
+[![Discord](https://img.shields.io/badge/discord-chat-MH2e2eb.svg?style=flat-square)](https://discord.gg/MH2e2eb)
 
 # Support
 For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
