@@ -16,7 +16,7 @@ If you find a bug, please open an issue on [Github](https://github.com/morpheus6
 You can also reach me on [Discord](https://discord.gg/MH2e2eb).
 
 # Feature Requests
-[![Feature Requests](http://feathub.com/morpheus65535/bazarr?format=svg)](http://feathub.com/morpheus65535/bazarr)
+If you need something that is not already part of Bazarr, feel free to create a feature request on [Github](https://github.com/morpheus65535/bazarr/issues).
 
 ## Major Features Include:
 
