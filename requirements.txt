@@ -12,5 +12,5 @@ pycountry
 pytz
 requests
 tzlocal
-urllib3
+urllib3<1.23,>=1.21.1
 waitress

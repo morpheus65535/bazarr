@@ -1,0 +1,23 @@
+language: bash
+sudo: required
+services: docker
+env:
+  global:
+  - REPO=morpheus65535/bazarr
+  - QEMU_VERSION=v2.11.0
+  - COMMIT=${TRAVIS_COMMIT::8}
+  - secure: NZ38MZPfDvGRgo9w7Aip6tm/5WVrnm5MWAdokND2ULfCsxkSXVflqVVfiIObkRBkz9vg6YAj4zKtETWZ9HH4K7LXM6NA0/VUb63sP9QjDsJKxFy1a09T2V0b2uRmh5dcC4XURESRXkfJerxj/kXSWF8UiPsU/op2rBtWdTl9jI65imTX8HcCZ52xlBMwDw2TtUP+J5RTAFsvViVl0znTdt+ScK813etokgK3Y3wkZ/TUyc0+F4PYYVeEqZJT3nLAYSO29ubV5gxfbfYCN80Gu1XvRaFB7vPBQBkhgP8CHteV+gPkavBxGgBcFCFEjtp7HlzCpu6XrxL8i/aR8vp8Wn2TrAmoiFTwFc3BZfO66byjS+fVpQzsfW1b2b2Y4M2GwHpTISvZHX3Y95iaCK5nU1eY7lfV2B0MF7J9xsSXLH7GShz/q9/xGRNmUeqp9gT7l0oiJ+2npCm08PL3kqbTNW6CuY3y7vejVS8xLGmkttYUZVZaViksN5JL25ISEMT12u5/GYIMpxKZydA9W+E+yrwoOlim2ENVH6Wae+37rxY68EU75ez+biddGEao7yC8Yg2i8Tf3VfzZyQc0/uJ7o8hXHoo1vUb6qNQzOG/P1ynJy+Bbaa6LrealCeJZWHCha+BnHOIX5IsHibqSkjttpCeiSTliufQ+P6tPqever1M=
+  - secure: UhaZ3/C0r3vtoVYEmc2YSM/AnWdESmnKq0WzyFtQogL2gQXmLxMIkr1N5W71fGn3FII8HAP1lO3JKHzJXkMjq+pkBZrg5m9FJG+gf+KMYGeQ1nXHForC2q67QuD6A7dL9gZvxoM/Tu0WCHVQcnMJXnXIjvgMeXvXXeOg4x/WEOMuEqb/QfwtksfWifhrrSBPCXTECiDloc4bqRMDEMOKutw+uIdrj4IKtJxhRY8Q/calbSUYwTN1xhlbNzMODfGl6Wkj+8jl+FEtjzPii9UHn5Nh5Sl7Lm+Jp48MqJX8Pg7nC9B4uq3esELxb3zZZjZN6IuTxRKk1Mty1L5qv6MOF7Aum001Gy/JEjEc1oJzCO50wKsAvELiQ9XB68KcBT+qsbb2df+VBp5/mubCmdIp5I/laPVPmbPbwhrtGMG0B28czFZni6Q6qRyiZJL/FC8EY9Yx/+Sei16GjFpNvhiAti+z+Iu5MblbRgta7y8o85yfe26ABctmuJGEPYYUeUnGFH6C5cG/BXX6y4rONWxz0FgYb0pBUuKWqThKEZV+tkfx7kMsprwzLyAx6ZzQGnvOuuTd5zaqbIwquaKcsqyQNrAi0JLaJj43bpVPJqIH9dqYj3Ms3IUSSR9hLnlgGtDwxXodyI6dBGLcs3QCGY5ylSaIYmU0V8YEX4RplMlMiFs=
+  matrix:
+  - ARCH=amd64
+  - QEMU_ARCH=arm ARCH=armhf
+  - QEMU_ARCH=aarch64 ARCH=arm64
+script:
+- if [ "$ARCH" != "amd64" ]; then curl -L -o qemu-$QEMU_ARCH-static https://github.com/multiarch/qemu-user-static/releases/download/${QEMU_VERSION}/qemu-$QEMU_ARCH-static; chmod u+x qemu-$QEMU_ARCH-static; fi
+- docker run --rm --privileged multiarch/qemu-user-static:register
+- docker build -t $REPO:$COMMIT-$ARCH -f Dockerfile.$ARCH .
+after_success:
+- docker login -u $DOCKER_USER -p $DOCKER_PASS
+- if [ "$ARCH" == "amd64" ]; then docker tag $REPO:$COMMIT-$ARCH $REPO:latest; fi
+- docker tag $REPO:$COMMIT-$ARCH $REPO:$ARCH-latest
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then docker push $REPO; fi
