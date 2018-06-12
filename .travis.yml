@@ -1,6 +1,9 @@
 language: bash
 sudo: required
 services: docker
+branches:
+  only:
+  - master
 env:
   global:
   - REPO=morpheus65535/bazarr
