@@ -80,7 +80,7 @@
 								<label></label>
 							</div>
 						</td>
-						<td><a href="{{base_url}}episodes/{{row[5]}}">{{row[1]}}</a></td>
+						<td><a href="{{base_url}}movie/{{row[5]}}">{{row[1]}}</a></td>
 						<td>{{row[7]}}</td>
 						<td>
 							%subs_languages = ast.literal_eval(str(row[3]))
