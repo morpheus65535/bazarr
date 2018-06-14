@@ -4,6 +4,7 @@ babelfish
 bottle
 bottle-fdsend
 dogpile.cache
+enzyme
 gitpython
 langdetect
 Pillow
@@ -11,6 +12,7 @@ py-pretty
 pycountry
 pytz
 requests
+subliminal
 tzlocal
 urllib3<1.23,>=1.21.1
 waitress
