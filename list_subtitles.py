@@ -85,18 +85,19 @@ def store_subtitles_movie(file):
             if str(language) != 'und':
                 actual_subtitles.append([str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
             else:
-                with open(path_replace_movie(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = list(islice(f, 100))
-                    text = ' '.join(text)
-                    encoding = UnicodeDammit(text)
-                    try:
-                        text = text.decode(encoding.original_encoding)
-                    except Exception as e:
-                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace_movie(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
-                    else:
-                        detected_language = langdetect.detect(text)
-                        if len(detected_language) > 0:
-                            actual_subtitles.append([str(detected_language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+                if os.path.splitext(subtitle)[1] != ".sub":
+                    with open(path_replace_movie(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                        text = list(islice(f, 100))
+                        text = ' '.join(text)
+                        encoding = UnicodeDammit(text)
+                        try:
+                            text = text.decode(encoding.original_encoding)
+                        except Exception as e:
+                            logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace_movie(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                        else:
+                            detected_language = langdetect.detect(text)
+                            if len(detected_language) > 0:
+                                actual_subtitles.append([str(detected_language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
 
         conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
