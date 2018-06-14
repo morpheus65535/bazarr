@@ -60,7 +60,7 @@ def update_movies():
                 if movie['path'][0] == "/":
                     separator = "/"
                 else:
-                    separator == "\\"
+                    separator = "\\"
 
                 # Update or insert movies list in database table
                 try:
