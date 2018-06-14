@@ -257,8 +257,15 @@ def edit_series(no):
     else:
         lang = 'None'
 
-    if str(lang) == "['']":
-        lang = '[]'
+    single_language = get_general_settings()[7]
+    if single_language == 'True':
+        if str(lang) == "['None']":
+            lang = 'None'
+        else:
+            lang = str(lang)
+    else:
+        if str(lang) == "['']":
+            lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
 

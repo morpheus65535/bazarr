@@ -241,6 +241,9 @@
 									<div class="nine wide column">
 										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language == 'False' else ''}} class="ui fluid selection dropdown">
 											<option value="">Languages</option>
+										    %if single_language == 'True':
+                                            <option value="None">None</option>
+                                            %end
 											%for language in languages:
 											<option value="{{language[0]}}">{{language[1]}}</option>
 											%end
