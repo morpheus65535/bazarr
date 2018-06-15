@@ -18,8 +18,13 @@ def get_general_settings():
     ip = general_settings[0]
     port = general_settings[1]
     base_url = general_settings[2]
-    if base_url == (''):
-        base_url = '/'
+    if base_url == None:
+        base_url = "/"
+    if base_url.startswith("/") == False:
+        base_url = "/" + base_url
+    if base_url.endswith("/") == False:
+        base_url = base_url + "/"
+
     if general_settings[3] is None:
        path_mappings = []
     else:
