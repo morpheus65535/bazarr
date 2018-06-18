@@ -32,32 +32,35 @@ def store_subtitles(file):
                 pass
 
 
-        subtitles = core.search_external_subtitles(file)
+        try:
+            subtitles = core.search_external_subtitles(file)
+        except:
+            pass
+        else:
+            for subtitle, language in subtitles.iteritems():
+                if str(language) != 'und':
+                    actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                else:
+                    with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                        text = list(islice(f, 100))
+                        text = ' '.join(text)
+                        encoding = UnicodeDammit(text)
+                        try:
+                            text = text.decode(encoding.original_encoding)
+                        except Exception as e:
+                            logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                        else:
+                            detected_language = langdetect.detect(text)
+                            if len(detected_language) > 0:
+                                actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
         
-        for subtitle, language in subtitles.iteritems():
-            if str(language) != 'und':
-                actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-            else:
-                with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
-                    text = list(islice(f, 100))
-                    text = ' '.join(text)
-                    encoding = UnicodeDammit(text)
-                    try:
-                        text = text.decode(encoding.original_encoding)
-                    except Exception as e:
-                        logging.exception('Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
-                    else:
-                        detected_language = langdetect.detect(text)
-                        if len(detected_language) > 0:
-                            actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-        
-        conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-        c_db = conn_db.cursor()
-        
-        c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
-        conn_db.commit()
+            conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+            c_db = conn_db.cursor()
 
-        c_db.close()
+            c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))
+            conn_db.commit()
+
+            c_db.close()
 
     return actual_subtitles
 
