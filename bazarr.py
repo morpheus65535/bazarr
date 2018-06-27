@@ -1,4 +1,4 @@
-bazarr_version = '0.5.3'
+bazarr_version = '0.5.4'
 
 import gc
 gc.enable()
