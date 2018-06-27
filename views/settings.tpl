@@ -895,6 +895,120 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="ui dividing header">Series default settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Default enabled</label>
+                            </div>
+                            <div class="one wide column">
+                                <div class="nine wide column">
+                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[17]}}">
+                                        <input name="settings_serie_default_enabled" id="settings_serie_default_enabled" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Apply only to series added to Bazarr after enabling this option." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Languages</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class='field'>
+                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                        %if settings_general[9] == 'False':
+                                        <option value="">Languages</option>
+                                        %else:
+                                        <option value="">None</option>
+                                        %end
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Hearing-impaired</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class="nine wide column">
+                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[19]}}">
+                                        <input name="settings_serie_default_hi" id="settings_serie_default_hi" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Movies default settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Default enabled</label>
+                            </div>
+                            <div class="one wide column">
+                                <div class="nine wide column">
+                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[20]}}">
+                                        <input name="settings_movie_default_enabled" id="settings_movie_default_enabled" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Apply only to movies added to Bazarr after enabling this option." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div id="movie_default_languages_label" class="right aligned four wide column">
+                                <label>Languages</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class='field'>
+                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                        %if settings_general[9] == 'False':
+                                        <option value="">Languages</option>
+                                        %else:
+                                        <option value="">None</option>
+                                        %end
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div id="movie_default_hi_label" class="right aligned four wide column">
+                                <label>Hearing-impaired</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class="nine wide column">
+                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[22]}}">
+                                        <input name="settings_movie_default_hi" id="settings_movie_default_hi" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="ui bottom attached tab segment" data-tab="notifier">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
@@ -1030,6 +1144,103 @@
         }
     });
 
+    $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
+        $("#settings_serie_default_languages").append(
+            $("<option></option>").attr("value", val).text(txt)
+        )
+        $("#settings_movie_default_languages").append(
+            $("<option></option>").attr("value", val).text(txt)
+        )
+    });
+
+    $('#settings_languages').dropdown('setting', 'onRemove', function(val, txt){
+        $("#settings_serie_default_languages").dropdown('remove selected', val);
+        $("#settings_serie_default_languages option[value='" + val + "']").remove();
+
+        $("#settings_movie_default_languages").dropdown('remove selected', val);
+        $("#settings_movie_default_languages option[value='" + val + "']").remove();
+    });
+
+    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+        $("#settings_serie_default_enabled_div").checkbox('check');
+    } else {
+        $("#settings_serie_default_enabled_div").checkbox('uncheck');
+    }
+
+    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+        $("#settings_serie_default_languages").removeClass('disabled');
+        $("#settings_serie_default_hi_div").removeClass('disabled');
+    } else {
+        $("#settings_serie_default_languages").addClass('disabled');
+        $("#settings_serie_default_hi_div").addClass('disabled');
+    }
+
+    $('#settings_serie_default_enabled_div').checkbox({
+        onChecked: function() {
+            $("#settings_serie_default_languages").parent().removeClass('disabled');
+            $("#settings_serie_default_hi_div").removeClass('disabled');
+        },
+        onUnchecked: function() {
+            $("#settings_serie_default_languages").parent().addClass('disabled');
+            $("#settings_serie_default_hi_div").addClass('disabled');
+        }
+    });
+
+    if ($('#settings_serie_default_hi_div').data("hi") == "True") {
+        $("#settings_serie_default_hi_div").checkbox('check');
+    } else {
+        $("#settings_serie_default_hi_div").checkbox('uncheck');
+    }
+
+    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+        $("#settings_movie_default_enabled_div").checkbox('check');
+    } else {
+        $("#settings_movie_default_enabled_div").checkbox('uncheck');
+    }
+
+    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+        $("#settings_movie_default_languages").removeClass('disabled');
+        $("#settings_movie_default_hi_div").removeClass('disabled');
+    } else {
+        $("#settings_movie_default_languages").addClass('disabled');
+        $("#settings_movie_default_hi_div").addClass('disabled');
+    }
+
+    $('#settings_movie_default_enabled_div').checkbox({
+        onChecked: function() {
+            $("#settings_movie_default_languages").parent().removeClass('disabled');
+            $("#settings_movie_default_hi_div").removeClass('disabled');
+        },
+        onUnchecked: function() {
+            $("#settings_movie_default_languages").parent().addClass('disabled');
+            $("#settings_movie_default_hi_div").addClass('disabled');
+        }
+    });
+
+    if ($('#settings_movie_default_hi_div').data("hi") == "True") {
+        $("#settings_movie_default_hi_div").checkbox('check');
+    } else {
+        $("#settings_movie_default_hi_div").checkbox('uncheck');
+    }
+
+    $("#settings_single_language").change(function(i, obj) {
+        if ($("#settings_single_language").checkbox('is checked')) {
+            $("#settings_serie_default_languages").dropdown('clear');
+            $("#settings_movie_default_languages").dropdown('clear');
+            $("#settings_serie_default_languages").parent().removeClass('multiple');
+            $("#settings_serie_default_languages").removeAttr('multiple');
+            $("#settings_movie_default_languages").parent().removeClass('multiple');
+            $("#settings_movie_default_languages").removeAttr('multiple');
+        } else {
+            $("#settings_serie_default_languages").dropdown('clear');
+            $("#settings_movie_default_languages").dropdown('clear');
+            $("#settings_serie_default_languages").parent().addClass('multiple');
+            $("#settings_serie_default_languages").attr('multiple');
+            $("#settings_movie_default_languages").parent().addClass('multiple');
+            $("#settings_movie_default_languages").attr('multiple');
+        }
+    });
+
     $('.notifier_enabled').each(function(i, obj) {
         if ($(this).data("enabled") == 1) {
                 $(this).checkbox('check');
@@ -1065,6 +1276,14 @@
     $('#settings_loglevel').dropdown();
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
+    $('#settings_serie_default_languages').dropdown();
+    $('#settings_movie_default_languages').dropdown();
+    %if settings_general[18] is not None:
+    $('#settings_serie_default_languages').dropdown('set selected',{{!settings_general[18]}});
+    %end
+    %if settings_general[21] is not None:
+    $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[21]}});
+    %end
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();
     $('#settings_radarr_sync').dropdown();

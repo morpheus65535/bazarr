@@ -123,6 +123,40 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_general add column "serie_default_enabled" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET serie_default_enabled="False"')
+
+    try:
+        c.execute('alter table table_settings_general add column "serie_default_languages" "text"')
+    except:
+        pass
+
+    try:
+        c.execute('alter table table_settings_general add column "serie_default_hi" "text"')
+    except:
+        pass
+
+    try:
+        c.execute('alter table table_settings_general add column "movie_default_enabled" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET movie_default_enabled="False"')
+
+    try:
+        c.execute('alter table table_settings_general add column "movie_default_languages" "text"')
+    except:
+        pass
+
+    try:
+        c.execute('alter table table_settings_general add column "movie_default_hi" "text"')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

@@ -745,6 +745,40 @@ def save_settings():
     for item in settings_subliminal_languages:
         c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
 
+    settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
+    if settings_serie_default_enabled is None:
+        settings_serie_default_enabled = 'False'
+    else:
+        settings_serie_default_enabled = 'True'
+    c.execute("UPDATE table_settings_general SET serie_default_enabled = ?", (settings_serie_default_enabled,))
+
+    settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
+    c.execute("UPDATE table_settings_general SET serie_default_languages = ?", (settings_serie_default_languages,))
+
+    settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
+    if settings_serie_default_hi is None:
+        settings_serie_default_hi = 'False'
+    else:
+        settings_serie_default_hi = 'True'
+    c.execute("UPDATE table_settings_general SET serie_default_hi = ?", (settings_serie_default_hi,))
+
+    settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
+    if settings_movie_default_enabled is None:
+        settings_movie_default_enabled = 'False'
+    else:
+        settings_movie_default_enabled = 'True'
+    c.execute("UPDATE table_settings_general SET movie_default_enabled = ?", (settings_movie_default_enabled,))
+
+    settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
+    c.execute("UPDATE table_settings_general SET movie_default_languages = ?", (settings_movie_default_languages,))
+
+    settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
+    if settings_movie_default_hi is None:
+        settings_movie_default_hi = 'False'
+    else:
+        settings_movie_default_hi = 'True'
+    c.execute("UPDATE table_settings_general SET movie_default_hi = ?", (settings_movie_default_hi,))
+
     settings_notifier_Boxcar_enabled = request.forms.get('settings_notifier_Boxcar_enabled')
     if settings_notifier_Boxcar_enabled == 'on':
         settings_notifier_Boxcar_enabled = 1

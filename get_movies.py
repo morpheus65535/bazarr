@@ -10,6 +10,9 @@ def update_movies():
     url_radarr = get_radarr_settings()[0]
     url_radarr_short = get_radarr_settings()[1]
     apikey_radarr = get_radarr_settings()[2]
+    movie_default_enabled = get_general_settings()[18]
+    movie_default_language = get_general_settings()[19]
+    movie_default_hi = get_general_settings()[20]
 
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -64,7 +67,10 @@ def update_movies():
 
                 # Update or insert movies list in database table
                 try:
-                    c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
+                    if movie_default_enabled == 'True':
+                        c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
+                    else:
+                        c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
                 except:
                     c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,movie["tmdbId"]))
 
@@ -85,6 +91,8 @@ def update_movies():
 
     # Close database connection
     db.close()
+
+    list_missing_subtitles_movies()
 
 def get_profile_list():
     from get_radarr_settings import get_radarr_settings

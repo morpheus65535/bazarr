@@ -43,8 +43,14 @@ def get_general_settings():
         path_mappings_movie = []
     else:
         path_mappings_movie = ast.literal_eval(general_settings[16])
+    serie_default_enabled = general_settings[17]
+    serie_default_language = general_settings[18]
+    serie_default_hi = general_settings[19]
+    movie_default_enabled = general_settings[20]
+    movie_default_language = general_settings[21]
+    movie_default_hi = general_settings[22]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -116,3 +122,9 @@ postprocessing_cmd = result[11]
 use_sonarr = result[12]
 use_radarr = result[13]
 path_mappings_movie = result[14]
+serie_default_enabled = result[15]
+serie_default_language = result[16]
+serie_default_hi = result[17]
+movie_default_enabled = result[18]
+movie_default_language = result[19]
+movie_default_hi = result[20]
