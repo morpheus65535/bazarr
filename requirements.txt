@@ -24,7 +24,7 @@ babelfish>=0.5.5
 six>=1.11.0
 dogpile.cache>=0.6.5
 requests>=2.18.4
-beautifulsoup4>=>=4.6.0
+beautifulsoup4>=4.6.0
 pysrt>=1.1.1
 rarfile>=3.0
 pytz>=2018.4
