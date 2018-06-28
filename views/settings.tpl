@@ -1239,6 +1239,8 @@
         if ($("#settings_single_language").checkbox('is checked')) {
             $("#settings_serie_default_languages").dropdown('clear');
             $("#settings_movie_default_languages").dropdown('clear');
+            $("#settings_serie_default_languages").prepend("<option value='None' selected='selected'>None</option>");
+            $("#settings_movie_default_languages").prepend("<option value='None' selected='selected'>None</option>");
             $("#settings_serie_default_languages").parent().removeClass('multiple');
             $("#settings_serie_default_languages").removeAttr('multiple');
             $("#settings_movie_default_languages").parent().removeClass('multiple');
@@ -1246,6 +1248,8 @@
         } else {
             $("#settings_serie_default_languages").dropdown('clear');
             $("#settings_movie_default_languages").dropdown('clear');
+            $("#settings_serie_default_languages option[value='None']").remove();
+            $("#settings_movie_default_languages option[value='None']").remove();
             $("#settings_serie_default_languages").parent().addClass('multiple');
             $("#settings_serie_default_languages").attr('multiple');
             $("#settings_movie_default_languages").parent().addClass('multiple');
