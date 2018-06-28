@@ -753,6 +753,8 @@ def save_settings():
     c.execute("UPDATE table_settings_general SET serie_default_enabled = ?", (settings_serie_default_enabled,))
 
     settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
+    if settings_serie_default_languages == "['None']":
+        settings_serie_default_languages = 'None'
     c.execute("UPDATE table_settings_general SET serie_default_languages = ?", (settings_serie_default_languages,))
 
     settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
@@ -770,6 +772,8 @@ def save_settings():
     c.execute("UPDATE table_settings_general SET movie_default_enabled = ?", (settings_movie_default_enabled,))
 
     settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
+    if settings_movie_default_languages == "['None']":
+        settings_movie_default_languages = 'None'
     c.execute("UPDATE table_settings_general SET movie_default_languages = ?", (settings_movie_default_languages,))
 
     settings_movie_default_hi = request.forms.get('settings_movie_default_hi')

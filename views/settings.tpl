@@ -930,7 +930,7 @@
                                         %if settings_general[9] == 'False':
                                         <option value="">Languages</option>
                                         %else:
-                                        <option value="">None</option>
+                                        <option value="None">None</option>
                                         %end
                                     </select>
                                 </div>
@@ -987,7 +987,7 @@
                                         %if settings_general[9] == 'False':
                                         <option value="">Languages</option>
                                         %else:
-                                        <option value="">None</option>
+                                        <option value="None">None</option>
                                         %end
                                     </select>
                                 </div>
@@ -1221,6 +1221,18 @@
         $("#settings_movie_default_hi_div").checkbox('check');
     } else {
         $("#settings_movie_default_hi_div").checkbox('uncheck');
+    }
+
+    if ($("#settings_single_language").checkbox('is checked')) {
+        $("#settings_serie_default_languages").parent().removeClass('multiple');
+        $("#settings_serie_default_languages").removeAttr('multiple');
+        $("#settings_movie_default_languages").parent().removeClass('multiple');
+        $("#settings_movie_default_languages").removeAttr('multiple');
+    } else {
+        $("#settings_serie_default_languages").parent().addClass('multiple');
+        $("#settings_serie_default_languages").attr('multiple');
+        $("#settings_movie_default_languages").parent().addClass('multiple');
+        $("#settings_movie_default_languages").attr('multiple');
     }
 
     $("#settings_single_language").change(function(i, obj) {
