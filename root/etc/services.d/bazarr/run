@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+exec s6-setuidgid abc python /bazarr/bazarr.py
+	

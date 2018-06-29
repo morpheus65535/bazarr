@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv bash
+
+# permissions
+chown -R abc:abc /bazarr/data
