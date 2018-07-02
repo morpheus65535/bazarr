@@ -17,8 +17,8 @@ try:
 
     if os.name == 'nt':
         process = process.decode(encoding)
-except:
-    logging.error('Unable to install requirements using command line PIP. Is PIP installed and included in system path?')
+except Exception as e:
+    logging.exception('Unable to install requirements using command line PIP.')
     pass
 else:
     if process == "":
