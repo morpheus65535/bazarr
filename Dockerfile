@@ -16,5 +16,4 @@ VOLUME /bazarr/data
 
 EXPOSE 6767
 
-#COPY root/ /
 CMD ["python", "/bazarr/bazarr.py"]
