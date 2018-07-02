@@ -2,3 +2,4 @@
 
 # permissions
 chown -R abc:abc /bazarr
+chmod -R 0777 /root/.local
