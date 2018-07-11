@@ -36,18 +36,29 @@ def sync_episodes():
     for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
-        r = requests.get(url_sonarr_api_episode)
-        for episode in r.json():
-            if 'hasFile' in episode:
-                if episode['hasFile'] is True:
-                    if 'episodeFile' in episode:
-                        if episode['episodeFile']['size'] > 20480:
-                            # Add shows in Sonarr to current shows list
-                            if 'sceneName' in episode['episodeFile']:
-                                sceneName = episode['episodeFile']['sceneName']
-                            else:
-                                sceneName = None
-                            current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
+        try:
+            r = requests.get(url_sonarr_api_episode, timeout=15)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            logging.exception("Error trying to get episodes from Sonarr. Http error.")
+        except requests.exceptions.ConnectionError as errc:
+            logging.exception("Error trying to get episodes from Sonarr. Connection Error.")
+        except requests.exceptions.Timeout as errt:
+            logging.exception("Error trying to get episodes from Sonarr. Timeout Error.")
+        except requests.exceptions.RequestException as err:
+            logging.exception("Error trying to get episodes from Sonarr.")
+        else:
+            for episode in r.json():
+                if 'hasFile' in episode:
+                    if episode['hasFile'] is True:
+                        if 'episodeFile' in episode:
+                            if episode['episodeFile']['size'] > 20480:
+                                # Add shows in Sonarr to current shows list
+                                if 'sceneName' in episode['episodeFile']:
+                                    sceneName = episode['episodeFile']['sceneName']
+                                else:
+                                    sceneName = None
+                                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
 
     added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
     removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))

@@ -130,7 +130,7 @@ def image_proxy(url):
     apikey = get_sonarr_settings()[2]
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
-        img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/api' + url_image.split(url_sonarr)[1]).content))
+        img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/api' + url_image.split(url_sonarr)[1], timeout=15).content))
     except:
         return None
     else:
@@ -148,10 +148,10 @@ def image_proxy_movies(url):
     apikey = get_radarr_settings()[2]
     try:
         url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
-        img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1]).content))
+        img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1], timeout=15).content))
     except:
         url_image = url_radarr_short + '/' + url + '?apikey=' + apikey
-        img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1]).content))
+        img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1], timeout=15).content))
 
     img_buffer = BytesIO()
     img_pil.tobytes()
