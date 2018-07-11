@@ -108,7 +108,12 @@ red bug icon \\
 
 	$('.log').click(function(){
 		$("#message").html($(this).data("message"));
-		$("#exception").html($(this).data("exception"));
+		exception = $(this).data("exception");
+		exception = exception.replace(/'/g,"");
+		exception = exception.replace(/\\n\s\s\s\s/g, "\\n&emsp;&emsp;");
+		exception = exception.replace(/\\n\s\s/g, "\\n&emsp;");
+		exception = exception.replace(/\\n/g, "<br />")
+		$("#exception").html(exception);
 		$('#modal').modal('show');
 	})
 </script>
