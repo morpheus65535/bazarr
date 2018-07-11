@@ -159,6 +159,30 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Page size</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_page_size" id="settings_page_size" class="ui fluid selection dropdown">
+                                    <option value="">Page Size</option>
+                                    <option value="-1">Unlimited</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                    <option value="250">250</option>
+                                    <option value="500">500</option>
+                                    <option value="1000">1000</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="How many items to show in a list." data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1278,6 +1302,8 @@
 
     $('#settings_loglevel').dropdown('clear');
     $('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
+    $('#settings_page_size').dropdown('clear');
+    $('#settings_page_size').dropdown('set selected','{{!settings_general[23]}}');
     $('#settings_providers').dropdown('clear');
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');

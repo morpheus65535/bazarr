@@ -157,6 +157,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_general add column "page_size" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET page_size="25"')
+
     # Commit change to db
     db.commit()
 

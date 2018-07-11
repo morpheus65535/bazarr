@@ -89,6 +89,7 @@
 				%end
 				</tbody>
 			</table>
+			%if page_size != -1:
 			<div class="ui grid">
 				<div class="three column row">
 			    	<div class="column"></div>
@@ -118,6 +119,7 @@
 			    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
 				</div>
 			</div>
+            %end
 		</div>
 		<div id='bottommenu' class="ui fluid inverted bottom fixed five item menu">
 			<div class="ui small statistics">

@@ -91,7 +91,8 @@
 				<div class="content">
 					<div id="logs"></div>
 
-					<div class="ui grid">
+					%if page_size != -1:
+                    <div class="ui grid">
 						<div class="three column row">
 					    	<div class="column"></div>
 					    	<div class="center aligned column">
@@ -104,6 +105,7 @@
 					    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
 						</div>
 					</div>
+                    %end
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="about">
@@ -131,7 +133,7 @@
 	    });
 
 	    current_page = page;
-	    
+
 	    $("#page").text(current_page);
 	    if (current_page == 1) {
 	    	$(".backward, .fast.backward").addClass("disabled");

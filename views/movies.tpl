@@ -104,6 +104,7 @@
 				%end
 				</tbody>
 			</table>
+			%if page_size != -1:
 			<div class="ui grid">
 				<div class="three column row">
 					<div class="column"></div>
@@ -133,6 +134,7 @@
 					<div class="right floated right aligned column">Total records: {{missing_count}}</div>
 				</div>
 			</div>
+			%end
 		</div>
 
 		<div class="ui small modal">

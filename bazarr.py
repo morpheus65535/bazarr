@@ -1,4 +1,4 @@
-bazarr_version = '0.5.4'
+bazarr_version = '0.5.5'
 
 import gc
 gc.enable()
@@ -190,10 +190,11 @@ def series():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(missing_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY sortTitle ASC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -202,7 +203,7 @@ def series():
     c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' GROUP BY table_shows.sonarrSeriesId")
     total_subtitles_list = c.fetchall()
     c.close()
-    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
+    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size)
     return output
 
 @route(base_url + 'serieseditor')
@@ -353,15 +354,16 @@ def movies():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(missing_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('movies', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language)
+    output = template('movies', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size)
     return output
 
 @route(base_url + 'movieseditor')
@@ -510,8 +512,9 @@ def historyseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(row_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
     now = datetime.now()
     today = []
@@ -528,11 +531,11 @@ def historyseries():
             thisyear.append(datetime.fromtimestamp(stat[0]).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
 
-    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
+    return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'historymovies')
 def historymovies():
@@ -545,8 +548,9 @@ def historymovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(row_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
     now = datetime.now()
     today = []
@@ -563,11 +567,11 @@ def historymovies():
             thisyear.append(datetime.fromtimestamp(stat[0]).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
 
-    c.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
-    return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url)
+    return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted')
 def wanted():
@@ -585,13 +589,14 @@ def wantedseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(missing_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+    return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wantedmovies')
 def wantedmovies():
@@ -605,13 +610,14 @@ def wantedmovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    offset = (int(page) - 1) * 15
-    max_page = int(math.ceil(missing_count / 15.0))
+    page_size = int(get_general_settings()[21])
+    offset = (int(page) - 1) * page_size
+    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]' ORDER BY _rowid_ DESC LIMIT 15 OFFSET ?", (offset,))
+    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]' ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url)
+    return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted_search_missing_subtitles')
 def wanted_search_missing_subtitles_list():
@@ -692,10 +698,11 @@ def save_settings():
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
+    settings_page_size = request.forms.get('settings_page_size')
 
     before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie)))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size)))
     conn.commit()
     if after != before:
         configured()
@@ -1047,13 +1054,14 @@ def system():
         for i, l in enumerate(f, 1):
             pass
         row_count = i
-        max_page = int(math.ceil(row_count / 50.0))
+        page_size = int(get_general_settings()[21])
+        max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
-    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page)
+    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size)
 
 @route(base_url + 'logs/<page:int>')
 def get_logs(page):
-    page_size = 50
+    page_size = int(get_general_settings()[21])
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
     logs_complete = []
