@@ -93,7 +93,7 @@ def update_movies():
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                c.execute('DELETE FROM table_movies WHERE radarrId = ?', (removed_movie,))
+                c.execute('DELETE FROM table_movies WHERE tmdbId = ?', (removed_movie,))
                 db.commit()
 
             for added_movie in added_movies:
