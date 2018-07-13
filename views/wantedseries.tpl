@@ -92,6 +92,7 @@
 			</table>
 			%try: page_size
 			%except NameError: page_size = "25"
+			%end
 			%if page_size != -1:
 			<div class="ui grid">
 				<div class="three column row">
