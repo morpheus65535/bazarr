@@ -164,6 +164,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('UPDATE table_settings_general SET page_size="25"')
 
+    try:
+        providers = ['Discord', 'E-Mail', 'Emby', 'IFTTT', 'Stride', 'Windows']
+        for provider in providers:
+            c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider, '0'))
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 

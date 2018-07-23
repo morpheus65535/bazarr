@@ -1,5 +1,5 @@
 #Bazarr requirements
-apprise>=0.0.8
+apprise>=0.0.9
 apscheduler>=3.5.1
 babelfish>=0.5.5
 bottle>=0.12.13

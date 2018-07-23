@@ -1,4 +1,4 @@
-bazarr_version = '0.5.5'
+bazarr_version = '0.5.6'
 
 import gc
 gc.enable()
@@ -934,6 +934,53 @@ def save_settings():
     settings_notifier_XBMC_url = request.forms.get('settings_notifier_XBMC_url')
     c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'XBMC'", (settings_notifier_XBMC_enabled, settings_notifier_XBMC_url))
 
+    settings_notifier_Discord_enabled = request.forms.get('settings_notifier_Discord_enabled')
+    if settings_notifier_Discord_enabled == 'on':
+        settings_notifier_Discord_enabled = 1
+    else:
+        settings_notifier_Discord_enabled = 0
+    settings_notifier_Discord_url = request.forms.get('settings_notifier_Discord_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Discord'", (settings_notifier_Discord_enabled, settings_notifier_Discord_url))
+
+    settings_notifier_E_Mail_enabled = request.forms.get('settings_notifier_E-Mail_enabled')
+    if settings_notifier_E_Mail_enabled == 'on':
+        settings_notifier_E_Mail_enabled = 1
+    else:
+        settings_notifier_E_Mail_enabled = 0
+    settings_notifier_E_Mail_url = request.forms.get('settings_notifier_E-Mail_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'E-Mail'", (settings_notifier_E_Mail_enabled, settings_notifier_E_Mail_url))
+
+    settings_notifier_Emby_enabled = request.forms.get('settings_notifier_Emby_enabled')
+    if settings_notifier_Emby_enabled == 'on':
+        settings_notifier_Emby_enabled = 1
+    else:
+        settings_notifier_Emby_enabled = 0
+    settings_notifier_Emby_url = request.forms.get('settings_notifier_Emby_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Emby'", (settings_notifier_Emby_enabled, settings_notifier_Emby_url))
+
+    settings_notifier_IFTTT_enabled = request.forms.get('settings_notifier_IFTTT_enabled')
+    if settings_notifier_IFTTT_enabled == 'on':
+        settings_notifier_IFTTT_enabled = 1
+    else:
+        settings_notifier_IFTTT_enabled = 0
+    settings_notifier_IFTTT_url = request.forms.get('settings_notifier_IFTTT_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'IFTTT'", (settings_notifier_IFTTT_enabled, settings_notifier_IFTTT_url))
+
+    settings_notifier_Stride_enabled = request.forms.get('settings_notifier_Stride_enabled')
+    if settings_notifier_Stride_enabled == 'on':
+        settings_notifier_Stride_enabled = 1
+    else:
+        settings_notifier_Stride_enabled = 0
+    settings_notifier_Stride_url = request.forms.get('settings_notifier_Stride_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Stride'", (settings_notifier_Stride_enabled, settings_notifier_Stride_url))
+
+    settings_notifier_Windows_enabled = request.forms.get('settings_notifier_Windows_enabled')
+    if settings_notifier_Windows_enabled == 'on':
+        settings_notifier_Windows_enabled = 1
+    else:
+        settings_notifier_Windows_enabled = 0
+    settings_notifier_Windows_url = request.forms.get('settings_notifier_Windows_url')
+    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Windows'", (settings_notifier_Windows_enabled, settings_notifier_Windows_url))
 
     conn.commit()
     c.close()
