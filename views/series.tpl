@@ -89,16 +89,16 @@
 						</td>
 						<td>{{!"" if row[4] == None else row[4]}}</td>
 						<td>
+							%total_subs = 0
+							%missing_subs = 0
 							%if not total_subtitles_list:
 							%	pass
 							%else:
-							%	total_subs = 0
 							%	for total_subtitles in total_subtitles_list:
 							%		if total_subtitles[0] == row[5]:
 							%			total_subs = total_subtitles[1]
 							%		end
 							%	end
-							%	missing_subs = 0
 							%	for missing_subtitles in missing_subtitles_list:
 							%		if missing_subtitles[0] == row[5]:
 							%			missing_subs = missing_subtitles[1]
