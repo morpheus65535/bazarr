@@ -68,9 +68,13 @@ def sync_episodes():
         db.commit()
 
     for added_episode in added_episodes:
-        c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', added_episode)
-        db.commit()
-        store_subtitles(path_replace(added_episode[3]))
+        try:
+            c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', added_episode)
+        except sqlite3.IntegrityError as e:
+            logging.exception("You're probably an early adopter of Bazarr and this is a known issue. Please open an issue on Github and we'll fix this.")
+        else:
+            db.commit()
+            store_subtitles(path_replace(added_episode[3]))
 
     # Close database connection
     c.close()
