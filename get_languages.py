@@ -33,6 +33,8 @@ def language_from_alpha2(lang):
     return result
 
 def language_from_alpha3(lang):
+    if lang == 'fre':
+        lang = 'fra'
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
     try:
@@ -43,6 +45,8 @@ def language_from_alpha3(lang):
     return result
 
 def alpha2_from_alpha3(lang):
+    if lang == 'fre':
+        lang = 'fra'
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
     try:
