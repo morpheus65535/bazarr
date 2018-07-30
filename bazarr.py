@@ -1,4 +1,4 @@
-bazarr_version = '0.5.6'
+bazarr_version = '0.5.7'
 
 import gc
 gc.enable()
@@ -69,7 +69,6 @@ from json import dumps
 import itertools
 import operator
 import requests
-import pycountry
 import pretty
 from datetime import datetime, timedelta
 from PIL import Image
@@ -100,6 +99,8 @@ c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
 conn.commit()
 c.close()
 
+# Load languages in database
+load_language_in_db()
 
 @route('/')
 def redirect_root():
@@ -1137,7 +1138,7 @@ def remove_subtitles():
 
         try:
             os.remove(subtitlesPath)
-            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
         except OSError:
             pass
@@ -1154,7 +1155,7 @@ def remove_subtitles_movie():
 
         try:
             os.remove(subtitlesPath)
-            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log_movie(0, radarrId, result)
         except OSError:
             pass

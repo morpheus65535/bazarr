@@ -74,7 +74,7 @@
 	</head>
 	<body>
 		%import ast
-		%import pycountry
+		%from get_languages import *
 		%from get_general_settings import *
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
@@ -109,7 +109,7 @@
 				</p>
 				<p style='margin-top: 2em;'>
 					%for language in subs_languages_list:
-					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
+                    <div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
 					%end
 				</p>
 				<div style='clear:both;'></div>
@@ -162,14 +162,14 @@
 										<td>
 										%if episode[4] is not None:
 										%	actual_languages = ast.literal_eval(episode[4])
+                                        %   actual_languages.sort()
 										%else:
 										%	actual_languages = '[]'
 										%end
-
 										%try:
 											%for language in actual_languages:
 												%if language[1] is not None:
-												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{pycountry.languages.lookup(str(language[0])).alpha_3}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
+												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{alpha3_from_alpha2(str(language[0]))}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
 													{{language[0]}}
 													<i class="delete icon"></i>
 												</a>
@@ -187,12 +187,13 @@
 										%try:
 											%if episode[6] is not None:
 											%	missing_languages = ast.literal_eval(episode[6])
+                                            %   missing_languages.sort()
 											%else:
 											%	missing_languages = None
 											%end
 											%if missing_languages is not None:
-												%for language in missing_languages:
-												<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
+                                                %for language in missing_languages:
+                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
 													{{language}}
 													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 												</a>

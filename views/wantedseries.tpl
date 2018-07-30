@@ -41,7 +41,7 @@
 	</head>
 	<body>
 		%import ast
-		%import pycountry
+		%from get_languages import *
 		<div id='loader' class="ui page dimmer">
 		   	<div class="ui indeterminate text loader">Loading...</div>
 		</div>
@@ -79,7 +79,7 @@
 						%missing_languages = ast.literal_eval(row[3])
 						%if missing_languages is not None:
 							%for language in missing_languages:
-							<a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{pycountry.languages.lookup(str(language)).alpha_3}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
+							<a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
 								{{language}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>

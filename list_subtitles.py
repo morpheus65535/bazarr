@@ -3,7 +3,6 @@ import os
 import enzyme
 import babelfish
 from subliminal import *
-import pycountry
 import sqlite3
 import ast
 import langdetect
@@ -11,6 +10,7 @@ from bs4 import UnicodeDammit
 from itertools import islice
 
 from get_general_settings import *
+from get_languages import *
 
 gc.enable()
 
@@ -25,20 +25,23 @@ def store_subtitles(file):
                 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        actual_subtitles.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2),None])
+                        actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)),None])
                     except:
                         pass
             except:
                 pass
 
 
+        brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
             subtitles = core.search_external_subtitles(file)
         except:
             pass
         else:
             for subtitle, language in subtitles.iteritems():
-                if str(language) != 'und':
+                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
+                    actual_subtitles.append([str("pb"), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                elif str(language) != 'und':
                     actual_subtitles.append([str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
                 else:
                     with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
@@ -53,7 +56,7 @@ def store_subtitles(file):
                             detected_language = langdetect.detect(text)
                             if len(detected_language) > 0:
                                 actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
-        
+
             conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
             c_db = conn_db.cursor()
 
@@ -76,16 +79,19 @@ def store_subtitles_movie(file):
 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        actual_subtitles.append([str(pycountry.languages.lookup(subtitle_track.language).alpha_2), None])
+                        actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)), None])
                     except:
                         pass
             except:
                 pass
 
         subtitles = core.search_external_subtitles(file)
+        brazilian_portuguese = [".pt-br", ".pob", "pb"]
 
         for subtitle, language in subtitles.iteritems():
-            if str(language) != 'und':
+            if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
+                actual_subtitles.append([str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+            elif str(language) != 'und':
                 actual_subtitles.append([str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
             else:
                 if os.path.splitext(subtitle)[1] != ".sub":
@@ -139,7 +145,10 @@ def list_missing_subtitles(*no):
             missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
         else:
             for item in actual_subtitles:
-                actual_subtitles_list.append(item[0])
+                if item[0] == "pt-BR":
+                    actual_subtitles_list.append("pb")
+                else:
+                    actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
             
@@ -176,7 +185,10 @@ def list_missing_subtitles_movies(*no):
             missing_subtitles_global.append(tuple(['[]', movie_subtitles[0]]))
         else:
             for item in actual_subtitles:
-                actual_subtitles_list.append(item[0])
+                if item[0] == "pt-BR":
+                    actual_subtitles_list.append("pb")
+                else:
+                    actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles[0]]))
 

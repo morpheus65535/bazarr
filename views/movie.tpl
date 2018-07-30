@@ -65,7 +65,7 @@
 	</head>
 	<body>
 		%import ast
-		%import pycountry
+		%from get_languages import *
 		%from get_general_settings import *
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details[3]}}"></div>
@@ -116,15 +116,16 @@
 						<tbody>
 							<%
 							subtitles_files = ast.literal_eval(str(details[9]))
+							subtitles_files.sort()
 							if subtitles_files is not None:
 								for subtitles_file in subtitles_files:
 							%>
 							<tr>
 								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
-								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{pycountry.languages.lookup(str(subtitles_file[0])).name}}</div></td>
+								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0])}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{pycountry.languages.lookup(str(subtitles_file[0])).alpha_3}}" data-radarrId={{details[10]}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0])}}" data-radarrId={{details[10]}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
@@ -143,7 +144,6 @@
 					</table>
 					<%
 					missing_subs_languages = ast.literal_eval(str(details[11]))
-					missing_subs_languages_list = []
 					if missing_subs_languages is not None:
 					%>
 					<table class="ui very basic single line selectable table">
@@ -156,8 +156,8 @@
 					<%
 						for missing_subs_language in missing_subs_languages:
 					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{pycountry.languages.lookup(str(missing_subs_language)).alpha_3}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
-								{{pycountry.languages.lookup(str(missing_subs_language)).name}}
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>
 					<%
