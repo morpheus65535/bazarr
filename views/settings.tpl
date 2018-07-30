@@ -764,6 +764,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use embedded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[24]}}>
+                                    <input name="settings_general_embedded" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Use embedded subtitles in media files when determining missing ones." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="ui dividing header">Subtitles providers</div>
@@ -1116,6 +1135,12 @@
                 $("#settings_scenename").checkbox('check');
             } else {
                 $("#settings_scenename").checkbox('uncheck');
+            }
+
+    if ($('#settings_embedded').data("embedded") == "True") {
+                $("#settings_embedded").checkbox('check');
+            } else {
+                $("#settings_embedded").checkbox('uncheck');
             }
 
     if ($('#settings_use_postprocessing').data("postprocessing") == "True") {

@@ -25,7 +25,8 @@ def store_subtitles(file):
                 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)),None])
+                        if alpha2_from_alpha3(subtitle_track.language) != None:
+                            actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)),None])
                     except:
                         pass
             except:
@@ -79,7 +80,8 @@ def store_subtitles_movie(file):
 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)), None])
+                        if alpha2_from_alpha3(subtitle_track.language) != None:
+                            actual_subtitles.append([str(alpha2_from_alpha3(subtitle_track.language)), None])
                     except:
                         pass
             except:
@@ -131,13 +133,20 @@ def list_missing_subtitles(*no):
     c_db.close()
 
     missing_subtitles_global = []
-
+    use_embedded_subs = get_general_settings()[22]
     for episode_subtitles in episodes_subtitles:
+        actual_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
         if episode_subtitles[1] != None:
-            actual_subtitles = ast.literal_eval(episode_subtitles[1])
+            if use_embedded_subs == "True":
+                actual_subtitles = ast.literal_eval(episode_subtitles[1])
+            else:
+                actual_subtitles_temp = ast.literal_eval(episode_subtitles[1])
+                for subtitle in actual_subtitles_temp:
+                    if subtitle[1] != None:
+                        actual_subtitles.append(subtitle)
         if episode_subtitles[2] != None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
         actual_subtitles_list = []
@@ -171,13 +180,20 @@ def list_missing_subtitles_movies(*no):
     c_db.close()
 
     missing_subtitles_global = []
-
+    use_embedded_subs = get_general_settings()[22]
     for movie_subtitles in movies_subtitles:
+        actual_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
         if movie_subtitles[1] != None:
-            actual_subtitles = ast.literal_eval(movie_subtitles[1])
+            if use_embedded_subs == "True":
+                actual_subtitles = ast.literal_eval(movie_subtitles[1])
+            else:
+                actual_subtitles_temp = ast.literal_eval(movie_subtitles[1])
+                for subtitle in actual_subtitles_temp:
+                    if subtitle[1] != None:
+                        actual_subtitles.append(subtitle)
         if movie_subtitles[2] != None:
             desired_subtitles = ast.literal_eval(movie_subtitles[2])
         actual_subtitles_list = []

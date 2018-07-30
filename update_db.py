@@ -171,6 +171,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_general add column "use_embedded_subs" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET use_embedded_subs="True"')
+
     # Commit change to db
     db.commit()
 

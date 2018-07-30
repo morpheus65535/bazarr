@@ -50,8 +50,9 @@ def get_general_settings():
     movie_default_language = general_settings[21]
     movie_default_hi = general_settings[22]
     page_size = general_settings[23]
+    use_embedded_subs = general_settings[24]
 
-    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size]
+    return [ip, port, base_url, path_mappings, log_level, branch, automatic, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, use_embedded_subs]
 
 def path_replace(path):
     for path_mapping in path_mappings:
@@ -130,3 +131,4 @@ movie_default_enabled = result[18]
 movie_default_language = result[19]
 movie_default_hi = result[20]
 page_size = result[21]
+use_embedded_subs = result[22]
