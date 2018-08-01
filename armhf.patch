@@ -1,0 +1,21 @@
+--- Dockerfile	2018-08-01 15:45:59.442917179 -0700
++++ Dockerfile.armhf	2018-08-01 15:45:59.443508162 -0700
+@@ -1,8 +1,10 @@
+-FROM lsiobase/alpine.python:3.7
++FROM lsiobase/alpine.python.armhf:3.7
+ 
+ # set python to use utf-8 rather than ascii.
+ ENV PYTHONIOENCODING="UTF-8"
+ 
++ADD qemu-arm-static /usr/bin
++
+ VOLUME /tv
+ VOLUME /movies
+ 
+@@ -17,4 +19,4 @@
+ EXPOSE 6767
+ 
+ COPY root/ /
+-CMD ["python", "/bazarr/bazarr.py"]
++CMD ["python", "/bazarr/bazarr.py"]
+\ No newline at end of file

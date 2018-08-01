@@ -16,7 +16,7 @@ env:
   - QEMU_ARCH=arm ARCH=armhf
   - QEMU_ARCH=aarch64 ARCH=arm64
 script:
-- if [ "$ARCH" != "amd64" ]; then curl -L -o qemu-$QEMU_ARCH-static https://github.com/multiarch/qemu-user-static/releases/download/${QEMU_VERSION}/qemu-$QEMU_ARCH-static; chmod u+x qemu-$QEMU_ARCH-static; fi
+- if [ "$ARCH" != "amd64" ]; then curl -L -o qemu-$QEMU_ARCH-static https://github.com/multiarch/qemu-user-static/releases/download/${QEMU_VERSION}/qemu-$QEMU_ARCH-static; chmod u+x qemu-$QEMU_ARCH-static; cp Dockerfile Dockerfile.$ARCH; patch Dockerfile.$ARCH $ARCH.patch; fi
 - docker run --rm --privileged multiarch/qemu-user-static:register
 - docker build -t $REPO:$COMMIT-$ARCH -f Dockerfile.$ARCH .
 after_success:
