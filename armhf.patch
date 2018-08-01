@@ -12,10 +12,3 @@
  VOLUME /tv
  VOLUME /movies
  
-@@ -17,4 +19,4 @@
- EXPOSE 6767
- 
- COPY root/ /
--CMD ["python", "/bazarr/bazarr.py"]
-+CMD ["python", "/bazarr/bazarr.py"]
-\ No newline at end of file
