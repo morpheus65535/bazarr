@@ -165,11 +165,12 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('UPDATE table_settings_general SET page_size="25"')
 
     try:
+        c.execute('DELETE FROM table_settings_notifier WHERE rowid > 24') #Modify this if we add more notification provider
+        c.execute('SELECT name FROM table_settings_notifier WHERE name = "Discord"').fetchone()
+    except:
         providers = ['Discord', 'E-Mail', 'Emby', 'IFTTT', 'Stride', 'Windows']
         for provider in providers:
             c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider, '0'))
-    except:
-        pass
 
     try:
         c.execute('alter table table_settings_general add column "use_embedded_subs" "text"')
@@ -177,6 +178,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         pass
     else:
         c.execute('UPDATE table_settings_general SET use_embedded_subs="True"')
+
+    try:
+        c.execute('CREATE TABLE `table_settings_auth` (	`enabled` TEXT, `username` TEXT, `password` TEXT);')
+    except:
+        pass
+    else:
+        c.execute('INSERT INTO `table_settings_auth` (enabled, username, password) VALUES ("False", "", "")')
 
     # Commit change to db
     db.commit()

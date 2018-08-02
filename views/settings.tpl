@@ -55,7 +55,7 @@
             </div>
             <div class="ui bottom attached tab segment active" data-tab="general">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                <div class="ui dividing header">Bazarr settings</div>
+                <div class="ui dividing header">Start-Up</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -180,6 +180,71 @@
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="How many items to show in a list." data-inverted="">
                                     <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ui dividing header">Security settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use basic authentication</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_use_auth" class="ui toggle checkbox" data-enabled={{settings_auth[0]}}>
+                                    <input name="settings_general_auth_enabled" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                    <i class="yellow warning sign icon"></i>
+                                </div>
+                            </div>
+
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enable basic authentication to access Bazarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Username</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_general_auth_username" name="settings_general_auth_username" type="text" value="{{settings_auth[1]}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Password</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_general_auth_password" name="settings_general_auth_password" type="password" value="{{settings_auth[2]}}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Basic auth transmit username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1143,6 +1208,26 @@
                 $("#settings_embedded").checkbox('uncheck');
             }
 
+    if ($('#settings_use_auth').data("enabled") == "True") {
+                $("#settings_use_auth").checkbox('check');
+                $("#settings_general_auth_username").parent().removeClass('disabled');
+                $("#settings_general_auth_password").parent().removeClass('disabled');
+            } else {
+                $("#settings_use_auth").checkbox('uncheck');
+                $("#settings_general_auth_username").parent().addClass('disabled');
+                $("#settings_general_auth_password").parent().addClass('disabled');
+            }
+
+    $("#settings_use_auth").change(function(i, obj) {
+        if ($("#settings_use_auth").checkbox('is checked')) {
+                $("#settings_general_auth_username").parent().removeClass('disabled');
+                $("#settings_general_auth_password").parent().removeClass('disabled');
+            } else {
+                $("#settings_general_auth_username").parent().addClass('disabled');
+                $("#settings_general_auth_password").parent().addClass('disabled');
+            }
+    });
+
     if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
                 $("#settings_use_postprocessing").checkbox('check');
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
@@ -1376,6 +1461,22 @@
                         {
                             type : 'integer[1..65535]'
                         },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_general_auth_username : {
+                    depends: 'settings_general_auth_enabled',
+                    rules : [
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_general_auth_password : {
+                    depends: 'settings_general_auth_enabled',
+                    rules : [
                         {
                             type : 'empty'
                         }
