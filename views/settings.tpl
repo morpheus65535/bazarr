@@ -812,7 +812,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Minimum score</label>
+                                <label>Minimum score for episodes</label>
                             </div>
                             <div class="two wide column">
                                 <div class='field'>
@@ -823,7 +823,27 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Minimum score for a subtitle to be downloaded (0 to 100)." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Minimum score for an episode subtitle to be downloaded (0 to 100)." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Minimum score for movies</label>
+                            </div>
+                            <div class="two wide column">
+                                <div class='field'>
+                                    <div class="ui input">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[25]}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Minimum score for a movie subtitle to be downloaded (0 to 100)." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>

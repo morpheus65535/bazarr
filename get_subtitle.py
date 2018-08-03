@@ -18,9 +18,10 @@ region.configure('dogpile.cache.memory')
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
     if type == 'series':
         type_of_score = 359
+        minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
     elif type == 'movies':
         type_of_score = 119
-    minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
+        minimum_score = float(get_general_settings()[23]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]

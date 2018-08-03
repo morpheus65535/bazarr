@@ -758,6 +758,7 @@ def save_settings():
     else:
         settings_general_embedded = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
+    settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
     if settings_general_use_postprocessing is None:
         settings_general_use_postprocessing = 'False'
@@ -778,7 +779,7 @@ def save_settings():
 
     before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded)))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?, minimum_score_movie=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded), unicode(settings_general_minimum_score_movies)))
     conn.commit()
     if after != before:
         configured()
