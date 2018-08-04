@@ -193,6 +193,11 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('INSERT INTO `table_settings_auth` (enabled, username, password) VALUES ("False", "", "")')
 
+    try:
+        c.execute('alter table table_settings_sonarr add column "monitored" TEXT')
+    except:
+        pass
+
     # Commit change to db
     db.commit()
 
