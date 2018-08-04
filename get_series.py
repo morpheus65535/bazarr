@@ -11,7 +11,6 @@ def update_series():
     url_sonarr = get_sonarr_settings()[0]
     url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
-    monitored_sonarr = get_sonarr_settings()[4]
     serie_default_enabled = get_general_settings()[15]
     serie_default_language = get_general_settings()[16]
     serie_default_hi = get_general_settings()[17]
