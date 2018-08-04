@@ -11,6 +11,7 @@ def update_series():
     url_sonarr = get_sonarr_settings()[0]
     url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
+    monitored_sonarr = get_sonarr_settings()[4]
     serie_default_enabled = get_general_settings()[15]
     serie_default_language = get_general_settings()[16]
     serie_default_hi = get_general_settings()[17]
@@ -59,15 +60,20 @@ def update_series():
                     fanart = ""
 
                 # Add shows in Sonarr to current shows list
-                current_shows_sonarr.append(show['tvdbId'])
+                if monitored_sonarr == 'True':
+                    if show['monitored'] is True:
+                        current_shows_sonarr.append(show['tvdbId'])
+                
 
                 # Update or insert shows list in database table
                 try:
-                    if serie_default_enabled == 'True':
-                        c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], serie_default_language, serie_default_hi, show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
-                        list_missing_subtitles(show["id"])
-                    else:
-                        c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
+                    if monitored_sonarr == 'True':
+                        if show['monitored'] is True:
+                            if serie_default_enabled == 'True':
+                                c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], serie_default_language, serie_default_hi, show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
+                                list_missing_subtitles(show["id"])
+                            else:
+                                c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
                 except:
                     c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),show['sortTitle'],show["tvdbId"]))
 
