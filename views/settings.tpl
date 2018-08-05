@@ -837,7 +837,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[25]}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[24]}}">
                                     </div>
                                 </div>
                             </div>
@@ -855,7 +855,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[24]}}>
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[25]}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
