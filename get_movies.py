@@ -119,11 +119,11 @@ def get_profile_list():
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=15)
     except requests.exceptions.ConnectionError as errc:
-        logging.exception("Error trying to get profiles from Sonarr. Connection Error.")
+        logging.exception("Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
-        logging.exception("Error trying to get profiles from Sonarr. Timeout Error.")
+        logging.exception("Error trying to get profiles from Radarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
-        logging.exception("Error trying to get profiles from Sonarr.")
+        logging.exception("Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
         for profile in profiles_json.json():
