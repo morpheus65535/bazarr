@@ -803,8 +803,13 @@ def save_settings():
     else:
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    settings_sonarr_monitored = request.forms.get('settings_sonarr_monitored')
+    if settings_sonarr_monitored is None:
+        settings_sonarr_monitored = 'False'
+    else:
+        settings_sonarr_monitored = 'True'
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
-    c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync))
+    c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?, monitored = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync, settings_sonarr_monitored))
 
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')

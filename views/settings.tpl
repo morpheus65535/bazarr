@@ -648,6 +648,23 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Monitored only</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="sonarr_monitored_div" class="ui toggle checkbox" data-monitored={{settings_sonarr[6]}}>
+                                    <input name="settings_sonarr_monitored" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Import only monitored episodes from sonarr" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1196,6 +1213,12 @@
                 $("#sonarr_ssl_div").checkbox('check');
             } else {
                 $("#sonarr_ssl_div").checkbox('uncheck');
+            }
+
+    if ($('#sonarr_monitored_div').data("monitored") == "True") {
+                $("#sonarr_monitored_div").checkbox('check');
+            } else {
+                $("#sonarr_monitored_div").checkbox('uncheck');
             }
 
     if ($('#radarr_ssl_div').data("ssl") == "True") {

@@ -22,6 +22,7 @@ def sync_episodes():
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[0]
     apikey_sonarr = get_sonarr_settings()[2]
+    monitored_sonarr = get_sonarr_settings()[4]
     
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -49,16 +50,30 @@ def sync_episodes():
             logging.exception("Error trying to get episodes from Sonarr.")
         else:
             for episode in r.json():
-                if 'hasFile' in episode:
-                    if episode['hasFile'] is True:
-                        if 'episodeFile' in episode:
-                            if episode['episodeFile']['size'] > 20480:
-                                # Add shows in Sonarr to current shows list
-                                if 'sceneName' in episode['episodeFile']:
-                                    sceneName = episode['episodeFile']['sceneName']
-                                else:
-                                    sceneName = None
+                if monitored_sonarr == 'True':
+                    if episode['monitored'] is True:
+                        if 'hasFile' in episode:
+                            if episode['hasFile'] is True:
+                                if 'episodeFile' in episode:
+                                    if episode['episodeFile']['size'] > 20480:
+                                        # Add shows in Sonarr to current shows list
+                                        if 'sceneName' in episode['episodeFile']:
+                                            sceneName = episode['episodeFile']['sceneName']
+                                        else:
+                                            sceneName = None
+                                    current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
+                else:
+                    if 'hasFile' in episode:
+                        if episode['hasFile'] is True:
+                            if 'episodeFile' in episode:
+                                if episode['episodeFile']['size'] > 20480:
+                                    # Add shows in Sonarr to current shows list
+                                    if 'sceneName' in episode['episodeFile']:
+                                        sceneName = episode['episodeFile']['sceneName']
+                                    else:
+                                        sceneName = None
                                 current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
+
 
     added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
     removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))
