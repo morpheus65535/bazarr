@@ -91,7 +91,14 @@
 					%>
 					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
-				<h2>{{details[0]}}</h2>
+				<h2>
+                    %if details[13] == "True":
+                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+                    %else:
+                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+                    %end
+					{{details[0]}}
+                </h2>
 				<p>{{details[1]}}</p>
 				<p style='margin-top: 3em;'>
 					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>

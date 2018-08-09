@@ -148,6 +148,7 @@
 							<table class="ui very basic single line selectable table">
 								<thead>
 									<tr>
+										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
 										<th>Title</th>
 										<th class="collapsing">Existing subtitles</th>
@@ -157,6 +158,13 @@
 								<tbody>
 								%for episode in season:
 									<tr>
+										<td class="collapsing">
+                                            %if episode[9] == "True":
+                                            <span data-tooltip="Episode monitored in Sonarr"><i class="bookmark icon"></i></span>
+                                            %else:
+                                            <span data-tooltip="Episode unmonitored in Sonarr"><i class="bookmark outline icon"></i></span>
+                                            %end
+                                        </td>
 										<td>{{episode[3]}}</td>
 										<td>{{episode[0]}}</td>
 										<td>

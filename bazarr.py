@@ -372,7 +372,7 @@ def episodes(no):
     series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path) FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
     tvdbid = series_details[5]
 
-    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     number = len(episodes)
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
@@ -403,7 +403,7 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -506,7 +506,7 @@ def movie(no):
     c = conn.cursor()
 
     movies_details = []
-    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
+    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
     tmdbid = movies_details[5]
 
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
@@ -641,7 +641,12 @@ def wantedseries():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'")
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     missing_count = c.fetchone()
     missing_count = missing_count[0]
     page = request.GET.page
@@ -651,7 +656,7 @@ def wantedseries():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
@@ -663,7 +668,12 @@ def wantedmovies():
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'")
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     missing_count = c.fetchone()
     missing_count = missing_count[0]
     page = request.GET.page
@@ -673,7 +683,7 @@ def wantedmovies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]' ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
@@ -757,6 +767,11 @@ def save_settings():
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
+    settings_general_only_monitored = request.forms.get('settings_general_only_monitored')
+    if settings_general_only_monitored is None:
+        settings_general_only_monitored = 'False'
+    else:
+        settings_general_only_monitored = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
     settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
@@ -779,7 +794,7 @@ def save_settings():
 
     before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?, minimum_score_movie=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded), unicode(settings_general_minimum_score_movies)))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?, minimum_score_movie=?, only_monitored=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded), unicode(settings_general_minimum_score_movies), unicode(settings_general_only_monitored)))
     conn.commit()
     if after != before:
         configured()

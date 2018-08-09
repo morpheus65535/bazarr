@@ -200,14 +200,48 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('alter table table_episodes add column "scene_name" TEXT')
         db.commit()
     except:
-        db.close()
         pass
     else:
-        db.close()
         from scheduler import execute_now
         from get_general_settings import get_general_settings
         integration = get_general_settings()
         if integration[12] == "True":
-            execute_now('update_all_episodes')
+            execute_now('sync_episodes')
         if integration[13] == "True":
-            execute_now('update_all_movies')
+            execute_now('update_movies')
+
+
+
+    try:
+        c.execute('alter table table_settings_general add column "only_monitored" "text"')
+        db.commit()
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET only_monitored="False"')
+
+    try:
+        c.execute('alter table table_episodes add column "monitored" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from scheduler import execute_now
+        from get_general_settings import get_general_settings
+        integration = get_general_settings()
+        if integration[12] == "True":
+            execute_now('sync_episodes')
+
+    try:
+        c.execute('alter table table_movies add column "monitored" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from scheduler import execute_now
+        from get_general_settings import get_general_settings
+        integration = get_general_settings()
+        if integration[13] == "True":
+            execute_now('update_movies')
+
+    db.close()

@@ -55,6 +55,7 @@
 			<table id="tablemovies" class="ui very basic selectable sortable table">
 				<thead>
 					<tr>
+						<th></th>
 						<th class="sorted ascending">Name</th>
 						<th>Path</th>
 						<th>Audio language</th>
@@ -68,6 +69,13 @@
 				%import os
 				%for row in rows:
 					<tr class="selectable">
+						<td>
+							%if row[8] == "True":
+							<span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+							%else:
+							<span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+							%end
+						</td>
 						<td><a href="{{base_url}}movie/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 							%if os.path.isfile(row[2]):

@@ -837,7 +837,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[25]}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[24]}}">
                                     </div>
                                 </div>
                             </div>
@@ -855,7 +855,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[24]}}>
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[25]}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
@@ -863,6 +863,25 @@
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon" data-tooltip="Use embedded subtitles in media files when determining missing ones." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Download only monitored</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings_general[26]}}>
+                                    <input name="settings_general_only_monitored" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored episodes/movies in Sonarr/Radarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1226,6 +1245,12 @@
                 $("#settings_embedded").checkbox('check');
             } else {
                 $("#settings_embedded").checkbox('uncheck');
+            }
+
+    if ($('#settings_only_monitored').data("monitored") == "True") {
+                $("#settings_only_monitored").checkbox('check');
+            } else {
+                $("#settings_only_monitored").checkbox('uncheck');
             }
 
     if ($('#settings_use_auth').data("enabled") == "True") {
