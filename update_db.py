@@ -158,18 +158,18 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         pass
 
     try:
-        c.execute('alter table table_settings_general add column "minimum_score_movie" "text"')
-    except:
-        pass
-    else:
-        c.execute('UPDATE table_settings_general SET minimum_score_movie="0"')
-
-    try:
         c.execute('alter table table_settings_general add column "page_size" "text"')
     except:
         pass
     else:
         c.execute('UPDATE table_settings_general SET page_size="25"')
+
+    try:
+        c.execute('alter table table_settings_general add column "minimum_score_movie" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET minimum_score_movie="0"')
 
     try:
         c.execute('DELETE FROM table_settings_notifier WHERE rowid > 24') #Modify this if we add more notification provider
