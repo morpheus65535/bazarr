@@ -174,7 +174,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     try:
         c.execute('DELETE FROM table_settings_notifier WHERE rowid > 24') #Modify this if we add more notification provider
         rows = c.execute('SELECT name FROM table_settings_notifier WHERE name = "Discord"').fetchall()
-        if rows == "[]":
+        if len(rows) == 0:
             providers = ['Discord', 'E-Mail', 'Emby', 'IFTTT', 'Stride', 'Windows']
             for provider in providers:
                 c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider, '0'))
