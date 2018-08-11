@@ -195,6 +195,13 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
     else:
         c.execute('INSERT INTO `table_settings_auth` (enabled, username, password) VALUES ("False", "", "")')
 
+    try:
+        c.execute('alter table table_settings_general add column "only_monitored" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET only_monitored="False"')
+
     # Commit change to db
     db.commit()
 
@@ -212,15 +219,6 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         if integration[13] == "True":
             execute_now('update_movies')
 
-
-
-    try:
-        c.execute('alter table table_settings_general add column "only_monitored" "text"')
-        db.commit()
-    except:
-        pass
-    else:
-        c.execute('UPDATE table_settings_general SET only_monitored="False"')
 
     try:
         c.execute('alter table table_episodes add column "monitored" TEXT')
