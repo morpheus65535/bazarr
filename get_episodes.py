@@ -28,7 +28,7 @@ def sync_episodes():
     c = db.cursor()
 
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name FROM table_episodes').fetchall()
+    current_episodes_db = c.execute('SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored FROM table_episodes').fetchall()
 
     # Get sonarrId for each series from database
     current_episodes_sonarr = []
@@ -58,7 +58,7 @@ def sync_episodes():
                                     sceneName = episode['episodeFile']['sceneName']
                                 else:
                                     sceneName = None
-                                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName))
+                                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored']))))
 
     added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
     removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))
@@ -69,7 +69,7 @@ def sync_episodes():
 
     for added_episode in added_episodes:
         try:
-            c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name) VALUES (?, ?, ?, ?, ?, ?, ?)''', added_episode)
+            c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', added_episode)
         except sqlite3.IntegrityError as e:
             logging.exception("You're probably an early adopter of Bazarr and this is a known issue. Please open an issue on Github and we'll fix this.")
         else:

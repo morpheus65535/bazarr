@@ -1,4 +1,4 @@
-bazarr_version = '0.5.6'
+bazarr_version = '0.5.9'
 
 import gc
 gc.enable()
@@ -59,7 +59,7 @@ configure_logging()
 
 from update_modules import *
 
-from bottle import route, run, template, static_file, request, redirect, response
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
 bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
 bottle.debug(True)
@@ -69,7 +69,6 @@ from json import dumps
 import itertools
 import operator
 import requests
-import pycountry
 import pretty
 from datetime import datetime, timedelta
 from PIL import Image
@@ -78,6 +77,7 @@ from fdsend import send_file
 import urllib
 import math
 import ast
+import hashlib
 
 from get_languages import *
 from get_providers import *
@@ -100,16 +100,50 @@ c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
 conn.commit()
 c.close()
 
+# Load languages in database
+load_language_in_db()
+
+from get_auth_settings import get_auth_settings
+auth_enabled = get_auth_settings()[0]
+
+def custom_auth_basic(check):
+    def decorator(func):
+        def wrapper(*a, **ka):
+            if auth_enabled == "True":
+                user, password = request.auth or (None, None)
+                if user is None or not check(user, password):
+                    err = HTTPError(401, "Access denied")
+                    err.add_header('WWW-Authenticate', 'Basic realm="Bazarr"')
+                    return err
+                return func(*a, **ka)
+            else:
+                return func(*a, **ka)
+
+        return wrapper
+    return decorator
+
+def check_credentials(user, pw):
+    from get_auth_settings import get_auth_settings
+    auth_enabled = get_auth_settings()
+
+    username = auth_enabled[1]
+    password = auth_enabled[2]
+    if hashlib.md5(pw).hexdigest() == password and user == username:
+        return True
+    return False
 
 @route('/')
+@custom_auth_basic(check_credentials)
 def redirect_root():
     redirect (base_url)
 
 @route(base_url + 'static/:path#.+#', name='static')
+@custom_auth_basic(check_credentials)
 def static(path):
     return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
 
 @route(base_url + 'emptylog')
+@custom_auth_basic(check_credentials)
 def emptylog():
     ref = request.environ['HTTP_REFERER']
 
@@ -119,10 +153,12 @@ def emptylog():
     redirect(ref)
 
 @route(base_url + 'bazarr.log')
+@custom_auth_basic(check_credentials)
 def download_log():
     return static_file('bazarr.log', root=os.path.join(os.path.dirname(__file__), 'data/log/'), download='bazarr.log')
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
+@custom_auth_basic(check_credentials)
 def image_proxy(url):
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[0]
@@ -141,6 +177,7 @@ def image_proxy(url):
         return send_file(img_buffer, ctype=img_pil.format)
 
 @route(base_url + 'image_proxy_movies/<url:path>', method='GET')
+@custom_auth_basic(check_credentials)
 def image_proxy_movies(url):
     from get_radarr_settings import get_radarr_settings
     url_radarr = get_radarr_settings()[0]
@@ -161,6 +198,7 @@ def image_proxy_movies(url):
 
 
 @route(base_url)
+@custom_auth_basic(check_credentials)
 def redirect_root():
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = conn.cursor()
@@ -176,6 +214,7 @@ def redirect_root():
 
 
 @route(base_url + 'series')
+@custom_auth_basic(check_credentials)
 def series():
     import update_db
     single_language = get_general_settings()[7]
@@ -207,6 +246,7 @@ def series():
     return output
 
 @route(base_url + 'serieseditor')
+@custom_auth_basic(check_credentials)
 def serieseditor():
     single_language = get_general_settings()[7]
 
@@ -227,6 +267,7 @@ def serieseditor():
     return output
 
 @route(base_url + 'search_json/<query>', method='GET')
+@custom_auth_basic(check_credentials)
 def search_json(query):
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -249,6 +290,7 @@ def search_json(query):
 
 
 @route(base_url + 'edit_series/<no:int>', method='POST')
+@custom_auth_basic(check_credentials)
 def edit_series(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -286,6 +328,7 @@ def edit_series(no):
     redirect(ref)
 
 @route(base_url + 'edit_serieseditor', method='POST')
+@custom_auth_basic(check_credentials)
 def edit_serieseditor():
     ref = request.environ['HTTP_REFERER']
 
@@ -316,6 +359,7 @@ def edit_serieseditor():
     redirect(ref)
 
 @route(base_url + 'episodes/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def episodes(no):
     single_language = get_general_settings()[7]
     url_sonarr_short = get_sonarr_settings()[1]
@@ -328,7 +372,7 @@ def episodes(no):
     series_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path) FROM table_shows WHERE sonarrSeriesId LIKE ?", (str(no),)).fetchone()
     tvdbid = series_details[5]
 
-    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     number = len(episodes)
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
@@ -340,6 +384,7 @@ def episodes(no):
     return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
 
 @route(base_url + 'movies')
+@custom_auth_basic(check_credentials)
 def movies():
     import update_db
     single_language = get_general_settings()[7]
@@ -358,7 +403,7 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -367,6 +412,7 @@ def movies():
     return output
 
 @route(base_url + 'movieseditor')
+@custom_auth_basic(check_credentials)
 def movieseditor():
     single_language = get_general_settings()[7]
 
@@ -387,6 +433,7 @@ def movieseditor():
     return output
 
 @route(base_url + 'edit_movieseditor', method='POST')
+@custom_auth_basic(check_credentials)
 def edit_movieseditor():
     ref = request.environ['HTTP_REFERER']
 
@@ -417,6 +464,7 @@ def edit_movieseditor():
     redirect(ref)
 
 @route(base_url + 'edit_movie/<no:int>', method='POST')
+@custom_auth_basic(check_credentials)
 def edit_movie(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -447,6 +495,7 @@ def edit_movie(no):
     redirect(ref)
 
 @route(base_url + 'movie/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def movie(no):
     from get_radarr_settings import get_radarr_settings
     single_language = get_general_settings()[7]
@@ -457,7 +506,7 @@ def movie(no):
     c = conn.cursor()
 
     movies_details = []
-    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
+    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
     tmdbid = movies_details[5]
 
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
@@ -466,6 +515,7 @@ def movie(no):
     return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def scan_disk(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -474,6 +524,7 @@ def scan_disk(no):
     redirect(ref)
 
 @route(base_url + 'scan_disk_movie/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def scan_disk_movie(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -482,6 +533,7 @@ def scan_disk_movie(no):
     redirect(ref)
 
 @route(base_url + 'search_missing_subtitles/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def search_missing_subtitles(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -490,6 +542,7 @@ def search_missing_subtitles(no):
     redirect(ref)
 
 @route(base_url + 'search_missing_subtitles_movie/<no:int>', method='GET')
+@custom_auth_basic(check_credentials)
 def search_missing_subtitles_movie(no):
     ref = request.environ['HTTP_REFERER']
 
@@ -498,10 +551,12 @@ def search_missing_subtitles_movie(no):
     redirect(ref)
 
 @route(base_url + 'history')
+@custom_auth_basic(check_credentials)
 def history():
     return template('history', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
 
 @route(base_url + 'historyseries')
+@custom_auth_basic(check_credentials)
 def historyseries():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -538,6 +593,7 @@ def historyseries():
     return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'historymovies')
+@custom_auth_basic(check_credentials)
 def historymovies():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -574,16 +630,23 @@ def historymovies():
     return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted')
+@custom_auth_basic(check_credentials)
 def wanted():
     return template('wanted', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
 
 @route(base_url + 'wantedseries')
+@custom_auth_basic(check_credentials)
 def wantedseries():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'")
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     missing_count = c.fetchone()
     missing_count = missing_count[0]
     page = request.GET.page
@@ -593,18 +656,24 @@ def wantedseries():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wantedmovies')
+@custom_auth_basic(check_credentials)
 def wantedmovies():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'")
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     missing_count = c.fetchone()
     missing_count = missing_count[0]
     page = request.GET.page
@@ -614,12 +683,13 @@ def wantedmovies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]' ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted_search_missing_subtitles')
+@custom_auth_basic(check_credentials)
 def wanted_search_missing_subtitles_list():
     ref = request.environ['HTTP_REFERER']
 
@@ -628,11 +698,14 @@ def wanted_search_missing_subtitles_list():
     redirect(ref)
 
 @route(base_url + 'settings')
+@custom_auth_basic(check_credentials)
 def settings():
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_general")
     settings_general = c.fetchone()
+    c.execute("SELECT * FROM table_settings_auth")
+    settings_auth = c.fetchone()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
     c.execute("SELECT * FROM table_settings_providers ORDER BY name")
@@ -641,12 +714,13 @@ def settings():
     settings_sonarr = c.fetchone()
     c.execute("SELECT * FROM table_settings_radarr")
     settings_radarr = c.fetchone()
-    c.execute("SELECT * FROM table_settings_notifier")
+    c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
+@custom_auth_basic(check_credentials)
 def save_settings():
     ref = request.environ['HTTP_REFERER']
 
@@ -657,6 +731,13 @@ def save_settings():
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     settings_general_loglevel = request.forms.get('settings_general_loglevel')
+    settings_general_auth_enabled = request.forms.get('settings_general_auth_enabled')
+    if settings_general_auth_enabled is None:
+        settings_general_auth_enabled = 'False'
+    else:
+        settings_general_auth_enabled = 'True'
+    settings_general_auth_username = request.forms.get('settings_general_auth_username')
+    settings_general_auth_password = request.forms.get('settings_general_auth_password')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -681,7 +762,18 @@ def save_settings():
         settings_general_scenename = 'False'
     else:
         settings_general_scenename = 'True'
+    settings_general_embedded = request.forms.get('settings_general_embedded')
+    if settings_general_embedded is None:
+        settings_general_embedded = 'False'
+    else:
+        settings_general_embedded = 'True'
+    settings_general_only_monitored = request.forms.get('settings_general_only_monitored')
+    if settings_general_only_monitored is None:
+        settings_general_only_monitored = 'False'
+    else:
+        settings_general_only_monitored = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
+    settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
     if settings_general_use_postprocessing is None:
         settings_general_use_postprocessing = 'False'
@@ -702,11 +794,20 @@ def save_settings():
 
     before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size)))
+    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?, minimum_score_movie=?, only_monitored=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded), unicode(settings_general_minimum_score_movies), unicode(settings_general_only_monitored)))
     conn.commit()
     if after != before:
         configured()
     get_general_settings()
+
+    before_auth_password = c.execute("SELECT enabled, password FROM table_settings_auth").fetchone()
+    if before_auth_password[0] != settings_general_auth_enabled:
+        configured()
+    if before_auth_password[1] == settings_general_auth_password:
+        c.execute("UPDATE table_settings_auth SET enabled = ?, username = ?", (unicode(settings_general_auth_enabled), unicode(settings_general_auth_username)))
+    else:
+        c.execute("UPDATE table_settings_auth SET enabled = ?, username = ?, password = ?", (unicode(settings_general_auth_enabled), unicode(settings_general_auth_username), unicode(hashlib.md5(settings_general_auth_password.encode('utf-8')).hexdigest())))
+    conn.commit()
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -996,6 +1097,7 @@ def save_settings():
     redirect(ref)
 
 @route(base_url + 'check_update')
+@custom_auth_basic(check_credentials)
 def check_update():
     ref = request.environ['HTTP_REFERER']
 
@@ -1004,6 +1106,7 @@ def check_update():
     redirect(ref)
 
 @route(base_url + 'system')
+@custom_auth_basic(check_credentials)
 def system():
     def get_time_from_interval(interval):
         interval_clean = interval.split('[')
@@ -1107,6 +1210,7 @@ def system():
     return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size)
 
 @route(base_url + 'logs/<page:int>')
+@custom_auth_basic(check_credentials)
 def get_logs(page):
     page_size = int(get_general_settings()[21])
     begin = (page * page_size) - page_size
@@ -1119,6 +1223,7 @@ def get_logs(page):
     return template('logs', logs=logs, base_url=base_url)
 
 @route(base_url + 'execute/<taskid>')
+@custom_auth_basic(check_credentials)
 def execute_task(taskid):
     ref = request.environ['HTTP_REFERER']
 
@@ -1128,6 +1233,7 @@ def execute_task(taskid):
 
 
 @route(base_url + 'remove_subtitles', method='POST')
+@custom_auth_basic(check_credentials)
 def remove_subtitles():
         episodePath = request.forms.get('episodePath')
         language = request.forms.get('language')
@@ -1137,7 +1243,7 @@ def remove_subtitles():
 
         try:
             os.remove(subtitlesPath)
-            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
         except OSError:
             pass
@@ -1146,6 +1252,7 @@ def remove_subtitles():
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
+@custom_auth_basic(check_credentials)
 def remove_subtitles_movie():
         moviePath = request.forms.get('moviePath')
         language = request.forms.get('language')
@@ -1154,7 +1261,7 @@ def remove_subtitles_movie():
 
         try:
             os.remove(subtitlesPath)
-            result = pycountry.languages.lookup(language).name + " subtitles deleted from disk."
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log_movie(0, radarrId, result)
         except OSError:
             pass
@@ -1163,6 +1270,7 @@ def remove_subtitles_movie():
 
 
 @route(base_url + 'get_subtitle', method='POST')
+@custom_auth_basic(check_credentials)
 def get_subtitle():
         ref = request.environ['HTTP_REFERER']
 
@@ -1209,6 +1317,7 @@ def get_subtitle():
             pass
 
 @route(base_url + 'get_subtitle_movie', method='POST')
+@custom_auth_basic(check_credentials)
 def get_subtitle_movie():
         ref = request.environ['HTTP_REFERER']
 

@@ -5,7 +5,7 @@ import logging
 import subprocess
 from babelfish import *
 from subliminal import *
-from pycountry import *
+from get_languages import *
 from bs4 import UnicodeDammit
 from get_general_settings import *
 from list_subtitles import *
@@ -18,12 +18,19 @@ region.configure('dogpile.cache.memory')
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
     if type == 'series':
         type_of_score = 359
+        minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
     elif type == 'movies':
         type_of_score = 119
-    minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
+        minimum_score = float(get_general_settings()[22]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        lang_obj = Language(language)
+
     try:
         if sceneName is None or use_scenename == "False":
             used_sceneName = False
@@ -36,7 +43,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         return None
     else:
         try:
-            best_subtitles = download_best_subtitles([video], {Language(language)}, providers=providers, min_score=minimum_score, hearing_impaired=hi, provider_configs=providers_auth)
+            best_subtitles = download_best_subtitles([video], {lang_obj}, providers=providers, min_score=minimum_score, hearing_impaired=hi, provider_configs=providers_auth)
         except Exception as e:
             logging.exception('Error trying to get the best subtitles for this file: ' + path)
             return None
@@ -61,9 +68,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     return None
                 else:
                     downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]
-                    downloaded_language = pycountry.languages.lookup(str(str(result[0][0]).strip('<>').split(' ')[2].strip('[]'))).name
-                    downloaded_language_code2 = pycountry.languages.lookup(downloaded_language).alpha_2
-                    downloaded_language_code3 = pycountry.languages.lookup(downloaded_language).alpha_3
+                    downloaded_language = language_from_alpha3(language)
+                    downloaded_language_code2 = alpha2_from_alpha3(language)
+                    downloaded_language_code3 = language
                     downloaded_path = result[1]
                     if used_sceneName == True:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
@@ -100,9 +107,14 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     return message
 
 def series_download_subtitles(no):
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
     conn_db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    episodes_details = c_db.execute("SELECT path, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
+    episodes_details = c_db.execute('SELECT path, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId = ? AND missing_subtitles != "[]"' + monitored_only_query_string, (no,)).fetchall()
     series_details = c_db.execute("SELECT hearing_impaired FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
     enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
@@ -126,11 +138,12 @@ def series_download_subtitles(no):
             
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), series_details[0], providers_list, providers_auth, episode[3], 'series')
-            if message is not None:
-                store_subtitles(path_replace(episode[0]))
-                history_log(1, no, episode[2], message)
-                send_notifications(no, episode[2], message)
+            if language is not None:
+                message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), series_details[0], providers_list, providers_auth, episode[3], 'series')
+                if message is not None:
+                    store_subtitles(path_replace(episode[0]))
+                    history_log(1, no, episode[2], message)
+                    send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
 
 
@@ -159,11 +172,12 @@ def movies_download_subtitles(no):
         providers_auth = None
 
     for language in ast.literal_eval(movie[1]):
-        message = download_subtitle(path_replace_movie(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[3], 'movies')
-        if message is not None:
-            store_subtitles_movie(path_replace_movie(movie[0]))
-            history_log_movie(1, no, message)
-            send_notifications_movie(no, message)
+        if language is not None:
+            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movies')
+            if message is not None:
+                store_subtitles_movie(path_replace_movie(movie[0]))
+                history_log_movie(1, no, message)
+                send_notifications_movie(no, message)
     list_missing_subtitles_movies(no)
 
 
@@ -193,7 +207,7 @@ def wanted_download_subtitles(path):
         
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(pycountry.languages.lookup(language).alpha_3), episode[4], providers_list, providers_auth, episode[5], 'series')
+            message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
             if message is not None:
                 store_subtitles(path_replace(episode[0]))
                 list_missing_subtitles(episode[3])
@@ -227,7 +241,7 @@ def wanted_download_subtitles_movie(path):
 
     for movie in movies_details:
         for language in ast.literal_eval(movie[1]):
-            message = download_subtitle(path_replace_movie(movie[0]), str(pycountry.languages.lookup(language).alpha_3), movie[4], providers_list, providers_auth, movie[5], 'movies')
+            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
             if message is not None:
                 store_subtitles_movie(path_replace_movie(movie[0]))
                 list_missing_subtitles_movies(movie[3])
@@ -241,10 +255,15 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'")
+    if get_general_settings()[24] == "True":
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     episodes = c.fetchall()
 
-    c.execute("SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'")
+    c.execute("SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
     movies = c.fetchall()
 
     c.close()

@@ -165,11 +165,42 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('UPDATE table_settings_general SET page_size="25"')
 
     try:
-        providers = ['Discord', 'E-Mail', 'Emby', 'IFTTT', 'Stride', 'Windows']
-        for provider in providers:
-            c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider, '0'))
+        c.execute('alter table table_settings_general add column "minimum_score_movie" "text"')
     except:
         pass
+    else:
+        c.execute('UPDATE table_settings_general SET minimum_score_movie="0"')
+
+    try:
+        c.execute('DELETE FROM table_settings_notifier WHERE rowid > 24') #Modify this if we add more notification provider
+        rows = c.execute('SELECT name FROM table_settings_notifier WHERE name = "Discord"').fetchall()
+        if len(rows) == 0:
+            providers = ['Discord', 'E-Mail', 'Emby', 'IFTTT', 'Stride', 'Windows']
+            for provider in providers:
+                c.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (provider, '0'))
+    except:
+        pass
+
+    try:
+        c.execute('alter table table_settings_general add column "use_embedded_subs" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET use_embedded_subs="True"')
+
+    try:
+        c.execute('CREATE TABLE `table_settings_auth` (	`enabled` TEXT, `username` TEXT, `password` TEXT);')
+    except:
+        pass
+    else:
+        c.execute('INSERT INTO `table_settings_auth` (enabled, username, password) VALUES ("False", "", "")')
+
+    try:
+        c.execute('alter table table_settings_general add column "only_monitored" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_settings_general SET only_monitored="False"')
 
     # Commit change to db
     db.commit()
@@ -178,14 +209,39 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db')) 
         c.execute('alter table table_episodes add column "scene_name" TEXT')
         db.commit()
     except:
-        db.close()
         pass
     else:
-        db.close()
         from scheduler import execute_now
         from get_general_settings import get_general_settings
         integration = get_general_settings()
         if integration[12] == "True":
-            execute_now('update_all_episodes')
+            execute_now('sync_episodes')
         if integration[13] == "True":
-            execute_now('update_all_movies')
+            execute_now('update_movies')
+
+
+    try:
+        c.execute('alter table table_episodes add column "monitored" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from scheduler import execute_now
+        from get_general_settings import get_general_settings
+        integration = get_general_settings()
+        if integration[12] == "True":
+            execute_now('sync_episodes')
+
+    try:
+        c.execute('alter table table_movies add column "monitored" TEXT')
+        db.commit()
+    except:
+        pass
+    else:
+        from scheduler import execute_now
+        from get_general_settings import get_general_settings
+        integration = get_general_settings()
+        if integration[13] == "True":
+            execute_now('update_movies')
+
+    db.close()

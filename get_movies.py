@@ -79,11 +79,11 @@ def update_movies():
                     # Update or insert movies list in database table
                     try:
                         if movie_default_enabled == 'True':
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
+                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
                         else:
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName))
+                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
                     except:
-                        c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,movie["tmdbId"]))
+                        c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
 
                     # Commit changes to database table
                     db.commit()
@@ -119,11 +119,11 @@ def get_profile_list():
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=15)
     except requests.exceptions.ConnectionError as errc:
-        logging.exception("Error trying to get profiles from Sonarr. Connection Error.")
+        logging.exception("Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
-        logging.exception("Error trying to get profiles from Sonarr. Timeout Error.")
+        logging.exception("Error trying to get profiles from Radarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
-        logging.exception("Error trying to get profiles from Sonarr.")
+        logging.exception("Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
         for profile in profiles_json.json():
