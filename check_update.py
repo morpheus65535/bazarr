@@ -1,4 +1,4 @@
-from get_general_settings import *
+from get_general_settings import get_general_settings
 
 import os
 import logging

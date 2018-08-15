@@ -3,8 +3,8 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import *
-from list_subtitles import *
+from get_general_settings import path_replace
+from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, movies_full_scan_subtitles
     
 def update_all_episodes():
     series_full_scan_subtitles()

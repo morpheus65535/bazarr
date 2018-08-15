@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from subliminal import *
+from subliminal import provider_manager
 
 # Get providers list from subliminal
 providers_list = sorted(provider_manager.names())

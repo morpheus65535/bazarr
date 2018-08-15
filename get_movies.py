@@ -3,13 +3,13 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import *
-from list_subtitles import *
+from get_general_settings import get_general_settings, path_replace_movie
+from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 
 def update_movies():
     from get_radarr_settings import get_radarr_settings
     url_radarr = get_radarr_settings()[0]
-    url_radarr_short = get_radarr_settings()[1]
+    # url_radarr_short = get_radarr_settings()[1]
     apikey_radarr = get_radarr_settings()[2]
     movie_default_enabled = get_general_settings()[18]
     movie_default_language = get_general_settings()[19]
@@ -108,7 +108,7 @@ def update_movies():
 def get_profile_list():
     from get_radarr_settings import get_radarr_settings
     url_radarr = get_radarr_settings()[0]
-    url_radarr_short = get_radarr_settings()[1]
+    # url_radarr_short = get_radarr_settings()[1]
     apikey_radarr = get_radarr_settings()[2]
 
     # Get profiles data from radarr

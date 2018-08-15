@@ -7,7 +7,7 @@ import os
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-sys.path.insert(0,os.path.join(os.path.dirname(__file__), 'libs/'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
 
 import sqlite3
 from init_db import *
@@ -61,7 +61,7 @@ from update_modules import *
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
-bottle.TEMPLATE_PATH.insert(0,os.path.join(os.path.dirname(__file__), 'views/'))
+bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
@@ -79,19 +79,19 @@ import math
 import ast
 import hashlib
 
-from get_languages import *
+from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import *
 
 from get_series import *
 from get_episodes import *
-from get_general_settings import *
-from get_sonarr_settings import *
-from check_update import *
-from list_subtitles import *
-from get_subtitle import *
-from utils import *
+from get_general_settings import base_url, ip, port, path_replace, path_replace_movie
+from get_sonarr_settings import get_sonarr_settings
+from check_update import check_and_apply_update
+from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
+from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles
+from utils import history_log, history_log_movie
 from scheduler import *
-from notifier import send_notifications
+from notifier import send_notifications, send_notifications_movie
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -216,7 +216,6 @@ def redirect_root():
 @route(base_url + 'series')
 @custom_auth_basic(check_credentials)
 def series():
-    import update_db
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -361,7 +360,7 @@ def edit_serieseditor():
 @route(base_url + 'episodes/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
 def episodes(no):
-    single_language = get_general_settings()[7]
+    # single_language = get_general_settings()[7]
     url_sonarr_short = get_sonarr_settings()[1]
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -378,7 +377,7 @@ def episodes(no):
     c.close()
     episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
     seasons_list = []
-    for key,season in itertools.groupby(episodes,operator.itemgetter(2)):
+    for key, season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
 
     return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
@@ -386,7 +385,6 @@ def episodes(no):
 @route(base_url + 'movies')
 @custom_auth_basic(check_credentials)
 def movies():
-    import update_db
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -498,7 +496,7 @@ def edit_movie(no):
 @custom_auth_basic(check_credentials)
 def movie(no):
     from get_radarr_settings import get_radarr_settings
-    single_language = get_general_settings()[7]
+    # single_language = get_general_settings()[7]
     url_radarr_short = get_radarr_settings()[1]
 
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -1235,132 +1233,132 @@ def execute_task(taskid):
 @route(base_url + 'remove_subtitles', method='POST')
 @custom_auth_basic(check_credentials)
 def remove_subtitles():
-        episodePath = request.forms.get('episodePath')
-        language = request.forms.get('language')
-        subtitlesPath = request.forms.get('subtitlesPath')
-        sonarrSeriesId = request.forms.get('sonarrSeriesId')
-        sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    episodePath = request.forms.get('episodePath')
+    language = request.forms.get('language')
+    subtitlesPath = request.forms.get('subtitlesPath')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
-        try:
-            os.remove(subtitlesPath)
-            result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
-        except OSError:
-            pass
-        store_subtitles(unicode(episodePath))
-        list_missing_subtitles(sonarrSeriesId)
+    try:
+        os.remove(subtitlesPath)
+        result = language_from_alpha3(language) + " subtitles deleted from disk."
+        history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
+    except OSError:
+        pass
+    store_subtitles(unicode(episodePath))
+    list_missing_subtitles(sonarrSeriesId)
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def remove_subtitles_movie():
-        moviePath = request.forms.get('moviePath')
-        language = request.forms.get('language')
-        subtitlesPath = request.forms.get('subtitlesPath')
-        radarrId = request.forms.get('radarrId')
+    moviePath = request.forms.get('moviePath')
+    language = request.forms.get('language')
+    subtitlesPath = request.forms.get('subtitlesPath')
+    radarrId = request.forms.get('radarrId')
 
-        try:
-            os.remove(subtitlesPath)
-            result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log_movie(0, radarrId, result)
-        except OSError:
-            pass
-        store_subtitles_movie(unicode(moviePath))
-        list_missing_subtitles_movies(radarrId)
+    try:
+        os.remove(subtitlesPath)
+        result = language_from_alpha3(language) + " subtitles deleted from disk."
+        history_log_movie(0, radarrId, result)
+    except OSError:
+        pass
+    store_subtitles_movie(unicode(moviePath))
+    list_missing_subtitles_movies(radarrId)
 
 
 @route(base_url + 'get_subtitle', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle():
-        ref = request.environ['HTTP_REFERER']
+    ref = request.environ['HTTP_REFERER']
 
-        episodePath = request.forms.get('episodePath')
-        sceneName = request.forms.get('sceneName')
-        language = request.forms.get('language')
-        hi = request.forms.get('hi')
-        sonarrSeriesId = request.forms.get('sonarrSeriesId')
-        sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-        tvdbid = request.forms.get('tvdbid')
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    # tvdbid = request.forms.get('tvdbid')
 
-        db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-        c = db.cursor()
-        c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-        enabled_providers = c.fetchall()
-        c.close()
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+    enabled_providers = c.fetchall()
+    c.close()
 
-        providers_list = []
-        providers_auth = {}
-        if len(enabled_providers) > 0:
-            for provider in enabled_providers:
-                providers_list.append(provider[0])
-                try:
-                    if provider[2] is not '' and provider[3] is not '':
-                        provider_auth = providers_auth.append(provider[0])
-                        provider_auth.update({'username':providers[2], 'password':providers[3]})
-                    else:
-                        providers_auth = None
-                except:
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
                     providers_auth = None
-        else:
-            providers_list = None
-            providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
 
-        try:
-            result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
-            if result is not None:
-                history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
-                store_subtitles(unicode(episodePath))
-                list_missing_subtitles(sonarrSeriesId)
-            redirect(ref)
-        except OSError:
-            pass
+    try:
+        result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
+        if result is not None:
+            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
+            store_subtitles(unicode(episodePath))
+            list_missing_subtitles(sonarrSeriesId)
+        redirect(ref)
+    except OSError:
+        pass
 
 @route(base_url + 'get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle_movie():
-        ref = request.environ['HTTP_REFERER']
+    ref = request.environ['HTTP_REFERER']
 
-        moviePath = request.forms.get('moviePath')
-        sceneName = request.forms.get('sceneName')
-        language = request.forms.get('language')
-        hi = request.forms.get('hi')
-        radarrId = request.forms.get('radarrId')
-        tmdbid = request.forms.get('tmdbid')
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    radarrId = request.forms.get('radarrId')
+    # tmdbid = request.forms.get('tmdbid')
 
-        db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
-        c = db.cursor()
-        c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-        enabled_providers = c.fetchall()
-        c.close()
+    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+    enabled_providers = c.fetchall()
+    c.close()
 
-        providers_list = []
-        providers_auth = {}
-        if len(enabled_providers) > 0:
-            for provider in enabled_providers:
-                providers_list.append(provider[0])
-                try:
-                    if provider[2] is not '' and provider[3] is not '':
-                        provider_auth = providers_auth.append(provider[0])
-                        provider_auth.update({'username':providers[2], 'password':providers[3]})
-                    else:
-                        providers_auth = None
-                except:
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
                     providers_auth = None
-        else:
-            providers_list = None
-            providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
 
-        try:
-            result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movies')
-            if result is not None:
-                history_log_movie(1, radarrId, result)
-                send_notifications_movie(radarrId, result)
-                store_subtitles_movie(unicode(moviePath))
-                list_missing_subtitles_movies(radarrId)
-            redirect(ref)
-        except OSError:
-            pass
+    try:
+        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movies')
+        if result is not None:
+            history_log_movie(1, radarrId, result)
+            send_notifications_movie(radarrId, result)
+            store_subtitles_movie(unicode(moviePath))
+            list_missing_subtitles_movies(radarrId)
+        redirect(ref)
+    except OSError:
+        pass
 
 def configured():
     conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
