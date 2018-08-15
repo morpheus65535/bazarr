@@ -3,13 +3,12 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import *
-from list_subtitles import *
+from get_general_settings import get_general_settings
+from list_subtitles import list_missing_subtitles
 
 def update_series():
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[0]
-    url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
     serie_default_enabled = get_general_settings()[15]
     serie_default_language = get_general_settings()[16]
@@ -87,7 +86,7 @@ def update_series():
 def get_profile_list():
     from get_sonarr_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[0]
-    url_sonarr_short = get_sonarr_settings()[1]
+    # url_sonarr_short = get_sonarr_settings()[1]
     apikey_sonarr = get_sonarr_settings()[2]
 
     # Get profiles data from Sonarr

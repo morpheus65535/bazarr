@@ -2,20 +2,21 @@ import gc
 import os
 import enzyme
 import babelfish
-from subliminal import *
+import logging
+from subliminal import core
 import sqlite3
 import ast
 import langdetect
 from bs4 import UnicodeDammit
 from itertools import islice
 
-from get_general_settings import *
-from get_languages import *
+from get_general_settings import path_replace_reverse, path_replace, path_replace_reverse_movie, path_replace_movie, get_general_settings
+from get_languages import alpha2_from_alpha3
 
 gc.enable()
 
 def store_subtitles(file):
-    languages = []
+    # languages = []
     actual_subtitles = []
     if os.path.exists(file):
         if os.path.splitext(file)[1] == '.mkv':
@@ -70,7 +71,7 @@ def store_subtitles(file):
 
 
 def store_subtitles_movie(file):
-    languages = []
+    # languages = []
     actual_subtitles = []
     if os.path.exists(file):
         if os.path.splitext(file)[1] == '.mkv':

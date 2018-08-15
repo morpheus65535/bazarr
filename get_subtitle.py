@@ -3,13 +3,13 @@ import sqlite3
 import ast
 import logging
 import subprocess
-from babelfish import *
-from subliminal import *
-from get_languages import *
+from babelfish import Language
+from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles
+from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
-from get_general_settings import *
-from list_subtitles import *
-from utils import *
+from get_general_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
+from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
+from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 
 # configure the cache
