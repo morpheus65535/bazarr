@@ -1,10 +1,12 @@
+from get_argv import config_dir
+
 import sqlite3
 import os
 import ast
 
 def get_sonarr_settings():
     # Open database connection
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Get Sonarr API URL from database config table

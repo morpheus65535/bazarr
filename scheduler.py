@@ -1,3 +1,5 @@
+from get_argv import no_update
+
 from get_general_settings import automatic
 from get_sonarr_settings import get_sonarr_settings
 from get_radarr_settings import get_radarr_settings
@@ -44,10 +46,11 @@ if str(get_localzone()) == "local":
 else:
     scheduler = BackgroundScheduler()
 
-if automatic == 'True':
-    scheduler.add_job(check_and_apply_update, 'interval', hours=6, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
-else:
-    scheduler.add_job(check_and_apply_update, 'cron', year='2100', hour=4, id='update_bazarr', name='Update bazarr from source on Github')
+if no_update is False:
+    if automatic == 'True':
+        scheduler.add_job(check_and_apply_update, 'interval', hours=6, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
+    else:
+        scheduler.add_job(check_and_apply_update, 'cron', year='2100', hour=4, id='update_bazarr', name='Update bazarr from source on Github')
 
 if integration[12] == "True":
     scheduler.add_job(update_series, 'interval', minutes=1, max_instances=1, coalesce=True, misfire_grace_time=15, id='update_series', name='Update series list from Sonarr')

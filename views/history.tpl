@@ -49,10 +49,11 @@
 		</div>
 		% include('menu.tpl')
 
+        % from get_argv import config_dir
         % import os
 		% import sqlite3
 
-		% conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+		% conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     	% c = conn.cursor()
 
 		% integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()

@@ -1,3 +1,5 @@
+from get_argv import config_dir
+
 import os
 import sqlite3
 import requests
@@ -24,7 +26,7 @@ def sync_episodes():
     apikey_sonarr = get_sonarr_settings()[2]
     
     # Open database connection
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Get current episodes id in DB

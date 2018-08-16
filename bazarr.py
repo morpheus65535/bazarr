@@ -1,13 +1,15 @@
-bazarr_version = '0.5.9'
+bazarr_version = '0.6.0'
 
 import gc
 gc.enable()
+
+from get_argv import config_dir
 
 import os
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
+sys.path.insert(0, os.path.join(config_dir, 'libs/'))
 
 import sqlite3
 from init_db import *
@@ -17,7 +19,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 
 logger = logging.getLogger('waitress')
-db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
 c = db.cursor()
 c.execute("SELECT log_level FROM table_settings_general")
 log_level = c.fetchone()
@@ -43,7 +45,7 @@ class OneLineExceptionFormatter(logging.Formatter):
 
 def configure_logging():
     global fh
-    fh = TimedRotatingFileHandler(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log'), when="midnight", interval=1, backupCount=7)
+    fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1, backupCount=7)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
@@ -61,7 +63,7 @@ from update_modules import *
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
-bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
+bottle.TEMPLATE_PATH.insert(0, os.path.join(config_dir, 'views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
@@ -94,7 +96,7 @@ from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 
 # Reset restart required warning on start
-conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
 c = conn.cursor()
 c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
 conn.commit()
@@ -140,7 +142,7 @@ def redirect_root():
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
-    return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
+    return static_file(path, root=os.path.join(config_dir, 'static'))
 
 @route(base_url + 'emptylog')
 @custom_auth_basic(check_credentials)
@@ -155,7 +157,7 @@ def emptylog():
 @route(base_url + 'bazarr.log')
 @custom_auth_basic(check_credentials)
 def download_log():
-    return static_file('bazarr.log', root=os.path.join(os.path.dirname(__file__), 'data/log/'), download='bazarr.log')
+    return static_file('bazarr.log', root=os.path.join(config_dir, 'log/'), download='bazarr.log')
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -200,7 +202,7 @@ def image_proxy_movies(url):
 @route(base_url)
 @custom_auth_basic(check_credentials)
 def redirect_root():
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
     integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
     c.close()
@@ -218,7 +220,7 @@ def redirect_root():
 def series():
     single_language = get_general_settings()[7]
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -249,7 +251,7 @@ def series():
 def serieseditor():
     single_language = get_general_settings()[7]
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -268,7 +270,7 @@ def serieseditor():
 @route(base_url + 'search_json/<query>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_json(query):
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
     c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title", ('%'+query+'%',))
@@ -316,7 +318,7 @@ def edit_series(no):
     else:
         hi = "False"
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (str(lang), hi, no))
     conn.commit()
@@ -336,7 +338,7 @@ def edit_serieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
 
     for serie in series:
@@ -363,7 +365,7 @@ def episodes(no):
     # single_language = get_general_settings()[7]
     url_sonarr_short = get_sonarr_settings()[1]
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()
 
@@ -387,7 +389,7 @@ def episodes(no):
 def movies():
     single_language = get_general_settings()[7]
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
@@ -414,7 +416,7 @@ def movies():
 def movieseditor():
     single_language = get_general_settings()[7]
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
@@ -440,7 +442,7 @@ def edit_movieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
 
     for movie in movies:
@@ -482,7 +484,7 @@ def edit_movie(no):
     else:
         hi = "False"
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ? WHERE radarrId LIKE ?", (str(lang), hi, no))
     conn.commit()
@@ -499,7 +501,7 @@ def movie(no):
     # single_language = get_general_settings()[7]
     url_radarr_short = get_radarr_settings()[1]
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace_movie)
     c = conn.cursor()
 
@@ -556,7 +558,7 @@ def history():
 @route(base_url + 'historyseries')
 @custom_auth_basic(check_credentials)
 def historyseries():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_history")
@@ -593,7 +595,7 @@ def historyseries():
 @route(base_url + 'historymovies')
 @custom_auth_basic(check_credentials)
 def historymovies():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_history_movie")
@@ -635,7 +637,7 @@ def wanted():
 @route(base_url + 'wantedseries')
 @custom_auth_basic(check_credentials)
 def wantedseries():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -662,7 +664,7 @@ def wantedseries():
 @route(base_url + 'wantedmovies')
 @custom_auth_basic(check_credentials)
 def wantedmovies():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
@@ -698,7 +700,7 @@ def wanted_search_missing_subtitles_list():
 @route(base_url + 'settings')
 @custom_auth_basic(check_credentials)
 def settings():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_general")
     settings_general = c.fetchone()
@@ -722,7 +724,7 @@ def settings():
 def save_settings():
     ref = request.environ['HTTP_REFERER']
 
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
 
     settings_general_ip = request.forms.get('settings_general_ip')
@@ -1198,7 +1200,7 @@ def system():
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
     i = 0
-    with open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')) as f:
+    with open(os.path.join(config_dir, 'log/bazarr.log')) as f:
         for i, l in enumerate(f, 1):
             pass
         row_count = i
@@ -1214,7 +1216,7 @@ def get_logs(page):
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
     logs_complete = []
-    for line in reversed(open(os.path.join(os.path.dirname(__file__), 'data/log/bazarr.log')).readlines()):
+    for line in reversed(open(os.path.join(config_dir, 'log/bazarr.log')).readlines()):
         logs_complete.append(line.rstrip())
     logs = logs_complete[begin:end]
 
@@ -1280,7 +1282,7 @@ def get_subtitle():
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     # tvdbid = request.forms.get('tvdbid')
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
     enabled_providers = c.fetchall()
@@ -1326,7 +1328,7 @@ def get_subtitle_movie():
     radarrId = request.forms.get('radarrId')
     # tmdbid = request.forms.get('tmdbid')
 
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
     enabled_providers = c.fetchall()
@@ -1361,7 +1363,7 @@ def get_subtitle_movie():
         pass
 
 def configured():
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE table_settings_general SET configured = 1")
     conn.commit()
@@ -1369,7 +1371,7 @@ def configured():
 
 @route(base_url + 'api/wanted')
 def api_wanted():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC").fetchall()
     c.close()
@@ -1377,7 +1379,7 @@ def api_wanted():
 
 @route(base_url + 'api/history')
 def api_history():
-    db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
     c.close()

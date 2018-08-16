@@ -1,3 +1,5 @@
+from get_argv import config_dir
+
 import sqlite3
 import os
 from subliminal import provider_manager
@@ -6,7 +8,7 @@ from subliminal import provider_manager
 providers_list = sorted(provider_manager.names())
 
 # Open database connection
-db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
 c = db.cursor()
 
 # Remove unsupported providers

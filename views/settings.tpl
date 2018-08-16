@@ -518,6 +518,7 @@
                     </div>
                 </div>
 
+                <div id="div_update" >
                 <div class="ui dividing header">Updates</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
@@ -560,6 +561,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
             <div class="ui bottom attached tab segment" data-tab="sonarr">
@@ -1199,6 +1201,12 @@
 
 
 <script>
+
+    % from get_argv import no_update
+    % if no_update is True:
+    $("#div_update").hide();
+    % end
+
     $('.menu .item')
         .tab()
     ;

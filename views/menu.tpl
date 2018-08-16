@@ -21,6 +21,8 @@
         </style>
     </head>
     <body>
+		% from get_argv import config_dir
+
 		% import os
 		% import sqlite3
         % from get_general_settings import *
@@ -31,7 +33,7 @@
         %    monitored_only_query_string = ""
         %end
 
-        % conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
+        % conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     	% c = conn.cursor()
 		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string).fetchone()
 		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string).fetchone()
