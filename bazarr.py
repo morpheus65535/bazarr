@@ -142,7 +142,7 @@ def redirect_root():
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
-    return static_file(path, root=os.path.join(config_dir, 'static'))
+    return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
 
 @route(base_url + 'emptylog')
 @custom_auth_basic(check_credentials)
