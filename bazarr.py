@@ -63,7 +63,7 @@ from update_modules import *
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
-bottle.TEMPLATE_PATH.insert(0, os.path.join(config_dir, 'views/'))
+bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
