@@ -174,7 +174,7 @@
 										<label>Subtitles languages</label>
 									</div>
 									<div class="nine wide column">
-										<select name="languages" id="movies_languages" {{!'multiple="" ' if single_language == 'False' else ''}}class="ui fluid selection dropdown">
+										<select name="languages" id="movies_languages" {{!'multiple="" ' if single_language is False else ''}}class="ui fluid selection dropdown">
 											<option value="">Languages</option>
 											%for language in languages:
 											<option value="{{language[0]}}">{{language[1]}}</option>

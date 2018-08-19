@@ -102,7 +102,7 @@
 				<div class="fields">
 			    	<div class="eight wide field">
 			      		<label style='color: white;'>Subtitles languages</label>
-			      		<select name="languages" {{!'multiple="" ' if single_language == 'False' else ''}}class="select ui disabled selection dropdown">
+			      		<select name="languages" {{!'multiple="" ' if single_language is False else ''}}class="select ui disabled selection dropdown">
 			                <option value="">No change</option>
 			                <option value="None">None</option>
 			                %for language in languages:

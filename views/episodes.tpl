@@ -75,7 +75,7 @@
 	<body>
 		%import ast
 		%from get_languages import *
-		%from get_general_settings import *
+		%from get_settings import *
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
@@ -248,9 +248,9 @@
 										<label>Subtitles languages</label>
 									</div>
 									<div class="nine wide column">
-										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language == 'False' else ''}} class="ui fluid selection dropdown">
+										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
 											<option value="">Languages</option>
-										    %if single_language == 'True':
+										    %if single_language is True:
                                             <option value="None">None</option>
                                             %end
 											%for language in languages:

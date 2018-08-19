@@ -9,7 +9,7 @@ from babelfish import Language
 from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
-from get_general_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
+from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
@@ -61,7 +61,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
-                    if single == 'True':
+                    if single is True:
                         result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
                     else:
                         result = save_subtitles(video, [best_subtitle], encoding='utf-8')

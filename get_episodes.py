@@ -5,7 +5,7 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import path_replace
+from get_settings import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, movies_full_scan_subtitles
     
 def update_all_episodes():
@@ -21,9 +21,9 @@ def update_all_movies():
     logging.info('All missing movie subtitles updated in database.')
 
 def sync_episodes():
-    from get_sonarr_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[0]
-    apikey_sonarr = get_sonarr_settings()[2]
+    from get_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[6]
+    apikey_sonarr = get_sonarr_settings()[4]
     
     # Open database connection
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)

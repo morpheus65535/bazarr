@@ -1,6 +1,6 @@
 from get_argv import config_dir
 
-from get_general_settings import get_general_settings
+from get_settings import get_general_settings
 
 import os
 import logging
@@ -44,6 +44,6 @@ def check_and_apply_update():
 def updated():
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
-    c.execute("UPDATE table_settings_general SET updated = 1")
+    c.execute("UPDATE system SET updated = 1")
     conn.commit()
     c.close()

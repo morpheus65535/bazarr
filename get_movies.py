@@ -5,14 +5,14 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import get_general_settings, path_replace_movie
+from get_settings import get_general_settings, path_replace_movie
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 
 def update_movies():
-    from get_radarr_settings import get_radarr_settings
-    url_radarr = get_radarr_settings()[0]
-    # url_radarr_short = get_radarr_settings()[1]
-    apikey_radarr = get_radarr_settings()[2]
+    from get_settings import get_radarr_settings
+    url_radarr = get_radarr_settings()[6]
+    # url_radarr_short = get_radarr_settings()[7]
+    apikey_radarr = get_radarr_settings()[4]
     movie_default_enabled = get_general_settings()[18]
     movie_default_language = get_general_settings()[19]
     movie_default_hi = get_general_settings()[20]
@@ -80,10 +80,10 @@ def update_movies():
 
                     # Update or insert movies list in database table
                     try:
-                        if movie_default_enabled == 'True':
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                        if movie_default_enabled is True:
+                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
                         else:
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?),(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
                     except:
                         c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
 
@@ -108,10 +108,10 @@ def update_movies():
     list_missing_subtitles_movies()
 
 def get_profile_list():
-    from get_radarr_settings import get_radarr_settings
-    url_radarr = get_radarr_settings()[0]
-    # url_radarr_short = get_radarr_settings()[1]
-    apikey_radarr = get_radarr_settings()[2]
+    from get_settings import get_radarr_settings
+    url_radarr = get_radarr_settings()[6]
+    # url_radarr_short = get_radarr_settings()[7]
+    apikey_radarr = get_radarr_settings()[4]
 
     # Get profiles data from radarr
     global profiles_list
