@@ -142,15 +142,6 @@ def get_general_settings():
         else:
             only_monitored = False
 
-        if cfg.has_option('general', 'configured'):
-            configured = cfg.getboolean('general', 'configured')
-        else:
-            configured = '0'
-
-        if cfg.has_option('general', 'updated'):
-            updated = cfg.getboolean('general', 'updated')
-        else:
-            updated = '0'
     else:
         ip = '0.0.0.0'
         port = '6768'
@@ -177,10 +168,8 @@ def get_general_settings():
         minimum_score_movie = '0'
         use_embedded_subs = False
         only_monitored = False
-        configured = '0'
-        updated = '0'
 
-    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored, configured, updated]
+    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored]
 
 
 def get_auth_settings():
