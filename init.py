@@ -141,7 +141,7 @@ except sqlite3.OperationalError:
         cfg.set(section, 'branch', "master")
         cfg.set(section, 'auto_update', "True")
         cfg.set(section, 'single_language', "False")
-        cfg.set(section, 'minimum_score', "0")
+        cfg.set(section, 'minimum_score', "100")
         cfg.set(section, 'use_scenename', "False")
         cfg.set(section, 'use_postprocessing', "False")
         cfg.set(section, 'postprocessing_cmd', "False")
@@ -155,7 +155,7 @@ except sqlite3.OperationalError:
         cfg.set(section, 'movie_default_language', '')
         cfg.set(section, 'movie_default_hi', "False")
         cfg.set(section, 'page_size', "25")
-        cfg.set(section, 'minimum_score_movie', "0")
+        cfg.set(section, 'minimum_score_movie', "100")
         cfg.set(section, 'use_embedded_subs', "False")
         cfg.set(section, 'only_monitored', "False")
 
