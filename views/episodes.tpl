@@ -4,7 +4,12 @@
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
+		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
+		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.css">
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
+
 		
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
@@ -151,8 +156,9 @@
 										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
 										<th>Title</th>
-										<th class="collapsing">Existing subtitles</th>
-										<th class="collapsing">Missing subtitles</th>
+										<th class="collapsing">Existing<br>subtitles</th>
+										<th class="collapsing">Missing<br>subtitles</th>
+										<th class="collapsing">Manual<br>search</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -211,6 +217,9 @@
 											%pass
 										%end
 										</td>
+										<td>
+											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+										</td>
 									</tr>
 								%end
 								</tbody>
@@ -222,7 +231,7 @@
 			%end
 		</div>
 
-		<div class="ui small modal">
+		<div class="config_dialog ui small modal">
 			<i class="close icon"></i>
 			<div class="header">
 				<div id="series_title"></div>
@@ -278,6 +287,27 @@
 			<div class="actions">
 				<button class="ui cancel button" >Cancel</button>
 				<button type="submit" name="save" value="save" form="series_form" class="ui blue approve button">Save</button>
+			</div>
+		</div>
+
+		<div class="search_dialog ui modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<div></div>
+			</div>
+			<div class="scrolling content">
+				<table id="search_result" class="display" style="width:100%">
+					<thead>
+						<tr>
+							<th>Score</th>
+							<th>Hearing-impaired</th>
+							<th>Provider</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
 			</div>
 		</div>
 
@@ -341,7 +371,7 @@
 			});
 	})
 
-	$('a, .menu .item, button:not(#config, .cancel)').click(function(){
+	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -369,6 +399,53 @@
 			$("#series_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.small.modal').modal('show');
+		$('.config_dialog')
+			.modal({
+				centered: true
+			})
+			.modal('show')
+		;
+	})
+
+	$('.manual_search').click(function(){
+		var values = {
+			episodePath: $(this).attr("data-episodePath"),
+			sceneName: $(this).attr("data-sceneName"),
+			language: $(this).attr("data-language"),
+			hi: $(this).attr("data-hi"),
+			sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+			sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+			tvdbid: {{tvdbid}}
+		};
+
+		$('#search_result').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: "Searching for subtitles..."
+		    },
+		    paging: true,
+    		searching: false,
+    		ordering: false,
+    		processing: false,
+        	serverSide: false,
+        	lengthMenu: [ [ 5, 10, 25, 50, 100 , -1 ] , [ 5, 10, 25, 50, 100, "All" ] ],
+    		ajax: {
+				url: '{{base_url}}manual_search',
+				type: 'POST',
+                data: values
+			},
+			columns: [
+				{ data: 'score' },
+				{ data: 'hearing_impaired' },
+				{ data: 'provider' }
+			]
+		} );
+
+		$('.search_dialog')
+			.modal({
+				centered: false
+			})
+			.modal('show')
+		;
 	})
 </script>

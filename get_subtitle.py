@@ -6,7 +6,7 @@ import ast
 import logging
 import subprocess
 from babelfish import Language
-from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles
+from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_general_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
@@ -107,6 +107,50 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                 logging.info('Post-processing result for file ' + path + ' : ' + out)
 
                     return message
+
+def manual_search(path, language, providers, providers_auth, sceneName, type):
+    language_set = set()
+    for lang in ast.literal_eval(language):
+        if lang == 'pob':
+            language_set.add(Language('por', 'BR'))
+        else:
+            language_set.add(Language(alpha3_from_alpha2(lang)))
+    try:
+        if sceneName != "None":
+            video = Video.fromname(sceneName)
+        else:
+            video = scan_video(path)
+    except:
+        print "Error trying to get video information."
+    else:
+        if type == "movie":
+            max_score = 120.0
+        elif type == "series":
+            max_score = 360.0
+
+        try:
+            with AsyncProviderPool(max_workers=None, providers=providers, provider_configs=providers_auth) as p:
+                subtitles = p.list_subtitles(video, language_set)
+            #for s in subtitles:
+                #sorted(s.get_matches(video))
+                #{s: compute_score(s, video)}
+        except Exception as e:
+            print(e)
+        else:
+            subtitles_list = []
+            for s in subtitles:
+                if type == "movie":
+                    not_matched = set(score.movie_scores.keys()) - set(s.get_matches(video))
+                    if 'title' in not_matched:
+                        continue
+                elif type == "series":
+                    not_matched = set(score.episode_scores.keys()) - set(s.get_matches(video))
+                    if 'series' in not_matched:
+                        continue
+                subtitles_list.append(dict(score=round((compute_score(s, video) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, id=s.id, url=s.page_link, matches=list(s.get_matches(video)), dont_matches=list(not_matched)))
+            subtitles_dict = {}
+            subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
+            return(subtitles_dict)
 
 def series_download_subtitles(no):
     if get_general_settings()[24] == "True":

@@ -90,7 +90,7 @@ from get_general_settings import base_url, ip, port, path_replace, path_replace_
 from get_sonarr_settings import get_sonarr_settings
 from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
-from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles
+from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles, manual_search
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
@@ -1315,6 +1315,41 @@ def get_subtitle():
         redirect(ref)
     except OSError:
         pass
+
+@route(base_url + 'manual_search', method='POST')
+@custom_auth_basic(check_credentials)
+def manual_search_json():
+    ref = request.environ['HTTP_REFERER']
+
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+    enabled_providers = c.fetchall()
+    c.close()
+
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
+
+    data = manual_search(episodePath, language, providers_list, providers_auth, sceneName, 'series')
+    return dict(data=data)
 
 @route(base_url + 'get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
