@@ -5,13 +5,13 @@ import sqlite3
 import requests
 import logging
 
-from get_general_settings import get_general_settings
+from get_settings import get_general_settings
 from list_subtitles import list_missing_subtitles
 
 def update_series():
-    from get_sonarr_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[0]
-    apikey_sonarr = get_sonarr_settings()[2]
+    from get_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[6]
+    apikey_sonarr = get_sonarr_settings()[4]
     serie_default_enabled = get_general_settings()[15]
     serie_default_language = get_general_settings()[16]
     serie_default_hi = get_general_settings()[17]
@@ -64,7 +64,7 @@ def update_series():
 
                 # Update or insert shows list in database table
                 try:
-                    if serie_default_enabled == 'True':
+                    if serie_default_enabled is True:
                         c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], serie_default_language, serie_default_hi, show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
                         list_missing_subtitles(show["id"])
                     else:
@@ -86,10 +86,10 @@ def update_series():
     db.close()
 
 def get_profile_list():
-    from get_sonarr_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[0]
-    # url_sonarr_short = get_sonarr_settings()[1]
-    apikey_sonarr = get_sonarr_settings()[2]
+    from get_settings import get_sonarr_settings
+    url_sonarr = get_sonarr_settings()[6]
+    # url_sonarr_short = get_sonarr_settings()[5]
+    apikey_sonarr = get_sonarr_settings()[4]
 
     # Get profiles data from Sonarr
     error = False

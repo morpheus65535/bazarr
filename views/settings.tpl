@@ -259,7 +259,7 @@
                                 <label>Use Sonarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings_general[14]}}>
+                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings_general[12]}}>
                                     <input name="settings_general_use_sonarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -278,7 +278,7 @@
                                 <label>Use Radarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings_general[15]}}>
+                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings_general[13]}}>
                                     <input name="settings_general_use_radarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -372,8 +372,8 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
-                        %if settings_general[16] is not None:
-                        %	path_substitutions_movie = ast.literal_eval(settings_general[16])
+                        %if settings_general[14] is not None:
+                        %	path_substitutions_movie = ast.literal_eval(settings_general[14])
                         %else:
                         %	path_substitutions_movie = []
                         %end
@@ -453,7 +453,7 @@
                                 <label>Use post-processing</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings_general[12]}}>
+                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings_general[10]}}>
                                     <input name="settings_general_use_postprocessing" type="checkbox">
                                     <label></label>
                                 </div>
@@ -473,7 +473,7 @@
                             </div>
                             <div class="five wide column">
                                 <div id="settings_general_postprocessing_cmd_div" class="ui fluid input">
-                                    <input name="settings_general_postprocessing_cmd" type="text" value="{{settings_general[13] if settings_general[13] != None else ''}}">
+                                    <input name="settings_general_postprocessing_cmd" type="text" value="{{settings_general[11] if settings_general[11] != None else ''}}">
                                 </div>
                             </div>
                         </div>
@@ -798,7 +798,7 @@
                                 <label>Use scene name when available</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[11]}}>
+                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[9]}}>
                                     <input name="settings_general_scenename" type="checkbox">
                                     <label></label>
                                 </div>
@@ -819,7 +819,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[10]}}">
+                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[8]}}">
                                     </div>
                                 </div>
                             </div>
@@ -839,7 +839,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[24]}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[22]}}">
                                     </div>
                                 </div>
                             </div>
@@ -857,7 +857,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[25]}}>
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[23]}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
@@ -876,7 +876,7 @@
                                 <label>Download only monitored</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings_general[26]}}>
+                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings_general[24]}}>
                                     <input name="settings_general_only_monitored" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1009,7 +1009,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings_general[9]}}>
+                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings_general[7]}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1054,7 +1054,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[17]}}">
+                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[15]}}">
                                         <input name="settings_serie_default_enabled" id="settings_serie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1076,7 +1076,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid selection dropdown">
-                                        %if settings_general[9] == 'False':
+                                        %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1092,7 +1092,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[19]}}">
+                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[17]}}">
                                         <input name="settings_serie_default_hi" id="settings_serie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1111,7 +1111,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[20]}}">
+                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[18]}}">
                                         <input name="settings_movie_default_enabled" id="settings_movie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1133,7 +1133,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid selection dropdown">
-                                        %if settings_general[9] == 'False':
+                                        %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1149,7 +1149,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[22]}}">
+                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[20]}}">
                                         <input name="settings_movie_default_hi" id="settings_movie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1466,7 +1466,7 @@
     $('#settings_loglevel').dropdown('clear');
     $('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
     $('#settings_page_size').dropdown('clear');
-    $('#settings_page_size').dropdown('set selected','{{!settings_general[23]}}');
+    $('#settings_page_size').dropdown('set selected','{{!settings_general[21]}}');
     $('#settings_providers').dropdown('clear');
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
@@ -1483,11 +1483,11 @@
     $('#settings_languages').dropdown();
     $('#settings_serie_default_languages').dropdown();
     $('#settings_movie_default_languages').dropdown();
-    %if settings_general[18] is not None:
-    $('#settings_serie_default_languages').dropdown('set selected',{{!settings_general[18]}});
+    %if settings_general[16] is not None:
+    $('#settings_serie_default_languages').dropdown('set selected',{{!settings_general[16]}});
     %end
-    %if settings_general[21] is not None:
-    $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[21]}});
+    %if settings_general[19] is not None:
+    $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();

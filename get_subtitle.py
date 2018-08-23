@@ -9,7 +9,7 @@ from babelfish import Language
 from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
-from get_general_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
+from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
@@ -34,7 +34,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         lang_obj = Language(language)
 
     try:
-        if sceneName is None or use_scenename == "False":
+        if sceneName is None or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
@@ -61,7 +61,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
-                    if single == 'True':
+                    if single is True:
                         result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
                     else:
                         result = save_subtitles(video, [best_subtitle], encoding='utf-8')
@@ -79,7 +79,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     else:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
 
-                    if use_postprocessing == "True":
+                    if use_postprocessing is True:
                         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
                         try:
                             if os.name == 'nt':
@@ -109,7 +109,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     return message
 
 def series_download_subtitles(no):
-    if get_general_settings()[24] == "True":
+    if get_general_settings()[24] is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -257,7 +257,7 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    if get_general_settings()[24] == "True":
+    if get_general_settings()[24] is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -272,11 +272,11 @@ def wanted_search_missing_subtitles():
 
     integration = get_general_settings()
 
-    if integration[12] == "True":
+    if integration[12] is True:
         for episode in episodes:
             wanted_download_subtitles(episode[0])
 
-    if integration[13] == "True":
+    if integration[13] is True:
         for movie in movies:
             wanted_download_subtitles_movie(movie[0])
 

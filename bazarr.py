@@ -12,22 +12,19 @@ sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
 
 import sqlite3
-from init_db import *
+from update_modules import *
+from init import *
 from update_db import *
 
+
+from get_settings import get_general_settings
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
 logger = logging.getLogger('waitress')
-db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-c = db.cursor()
-c.execute("SELECT log_level FROM table_settings_general")
-log_level = c.fetchone()
-c.close()
-log_level = log_level[0]
+log_level = get_general_settings()[4]
 if log_level is None:
     log_level = "INFO"
-log_level = getattr(logging, log_level)
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -59,8 +56,6 @@ def configure_logging():
 
 configure_logging()
 
-from update_modules import *
-
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
@@ -86,8 +81,7 @@ from get_providers import *
 
 from get_series import *
 from get_episodes import *
-from get_general_settings import base_url, ip, port, path_replace, path_replace_movie
-from get_sonarr_settings import get_sonarr_settings
+from get_settings import base_url, ip, port, path_replace, path_replace_movie
 from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles
@@ -98,20 +92,19 @@ from notifier import send_notifications, send_notifications_movie
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
 c = conn.cursor()
-c.execute("UPDATE table_settings_general SET configured = 0, updated = 0")
+c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
 
 # Load languages in database
 load_language_in_db()
 
-from get_auth_settings import get_auth_settings
-auth_enabled = get_auth_settings()[0]
+from get_settings import get_auth_settings
 
 def custom_auth_basic(check):
     def decorator(func):
         def wrapper(*a, **ka):
-            if auth_enabled == "True":
+            if get_auth_settings()[0] is True:
                 user, password = request.auth or (None, None)
                 if user is None or not check(user, password):
                     err = HTTPError(401, "Access denied")
@@ -125,11 +118,10 @@ def custom_auth_basic(check):
     return decorator
 
 def check_credentials(user, pw):
-    from get_auth_settings import get_auth_settings
-    auth_enabled = get_auth_settings()
+    from get_settings import get_auth_settings
 
-    username = auth_enabled[1]
-    password = auth_enabled[2]
+    username = get_auth_settings()[1]
+    password = get_auth_settings()[2]
     if hashlib.md5(pw).hexdigest() == password and user == username:
         return True
     return False
@@ -162,10 +154,9 @@ def download_log():
 @route(base_url + 'image_proxy/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def image_proxy(url):
-    from get_sonarr_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[0]
-    url_sonarr_short = get_sonarr_settings()[1]
-    apikey = get_sonarr_settings()[2]
+    url_sonarr = get_sonarr_settings()[6]
+    url_sonarr_short = get_sonarr_settings()[7]
+    apikey = get_sonarr_settings()[4]
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
         img_pil = Image.open(BytesIO(requests.get(url_sonarr_short + '/api' + url_image.split(url_sonarr)[1], timeout=15).content))
@@ -181,10 +172,9 @@ def image_proxy(url):
 @route(base_url + 'image_proxy_movies/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def image_proxy_movies(url):
-    from get_radarr_settings import get_radarr_settings
-    url_radarr = get_radarr_settings()[0]
-    url_radarr_short = get_radarr_settings()[1]
-    apikey = get_radarr_settings()[2]
+    url_radarr = get_radarr_settings()[6]
+    url_radarr_short = get_radarr_settings()[7]
+    apikey = get_radarr_settings()[4]
     try:
         url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         img_pil = Image.open(BytesIO(requests.get(url_radarr_short + '/api' + url_image.split(url_radarr)[1], timeout=15).content))
@@ -202,14 +192,10 @@ def image_proxy_movies(url):
 @route(base_url)
 @custom_auth_basic(check_credentials)
 def redirect_root():
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = conn.cursor()
-    integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
-    c.close()
 
-    if integration[0] == "True":
+    if get_general_settings()[12] is True:
         redirect(base_url + 'series')
-    elif integration[1] == "True":
+    elif get_general_settings()[13] is True:
         redirect(base_url + 'movies')
     else:
         redirect(base_url + 'settings')
@@ -302,7 +288,7 @@ def edit_series(no):
         lang = 'None'
 
     single_language = get_general_settings()[7]
-    if single_language == 'True':
+    if single_language is True:
         if str(lang) == "['None']":
             lang = 'None'
         else:
@@ -363,7 +349,7 @@ def edit_serieseditor():
 @custom_auth_basic(check_credentials)
 def episodes(no):
     # single_language = get_general_settings()[7]
-    url_sonarr_short = get_sonarr_settings()[1]
+    url_sonarr_short = get_sonarr_settings()[7]
 
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
@@ -497,9 +483,8 @@ def edit_movie(no):
 @route(base_url + 'movie/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
 def movie(no):
-    from get_radarr_settings import get_radarr_settings
     # single_language = get_general_settings()[7]
-    url_radarr_short = get_radarr_settings()[1]
+    url_radarr_short = get_radarr_settings()[7]
 
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace_movie)
@@ -641,7 +626,7 @@ def wantedseries():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    if get_general_settings()[24] == "True":
+    if get_general_settings()[24] is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -668,7 +653,7 @@ def wantedmovies():
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    if get_general_settings()[24] == "True":
+    if get_general_settings()[24] is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -702,21 +687,19 @@ def wanted_search_missing_subtitles_list():
 def settings():
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-    c.execute("SELECT * FROM table_settings_general")
-    settings_general = c.fetchone()
-    c.execute("SELECT * FROM table_settings_auth")
-    settings_auth = c.fetchone()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
     c.execute("SELECT * FROM table_settings_providers ORDER BY name")
     settings_providers = c.fetchall()
-    c.execute("SELECT * FROM table_settings_sonarr")
-    settings_sonarr = c.fetchone()
-    c.execute("SELECT * FROM table_settings_radarr")
-    settings_radarr = c.fetchone()
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
+    from get_settings import get_general_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
+    settings_general = get_general_settings()
+    settings_auth = get_auth_settings()
+    settings_sonarr = get_sonarr_settings()
+    settings_radarr = get_radarr_settings()
+
     return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
@@ -792,22 +775,55 @@ def save_settings():
         settings_general_use_radarr = 'True'
     settings_page_size = request.forms.get('settings_page_size')
 
-    before = c.execute("SELECT ip, port, base_url, log_level, path_mapping, use_sonarr, use_radarr, path_mapping_movie FROM table_settings_general").fetchone()
+    settings_general = get_general_settings()
+
+    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[4]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    c.execute("UPDATE table_settings_general SET ip = ?, port = ?, base_url = ?, path_mapping = ?, log_level = ?, branch=?, auto_update=?, single_language=?, minimum_score=?, use_scenename=?, use_postprocessing=?, postprocessing_cmd=?, use_sonarr=?, use_radarr=?, path_mapping_movie=?, page_size=?, use_embedded_subs=?, minimum_score_movie=?, only_monitored=?", (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_loglevel), unicode(settings_general_branch), unicode(settings_general_automatic), unicode(settings_general_single_language), unicode(settings_general_minimum_score), unicode(settings_general_scenename), unicode(settings_general_use_postprocessing), unicode(settings_general_postprocessing_cmd), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie), unicode(settings_page_size), unicode(settings_general_embedded), unicode(settings_general_minimum_score_movies), unicode(settings_general_only_monitored)))
-    conn.commit()
+    from six import text_type
+
+    cfg = ConfigParser()
+
+    with open(config_file, 'r') as f:
+        cfg.read_file(f)
+
+    cfg.set('general', 'ip', text_type(settings_general_ip))
+    cfg.set('general', 'port', text_type(settings_general_port))
+    cfg.set('general', 'base_url', text_type(settings_general_baseurl))
+    cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
+    cfg.set('general', 'log_level', text_type(settings_general_loglevel))
+    cfg.set('general', 'branch', text_type(settings_general_branch))
+    cfg.set('general', 'auto_update', text_type(settings_general_automatic))
+    cfg.set('general', 'single_language', text_type(settings_general_single_language))
+    cfg.set('general', 'minimum_score', text_type(settings_general_minimum_score))
+    cfg.set('general', 'use_scenename', text_type(settings_general_scenename))
+    cfg.set('general', 'use_postprocessing', text_type(settings_general_use_postprocessing))
+    cfg.set('general', 'postprocessing_cmd', text_type(settings_general_postprocessing_cmd))
+    cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
+    cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
+    cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
+    cfg.set('general', 'page_size', text_type(settings_page_size))
+    cfg.set('general', 'minimum_score_movie', text_type(settings_general_minimum_score_movies))
+    cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
+    cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
+    # cfg.set('general', 'configured', text_type(configured))
+    # cfg.set('general', 'updated', text_type(updated))
+
     if after != before:
         configured()
     get_general_settings()
 
-    before_auth_password = c.execute("SELECT enabled, password FROM table_settings_auth").fetchone()
+    settings_auth = get_auth_settings()
+
+    before_auth_password = (unicode(settings_auth[0]), unicode(settings_auth[2]))
     if before_auth_password[0] != settings_general_auth_enabled:
         configured()
     if before_auth_password[1] == settings_general_auth_password:
-        c.execute("UPDATE table_settings_auth SET enabled = ?, username = ?", (unicode(settings_general_auth_enabled), unicode(settings_general_auth_username)))
+        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
+        cfg.set('auth', 'username', text_type(settings_general_auth_username))
     else:
-        c.execute("UPDATE table_settings_auth SET enabled = ?, username = ?, password = ?", (unicode(settings_general_auth_enabled), unicode(settings_general_auth_username), unicode(hashlib.md5(settings_general_auth_password.encode('utf-8')).hexdigest())))
-    conn.commit()
+        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
+        cfg.set('auth', 'username', text_type(settings_general_auth_username))
+        cfg.set('auth', 'password', hashlib.md5(settings_general_auth_password).hexdigest())
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -819,7 +835,13 @@ def save_settings():
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
-    c.execute("UPDATE table_settings_sonarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_sonarr_ip, settings_sonarr_port, settings_sonarr_baseurl, settings_sonarr_ssl, settings_sonarr_apikey, settings_sonarr_sync))
+
+    cfg.set('sonarr', 'ip', text_type(settings_sonarr_ip))
+    cfg.set('sonarr', 'port', text_type(settings_sonarr_port))
+    cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
+    cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
+    cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
+    cfg.set('sonarr', 'full_update', text_type(settings_sonarr_sync))
 
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -831,7 +853,13 @@ def save_settings():
         settings_radarr_ssl = 'True'
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
     settings_radarr_sync = request.forms.get('settings_radarr_sync')
-    c.execute("UPDATE table_settings_radarr SET ip = ?, port = ?, base_url = ?, ssl = ?, apikey = ?, full_update = ?", (settings_radarr_ip, settings_radarr_port, settings_radarr_baseurl, settings_radarr_ssl, settings_radarr_apikey, settings_radarr_sync))
+
+    cfg.set('radarr', 'ip', text_type(settings_radarr_ip))
+    cfg.set('radarr', 'port', text_type(settings_radarr_port))
+    cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
+    cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
+    cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
+    cfg.set('radarr', 'full_update', text_type(settings_radarr_sync))
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")
@@ -858,38 +886,41 @@ def save_settings():
         settings_serie_default_enabled = 'False'
     else:
         settings_serie_default_enabled = 'True'
-    c.execute("UPDATE table_settings_general SET serie_default_enabled = ?", (settings_serie_default_enabled,))
+    cfg.set('general', 'serie_default_enabled', text_type(settings_serie_default_enabled))
 
     settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
     if settings_serie_default_languages == "['None']":
         settings_serie_default_languages = 'None'
-    c.execute("UPDATE table_settings_general SET serie_default_languages = ?", (settings_serie_default_languages,))
+    cfg.set('general', 'serie_default_language', text_type(settings_serie_default_languages))
 
     settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
-    c.execute("UPDATE table_settings_general SET serie_default_hi = ?", (settings_serie_default_hi,))
+    cfg.set('general', 'serie_default_hi', text_type(settings_serie_default_hi))
 
     settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
         settings_movie_default_enabled = 'True'
-    c.execute("UPDATE table_settings_general SET movie_default_enabled = ?", (settings_movie_default_enabled,))
+    cfg.set('general', 'movie_default_enabled', text_type(settings_movie_default_enabled))
 
     settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
-    c.execute("UPDATE table_settings_general SET movie_default_languages = ?", (settings_movie_default_languages,))
+    cfg.set('general', 'movie_default_language', text_type(settings_movie_default_languages))
 
     settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
-    c.execute("UPDATE table_settings_general SET movie_default_hi = ?", (settings_movie_default_hi,))
+    cfg.set('general', 'movie_default_hi', text_type(settings_movie_default_hi))
+
+    with open(config_file, 'wb') as f:
+        cfg.write(f)
 
     settings_notifier_Boxcar_enabled = request.forms.get('settings_notifier_Boxcar_enabled')
     if settings_notifier_Boxcar_enabled == 'on':
@@ -1365,7 +1396,7 @@ def get_subtitle_movie():
 def configured():
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
-    c.execute("UPDATE table_settings_general SET configured = 1")
+    c.execute("UPDATE system SET configured = 1")
     conn.commit()
     c.close()
 
