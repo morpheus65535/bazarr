@@ -17,6 +17,7 @@ requests>=2.18.4
 tzlocal>=1.5.1
 urllib3<1.23,>=1.21.1
 waitress>=1.1.0
+configparser==3.5.0
 
 #Subliminal requirements
 click>=6.7

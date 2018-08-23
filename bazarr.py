@@ -12,6 +12,7 @@ sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
 
 import sqlite3
+from update_modules import *
 from init import *
 from update_db import *
 
@@ -54,8 +55,6 @@ def configure_logging():
     root.addHandler(fh)
 
 configure_logging()
-
-from update_modules import *
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
