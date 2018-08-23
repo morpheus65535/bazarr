@@ -437,7 +437,11 @@
                 data: values
 			},
 			columns: [
-				{ data: 'score' },
+				{ data: 'score',
+				render: function ( data, type, row ) {
+        			return data +'%';
+    				}
+				},
 				{ data: 'hearing_impaired' },
 				{ data: 'provider' }
 			]
