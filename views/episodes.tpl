@@ -218,7 +218,7 @@
 										%end
 										</td>
 										<td>
-											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
 										</td>
 									</tr>
 								%end
@@ -293,7 +293,7 @@
 		<div class="search_dialog ui modal">
 			<i class="close icon"></i>
 			<div class="header">
-				<div></div>
+				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
 			</div>
 			<div class="scrolling content">
 				<table id="search_result" class="display" style="width:100%">
@@ -325,50 +325,47 @@
 	})
 
 	$('.remove_subtitles').click(function(){
-		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
-		            language: $(this).attr("data-language"),
-		            subtitlesPath: $(this).attr("data-subtitlesPath"),
-		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-		            tvdbid: {{tvdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}remove_subtitles",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+				episodePath: $(this).attr("data-episodePath"),
+				language: $(this).attr("data-language"),
+				subtitlesPath: $(this).attr("data-subtitlesPath"),
+				sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+				sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+				tvdbid: {{tvdbid}}
+		};
+		$.ajax({
+			url: "{{base_url}}remove_subtitles",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
 	$('.get_subtitle').click(function(){
-		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
-		            sceneName: $(this).attr("data-sceneName"),
-		            language: $(this).attr("data-language"),
-		            hi: $(this).attr("data-hi"),
-		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-		            tvdbid: {{tvdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}get_subtitle",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+				episodePath: $(this).attr("data-episodePath"),
+				sceneName: $(this).attr("data-sceneName"),
+				language: $(this).attr("data-language"),
+				hi: $(this).attr("data-hi")
+		};
+		$.ajax({
+			url: "{{base_url}}get_subtitle",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
 	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').click(function(){
@@ -408,6 +405,11 @@
 	})
 
 	$('.manual_search').click(function(){
+		$("#series_title_span").html($(this).data("series_title"));
+		$("#season").html($(this).data("season"));
+		$("#episode").html($(this).data("episode"));
+		$("#episode_title").html($(this).data("episode_title"));
+
 		var values = {
 			episodePath: $(this).attr("data-episodePath"),
 			sceneName: $(this).attr("data-sceneName"),
