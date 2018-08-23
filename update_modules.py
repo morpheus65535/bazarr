@@ -7,7 +7,7 @@ import sys
 try:
     logging.info('Installing Python modules required for Bazarr...')
 
-    command = sys.executable + ' -m pip --disable-pip-version-check -q -q install --user -r ' + os.path.join(os.path.dirname(__file__), 'requirements.txt')
+    command = sys.executable + ' -m pip --disable-pip-version-check -q -q install --user -r "' + os.path.join(os.path.dirname(__file__), 'requirements.txt"')
 
     if os.name == 'nt':
         codepage = check_output("chcp", shell=True, stderr=subprocess.STDOUT)
