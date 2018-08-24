@@ -51,18 +51,12 @@
 
         % from get_argv import config_dir
         % import os
-		% import sqlite3
+		% from get_settings import get_general_settings
 
-		% conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    	% c = conn.cursor()
-
-		% integration = c.execute("SELECT use_sonarr, use_radarr FROM table_settings_general").fetchone()
-
-        % c.close()
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
-				<a id="series_tab" class="tabs item active" data-enabled="{{integration[0]}}" data-tab="series">Series</a>
-				<a id="movies_tab" class="tabs item" data-enabled="{{integration[1]}}" data-tab="movies">Movies</a>
+				<a id="series_tab" class="tabs item active" data-enabled="{{get_general_settings()[12]}}" data-tab="series">Series</a>
+				<a id="movies_tab" class="tabs item" data-enabled="{{get_general_settings()[13]}}" data-tab="movies">Movies</a>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="series">
 				<div class="content">

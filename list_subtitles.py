@@ -12,7 +12,7 @@ import langdetect
 from bs4 import UnicodeDammit
 from itertools import islice
 
-from get_general_settings import path_replace_reverse, path_replace, path_replace_reverse_movie, path_replace_movie, get_general_settings
+from get_settings import path_replace_reverse, path_replace, path_replace_reverse_movie, path_replace_movie, get_general_settings
 from get_languages import alpha2_from_alpha3
 
 gc.enable()
@@ -143,7 +143,7 @@ def list_missing_subtitles(*no):
         desired_subtitles = []
         missing_subtitles = []
         if episode_subtitles[1] != None:
-            if use_embedded_subs == "True":
+            if use_embedded_subs is True:
                 actual_subtitles = ast.literal_eval(episode_subtitles[1])
             else:
                 actual_subtitles_temp = ast.literal_eval(episode_subtitles[1])
@@ -190,7 +190,7 @@ def list_missing_subtitles_movies(*no):
         desired_subtitles = []
         missing_subtitles = []
         if movie_subtitles[1] != None:
-            if use_embedded_subs == "True":
+            if use_embedded_subs is True:
                 actual_subtitles = ast.literal_eval(movie_subtitles[1])
             else:
                 actual_subtitles_temp = ast.literal_eval(movie_subtitles[1])

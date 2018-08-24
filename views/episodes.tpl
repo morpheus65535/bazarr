@@ -80,7 +80,7 @@
 	<body>
 		%import ast
 		%from get_languages import *
-		%from get_general_settings import *
+		%from get_settings import *
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
@@ -165,7 +165,7 @@
 								%for episode in season:
 									<tr>
 										<td class="collapsing">
-                                            %if episode[9] == "True":
+                                            %if episode[9] is True:
                                             <span data-tooltip="Episode monitored in Sonarr"><i class="bookmark icon"></i></span>
                                             %else:
                                             <span data-tooltip="Episode unmonitored in Sonarr"><i class="bookmark outline icon"></i></span>
@@ -257,9 +257,9 @@
 										<label>Subtitles languages</label>
 									</div>
 									<div class="nine wide column">
-										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language == 'False' else ''}} class="ui fluid selection dropdown">
+										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
 											<option value="">Languages</option>
-										    %if single_language == 'True':
+										    %if single_language is True:
                                             <option value="None">None</option>
                                             %end
 											%for language in languages:
