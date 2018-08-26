@@ -423,7 +423,7 @@
 		$('#search_result').DataTable( {
 		    destroy: true,
 		    language: {
-				loadingRecords: "Searching for subtitles..."
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>'
 		    },
 		    paging: true,
     		searching: false,
@@ -443,7 +443,11 @@
     				}
 				},
 				{ data: 'hearing_impaired' },
-				{ data: 'provider' }
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+    				}
+				}
 			]
 		} );
 

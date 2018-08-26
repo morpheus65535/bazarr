@@ -19,10 +19,10 @@ region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
     if type == 'series':
-        type_of_score = 360
+        type_of_score = 359
         minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
     elif type == 'movies':
-        type_of_score = 120
+        type_of_score = 119
         minimum_score = float(get_general_settings()[22]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
@@ -124,16 +124,13 @@ def manual_search(path, language, providers, providers_auth, sceneName, type):
         print "Error trying to get video information."
     else:
         if type == "movie":
-            max_score = 120.0
+            max_score = 119.0
         elif type == "series":
-            max_score = 360.0
+            max_score = 359.0
 
         try:
             with AsyncProviderPool(max_workers=None, providers=providers, provider_configs=providers_auth) as p:
                 subtitles = p.list_subtitles(video, language_set)
-            #for s in subtitles:
-                #sorted(s.get_matches(video))
-                #{s: compute_score(s, video)}
         except Exception as e:
             print(e)
         else:
@@ -141,11 +138,11 @@ def manual_search(path, language, providers, providers_auth, sceneName, type):
             for s in subtitles:
                 if type == "movie":
                     not_matched = set(score.movie_scores.keys()) - set(s.get_matches(video))
-                    if 'title' in not_matched:
+                    if "title" in not_matched:
                         continue
                 elif type == "series":
                     not_matched = set(score.episode_scores.keys()) - set(s.get_matches(video))
-                    if 'series' in not_matched:
+                    if "series" in not_matched or "episode" in not_matched:
                         continue
                 subtitles_list.append(dict(score=round((compute_score(s, video) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, id=s.id, url=s.page_link, matches=list(s.get_matches(video)), dont_matches=list(not_matched)))
             subtitles_dict = {}
