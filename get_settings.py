@@ -141,6 +141,11 @@ def get_general_settings():
             only_monitored = cfg.getboolean('general', 'only_monitored')
         else:
             only_monitored = False
+            
+        if cfg.has_option('general', 'adaptive_searching'):
+            adaptive_searching = cfg.getboolean('general', 'adaptive_searching')
+        else:
+            adaptive_searching = False
 
     else:
         ip = '0.0.0.0'
@@ -168,8 +173,9 @@ def get_general_settings():
         minimum_score_movie = '100'
         use_embedded_subs = False
         only_monitored = False
+        adaptive_searching = False
 
-    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored]
+    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored, adaptive_searching]
 
 
 def get_auth_settings():
@@ -414,3 +420,4 @@ page_size = result[21]
 minimum_score_movie = result[22]
 use_embedded_subs = result[23]
 only_monitored = result[24]
+adaptive_searching = result[25]

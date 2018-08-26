@@ -21,6 +21,7 @@ def update_all_movies():
     logging.info('All missing movie subtitles updated in database.')
 
 def sync_episodes():
+    logging.debug('Starting episode sync from Sonarr.')
     from get_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]

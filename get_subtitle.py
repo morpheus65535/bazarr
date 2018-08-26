@@ -216,26 +216,29 @@ def wanted_download_subtitles(path):
         for language in ast.literal_eval(episode[1]):
             if attempt is None:
                 attempt = []
-                attempt.append([language, time.time(), time.time()])
+                attempt.append([language, time.time()])
             else:
                 att = zip(*attempt)[0]
                 if language not in att:
-                    attempt.append([language, time.time(), time.time()])
-            message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
-            if message is not None:
-                store_subtitles(path_replace(episode[0]))
-                list_missing_subtitles(episode[3])
-                history_log(1, episode[3], episode[2], message)
-                send_notifications(episode[3], episode[2], message)
-            else:
-                for i in range(len(attempt)):
-                    if attempt[i][0] == language:
-                        attempt[i][2] = time.time()
-                conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-                c_db = conn_db.cursor()
-                c_db.execute('UPDATE table_episodes SET failedAttempts = ? WHERE sonarrEpisodeId = ?', (unicode(attempt), movie[3]))
-                conn_db.commit()
-                c_db.close()
+                    attempt.append([language, time.time()])
+                    
+            conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c_db = conn_db.cursor()
+            c_db.execute('UPDATE table_episodes SET failedAttempts = ? WHERE sonarrEpisodeId = ?', (unicode(attempt), episode[2]))
+            conn_db.commit()
+            c_db.close()
+            
+            for i in range(len(attempt)):
+                if attempt[i][0] == language:
+                    if search_active(attempt[i][1]) is True:
+                        message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
+                        if message is not None:
+                            store_subtitles(path_replace(episode[0]))
+                            list_missing_subtitles(episode[3])
+                            history_log(1, episode[3], episode[2], message)
+                            send_notifications(episode[3], episode[2], message)
+                    else:
+                        logging.debug('Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
 
 
 def wanted_download_subtitles_movie(path):
@@ -269,30 +272,29 @@ def wanted_download_subtitles_movie(path):
         for language in ast.literal_eval(movie[1]):
             if attempt is None:
                 attempt = []
-                attempt.append([language, time.time(), str(time.time())])
+                attempt.append([language, time.time()])
             else:
                 att = zip(*attempt)[0]
                 if language not in att:
-                    attempt.append([language, time.time(), str(time.time())])
+                    attempt.append([language, time.time()])
+                    
+            conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c_db = conn_db.cursor()
+            c_db.execute('UPDATE table_movies SET failedAttempts = ? WHERE radarrId = ?', (unicode(attempt), movie[2]))
+            conn_db.commit()
+            c_db.close()
+            
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
-                    sa = search_active(attempt[i][2])
-                    print sa
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
-            if message is not None:
-                store_subtitles_movie(path_replace_movie(movie[0]))
-                list_missing_subtitles_movies(movie[3])
-                history_log_movie(1, movie[3], message)
-                send_notifications_movie(movie[3], message)
-            else:
-                for i in range(len(attempt)):
-                    if attempt[i][0] == language:
-                        attempt[i][2] = str(time.time())
-                conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-                c_db = conn_db.cursor()
-                c_db.execute('UPDATE table_movies SET failedAttempts = ? WHERE radarrId = ?', (unicode(attempt), movie[3]))
-                conn_db.commit()
-                c_db.close()
+                    if search_active(attempt[i][1]) is True:
+                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
+                        if message is not None:
+                            store_subtitles_movie(path_replace_movie(movie[0]))
+                            list_missing_subtitles_movies(movie[3])
+                            history_log_movie(1, movie[3], message)
+                            send_notifications_movie(movie[3], message)
+                    else:
+                        logging.info('Search is not active for movie ' + movie[0] + ' Language: ' + attempt[i][0])
 
 
 def wanted_search_missing_subtitles():
@@ -328,20 +330,19 @@ def wanted_search_missing_subtitles():
   
 
 def search_active(timestamp):
-    search_deadline = timedelta(days=1)
-    # search_delta = timedelta(days=1)
-    aa = datetime.fromtimestamp(float(timestamp))
-    attempt_datetime = datetime.strptime(str(aa).split(".")[0], '%Y-%m-%d %H:%M:%S')
-    print attempt_datetime
-    attempt_search_deadline = attempt_datetime + search_deadline
-    print attempt_search_deadline
-    today = datetime.today()
-    print today
-    attempt_age_in_days = (today.date() - attempt_search_deadline.date()).days
-    print attempt_age_in_days
-    if today.date() <= attempt_search_deadline.date():
-        return True
-    # elif attempt_age_in_days % search_delta.days == 0:
-    #     return True
+    if get_general_settings()[25] is True:
+        search_deadline = timedelta(weeks=3)
+        search_delta = timedelta(weeks=1)
+        aa = datetime.fromtimestamp(float(timestamp))
+        attempt_datetime = datetime.strptime(str(aa).split(".")[0], '%Y-%m-%d %H:%M:%S')
+        attempt_search_deadline = attempt_datetime + search_deadline
+        today = datetime.today()
+        attempt_age_in_days = (today.date() - attempt_search_deadline.date()).days
+        if today.date() <= attempt_search_deadline.date():
+            return True
+        elif attempt_age_in_days % search_delta.days == 0:
+            return True
+        else:
+            return False
     else:
-        return False
+        return True
