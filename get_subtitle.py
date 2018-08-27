@@ -5,6 +5,8 @@ import sqlite3
 import ast
 import logging
 import subprocess
+import time
+from datetime import datetime, timedelta
 from babelfish import Language
 from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
@@ -178,7 +180,7 @@ def series_download_subtitles(no):
     else:
         providers_list = None
         providers_auth = None
-            
+        
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
             if language is not None:
@@ -227,7 +229,7 @@ def movies_download_subtitles(no):
 def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
+    episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
     enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
@@ -249,19 +251,41 @@ def wanted_download_subtitles(path):
         providers_auth = None
         
     for episode in episodes_details:
+        attempt = episode[6]
+        if type(attempt) == unicode:
+            attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode[1]):
-            message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
-            if message is not None:
-                store_subtitles(path_replace(episode[0]))
-                list_missing_subtitles(episode[3])
-                history_log(1, episode[3], episode[2], message)
-                send_notifications(episode[3], episode[2], message)
+            if attempt is None:
+                attempt = []
+                attempt.append([language, time.time()])
+            else:
+                att = zip(*attempt)[0]
+                if language not in att:
+                    attempt.append([language, time.time()])
+                    
+            conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c_db = conn_db.cursor()
+            c_db.execute('UPDATE table_episodes SET failedAttempts = ? WHERE sonarrEpisodeId = ?', (unicode(attempt), episode[2]))
+            conn_db.commit()
+            c_db.close()
+            
+            for i in range(len(attempt)):
+                if attempt[i][0] == language:
+                    if search_active(attempt[i][1]) is True:
+                        message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
+                        if message is not None:
+                            store_subtitles(path_replace(episode[0]))
+                            list_missing_subtitles(episode[3])
+                            history_log(1, episode[3], episode[2], message)
+                            send_notifications(episode[3], episode[2], message)
+                    else:
+                        logging.debug('Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
 
 
 def wanted_download_subtitles_movie(path):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    movies_details = c_db.execute("SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName FROM table_movies WHERE path = ? AND missing_subtitles != '[]'", (path_replace_reverse_movie(path),)).fetchall()
+    movies_details = c_db.execute("SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE path = ? AND missing_subtitles != '[]'", (path_replace_reverse_movie(path),)).fetchall()
     enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
@@ -283,13 +307,35 @@ def wanted_download_subtitles_movie(path):
         providers_auth = None
 
     for movie in movies_details:
+        attempt = movie[6]
+        if type(attempt) == unicode:
+            attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie[1]):
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
-            if message is not None:
-                store_subtitles_movie(path_replace_movie(movie[0]))
-                list_missing_subtitles_movies(movie[3])
-                history_log_movie(1, movie[3], message)
-                send_notifications_movie(movie[3], message)
+            if attempt is None:
+                attempt = []
+                attempt.append([language, time.time()])
+            else:
+                att = zip(*attempt)[0]
+                if language not in att:
+                    attempt.append([language, time.time()])
+                    
+            conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c_db = conn_db.cursor()
+            c_db.execute('UPDATE table_movies SET failedAttempts = ? WHERE radarrId = ?', (unicode(attempt), movie[2]))
+            conn_db.commit()
+            c_db.close()
+            
+            for i in range(len(attempt)):
+                if attempt[i][0] == language:
+                    if search_active(attempt[i][1]) is True:
+                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
+                        if message is not None:
+                            store_subtitles_movie(path_replace_movie(movie[0]))
+                            list_missing_subtitles_movies(movie[3])
+                            history_log_movie(1, movie[3], message)
+                            send_notifications_movie(movie[3], message)
+                    else:
+                        logging.info('Search is not active for movie ' + movie[0] + ' Language: ' + attempt[i][0])
 
 
 def wanted_search_missing_subtitles():
@@ -322,3 +368,22 @@ def wanted_search_missing_subtitles():
             wanted_download_subtitles_movie(movie[0])
 
     logging.info('Finished searching for missing subtitles. Check histories for more information.')
+  
+
+def search_active(timestamp):
+    if get_general_settings()[25] is True:
+        search_deadline = timedelta(weeks=3)
+        search_delta = timedelta(weeks=1)
+        aa = datetime.fromtimestamp(float(timestamp))
+        attempt_datetime = datetime.strptime(str(aa).split(".")[0], '%Y-%m-%d %H:%M:%S')
+        attempt_search_deadline = attempt_datetime + search_deadline
+        today = datetime.today()
+        attempt_age_in_days = (today.date() - attempt_search_deadline.date()).days
+        if today.date() <= attempt_search_deadline.date():
+            return True
+        elif attempt_age_in_days % search_delta.days == 0:
+            return True
+        else:
+            return False
+    else:
+        return True

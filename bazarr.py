@@ -755,6 +755,11 @@ def save_settings():
         settings_general_only_monitored = 'False'
     else:
         settings_general_only_monitored = 'True'
+    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
+    if settings_general_adaptive_searching is None:
+        settings_general_adaptive_searching = 'False'
+    else:
+        settings_general_adaptive_searching = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
     settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
@@ -805,8 +810,8 @@ def save_settings():
     cfg.set('general', 'minimum_score_movie', text_type(settings_general_minimum_score_movies))
     cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
-    # cfg.set('general', 'configured', text_type(configured))
-    # cfg.set('general', 'updated', text_type(updated))
+    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+
 
     if after != before:
         configured()
@@ -1238,7 +1243,24 @@ def system():
         page_size = int(get_general_settings()[21])
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
-    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size)
+    releases = []
+    url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases'
+    try:
+        r = requests.get(url_releases, timeout=15)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        logging.exception("Error trying to get releases from Github. Http error.")
+    except requests.exceptions.ConnectionError as errc:
+        logging.exception("Error trying to get releases from Github. Connection Error.")
+    except requests.exceptions.Timeout as errt:
+        logging.exception("Error trying to get releases from Github. Timeout Error.")
+    except requests.exceptions.RequestException as err:
+        logging.exception("Error trying to get releases from Github.")
+    else:
+        for release in r.json():
+            releases.append([release['name'],release['body']])
+
+    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size, releases=releases)
 
 @route(base_url + 'logs/<page:int>')
 @custom_auth_basic(check_credentials)

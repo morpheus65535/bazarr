@@ -49,7 +49,7 @@
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
-				<a class="tabs item" data-tab="about">About</a>
+				<a class="tabs item" data-tab="releases">Releases</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
 				<div class="content">
@@ -111,8 +111,32 @@
                     %end
 				</div>
 			</div>
-			<div class="ui bottom attached tab segment" data-tab="about">
-				Bazarr version: {{bazarr_version}}
+
+			<div class="ui bottom attached tab segment" data-tab="releases">
+				%for release in releases:
+				<h2 class="ui header">
+					%if release[0][1:] == bazarr_version:
+					{{release[0]}} <div class="ui green label">Current version</div>
+					%else:
+					{{release[0]}}
+					%end
+				</h2>
+				<div class="ui list">
+					%release_lines = release[1].split('\r\n')
+					%for i, release_line in enumerate(release_lines):
+					%if i == 0:
+					<div class="item">
+						<div><h3>{{release_line}}</h3></div>
+						<div class="list">
+					%else:
+							<div class="item">{{release_line}}</div>
+						%end
+					%end
+						</div>
+					</div>
+					%end
+				</div>
+				%end
 			</div>
 		</div>
 		% include('footer.tpl')

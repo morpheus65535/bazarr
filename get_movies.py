@@ -9,6 +9,7 @@ from get_settings import get_general_settings, path_replace_movie
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 
 def update_movies():
+    logging.debug('Starting movie sync from Radarr.')
     from get_settings import get_radarr_settings
     url_radarr = get_radarr_settings()[6]
     # url_radarr_short = get_radarr_settings()[7]
@@ -105,7 +106,10 @@ def update_movies():
     # Close database connection
     db.close()
 
+    logging.debug('All movies synced from Radarr into database.')
+
     list_missing_subtitles_movies()
+    logging.debug('All movie missing subtitles updated in database.')
 
 def get_profile_list():
     from get_settings import get_radarr_settings
