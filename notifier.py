@@ -59,15 +59,12 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     episode_name = get_episode_name(sonarrEpisodeId)
     season = str(get_season(sonarrEpisodeId))
     episode = str(get_episode(sonarrEpisodeId))
-    print season + episode
     
     if len(season) == 1:
         season = '0' + season
         
     if len(episode) == 1:
         episode = '0' + episode
-
-    print season + episode
 
     apobj = apprise.Apprise()
 
