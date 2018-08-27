@@ -889,6 +889,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Adaptive searching</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings_general[25]}}>
+                                    <input name="settings_general_adaptive_searching" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="When searching for subtitles, Bazarr will search less frequently after sometime to limit call to providers." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="ui dividing header">Subtitles providers</div>
@@ -1259,6 +1278,12 @@
                 $("#settings_only_monitored").checkbox('check');
             } else {
                 $("#settings_only_monitored").checkbox('uncheck');
+            }
+
+    if ($('#settings_adaptive_searching').data("adaptive") == "True") {
+                $("#settings_adaptive_searching").checkbox('check');
+            } else {
+                $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
     if ($('#settings_use_auth').data("enabled") == "True") {
