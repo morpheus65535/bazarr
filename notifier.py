@@ -3,6 +3,7 @@ from get_argv import config_dir
 import apprise
 import os
 import sqlite3
+import ast
 
 def get_notifier_providers():
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -28,6 +29,22 @@ def get_episode_name(sonarrEpisodeId):
 
     return data[0]
 
+def get_season(sonarrEpisodeId):
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    data = c_db.execute('SELECT season FROM table_episodes WHERE sonarrEpisodeId = ?', (sonarrEpisodeId,)).fetchone()
+    c_db.close()
+
+    return data[0]
+
+def get_episode(sonarrEpisodeId):
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    data = c_db.execute('SELECT episode FROM table_episodes WHERE sonarrEpisodeId = ?', (sonarrEpisodeId,)).fetchone()
+    c_db.close()
+
+    return data[0]
+
 def get_movies_name(radarrId):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
@@ -39,7 +56,18 @@ def get_movies_name(radarrId):
 def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     providers = get_notifier_providers()
     series = get_series_name(sonarrSeriesId)
-    episode = get_episode_name(sonarrEpisodeId)
+    episode_name = get_episode_name(sonarrEpisodeId)
+    season = str(get_season(sonarrEpisodeId))
+    episode = str(get_episode(sonarrEpisodeId))
+    print season + episode
+    
+    if len(season) == 1:
+        season = '0' + season
+        
+    if len(episode) == 1:
+        episode = '0' + episode
+
+    print season + episode
 
     apobj = apprise.Apprise()
 
@@ -49,7 +77,7 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body=series + ' - ' + episode + ' : ' + message,
+        body=(series + ' - S' + season + 'E' + episode + ' - ' + episode_name + ' : ' + message),
     )
 
 
