@@ -124,7 +124,6 @@ try:
     logging.info('Config file succesfully migrated from database')
 
 except sqlite3.OperationalError:
-# if not os.path.exists(config_file):
     if os.path.exists(config_file) is False:
         cfg = ConfigParser()
 
@@ -158,6 +157,7 @@ except sqlite3.OperationalError:
         cfg.set(section, 'minimum_score_movie', "100")
         cfg.set(section, 'use_embedded_subs', "False")
         cfg.set(section, 'only_monitored', "False")
+        cfg.set(section, 'adaptive_searching', "False")
 
         section = 'auth'
 

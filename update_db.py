@@ -69,6 +69,12 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
     except:
         pass
 
+    try:
+        c.execute('alter table table_movies add column "failedAttempts" "text"')
+        c.execute('alter table table_episodes add column "failedAttempts" "text"')
+    except:
+        pass
+
 
     # Commit change to db
     db.commit()

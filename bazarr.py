@@ -755,6 +755,11 @@ def save_settings():
         settings_general_only_monitored = 'False'
     else:
         settings_general_only_monitored = 'True'
+    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
+    if settings_general_adaptive_searching is None:
+        settings_general_adaptive_searching = 'False'
+    else:
+        settings_general_adaptive_searching = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
     settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
@@ -805,8 +810,8 @@ def save_settings():
     cfg.set('general', 'minimum_score_movie', text_type(settings_general_minimum_score_movies))
     cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
-    # cfg.set('general', 'configured', text_type(configured))
-    # cfg.set('general', 'updated', text_type(updated))
+    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+
 
     if after != before:
         configured()
