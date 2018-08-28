@@ -23,10 +23,10 @@ def get_series_name(sonarrSeriesId):
 def get_episode_name(sonarrEpisodeId):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    data = c_db.execute('SELECT title FROM table_episodes WHERE sonarrEpisodeId = ?', (sonarrEpisodeId,)).fetchone()
+    data = c_db.execute('SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId = ?', (sonarrEpisodeId,)).fetchone()
     c_db.close()
 
-    return data[0]
+    return data[0], data[1], data[2]
 
 def get_movies_name(radarrId):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -49,7 +49,7 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body=series + ' - ' + episode + ' : ' + message,
+        body=(series + ' - S' + str(episode[1]).zfill(2) + 'E' + str(episode[2]).zfill(2) + ' - ' + episode[0] + ' : ' + message),
     )
 
 
