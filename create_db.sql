@@ -62,8 +62,9 @@ CREATE TABLE "table_movies" (
     `fanart` TEXT,
     `audio_language` "text",
     `sceneName` TEXT,
-    `monitored` TEXT, PRIMARY KEY(`tmdbId`),
-    `failedAttempts` "text"
+    `monitored` TEXT,
+    `failedAttempts` "text",
+    PRIMARY KEY(`tmdbId`)
 );
 CREATE TABLE "table_history_movie" (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
