@@ -170,7 +170,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     else:
-        lang_obj = Language(language)
+        lang_obj = Language(alpha3_from_alpha2(language))
 
     try:
         if sceneName is None or use_scenename is False:

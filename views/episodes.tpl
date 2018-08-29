@@ -423,15 +423,20 @@
 		$("#episode").html($(this).data("episode"));
 		$("#episode_title").html($(this).data("episode_title"));
 
+		episodePath = $(this).attr("data-episodePath"),
+		sceneName = $(this).attr("data-sceneName"),
+		language = $(this).attr("data-language"),
+		hi = $(this).attr("data-hi"),
+		sonarrSeriesId = $(this).attr("data-sonarrSeriesId"),
+		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId")
 
 		var values = {
-			episodePath: $(this).attr("data-episodePath"),
-			sceneName: $(this).attr("data-sceneName"),
-			language: $(this).attr("data-language"),
-			hi: $(this).attr("data-hi"),
-			sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-			sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-			tvdbid: {{tvdbid}}
+			episodePath: episodePath,
+			sceneName: sceneName,
+			language: language,
+			hi: hi,
+			sonarrSeriesId: sonarrSeriesId,
+			sonarrEpisodeId: sonarrEpisodeId
 		};
 
 		$('#search_result').DataTable( {
@@ -490,7 +495,7 @@
 				},
 				{ data: null,
 				render: function ( data, type, row ) {
-        			return '<a class="manual_get ui tiny label" data-subid="'+data.id+'" data-provider="'+data.provider+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
+        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, language, hi, sonarrSeriesId, sonarrEpisodeId)" data-subid="'+data.id+'" data-provider="'+data.provider+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
     				}
 				}
 			]
@@ -504,11 +509,17 @@
 		;
 	})
 
-	$('.manual_get').click(function(){
-		alert("test");
+	function manual_get(button, episodePath, sceneName, language, hi, sonarrSeriesId, sonarrEpisodeId){
+		alert(episodePath);
 		var values = {
-				subid: $(this).attr("data-subid"),
-				provider: $(this).attr("data-provider")
+				subid: $(button).attr("data-subid"),
+				provider: $(button).attr("data-provider"),
+				episodePath: episodePath,
+				sceneName: sceneName,
+				language: language,
+				hi: hi,
+				sonarrSeriesId: sonarrSeriesId,
+				sonarrEpisodeId: sonarrEpisodeId
 		};
 		$.ajax({
 			url: "{{base_url}}manual_get_subtitle",
@@ -522,5 +533,5 @@
 		$(document).ajaxStop(function(){
 			window.location.reload();
 		});
-	})
+	}
 </script>

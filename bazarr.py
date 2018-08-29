@@ -1413,31 +1413,23 @@ def manual_get_subtitle():
     episodePath = request.forms.get('episodePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
-    provider = request.forms.get('provider')
+    selected_provider = request.forms.get('provider')
     id = request.forms.get('id')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-    enabled_providers =c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(provider,)).fetchone()
+    provider =c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
     c.close()
-
-    providers_list = []
     providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
+    try:
+        if provider[2] is not '' and provider[3] is not '':
+            provider_auth = providers_auth.append(provider[0])
+            provider_auth.update({'username':providers[2], 'password':providers[3]})
+        else:
+            providers_auth = None
+    except:
         providers_auth = None
 
     try:
