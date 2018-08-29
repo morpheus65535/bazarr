@@ -126,15 +126,14 @@
 					%for i, release_line in enumerate(release_lines):
 					%if i == 0:
 					<div class="item">
-						<div><h3>{{release_line}}</h3></div>
+						<div><h4>{{release_line}}</h4></div>
 						<div class="list">
 					%else:
 							<div class="item">{{release_line}}</div>
-						%end
+					%end
 					%end
 						</div>
 					</div>
-					%end
 				</div>
 				%end
 			</div>
