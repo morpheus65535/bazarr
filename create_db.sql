@@ -45,8 +45,8 @@ CREATE TABLE "table_episodes" (
 	`subtitles`	TEXT,
 	`missing_subtitles`	TEXT,
 	`scene_name`    TEXT,
-	`monitored` TEXT
-	'failedAttempts' 'text'
+	`monitored` TEXT,
+	`failedAttempts` "text"
 );
 CREATE TABLE "table_movies" (
     `tmdbId` TEXT NOT NULL UNIQUE,
@@ -62,8 +62,8 @@ CREATE TABLE "table_movies" (
     `fanart` TEXT,
     `audio_language` "text",
     `sceneName` TEXT,
-    `monitored` TEXT, PRIMARY KEY(`tmdbId`)
-    'failedAttempts' 'text'
+    `monitored` TEXT, PRIMARY KEY(`tmdbId`),
+    `failedAttempts` "text"
 );
 CREATE TABLE "table_history_movie" (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
