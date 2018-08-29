@@ -65,6 +65,16 @@
 			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
 				background: transparent !important;
 			}
+
+			.criteria_matched {
+				background-color: #e6ffe6 !important;
+				line-height: 0 !important;
+			}
+
+			.criteria_not_matched {
+				background-color: #ffcccc !important;
+				line-height: 0 !important;
+			}
 		</style>
 
 		<script>
@@ -299,9 +309,12 @@
 				<table id="search_result" class="display" style="width:100%">
 					<thead>
 						<tr>
-							<th>Score</th>
-							<th>Hearing-impaired</th>
-							<th>Provider</th>
+							<th style="text-align: left;">Score:</th>
+							<th style="text-align: left;">Language:</th>
+							<th style="text-align: left;">Hearing-impaired:</th>
+							<th style="text-align: left;">Provider:</th>
+							<th style="text-align: left;">Based on:</th>
+							<th></th>
 						</tr>
 					</thead>
 				</table>
@@ -410,6 +423,7 @@
 		$("#episode").html($(this).data("episode"));
 		$("#episode_title").html($(this).data("episode_title"));
 
+
 		var values = {
 			episodePath: $(this).attr("data-episodePath"),
 			sceneName: $(this).attr("data-sceneName"),
@@ -436,16 +450,47 @@
 				type: 'POST',
                 data: values
 			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+			},
 			columns: [
 				{ data: 'score',
 				render: function ( data, type, row ) {
         			return data +'%';
     				}
 				},
+				{ data: 'language' },
 				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {
         			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+					var array_matches = data.matches;
+					var array_dont_matches = data.dont_matches;
+					var i;
+					text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">'
+					text += array_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_matches.length; i++) {
+						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">'
+					text += array_dont_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_dont_matches.length; i++) {
+						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+        			return text;
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a class="manual_get ui tiny label" data-subid="'+data.id+'" data-provider="'+data.provider+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
     				}
 				}
 			]
@@ -457,5 +502,25 @@
 			})
 			.modal('show')
 		;
+	})
+
+	$('.manual_get').click(function(){
+		alert("test");
+		var values = {
+				subid: $(this).attr("data-subid"),
+				provider: $(this).attr("data-provider")
+		};
+		$.ajax({
+			url: "{{base_url}}manual_get_subtitle",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 </script>
