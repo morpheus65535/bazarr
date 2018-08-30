@@ -8,7 +8,7 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 from babelfish import Language
-from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles
+from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
@@ -123,7 +123,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         else:
             video = scan_video(path)
     except:
-        print "Error trying to get video information."
+        logging.error("Error trying to get video information.")
     else:
         if media_type == "movie":
             max_score = 120.0
@@ -134,7 +134,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
             with AsyncProviderPool(max_workers=None, providers=providers, provider_configs=providers_auth) as p:
                 subtitles = p.list_subtitles(video, language_set)
         except Exception as e:
-            print(e)
+            logging.exception("Error trying to get subtitle list from provider")
         else:
             subtitles_list = []
             for s in subtitles:
@@ -170,7 +170,8 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     else:
-        lang_obj = Language(alpha3_from_alpha2(language))
+        language = alpha3_from_alpha2(ast.literal_eval(language)[0])
+        lang_obj = Language(language)
 
     try:
         if sceneName is None or use_scenename is False:
@@ -184,7 +185,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
         return None
     else:
         try:
-            subtitles = list_subtitles([video], {lang_obj}, providers=[provider], provider_configs=providers_auth)
+            subtitles = list_subtitles([video], {lang_obj}, providers=provider, provider_configs=providers_auth)
         except Exception as e:
             logging.exception('Error trying to get the best subtitles for this file: ' + path)
             return None
@@ -193,6 +194,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
                 for s in subtitles[video]:
                     if s.id == id:
                         best_subtitle = s
+                        download_subtitles([best_subtitle])
             except:
                 logging.debug('No subtitles found for ' + path)
                 return None
@@ -206,8 +208,8 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
                         result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
                     else:
                         result = save_subtitles(video, [best_subtitle], encoding='utf-8')
-                except:
-                    logging.error('Error saving subtitles file to disk.')
+                except Exception as e:
+                    logging.exception('Error saving subtitles file to disk.')
                     return None
                 else:
                     downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]

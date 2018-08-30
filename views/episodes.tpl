@@ -94,7 +94,7 @@
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 		
@@ -217,7 +217,7 @@
 											%end
 											%if missing_languages is not None:
                                                 %for language in missing_languages:
-                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
+                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													{{language}}
 													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 												</a>
@@ -228,7 +228,9 @@
 										%end
 										</td>
 										<td>
-											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											%if subs_languages is not None:
+											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											%end
 										</td>
 									</tr>
 								%end
@@ -339,13 +341,16 @@
 
 	$('.remove_subtitles').click(function(){
 		var values = {
-				episodePath: $(this).attr("data-episodePath"),
-				language: $(this).attr("data-language"),
-				subtitlesPath: $(this).attr("data-subtitlesPath"),
-				sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-				sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-				tvdbid: {{tvdbid}}
+			episodePath: $(this).attr("data-episodePath"),
+			language: $(this).attr("data-language"),
+			subtitlesPath: $(this).attr("data-subtitlesPath"),
+			sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+			sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+			tvdbid: {{tvdbid}}
 		};
+
+		$('#loader_text').text("Deleting subtitle from disk...");
+
 		$.ajax({
 			url: "{{base_url}}remove_subtitles",
 			type: "POST",
@@ -362,11 +367,16 @@
 
 	$('.get_subtitle').click(function(){
 		var values = {
-				episodePath: $(this).attr("data-episodePath"),
-				sceneName: $(this).attr("data-sceneName"),
-				language: $(this).attr("data-language"),
-				hi: $(this).attr("data-hi")
+			episodePath: $(this).attr("data-episodePath"),
+			sceneName: $(this).attr("data-sceneName"),
+			language: $(this).attr("data-language"),
+			hi: $(this).attr("data-hi"),
+			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
+			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId')
 		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+
 		$.ajax({
 			url: "{{base_url}}get_subtitle",
 			type: "POST",
@@ -442,7 +452,8 @@
 		$('#search_result').DataTable( {
 		    destroy: true,
 		    language: {
-				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>'
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No subtitles found for this episode'
 		    },
 		    paging: true,
     		searching: false,
@@ -510,7 +521,6 @@
 	})
 
 	function manual_get(button, episodePath, sceneName, language, hi, sonarrSeriesId, sonarrEpisodeId){
-		alert(episodePath);
 		var values = {
 				subid: $(button).attr("data-subid"),
 				provider: $(button).attr("data-provider"),
@@ -521,14 +531,17 @@
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId
 		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader').addClass('active');
+
+		$('.search_dialog').modal('hide');
+
 		$.ajax({
 			url: "{{base_url}}manual_get_subtitle",
 			type: "POST",
 			dataType: "json",
 			data: values
-		});
-		$(document).ajaxStart(function(){
-			$('#loader').addClass('active');
 		});
 		$(document).ajaxStop(function(){
 			window.location.reload();

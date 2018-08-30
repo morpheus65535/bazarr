@@ -1414,7 +1414,7 @@ def manual_get_subtitle():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     selected_provider = request.forms.get('provider')
-    id = request.forms.get('id')
+    id = request.forms.get('subid')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
