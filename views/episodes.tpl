@@ -506,7 +506,7 @@
 				},
 				{ data: null,
 				render: function ( data, type, row ) {
-        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, language, hi, sonarrSeriesId, sonarrEpisodeId)" data-subid="'+data.id+'" data-provider="'+data.provider+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
+        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId)" data-subid="'+data.id+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
     				}
 				}
 			]
@@ -520,13 +520,13 @@
 		;
 	})
 
-	function manual_get(button, episodePath, sceneName, language, hi, sonarrSeriesId, sonarrEpisodeId){
+	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
 		var values = {
 				subid: $(button).attr("data-subid"),
 				provider: $(button).attr("data-provider"),
 				episodePath: episodePath,
 				sceneName: sceneName,
-				language: language,
+				language: $(button).attr("data-language"),
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId

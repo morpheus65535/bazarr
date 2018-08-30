@@ -170,7 +170,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
     if language == 'pob':
         lang_obj = Language('por', 'BR')
     else:
-        language = alpha3_from_alpha2(ast.literal_eval(language)[0])
+        language = alpha3_from_alpha2(language)
         lang_obj = Language(language)
 
     try:
