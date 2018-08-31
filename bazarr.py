@@ -56,12 +56,14 @@ def configure_logging():
 
 configure_logging()
 
-from bottle import route, run, template, static_file, request, redirect, response, HTTPError
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
+from beaker.middleware import SessionMiddleware
+from cork import Cork
 from json import dumps
 import itertools
 import operator
@@ -101,44 +103,68 @@ load_language_in_db()
 
 from get_settings import get_auth_settings
 
-def custom_auth_basic(check):
-    def decorator(func):
-        def wrapper(*a, **ka):
-            if get_auth_settings()[0] is True:
-                user, password = request.auth or (None, None)
-                if user is None or not check(user, password):
-                    err = HTTPError(401, "Access denied")
-                    err.add_header('WWW-Authenticate', 'Basic realm="Bazarr"')
-                    return err
-                return func(*a, **ka)
-            else:
-                return func(*a, **ka)
+aaa = Cork('data')
+        
+app = app()
+session_opts = {
+    'session.cookie_expires': True,
+    'session.key': 'Bazarr',
+    'session.encrypt_key': os.urandom(20),
+    'session.httponly': True,
+    'session.timeout': 3600 * 24,  # 1 day
+    'session.type': 'cookie',
+    'session.validate_key': True,
+}
+app = SessionMiddleware(app, session_opts)
 
-        return wrapper
-    return decorator
 
-def check_credentials(user, pw):
-    from get_settings import get_auth_settings
+def authorize():
+    if get_auth_settings()[0] is True:
+        aaa.require(fail_redirect=(base_url + 'login'))
 
-    username = get_auth_settings()[1]
-    password = get_auth_settings()[2]
-    if hashlib.md5(pw).hexdigest() == password and user == username:
-        return True
-    return False
+
+def post_get(name, default=''):
+    return request.POST.get(name, default).strip()
+
+
+@route(base_url + 'login')
+def login_form():
+    """Serve login form"""
+    return template('login', base_url=base_url)
+
+
+@route(base_url + 'login', method='POST')
+def login():
+    """Authenticate users"""
+    username = post_get('username')
+    password = post_get('password')
+    aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login'))
+    
+    
+@route(base_url + 'sorry_page')
+def sorry_page():
+    """Serve sorry page"""
+    return '<p>Sorry, you are not authorized to perform this action</p>'
+
+
+@route('/logout')
+def logout():
+    aaa.logout(success_redirect=(base_url + 'login'))
+    
 
 @route('/')
-@custom_auth_basic(check_credentials)
 def redirect_root():
+    authorize()
     redirect (base_url)
 
 @route(base_url + 'static/:path#.+#', name='static')
-@custom_auth_basic(check_credentials)
 def static(path):
+    authorize()
     return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
 
 @route(base_url + 'emptylog')
-@custom_auth_basic(check_credentials)
 def emptylog():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     fh.doRollover()
@@ -147,13 +173,13 @@ def emptylog():
     redirect(ref)
 
 @route(base_url + 'bazarr.log')
-@custom_auth_basic(check_credentials)
 def download_log():
+    authorize()
     return static_file('bazarr.log', root=os.path.join(config_dir, 'log/'), download='bazarr.log')
 
 @route(base_url + 'image_proxy/<url:path>', method='GET')
-@custom_auth_basic(check_credentials)
 def image_proxy(url):
+    authorize()
     url_sonarr = get_sonarr_settings()[6]
     url_sonarr_short = get_sonarr_settings()[7]
     apikey = get_sonarr_settings()[4]
@@ -170,8 +196,8 @@ def image_proxy(url):
         return send_file(img_buffer, ctype=img_pil.format)
 
 @route(base_url + 'image_proxy_movies/<url:path>', method='GET')
-@custom_auth_basic(check_credentials)
 def image_proxy_movies(url):
+    authorize()
     url_radarr = get_radarr_settings()[6]
     url_radarr_short = get_radarr_settings()[7]
     apikey = get_radarr_settings()[4]
@@ -190,9 +216,8 @@ def image_proxy_movies(url):
 
 
 @route(base_url)
-@custom_auth_basic(check_credentials)
 def redirect_root():
-
+    authorize()
     if get_general_settings()[12] is True:
         redirect(base_url + 'series')
     elif get_general_settings()[13] is True:
@@ -202,8 +227,8 @@ def redirect_root():
 
 
 @route(base_url + 'series')
-@custom_auth_basic(check_credentials)
 def series():
+    authorize()
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -233,8 +258,8 @@ def series():
     return output
 
 @route(base_url + 'serieseditor')
-@custom_auth_basic(check_credentials)
 def serieseditor():
+    authorize()
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -254,8 +279,8 @@ def serieseditor():
     return output
 
 @route(base_url + 'search_json/<query>', method='GET')
-@custom_auth_basic(check_credentials)
 def search_json(query):
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
@@ -277,8 +302,8 @@ def search_json(query):
 
 
 @route(base_url + 'edit_series/<no:int>', method='POST')
-@custom_auth_basic(check_credentials)
 def edit_series(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     lang = request.forms.getall('languages')
@@ -315,8 +340,8 @@ def edit_series(no):
     redirect(ref)
 
 @route(base_url + 'edit_serieseditor', method='POST')
-@custom_auth_basic(check_credentials)
 def edit_serieseditor():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     series = request.forms.get('series')
@@ -346,8 +371,8 @@ def edit_serieseditor():
     redirect(ref)
 
 @route(base_url + 'episodes/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def episodes(no):
+    authorize()
     # single_language = get_general_settings()[7]
     url_sonarr_short = get_sonarr_settings()[7]
 
@@ -371,8 +396,8 @@ def episodes(no):
     return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number)
 
 @route(base_url + 'movies')
-@custom_auth_basic(check_credentials)
 def movies():
+    authorize()
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -398,8 +423,8 @@ def movies():
     return output
 
 @route(base_url + 'movieseditor')
-@custom_auth_basic(check_credentials)
 def movieseditor():
+    authorize()
     single_language = get_general_settings()[7]
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -419,8 +444,8 @@ def movieseditor():
     return output
 
 @route(base_url + 'edit_movieseditor', method='POST')
-@custom_auth_basic(check_credentials)
 def edit_movieseditor():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     movies = request.forms.get('movies')
@@ -450,8 +475,8 @@ def edit_movieseditor():
     redirect(ref)
 
 @route(base_url + 'edit_movie/<no:int>', method='POST')
-@custom_auth_basic(check_credentials)
 def edit_movie(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     lang = request.forms.getall('languages')
@@ -481,8 +506,8 @@ def edit_movie(no):
     redirect(ref)
 
 @route(base_url + 'movie/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def movie(no):
+    authorize()
     # single_language = get_general_settings()[7]
     url_radarr_short = get_radarr_settings()[7]
 
@@ -500,8 +525,8 @@ def movie(no):
     return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def scan_disk(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     series_scan_subtitles(no)
@@ -509,8 +534,8 @@ def scan_disk(no):
     redirect(ref)
 
 @route(base_url + 'scan_disk_movie/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def scan_disk_movie(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     movies_scan_subtitles(no)
@@ -518,8 +543,8 @@ def scan_disk_movie(no):
     redirect(ref)
 
 @route(base_url + 'search_missing_subtitles/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def search_missing_subtitles(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     series_download_subtitles(no)
@@ -527,8 +552,8 @@ def search_missing_subtitles(no):
     redirect(ref)
 
 @route(base_url + 'search_missing_subtitles_movie/<no:int>', method='GET')
-@custom_auth_basic(check_credentials)
 def search_missing_subtitles_movie(no):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     movies_download_subtitles(no)
@@ -536,13 +561,13 @@ def search_missing_subtitles_movie(no):
     redirect(ref)
 
 @route(base_url + 'history')
-@custom_auth_basic(check_credentials)
 def history():
+    authorize()
     return template('history', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
 
 @route(base_url + 'historyseries')
-@custom_auth_basic(check_credentials)
 def historyseries():
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
@@ -578,8 +603,8 @@ def historyseries():
     return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'historymovies')
-@custom_auth_basic(check_credentials)
 def historymovies():
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
 
@@ -615,13 +640,13 @@ def historymovies():
     return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted')
-@custom_auth_basic(check_credentials)
 def wanted():
+    authorize()
     return template('wanted', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url)
 
 @route(base_url + 'wantedseries')
-@custom_auth_basic(check_credentials)
 def wantedseries():
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
@@ -647,8 +672,8 @@ def wantedseries():
     return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wantedmovies')
-@custom_auth_basic(check_credentials)
 def wantedmovies():
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
@@ -674,8 +699,8 @@ def wantedmovies():
     return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size)
 
 @route(base_url + 'wanted_search_missing_subtitles')
-@custom_auth_basic(check_credentials)
 def wanted_search_missing_subtitles_list():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     wanted_search_missing_subtitles()
@@ -683,8 +708,8 @@ def wanted_search_missing_subtitles_list():
     redirect(ref)
 
 @route(base_url + 'settings')
-@custom_auth_basic(check_credentials)
 def settings():
+    authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
@@ -703,8 +728,8 @@ def settings():
     return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
-@custom_auth_basic(check_credentials)
 def save_settings():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -1133,8 +1158,8 @@ def save_settings():
     redirect(ref)
 
 @route(base_url + 'check_update')
-@custom_auth_basic(check_credentials)
 def check_update():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     check_and_apply_update()
@@ -1142,8 +1167,8 @@ def check_update():
     redirect(ref)
 
 @route(base_url + 'system')
-@custom_auth_basic(check_credentials)
 def system():
+    authorize()
     def get_time_from_interval(interval):
         interval_clean = interval.split('[')
         interval_clean = interval_clean[1][:-1]
@@ -1263,8 +1288,8 @@ def system():
     return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size, releases=releases)
 
 @route(base_url + 'logs/<page:int>')
-@custom_auth_basic(check_credentials)
 def get_logs(page):
+    authorize()
     page_size = int(get_general_settings()[21])
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
@@ -1276,8 +1301,8 @@ def get_logs(page):
     return template('logs', logs=logs, base_url=base_url)
 
 @route(base_url + 'execute/<taskid>')
-@custom_auth_basic(check_credentials)
 def execute_task(taskid):
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     execute_now(taskid)
@@ -1286,8 +1311,8 @@ def execute_task(taskid):
 
 
 @route(base_url + 'remove_subtitles', method='POST')
-@custom_auth_basic(check_credentials)
 def remove_subtitles():
+    authorize()
     episodePath = request.forms.get('episodePath')
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
@@ -1305,8 +1330,8 @@ def remove_subtitles():
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
-@custom_auth_basic(check_credentials)
 def remove_subtitles_movie():
+    authorize()
     moviePath = request.forms.get('moviePath')
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
@@ -1323,8 +1348,8 @@ def remove_subtitles_movie():
 
 
 @route(base_url + 'get_subtitle', method='POST')
-@custom_auth_basic(check_credentials)
 def get_subtitle():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     episodePath = request.forms.get('episodePath')
@@ -1370,8 +1395,8 @@ def get_subtitle():
         pass
 
 @route(base_url + 'get_subtitle_movie', method='POST')
-@custom_auth_basic(check_credentials)
 def get_subtitle_movie():
+    authorize()
     ref = request.environ['HTTP_REFERER']
 
     moviePath = request.forms.get('moviePath')
@@ -1439,5 +1464,5 @@ def api_history():
     return dict(subtitles=data)
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-run(host=ip, port=port, server='waitress')
+run(host=ip, port=port, server='waitress', app=app)
 logging.info('Bazarr has been stopped.')
