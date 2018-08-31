@@ -185,7 +185,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
         return None
     else:
         try:
-            subtitles = list_subtitles([video], {lang_obj}, providers=provider, provider_configs=providers_auth)
+            subtitles = list_subtitles([video], {lang_obj}, providers=[provider], provider_configs=providers_auth)
         except Exception as e:
             logging.exception('Error trying to get the best subtitles for this file: ' + path)
             return None

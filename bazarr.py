@@ -1420,7 +1420,7 @@ def manual_get_subtitle():
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-    provider =c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
+    provider = c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
     c.close()
     providers_auth = {}
     try:
@@ -1433,7 +1433,7 @@ def manual_get_subtitle():
         providers_auth = None
 
     try:
-        result = manual_download_subtitle(episodePath, language, id, providers_list, providers_auth, sceneName, 'series')
+        result = manual_download_subtitle(episodePath, language, id, selected_provider, providers_auth, sceneName, 'series')
         if result is not None:
             history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
