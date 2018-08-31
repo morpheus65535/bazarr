@@ -109,9 +109,9 @@ app = app()
 session_opts = {
     'session.cookie_expires': True,
     'session.key': 'Bazarr',
-    'session.encrypt_key': os.urandom(20),
+    'session.encrypt_key': 'Bazarr',
     'session.httponly': True,
-    'session.timeout': 3600 * 24,  # 1 day
+    'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
     'session.type': 'cookie',
     'session.validate_key': True,
 }
@@ -119,6 +119,7 @@ app = SessionMiddleware(app, session_opts)
 
 
 def authorize():
+    # TODO: Make some configuration
     if get_auth_settings()[0] is True:
         aaa.require(fail_redirect=(base_url + 'login'))
 
@@ -135,16 +136,11 @@ def login_form():
 
 @route(base_url + 'login', method='POST')
 def login():
+    # TODO: Make Lgoin error message
     """Authenticate users"""
     username = post_get('username')
     password = post_get('password')
     aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login'))
-    
-    
-@route(base_url + 'sorry_page')
-def sorry_page():
-    """Serve sorry page"""
-    return '<p>Sorry, you are not authorized to perform this action</p>'
 
 
 @route('/logout')
