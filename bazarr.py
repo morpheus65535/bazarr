@@ -58,13 +58,14 @@ configure_logging()
 
 import requests
 if get_proxy_settings()[0] is True:
-    if get_proxy_settings()[4] is True and get_proxy_settings()[5] is True:
+    if get_proxy_settings()[4] != '' and get_proxy_settings()[5] != '':
         proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[4] + ':' + get_proxy_settings()[5] + '@' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
     else:
         proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
     print proxy
-    os.environ['HTTP_PROXY'] = proxy
-    os.environ['HTTPS_PROXY'] = proxy
+    os.environ['HTTP_PROXY'] = str(proxy)
+    os.environ['HTTPS_PROXY'] = str(proxy)
+    os.environ['NO_PROXY'] = 'localhost,127.0.0.1'
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
