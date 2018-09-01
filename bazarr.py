@@ -17,7 +17,7 @@ from init import *
 from update_db import *
 
 
-from get_settings import get_general_settings
+from get_settings import get_general_settings, get_proxy_settings
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -56,6 +56,16 @@ def configure_logging():
 
 configure_logging()
 
+import requests
+if get_proxy_settings()[0] is True:
+    if get_proxy_settings()[4] is True and get_proxy_settings()[5] is True:
+        proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[4] + ':' + get_proxy_settings()[5] + '@' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
+    else:
+        proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
+    print proxy
+    os.environ['HTTP_PROXY'] = proxy
+    os.environ['HTTPS_PROXY'] = proxy
+
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
@@ -65,7 +75,6 @@ bottle.TEMPLATES.clear()
 from json import dumps
 import itertools
 import operator
-import requests
 import pretty
 from datetime import datetime, timedelta
 from PIL import Image
@@ -82,7 +91,7 @@ from get_providers import *
 from get_series import *
 from get_episodes import *
 from get_settings import base_url, ip, port, path_replace, path_replace_movie
-from check_update import check_and_apply_update
+# from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles
 from utils import history_log, history_log_movie
@@ -694,13 +703,14 @@ def settings():
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
-    from get_settings import get_general_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
+    from get_settings import get_general_settings, get_proxy_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
     settings_general = get_general_settings()
+    settings_proxy = get_proxy_settings()
     settings_auth = get_auth_settings()
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
 
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
@@ -714,13 +724,6 @@ def save_settings():
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     settings_general_loglevel = request.forms.get('settings_general_loglevel')
-    settings_general_auth_enabled = request.forms.get('settings_general_auth_enabled')
-    if settings_general_auth_enabled is None:
-        settings_general_auth_enabled = 'False'
-    else:
-        settings_general_auth_enabled = 'True'
-    settings_general_auth_username = request.forms.get('settings_general_auth_username')
-    settings_general_auth_password = request.forms.get('settings_general_auth_password')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -816,19 +819,60 @@ def save_settings():
     if after != before:
         configured()
     get_general_settings()
+    
+    settings_proxy = get_proxy_settings()
+
+    if not cfg.has_section('proxy'):
+        cfg.add_section('proxy')
+        
+    settings_proxy_enabled = request.forms.get('settings_proxy_enabled')
+    if settings_proxy_enabled is None:
+        settings_proxy_enabled = 'False'
+    else:
+        settings_proxy_enabled = 'True'
+    settings_proxy_type = request.forms.get('settings_proxy_type')
+    settings_proxy_url = request.forms.get('settings_proxy_url')
+    settings_proxy_port = request.forms.get('settings_proxy_port')
+    settings_proxy_username = request.forms.get('settings_proxy_username')
+    settings_proxy_password = request.forms.get('settings_proxy_password')
+    
+    before_proxy_password = (unicode(settings_proxy[0]), unicode(settings_proxy[5]))
+    if before_proxy_password[0] != settings_proxy_enabled:
+        configured()
+    if before_proxy_password[1] == settings_proxy_password:
+        cfg.set('proxy', 'enabled', text_type(settings_proxy_enabled))
+        cfg.set('proxy', 'type', text_type(settings_proxy_type))
+        cfg.set('proxy', 'url', text_type(settings_proxy_url))
+        cfg.set('proxy', 'port', text_type(settings_proxy_port))
+        cfg.set('proxy', 'username', text_type(settings_proxy_username))
+    else:
+        cfg.set('proxy', 'enabled', text_type(settings_proxy_enabled))
+        cfg.set('proxy', 'type', text_type(settings_proxy_type))
+        cfg.set('proxy', 'url', text_type(settings_proxy_url))
+        cfg.set('proxy', 'port', text_type(settings_proxy_port))
+        cfg.set('proxy', 'username', text_type(settings_proxy_username))
+        cfg.set('proxy', 'password', text_type(settings_proxy_password))
 
     settings_auth = get_auth_settings()
 
-    before_auth_password = (unicode(settings_auth[0]), unicode(settings_auth[2]))
-    if before_auth_password[0] != settings_general_auth_enabled:
-        configured()
-    if before_auth_password[1] == settings_general_auth_password:
-        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
-        cfg.set('auth', 'username', text_type(settings_general_auth_username))
+    settings_auth_enabled = request.forms.get('settings_auth_enabled')
+    if settings_auth_enabled is None:
+        settings_auth_enabled = 'False'
     else:
-        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
-        cfg.set('auth', 'username', text_type(settings_general_auth_username))
-        cfg.set('auth', 'password', hashlib.md5(settings_general_auth_password).hexdigest())
+        settings_auth_enabled = 'True'
+    settings_auth_username = request.forms.get('settings_auth_username')
+    settings_auth_password = request.forms.get('settings_auth_password')
+    
+    before_auth_password = (unicode(settings_auth[0]), unicode(settings_auth[2]))
+    if before_auth_password[0] != settings_auth_enabled:
+        configured()
+    if before_auth_password[1] == settings_auth_password:
+        cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
+        cfg.set('auth', 'username', text_type(settings_auth_username))
+    else:
+        cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
+        cfg.set('auth', 'username', text_type(settings_auth_username))
+        cfg.set('auth', 'password', hashlib.md5(settings_auth_password).hexdigest())
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')

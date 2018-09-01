@@ -209,6 +209,55 @@ def get_auth_settings():
     return [enabled, username, password]
 
 
+def get_proxy_settings():
+    cfg = ConfigParser()
+    try:
+        with open(config_file, 'r') as f:
+            cfg.read_file(f)
+    except Exception:
+        pass
+
+    if cfg.has_section('proxy'):
+        if cfg.has_option('proxy', 'enabled'):
+            enabled = cfg.getboolean('proxy', 'enabled')
+        else:
+            enabled = False
+        
+        if cfg.has_option('proxy', 'type'):
+            type = cfg.get('proxy', 'type')
+        else:
+            type = ''
+            
+        if cfg.has_option('proxy', 'url'):
+            url = cfg.get('proxy', 'url')
+        else:
+            url = ''
+            
+        if cfg.has_option('proxy', 'port'):
+            port = cfg.get('proxy', 'port')
+        else:
+            port = ''
+
+        if cfg.has_option('proxy', 'username'):
+            username = cfg.get('proxy', 'username')
+        else:
+            username = ''
+
+        if cfg.has_option('proxy', 'password'):
+            password = cfg.get('proxy', 'password')
+        else:
+            password = ''
+    else:
+        enabled = False
+        type = ''
+        url = ''
+        port = ''
+        username = ''
+        password = ''
+
+    return [enabled, type, url, port, username, password]
+
+
 def get_sonarr_settings():
     cfg = ConfigParser()
     try:
