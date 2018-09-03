@@ -224,9 +224,9 @@ def get_proxy_settings():
             enabled = False
         
         if cfg.has_option('proxy', 'type'):
-            type = cfg.get('proxy', 'type')
+            proxy_type = cfg.get('proxy', 'type')
         else:
-            type = ''
+            proxy_type = ''
             
         if cfg.has_option('proxy', 'url'):
             url = cfg.get('proxy', 'url')
@@ -249,13 +249,13 @@ def get_proxy_settings():
             password = ''
     else:
         enabled = False
-        type = ''
+        proxy_type = ''
         url = ''
         port = ''
         username = ''
         password = ''
 
-    return [enabled, type, url, port, username, password]
+    return [enabled, proxy_type, url, port, username, password]
 
 
 def get_sonarr_settings():
