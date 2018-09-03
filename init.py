@@ -158,6 +158,18 @@ except sqlite3.OperationalError:
         cfg.set(section, 'use_embedded_subs', "False")
         cfg.set(section, 'only_monitored', "False")
         cfg.set(section, 'adaptive_searching', "False")
+        
+        section = 'proxy'
+
+        if not cfg.has_section(section):
+            cfg.add_section(section)
+
+        cfg.set(section, 'enabled', "False")
+        cfg.set(section, 'type', "")
+        cfg.set(section, 'url', "")
+        cfg.set(section, 'port', "")
+        cfg.set(section, 'username', "")
+        cfg.set(section, 'password', "")
 
         section = 'auth'
 

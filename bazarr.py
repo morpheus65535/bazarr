@@ -62,7 +62,7 @@ if get_proxy_settings()[0] is True:
         proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[4] + ':' + get_proxy_settings()[5] + '@' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
     else:
         proxy = get_proxy_settings()[1] + '://' + get_proxy_settings()[2] + ':' + get_proxy_settings()[3]
-    print proxy
+
     os.environ['HTTP_PROXY'] = str(proxy)
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = 'localhost,127.0.0.1'
