@@ -12,7 +12,7 @@ sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
 
 import sqlite3
-from update_modules import *
+# from update_modules import *
 from init import *
 from update_db import *
 

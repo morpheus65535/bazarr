@@ -1,0 +1,23 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +tvu.org.ru
+? -tvu.unsafe.ru
+: website: tvu.org.ru
+
+? +www.nimp.na
+? -somewww.nimp.na
+? -www.nimp.nawouak
+? -nimp.na
+: website: www.nimp.na
+
+? +wawa.co.uk
+? -wawa.uk
+: website: wawa.co.uk
+
+? -Dark.Net.S01E06.720p.HDTV.x264-BATV
+  -Dark.Net.2015.720p.HDTV.x264-BATV
+: website: Dark.Net
+
+? Dark.Net.S01E06.720p.HDTV.x264-BATV
+  Dark.Net.2015.720p.HDTV.x264-BATV
+: title: Dark Net

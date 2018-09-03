@@ -1,0 +1,10 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? cd 1of3
+: cd: 1
+  cd_count: 3
+
+? Some.Title-DVDRIP-x264-CDP
+: cd: !!null
+  release_group: CDP
+  video_codec: H.264

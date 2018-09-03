@@ -1,0 +1,176 @@
+#
+# ISO 15924 - Codes for the representation of names of scripts
+#             Codes pour la représentation des noms d’écritures
+# Format: 
+#             Code;N°;English Name;Nom français;PVA;Date
+#
+
+Afak;439;Afaka;afaka;;2010-12-21
+Aghb;239;Caucasian Albanian;aghbanien;;2012-10-16
+Ahom;338;Ahom, Tai Ahom;âhom;;2012-11-01
+Arab;160;Arabic;arabe;Arabic;2004-05-01
+Armi;124;Imperial Aramaic;araméen impérial;Imperial_Aramaic;2009-06-01
+Armn;230;Armenian;arménien;Armenian;2004-05-01
+Avst;134;Avestan;avestique;Avestan;2009-06-01
+Bali;360;Balinese;balinais;Balinese;2006-10-10
+Bamu;435;Bamum;bamoum;Bamum;2009-06-01
+Bass;259;Bassa Vah;bassa;;2010-03-26
+Batk;365;Batak;batik;Batak;2010-07-23
+Beng;325;Bengali;bengalî;Bengali;2004-05-01
+Blis;550;Blissymbols;symboles Bliss;;2004-05-01
+Bopo;285;Bopomofo;bopomofo;Bopomofo;2004-05-01
+Brah;300;Brahmi;brahma;Brahmi;2010-07-23
+Brai;570;Braille;braille;Braille;2004-05-01
+Bugi;367;Buginese;bouguis;Buginese;2006-06-21
+Buhd;372;Buhid;bouhide;Buhid;2004-05-01
+Cakm;349;Chakma;chakma;Chakma;2012-02-06
+Cans;440;Unified Canadian Aboriginal Syllabics;syllabaire autochtone canadien unifié;Canadian_Aboriginal;2004-05-29
+Cari;201;Carian;carien;Carian;2007-07-02
+Cham;358;Cham;cham (čam, tcham);Cham;2009-11-11
+Cher;445;Cherokee;tchérokî;Cherokee;2004-05-01
+Cirt;291;Cirth;cirth;;2004-05-01
+Copt;204;Coptic;copte;Coptic;2006-06-21
+Cprt;403;Cypriot;syllabaire chypriote;Cypriot;2004-05-01
+Cyrl;220;Cyrillic;cyrillique;Cyrillic;2004-05-01
+Cyrs;221;Cyrillic (Old Church Slavonic variant);cyrillique (variante slavonne);;2004-05-01
+Deva;315;Devanagari (Nagari);dévanâgarî;Devanagari;2004-05-01
+Dsrt;250;Deseret (Mormon);déseret (mormon);Deseret;2004-05-01
+Dupl;755;Duployan shorthand, Duployan stenography;sténographie Duployé;;2010-07-18
+Egyd;070;Egyptian demotic;démotique égyptien;;2004-05-01
+Egyh;060;Egyptian hieratic;hiératique égyptien;;2004-05-01
+Egyp;050;Egyptian hieroglyphs;hiéroglyphes égyptiens;Egyptian_Hieroglyphs;2009-06-01
+Elba;226;Elbasan;elbasan;;2010-07-18
+Ethi;430;Ethiopic (Geʻez);éthiopien (geʻez, guèze);Ethiopic;2004-10-25
+Geor;240;Georgian (Mkhedruli);géorgien (mkhédrouli);Georgian;2004-05-29
+Geok;241;Khutsuri (Asomtavruli and Nuskhuri);khoutsouri (assomtavrouli et nouskhouri);Georgian;2012-10-16
+Glag;225;Glagolitic;glagolitique;Glagolitic;2006-06-21
+Goth;206;Gothic;gotique;Gothic;2004-05-01
+Gran;343;Grantha;grantha;;2009-11-11
+Grek;200;Greek;grec;Greek;2004-05-01
+Gujr;320;Gujarati;goudjarâtî (gujrâtî);Gujarati;2004-05-01
+Guru;310;Gurmukhi;gourmoukhî;Gurmukhi;2004-05-01
+Hang;286;Hangul (Hangŭl, Hangeul);hangûl (hangŭl, hangeul);Hangul;2004-05-29
+Hani;500;Han (Hanzi, Kanji, Hanja);idéogrammes han (sinogrammes);Han;2009-02-23
+Hano;371;Hanunoo (Hanunóo);hanounóo;Hanunoo;2004-05-29
+Hans;501;Han (Simplified variant);idéogrammes han (variante simplifiée);;2004-05-29
+Hant;502;Han (Traditional variant);idéogrammes han (variante traditionnelle);;2004-05-29
+Hatr;127;Hatran;hatrénien;;2012-11-01
+Hebr;125;Hebrew;hébreu;Hebrew;2004-05-01
+Hira;410;Hiragana;hiragana;Hiragana;2004-05-01
+Hluw;080;Anatolian Hieroglyphs (Luwian Hieroglyphs, Hittite Hieroglyphs);hiéroglyphes anatoliens (hiéroglyphes louvites, hiéroglyphes hittites);;2011-12-09
+Hmng;450;Pahawh Hmong;pahawh hmong;;2004-05-01
+Hrkt;412;Japanese syllabaries (alias for Hiragana + Katakana);syllabaires japonais (alias pour hiragana + katakana);Katakana_Or_Hiragana;2011-06-21
+Hung;176;Old Hungarian (Hungarian Runic);runes hongroises (ancien hongrois);;2012-10-16
+Inds;610;Indus (Harappan);indus;;2004-05-01
+Ital;210;Old Italic (Etruscan, Oscan, etc.);ancien italique (étrusque, osque, etc.);Old_Italic;2004-05-29
+Java;361;Javanese;javanais;Javanese;2009-06-01
+Jpan;413;Japanese (alias for Han + Hiragana + Katakana);japonais (alias pour han + hiragana + katakana);;2006-06-21
+Jurc;510;Jurchen;jurchen;;2010-12-21
+Kali;357;Kayah Li;kayah li;Kayah_Li;2007-07-02
+Kana;411;Katakana;katakana;Katakana;2004-05-01
+Khar;305;Kharoshthi;kharochthî;Kharoshthi;2006-06-21
+Khmr;355;Khmer;khmer;Khmer;2004-05-29
+Khoj;322;Khojki;khojkî;;2011-06-21
+Knda;345;Kannada;kannara (canara);Kannada;2004-05-29
+Kore;287;Korean (alias for Hangul + Han);coréen (alias pour hangûl + han);;2007-06-13
+Kpel;436;Kpelle;kpèllé;;2010-03-26
+Kthi;317;Kaithi;kaithî;Kaithi;2009-06-01
+Lana;351;Tai Tham (Lanna);taï tham (lanna);Tai_Tham;2009-06-01
+Laoo;356;Lao;laotien;Lao;2004-05-01
+Latf;217;Latin (Fraktur variant);latin (variante brisée);;2004-05-01
+Latg;216;Latin (Gaelic variant);latin (variante gaélique);;2004-05-01
+Latn;215;Latin;latin;Latin;2004-05-01
+Lepc;335;Lepcha (Róng);lepcha (róng);Lepcha;2007-07-02
+Limb;336;Limbu;limbou;Limbu;2004-05-29
+Lina;400;Linear A;linéaire A;;2004-05-01
+Linb;401;Linear B;linéaire B;Linear_B;2004-05-29
+Lisu;399;Lisu (Fraser);lisu (Fraser);Lisu;2009-06-01
+Loma;437;Loma;loma;;2010-03-26
+Lyci;202;Lycian;lycien;Lycian;2007-07-02
+Lydi;116;Lydian;lydien;Lydian;2007-07-02
+Mahj;314;Mahajani;mahâjanî;;2012-10-16
+Mand;140;Mandaic, Mandaean;mandéen;Mandaic;2010-07-23
+Mani;139;Manichaean;manichéen;;2007-07-15
+Maya;090;Mayan hieroglyphs;hiéroglyphes mayas;;2004-05-01
+Mend;438;Mende Kikakui;mendé kikakui;;2013-10-12
+Merc;101;Meroitic Cursive;cursif méroïtique;Meroitic_Cursive;2012-02-06
+Mero;100;Meroitic Hieroglyphs;hiéroglyphes méroïtiques;Meroitic_Hieroglyphs;2012-02-06
+Mlym;347;Malayalam;malayâlam;Malayalam;2004-05-01
+Modi;323;Modi, Moḍī;modî;;2013-10-12
+Moon;218;Moon (Moon code, Moon script, Moon type);écriture Moon;;2006-12-11
+Mong;145;Mongolian;mongol;Mongolian;2004-05-01
+Mroo;199;Mro, Mru;mro;;2010-12-21
+Mtei;337;Meitei Mayek (Meithei, Meetei);meitei mayek;Meetei_Mayek;2009-06-01
+Mult;323; Multani;multanî;;2012-11-01
+Mymr;350;Myanmar (Burmese);birman;Myanmar;2004-05-01
+Narb;106;Old North Arabian (Ancient North Arabian);nord-arabique;;2010-03-26
+Nbat;159;Nabataean;nabatéen;;2010-03-26
+Nkgb;420;Nakhi Geba ('Na-'Khi ²Ggŏ-¹baw, Naxi Geba);nakhi géba;;2009-02-23
+Nkoo;165;N’Ko;n’ko;Nko;2006-10-10
+Nshu;499;Nüshu;nüshu;;2010-12-21
+Ogam;212;Ogham;ogam;Ogham;2004-05-01
+Olck;261;Ol Chiki (Ol Cemet’, Ol, Santali);ol tchiki;Ol_Chiki;2007-07-02
+Orkh;175;Old Turkic, Orkhon Runic;orkhon;Old_Turkic;2009-06-01
+Orya;327;Oriya;oriyâ;Oriya;2004-05-01
+Osma;260;Osmanya;osmanais;Osmanya;2004-05-01
+Palm;126;Palmyrene;palmyrénien;;2010-03-26
+Pauc;263;Pau Cin Hau;paou chin haou;;2013-10-12
+Perm;227;Old Permic;ancien permien;;2004-05-01
+Phag;331;Phags-pa;’phags pa;Phags_Pa;2006-10-10
+Phli;131;Inscriptional Pahlavi;pehlevi des inscriptions;Inscriptional_Pahlavi;2009-06-01
+Phlp;132;Psalter Pahlavi;pehlevi des psautiers;;2007-11-26
+Phlv;133;Book Pahlavi;pehlevi des livres;;2007-07-15
+Phnx;115;Phoenician;phénicien;Phoenician;2006-10-10
+Plrd;282;Miao (Pollard);miao (Pollard);Miao;2012-02-06
+Prti;130;Inscriptional Parthian;parthe des inscriptions;Inscriptional_Parthian;2009-06-01
+Qaaa;900;Reserved for private use (start);réservé à l’usage privé (début);;2004-05-29
+Qabx;949;Reserved for private use (end);réservé à l’usage privé (fin);;2004-05-29
+Rjng;363;Rejang (Redjang, Kaganga);redjang (kaganga);Rejang;2009-02-23
+Roro;620;Rongorongo;rongorongo;;2004-05-01
+Runr;211;Runic;runique;Runic;2004-05-01
+Samr;123;Samaritan;samaritain;Samaritan;2009-06-01
+Sara;292;Sarati;sarati;;2004-05-29
+Sarb;105;Old South Arabian;sud-arabique, himyarite;Old_South_Arabian;2009-06-01
+Saur;344;Saurashtra;saurachtra;Saurashtra;2007-07-02
+Sgnw;095;SignWriting;SignÉcriture, SignWriting;;2006-10-10
+Shaw;281;Shavian (Shaw);shavien (Shaw);Shavian;2004-05-01
+Shrd;319;Sharada, Śāradā;charada, shard;Sharada;2012-02-06
+Sidd;302;Siddham, Siddhaṃ, Siddhamātṛkā;siddham;;2013-10-12
+Sind;318;Khudawadi, Sindhi;khoudawadî, sindhî;;2010-12-21
+Sinh;348;Sinhala;singhalais;Sinhala;2004-05-01
+Sora;398;Sora Sompeng;sora sompeng;Sora_Sompeng;2012-02-06
+Sund;362;Sundanese;sundanais;Sundanese;2007-07-02
+Sylo;316;Syloti Nagri;sylotî nâgrî;Syloti_Nagri;2006-06-21
+Syrc;135;Syriac;syriaque;Syriac;2004-05-01
+Syre;138;Syriac (Estrangelo variant);syriaque (variante estranghélo);;2004-05-01
+Syrj;137;Syriac (Western variant);syriaque (variante occidentale);;2004-05-01
+Syrn;136;Syriac (Eastern variant);syriaque (variante orientale);;2004-05-01
+Tagb;373;Tagbanwa;tagbanoua;Tagbanwa;2004-05-01
+Takr;321;Takri, Ṭākrī, Ṭāṅkrī;tâkrî;Takri;2012-02-06
+Tale;353;Tai Le;taï-le;Tai_Le;2004-10-25
+Talu;354;New Tai Lue;nouveau taï-lue;New_Tai_Lue;2006-06-21
+Taml;346;Tamil;tamoul;Tamil;2004-05-01
+Tang;520;Tangut;tangoute;;2010-12-21
+Tavt;359;Tai Viet;taï viêt;Tai_Viet;2009-06-01
+Telu;340;Telugu;télougou;Telugu;2004-05-01
+Teng;290;Tengwar;tengwar;;2004-05-01
+Tfng;120;Tifinagh (Berber);tifinagh (berbère);Tifinagh;2006-06-21
+Tglg;370;Tagalog (Baybayin, Alibata);tagal (baybayin, alibata);Tagalog;2009-02-23
+Thaa;170;Thaana;thâna;Thaana;2004-05-01
+Thai;352;Thai;thaï;Thai;2004-05-01
+Tibt;330;Tibetan;tibétain;Tibetan;2004-05-01
+Tirh;326;Tirhuta;tirhouta;;2011-12-09
+Ugar;040;Ugaritic;ougaritique;Ugaritic;2004-05-01
+Vaii;470;Vai;vaï;Vai;2007-07-02
+Visp;280;Visible Speech;parole visible;;2004-05-01
+Wara;262;Warang Citi (Varang Kshiti);warang citi;;2009-11-11
+Wole;480;Woleai;woléaï;;2010-12-21
+Xpeo;030;Old Persian;cunéiforme persépolitain;Old_Persian;2006-06-21
+Xsux;020;Cuneiform, Sumero-Akkadian;cunéiforme suméro-akkadien;Cuneiform;2006-10-10
+Yiii;460;Yi;yi;Yi;2004-05-01
+Zinh;994;Code for inherited script;codet pour écriture héritée;Inherited;2009-02-23
+Zmth;995;Mathematical notation;notation mathématique;;2007-11-26
+Zsym;996;Symbols;symboles;;2007-11-26
+Zxxx;997;Code for unwritten documents;codet pour les documents non écrits;;2011-06-21
+Zyyy;998;Code for undetermined script;codet pour écriture indéterminée;Common;2004-05-29
+Zzzz;999;Code for uncoded script;codet pour écriture non codée;Unknown;2006-10-10

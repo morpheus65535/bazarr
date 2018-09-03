@@ -1,0 +1,172 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +DVDSCR
+? +DVDScreener
+? +DVD-SCR
+? +DVD Screener
+? +DVD AnythingElse Screener
+? -DVD AnythingElse SCR
+: other: Screener
+
+? +AudioFix
+? +AudioFixed
+? +Audio Fix
+? +Audio Fixed
+: other: Audio Fixed
+
+? +SyncFix
+? +SyncFixed
+? +Sync Fix
+? +Sync Fixed
+: other: Sync Fixed
+
+? +DualAudio
+? +Dual Audio
+: other: Dual Audio
+
+? +ws
+? +WideScreen
+? +Wide Screen
+: other: Widescreen
+
+# Fix and Real must be surround by others properties to be matched.
+? DVD.Real.XViD
+? DVD.fix.XViD
+? -DVD.Real
+? -DVD.Fix
+? -Real.XViD
+? -Fix.XViD
+: other: Proper
+  proper_count: 1
+
+? -DVD.BlablaBla.Fix.Blablabla.XVID
+? -DVD.BlablaBla.Fix.XVID
+? -DVD.Fix.Blablabla.XVID
+: other: Proper
+  proper_count: 1
+
+
+? DVD.Real.PROPER.REPACK
+: other: Proper
+  proper_count: 3
+
+
+? Proper
+? +Repack
+? +Rerip
+: other: Proper
+  proper_count: 1
+
+? XViD.Fansub
+: other: Fan Subtitled
+
+? XViD.Fastsub
+: other: Fast Subtitled
+
+? +Season Complete
+? -Complete
+: other: Complete
+
+? R5
+: other: Region 5
+
+? RC
+: other: Region C
+
+? PreAir
+? Pre Air
+: other: Preair
+
+? Screener
+: other: Screener
+
+? Remux
+: other: Remux
+
+? 3D
+: other: 3D
+
+? HD
+: other: HD
+
+? FHD
+? FullHD
+? Full HD
+: other: Full HD
+
+? UHD
+? Ultra
+? UltraHD
+? Ultra HD
+: other: Ultra HD
+
+? mHD # ??
+? HDLight
+: other: Micro HD
+
+? HQ
+: other: High Quality
+
+? hr
+: other: High Resolution
+
+? PAL
+: other: PAL
+
+? SECAM
+: other: SECAM
+
+? NTSC
+: other: NTSC
+
+? LDTV
+: other: Low Definition
+
+? LD
+: other: Line Dubbed
+
+? MD
+: other: Mic Dubbed
+
+? -The complete movie
+: other: Complete
+
+? +The complete movie
+: title: The complete movie
+
+? +AC3-HQ
+: audio_profile: High Quality
+
+? Other-HQ
+: other: High Quality
+
+? reenc
+? re-enc
+? re-encoded
+? reencoded
+: other: Reencoded
+
+? CONVERT XViD
+: other: Converted
+
+? +HDRIP  # it's a Rip from non specified HD source
+: other: [HD, Rip]
+
+? SDR
+: other: Standard Dynamic Range
+
+? HDR
+? HDR10
+? -HDR100
+: other: HDR10
+
+? BT2020
+? BT.2020
+? -BT.20200
+? -BT.2021
+: other: BT.2020
+
+? Upscaled
+? Upscale
+: other: Upscaled
+
