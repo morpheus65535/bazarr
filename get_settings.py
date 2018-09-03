@@ -247,6 +247,11 @@ def get_proxy_settings():
             password = cfg.get('proxy', 'password')
         else:
             password = ''
+            
+        if cfg.has_option('proxy', 'exclude_ip'):
+            exclude = cfg.get('proxy', 'exclude_ip')
+        else:
+            exclude = 'localhost,127.0.0.1'
     else:
         enabled = False
         proxy_type = ''
@@ -254,8 +259,9 @@ def get_proxy_settings():
         port = ''
         username = ''
         password = ''
+        exclude = 'localhost,127.0.0.1'
 
-    return [enabled, proxy_type, url, port, username, password]
+    return [enabled, proxy_type, url, port, username, password, exclude]
 
 
 def get_sonarr_settings():

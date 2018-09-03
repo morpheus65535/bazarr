@@ -287,6 +287,26 @@
                             </div>
 
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Exclude IP</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings_proxy[6]}}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip='IP or Hostanem with will be excluded from proxy. Separated by comma " , "' data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
 
@@ -1417,6 +1437,7 @@
                 $("#settings_proxy_port").parent().removeClass('disabled');
                 $("#settings_proxy_username").parent().removeClass('disabled');
                 $("#settings_proxy_password").parent().removeClass('disabled');
+                $("#settings_proxy_exclude").parent().removeClass('disabled');
             } else {
                 $("#settings_use_proxy").checkbox('uncheck');
                 $("#settings_proxy_type").parent().addClass('disabled');
@@ -1424,6 +1445,7 @@
                 $("#settings_proxy_port").parent().addClass('disabled');
                 $("#settings_proxy_username").parent().addClass('disabled');
                 $("#settings_proxy_password").parent().addClass('disabled');
+                $("#settings_proxy_exclude").parent().addClass('disabled');
             }
 
     $("#settings_use_proxy").change(function(i, obj) {
@@ -1433,12 +1455,14 @@
                 $("#settings_proxy_port").parent().removeClass('disabled');
                 $("#settings_proxy_username").parent().removeClass('disabled');
                 $("#settings_proxy_password").parent().removeClass('disabled');
+                $("#settings_proxy_exclude").parent().removeClass('disabled');
             } else {
                 $("#settings_proxy_type").parent().addClass('disabled');
                 $("#settings_proxy_url").parent().addClass('disabled');
                 $("#settings_proxy_port").parent().addClass('disabled');
                 $("#settings_proxy_username").parent().addClass('disabled');
                 $("#settings_proxy_password").parent().addClass('disabled');
+                $("#settings_proxy_exclude").parent().addClass('disabled');
             }
     });
 

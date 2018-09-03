@@ -170,6 +170,7 @@ except sqlite3.OperationalError:
         cfg.set(section, 'port', "")
         cfg.set(section, 'username', "")
         cfg.set(section, 'password', "")
+        cfg.set(section, 'exclude', "localhost,127.0.0.1")
 
         section = 'auth'
 
