@@ -10,6 +10,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "./libs/PIL.egg"))
 
 import sqlite3
 # from update_modules import *
