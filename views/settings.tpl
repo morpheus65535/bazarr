@@ -222,7 +222,7 @@
                             <div class="five wide column">
                                 <select name="settings_proxy_type" id="settings_proxy_type" class="ui fluid selection dropdown">
                                     <option value="">Proxy type</option>
-                                    <option value="http">http</option>
+                                    <option value="http">HTTP(S)</option>
                                     <option value="socks4">Socks4</option>
                                     <option value="socks5">Socks5</option>
                                 </select>
@@ -237,7 +237,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Proxy url</label>
+                                <label>Hostanme</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -250,7 +250,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Proxy port</label>
+                                <label>Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -263,7 +263,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Proxy username</label>
+                                <label>Username</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -272,11 +272,19 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="UYou only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
                         </div>
+
+
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Proxy password</label>
+                                <label>Password</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -286,11 +294,17 @@
                                 </div>
                             </div>
 
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="UYou only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Exclude IP</label>
+                                <label>Ignored Addresse</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -301,7 +315,7 @@
                             </div>
 
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip='IP or Hostanem with will be excluded from proxy. Separated by comma " , "' data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Use ',' as a separator, and '*.' as a wildcard for subdomains" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
