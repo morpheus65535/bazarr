@@ -195,7 +195,7 @@
                             </div>
                             <div class="one wide column">
                                 <div id="settings_use_auth" class="ui toggle checkbox" data-enabled={{settings_auth[0]}}>
-                                    <input name="settings_general_auth_enabled" type="checkbox">
+                                    <input name="settings_auth_enabled" type="checkbox">
                                     <label></label>
                                 </div>
                             </div>
@@ -208,7 +208,7 @@
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable basic authentication to access Bazarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Enable authentication to access Bazarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -222,7 +222,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_general_auth_username" name="settings_general_auth_username" type="text" value="{{settings_auth[1]}}">
+                                        <input id="settings_auth_username" name="settings_auth_username" type="text" value="{{current_user}}">
                                     </div>
                                 </div>
                             </div>
@@ -235,14 +235,14 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_general_auth_password" name="settings_general_auth_password" type="password" value="{{settings_auth[2]}}">
+                                        <input id="settings_auth_password" name="settings_auth_password" type="password">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Basic auth transmit username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Auth transmit username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1288,21 +1288,21 @@
 
     if ($('#settings_use_auth').data("enabled") == "True") {
                 $("#settings_use_auth").checkbox('check');
-                $("#settings_general_auth_username").parent().removeClass('disabled');
-                $("#settings_general_auth_password").parent().removeClass('disabled');
+                $("#settings_auth_username").parent().removeClass('disabled');
+                $("#settings_auth_password").parent().removeClass('disabled');
             } else {
                 $("#settings_use_auth").checkbox('uncheck');
-                $("#settings_general_auth_username").parent().addClass('disabled');
-                $("#settings_general_auth_password").parent().addClass('disabled');
+                $("#settings_auth_username").parent().addClass('disabled');
+                $("#settings_auth_password").parent().addClass('disabled');
             }
 
     $("#settings_use_auth").change(function(i, obj) {
         if ($("#settings_use_auth").checkbox('is checked')) {
-                $("#settings_general_auth_username").parent().removeClass('disabled');
-                $("#settings_general_auth_password").parent().removeClass('disabled');
+                $("#settings_auth_username").parent().removeClass('disabled');
+                $("#settings_auth_password").parent().removeClass('disabled');
             } else {
-                $("#settings_general_auth_username").parent().addClass('disabled');
-                $("#settings_general_auth_password").parent().addClass('disabled');
+                $("#settings_auth_username").parent().addClass('disabled');
+                $("#settings_auth_password").parent().addClass('disabled');
             }
     });
 

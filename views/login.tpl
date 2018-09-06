@@ -55,7 +55,7 @@
         <button type="submit" class="ui fluid large blue submit button"> Login </button>
       </div>
 
-      <div class="ui error message"></div>
+      <div class="ui error message">Bad login</div>
 
     </form>
   </div>

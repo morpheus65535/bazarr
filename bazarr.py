@@ -103,25 +103,28 @@ load_language_in_db()
 
 from get_settings import get_auth_settings
 
-aaa = Cork('data')
+aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
         
 app = app()
 session_opts = {
     'session.cookie_expires': True,
     'session.key': 'Bazarr',
-    'session.encrypt_key': 'Bazarr',
+    'session.encrypt_key': os.urandom(10),
     'session.httponly': True,
     'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
     'session.type': 'cookie',
     'session.validate_key': True,
 }
 app = SessionMiddleware(app, session_opts)
-
+login_auth = get_auth_settings()[0]
 
 def authorize():
-    # TODO: Make some configuration
-    if get_auth_settings()[0] is True:
+    if login_auth is True:
         aaa.require(fail_redirect=(base_url + 'login'))
+
+
+def postd():
+    return bottle.request.forms
 
 
 def post_get(name, default=''):
@@ -146,7 +149,7 @@ def login():
 @route('/logout')
 def logout():
     aaa.logout(success_redirect=(base_url + 'login'))
-    
+
 
 @route('/')
 def redirect_root():
@@ -715,19 +718,25 @@ def settings():
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
+    
     from get_settings import get_general_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
     settings_general = get_general_settings()
     settings_auth = get_auth_settings()
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
+    
+    if login_auth is True:
+        current_user = aaa.current_user.username
+    else:
+        current_user = ''
 
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, current_user=current_user, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+
 
 @route(base_url + 'save_settings', method='POST')
 def save_settings():
     authorize()
     ref = request.environ['HTTP_REFERER']
-
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
 
@@ -735,13 +744,6 @@ def save_settings():
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     settings_general_loglevel = request.forms.get('settings_general_loglevel')
-    settings_general_auth_enabled = request.forms.get('settings_general_auth_enabled')
-    if settings_general_auth_enabled is None:
-        settings_general_auth_enabled = 'False'
-    else:
-        settings_general_auth_enabled = 'True'
-    settings_general_auth_username = request.forms.get('settings_general_auth_username')
-    settings_general_auth_password = request.forms.get('settings_general_auth_password')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -833,23 +835,45 @@ def save_settings():
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
 
-
     if after != before:
         configured()
     get_general_settings()
 
     settings_auth = get_auth_settings()
 
-    before_auth_password = (unicode(settings_auth[0]), unicode(settings_auth[2]))
-    if before_auth_password[0] != settings_general_auth_enabled:
-        configured()
-    if before_auth_password[1] == settings_general_auth_password:
-        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
-        cfg.set('auth', 'username', text_type(settings_general_auth_username))
+    settings_auth_enabled = request.forms.get('settings_auth_enabled')
+    if settings_auth_enabled is None:
+        settings_auth_enabled = 'False'
     else:
-        cfg.set('auth', 'enabled', text_type(settings_general_auth_enabled))
-        cfg.set('auth', 'username', text_type(settings_general_auth_username))
-        cfg.set('auth', 'password', hashlib.md5(settings_general_auth_password).hexdigest())
+        settings_auth_enabled = 'True'
+    settings_auth_username = request.forms.get('settings_auth_username')
+    settings_auth_password = request.forms.get('settings_auth_password')
+    
+    if settings_auth[0] != settings_auth_enabled:
+        configured()
+        
+    if settings_auth_password == '':
+        # TODO: Need to be restarted
+        cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
+    else:
+        if settings_auth_username not in aaa._store.users:
+            cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
+            cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
+            import time
+            cork._store.roles['admin'] = 100
+            cork._store.save_roles()
+            cork._store.users[settings_auth_username] = {
+                'role': 'admin',
+                'hash': cork._hash(settings_auth_username, settings_auth_password),
+                'email_addr': '',
+                'desc': '',
+                'creation_date': time.time()
+            }
+            cork._store.save_users()
+            # aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
+        else:
+            cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
+            aaa.user(settings_auth_username).update(role='admin', pwd=settings_auth_password)
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
