@@ -133,8 +133,8 @@ def post_get(name, default=''):
 
 @route(base_url + 'login')
 def login_form():
-    """Serve login form"""
-    return template('login', base_url=base_url)
+    msg = bottle.request.query.get('msg', '')
+    return template('login', base_url=base_url, msg=msg)
 
 
 @route(base_url + 'login', method='POST')
@@ -143,7 +143,7 @@ def login():
     """Authenticate users"""
     username = post_get('username')
     password = post_get('password')
-    aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login'))
+    aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login?msg=fail'))
 
 
 @route('/logout')
@@ -870,7 +870,6 @@ def save_settings():
                 'creation_date': time.time()
             }
             cork._store.save_users()
-            # aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
         else:
             cfg.set('auth', 'enabled', text_type(settings_auth_enabled))
             aaa.user(settings_auth_username).update(role='admin', pwd=settings_auth_password)

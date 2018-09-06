@@ -55,8 +55,11 @@
         <button type="submit" class="ui fluid large blue submit button"> Login </button>
       </div>
 
-      <div class="ui error message">Bad login</div>
-
+      % if msg == 'fail':
+      <div class="ui red message" role="alert">
+        Incorrect Username or Password.
+      </div>
+      % end
     </form>
   </div>
 </div>
