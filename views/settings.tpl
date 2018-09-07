@@ -193,12 +193,15 @@
                             <div class="right aligned four wide column">
                                 <label>Use basic authentication</label>
                             </div>
-                            <div class="one wide column">
-                                <div id="settings_use_auth" class="ui toggle checkbox" data-enabled={{settings_auth[0]}}>
-                                    <input name="settings_auth_enabled" type="checkbox">
+                            <div class="five wide column">
+                                <select name="settings_auth_type" id="settings_auth_type" class="ui fluid selection dropdown">
+                                    <option value="None">None</option>
+                                    <option value="basic">Basic (Browser Popup)</option>
+                                    <option value="form">Forms (Login Page)</option>
+                                </select>
                                     <label></label>
                                 </div>
-                            </div>
+
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
@@ -1286,26 +1289,6 @@
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
-    if ($('#settings_use_auth').data("enabled") == "True") {
-                $("#settings_use_auth").checkbox('check');
-                $("#settings_auth_username").parent().removeClass('disabled');
-                $("#settings_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_use_auth").checkbox('uncheck');
-                $("#settings_auth_username").parent().addClass('disabled');
-                $("#settings_auth_password").parent().addClass('disabled');
-            }
-
-    $("#settings_use_auth").change(function(i, obj) {
-        if ($("#settings_use_auth").checkbox('is checked')) {
-                $("#settings_auth_username").parent().removeClass('disabled');
-                $("#settings_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_auth_username").parent().addClass('disabled');
-                $("#settings_auth_password").parent().addClass('disabled');
-            }
-    });
-
     if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
                 $("#settings_use_postprocessing").checkbox('check');
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
@@ -1514,6 +1497,8 @@
     %if settings_general[19] is not None:
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
+    $('#settings_auth_type').dropdown('clear');
+    $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();
     $('#settings_radarr_sync').dropdown();

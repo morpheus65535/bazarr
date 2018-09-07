@@ -187,10 +187,10 @@ def get_auth_settings():
         pass
 
     if cfg.has_section('auth'):
-        if cfg.has_option('auth', 'enabled'):
-            enabled = cfg.getboolean('auth', 'enabled')
+        if cfg.has_option('auth', 'type'):
+            type = cfg.get('auth', 'type')
         else:
-            enabled = False
+            type = None
 
         if cfg.has_option('auth', 'username'):
             username = cfg.get('auth', 'username')
@@ -202,11 +202,11 @@ def get_auth_settings():
         else:
             password = ''
     else:
-        enabled = False
+        type = None
         username = ''
         password = ''
 
-    return [enabled, username, password]
+    return [type, username, password]
 
 
 def get_sonarr_settings():

@@ -27,7 +27,7 @@ if os.path.exists(os.path.join(config_dir, 'log')) is False:
 
 config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
 
-# if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) is True and os.path.exists(config_file) is False:
+cfg = ConfigParser()
 try:
     # Open database connection
     db = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/db/bazarr.db'), timeout=30)
@@ -50,8 +50,6 @@ try:
 
     # Close database connection
     db.close()
-
-    cfg = ConfigParser()
 
     section = 'general'
 
@@ -164,7 +162,7 @@ except sqlite3.OperationalError:
         if not cfg.has_section(section):
             cfg.add_section(section)
 
-        cfg.set(section, 'enabled', "False")
+        cfg.set(section, 'type', "none")
         cfg.set(section, 'username', "")
         cfg.set(section, 'password', "")
 
@@ -219,6 +217,16 @@ try:
 except:
     pass
 
+# Remove unused settings
+try:
+    with open(config_file, 'r') as f:
+        cfg.read_file(f)
+except Exception:
+    pass
+cfg.remove_option('auth', 'enabled')
+with open(config_file, 'w+') as configfile:
+    cfg.write(configfile)
+
 from cork import Cork
 import time
 if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json'))) is False:
@@ -237,4 +245,3 @@ if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json')
         'creation_date': tstamp
     }
     cork._store.save_users()
-
