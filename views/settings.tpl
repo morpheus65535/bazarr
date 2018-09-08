@@ -42,7 +42,7 @@
         % include('menu.tpl')
 
         <div id="fondblanc" class="ui container">
-            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form">
+            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form" autocomplete="off">
             <div id="form_validation_error" class="ui error message">
                 <p>Some fields are in error and you can't save settings until you have corrected them. Be sure to check in every tabs.</p>
             </div>
@@ -225,7 +225,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_username" name="settings_auth_username" type="text" value="{{settings_auth[1]}}">
+                                        <input id="settings_auth_username" name="settings_auth_username" type="text" autocomplete="nope" value="{{settings_auth[1]}}">
                                     </div>
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_password" name="settings_auth_password" type="password" value="{{settings_auth[2]}}">
+                                        <input id="settings_auth_password" name="settings_auth_password" type="password" autocomplete="new-password" value="{{settings_auth[2]}}">
                                     </div>
                                 </div>
                             </div>

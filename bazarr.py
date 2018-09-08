@@ -910,10 +910,6 @@ def save_settings():
         cfg.set('auth', 'type', text_type(settings_auth_type))
         cfg.set('auth', 'username', text_type(settings_auth_username))
         cfg.set('auth', 'password', hashlib.md5(settings_auth_password).hexdigest())
-    
-    if settings_auth_password == '':
-        pass
-    else:
         if settings_auth_username not in aaa._store.users:
             cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
             import time
