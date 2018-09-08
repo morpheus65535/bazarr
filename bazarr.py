@@ -109,7 +109,7 @@ app = app()
 session_opts = {
     'session.cookie_expires': True,
     'session.key': 'Bazarr',
-    'session.encrypt_key': os.urandom(10),
+    #'session.encrypt_key': os.urandom(10),
     'session.httponly': True,
     'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
     'session.type': 'cookie',
@@ -185,7 +185,6 @@ def redirect_root():
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
-    authorize()
     return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
 
 @route(base_url + 'emptylog')

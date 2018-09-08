@@ -191,7 +191,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use basic authentication</label>
+                                <label>Authentication</label>
                             </div>
                             <div class="five wide column">
                                 <select name="settings_auth_type" id="settings_auth_type" class="ui fluid selection dropdown">
@@ -211,47 +211,46 @@
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable authentication to access Bazarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Require Username and Password to access Bazarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="auth_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Username</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_username" name="settings_auth_username" type="text" value="{{current_user}}">
+                                        <input id="settings_auth_username" name="settings_auth_username" type="text" value="{{settings_auth[1]}}">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="auth_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Password</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_password" name="settings_auth_password" type="password">
+                                        <input id="settings_auth_password" name="settings_auth_password" type="password" value="{{settings_auth[2]}}">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Auth transmit username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Authentication send username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                 </div>
 
                 <div class="ui dividing header">Integration settings</div>
@@ -1339,6 +1338,19 @@
         }
     });
 
+    if ($('#settings_auth_type').val() == "None") {
+        $('.auth_option').hide();
+    };
+
+    $('#settings_auth_type').dropdown('setting', 'onChange', function(){
+        if ($('#settings_auth_type').val() == "None") {
+            $('.auth_option').hide();
+        }
+        else {
+            $('.auth_option').show();
+        };
+    });
+
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
         $("#settings_serie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
@@ -1524,22 +1536,6 @@
                         {
                             type : 'integer[1..65535]'
                         },
-                        {
-                            type : 'empty'
-                        }
-                    ]
-                },
-                settings_general_auth_username : {
-                    depends: 'settings_general_auth_enabled',
-                    rules : [
-                        {
-                            type : 'empty'
-                        }
-                    ]
-                },
-                settings_general_auth_password : {
-                    depends: 'settings_general_auth_enabled',
-                    rules : [
                         {
                             type : 'empty'
                         }
