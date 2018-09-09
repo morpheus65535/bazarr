@@ -36,7 +36,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         lang_obj = Language(language)
 
     try:
-        if sceneName is None or use_scenename is False:
+        if sceneName == "None" or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
