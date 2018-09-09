@@ -77,6 +77,7 @@ import urllib
 import math
 import ast
 import hashlib
+import random
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import *
@@ -104,16 +105,15 @@ load_language_in_db()
 from get_settings import get_auth_settings
 
 aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
-        
+
 app = app()
 session_opts = {
     'session.cookie_expires': True,
     'session.key': 'Bazarr',
-    #'session.encrypt_key': os.urandom(10),
     'session.httponly': True,
     'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
     'session.type': 'cookie',
-    'session.validate_key': True,
+    'session.validate_key': random.random(),
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = get_auth_settings()[0]
@@ -910,21 +910,21 @@ def save_settings():
         cfg.set('auth', 'type', text_type(settings_auth_type))
         cfg.set('auth', 'username', text_type(settings_auth_username))
         cfg.set('auth', 'password', hashlib.md5(settings_auth_password).hexdigest())
-        if settings_auth_username not in aaa._store.users:
-            cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
-            import time
-            cork._store.roles['admin'] = 100
-            cork._store.save_roles()
-            cork._store.users[settings_auth_username] = {
-                'role': 'admin',
-                'hash': cork._hash(settings_auth_username, settings_auth_password),
-                'email_addr': '',
-                'desc': '',
-                'creation_date': time.time()
-            }
-            cork._store.save_users()
-        else:
-            aaa.user(settings_auth_username).update(role='admin', pwd=settings_auth_password)
+    if settings_auth_username not in aaa._store.users:
+        cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
+        import time
+        cork._store.roles[''] = 100
+        cork._store.save_roles()
+        cork._store.users[settings_auth_username] = {
+            'role': '',
+            'hash': cork._hash(settings_auth_username, settings_auth_password),
+            'email_addr': '',
+            'desc': '',
+            'creation_date': time.time()
+        }
+        cork._store.save_users()
+    else:
+        aaa.user(settings_auth_username).update(role='admin', pwd=settings_auth_password)
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')

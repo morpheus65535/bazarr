@@ -232,13 +232,13 @@ import time
 if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json'))) is False:
     cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
 
-    cork._store.roles['admin'] = 100
+    cork._store.roles[''] = 100
     cork._store.save_roles()
 
     tstamp = str(time.time())
     username = password = ''
     cork._store.users[username] = {
-        'role': 'admin',
+        'role': '',
         'hash': cork._hash(username, password),
         'email_addr': username,
         'desc': username,
