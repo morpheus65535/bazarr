@@ -113,7 +113,7 @@ session_opts = {
     'session.httponly': True,
     'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
     'session.type': 'cookie',
-    'session.validate_key': random.random(),
+    'session.validate_key': True
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = get_auth_settings()[0]
