@@ -20,6 +20,10 @@ from notifier import send_notifications, send_notifications_movie
 region.configure('dogpile.cache.memory')
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
     if media_type == 'series':
         type_of_score = 360
         minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
@@ -111,6 +115,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     return message
 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
     language_set = set()
     for lang in ast.literal_eval(language):
         if lang == 'pob':
@@ -138,22 +146,22 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         else:
             subtitles_list = []
             for s in subtitles:
-                {s: compute_score(s, video)}
+                {s: compute_score(s, video, hearing_impaired=hi)}
                 if media_type == "movie":
                     matched = set(s.get_matches(video))
-                    if hi == str(s.hearing_impaired):
+                    if hi == s.hearing_impaired:
                         matched.add('hearing_impaired')
                     not_matched = set(score.movie_scores.keys()) - matched
                     if "title" in not_matched:
                         continue
                 elif media_type == "series":
                     matched = set(s.get_matches(video))
-                    if hi == str(s.hearing_impaired):
+                    if hi == s.hearing_impaired:
                         matched.add('hearing_impaired')
                     not_matched = set(score.episode_scores.keys()) - matched
                     if "series" in not_matched or "season" in not_matched or "episode" in not_matched:
                         continue
-                subtitles_list.append(dict(score=round((compute_score(s, video, hearing_impaired=bool(hi)) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, id=s.id, url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
+                subtitles_list.append(dict(score=round((compute_score(s, video, hearing_impaired=hi) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, id=s.id, url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
             subtitles_dict = {}
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             return(subtitles_dict)
@@ -174,7 +182,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
         lang_obj = Language(language)
 
     try:
-        if sceneName is None or use_scenename is False:
+        if sceneName == "None" or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
@@ -218,7 +226,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
                     downloaded_language_code3 = language
                     downloaded_path = result[1]
                     if used_sceneName == True:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name: " + sceneName
                     else:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
 
