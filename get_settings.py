@@ -60,7 +60,7 @@ def get_general_settings():
         if cfg.has_option('general', 'minimum_score'):
             minimum_score = cfg.get('general', 'minimum_score')
         else:
-            minimum_score = '100'
+            minimum_score = '90'
 
         if cfg.has_option('general', 'use_scenename'):
             use_scenename = cfg.getboolean('general', 'use_scenename')
@@ -130,7 +130,7 @@ def get_general_settings():
         if cfg.has_option('general', 'minimum_score_movie'):
             minimum_score_movie = cfg.get('general', 'minimum_score_movie')
         else:
-            minimum_score_movie = '100'
+            minimum_score_movie = '70'
 
         if cfg.has_option('general', 'use_embedded_subs'):
             use_embedded_subs = cfg.getboolean('general', 'use_embedded_subs')
@@ -156,7 +156,7 @@ def get_general_settings():
         branch = 'master'
         auto_update = True
         single_language = False
-        minimum_score = '100'
+        minimum_score = '90'
         use_scenename = False
         use_postprocessing = False
         postprocessing_cmd = False
@@ -170,7 +170,7 @@ def get_general_settings():
         movie_default_language = []
         movie_default_hi = False
         page_size = '25'
-        minimum_score_movie = '100'
+        minimum_score_movie = '70'
         use_embedded_subs = False
         only_monitored = False
         adaptive_searching = False

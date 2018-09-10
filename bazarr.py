@@ -77,7 +77,7 @@ import urllib
 import math
 import ast
 import hashlib
-import random
+import time
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import *
@@ -147,6 +147,7 @@ def check_credentials(user, pw):
 
 def authorize():
     if login_auth == 'form':
+        aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
         aaa.require(fail_redirect=(base_url + 'login'))
 
 
@@ -166,12 +167,13 @@ def login_form():
 
 @route(base_url + 'login', method='POST')
 def login():
+    aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
     username = post_get('username')
     password = post_get('password')
     aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login?msg=fail'))
 
 
-@route('/logout')
+@route(base_url + 'logout')
 def logout():
     aaa.logout(success_redirect=(base_url + 'login'))
 
@@ -778,13 +780,8 @@ def settings():
     settings_auth = get_auth_settings()
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
-    
-    if login_auth == 'form':
-        current_user = aaa.current_user.username
-    else:
-        current_user = ''
 
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, current_user=current_user, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 
 @route(base_url + 'save_settings', method='POST')
@@ -912,7 +909,6 @@ def save_settings():
         cfg.set('auth', 'password', hashlib.md5(settings_auth_password).hexdigest())
     if settings_auth_username not in aaa._store.users:
         cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
-        import time
         cork._store.roles[''] = 100
         cork._store.save_roles()
         cork._store.users[settings_auth_username] = {
@@ -923,8 +919,17 @@ def save_settings():
             'creation_date': time.time()
         }
         cork._store.save_users()
+        if settings_auth_type == 'basic' or settings_auth_type == 'None':
+            pass
+        else:
+            aaa._beaker_session.delete()
     else:
-        aaa.user(settings_auth_username).update(role='admin', pwd=settings_auth_password)
+        if before_auth_password[1] != settings_auth_password:
+            aaa.user(settings_auth_username).update(role='', pwd=settings_auth_password)
+            if settings_auth_type == 'basic' or settings_auth_type == 'None':
+                pass
+            else:
+                aaa._beaker_session.delete()
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
