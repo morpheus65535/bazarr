@@ -448,7 +448,7 @@
 				},
 				{ data: null,
 				render: function ( data, type, row ) {
-        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, moviePath, sceneName, hi, radarrId)" data-subid="'+data.id+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
+        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, moviePath, sceneName, hi, radarrId)" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
     				}
 				}
 			]
@@ -464,7 +464,7 @@
 
 	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
 		var values = {
-				subid: $(button).attr("data-subid"),
+				subtitle: $(button).attr("data-subtitle"),
 				provider: $(button).attr("data-provider"),
 				moviePath: moviePath,
 				sceneName: sceneName,

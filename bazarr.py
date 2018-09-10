@@ -1415,7 +1415,7 @@ def manual_get_subtitle():
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     selected_provider = request.forms.get('provider')
-    id = request.forms.get('subid')
+    subtitle = request.forms.get('subtitle')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
@@ -1434,7 +1434,7 @@ def manual_get_subtitle():
         providers_auth = None
 
     try:
-        result = manual_download_subtitle(episodePath, language, hi, id, selected_provider, providers_auth, sceneName, 'series')
+        result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth, sceneName, 'series')
         if result is not None:
             history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
@@ -1536,7 +1536,7 @@ def manual_get_subtitle_movie():
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     selected_provider = request.forms.get('provider')
-    id = request.forms.get('subid')
+    subtitle = request.forms.get('subtitle')
     radarrId = request.forms.get('radarrId')
 
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -1554,7 +1554,7 @@ def manual_get_subtitle_movie():
         providers_auth = None
 
     try:
-        result = manual_download_subtitle(moviePath, language, hi, id, selected_provider, providers_auth, sceneName, 'movie')
+        result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth, sceneName, 'movie')
         if result is not None:
             history_log_movie(1, radarrId, result)
             send_notifications_movie(radarrId, result)
