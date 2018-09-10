@@ -27,7 +27,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     if media_type == 'series':
         type_of_score = 360
         minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
-    elif media_type == 'movies':
+    elif media_type == 'movie':
         type_of_score = 120
         minimum_score = float(get_general_settings()[22]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
@@ -64,7 +64,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             else:
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single is True:
@@ -166,10 +166,14 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             return(subtitles_dict)
 
-def manual_download_subtitle(path, language, id, provider, providers_auth, sceneName, media_type):
+def manual_download_subtitle(path, language, hi, id, provider, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
     if media_type == 'series':
         type_of_score = 360
-    elif media_type == 'movies':
+    elif media_type == 'movie':
         type_of_score = 120
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
@@ -199,17 +203,22 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
             return None
         else:
             try:
+                best_subtitle = None
                 for s in subtitles[video]:
                     if s.id == id:
                         best_subtitle = s
                         download_subtitles([best_subtitle])
-            except:
-                logging.debug('No subtitles found for ' + path)
+            except Exception as e:
+                logging.exception('Error downloading subtitles for ' + path)
                 return None
             else:
+                if best_subtitle == None:
+                    logging.error('Error trying to download subtitles for this file: ' + path + ". Please try again.")
+                    return None
+
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single is True:
@@ -225,10 +234,7 @@ def manual_download_subtitle(path, language, id, provider, providers_auth, scene
                     downloaded_language_code2 = alpha2_from_alpha3(language)
                     downloaded_language_code3 = language
                     downloaded_path = result[1]
-                    if used_sceneName == True:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name: " + sceneName
-                    else:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
+                    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
 
                     if use_postprocessing is True:
                         command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
@@ -326,7 +332,7 @@ def movies_download_subtitles(no):
 
     for language in ast.literal_eval(movie[1]):
         if language is not None:
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movies')
+            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movie')
             if message is not None:
                 store_subtitles_movie(path_replace_movie(movie[0]))
                 history_log_movie(1, no, message)
@@ -436,7 +442,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
+                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movie')
                         if message is not None:
                             store_subtitles_movie(path_replace_movie(movie[0]))
                             list_missing_subtitles_movies(movie[3])

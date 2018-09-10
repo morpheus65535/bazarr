@@ -1,4 +1,4 @@
-bazarr_version = '0.6.1'
+bazarr_version = '0.6.2'
 
 import gc
 gc.enable()
@@ -1413,6 +1413,7 @@ def manual_get_subtitle():
     episodePath = request.forms.get('episodePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
+    hi = request.forms.get('hi')
     selected_provider = request.forms.get('provider')
     id = request.forms.get('subid')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
@@ -1433,7 +1434,7 @@ def manual_get_subtitle():
         providers_auth = None
 
     try:
-        result = manual_download_subtitle(episodePath, language, id, selected_provider, providers_auth, sceneName, 'series')
+        result = manual_download_subtitle(episodePath, language, hi, id, selected_provider, providers_auth, sceneName, 'series')
         if result is not None:
             history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
@@ -1479,7 +1480,81 @@ def get_subtitle_movie():
         providers_auth = None
 
     try:
-        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movies')
+        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
+        if result is not None:
+            history_log_movie(1, radarrId, result)
+            send_notifications_movie(radarrId, result)
+            store_subtitles_movie(unicode(moviePath))
+            list_missing_subtitles_movies(radarrId)
+        redirect(ref)
+    except OSError:
+        pass
+
+@route(base_url + 'manual_search_movie', method='POST')
+@custom_auth_basic(check_credentials)
+def manual_search_movie_json():
+    ref = request.environ['HTTP_REFERER']
+
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
+    enabled_providers = c.fetchall()
+    c.close()
+
+    providers_list = []
+    providers_auth = {}
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+            try:
+                if provider[2] is not '' and provider[3] is not '':
+                    provider_auth = providers_auth.append(provider[0])
+                    provider_auth.update({'username':providers[2], 'password':providers[3]})
+                else:
+                    providers_auth = None
+            except:
+                providers_auth = None
+    else:
+        providers_list = None
+        providers_auth = None
+
+    data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
+    return dict(data=data)
+
+@route(base_url + 'manual_get_subtitle_movie', method='POST')
+@custom_auth_basic(check_credentials)
+def manual_get_subtitle_movie():
+    ref = request.environ['HTTP_REFERER']
+
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    selected_provider = request.forms.get('provider')
+    id = request.forms.get('subid')
+    radarrId = request.forms.get('radarrId')
+
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    provider = c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
+    c.close()
+    providers_auth = {}
+    try:
+        if provider[2] is not '' and provider[3] is not '':
+            provider_auth = providers_auth.append(provider[0])
+            provider_auth.update({'username':providers[2], 'password':providers[3]})
+        else:
+            providers_auth = None
+    except:
+        providers_auth = None
+
+    try:
+        result = manual_download_subtitle(moviePath, language, hi, id, selected_provider, providers_auth, sceneName, 'movie')
         if result is not None:
             history_log_movie(1, radarrId, result)
             send_notifications_movie(radarrId, result)

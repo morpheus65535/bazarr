@@ -332,10 +332,12 @@
 
 <script>
 	$('#scan_disk').click(function(){
+		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk/{{no}}';
 	})
 
 	$('#search_missing_subtitles').click(function(){
+		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}search_missing_subtitles/{{no}}';
 	})
 

@@ -4,8 +4,12 @@
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
-		
+		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
+		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
+		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.css">
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
+
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
@@ -61,6 +65,16 @@
 			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
 				background: transparent !important;
 			}
+
+			.criteria_matched {
+				background-color: #e6ffe6 !important;
+				line-height: 0 !important;
+			}
+
+			.criteria_not_matched {
+				background-color: #ffcccc !important;
+				line-height: 0 !important;
+			}
 		</style>
 	</head>
 	<body>
@@ -70,7 +84,7 @@
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 		
@@ -89,6 +103,9 @@
 						end
 					end
 					%>
+					%if subs_languages is not None:
+					<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
+					%end
 					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
 				<h2>
@@ -175,7 +192,7 @@
 			</div>
 		</div>
 
-		<div class="ui small modal">
+		<div class="config_dialog ui small modal">
 			<i class="close icon"></i>
 			<div class="header">
 				<div id="movie_title"></div>
@@ -231,65 +248,97 @@
 			</div>
 		</div>
 
+		<div class="search_dialog ui modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<span id="movie_title_span"></span>
+			</div>
+			<div class="scrolling content">
+				<table id="search_result" class="display" style="width:100%">
+					<thead>
+						<tr>
+							<th style="text-align: left;">Score:</th>
+							<th style="text-align: left;">Language:</th>
+							<th style="text-align: left;">Hearing-impaired:</th>
+							<th style="text-align: left;">Provider:</th>
+							<th style="text-align: left;">Based on:</th>
+							<th></th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
+			</div>
+		</div>
+
 		% include('footer.tpl')
 	</body>
 </html>
 
 <script>
 	$('#scan_disk').click(function(){
+		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
 	})
 
 	$('#search_missing_subtitles').click(function(){
+		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}search_missing_subtitles_movie/{{no}}';
 	})
 
 	$('.remove_subtitles').click(function(){
-		    var values = {
-		            moviePath: $(this).attr("data-moviePath"),
-		            language: $(this).attr("data-language"),
-		            subtitlesPath: $(this).attr("data-subtitlesPath"),
-		            radarrId: $(this).attr("data-radarrId"),
-		            tmdbid: {{tmdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}remove_subtitles_movie",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+			moviePath: $(this).attr("data-moviePath"),
+			language: $(this).attr("data-language"),
+			subtitlesPath: $(this).attr("data-subtitlesPath"),
+			radarrId: $(this).attr("data-radarrId"),
+			tmdbid: {{tmdbid}}
+		};
+
+		$('#loader_text').text("Deleting subtitle from disk...");
+
+		$.ajax({
+			url: "{{base_url}}remove_subtitles_movie",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
 	$('.get_subtitle').click(function(){
-		    var values = {
-		            moviePath: $(this).attr("data-moviePath"),
-		            sceneName: $(this).attr("data-sceneName"),
-		            language: $(this).attr("data-language"),
-		            hi: $(this).attr("data-hi"),
-		            radarrId: $(this).attr("data-radarrId"),
-		            tmdbid: {{tmdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}get_subtitle_movie",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+			moviePath: $(this).attr("data-moviePath"),
+			sceneName: $(this).attr("data-sceneName"),
+			language: $(this).attr("data-language"),
+			hi: $(this).attr("data-hi"),
+			radarrId: $(this).attr("data-radarrId"),
+			tmdbid: {{tmdbid}}
+		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+
+		$.ajax({
+			url: "{{base_url}}get_subtitle_movie",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
-	$('a, .menu .item, button:not(#config, .cancel)').click(function(){
+	$('a, .menu .item, button:not(#config, .cancel, .manual_search)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -317,6 +366,126 @@
 			$("#movie_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.small.modal').modal('show');
+		$('.config_dialog')
+			.modal({
+				centered: true
+			})
+			.modal('show')
+		;
 	})
+
+	$('.manual_search').click(function(){
+		$("#movie_title_span").html($(this).data("movie_title"));
+
+		moviePath = $(this).attr("data-moviePath"),
+		sceneName = $(this).attr("data-sceneName"),
+		language = $(this).attr("data-language"),
+		hi = $(this).attr("data-hi"),
+		radarrId = $(this).attr("data-radarrId")
+
+		var values = {
+			moviePath: moviePath,
+			sceneName: sceneName,
+			language: language,
+			hi: hi,
+			radarrId: radarrId
+		};
+
+		$('#search_result').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No subtitles found for this movie'
+		    },
+		    paging: true,
+    		searching: false,
+    		ordering: false,
+    		processing: false,
+        	serverSide: false,
+        	lengthMenu: [ [ 5, 10, 25, 50, 100 , -1 ] , [ 5, 10, 25, 50, 100, "All" ] ],
+    		ajax: {
+				url: '{{base_url}}manual_search_movie',
+				type: 'POST',
+                data: values
+			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+			},
+			columns: [
+				{ data: 'score',
+				render: function ( data, type, row ) {
+        			return data +'%';
+    				}
+				},
+				{ data: 'language' },
+				{ data: 'hearing_impaired' },
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+					var array_matches = data.matches;
+					var array_dont_matches = data.dont_matches;
+					var i;
+					text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">'
+					text += array_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_matches.length; i++) {
+						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">'
+					text += array_dont_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_dont_matches.length; i++) {
+						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+        			return text;
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, moviePath, sceneName, hi, radarrId)" data-subid="'+data.id+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
+    				}
+				}
+			]
+		} );
+
+		$('.search_dialog')
+			.modal({
+				centered: false
+			})
+			.modal('show')
+		;
+	})
+
+	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
+		var values = {
+				subid: $(button).attr("data-subid"),
+				provider: $(button).attr("data-provider"),
+				moviePath: moviePath,
+				sceneName: sceneName,
+				language: $(button).attr("data-language"),
+				hi: hi,
+				radarrId: radarrId
+		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader').addClass('active');
+
+		$('.search_dialog').modal('hide');
+
+		$.ajax({
+			url: "{{base_url}}manual_get_subtitle_movie",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
+	}
 </script>
