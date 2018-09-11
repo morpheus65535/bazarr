@@ -234,7 +234,7 @@ def get_sonarr_settings():
             base_url = '/'
 
         if cfg.has_option('sonarr', 'ssl'):
-            ssl = cfg.get('sonarr', 'ssl')
+            ssl = cfg.getboolean('sonarr', 'ssl')
         else:
             ssl = False
 
@@ -300,7 +300,7 @@ def get_radarr_settings():
             base_url = '/'
 
         if cfg.has_option('radarr', 'ssl'):
-            ssl = cfg.get('radarr', 'ssl')
+            ssl = cfg.getboolean('radarr', 'ssl')
         else:
             ssl = False
 

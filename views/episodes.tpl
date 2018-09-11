@@ -4,7 +4,12 @@
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
+		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
+		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.css">
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
+
 		
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
@@ -60,6 +65,16 @@
 			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
 				background: transparent !important;
 			}
+
+			.criteria_matched {
+				background-color: #e6ffe6 !important;
+				line-height: 0 !important;
+			}
+
+			.criteria_not_matched {
+				background-color: #ffcccc !important;
+				line-height: 0 !important;
+			}
 		</style>
 
 		<script>
@@ -79,7 +94,7 @@
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 		
@@ -151,8 +166,9 @@
 										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
 										<th>Title</th>
-										<th class="collapsing">Existing subtitles</th>
-										<th class="collapsing">Missing subtitles</th>
+										<th class="collapsing">Existing<br>subtitles</th>
+										<th class="collapsing">Missing<br>subtitles</th>
+										<th class="collapsing">Manual<br>search</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -201,7 +217,7 @@
 											%end
 											%if missing_languages is not None:
                                                 %for language in missing_languages:
-                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="get_subtitle ui tiny label">
+                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													{{language}}
 													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 												</a>
@@ -210,6 +226,11 @@
 										%except:
 											%pass
 										%end
+										</td>
+										<td>
+											%if subs_languages is not None:
+											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											%end
 										</td>
 									</tr>
 								%end
@@ -222,7 +243,7 @@
 			%end
 		</div>
 
-		<div class="ui small modal">
+		<div class="config_dialog ui small modal">
 			<i class="close icon"></i>
 			<div class="header">
 				<div id="series_title"></div>
@@ -281,67 +302,98 @@
 			</div>
 		</div>
 
+		<div class="search_dialog ui modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
+			</div>
+			<div class="scrolling content">
+				<table id="search_result" class="display" style="width:100%">
+					<thead>
+						<tr>
+							<th style="text-align: left;">Score:</th>
+							<th style="text-align: left;">Language:</th>
+							<th style="text-align: left;">Hearing-impaired:</th>
+							<th style="text-align: left;">Provider:</th>
+							<th style="text-align: left;">Based on:</th>
+							<th></th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
+			</div>
+		</div>
+
 		% include('footer.tpl')
 	</body>
 </html>
 
 <script>
 	$('#scan_disk').click(function(){
+		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk/{{no}}';
 	})
 
 	$('#search_missing_subtitles').click(function(){
+		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}search_missing_subtitles/{{no}}';
 	})
 
 	$('.remove_subtitles').click(function(){
-		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
-		            language: $(this).attr("data-language"),
-		            subtitlesPath: $(this).attr("data-subtitlesPath"),
-		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-		            tvdbid: {{tvdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}remove_subtitles",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+			episodePath: $(this).attr("data-episodePath"),
+			language: $(this).attr("data-language"),
+			subtitlesPath: $(this).attr("data-subtitlesPath"),
+			sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
+			sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+			tvdbid: {{tvdbid}}
+		};
+
+		$('#loader_text').text("Deleting subtitle from disk...");
+
+		$.ajax({
+			url: "{{base_url}}remove_subtitles",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
 	$('.get_subtitle').click(function(){
-		    var values = {
-		            episodePath: $(this).attr("data-episodePath"),
-		            sceneName: $(this).attr("data-sceneName"),
-		            language: $(this).attr("data-language"),
-		            hi: $(this).attr("data-hi"),
-		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-		            tvdbid: {{tvdbid}}
-		    };
-		    $.ajax({
-		        url: "{{base_url}}get_subtitle",
-		        type: "POST",
-		        dataType: "json",
-				data: values
-		    });
-		    $(document).ajaxStart(function(){
-				$('#loader').addClass('active');
-			});
-		    $(document).ajaxStop(function(){
-				window.location.reload();
-			});
+		var values = {
+			episodePath: $(this).attr("data-episodePath"),
+			sceneName: $(this).attr("data-sceneName"),
+			language: $(this).attr("data-language"),
+			hi: $(this).attr("data-hi"),
+			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
+			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId')
+		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+
+		$.ajax({
+			url: "{{base_url}}get_subtitle",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStart(function(){
+			$('#loader').addClass('active');
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
 	})
 
-	$('a, .menu .item, button:not(#config, .cancel)').click(function(){
+	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -369,6 +421,132 @@
 			$("#series_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.small.modal').modal('show');
+		$('.config_dialog')
+			.modal({
+				centered: true
+			})
+			.modal('show')
+		;
 	})
+
+	$('.manual_search').click(function(){
+		$("#series_title_span").html($(this).data("series_title"));
+		$("#season").html($(this).data("season"));
+		$("#episode").html($(this).data("episode"));
+		$("#episode_title").html($(this).data("episode_title"));
+
+		episodePath = $(this).attr("data-episodePath"),
+		sceneName = $(this).attr("data-sceneName"),
+		language = $(this).attr("data-language"),
+		hi = $(this).attr("data-hi"),
+		sonarrSeriesId = $(this).attr("data-sonarrSeriesId"),
+		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId")
+
+		var values = {
+			episodePath: episodePath,
+			sceneName: sceneName,
+			language: language,
+			hi: hi,
+			sonarrSeriesId: sonarrSeriesId,
+			sonarrEpisodeId: sonarrEpisodeId
+		};
+
+		$('#search_result').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No subtitles found for this episode'
+		    },
+		    paging: true,
+    		searching: false,
+    		ordering: false,
+    		processing: false,
+        	serverSide: false,
+        	lengthMenu: [ [ 5, 10, 25, 50, 100 , -1 ] , [ 5, 10, 25, 50, 100, "All" ] ],
+    		ajax: {
+				url: '{{base_url}}manual_search',
+				type: 'POST',
+                data: values
+			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+			},
+			columns: [
+				{ data: 'score',
+				render: function ( data, type, row ) {
+        			return data +'%';
+    				}
+				},
+				{ data: 'language' },
+				{ data: 'hearing_impaired' },
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+					var array_matches = data.matches;
+					var array_dont_matches = data.dont_matches;
+					var i;
+					text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">'
+					text += array_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_matches.length; i++) {
+						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">'
+					text += array_dont_matches.length;
+					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					for (i = 0; i < array_dont_matches.length; i++) {
+						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
+					}
+					text += '</div></div>';
+        			return text;
+    				}
+				},
+				{ data: null,
+				render: function ( data, type, row ) {
+        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId)" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
+    				}
+				}
+			]
+		} );
+
+		$('.search_dialog')
+			.modal({
+				centered: false
+			})
+			.modal('show')
+		;
+	})
+
+	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
+		var values = {
+				subtitle: $(button).attr("data-subtitle"),
+				provider: $(button).attr("data-provider"),
+				episodePath: episodePath,
+				sceneName: sceneName,
+				language: $(button).attr("data-language"),
+				hi: hi,
+				sonarrSeriesId: sonarrSeriesId,
+				sonarrEpisodeId: sonarrEpisodeId
+		};
+
+		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader').addClass('active');
+
+		$('.search_dialog').modal('hide');
+
+		$.ajax({
+			url: "{{base_url}}manual_get_subtitle",
+			type: "POST",
+			dataType: "json",
+			data: values
+		});
+		$(document).ajaxStop(function(){
+			window.location.reload();
+		});
+	}
 </script>
