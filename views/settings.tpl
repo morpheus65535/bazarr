@@ -1541,6 +1541,15 @@
                         }
                     ]
                 },
+                settings_auth_password : {
+                    depends: 'settings_auth_username',
+                    rules : [
+                        {
+                            type : 'empty',
+                            prompt : 'This field must have a value and you must type it again if you change your username.'
+                        }
+                    ]
+                },
                 settings_sonarr_ip : {
                     depends: 'settings_general_use_sonarr',
                     rules : [
@@ -1654,6 +1663,12 @@
     });
 
     $('#settings_form').focusout(function() {
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $('#settings_auth_username').keyup(function() {
+    	$('#settings_auth_password').val('');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     })
