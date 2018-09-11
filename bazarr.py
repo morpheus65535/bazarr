@@ -111,7 +111,7 @@ session_opts = {
     'session.cookie_expires': True,
     'session.key': 'Bazarr',
     'session.httponly': True,
-    'session.timeout': 3600 * 24,  # 1 day TODO: Decide how long keep cookies
+    'session.timeout': 3600 * 24,  # 1 day
     'session.type': 'cookie',
     'session.validate_key': True
 }
@@ -149,10 +149,6 @@ def authorize():
     if login_auth == 'form':
         aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
         aaa.require(fail_redirect=(base_url + 'login'))
-
-
-def postd():
-    return bottle.request.forms
 
 
 def post_get(name, default=''):
@@ -783,7 +779,6 @@ def settings():
 
     return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
-
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
 def save_settings():
@@ -899,8 +894,7 @@ def save_settings():
 
     if get_auth_settings()[0] != settings_auth_type:
         configured()
-    before_auth_password = (unicode(settings_auth[0]), unicode(settings_auth[2]))
-    if before_auth_password[1] == settings_auth_password:
+    if settings_auth[2] == settings_auth_password:
         cfg.set('auth', 'type', text_type(settings_auth_type))
         cfg.set('auth', 'username', text_type(settings_auth_username))
     else:
@@ -924,7 +918,7 @@ def save_settings():
         else:
             aaa._beaker_session.delete()
     else:
-        if before_auth_password[1] != settings_auth_password:
+        if settings_auth[2] != settings_auth_password:
             aaa.user(settings_auth_username).update(role='', pwd=settings_auth_password)
             if settings_auth_type == 'basic' or settings_auth_type == 'None':
                 pass

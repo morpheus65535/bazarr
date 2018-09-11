@@ -251,6 +251,7 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
                 </div>
 
                 <div class="ui dividing header">Integration settings</div>
