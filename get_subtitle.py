@@ -77,7 +77,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     downloaded_language_code3 = language
                     downloaded_path = result[1]
                     if used_sceneName == True:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name obtained from Sonarr: " + sceneName
+                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name: " + sceneName
                     else:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using filename guessing."
 
