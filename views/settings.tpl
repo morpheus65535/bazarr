@@ -42,7 +42,7 @@
         % include('menu.tpl')
 
         <div id="fondblanc" class="ui container">
-            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form">
+            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form" autocomplete="off">
             <div id="form_validation_error" class="ui error message">
                 <p>Some fields are in error and you can't save settings until you have corrected them. Be sure to check in every tabs.</p>
             </div>
@@ -191,14 +191,17 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use basic authentication</label>
+                                <label>Authentication</label>
                             </div>
-                            <div class="one wide column">
-                                <div id="settings_use_auth" class="ui toggle checkbox" data-enabled={{settings_auth[0]}}>
-                                    <input name="settings_general_auth_enabled" type="checkbox">
+                            <div class="five wide column">
+                                <select name="settings_auth_type" id="settings_auth_type" class="ui fluid selection dropdown">
+                                    <option value="None">None</option>
+                                    <option value="basic">Basic (Browser Popup)</option>
+                                    <option value="form">Forms (Login Page)</option>
+                                </select>
                                     <label></label>
                                 </div>
-                            </div>
+
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
@@ -208,41 +211,41 @@
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable basic authentication to access Bazarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Require Username and Password to access Bazarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="auth_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Username</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_general_auth_username" name="settings_general_auth_username" type="text" value="{{settings_auth[1]}}">
+                                        <input id="settings_auth_username" name="settings_auth_username" type="text" autocomplete="nope" value="{{settings_auth[1]}}">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="auth_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Password</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_general_auth_password" name="settings_general_auth_password" type="password" value="{{settings_auth[2]}}">
+                                        <input id="settings_auth_password" name="settings_auth_password" type="password" autocomplete="new-password" value="{{settings_auth[2]}}">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Basic auth transmit username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Authentication send username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1286,26 +1289,6 @@
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
-    if ($('#settings_use_auth').data("enabled") == "True") {
-                $("#settings_use_auth").checkbox('check');
-                $("#settings_general_auth_username").parent().removeClass('disabled');
-                $("#settings_general_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_use_auth").checkbox('uncheck');
-                $("#settings_general_auth_username").parent().addClass('disabled');
-                $("#settings_general_auth_password").parent().addClass('disabled');
-            }
-
-    $("#settings_use_auth").change(function(i, obj) {
-        if ($("#settings_use_auth").checkbox('is checked')) {
-                $("#settings_general_auth_username").parent().removeClass('disabled');
-                $("#settings_general_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_general_auth_username").parent().addClass('disabled');
-                $("#settings_general_auth_password").parent().addClass('disabled');
-            }
-    });
-
     if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
                 $("#settings_use_postprocessing").checkbox('check');
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
@@ -1354,6 +1337,19 @@
         onUnchecked: function() {
             $("#radarr_tab").addClass('disabled');
         }
+    });
+
+    if ($('#settings_auth_type').val() == "None") {
+        $('.auth_option').hide();
+    };
+
+    $('#settings_auth_type').dropdown('setting', 'onChange', function(){
+        if ($('#settings_auth_type').val() == "None") {
+            $('.auth_option').hide();
+        }
+        else {
+            $('.auth_option').show();
+        };
     });
 
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
@@ -1514,6 +1510,8 @@
     %if settings_general[19] is not None:
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
+    $('#settings_auth_type').dropdown('clear');
+    $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();
     $('#settings_radarr_sync').dropdown();
@@ -1544,19 +1542,12 @@
                         }
                     ]
                 },
-                settings_general_auth_username : {
-                    depends: 'settings_general_auth_enabled',
+                settings_auth_password : {
+                    depends: 'settings_auth_username',
                     rules : [
                         {
-                            type : 'empty'
-                        }
-                    ]
-                },
-                settings_general_auth_password : {
-                    depends: 'settings_general_auth_enabled',
-                    rules : [
-                        {
-                            type : 'empty'
+                            type : 'empty',
+                            prompt : 'This field must have a value and you must type it again if you change your username.'
                         }
                     ]
                 },
@@ -1673,6 +1664,12 @@
     });
 
     $('#settings_form').focusout(function() {
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $('#settings_auth_username').keyup(function() {
+    	$('#settings_auth_password').val('');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     })
