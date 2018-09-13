@@ -1,7 +1,7 @@
 # bazarr
-Bazarr is a companion application to Sonarr and Radarr. It manage and download subtitles based on your requirements. You defined your preferences by TV show and movies and Bazarr take care of everything for you.
+Bazarr is a companion application to Sonarr and Radarr. It can manage and download subtitles based on your requirements. You define your preferences by TV show or movie and Bazarr takes care of everything for you.
 
-Be aware that Bazarr doesn't scan disk to detect series and movies: it's only taking care of the series and movies indexed in Sonarr and Radarr.
+Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
 # Status
 [![Build status](https://travis-ci.org/morpheus65535/bazarr.svg?branch=master)](https://travis-ci.org/morpheus65535/bazarr)
