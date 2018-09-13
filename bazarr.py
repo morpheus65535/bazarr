@@ -62,16 +62,12 @@ bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/')
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
-from json import dumps
 import itertools
 import operator
 import requests
 import pretty
 from datetime import datetime, timedelta
-from PIL import Image
 from io import BytesIO
-from fdsend import send_file
-import urllib
 import math
 import ast
 import hashlib
@@ -159,15 +155,14 @@ def image_proxy(url):
     apikey = get_sonarr_settings()[4]
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
-        img_pil = Image.open(BytesIO(requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content))
+        image_buffer = BytesIO(requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content)
     except:
         return None
     else:
-        img_buffer = BytesIO()
-        img_pil.tobytes()
-        img_pil.save(img_buffer, img_pil.format)
-        img_buffer.seek(0)
-        return send_file(img_buffer, ctype=img_pil.format)
+        image_buffer.seek(0)
+        bytes = image_buffer.read()
+        response.set_header('Content-type', 'image/jpeg')
+        return bytes
 
 @route(base_url + 'image_proxy_movies/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -177,16 +172,15 @@ def image_proxy_movies(url):
     apikey = get_radarr_settings()[4]
     try:
         url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
-        img_pil = Image.open(BytesIO(requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content))
+        image_buffer = BytesIO(requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
     except:
         url_image = url_radarr_short + '/' + url + '?apikey=' + apikey
-        img_pil = Image.open(BytesIO(requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content))
-
-    img_buffer = BytesIO()
-    img_pil.tobytes()
-    img_pil.save(img_buffer, img_pil.format)
-    img_buffer.seek(0)
-    return send_file(img_buffer, ctype=img_pil.format)
+        image_buffer = BytesIO(requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
+    else:
+        image_buffer.seek(0)
+        bytes = image_buffer.read()
+        response.set_header('Content-type', 'image/jpeg')
+        return bytes
 
 
 @route(base_url)
@@ -1586,6 +1580,17 @@ def api_history():
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
     c.close()
     return dict(subtitles=data)
+
+@route(base_url + 'test_url/<url:path>', method='GET')
+@custom_auth_basic(check_credentials)
+def test_url(url):
+    try:
+        result = requests.get(url).json()['version']
+    except:
+        return dict(status=False, version=result)
+    else:
+        return dict(status=True, version=result)
+
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress')

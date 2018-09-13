@@ -571,12 +571,29 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Settings validation:</label>
+                            </div>
+                            <div class="two wide column">
+                                <button id="sonarr_validate" class="test ui blue button" type="button">
+                                    Test
+                                </button>
+                            </div>
+                            <div class="seven wide column">
+                                <div id="sonarr_validated" class="ui read-only checkbox">
+                                    <input id="sonarr_validated_checkbox" type="checkbox">
+                                    <label id="sonarr_validation_result">Not tested recently</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Hostname or IP address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_sonarr_ip" type="text" value="{{settings_sonarr[0]}}">
+                                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text" value="{{settings_sonarr[0]}}">
                                     </div>
                                 </div>
                             </div>
@@ -594,7 +611,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_sonarr_port" type="text" value="{{settings_sonarr[1]}}">
+                                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text" value="{{settings_sonarr[1]}}">
                                     </div>
                                 </div>
                             </div>
@@ -611,7 +628,7 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_sonarr_baseurl" type="text" value="{{settings_sonarr[2]}}">
+                                    <input id="settings_sonarr_baseurl" name="settings_sonarr_baseurl" class="sonarr_config" type="text" value="{{settings_sonarr[2]}}">
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
@@ -627,7 +644,7 @@
                             </div>
                             <div class="one wide column">
                                 <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_sonarr[3]}}>
-                                    <input name="settings_sonarr_ssl" type="checkbox">
+                                    <input id="settings_sonarr_ssl" name="settings_sonarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
                             </div>
@@ -640,7 +657,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_sonarr_apikey" type="text" value="{{settings_sonarr[4]}}">
+                                        <input id="settings_sonarr_apikey" name="settings_sonarr_apikey" class="sonarr_config" type="text" value="{{settings_sonarr[4]}}">
                                     </div>
                                 </div>
                             </div>
@@ -680,12 +697,29 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Settings validation:</label>
+                            </div>
+                            <div class="two wide column">
+                                <button id="radarr_validate" class="test ui blue button" type="button">
+                                    Test
+                                </button>
+                            </div>
+                            <div class="seven wide column">
+                                <div id="radarr_validated" class="ui read-only checkbox">
+                                    <input id="radarr_validated_checkbox" type="checkbox">
+                                    <label id="radarr_validation_result">Not tested recently</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Hostname or IP address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_radarr_ip" type="text" value="{{settings_radarr[0]}}">
+                                        <input id="settings_radarr_ip" name="settings_radarr_ip" type="text" class="radarr_config" value="{{settings_radarr[0]}}">
                                     </div>
                                 </div>
                             </div>
@@ -703,7 +737,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_radarr_port" type="text" value="{{settings_radarr[1]}}">
+                                        <input id="settings_radarr_port" name="settings_radarr_port" type="text" class="radarr_config" value="{{settings_radarr[1]}}">
                                     </div>
                                 </div>
                             </div>
@@ -720,7 +754,7 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_radarr_baseurl" type="text" value="{{settings_radarr[2]}}">
+                                    <input id="settings_radarr_baseurl" name="settings_radarr_baseurl" type="text" class="radarr_config" value="{{settings_radarr[2]}}">
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
@@ -736,7 +770,7 @@
                             </div>
                             <div class="one wide column">
                                 <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_radarr[3]}}>
-                                    <input name="settings_radarr_ssl" type="checkbox">
+                                    <input id="settings_radarr_ssl" name="settings_radarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
                             </div>
@@ -749,7 +783,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_radarr_apikey" type="text" value="{{settings_radarr[4]}}">
+                                        <input id="settings_radarr_apikey" name="settings_radarr_apikey" type="text" class="radarr_config" value="{{settings_radarr[4]}}">
                                     </div>
                                 </div>
                             </div>
@@ -1230,7 +1264,7 @@
         .tab()
     ;
 
-    $('a:not(.tabs), button:not(.cancel)').click(function(){
+    $('a:not(.tabs), button:not(.cancel, .test)').click(function(){
         $('#loader').addClass('active');
     })
 
@@ -1333,6 +1367,9 @@
     $('#settings_use_sonarr').checkbox({
         onChecked: function() {
             $("#sonarr_tab").removeClass('disabled');
+            $('#sonarr_validated').checkbox('uncheck');
+            $('.form').form('validate form');
+            $('#loader').removeClass('active');
         },
         onUnchecked: function() {
             $("#sonarr_tab").addClass('disabled');
@@ -1350,6 +1387,9 @@
     $('#settings_use_radarr').checkbox({
         onChecked: function() {
             $("#radarr_tab").removeClass('disabled');
+            $('#sonarr_validated').checkbox('uncheck');
+            $('.form').form('validate form');
+            $('#loader').removeClass('active');
         },
         onUnchecked: function() {
             $("#radarr_tab").addClass('disabled');
@@ -1560,6 +1600,14 @@
                         }
                     ]
                 },
+                sonarr_validated_checkbox : {
+                    depends: 'settings_general_use_sonarr',
+                    rules : [
+                        {
+                            type : 'checked'
+                        }
+                    ]
+                },
                 settings_sonarr_ip : {
                     depends: 'settings_general_use_sonarr',
                     rules : [
@@ -1587,6 +1635,14 @@
                         },
                         {
                             type : 'empty'
+                        }
+                    ]
+                },
+                radarr_validated_checkbox : {
+                    depends: 'settings_general_use_radarr',
+                    rules : [
+                        {
+                            type : 'checked'
                         }
                     ]
                 },
@@ -1676,4 +1732,82 @@
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     })
+
+    $('#sonarr_validate').click(function() {
+        if ($('#sonarr_ssl_div').checkbox('is checked')) {
+            sonarr_url = 'https://';
+        } else {
+            sonarr_url = 'http://';
+        }
+        sonarr_url += $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + "/" + $('#settings_sonarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
+
+        $.getJSON("{{base_url}}test_url/" + encodeURIComponent(sonarr_url), function (data) {
+            if (data.status) {
+                $('#sonarr_validated').checkbox('check');
+                $('#sonarr_validation_result').text('Test successful: Sonarr v' + data.version).css('color', 'green');
+                $('.form').form('validate form');
+                $('#loader').removeClass('active');
+            } else {
+                $('#sonarr_validated').checkbox('uncheck');
+                $('#sonarr_validation_result').text('Test failed').css('color', 'red');
+                $('.form').form('validate form');
+                $('#loader').removeClass('active');
+            }
+        });
+    })
+
+    $('.sonarr_config').keyup(function() {
+        $('#sonarr_validated').checkbox('uncheck');
+        $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $('#settings_sonarr_ssl').change(function() {
+        $('#sonarr_validated').checkbox('uncheck');
+        $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $("#sonarr_validated").checkbox('check');
+
+    $('#radarr_validate').click(function() {
+        if ($('#radarr_ssl_div').checkbox('is checked')) {
+            radarr_url = 'https://';
+        } else {
+            radarr_url = 'http://';
+        }
+        radarr_url += $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + "/" + $('#settings_radarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
+
+        $.getJSON("{{base_url}}test_url/" + encodeURIComponent(radarr_url), function (data) {
+            if (data.status) {
+                $('#radarr_validated').checkbox('check');
+                $('#radarr_validation_result').text('Test successful: Radarr v' + data.version).css('color', 'green');
+                $('.form').form('validate form');
+                $('#loader').removeClass('active');
+            } else {
+                $('#radarr_validated').checkbox('uncheck');
+                $('#radarr_validation_result').text('Test failed').css('color', 'red');
+                $('.form').form('validate form');
+                $('#loader').removeClass('active');
+            }
+        });
+    })
+
+    $('.radarr_config').keyup(function() {
+        $('#radarr_validated').checkbox('uncheck');
+        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $('#settings_radarr_ssl').change(function() {
+        $('#radarr_validated').checkbox('uncheck');
+        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('.form').form('validate form');
+        $('#loader').removeClass('active');
+    })
+
+    $("#radarr_validated").checkbox('check');
 </script>
