@@ -3,7 +3,7 @@ bazarr_version = '0.6.2'
 import gc
 gc.enable()
 
-from get_argv import config_dir
+from get_argv import config_dir, no_update
 
 import os
 import sys
@@ -12,7 +12,8 @@ sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
 
 import sqlite3
-from update_modules import *
+if no_update is False:
+    from update_modules import *
 from init import *
 from update_db import *
 
@@ -82,7 +83,8 @@ from get_providers import *
 from get_series import *
 from get_episodes import *
 from get_settings import base_url, ip, port, path_replace, path_replace_movie
-from check_update import check_and_apply_update
+if no_update is False:
+    from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle
 from utils import history_log, history_log_movie
@@ -1229,7 +1231,8 @@ def check_update():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    check_and_apply_update()
+    if no_update is False:
+        check_and_apply_update()
 
     redirect(ref)
 
