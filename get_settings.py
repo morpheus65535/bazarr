@@ -60,7 +60,7 @@ def get_general_settings():
         if cfg.has_option('general', 'minimum_score'):
             minimum_score = cfg.get('general', 'minimum_score')
         else:
-            minimum_score = '100'
+            minimum_score = '90'
 
         if cfg.has_option('general', 'use_scenename'):
             use_scenename = cfg.getboolean('general', 'use_scenename')
@@ -130,7 +130,7 @@ def get_general_settings():
         if cfg.has_option('general', 'minimum_score_movie'):
             minimum_score_movie = cfg.get('general', 'minimum_score_movie')
         else:
-            minimum_score_movie = '100'
+            minimum_score_movie = '70'
 
         if cfg.has_option('general', 'use_embedded_subs'):
             use_embedded_subs = cfg.getboolean('general', 'use_embedded_subs')
@@ -156,7 +156,7 @@ def get_general_settings():
         branch = 'master'
         auto_update = True
         single_language = False
-        minimum_score = '100'
+        minimum_score = '90'
         use_scenename = False
         use_postprocessing = False
         postprocessing_cmd = False
@@ -170,7 +170,7 @@ def get_general_settings():
         movie_default_language = []
         movie_default_hi = False
         page_size = '25'
-        minimum_score_movie = '100'
+        minimum_score_movie = '70'
         use_embedded_subs = False
         only_monitored = False
         adaptive_searching = False
@@ -187,10 +187,10 @@ def get_auth_settings():
         pass
 
     if cfg.has_section('auth'):
-        if cfg.has_option('auth', 'enabled'):
-            enabled = cfg.getboolean('auth', 'enabled')
+        if cfg.has_option('auth', 'type'):
+            type = cfg.get('auth', 'type')
         else:
-            enabled = False
+            type = None
 
         if cfg.has_option('auth', 'username'):
             username = cfg.get('auth', 'username')
@@ -202,11 +202,11 @@ def get_auth_settings():
         else:
             password = ''
     else:
-        enabled = False
+        type = None
         username = ''
         password = ''
 
-    return [enabled, username, password]
+    return [type, username, password]
 
 
 def get_sonarr_settings():
@@ -234,7 +234,7 @@ def get_sonarr_settings():
             base_url = '/'
 
         if cfg.has_option('sonarr', 'ssl'):
-            ssl = cfg.get('sonarr', 'ssl')
+            ssl = cfg.getboolean('sonarr', 'ssl')
         else:
             ssl = False
 
@@ -300,7 +300,7 @@ def get_radarr_settings():
             base_url = '/'
 
         if cfg.has_option('radarr', 'ssl'):
-            ssl = cfg.get('radarr', 'ssl')
+            ssl = cfg.getboolean('radarr', 'ssl')
         else:
             ssl = False
 
