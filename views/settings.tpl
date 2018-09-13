@@ -1732,13 +1732,13 @@
 
     $('#sonarr_validate').click(function() {
         if ($('#sonarr_ssl_div').checkbox('is checked')) {
-            sonarr_url = 'https://';
+            protocol = 'https';
         } else {
-            sonarr_url = 'http://';
+            protocol = 'http';
         }
-        sonarr_url += $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + "/" + $('#settings_sonarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
+        sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + "/" + $('#settings_sonarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
 
-        $.getJSON("{{base_url}}test_url/" + encodeURIComponent(sonarr_url), function (data) {
+        $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
             if (data.status) {
                 $('#sonarr_validated').checkbox('check');
                 $('#sonarr_validation_result').text('Test successful: Sonarr v' + data.version).css('color', 'green');
@@ -1771,13 +1771,13 @@
 
     $('#radarr_validate').click(function() {
         if ($('#radarr_ssl_div').checkbox('is checked')) {
-            radarr_url = 'https://';
+            protocol = 'https';
         } else {
-            radarr_url = 'http://';
+            protocol = 'http';
         }
-        radarr_url += $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + "/" + $('#settings_radarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
+        radarr_url = $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + "/" + $('#settings_radarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
 
-        $.getJSON("{{base_url}}test_url/" + encodeURIComponent(radarr_url), function (data) {
+        $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(radarr_url), function (data) {
             if (data.status) {
                 $('#radarr_validated').checkbox('check');
                 $('#radarr_validation_result').text('Test successful: Radarr v' + data.version).css('color', 'green');

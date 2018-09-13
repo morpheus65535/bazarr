@@ -1690,13 +1690,13 @@ def api_history():
     c.close()
     return dict(subtitles=data)
 
-@route(base_url + 'test_url/<url:path>', method='GET')
+@route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
-def test_url(url):
+def test_url(protocol, url):
     try:
-        result = requests.get(url).json()['version']
+        result = requests.get(protocol + "://" + url).json()['version']
     except:
-        return dict(status=False, version=result)
+        return dict(status=False)
     else:
         return dict(status=True, version=result)
 
