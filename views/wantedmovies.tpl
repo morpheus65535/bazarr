@@ -43,7 +43,7 @@
 		%import ast
 		%from get_languages import *
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 
 		<div class="ui container">
@@ -141,6 +141,7 @@
 	})
 
 	$('#wanted_search_missing_subtitles_movies').click(function(){
+		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}wanted_search_missing_subtitles';
 	})
 
@@ -152,7 +153,8 @@
 		            hi: $(this).attr("data-hi"),
 		            radarrId: $(this).attr("data-radarrId")
 		    };
-		    $('#loader').addClass('active');
+		    $('#loader_text').text("Downloading subtitles...");
+			$('#loader').addClass('active');
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle_movie",
 		        type: "POST",

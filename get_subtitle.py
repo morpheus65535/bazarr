@@ -8,22 +8,28 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 from babelfish import Language
-from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles
+from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
+import cPickle as pickle
+import codecs
 
 # configure the cache
 region.configure('dogpile.cache.memory')
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName, type):
-    if type == 'series':
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
+    if media_type == 'series':
         type_of_score = 360
         minimum_score = float(get_general_settings()[8]) / 100 * type_of_score
-    elif type == 'movies':
+    elif media_type == 'movie':
         type_of_score = 120
         minimum_score = float(get_general_settings()[22]) / 100 * type_of_score
     use_scenename = get_general_settings()[9]
@@ -36,7 +42,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         lang_obj = Language(language)
 
     try:
-        if sceneName is None or use_scenename is False:
+        if sceneName == "None" or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
@@ -60,7 +66,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             else:
                 single = get_general_settings()[7]
                 try:
-                    score = round(float(compute_score(best_subtitle, video)) / type_of_score * 100, 2)
+                    score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                     if used_sceneName == True:
                         video = scan_video(path)
                     if single is True:
@@ -109,6 +115,145 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                 logging.info('Post-processing result for file ' + path + ' : ' + out)
 
                     return message
+
+def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
+    language_set = set()
+    for lang in ast.literal_eval(language):
+        if lang == 'pob':
+            language_set.add(Language('por', 'BR'))
+        else:
+            language_set.add(Language(alpha3_from_alpha2(lang)))
+    try:
+        if sceneName != "None":
+            video = Video.fromname(sceneName)
+        else:
+            video = scan_video(path)
+    except:
+        logging.error("Error trying to get video information.")
+    else:
+        if media_type == "movie":
+            max_score = 120.0
+        elif media_type == "series":
+            max_score = 360.0
+
+        try:
+            with AsyncProviderPool(max_workers=None, providers=providers, provider_configs=providers_auth) as p:
+                subtitles = p.list_subtitles(video, language_set)
+        except Exception as e:
+            logging.exception("Error trying to get subtitle list from provider")
+        else:
+            subtitles_list = []
+            for s in subtitles:
+                {s: compute_score(s, video, hearing_impaired=hi)}
+                if media_type == "movie":
+                    matched = set(s.get_matches(video))
+                    if hi == s.hearing_impaired:
+                        matched.add('hearing_impaired')
+                    not_matched = set(score.movie_scores.keys()) - matched
+                    if "title" in not_matched:
+                        continue
+                elif media_type == "series":
+                    matched = set(s.get_matches(video))
+                    if hi == s.hearing_impaired:
+                        matched.add('hearing_impaired')
+                    not_matched = set(score.episode_scores.keys()) - matched
+                    if "series" in not_matched or "season" in not_matched or "episode" in not_matched:
+                        continue
+                subtitles_list.append(dict(score=round((compute_score(s, video, hearing_impaired=hi) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, subtitle=codecs.encode(pickle.dumps(s), "base64").decode(), url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
+            subtitles_dict = {}
+            subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
+            return(subtitles_dict)
+
+def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, media_type):
+    if hi == "True":
+        hi = True
+    else:
+        hi = False
+    subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    if media_type == 'series':
+        type_of_score = 360
+    elif media_type == 'movie':
+        type_of_score = 120
+    use_scenename = get_general_settings()[9]
+    use_postprocessing = get_general_settings()[10]
+    postprocessing_cmd = get_general_settings()[11]
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        language = alpha3_from_alpha2(language)
+        lang_obj = Language(language)
+
+    try:
+        if sceneName == "None" or use_scenename is False:
+            used_sceneName = False
+            video = scan_video(path)
+        else:
+            used_sceneName = True
+            video = Video.fromname(sceneName)
+    except Exception as e:
+        logging.exception('Error trying to extract information from this filename: ' + path)
+        return None
+    else:
+        try:
+            best_subtitle = subtitle
+            download_subtitles([best_subtitle])
+        except Exception as e:
+            logging.exception('Error downloading subtitles for ' + path)
+            return None
+        else:
+            single = get_general_settings()[7]
+            try:
+                score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
+                if used_sceneName == True:
+                    video = scan_video(path)
+                if single is True:
+                    result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                else:
+                    result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+            except Exception as e:
+                logging.exception('Error saving subtitles file to disk.')
+                return None
+            else:
+                downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]
+                downloaded_language = language_from_alpha3(language)
+                downloaded_language_code2 = alpha2_from_alpha3(language)
+                downloaded_language_code3 = language
+                downloaded_path = result[1]
+                message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
+
+                if use_postprocessing is True:
+                    command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
+                    try:
+                        if os.name == 'nt':
+                            codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            # wait for the process to terminate
+                            out_codepage, err_codepage = codepage.communicate()
+                            encoding = out_codepage.split(':')[-1].strip()
+
+                        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        # wait for the process to terminate
+                        out, err = process.communicate()
+
+                        if os.name == 'nt':
+                            out = out.decode(encoding)
+
+                    except:
+                        if out == "":
+                            logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                        else:
+                            logging.error('Post-processing result for file ' + path + ' : ' + out)
+                    else:
+                        if out == "":
+                            logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                        else:
+                            logging.info('Post-processing result for file ' + path + ' : ' + out)
+
+                return message
 
 def series_download_subtitles(no):
     if get_general_settings()[24] is True:
@@ -177,7 +322,7 @@ def movies_download_subtitles(no):
 
     for language in ast.literal_eval(movie[1]):
         if language is not None:
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movies')
+            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movie')
             if message is not None:
                 store_subtitles_movie(path_replace_movie(movie[0]))
                 history_log_movie(1, no, message)
@@ -287,7 +432,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movies')
+                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movie')
                         if message is not None:
                             store_subtitles_movie(path_replace_movie(movie[0]))
                             list_missing_subtitles_movies(movie[3])

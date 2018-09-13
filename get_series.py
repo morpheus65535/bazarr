@@ -28,7 +28,7 @@ def update_series():
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_series, timeout=15)
+            r = requests.get(url_sonarr_api_series, timeout=15, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("Error trying to get series from Sonarr. Http error.")
@@ -96,7 +96,7 @@ def get_profile_list():
 
     url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=15)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=15, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("Error trying to get profiles from Sonarr. Connection Error.")
@@ -109,7 +109,7 @@ def get_profile_list():
 
     url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
     try:
-        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=15)
+        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=15, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("Error trying to get profiles from Sonarr. Connection Error.")

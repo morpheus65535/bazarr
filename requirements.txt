@@ -19,6 +19,7 @@ urllib3<1.23,>=1.21.1
 waitress>=1.1.0
 configparser>=3.5.0
 backports.functools-lru-cache>=1.5
+beaker>=1.10.0
 
 #Subliminal requirements
 click>=6.7

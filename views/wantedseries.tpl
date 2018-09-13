@@ -43,7 +43,7 @@
 		%import ast
 		%from get_languages import *
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 
 		<div class="ui container">
@@ -148,6 +148,7 @@
 	})
 
 	$('#wanted_search_missing_subtitles').click(function(){
+		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}wanted_search_missing_subtitles';
 	})
 
@@ -160,7 +161,8 @@
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
 		    };
-		    $('#loader').addClass('active');
+		    $('#loader_text').text("Downloading subtitles...");
+			$('#loader').addClass('active');
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle",
 		        type: "POST",
