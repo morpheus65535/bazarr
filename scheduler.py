@@ -5,8 +5,9 @@ from get_series import update_series
 from get_episodes import update_all_episodes, update_all_movies, sync_episodes
 from get_movies import update_movies
 from list_subtitles import store_subtitles
-from get_subtitle import wanted_search_missing_subtitles
-from check_update import check_and_apply_update
+from get_subtitle import download_best_subtitles, wanted_search_missing_subtitles
+if no_update is False:
+    from check_update import check_and_apply_update
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
