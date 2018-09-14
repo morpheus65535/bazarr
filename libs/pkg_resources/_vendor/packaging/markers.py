@@ -8,9 +8,9 @@ import os
 import platform
 import sys
 
-from setuptools.extern.pyparsing import ParseException, ParseResults, stringStart, stringEnd
-from setuptools.extern.pyparsing import ZeroOrMore, Group, Forward, QuotedString
-from setuptools.extern.pyparsing import Literal as L  # noqa
+from pkg_resources.extern.pyparsing import ParseException, ParseResults, stringStart, stringEnd
+from pkg_resources.extern.pyparsing import ZeroOrMore, Group, Forward, QuotedString
+from pkg_resources.extern.pyparsing import Literal as L  # noqa
 
 from ._compat import string_types
 from .specifiers import Specifier, InvalidSpecifier

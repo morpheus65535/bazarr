@@ -6,10 +6,10 @@ from __future__ import absolute_import, division, print_function
 import string
 import re
 
-from setuptools.extern.pyparsing import stringStart, stringEnd, originalTextFor, ParseException
-from setuptools.extern.pyparsing import ZeroOrMore, Word, Optional, Regex, Combine
-from setuptools.extern.pyparsing import Literal as L  # noqa
-from setuptools.extern.six.moves.urllib import parse as urlparse
+from pkg_resources.extern.pyparsing import stringStart, stringEnd, originalTextFor, ParseException
+from pkg_resources.extern.pyparsing import ZeroOrMore, Word, Optional, Regex, Combine
+from pkg_resources.extern.pyparsing import Literal as L  # noqa
+from pkg_resources.extern.six.moves.urllib import parse as urlparse
 
 from .markers import MARKER_EXPR, Marker
 from .specifiers import LegacySpecifier, Specifier, SpecifierSet
