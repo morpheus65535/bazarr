@@ -189,31 +189,6 @@
                 <div class="ui dividing header">Proxy settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Use proxy</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="settings_use_proxy" class="ui toggle checkbox" data-enabled={{settings_proxy[0]}}>
-                                    <input name="settings_proxy_enabled" type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-
-                            <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
-                                    <i class="yellow warning sign icon"></i>
-                                </div>
-                            </div>
-
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable proxy." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -221,11 +196,17 @@
                             </div>
                             <div class="five wide column">
                                 <select name="settings_proxy_type" id="settings_proxy_type" class="ui fluid selection dropdown">
-                                    <option value="">Proxy type</option>
+                                    <option value="None">None</option>
                                     <option value="http">HTTP(S)</option>
                                     <option value="socks4">Socks4</option>
                                     <option value="socks5">Socks5</option>
                                 </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                    <i class="yellow warning sign icon"></i>
+                                </div>
                             </div>
 
                             <div class="collapsed center aligned column">
@@ -235,40 +216,40 @@
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Hostanme</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_url" name="settings_proxy_url" type="text" value="{{settings_proxy[2]}}">
+                                        <input id="settings_proxy_url" name="settings_proxy_url" type="text" value="{{settings_proxy[1]}}">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_port" name="settings_proxy_port" type="text" value="{{settings_proxy[3]}}">
+                                        <input id="settings_proxy_port" name="settings_proxy_port" type="text" value="{{settings_proxy[2]}}">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Username</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_username" name="settings_proxy_username" type="text" value="{{settings_proxy[4]}}">
+                                        <input id="settings_proxy_username" name="settings_proxy_username" type="text" value="{{settings_proxy[3]}}">
                                     </div>
                                 </div>
                             </div>
@@ -280,16 +261,14 @@
                             </div>
                         </div>
 
-
-
-                        <div class="middle aligned row">
+                        <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Password</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_password" name="settings_proxy_password" type="password" value="{{settings_proxy[5]}}">
+                                        <input id="settings_proxy_password" name="settings_proxy_password" type="password" value="{{settings_proxy[4]}}">
                                     </div>
                                 </div>
                             </div>
@@ -302,14 +281,14 @@
 
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Ignored Addresse</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings_proxy[6]}}">
+                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings_proxy[5]}}">
                                     </div>
                                 </div>
                             </div>
@@ -1461,42 +1440,6 @@
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
-    if ($('#settings_use_proxy').data("enabled") == "True") {
-                $("#settings_use_proxy").checkbox('check');
-                $("#settings_proxy_type").parent().removeClass('disabled');
-                $("#settings_proxy_url").parent().removeClass('disabled');
-                $("#settings_proxy_port").parent().removeClass('disabled');
-                $("#settings_proxy_username").parent().removeClass('disabled');
-                $("#settings_proxy_password").parent().removeClass('disabled');
-                $("#settings_proxy_exclude").parent().removeClass('disabled');
-            } else {
-                $("#settings_use_proxy").checkbox('uncheck');
-                $("#settings_proxy_type").parent().addClass('disabled');
-                $("#settings_proxy_url").parent().addClass('disabled');
-                $("#settings_proxy_port").parent().addClass('disabled');
-                $("#settings_proxy_username").parent().addClass('disabled');
-                $("#settings_proxy_password").parent().addClass('disabled');
-                $("#settings_proxy_exclude").parent().addClass('disabled');
-            }
-
-    $("#settings_use_proxy").change(function(i, obj) {
-        if ($("#settings_use_proxy").checkbox('is checked')) {
-                $("#settings_proxy_type").parent().removeClass('disabled');
-                $("#settings_proxy_url").parent().removeClass('disabled');
-                $("#settings_proxy_port").parent().removeClass('disabled');
-                $("#settings_proxy_username").parent().removeClass('disabled');
-                $("#settings_proxy_password").parent().removeClass('disabled');
-                $("#settings_proxy_exclude").parent().removeClass('disabled');
-            } else {
-                $("#settings_proxy_type").parent().addClass('disabled');
-                $("#settings_proxy_url").parent().addClass('disabled');
-                $("#settings_proxy_port").parent().addClass('disabled');
-                $("#settings_proxy_username").parent().addClass('disabled');
-                $("#settings_proxy_password").parent().addClass('disabled');
-                $("#settings_proxy_exclude").parent().addClass('disabled');
-            }
-    });
-
     if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
                 $("#settings_use_postprocessing").checkbox('check');
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
@@ -1563,6 +1506,19 @@
         }
         else {
             $('.auth_option').show();
+        };
+    });
+
+    if ($('#settings_proxy_type').val() == "None") {
+        $('.proxy_option').hide();
+    };
+
+    $('#settings_proxy_type').dropdown('setting', 'onChange', function(){
+        if ($('#settings_proxy_type').val() == "None") {
+            $('.proxy_option').hide();
+        }
+        else {
+            $('.proxy_option').show();
         };
     });
 
@@ -1703,7 +1659,7 @@
     $('#settings_page_size').dropdown('clear');
     $('#settings_page_size').dropdown('set selected','{{!settings_general[21]}}');
     $('#settings_proxy_type').dropdown('clear');
-    $('#settings_proxy_type').dropdown('set selected','{{!settings_proxy[1]}}');
+    $('#settings_proxy_type').dropdown('set selected','{{!settings_proxy[0]}}');
     $('#settings_providers').dropdown('clear');
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
@@ -1758,8 +1714,6 @@
                         }
                     ]
                 },
-                settings_proxy_type : {
-                    depends: 'settings_proxy_enabled',
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [
@@ -1770,7 +1724,6 @@
                     ]
                 },
                 settings_proxy_url : {
-                    depends: 'settings_proxy_enabled',
                     rules : [
                         {
                             type : 'empty'
@@ -1778,7 +1731,6 @@
                     ]
                 },
                 settings_proxy_port : {
-                    depends: 'settings_proxy_enabled',
                     rules : [
                         {
                             type : 'integer[1..65535]'
@@ -1787,12 +1739,6 @@
                             type : 'empty'
                         }
                     ]
-                },
-                settings_proxy_username : {
-                    depends: 'settings_proxy_enabled',
-                },
-                settings_proxy_password : {
-                    depends: 'settings_proxy_enabled',
                 },
                 sonarr_validated_checkbox : {
                     depends: 'settings_general_use_sonarr',

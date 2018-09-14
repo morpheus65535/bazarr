@@ -897,12 +897,7 @@ def save_settings():
 
     if not cfg.has_section('proxy'):
         cfg.add_section('proxy')
-        
-    settings_proxy_enabled = request.forms.get('settings_proxy_enabled')
-    if settings_proxy_enabled is None:
-        settings_proxy_enabled = 'False'
-    else:
-        settings_proxy_enabled = 'True'
+
     settings_proxy_type = request.forms.get('settings_proxy_type')
     settings_proxy_url = request.forms.get('settings_proxy_url')
     settings_proxy_port = request.forms.get('settings_proxy_port')
@@ -911,17 +906,15 @@ def save_settings():
     settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
     
     before_proxy_password = (unicode(settings_proxy[0]), unicode(settings_proxy[5]))
-    if before_proxy_password[0] != settings_proxy_enabled:
+    if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
-        cfg.set('proxy', 'enabled', text_type(settings_proxy_enabled))
         cfg.set('proxy', 'type', text_type(settings_proxy_type))
         cfg.set('proxy', 'url', text_type(settings_proxy_url))
         cfg.set('proxy', 'port', text_type(settings_proxy_port))
         cfg.set('proxy', 'username', text_type(settings_proxy_username))
         cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
     else:
-        cfg.set('proxy', 'enabled', text_type(settings_proxy_enabled))
         cfg.set('proxy', 'type', text_type(settings_proxy_type))
         cfg.set('proxy', 'url', text_type(settings_proxy_url))
         cfg.set('proxy', 'port', text_type(settings_proxy_port))
@@ -936,15 +929,6 @@ def save_settings():
     settings_auth_password = request.forms.get('settings_auth_password')
 
     if get_auth_settings()[0] != settings_auth_type:
-        settings_auth_enabled = request.forms.get('settings_auth_enabled')
-    if settings_auth_enabled is None:
-        settings_auth_enabled = 'False'
-    else:
-        settings_auth_enabled = 'True'
-    settings_auth_username = request.forms.get('settings_auth_username')
-    settings_auth_password = request.forms.get('settings_auth_password')
-    
-    if settings_auth[0] != settings_auth_enabled:
         configured()
     if settings_auth[2] == settings_auth_password:
         cfg.set('auth', 'type', text_type(settings_auth_type))

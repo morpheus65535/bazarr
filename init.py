@@ -162,8 +162,7 @@ except sqlite3.OperationalError:
         if not cfg.has_section(section):
             cfg.add_section(section)
 
-        cfg.set(section, 'enabled', "False")
-        cfg.set(section, 'type', "")
+        cfg.set(section, 'type', "None")
         cfg.set(section, 'url', "")
         cfg.set(section, 'port', "")
         cfg.set(section, 'username', "")
