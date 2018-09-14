@@ -202,7 +202,7 @@ class NotifyEmail(NotifyBase):
 
                 if self.smtp_host is None:
                     # Detect Server if possible
-                    self.smtp_host = re.split('[\s@]+', self.from_addr)[-1]
+                    self.smtp_host = re.split(r'[\s@]+', self.from_addr)[-1]
 
                 # Adjust email login based on the defined
                 # usertype
@@ -253,6 +253,8 @@ class NotifyEmail(NotifyBase):
                                 .strftime("%a, %d %b %Y %H:%M:%S +0000")
         email['X-Application'] = self.app_id
 
+        # bind the socket variable to the current namespace
+        socket = None
         try:
             self.logger.debug('Connecting to remote SMTP server...')
             socket = smtplib.SMTP(
@@ -289,7 +291,8 @@ class NotifyEmail(NotifyBase):
 
         finally:
             # Gracefully terminate the connection with the server
-            socket.quit()
+            if socket is not None:  # pragma: no branch
+                socket.quit()
 
         return True
 
@@ -329,14 +332,14 @@ class NotifyEmail(NotifyBase):
             # get 'To' email address
             from_addr = '%s@%s' % (
                 re.split(
-                    '[\s@]+', NotifyBase.unquote(results['user']))[0],
+                    r'[\s@]+', NotifyBase.unquote(results['user']))[0],
                 results.get('host', '')
             )
             # Lets be clever and attempt to make the from
             # address an email based on the to address
             from_addr = '%s@%s' % (
-                re.split('[\s@]+', from_addr)[0],
-                re.split('[\s@]+', from_addr)[-1],
+                re.split(r'[\s@]+', from_addr)[0],
+                re.split(r'[\s@]+', from_addr)[-1],
             )
 
         # Attempt to detect 'to' email address
