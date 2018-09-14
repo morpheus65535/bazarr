@@ -1461,26 +1461,6 @@
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
-    if ($('#settings_use_auth').data("enabled") == "True") {
-                $("#settings_use_auth").checkbox('check');
-                $("#settings_general_auth_username").parent().removeClass('disabled');
-                $("#settings_general_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_use_auth").checkbox('uncheck');
-                $("#settings_general_auth_username").parent().addClass('disabled');
-                $("#settings_general_auth_password").parent().addClass('disabled');
-            }
-
-    $("#settings_use_auth").change(function(i, obj) {
-        if ($("#settings_use_auth").checkbox('is checked')) {
-                $("#settings_auth_username").parent().removeClass('disabled');
-                $("#settings_auth_password").parent().removeClass('disabled');
-            } else {
-                $("#settings_auth_username").parent().addClass('disabled');
-                $("#settings_auth_password").parent().addClass('disabled');
-            }
-    });
-
     if ($('#settings_use_proxy').data("enabled") == "True") {
                 $("#settings_use_proxy").checkbox('check');
                 $("#settings_proxy_type").parent().removeClass('disabled');
@@ -1814,16 +1794,6 @@
                 settings_proxy_password : {
                     depends: 'settings_proxy_enabled',
                 },
-                settings_auth_username : {
-                    depends: 'settings_auth_enabled',
-                    rules : [
-                        {
-                            type : 'empty'
-                        }
-                    ]
-                },
-                settings_auth_password : {
-                    depends: 'settings_auth_enabled',
                 sonarr_validated_checkbox : {
                     depends: 'settings_general_use_sonarr',
                     rules : [
