@@ -1,0 +1,8 @@
+# Multiple input strings having same expected results can be chained.
+# Use $ marker to check inputs that should not match results.
+
+# Prefer information for last path.
+? Some movie (2000)/Some movie (2001).mkv
+? Some movie (2001)/Some movie.mkv
+: year: 2001
+  container: mkv

@@ -1,0 +1,32 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? Title Only
+? -Title XViD 720p Only
+? sub/folder/Title Only
+? -sub/folder/Title XViD 720p Only
+? Title Only.mkv
+? Title Only.avi
+: title: Title Only
+
+? Title Only/title_only.mkv
+: title: Title Only
+
+? title_only.mkv
+: title: title only
+
+? Some Title/some.title.mkv
+? some.title/Some.Title.mkv
+: title: Some Title
+
+? SOME TITLE/Some.title.mkv
+? Some.title/SOME TITLE.mkv
+: title: Some title
+
+? some title/Some.title.mkv
+? Some.title/some title.mkv
+: title: Some title
+
+? Some other title/Some.Other.title.mkv
+? Some.Other title/Some other title.mkv
+: title: Some Other title
+
