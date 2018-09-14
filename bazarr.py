@@ -92,7 +92,7 @@ from get_providers import *
 from get_series import *
 from get_episodes import *
 from get_settings import base_url, ip, port, path_replace, path_replace_movie
-# from check_update import check_and_apply_update
+from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle
 from utils import history_log, history_log_movie
