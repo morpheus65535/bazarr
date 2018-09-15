@@ -243,8 +243,8 @@ def get_proxy_settings():
         else:
             password = ''
             
-        if cfg.has_option('proxy', 'exclude_ip'):
-            exclude = cfg.get('proxy', 'exclude_ip')
+        if cfg.has_option('proxy', 'exclude'):
+            exclude = cfg.get('proxy', 'exclude')
         else:
             exclude = 'localhost,127.0.0.1'
     else:

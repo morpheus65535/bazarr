@@ -218,7 +218,7 @@
 
                         <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hostanme</label>
+                                <label>Hostname</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -274,7 +274,7 @@
                             </div>
 
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="UYou only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="You only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -283,7 +283,7 @@
 
                         <div class="proxy_option middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Ignored Addresse</label>
+                                <label>Ignored Addresses</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
