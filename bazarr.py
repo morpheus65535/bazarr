@@ -65,7 +65,7 @@ if get_proxy_settings()[0] != 'None':
         proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
     os.environ['HTTP_PROXY'] = str(proxy)
     os.environ['HTTPS_PROXY'] = str(proxy)
-    os.environ['NO_PROXY'] = get_proxy_settings()[5]
+    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app
 import bottle
