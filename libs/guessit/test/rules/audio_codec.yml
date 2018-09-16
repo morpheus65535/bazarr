@@ -1,0 +1,131 @@
+# Multiple input strings having same expected results can be chained.
+# Use $ marker to check inputs that should not match results.
+
+
+? +MP3
+? +lame
+? +lame3.12
+? +lame3.100
+: audio_codec: MP3
+
+? +DolbyDigital
+? +DD
+? +Dolby Digital
+? +AC3
+: audio_codec: Dolby Digital
+
+? +DDP
+? +DD+
+? +EAC3
+: audio_codec: Dolby Digital Plus
+
+? +DolbyAtmos
+? +Dolby Atmos
+? +Atmos
+? -Atmosphere
+: audio_codec: Dolby Atmos
+
+? +AAC
+: audio_codec: AAC
+
+? +Flac
+: audio_codec: FLAC
+
+? +DTS
+: audio_codec: DTS
+
+? +True-HD
+? +trueHD
+: audio_codec: Dolby TrueHD
+
+? +True-HD51
+? +trueHD51
+: audio_codec: Dolby TrueHD
+  audio_channels: '5.1'
+
+? +DTSHD
+? +DTS HD
+? +DTS-HD
+: audio_codec: DTS-HD
+
+? +DTS-HDma
+? +DTSMA
+: audio_codec: DTS-HD
+  audio_profile: Master Audio
+
+? +AC3-hq
+: audio_codec: Dolby Digital
+  audio_profile: High Quality
+
+? +AAC-HE
+: audio_codec: AAC
+  audio_profile: High Efficiency
+
+? +AAC-LC
+: audio_codec: AAC
+  audio_profile: Low Complexity
+
+? +AAC2.0
+? +AAC20
+: audio_codec: AAC
+  audio_channels: '2.0'
+
+? +7.1
+? +7ch
+? +8ch
+: audio_channels: '7.1'
+
+? +5.1
+? +5ch
+? +6ch
+: audio_channels: '5.1'
+
+? +2ch
+? +2.0
+? +stereo
+: audio_channels: '2.0'
+
+? +1ch
+? +mono
+: audio_channels: '1.0'
+
+? DD5.1
+? DD51
+: audio_codec: Dolby Digital
+  audio_channels: '5.1'
+
+? -51
+: audio_channels: '5.1'
+
+? DTS-HD.HRA
+? DTSHD.HRA
+? DTS-HD.HR
+? DTSHD.HR
+? -HRA
+? -HR
+: audio_codec: DTS-HD
+  audio_profile: High Resolution Audio
+
+? DTSES
+? DTS-ES
+? -ES
+: audio_codec: DTS
+  audio_profile: Extended Surround
+
+? DD-EX
+? DDEX
+? -EX
+: audio_codec: Dolby Digital
+  audio_profile: EX
+
+? OPUS
+: audio_codec: Opus
+
+? Vorbis
+: audio_codec: Vorbis
+
+? PCM
+: audio_codec: PCM
+
+? LPCM
+: audio_codec: LPCM

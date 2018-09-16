@@ -1,0 +1,71 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? Some.Title.XViD-ReleaseGroup
+? Some.Title.XViD-ReleaseGroup.mkv
+: release_group: ReleaseGroup
+
+? Some.Title.XViD-by.Artik[SEDG].avi
+: release_group: Artik[SEDG]
+
+? "[ABC] Some.Title.avi"
+? some/folder/[ABC]Some.Title.avi
+: release_group: ABC
+
+? "[ABC] Some.Title.XViD-GRP.avi"
+? some/folder/[ABC]Some.Title.XViD-GRP.avi
+: release_group: GRP
+
+? "[ABC] Some.Title.S01E02.avi"
+? some/folder/[ABC]Some.Title.S01E02.avi
+: release_group: ABC
+
+? Some.Title.XViD-S2E02.NoReleaseGroup.avi
+: release_group: !!null
+
+? Test.S01E01-FooBar-Group
+: options: -G group -G xxxx
+  episode: 1
+  episode_title: FooBar
+  release_group: Group
+  season: 1
+  title: Test
+  type: episode
+
+? Test.S01E01-FooBar-Group
+: options: -G re:gr.?up -G xxxx
+  episode: 1
+  episode_title: FooBar
+  release_group: Group
+  season: 1
+  title: Test
+  type: episode
+
+? Show.Name.x264-byEMP
+: title: Show Name
+  video_codec: H.264
+  release_group: byEMP
+
+? Show.Name.x264-NovaRip
+: title: Show Name
+  video_codec: H.264
+  release_group: NovaRip
+
+? Show.Name.x264-PARTiCLE
+: title: Show Name
+  video_codec: H.264
+  release_group: PARTiCLE
+
+? Show.Name.x264-POURMOi
+: title: Show Name
+  video_codec: H.264
+  release_group: POURMOi
+
+? Show.Name.x264-RipPourBox
+: title: Show Name
+  video_codec: H.264
+  release_group: RipPourBox
+
+? Show.Name.x264-RiPRG
+: title: Show Name
+  video_codec: H.264
+  release_group: RiPRG

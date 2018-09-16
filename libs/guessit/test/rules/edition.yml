@@ -1,0 +1,63 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? Director's cut
+? Edition Director's cut
+: edition: Director's Cut
+
+? Collector
+? Collector Edition
+? Edition Collector
+: edition: Collector
+
+? Special Edition
+? Edition Special
+? -Special
+: edition: Special
+
+? Criterion Edition
+? Edition Criterion
+? CC
+? -Criterion
+: edition: Criterion
+
+? Deluxe
+? Deluxe Edition
+? Edition Deluxe
+: edition: Deluxe
+
+? Super Movie Alternate XViD
+? Super Movie Alternative XViD
+? Super Movie Alternate Cut XViD
+? Super Movie Alternative Cut XViD
+: edition: Alternative Cut
+
+? ddc
+: edition: Director's Definitive Cut
+
+? IMAX
+? IMAX Edition
+: edition: IMAX
+
+? ultimate edition
+? -ultimate
+: edition: Ultimate
+
+? ultimate collector edition
+? ultimate collector's edition
+? ultimate collectors edition
+? -collectors edition
+? -ultimate edition
+: edition: [Ultimate, Collector]
+
+? ultimate collectors edition dc
+: edition: [Ultimate, Collector, Director's Cut]
+
+? fan edit
+? fan edition
+? fan collection
+: edition: Fan
+
+? ultimate fan edit
+? ultimate fan edition
+? ultimate fan collection
+: edition: [Ultimate, Fan]

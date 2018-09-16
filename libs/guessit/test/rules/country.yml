@@ -1,0 +1,13 @@
+# Multiple input strings having same expected results can be chained.
+# Use $ marker to check inputs that should not match results.
+? Us.this.is.title
+? this.is.title.US
+: country: US
+  title: this is title
+
+? This.is.us.title
+: title: This is us title
+
+? This.Is.Us
+: options: --no-embedded-config
+  title: This Is Us
