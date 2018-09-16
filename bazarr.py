@@ -18,7 +18,7 @@ from init import *
 from update_db import *
 
 
-from get_settings import get_general_settings
+from get_settings import get_general_settings, get_proxy_settings
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -57,6 +57,16 @@ def configure_logging():
 
 configure_logging()
 
+import requests
+if get_proxy_settings()[0] != 'None':
+    if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
+        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+    else:
+        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+    os.environ['HTTP_PROXY'] = str(proxy)
+    os.environ['HTTPS_PROXY'] = str(proxy)
+    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
+
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
@@ -68,7 +78,6 @@ from cork import Cork
 from json import dumps
 import itertools
 import operator
-import requests
 import pretty
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -768,13 +777,14 @@ def settings():
     settings_notifier = c.fetchall()
     c.close()
 
-    from get_settings import get_general_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
+    from get_settings import get_general_settings, get_proxy_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
     settings_general = get_general_settings()
+    settings_proxy = get_proxy_settings()
     settings_auth = get_auth_settings()
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
 
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
+    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url)
 
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
@@ -883,6 +893,35 @@ def save_settings():
     if after != before:
         configured()
     get_general_settings()
+    
+    settings_proxy = get_proxy_settings()
+
+    if not cfg.has_section('proxy'):
+        cfg.add_section('proxy')
+
+    settings_proxy_type = request.forms.get('settings_proxy_type')
+    settings_proxy_url = request.forms.get('settings_proxy_url')
+    settings_proxy_port = request.forms.get('settings_proxy_port')
+    settings_proxy_username = request.forms.get('settings_proxy_username')
+    settings_proxy_password = request.forms.get('settings_proxy_password')
+    settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
+    
+    before_proxy_password = (unicode(settings_proxy[0]), unicode(settings_proxy[5]))
+    if before_proxy_password[0] != settings_proxy_type:
+        configured()
+    if before_proxy_password[1] == settings_proxy_password:
+        cfg.set('proxy', 'type', text_type(settings_proxy_type))
+        cfg.set('proxy', 'url', text_type(settings_proxy_url))
+        cfg.set('proxy', 'port', text_type(settings_proxy_port))
+        cfg.set('proxy', 'username', text_type(settings_proxy_username))
+        cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
+    else:
+        cfg.set('proxy', 'type', text_type(settings_proxy_type))
+        cfg.set('proxy', 'url', text_type(settings_proxy_url))
+        cfg.set('proxy', 'port', text_type(settings_proxy_port))
+        cfg.set('proxy', 'username', text_type(settings_proxy_username))
+        cfg.set('proxy', 'password', text_type(settings_proxy_password))
+        cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
 
     settings_auth = get_auth_settings()
 

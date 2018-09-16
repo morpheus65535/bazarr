@@ -8,17 +8,17 @@ dogpile.cache>=0.6.5
 #enzyme>=0.4.1  <-- included in /libs
 gitpython>=2.1.9
 langdetect>=1.0.7
-Pillow>=5.1.0
 py-pretty>=1
 pycountry>=18.2.23
 pytz>=2018.4
 requests>=2.18.4
 #subliminal>=2.0.5  <-- included in /libs
 tzlocal>=1.5.1
-urllib3<1.23,>=1.21.1
+#urllib3<1.23,>=1.21.1
 waitress>=1.1.0
 configparser>=3.5.0
 backports.functools-lru-cache>=1.5
+pysocks>=1.6.8
 beaker>=1.10.0
 
 #Subliminal requirements

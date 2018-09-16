@@ -186,6 +186,123 @@
                     </div>
                 </div>
 
+                <div class="ui dividing header">Proxy settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Proxy type</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_proxy_type" id="settings_proxy_type" class="ui fluid selection dropdown">
+                                    <option value="None">None</option>
+                                    <option value="http">HTTP(S)</option>
+                                    <option value="socks4">Socks4</option>
+                                    <option value="socks5">Socks5</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                    <i class="yellow warning sign icon"></i>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Type of your proxy." data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="proxy_option middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Hostname</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_url" name="settings_proxy_url" type="text" value="{{settings_proxy[1]}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="proxy_option middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Port</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_port" name="settings_proxy_port" type="text" value="{{settings_proxy[2]}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="proxy_option middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Username</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_username" name="settings_proxy_username" type="text" value="{{settings_proxy[3]}}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="UYou only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="proxy_option middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Password</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_password" name="settings_proxy_password" type="password" value="{{settings_proxy[4]}}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="You only need to enter a username and password if one is required. Leave them blank otherwise" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="proxy_option middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Ignored Addresses</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings_proxy[5]}}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Use ',' as a separator, and '*.' as a wildcard for subdomains" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ui dividing header">Security settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
@@ -1528,6 +1645,8 @@
     $('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
     $('#settings_page_size').dropdown('clear');
     $('#settings_page_size').dropdown('set selected','{{!settings_general[21]}}');
+    $('#settings_proxy_type').dropdown('clear');
+    $('#settings_proxy_type').dropdown('set selected','{{!settings_proxy[0]}}');
     $('#settings_providers').dropdown('clear');
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
@@ -1702,6 +1821,33 @@
             }
         })
     ;
+
+    if ($('#settings_proxy_type').val() == "None") {
+        $('.proxy_option').hide();
+        $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+    }
+    else {
+        $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
+    };
+
+    $('#settings_proxy_type').dropdown('setting', 'onChange', function(){
+        if ($('#settings_proxy_type').val() == "None") {
+            $('.proxy_option').hide();
+            $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+        }
+        else {
+            $('.proxy_option').show();
+            $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
+        };
+    });
 
     $('#settings_providers').dropdown('setting', 'onChange', function(){
         $('.form').form('validate field', 'settings_subliminal_providers');
