@@ -1509,19 +1509,6 @@
         };
     });
 
-    if ($('#settings_proxy_type').val() == "None") {
-        $('.proxy_option').hide();
-    };
-
-    $('#settings_proxy_type').dropdown('setting', 'onChange', function(){
-        if ($('#settings_proxy_type').val() == "None") {
-            $('.proxy_option').hide();
-        }
-        else {
-            $('.proxy_option').show();
-        };
-    });
-
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
         $("#settings_serie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
@@ -1723,23 +1710,6 @@
                         }
                     ]
                 },
-                settings_proxy_url : {
-                    rules : [
-                        {
-                            type : 'empty'
-                        }
-                    ]
-                },
-                settings_proxy_port : {
-                    rules : [
-                        {
-                            type : 'integer[1..65535]'
-                        },
-                        {
-                            type : 'empty'
-                        }
-                    ]
-                },
                 sonarr_validated_checkbox : {
                     depends: 'settings_general_use_sonarr',
                     rules : [
@@ -1851,6 +1821,33 @@
             }
         })
     ;
+
+    if ($('#settings_proxy_type').val() == "None") {
+        $('.proxy_option').hide();
+        $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+    }
+    else {
+        $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
+    };
+
+    $('#settings_proxy_type').dropdown('setting', 'onChange', function(){
+        if ($('#settings_proxy_type').val() == "None") {
+            $('.proxy_option').hide();
+            $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+        }
+        else {
+            $('.proxy_option').show();
+            $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
+        };
+    });
 
     $('#settings_providers').dropdown('setting', 'onChange', function(){
         $('.form').form('validate field', 'settings_subliminal_providers');
