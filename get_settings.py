@@ -248,7 +248,7 @@ def get_proxy_settings():
         else:
             exclude = 'localhost,127.0.0.1'
     else:
-        proxy_type = ''
+        proxy_type = 'None'
         url = ''
         port = ''
         username = ''
