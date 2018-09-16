@@ -1,0 +1,87 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? rv10
+? rv13
+? RV20
+? Rv30
+? rv40
+? -xrv40
+: video_codec: RealVideo
+
+? mpeg2
+? MPEG2
+? MPEG-2
+? mpg2
+? H262
+? H.262
+? x262
+? -mpeg
+? -xmpeg2
+? -mpeg2x
+: video_codec: MPEG-2
+
+? DivX
+? -div X
+? divx
+? dvdivx
+? DVDivX
+: video_codec: DivX
+
+? XviD
+? xvid
+? -x vid
+: video_codec: Xvid
+
+? h263
+? x263
+? h.263
+: video_codec: H.263
+
+? h264
+? x264
+? h.264
+? x.264
+? mpeg4-AVC
+? AVC
+? AVCHD
+? AVCHD-SC
+? H.264-SC
+? H.264-AVCHD-SC
+? -MPEG-4
+? -mpeg4
+? -mpeg
+? -h 265
+? -x265
+: video_codec: H.264
+
+? h265
+? x265
+? h.265
+? x.265
+? hevc
+? -h 264
+? -x264
+: video_codec: H.265
+
+? hevc10
+? HEVC-YUV420P10
+: video_codec: H.265
+  color_depth: 10-bit
+
+? h265-HP
+: video_codec: H.265
+  video_profile: High
+
+? VC1
+? VC-1
+: video_codec: VC-1
+
+? VP7
+: video_codec: VP7
+
+? VP8
+? VP80
+: video_codec: VP8
+
+? VP9
+: video_codec: VP9

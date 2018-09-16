@@ -1,0 +1,47 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +English
+? .ENG.
+: language: English
+
+? +French
+: language: French
+
+? +SubFrench
+? +SubFr
+? +STFr
+? ST.FR
+: subtitle_language: French
+
+? +ENG.-.sub.FR
+? ENG.-.FR Sub
+? +ENG.-.SubFR
+? +ENG.-.FRSUB
+? +ENG.-.FRSUBS
+? +ENG.-.FR-SUBS
+: language: English
+  subtitle_language: French
+
+? "{Fr-Eng}.St{Fr-Eng}"
+? "Le.Prestige[x264.{Fr-Eng}.St{Fr-Eng}.Chaps].mkv"
+: language: [French, English]
+  subtitle_language: [French, English]
+
+? +ENG.-.sub.SWE
+? ENG.-.SWE Sub
+? +ENG.-.SubSWE
+? +ENG.-.SWESUB
+? +ENG.-.sub.SV
+? ENG.-.SV Sub
+? +ENG.-.SubSV
+? +ENG.-.SVSUB
+: language: English
+  subtitle_language: Swedish
+
+? The English Patient (1996)
+: title: The English Patient
+  -language: english
+
+? French.Kiss.1995.1080p
+: title: French Kiss
+  -language: french

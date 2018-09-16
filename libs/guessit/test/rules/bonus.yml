@@ -1,0 +1,9 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? Movie Title-x01-Other Title.mkv
+? Movie Title-x01-Other Title
+? directory/Movie Title-x01-Other Title/file.mkv
+: title: Movie Title
+  bonus_title: Other Title
+  bonus: 1
+

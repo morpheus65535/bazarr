@@ -1,0 +1,1934 @@
+? House.of.Cards.2013.S02E03.1080p.NF.WEBRip.DD5.1.x264-NTb.mkv
+? House.of.Cards.2013.S02E03.1080p.Netflix.WEBRip.DD5.1.x264-NTb.mkv
+: title: House of Cards
+  year: 2013
+  season: 2
+  episode: 3
+  screen_size: 1080p
+  streaming_service: Netflix
+  source: Web
+  other: Rip
+  audio_channels: "5.1"
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  release_group: NTb
+
+? The.Daily.Show.2015.07.01.Kirsten.Gillibrand.Extended.720p.CC.WEBRip.AAC2.0.x264-BTW.mkv
+? The.Daily.Show.2015.07.01.Kirsten.Gillibrand.Extended.720p.ComedyCentral.WEBRip.AAC2.0.x264-BTW.mkv
+? The.Daily.Show.2015.07.01.Kirsten.Gillibrand.Extended.720p.Comedy.Central.WEBRip.AAC2.0.x264-BTW.mkv
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2015-07-01
+  edition: Extended
+  source: Web
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  streaming_service: Comedy Central
+  title: The Daily Show
+  episode_title: Kirsten Gillibrand
+  video_codec: H.264
+
+? The.Daily.Show.2015.07.01.Kirsten.Gillibrand.Extended.Interview.720p.CC.WEBRip.AAC2.0.x264-BTW.mkv
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2015-07-01
+  source: Web
+  release_group: BTW
+  screen_size: 720p
+  streaming_service: Comedy Central
+  title: The Daily Show
+  episode_title: Kirsten Gillibrand Extended Interview
+  video_codec: H.264
+
+? The.Daily.Show.2015.07.02.Sarah.Vowell.CC.WEBRip.AAC2.0.x264-BTW.mkv
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2015-07-02
+  source: Web
+  release_group: BTW
+  streaming_service: Comedy Central
+  title: The Daily Show
+  episode_title: Sarah Vowell
+  video_codec: H.264
+
+# Streaming service: Amazon
+? Show.Name.S07E04.Service.1080p.AMZN.WEBRip.DD+5.1.x264
+? Show.Name.S07E04.Service.1080p.AmazonPrime.WEBRip.DD+5.1.x264
+: title: Show Name
+  season: 7
+  episode: 4
+  episode_title: Service
+  screen_size: 1080p
+  streaming_service: Amazon Prime
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  type: episode
+
+# Streaming service: Comedy Central
+? Show.Name.2016.09.28.Nice.Title.Extended.1080p.CC.WEBRip.AAC2.0.x264-monkee
+: title: Show Name
+  date: 2016-09-28
+  episode_title: Nice Title
+  edition: Extended
+  other: Rip
+  screen_size: 1080p
+  streaming_service: Comedy Central
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: The CW
+? Show.Name.US.S12E20.Nice.Title.720p.CW.WEBRip.AAC2.0.x264-monkee
+? Show.Name.US.S12E20.Nice.Title.720p.TheCW.WEBRip.AAC2.0.x264-monkee
+: title: Show Name
+  country: US
+  season: 12
+  episode: 20
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: The CW
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: AMBC
+? Show.Name.2016.09.27.Nice.Title.720p.AMBC.WEBRip.AAC2.0.x264-monkee
+: title: Show Name
+  date: 2016-09-27
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: ABC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: HIST
+? Show.Name.720p.HIST.WEBRip.AAC2.0.H.264-monkee
+? Show.Name.720p.History.WEBRip.AAC2.0.H.264-monkee
+: options: -t episode
+  title: Show Name
+  screen_size: 720p
+  streaming_service: History
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: PBS
+? Show.Name.2015.Nice.Title.1080p.PBS.WEBRip.AAC2.0.H264-monkee
+: options: -t episode
+  title: Show Name
+  year: 2015
+  episode_title: Nice Title
+  screen_size: 1080p
+  streaming_service: PBS
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: SeeSo
+? Show.Name.2016.Nice.Title.1080p.SESO.WEBRip.AAC2.0.x264-monkee
+: options: -t episode
+  title: Show Name
+  year: 2016
+  episode_title: Nice Title
+  screen_size: 1080p
+  streaming_service: SeeSo
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Discovery
+? Show.Name.S01E03.Nice.Title.720p.DISC.WEBRip.AAC2.0.x264-NTb
+? Show.Name.S01E03.Nice.Title.720p.Discovery.WEBRip.AAC2.0.x264-NTb
+: title: Show Name
+  season: 1
+  episode: 3
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: Discovery
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: NTb
+  type: episode
+
+# Streaming service: BBC iPlayer
+? Show.Name.2016.08.18.Nice.Title.720p.iP.WEBRip.AAC2.0.H.264-monkee
+? Show.Name.2016.08.18.Nice.Title.720p.BBCiPlayer.WEBRip.AAC2.0.H.264-monkee
+: title: Show Name
+  date: 2016-08-18
+  episode_title: Nice Title
+  streaming_service: BBC iPlayer
+  screen_size: 720p
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: A&E
+? Show.Name.S15E18.Nice.Title.720p.AE.WEBRip.AAC2.0.H.264-monkee
+? Show.Name.S15E18.Nice.Title.720p.A&E.WEBRip.AAC2.0.H.264-monkee
+: title: Show Name
+  season: 15
+  episode: 18
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: A&E
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Adult Swim
+? Show.Name.S04E01.Nice.Title.1080p.AS.WEBRip.AAC2.0.H.264-monkee
+? Show.Name.S04E01.Nice.Title.1080p.AdultSwim.WEBRip.AAC2.0.H.264-monkee
+: title: Show Name
+  season: 4
+  episode: 1
+  episode_title: Nice Title
+  screen_size: 1080p
+  streaming_service: Adult Swim
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Netflix
+? Show.Name.2013.S02E03.1080p.NF.WEBRip.DD5.1.x264-NTb.mkv
+: title: Show Name
+  year: 2013
+  season: 2
+  episode: 3
+  screen_size: 1080p
+  streaming_service: Netflix
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NTb
+  container: mkv
+  type: episode
+
+# Streaming service: CBS
+? Show.Name.2016.05.10.Nice.Title.720p.CBS.WEBRip.AAC2.0.x264-monkee
+: title: Show Name
+  date: 2016-05-10
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: CBS
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: NBA TV
+? NBA.2016.02.27.Team.A.vs.Team.B.720p.NBA.WEBRip.AAC2.0.H.264-monkee
+? NBA.2016.02.27.Team.A.vs.Team.B.720p.NBATV.WEBRip.AAC2.0.H.264-monkee
+: title: NBA
+  date: 2016-02-27
+  episode_title: Team A vs Team B
+  screen_size: 720p
+  streaming_service: NBA TV
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: ePix
+? Show.Name.S05E04.Nice.Title.Part4.720p.EPIX.WEBRip.AAC2.0.H.264-monkee
+? Show.Name.S05E04.Nice.Title.Part4.720p.ePix.WEBRip.AAC2.0.H.264-monkee
+: title: Show Name
+  season: 5
+  episode: 4
+  episode_title: Nice Title
+  part: 4
+  screen_size: 720p
+  streaming_service: ePix
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: NBC
+? Show.Name.S41E03.Nice.Title.720p.NBC.WEBRip.AAC2.0.x264-monkee
+: title: Show Name
+  season: 41
+  episode: 3
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: NBC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Syfy
+? Show.Name.S01E02.Nice.Title.720p.SYFY.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.Syfy.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: Syfy
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: Spike TV
+? Show.Name.S01E02.Nice.Title.720p.SPKE.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.Spike TV.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.SpikeTV.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: Spike TV
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: IFC
+? Show.Name.S01E02.Nice.Title.720p.IFC.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: IFC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: NATG
+? Show.Name.S01E02.Nice.Title.720p.NATG.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.NationalGeographic.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: National Geographic
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: NFL
+? Show.Name.S01E02.Nice.Title.720p.NFL.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: NFL
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: UFC
+? Show.Name.S01E02.Nice.Title.720p.UFC.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: UFC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: TV Land
+? Show.Name.S01E02.Nice.Title.720p.TVL.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.TVLand.WEBRip.AAC2.0.x264-group
+? Show.Name.S01E02.Nice.Title.720p.TV Land.WEBRip.AAC2.0.x264-group
+: title: Show Name
+  season: 1
+  episode: 2
+  episode_title: Nice Title
+  screen_size: 720p
+  streaming_service: TV Land
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: group
+  type: episode
+
+# Streaming service: Crunchy Roll
+? Show.Name.S01.1080p.CR.WEBRip.AAC.2.0.x264-monkee
+: title: Show Name
+  season: 1
+  screen_size: 1080p
+  streaming_service: Crunchy Roll
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Disney
+? Show.Name.S01.1080p.DSNY.WEBRip.AAC.2.0.x264-monkee
+? Show.Name.S01.1080p.Disney.WEBRip.AAC.2.0.x264-monkee
+: title: Show Name
+  season: 1
+  screen_size: 1080p
+  streaming_service: Disney
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: Nickelodeon
+? Show.Name.S01.1080p.NICK.WEBRip.AAC.2.0.x264-monkee
+? Show.Name.S01.1080p.Nickelodeon.WEBRip.AAC.2.0.x264-monkee
+: title: Show Name
+  season: 1
+  screen_size: 1080p
+  streaming_service: Nickelodeon
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: TFou
+? Show.Name.S01.1080p.TFOU.WEBRip.AAC.2.0.x264-monkee
+? Show.Name.S01.1080p.TFou.WEBRip.AAC.2.0.x264-monkee
+: title: Show Name
+  season: 1
+  screen_size: 1080p
+  streaming_service: TFou
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+# Streaming service: DIY Network
+? Show.Name.S01.720p.DIY.WEBRip.AAC2.0.H.264-BTN
+: title: Show Name
+  season: 1
+  screen_size: 720p
+  streaming_service: DIY Network
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTN
+  type: episode
+
+# Streaming service: USA Network
+? Show.Name.S01E02.Exfil.1080p.USAN.WEBRip.AAC2.0.x264-AJP69
+: title: Show Name
+  season: 1
+  episode: 2
+  screen_size: 1080p
+  streaming_service: USA Network
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: AJP69
+  type: episode
+
+# Streaming service: TV3 Ireland
+? Show.Name.S01E08.576p.TV3.WEBRip.AAC2.0.x264-HARiKEN
+: title: Show Name
+  season: 1
+  episode: 8
+  screen_size: 576p
+  streaming_service: TV3 Ireland
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: HARiKEN
+  type: episode
+
+# Streaming service: TV4 Sweeden
+? Show.Name.S05.720p.TV4.WEBRip.AAC2.0.H.264-BTW
+: title: Show Name
+  season: 5
+  screen_size: 720p
+  streaming_service: TV4 Sweeden
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTW
+  type: episode
+
+# Streaming service: TLC
+? Show.Name.S02.720p.TLC.WEBRip.AAC2.0.x264-BTW
+: title: Show Name
+  season: 2
+  screen_size: 720p
+  streaming_service: TLC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTW
+  type: episode
+
+# Streaming service: Investigation Discovery
+? Show.Name.S01E01.720p.ID.WEBRip.AAC2.0.x264-BTW
+: title: Show Name
+  season: 1
+  episode: 1
+  screen_size: 720p
+  streaming_service: Investigation Discovery
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTW
+  type: episode
+
+# Streaming service: RTÉ One
+? Show.Name.S10E01.576p.RTE.WEBRip.AAC2.0.H.264-RTN
+: title: Show Name
+  season: 10
+  episode: 1
+  screen_size: 576p
+  streaming_service: RTÉ One
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: RTN
+  type: episode
+
+# Streaming service: AMC
+? Show.Name.S01E01.1080p.AMC.WEBRip.H.264.AAC2.0-CasStudio
+: title: Show Name
+  season: 1
+  episode: 1
+  screen_size: 1080p
+  streaming_service: AMC
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: CasStudio
+  type: episode
+
+? Suits.S07E01.1080p.iT.WEB-DL.DD5.1.H.264-VLAD.mkv
+? Suits.S07E01.1080p.iTunes.WEB-DL.DD5.1.H.264-VLAD.mkv
+: title: Suits
+  season: 7
+  episode: 1
+  screen_size: 1080p
+  source: Web
+  streaming_service: iTunes
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: VLAD
+  container: mkv
+  type: episode
+
+? UpFront.S01.720p.AJAZ.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Al Jazeera English
+  title: UpFront
+  type: episode
+  video_codec: H.264
+
+? Smack.The.Pony.S01.4OD.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  season: 1
+  source: Web
+  streaming_service: Channel 4
+  title: Smack The Pony
+  type: episode
+  video_codec: H.264
+
+? The.Toy.Box.S01E01.720p.AMBC.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: BTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: ABC
+  title: The Toy Box
+  type: episode
+  video_codec: H.264
+
+? Gundam.Reconguista.in.G.S01.720p.ANLB.WEBRip.AAC2.0.x264-HorribleSubs
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: HorribleSubs
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: AnimeLab
+  title: Gundam Reconguista in G
+  type: episode
+  video_codec: H.264
+
+? Animal.Nation.with.Anthony.Anderson.S01E01.1080p.ANPL.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: RTN
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Animal Planet
+  title: Animal Nation with Anthony Anderson
+  type: episode
+  video_codec: H.264
+
+? Park.Bench.S01.1080p.AOL.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: AOL
+  title: Park Bench
+  type: episode
+  video_codec: H.264
+
+? Crime.Scene.Cleaner.S05.720p.ARD.WEBRip.AAC2.0.H.264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  screen_size: 720p
+  season: 5
+  source: Web
+  streaming_service: ARD
+  title: Crime Scene Cleaner
+  type: episode
+  video_codec: H.264
+
+? Decker.S03.720p.AS.WEB-DL.AAC2.0.H.264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: RTN
+  screen_size: 720p
+  season: 3
+  source: Web
+  streaming_service: Adult Swim
+  title: Decker
+  type: episode
+  video_codec: H.264
+
+? Southern.Charm.Savannah.S01E04.Hurricane.On.The.Horizon.1080p.BRAV.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 4
+  episode_title: Hurricane On The Horizon
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: BravoTV
+  title: Southern Charm Savannah
+  type: episode
+  video_codec: H.264
+
+? Four.in.the.Morning.S01E01.Pig.RERip.720p.CBC.WEBRip.AAC2.0.H.264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  episode_title: Pig
+  other:
+  - Proper
+  - Rip
+  proper_count: 1
+  release_group: RTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: CBC
+  title: Four in the Morning
+  type: episode
+  video_codec: H.264
+
+? Rio.Olympics.2016.08.07.Mens.Football.Group.C.Germany.vs.South.Korea.720p.CBC.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2016-08-07
+  episode_title: Mens Football Group C Germany vs South Korea
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: CBC
+  title: Rio Olympics
+  type: episode
+  video_codec: H.264
+
+? Comedians.In.Cars.Getting.Coffee.S01.720p.CCGC.WEBRip.AAC2.0.x264-monkee
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: monkee
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Comedians in Cars Getting Coffee
+  title: Comedians In Cars Getting Coffee
+  type: episode
+  video_codec: H.264
+
+? Life.on.Top.S02.720p.CMAX.WEBRip.AAC2.0.x264-CMAX
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: CMAX
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: Cinemax
+  title: Life on Top
+  type: episode
+  video_codec: H.264
+
+? Sun.Records.S01.720p.CMT.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Country Music Television
+  title: Sun Records
+  type: episode
+  video_codec: H.264
+
+? Infinity.Train.S01E00.Pilot.REPACK.720p.CN.WEBRip.AAC2.0.H.264-monkee
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 0
+  episode_details: Pilot
+  episode_title: Pilot
+  language: zh
+  other:
+  - Proper
+  - Rip
+  proper_count: 1
+  release_group: monkee
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Cartoon Network
+  title: Infinity Train
+  type: episode
+  video_codec: H.264
+
+? Jay.Lenos.Garage.2015.S03E02.1080p.CNBC.WEB-DL.x264-TOPKEK
+: episode: 2
+  release_group: TOPKEK
+  screen_size: 1080p
+  season: 3
+  source: Web
+  streaming_service: CNBC
+  title: Jay Lenos Garage
+  type: episode
+  video_codec: H.264
+  year: 2015
+
+? US.Presidential.Debates.2015.10.28.Third.Republican.Debate.720p.CNBC.WEBRip.AAC2.0.H.264-monkee
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: US
+  date: 2015-10-28
+  episode_title: Third Republican Debate
+  other: Rip
+  release_group: monkee
+  screen_size: 720p
+  source: Web
+  streaming_service: CNBC
+  title: Presidential Debates
+  type: episode
+  video_codec: H.264
+
+? What.The.Fuck.France.S01E01.Le.doublage.CNLP.WEBRip.AAC2.0.x264-TURTLE
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: FR
+  episode: 1
+  episode_title: Le doublage
+  other: Rip
+  release_group: TURTLE
+  season: 1
+  source: Web
+  streaming_service: Canal+
+  title: What The Fuck
+  type: episode
+  video_codec: H.264
+
+? SuperMansion.S02.720p.CRKL.WEBRip.AAC2.0.x264-VLAD
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: VLAD
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: Crackle
+  title: SuperMansion
+  type: episode
+  video_codec: H.264
+
+? Chosen.S02.1080p.CRKL.WEBRip.AAC2.0.x264-AJP69
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: AJP69
+  screen_size: 1080p
+  season: 2
+  source: Web
+  streaming_service: Crackle
+  title: Chosen
+  type: episode
+  video_codec: H.264
+
+? Chosen.S03.1080p.CRKL.WEBRip.AAC2.0.x264-AJP69
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: AJP69
+  screen_size: 1080p
+  season: 3
+  source: Web
+  streaming_service: Crackle
+  title: Chosen
+  type: episode
+  video_codec: H.264
+
+? Snatch.S01.1080p.CRKL.WEBRip.AAC2.0.x264-DEFLATE
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: DEFLATE
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Crackle
+  title: Snatch
+  type: episode
+  video_codec: H.264
+
+? White.House.Correspondents.Dinner.2015.Complete.CSPN.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other:
+  - Complete
+  - Rip
+  release_group: BTW
+  source: Web
+  streaming_service: CSpan
+  title: White House Correspondents Dinner
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? The.Amazing.Race.Canada.S03.720p.CTV.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: CA
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 3
+  source: Web
+  streaming_service: CTV
+  title: The Amazing Race
+  type: episode
+  video_codec: H.264
+
+? Miniverse.S01E01.Explore.the.Solar.System.2160p.CUR.WEB-DL.DDP2.0.x264-monkee
+: audio_channels: '2.0'
+  audio_codec: Dolby Digital Plus
+  episode: 1
+  episode_title: Explore the Solar System
+  release_group: monkee
+  screen_size: 2160p
+  season: 1
+  source: Web
+  streaming_service: CuriosityStream
+  title: Miniverse
+  type: episode
+  video_codec: H.264
+
+? Vixen.S02.720p.CWS.WEBRip.AAC2.0.x264-BMF
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BMF
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: CWSeed
+  title: Vixen
+  type: episode
+  video_codec: H.264
+
+? Abidin.Dino.DDY.WEBRip.AAC2.0.H.264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  source: Web
+  streaming_service: Digiturk Diledigin Yerde
+  title: Abidin Dino
+  type: movie
+  video_codec: H.264
+
+? Fast.N.Loud.S08.1080p.DISC.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  screen_size: 1080p
+  season: 8
+  source: Web
+  streaming_service: Discovery
+  title: Fast N Loud
+  type: episode
+  video_codec: H.264
+
+? Bake.Off.Italia.S04.1080p.DPLY.WEBRip.AAC2.0.x264-Threshold
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: Threshold
+  screen_size: 1080p
+  season: 4
+  source: Web
+  streaming_service: DPlay
+  title: Bake Off Italia
+  type: episode
+  video_codec: H.264
+
+? Long.Riders.S01.DSKI.WEBRip.AAC2.0.x264-HorribleSubs
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: HorribleSubs
+  season: 1
+  source: Web
+  streaming_service: Daisuki
+  title: Long Riders
+  type: episode
+  video_codec: H.264
+
+? Milo.Murphys.Law.S01.720p.DSNY.WEB-DL.AAC2.0.x264-TVSmash
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: TVSmash
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Disney
+  title: Milo Murphys Law
+  type: episode
+  video_codec: H.264
+
+? 30.for.30.S03E15.Doc.and.Darryl.720p.ESPN.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 15
+  episode_title: Doc and Darryl
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 3
+  source: Web
+  streaming_service: ESPN
+  title: 30 for 30
+  type: episode
+  video_codec: H.264
+
+? Boundless.S03.720p.ESQ.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  screen_size: 720p
+  season: 3
+  source: Web
+  streaming_service: Esquire
+  title: Boundless
+  type: episode
+  video_codec: H.264
+
+? Periodismo.Para.Todos.S2016E01.720p.ETTV.WEBRip.AAC2.0.H.264-braggart74
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: braggart74
+  screen_size: 720p
+  season: 2016
+  source: Web
+  streaming_service: El Trece
+  title: Periodismo Para Todos
+  type: episode
+  video_codec: H.264
+  year: 2016
+
+? Just.Jillian.S01E01.1080p.ETV.WEBRip.AAC2.0.x264-GoApe
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: GoApe
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: E!
+  title: Just Jillian
+  type: episode
+  video_codec: H.264
+
+? New.Money.S01.1080p.ETV.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: E!
+  title: New Money
+  type: episode
+  video_codec: H.264
+
+? Gaming.Show.In.My.Parents.Garage.S02E01.The.Power.Up1000.FAM.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  episode_title: The Power Up1000
+  other: Rip
+  release_group: RTN
+  season: 2
+  source: Web
+  streaming_service: Family
+  title: Gaming Show In My Parents Garage
+  type: episode
+  video_codec: H.264
+
+? Little.People.2016.S01E03.Proud.to.Be.You.and.Me.720p.FJR.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 3
+  episode_title: Proud to Be You and Me
+  other: Rip
+  release_group: RTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Family Jr
+  title: Little People
+  type: episode
+  video_codec: H.264
+  year: 2016
+
+? The.Pioneer.Woman.S00E08.Summer.Summer.Summer.720p.FOOD.WEB-DL.AAC2.0.x264-AJP69
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 8
+  episode_title: Summer Summer Summer
+  release_group: AJP69
+  screen_size: 720p
+  season: 0
+  source: Web
+  streaming_service: Food Network
+  title: The Pioneer Woman
+  type: episode
+  video_codec: H.264
+
+? Prata.da.Casa.S01E01.720p.FOX.WEBRip.AAC2.0.H.264-BARRY
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: BARRY
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Fox
+  title: Prata da Casa
+  type: episode
+  video_codec: H.264
+
+? Grandfathered.S01.720p.FOX.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Fox
+  title: Grandfathered
+  type: episode
+  video_codec: H.264
+
+? Truth.and.Iliza.S01E01.FREE.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: BTN
+  season: 1
+  source: Web
+  streaming_service: Freeform
+  title: Truth and Iliza
+  type: episode
+  video_codec: H.264
+
+? Seven.Year.Switch.S01.720p.FYI.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: FYI Network
+  title: Seven Year Switch
+  type: episode
+  video_codec: H.264
+
+? NHL.2015.10.09.Leafs.vs.Red.Wings.Condensed.Game.720p.Away.Feed.GC.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2015-10-09
+  episode_title: Leafs vs Red Wings Condensed Game
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: NHL GameCenter
+  title: NHL
+  type: episode
+  video_codec: H.264
+
+? NHL.2016.01.26.Maple.Leafs.vs.Panthers.720p.Home.Feed.GC.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2016-01-26
+  episode_title: Maple Leafs vs Panthers
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: NHL GameCenter
+  title: NHL
+  type: episode
+  video_codec: H.264
+
+? Big.Brother.Canada.S05.GLBL.WEBRip.AAC2.0.H.264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: CA
+  other: Rip
+  release_group: RTN
+  season: 5
+  source: Web
+  streaming_service: Global
+  title: Big Brother
+  type: episode
+  video_codec: H.264
+
+? Pornolandia.S01.720p.GLOB.WEBRip.AAC2.0.x264-GeneX
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: GeneX
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: GloboSat Play
+  title: Pornolandia
+  type: episode
+  video_codec: H.264
+
+? Transando.com.Laerte.S01.720p.GLOB.WEBRip.AAC2.0.x264-GeneX
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: GeneX
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: GloboSat Play
+  title: Transando com Laerte
+  type: episode
+  video_codec: H.264
+
+? Flip.or.Flop.S01.720p.HGTV.WEBRip.AAC2.0.H.264-AJP69
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: AJP69
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: HGTV
+  title: Flip or Flop
+  type: episode
+  video_codec: H.264
+
+? Kitten.Bowl.2014.720p.HLMK.WEBRip.AAC2.0.x264-monkee
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: monkee
+  screen_size: 720p
+  source: Web
+  streaming_service: Hallmark
+  title: Kitten Bowl
+  type: movie
+  video_codec: H.264
+  year: 2014
+
+? Still.Star-Crossed.S01E05.720p.HULU.WEB-DL.AAC2.0.H.264-VLAD
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 5
+  release_group: VLAD
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Hulu
+  title: Still Star-Crossed
+  type: episode
+  video_codec: H.264
+
+? EastEnders.2017.07.17.720p.iP.WEB-DL.AAC2.0.H.264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2017-07-17
+  release_group: BTN
+  screen_size: 720p
+  source: Web
+  streaming_service: BBC iPlayer
+  title: EastEnders
+  type: episode
+  video_codec: H.264
+
+? Handmade.in.Japan.S01E01.720p.iP.WEBRip.AAC2.0.H.264-SUP
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: JP
+  episode: 1
+  other: Rip
+  release_group: SUP
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: BBC iPlayer
+  title: Handmade in
+  type: episode
+  video_codec: H.264
+
+? The.Chillenden.Murders.S01.720p.iP.WEBRip.AAC2.0.H.264-HAX
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: HAX
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: BBC iPlayer
+  title: The Chillenden Murders
+  type: episode
+  video_codec: H.264
+
+? The.Street.S01.ITV.WEB-DL.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: RTN
+  season: 1
+  source: Web
+  streaming_service: ITV
+  title: The Street
+  type: episode
+  video_codec: H.264
+
+? Hope.for.Wildlife.S04.1080p.KNOW.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 4
+  source: Web
+  streaming_service: Knowledge Network
+  title: Hope for Wildlife
+  type: episode
+  video_codec: H.264
+
+? Kim.of.Queens.S02.720p.LIFE.WEBRip.AAC2.0.H.264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: Lifetime
+  title: Kim of Queens
+  type: episode
+  video_codec: H.264
+
+? The.Rachel.Maddow.Show.2017.02.22.720p.MNBC.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2017-02-22
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: MSNBC
+  title: The Rachel Maddow Show
+  type: episode
+  video_codec: H.264
+
+? Ignition.S06E12.720p.MTOD.WEB-DL.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 12
+  release_group: RTN
+  screen_size: 720p
+  season: 6
+  source: Web
+  streaming_service: Motor Trend OnDemand
+  title: Ignition
+  type: episode
+  video_codec: H.264
+
+? Teen.Mom.UK.S01E01.Life.as.a.Teen.Mum.1080p.MTV.WEB-DL.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: GB
+  episode: 1
+  episode_title: Life as a Teen Mum
+  release_group: BTW
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: MTV
+  title: Teen Mom
+  type: episode
+  video_codec: H.264
+
+? Undrafted.S01.720p.NFLN.WEBRip.AAC2.0.H.264-TTYL
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: TTYL
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: NFL Now
+  title: Undrafted
+  type: episode
+  video_codec: H.264
+
+? NFL.2016.08.25.PreSeason.Cowboys.vs.Seahawks.720p.NFL.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2016-08-25
+  episode_title: PreSeason Cowboys vs Seahawks
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: NFL
+  title: NFL
+  type: episode
+  video_codec: H.264
+
+? Bunsen.is.a.Beast.S01E23.Guinea.Some.Lovin.1080p.NICK.WEBRip.AAC2.0.x264-TVSmash
+: audio_channels: '2.0'
+  audio_codec: AAC
+  country: GN
+  episode: 23
+  episode_title: Some Lovin
+  other: Rip
+  release_group: TVSmash
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Nickelodeon
+  title: Bunsen is a Beast
+  type: episode
+  video_codec: H.264
+
+? Valkyrie.S01.720p.NRK.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Norsk Rikskringkasting
+  title: Valkyrie
+  type: episode
+  video_codec: H.264
+
+? Food.Forward.S01.720p.PBS.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: PBS
+  title: Food Forward
+  type: episode
+  video_codec: H.264
+
+? SciGirls.S01E01.Turtle.Mania.720p.PBSK.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  episode_title: Turtle Mania
+  other: Rip
+  release_group: RTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: PBS Kids
+  title: SciGirls
+  type: episode
+  video_codec: H.264
+
+? Powers.2015.S01.1080p.PSN.WEBRip.DD5.1.x264-NTb
+: audio_channels: '5.1'
+  audio_codec: Dolby Digital
+  other: Rip
+  release_group: NTb
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Playstation Network
+  title: Powers
+  type: episode
+  video_codec: H.264
+  year: 2015
+
+? Escape.The.Night.S02E02.The.Masquerade.Part.II.1080p.RED.WEBRip.AAC5.1.VP9-BTW
+: audio_channels: '5.1'
+  audio_codec: AAC
+  episode: 2
+  episode_title: The Masquerade
+  other: Rip
+  part: 2
+  release_group: VP9-BTW
+  screen_size: 1080p
+  season: 2
+  source: Web
+  streaming_service: YouTube Red
+  title: Escape The Night
+  type: episode
+
+? Escape.The.Night.S02E02.The.Masquerade.Part.II.2160p.RED.WEBRip.AAC5.1.VP9-BTW
+: audio_channels: '5.1'
+  audio_codec: AAC
+  episode: 2
+  episode_title: The Masquerade
+  other: Rip
+  part: 2
+  release_group: VP9-BTW
+  screen_size: 2160p
+  season: 2
+  source: Web
+  streaming_service: YouTube Red
+  title: Escape The Night
+  type: episode
+
+? Escape.The.Night.S02E02.The.Masquerade.Part.II.720p.RED.WEBRip.AAC5.1.VP9-BTW
+: audio_channels: '5.1'
+  audio_codec: AAC
+  episode: 2
+  episode_title: The Masquerade
+  other: Rip
+  part: 2
+  release_group: VP9-BTW
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: YouTube Red
+  title: Escape The Night
+  type: episode
+
+? The.Family.Law.S02E01.720p.SBS.WEB-DL.AAC2.0.H.264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  release_group: BTN
+  screen_size: 720p
+  season: 2
+  source: Web
+  streaming_service: SBS (AU)
+  title: The Family Law
+  type: episode
+  video_codec: H.264
+
+? Theres.No.Joy.In.Beachville.The.True.Story.of.Baseballs.Origin.720p.SNET.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  source: Web
+  streaming_service: Sportsnet
+  title: Theres No Joy In Beachville The True Story of Baseballs Origin
+  type: movie
+  video_codec: H.264
+
+? One.Night.Only.Alec.Baldwin.720p.SPIK.WEB-DL.AAC2.0.x264-NOGRP
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: NOGRP
+  screen_size: 720p
+  source: Web
+  streaming_service: Spike
+  title: One Night Only Alec Baldwin
+  type: movie
+  video_codec: H.264
+
+? Ink.Master.S08.720p.SPIK.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 720p
+  season: 8
+  source: Web
+  streaming_service: Spike
+  title: Ink Master
+  type: episode
+  video_codec: H.264
+
+? Jungle.Bunch.S01E01.Deep.Chasm.1080p.SPRT.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  episode_title: Deep Chasm
+  other: Rip
+  release_group: RTN
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Sprout
+  title: Jungle Bunch
+  type: episode
+  video_codec: H.264
+
+? Ash.vs.Evil.Dead.S01.720p.STZ.WEBRip.AAC2.0.x264-NTb
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: NTb
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Starz
+  title: Ash vs Evil Dead
+  type: episode
+  video_codec: H.264
+
+? WWE.Swerved.S01.720p.WWEN.WEBRip.AAC2.0.H.264-PPKORE
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: PPKORE
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: WWE Network
+  title: WWE Swerved
+  type: episode
+  video_codec: H.264
+
+? Face.Off.S11.1080p.SYFY.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 11
+  source: Web
+  streaming_service: Syfy
+  title: Face Off
+  type: episode
+  video_codec: H.264
+
+? Conan.2016.09.22.Jeff.Garlin.720p.TBS.WEBRip.AAC2.0.H.264-NOGRP
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2016-09-22
+  episode_title: Jeff Garlin
+  other: Rip
+  release_group: NOGRP
+  screen_size: 720p
+  source: Web
+  streaming_service: TBS
+  title: Conan
+  type: episode
+  video_codec: H.264
+
+? Swans.Crossing.S01.TUBI.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  season: 1
+  source: Web
+  streaming_service: TubiTV
+  title: Swans Crossing
+  type: episode
+  video_codec: H.264
+
+? The.Joy.of.Techs.S01.UKTV.WEB-DL.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: RTN
+  season: 1
+  source: Web
+  streaming_service: UKTV
+  title: The Joy of Techs
+  type: episode
+  video_codec: H.264
+
+? Rock.Icons.S01.720p.VH1.WEB-DL.AAC2.0.H.264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: RTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: VH1
+  title: Rock Icons
+  type: episode
+  video_codec: H.264
+
+? Desus.and.Mero.S01E130.2017.07.18.1080p.VICE.WEB-DL.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  date: 2017-07-18
+  episode: 130
+  release_group: RTN
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Viceland
+  title: Desus and Mero
+  type: episode
+  video_codec: H.264
+
+? Graveyard.Carz.S07.1080p.VLCT.WEBRip.AAC2.0.x264-RTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: RTN
+  screen_size: 1080p
+  season: 7
+  source: Web
+  streaming_service: Velocity
+  title: Graveyard Carz
+  type: episode
+  video_codec: H.264
+
+? Other.Space.S01E01.1080p.YHOO.WEBRip.AAC2.0.x264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 1
+  other: Rip
+  release_group: BTW
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Yahoo
+  title: Other Space
+  type: episode
+  video_codec: H.264
+
+? Americas.Test.Kitchen.S17.720p.ATK.WEB-DL.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  release_group: BTN
+  screen_size: 720p
+  season: 17
+  source: Web
+  streaming_service: America's Test Kitchen
+  title: Americas Test Kitchen
+  type: episode
+  video_codec: H.264
+
+? Bushwhacked.Bugs.S01.AUBC.WEBRip.AAC2.0.H.264-DAWN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: DAWN
+  season: 1
+  source: Web
+  streaming_service: ABC Australia
+  title: Bushwhacked Bugs
+  type: episode
+  video_codec: H.264
+
+? VICE.S05E12.1080p.HBO.WEB-DL.AAC2.0.H.264-monkee
+? VICE.S05E12.1080p.HBO-Go.WEB-DL.AAC2.0.H.264-monkee
+? VICE.S05E12.1080p.HBOGo.WEB-DL.AAC2.0.H.264-monkee
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 12
+  release_group: monkee
+  screen_size: 1080p
+  season: 5
+  source: Web
+  streaming_service: HBO Go
+  title: VICE
+  type: episode
+  video_codec: H.264
+
+? Dix.Pour.Cent.S02.PLUZ.WEBRip.AAC2.0.H.264-TURTLE
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: TURTLE
+  season: 2
+  source: Web
+  streaming_service: Pluzz
+  title: Dix Pour Cent
+  type: episode
+  video_codec: H.264
+
+? Ulveson.och.Herngren.S01.720p.SVT.WEBRip.AAC2.0.H.264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  screen_size: 720p
+  season: 1
+  source: Web
+  streaming_service: Sveriges Television
+  title: Ulveson och Herngren
+  type: episode
+  video_codec: H.264
+
+? Bravest.Warriors.S03.1080p.VRV.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  screen_size: 1080p
+  season: 3
+  source: Web
+  streaming_service: VRV
+  title: Bravest Warriors
+  type: episode
+  video_codec: H.264
+
+? The.Late.Night.Big.Breakfast.S02.WME.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  season: 2
+  source: Web
+  streaming_service: WatchMe
+  title: The Late Night Big Breakfast
+  type: episode
+  video_codec: H.264
+
+? Hockey.Wives.S02.WNET.WEBRip.AAC2.0.H.264-BTW
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTW
+  season: 2
+  source: Web
+  streaming_service: W Network
+  title: Hockey Wives
+  type: episode
+  video_codec: H.264
+
+? Sin.City.Saints.S01.1080p.YHOO.WEBRip.AAC2.0.x264-NTb
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: NTb
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Yahoo
+  title: Sin City Saints
+  type: episode
+  video_codec: H.264
+
+? 555.S01.1080p.VMEO.WEBRip.AAC2.0.x264-BTN
+: audio_channels: '2.0'
+  audio_codec: AAC
+  other: Rip
+  release_group: BTN
+  screen_size: 1080p
+  season: 1
+  source: Web
+  streaming_service: Vimeo
+  title: '555'
+  type: episode
+  video_codec: H.264
+
+# All this below shouldn't match any streaming services
+? London.2012.Olympics.CTV.Preview.Show.HDTV.x264-2HD
+: alternative_title: Olympics CTV Preview Show
+  release_group: 2HD
+  source: HDTV
+  title: London
+  type: movie
+  video_codec: H.264
+  year: 2012
+
+? UFC.on.FOX.24.1080p.HDTV.x264-VERUM
+: episode: 24
+  release_group: VERUM
+  screen_size: 1080p
+  source: HDTV
+  title: UFC on FOX
+  type: episode
+  video_codec: H.264
+
+? ESPN.E.60.2016.10.04.HDTV.x264-LoTV
+: date: 2016-10-04
+  episode: 60
+  release_group: LoTV
+  source: HDTV
+  title: ESPN E
+  type: episode
+  video_codec: H.264
+
+? GTTV.E3.All.Access.Live.Day.1.Xbox.Showcase.Preshow.HDTV.x264-SYS
+: episode: 3
+  episode_title: All Access Live Day 1 Xbox Showcase Preshow
+  release_group: SYS
+  source: HDTV
+  title: GTTV
+  type: episode
+  video_codec: H.264
