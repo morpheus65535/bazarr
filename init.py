@@ -235,9 +235,16 @@ try:
         cfg.read_file(f)
 except Exception:
     pass
-cfg.remove_option('auth', 'enabled')
-with open(config_file, 'w+') as configfile:
-    cfg.write(configfile)
+if cfg.has_section('auth'):
+    if cfg.has_option('auth', 'enabled'):
+        enabled = cfg.getboolean('auth', 'enabled')
+        if enabled is True:
+            cfg.set('auth', 'type', 'basic')
+        elif enabled is False:
+            cfg.set('auth', 'type', 'basic')
+        cfg.remove_option('auth', 'enabled')
+        with open(config_file, 'w+') as configfile:
+            cfg.write(configfile)
 
 from cork import Cork
 import time
