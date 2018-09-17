@@ -241,7 +241,7 @@ if cfg.has_section('auth'):
         if enabled is True:
             cfg.set('auth', 'type', 'basic')
         elif enabled is False:
-            cfg.set('auth', 'type', 'basic')
+            cfg.set('auth', 'type', 'None')
         cfg.remove_option('auth', 'enabled')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
