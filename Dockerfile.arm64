@@ -8,11 +8,8 @@ ADD qemu-aarch64-static /usr/bin
 VOLUME /tv
 VOLUME /movies
 
-RUN apk add --update git py-pip jpeg-dev && \
-    apk add --update --virtual build-dependencies build-base python-dev libffi-dev zlib-dev  && \
-    git clone https://github.com/morpheus65535/bazarr.git /bazarr && \
-    pip install -r /bazarr/requirements.txt && \
-    apk del --purge build-dependencies
+RUN apk add --update git py-pip && \
+    git clone https://github.com/morpheus65535/bazarr.git /bazarr
 
 VOLUME /bazarr/data
 

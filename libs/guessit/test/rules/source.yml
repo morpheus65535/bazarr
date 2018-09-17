@@ -1,0 +1,323 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +VHS
+? -VHSAnythingElse
+? -SomeVHS stuff
+? -VH
+? -VHx
+: source: VHS
+  -other: Rip
+
+? +VHSRip
+? +VHS-Rip
+? +VhS_rip
+? +VHS.RIP
+? -VHS
+? -VHxRip
+: source: VHS
+  other: Rip
+
+? +Cam
+: source: Camera
+  -other: Rip
+
+? +CamRip
+? +CaM Rip
+? +Cam_Rip
+? +cam.rip
+? -Cam
+: source: Camera
+  other: Rip
+
+? +HDCam
+? +HD-Cam
+: source: HD Camera
+  -other: Rip
+
+? +HDCamRip
+? +HD-Cam.rip
+? -HDCam
+? -HD-Cam
+: source: HD Camera
+  other: Rip
+
+? +Telesync
+? +TS
+: source: Telesync
+  -other: Rip
+
+? +TelesyncRip
+? +TSRip
+? -Telesync
+? -TS
+: source: Telesync
+  other: Rip
+
+? +HD TS
+? -Hd.Ts # ts file extension
+? -HD.TS # ts file extension
+? +Hd-Ts
+: source: HD Telesync
+  -other: Rip
+
+? +HD TS Rip
+? +Hd-Ts-Rip
+? -HD TS
+? -Hd-Ts
+: source: HD Telesync
+  other: Rip
+
+? +Workprint
+? +workPrint
+? +WorkPrint
+? +WP
+? -Work Print
+: source: Workprint
+  -other: Rip
+
+? +Telecine
+? +teleCine
+? +TC
+? -Tele Cine
+: source: Telecine
+  -other: Rip
+
+? +Telecine Rip
+? +teleCine-Rip
+? +TC-Rip
+? -Telecine
+? -TC
+: source: Telecine
+  other: Rip
+
+? +HD-TELECINE
+? +HDTC
+: source: HD Telecine
+  -other: Rip
+
+? +HD-TCRip
+? +HD TELECINE RIP
+? -HD-TELECINE
+? -HDTC
+: source: HD Telecine
+  other: Rip
+
+? +PPV
+: source: Pay-per-view
+  -other: Rip
+
+? +ppv-rip
+? -PPV
+: source: Pay-per-view
+  other: Rip
+
+? -TV
+? +SDTV
+? +TV-Dub
+: source: TV
+  -other: Rip
+
+? +SDTVRIP
+? +Rip sd tv
+? +TvRip
+? +Rip TV
+? -TV
+? -SDTV
+: source: TV
+  other: Rip
+
+? +DVB
+? +pdTV
+? +Pd Tv
+: source: Digital TV
+  -other: Rip
+
+? +DVB-Rip
+? +DvBRiP
+? +pdtvRiP
+? +pd tv RiP
+? -DVB
+? -pdTV
+? -Pd Tv
+: source: Digital TV
+  other: Rip
+
+? +DVD
+? +video ts
+? +DVDR
+? +DVD 9
+? +dvd 5
+? -dvd ts
+: source: DVD
+  -source: Telesync
+  -other: Rip
+
+? +DVD-RIP
+? -video ts
+? -DVD
+? -DVDR
+? -DVD 9
+? -dvd 5
+: source: DVD
+  other: Rip
+
+? +HDTV
+: source: HDTV
+  -other: Rip
+
+? +tv rip hd
+? +HDtv Rip
+? -HdRip # it's a Rip from non specified HD source
+? -HDTV
+: source: HDTV
+  other: Rip
+
+? +VOD
+: source: Video on Demand
+  -other: Rip
+
+? +VodRip
+? +vod rip
+? -VOD
+: source: Video on Demand
+  other: Rip
+
+? +webrip
+? +Web Rip
+? +webdlrip
+? +web dl rip
+? +webcap
+? +web cap
+? +webcaprip
+? +web cap rip
+: source: Web
+  other: Rip
+
+? +webdl
+? +Web DL
+? +webHD
+? +WEB hd
+? +web
+: source: Web
+  -other: Rip
+
+? +HDDVD
+? +hd dvd
+: source: HD-DVD
+  -other: Rip
+
+? +hdDvdRip
+? -HDDVD
+? -hd dvd
+: source: HD-DVD
+  other: Rip
+
+? +BluRay
+? +BD
+? +BD5
+? +BD9
+? +BD25
+? +bd50
+: source: Blu-ray
+  -other: Rip
+
+? +BR-Scr
+? +BR.Screener
+: source: Blu-ray
+  other: [Reencoded, Screener]
+  -language: pt-BR
+
+? +BR-Rip
+? +BRRip
+: source: Blu-ray
+  other: [Reencoded, Rip]
+  -language: pt-BR
+
+? +BluRay rip
+? +BDRip
+? -BluRay
+? -BD
+? -BR
+? -BR rip
+? -BD5
+? -BD9
+? -BD25
+? -bd50
+: source: Blu-ray
+  other: Rip
+
+? XVID.NTSC.DVDR.nfo
+: source: DVD
+  -other: Rip
+
+? +AHDTV
+: source: Analog HDTV
+  -other: Rip
+
+? +dsr
+? +dth
+: source: Satellite
+  -other: Rip
+
+? +dsrip
+? +ds rip
+? +dsrrip
+? +dsr rip
+? +satrip
+? +sat rip
+? +dthrip
+? +dth rip
+? -dsr
+? -dth
+: source: Satellite
+  other: Rip
+
+? +UHDTV
+: source: Ultra HDTV
+  -other: Rip
+
+? +UHDRip
+? +UHDTV Rip
+? -UHDTV
+: source: Ultra HDTV
+  other: Rip
+
+? UHD Bluray
+? UHD 2160p Bluray
+? UHD 8bit Bluray
+? UHD HQ 8bit Bluray
+? Ultra Bluray
+? Ultra HD Bluray
+? Bluray ULTRA
+? Bluray Ultra HD
+? Bluray UHD
+? 4K Bluray
+? 2160p Bluray
+? UHD 10bit HDR Bluray
+? UHD HDR10 Bluray
+? -HD Bluray
+? -AMERICAN ULTRA (2015) 1080p Bluray
+? -American.Ultra.2015.BRRip
+? -BRRip XviD AC3-ULTRAS
+? -UHD Proper Bluray
+: source: Ultra HD Blu-ray
+
+? UHD.BRRip
+? UHD.2160p.BRRip
+? BRRip.2160p.UHD
+? BRRip.[4K-2160p-UHD]
+: source: Ultra HD Blu-ray
+  other: [Reencoded, Rip]
+
+? UHD.2160p.BDRip
+? BDRip.[4K-2160p-UHD]
+: source: Ultra HD Blu-ray
+  other: Rip
+
+? DM
+: source: Digital Master
+
+? DMRIP
+? DM-RIP
+: source: Digital Master
+  other: Rip

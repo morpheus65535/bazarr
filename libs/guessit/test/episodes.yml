@@ -1,0 +1,4496 @@
+? __default__
+: type: episode
+
+? Series/Californication/Season 2/Californication.2x05.Vaginatown.HDTV.XviD-0TV.avi
+: title: Californication
+  season: 2
+  episode: 5
+  episode_title: Vaginatown
+  source: HDTV
+  video_codec: Xvid
+  release_group: 0TV
+  container: avi
+
+? Series/dexter/Dexter.5x02.Hello,.Bandit.ENG.-.sub.FR.HDTV.XviD-AlFleNi-TeaM.[tvu.org.ru].avi
+: title: Dexter
+  season: 5
+  episode: 2
+  episode_title: Hello, Bandit
+  language: English
+  subtitle_language: French
+  source: HDTV
+  video_codec: Xvid
+  release_group: AlFleNi-TeaM
+  website: tvu.org.ru
+  container: avi
+
+? Series/Treme/Treme.1x03.Right.Place,.Wrong.Time.HDTV.XviD-NoTV.avi
+: title: Treme
+  season: 1
+  episode: 3
+  episode_title: Right Place, Wrong Time
+  source: HDTV
+  video_codec: Xvid
+  release_group: NoTV
+
+? Series/Duckman/Duckman - S1E13 Joking The Chicken (unedited).avi
+: title: Duckman
+  season: 1
+  episode: 13
+  episode_title: Joking The Chicken
+
+? Series/Simpsons/Saison 12 Français/Simpsons,.The.12x08.A.Bas.Le.Sergent.Skinner.FR.avi
+: title: The Simpsons
+  season: 12
+  episode: 8
+  episode_title: A Bas Le Sergent Skinner
+  language: French
+
+? Series/Duckman/Duckman - 101 (01) - 20021107 - I, Duckman.avi
+: title: Duckman
+  season: 1
+  episode: 1
+  episode_title: I, Duckman
+  date: 2002-11-07
+
+? Series/Simpsons/Saison 12 Français/Simpsons,.The.12x08.A.Bas.Le.Sergent.Skinner.FR.avi
+: title: The Simpsons
+  season: 12
+  episode: 8
+  episode_title: A Bas Le Sergent Skinner
+  language: French
+
+? Series/Futurama/Season 3 (mkv)/[™] Futurama - S03E22 - Le chef de fer à 30% ( 30 Percent Iron Chef ).mkv
+: title: Futurama
+  season: 3
+  episode: 22
+  episode_title: Le chef de fer à 30%
+
+? Series/The Office/Season 6/The Office - S06xE01.avi
+: title: The Office
+  season: 6
+  episode: 1
+
+? series/The Office/Season 4/The Office [401] Fun Run.avi
+: title: The Office
+  season: 4
+  episode: 1
+  episode_title: Fun Run
+
+? Series/Mad Men Season 1 Complete/Mad.Men.S01E01.avi
+: title: Mad Men
+  season: 1
+  episode: 1
+  other: Complete
+
+? series/Psych/Psych S02 Season 2 Complete English DVD/Psych.S02E02.65.Million.Years.Off.avi
+: title: Psych
+  season: 2
+  episode: 2
+  episode_title: 65 Million Years Off
+  language: english
+  source: DVD
+  other: Complete
+
+? series/Psych/Psych S02 Season 2 Complete English DVD/Psych.S02E03.Psy.Vs.Psy.Français.srt
+: title: Psych
+  season: 2
+  episode: 3
+  episode_title: Psy Vs Psy
+  source: DVD
+  language: English
+  subtitle_language: French
+  other: Complete
+
+? Series/Pure Laine/Pure.Laine.1x01.Toutes.Couleurs.Unies.FR.(Québec).DVB-Kceb.[tvu.org.ru].avi
+: title: Pure Laine
+  season: 1
+  episode: 1
+  episode_title: Toutes Couleurs Unies
+  source: Digital TV
+  release_group: Kceb
+  language: french
+  website: tvu.org.ru
+
+? Series/Pure Laine/2x05 - Pure Laine - Je Me Souviens.avi
+: title: Pure Laine
+  season: 2
+  episode: 5
+  episode_title: Je Me Souviens
+
+? Series/Tout sur moi/Tout sur moi - S02E02 - Ménage à trois (14-01-2008) [Rip by Ampli].avi
+: title: Tout sur moi
+  season: 2
+  episode: 2
+  episode_title: Ménage à trois
+  date: 2008-01-14
+
+? The.Mentalist.2x21.18-5-4.ENG.-.sub.FR.HDTV.XviD-AlFleNi-TeaM.[tvu.org.ru].avi
+: title: The Mentalist
+  season: 2
+  episode: 21
+  episode_title: 18-5-4
+  language: english
+  subtitle_language: french
+  source: HDTV
+  video_codec: Xvid
+  release_group: AlFleNi-TeaM
+  website: tvu.org.ru
+
+? series/__ Incomplete __/Dr Slump (Catalan)/Dr._Slump_-_003_DVB-Rip_Catalan_by_kelf.avi
+: title: Dr Slump
+  episode: 3
+  source: Digital TV
+  other: Rip
+  language: catalan
+
+# Disabling this test because it just doesn't looks like a serie ...
+#? series/Ren and Stimpy - Black_hole_[DivX].avi
+#: title: Ren and Stimpy
+#  episode_title: Black hole
+#  video_codec: DivX
+
+# Disabling this test because it just doesn't looks like a serie ...
+# ? Series/Walt Disney/Donald.Duck.-.Good.Scouts.[www.bigernie.jump.to].avi
+#: title: Donald Duck
+#  episode_title: Good Scouts
+#  website: www.bigernie.jump.to
+
+? Series/Neverwhere/Neverwhere.05.Down.Street.[tvu.org.ru].avi
+: title: Neverwhere
+  episode: 5
+  episode_title: Down Street
+  website: tvu.org.ru
+
+? Series/South Park/Season 4/South.Park.4x07.Cherokee.Hair.Tampons.DVDRip.[tvu.org.ru].avi
+: title: South Park
+  season: 4
+  episode: 7
+  episode_title: Cherokee Hair Tampons
+  source: DVD
+  other: Rip
+  website: tvu.org.ru
+
+? Series/Kaamelott/Kaamelott - Livre V - Ep 23 - Le Forfait.avi
+: title: Kaamelott
+  alternative_title: Livre V
+  episode: 23
+  episode_title: Le Forfait
+
+? Series/Duckman/Duckman - 110 (10) - 20021218 - Cellar Beware.avi
+: title: Duckman
+  season: 1
+  episode: 10
+  date: 2002-12-18
+  episode_title: Cellar Beware
+
+# Removing this test because it doesn't look like a series
+# ? Series/Ren & Stimpy/Ren And Stimpy - Onward & Upward-Adult Party Cartoon.avi
+# : title: Ren And Stimpy
+#   episode_title: Onward & Upward-Adult Party Cartoon
+
+? Series/Breaking Bad/Minisodes/Breaking.Bad.(Minisodes).01.Good.Cop.Bad.Cop.WEBRip.XviD.avi
+: title: Breaking Bad
+  episode_format: Minisode
+  episode: 1
+  episode_title: Good Cop Bad Cop
+  source: Web
+  other: Rip
+  video_codec: Xvid
+
+? Series/My Name Is Earl/My.Name.Is.Earl.S01Extras.-.Bad.Karma.DVDRip.XviD.avi
+: title: My Name Is Earl
+  season: 1
+  episode_title: Extras - Bad Karma
+  source: DVD
+  other: Rip
+  episode_details: Extras
+  video_codec: Xvid
+
+? series/Freaks And Geeks/Season 1/Episode 4 - Kim Kelly Is My Friend-eng(1).srt
+: title: Freaks And Geeks
+  season: 1
+  episode: 4
+  episode_title: Kim Kelly Is My Friend
+  subtitle_language: English  # This is really a subtitle_language, despite guessit 1.x assert for language.
+
+? /mnt/series/The Big Bang Theory/S01/The.Big.Bang.Theory.S01E01.mkv
+: title: The Big Bang Theory
+  season: 1
+  episode: 1
+
+? /media/Parks_and_Recreation-s03-e01.mkv
+: title: Parks and Recreation
+  season: 3
+  episode: 1
+
+? /media/Parks_and_Recreation-s03-e02-Flu_Season.mkv
+: title: Parks and Recreation
+  season: 3
+  episode_title: Flu Season
+  episode: 2
+
+? /media/Parks_and_Recreation-s03-x01.mkv
+: title: Parks and Recreation
+  season: 3
+  episode: 1
+
+? /media/Parks_and_Recreation-s03-x02-Gag_Reel.mkv
+: title: Parks and Recreation
+  season: 3
+  episode: 2
+  episode_title: Gag Reel
+
+? /media/Band_of_Brothers-e01-Currahee.mkv
+: title: Band of Brothers
+  episode: 1
+  episode_title: Currahee
+
+? /media/Band_of_Brothers-x02-We_Stand_Alone_Together.mkv
+: title: Band of Brothers
+  bonus: 2
+  bonus_title: We Stand Alone Together
+
+? /TV Shows/Mad.M-5x9.mkv
+: title: Mad M
+  season: 5
+  episode: 9
+
+? /TV Shows/new.girl.117.hdtv-lol.mp4
+: title: new girl
+  season: 1
+  episode: 17
+  source: HDTV
+  release_group: lol
+
+? Kaamelott - 5x44x45x46x47x48x49x50.avi
+: title: Kaamelott
+  season: 5
+  episode: [44, 45, 46, 47, 48, 49, 50]
+
+? Example S01E01-02.avi
+? Example S01E01E02.avi
+: title: Example
+  season: 1
+  episode: [1, 2]
+
+? Series/Baccano!/Baccano!_-_T1_-_Trailer_-_[Ayu](dae8173e).mkv
+: title: Baccano!
+  other: Trailer
+  release_group: Ayu
+  episode_title: T1
+  crc32: dae8173e
+
+? Series/Doctor Who (2005)/Season 06/Doctor Who (2005) - S06E01 - The Impossible Astronaut (1).avi
+: title: Doctor Who
+  year: 2005
+  season: 6
+  episode: 1
+  episode_title: The Impossible Astronaut
+
+? The Sopranos - [05x07] - In Camelot.mp4
+: title: The Sopranos
+  season: 5
+  episode: 7
+  episode_title: In Camelot
+
+? The.Office.(US).1x03.Health.Care.HDTV.XviD-LOL.avi
+: title: The Office
+  country: US
+  season: 1
+  episode: 3
+  episode_title: Health Care
+  source: HDTV
+  video_codec: Xvid
+  release_group: LOL
+
+? /Volumes/data-1/Series/Futurama/Season 3/Futurama_-_S03_DVD_Bonus_-_Deleted_Scenes_Part_3.ogm
+: title: Futurama
+  season: 3
+  part: 3
+  other: Bonus
+  episode_title: Deleted Scenes
+  source: DVD
+
+? Ben.and.Kate.S01E02.720p.HDTV.X264-DIMENSION.mkv
+: title: Ben and Kate
+  season: 1
+  episode: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: DIMENSION
+
+? /volume1/TV Series/Drawn Together/Season 1/Drawn Together 1x04 Requiem for a Reality Show.avi
+: title: Drawn Together
+  season: 1
+  episode: 4
+  episode_title: Requiem for a Reality Show
+
+? Sons.of.Anarchy.S05E06.720p.WEB.DL.DD5.1.H.264-CtrlHD.mkv
+: title: Sons of Anarchy
+  season: 5
+  episode: 6
+  screen_size: 720p
+  source: Web
+  audio_channels: "5.1"
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  release_group: CtrlHD
+
+? /media/bdc64bfe-e36f-4af8-b550-e6fd2dfaa507/TV_Shows/Doctor Who (2005)/Saison 6/Doctor Who (2005) - S06E13 - The Wedding of River Song.mkv
+: title: Doctor Who
+  season: 6
+  episode: 13
+  year: 2005
+  episode_title: The Wedding of River Song
+  uuid: bdc64bfe-e36f-4af8-b550-e6fd2dfaa507
+
+? /mnt/videos/tvshows/Doctor Who/Season 06/E13 - The Wedding of River Song.mkv
+: title: Doctor Who
+  season: 6
+  episode: 13
+  episode_title: The Wedding of River Song
+
+? The.Simpsons.S24E03.Adventures.in.Baby-Getting.720p.WEB-DL.DD5.1.H.264-CtrlHD.mkv
+: title: The Simpsons
+  season: 24
+  episode: 3
+  episode_title: Adventures in Baby-Getting
+  screen_size: 720p
+  source: Web
+  audio_channels: "5.1"
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  release_group: CtrlHD
+
+? /home/disaster/Videos/TV/Merlin/merlin_2008.5x02.arthurs_bane_part_two.repack.720p_hdtv_x264-fov.mkv
+: title: merlin
+  season: 5
+  episode: 2
+  part: 2
+  episode_title: arthurs bane
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: fov
+  year: 2008
+  other: Proper
+  proper_count: 1
+
+? "Da Vinci's Demons - 1x04 - The Magician.mkv"
+: title: "Da Vinci's Demons"
+  season: 1
+  episode: 4
+  episode_title: The Magician
+
+? CSI.S013E18.Sheltered.720p.WEB-DL.DD5.1.H.264.mkv
+: title: CSI
+  season: 13
+  episode: 18
+  episode_title: Sheltered
+  screen_size: 720p
+  source: Web
+  audio_channels: "5.1"
+  audio_codec: Dolby Digital
+  video_codec: H.264
+
+? Game of Thrones S03E06 1080i HDTV DD5.1 MPEG2-TrollHD.ts
+: title: Game of Thrones
+  season: 3
+  episode: 6
+  screen_size: 1080i
+  source: HDTV
+  audio_channels: "5.1"
+  audio_codec: Dolby Digital
+  video_codec: MPEG-2
+  release_group: TrollHD
+
+? gossip.girl.s01e18.hdtv.xvid-2hd.eng.srt
+: title: gossip girl
+  season: 1
+  episode: 18
+  source: HDTV
+  video_codec: Xvid
+  release_group: 2hd
+  subtitle_language: english
+
+? Wheels.S03E01E02.720p.HDTV.x264-IMMERSE.mkv
+: title: Wheels
+  season: 3
+  episode: [1, 2]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: IMMERSE
+
+? Wheels.S03E01-02.720p.HDTV.x264-IMMERSE.mkv
+: title: Wheels
+  season: 3
+  episode: [1, 2]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: IMMERSE
+
+? Wheels.S03E01-E02.720p.HDTV.x264-IMMERSE.mkv
+: title: Wheels
+  season: 3
+  episode: [1, 2]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: IMMERSE
+
+? Wheels.S03E01-04.720p.HDTV.x264-IMMERSE.mkv
+: title: Wheels
+  season: 3
+  episode: [1, 2, 3, 4]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: IMMERSE
+
+? Marvels.Agents.of.S.H.I.E.L.D-S01E06.720p.HDTV.X264-DIMENSION.mkv
+: title: Marvels Agents of S.H.I.E.L.D
+  season: 1
+  episode: 6
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: DIMENSION
+
+? Marvels.Agents.of.S.H.I.E.L.D.S01E06.720p.HDTV.X264-DIMENSION.mkv
+: title: Marvels Agents of S.H.I.E.L.D.
+  season: 1
+  episode: 6
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: DIMENSION
+
+? Marvels.Agents.of.S.H.I.E.L.D..S01E06.720p.HDTV.X264-DIMENSION.mkv
+: title: Marvels Agents of S.H.I.E.L.D.
+  season: 1
+  episode: 6
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: DIMENSION
+
+? Series/Friday Night Lights/Season 1/Friday Night Lights S01E19 - Ch-Ch-Ch-Ch-Changes.avi
+: title: Friday Night Lights
+  season: 1
+  episode: 19
+  episode_title: Ch-Ch-Ch-Ch-Changes
+
+? Dexter Saison VII FRENCH.BDRip.XviD-MiND.nfo
+: title: Dexter
+  season: 7
+  video_codec: Xvid
+  language: French
+  source: Blu-ray
+  other: Rip
+  release_group: MiND
+
+? Dexter Saison sept FRENCH.BDRip.XviD-MiND.nfo
+: title: Dexter
+  season: 7
+  video_codec: Xvid
+  language: French
+  source: Blu-ray
+  other: Rip
+  release_group: MiND
+
+? "Pokémon S16 - E29 - 1280*720 HDTV VF.mkv"
+: title: Pokémon
+  source: HDTV
+  language: French
+  season: 16
+  episode: 29
+  screen_size: 720p
+
+? One.Piece.E576.VOSTFR.720p.HDTV.x264-MARINE-FORD.mkv
+: episode: 576
+  video_codec: H.264
+  source: HDTV
+  title: One Piece
+  release_group: MARINE-FORD
+  subtitle_language: French
+  screen_size: 720p
+
+? Dexter.S08E12.FINAL.MULTi.1080p.BluRay.x264-MiND.mkv
+: video_codec: H.264
+  episode: 12
+  season: 8
+  source: Blu-ray
+  title: Dexter
+  episode_details: Final
+  language: Multiple languages
+  release_group: MiND
+  screen_size: 1080p
+
+? One Piece - E623 VOSTFR HD [www.manga-ddl-free.com].mkv
+: website: www.manga-ddl-free.com
+  episode: 623
+  subtitle_language: French
+  title: One Piece
+  other: HD
+
+? Falling Skies Saison 1.HDLight.720p.x264.VFF.mkv
+: language: French
+  screen_size: 720p
+  season: 1
+  title: Falling Skies
+  video_codec: H.264
+  other: Micro HD
+
+? Sleepy.Hollow.S01E09.720p.WEB-DL.DD5.1.H.264-BP.mkv
+: episode: 9
+  video_codec: H.264
+  source: Web
+  title: Sleepy Hollow
+  audio_channels: "5.1"
+  screen_size: 720p
+  season: 1
+#  video_profile: BP  # TODO: related to https://github.com/guessit-io/guessit/issues/458#issuecomment-305719715
+  audio_codec: Dolby Digital
+
+? Sleepy.Hollow.S01E09.720p.WEB-DL.DD5.1.H.264-BS.mkv
+: episode: 9
+  video_codec: H.264
+  source: Web
+  title: Sleepy Hollow
+  audio_channels: "5.1"
+  screen_size: 720p
+  season: 1
+  release_group: BS
+  audio_codec: Dolby Digital
+
+? Battlestar.Galactica.S00.Pilot.FRENCH.DVDRip.XviD-NOTAG.avi
+: title: Battlestar Galactica
+  season: 0
+  episode_details: Pilot
+  episode_title: Pilot
+  language: French
+  source: DVD
+  other: Rip
+  video_codec: Xvid
+  release_group: NOTAG
+
+? The Big Bang Theory S00E00 Unaired Pilot VOSTFR TVRip XviD-VioCs
+: title: The Big Bang Theory
+  season: 0
+  episode: 0
+  subtitle_language: French
+  source: TV
+  other: Rip
+  video_codec: Xvid
+  release_group: VioCs
+  episode_details: [Unaired, Pilot]
+
+? The Big Bang Theory S01E00 PROPER Unaired Pilot TVRip XviD-GIGGITY
+: title: The Big Bang Theory
+  season: 1
+  episode: 0
+  source: TV
+  video_codec: Xvid
+  release_group: GIGGITY
+  other: [Proper, Rip]
+  proper_count: 1
+  episode_details: [Unaired, Pilot]
+
+? Pawn.Stars.S2014E18.720p.HDTV.x264-KILLERS
+: title: Pawn Stars
+  season: 2014
+  year: 2014
+  episode: 18
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: KILLERS
+
+? 2.Broke.Girls.S03E10.480p.HDTV.x264-mSD.mkv
+: title: 2 Broke Girls
+  season: 3
+  episode: 10
+  screen_size: 480p
+  source: HDTV
+  video_codec: H.264
+  release_group: mSD
+
+? the.100.109.hdtv-lol.mp4
+: title: the 100
+  season: 1
+  episode: 9
+  source: HDTV
+  release_group: lol
+
+? Criminal.Minds.5x03.Reckoner.ENG.-.sub.FR.HDTV.XviD-STi.[tvu.org.ru].avi
+: title: Criminal Minds
+  language: English
+  subtitle_language: French
+  season: 5
+  episode: 3
+  video_codec: Xvid
+  source: HDTV
+  website: tvu.org.ru
+  release_group: STi
+  episode_title: Reckoner
+
+? 03-Criminal.Minds.avi
+: title: Criminal Minds
+  episode: 3
+
+? '[Evil-Saizen]_Laughing_Salesman_14_[DVD][1C98686A].mkv'
+: crc32: 1C98686A
+  episode: 14
+  source: DVD
+  release_group: Evil-Saizen
+  title: Laughing Salesman
+
+? '[Kaylith] Zankyou no Terror - 04 [480p][B4D4514E].mp4'
+: crc32: B4D4514E
+  episode: 4
+  release_group: Kaylith
+  screen_size: 480p
+  title: Zankyou no Terror
+
+? '[PuyaSubs!] Seirei Tsukai no Blade Dance - 05 [720p][32DD560E].mkv'
+: crc32: 32DD560E
+  episode: 5
+  release_group: PuyaSubs!
+  screen_size: 720p
+  title: Seirei Tsukai no Blade Dance
+
+? '[Doremi].Happiness.Charge.Precure.27.[1280x720].[DC91581A].mkv'
+: crc32: DC91581A
+  episode: 27
+  release_group: Doremi
+  screen_size: 720p
+  title: Happiness Charge Precure
+
+? "[Daisei] Free!：Iwatobi Swim Club - 01 ~ (BD 720p 10-bit AAC) [99E8E009].mkv"
+: audio_codec: AAC
+  crc32: 99E8E009
+  episode: 1
+  source: Blu-ray
+  release_group: Daisei
+  screen_size: 720p
+  title: Free!：Iwatobi Swim Club
+  color_depth: 10-bit
+
+? '[Tsundere] Boku wa Tomodachi ga Sukunai - 03 [BDRip h264 1920x1080 10bit FLAC][AF0C22CC].mkv'
+: audio_codec: FLAC
+  crc32: AF0C22CC
+  episode: 3
+  source: Blu-ray
+  release_group: Tsundere
+  screen_size: 1080p
+  title: Boku wa Tomodachi ga Sukunai
+  video_codec: H.264
+  color_depth: 10-bit
+
+? '[t.3.3.d]_Mikakunin_de_Shinkoukei_-_12_[720p][5DDC1352].mkv'
+: crc32: 5DDC1352
+  episode: 12
+  screen_size: 720p
+  title: Mikakunin de Shinkoukei
+  release_group: t.3.3.d
+
+? '[Anime-Koi] Sabagebu! - 06 [h264-720p][ABB3728A].mkv'
+: crc32: ABB3728A
+  episode: 6
+  release_group: Anime-Koi
+  screen_size: 720p
+  title: Sabagebu!
+  video_codec: H.264
+
+? '[aprm-Diogo4D] [BD][1080p] Nagi no Asukara 08 [4D102B7C].mkv'
+: crc32: 4D102B7C
+  episode: 8
+  source: Blu-ray
+  release_group: aprm-Diogo4D
+  screen_size: 1080p
+  title: Nagi no Asukara
+
+? '[Akindo-SSK] Zankyou no Terror - 05 [720P][Sub_ITA][F5CCE87C].mkv'
+: crc32: F5CCE87C
+  episode: 5
+  release_group: Akindo-SSK
+  screen_size: 720p
+  title: Zankyou no Terror
+  subtitle_language: it
+
+? Naruto Shippuden Episode 366 VOSTFR.avi
+: episode: 366
+  title: Naruto Shippuden
+  subtitle_language: fr
+
+? Naruto Shippuden Episode 366v2 VOSTFR.avi
+: episode: 366
+  version: 2
+  title: Naruto Shippuden
+  subtitle_language: fr
+
+? '[HorribleSubs] Ao Haru Ride - 06 [480p].mkv'
+: episode: 6
+  release_group: HorribleSubs
+  screen_size: 480p
+  title: Ao Haru Ride
+
+? '[DeadFish] Tari Tari - 01 [BD][720p][AAC].mp4'
+: audio_codec: AAC
+  episode: 1
+  source: Blu-ray
+  release_group: DeadFish
+  screen_size: 720p
+  title: Tari Tari
+
+? '[NoobSubs] Sword Art Online II 06 (720p 8bit AAC).mp4'
+: audio_codec: AAC
+  episode: 6
+  release_group: NoobSubs
+  screen_size: 720p
+  title: Sword Art Online II
+  color_depth: 8-bit
+
+? '[DeadFish] 01 - Tari Tari [BD][720p][AAC].mp4'
+: audio_codec: AAC
+  episode: 1
+  source: Blu-ray
+  release_group: DeadFish
+  screen_size: 720p
+  title: Tari Tari
+
+? '[NoobSubs] 06 Sword Art Online II (720p 8bit AAC).mp4'
+: audio_codec: AAC
+  episode: 6
+  release_group: NoobSubs
+  screen_size: 720p
+  title: Sword Art Online II
+  color_depth: 8-bit
+
+? '[DeadFish] 12 - Tari Tari [BD][720p][AAC].mp4'
+: audio_codec: AAC
+  episode: 12
+  source: Blu-ray
+  release_group: DeadFish
+  screen_size: 720p
+  title: Tari Tari
+
+? Something.Season.2.1of4.Ep.Title.HDTV.torrent
+: episode_count: 4
+  episode: 1
+  source: HDTV
+  season: 2
+  title: Something
+  episode_title: Title
+  container: torrent
+
+? Something.Season.2of5.3of9.Ep.Title.HDTV.torrent
+: episode_count: 9
+  episode: 3
+  source: HDTV
+  season: 2
+  season_count: 5
+  title: Something
+  episode_title: Title
+  container: torrent
+
+? Something.Other.Season.3of5.Complete.HDTV.torrent
+: source: HDTV
+  other: Complete
+  season: 3
+  season_count: 5
+  title: Something Other
+  container: torrent
+
+? Something.Other.Season.1-3.avi
+: season: [1, 2, 3]
+  title: Something Other
+
+? Something.Other.Season.1&3.avi
+: season: [1, 3]
+  title: Something Other
+
+? Something.Other.Season.1&3-1to12ep.avi
+: season: [1, 3]
+  title: Something Other
+
+? W2Test.123.HDTV.XViD-FlexGet
+: episode: 23
+  season: 1
+  source: HDTV
+  release_group: FlexGet
+  title: W2Test
+  video_codec: Xvid
+
+? W2Test.123.HDTV.XViD-FlexGet
+: options: --episode-prefer-number
+  episode: 123
+  source: HDTV
+  release_group: FlexGet
+  title: W2Test
+  video_codec: Xvid
+
+? FooBar.0307.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  season: 3
+  title: FooBar
+
+? FooBar.0307.PDTV-FlexGet
+? FooBar.307.PDTV-FlexGet
+: options: --episode-prefer-number
+  episode: 307
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.07.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.7.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.0307.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  season: 3
+  title: FooBar
+
+? FooBar.307.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  season: 3
+  title: FooBar
+
+? FooBar.07.PDTV-FlexGet
+: episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.07v4.PDTV-FlexGet
+: episode: 7
+  version: 4
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.7.PDTV-FlexGet
+: source: Digital TV
+  release_group: FlexGet
+  title: FooBar 7
+  type: movie
+
+? FooBar.7.PDTV-FlexGet
+: options: -t episode
+  episode: 7
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? FooBar.7v3.PDTV-FlexGet
+: options: -t episode
+  episode: 7
+  version: 3
+  source: Digital TV
+  release_group: FlexGet
+  title: FooBar
+
+? Test.S02E01.hdtv.real.proper
+: episode: 1
+  source: HDTV
+  other: Proper
+  proper_count: 2
+  season: 2
+  title: Test
+
+? Real.Test.S02E01.hdtv.proper
+: episode: 1
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  season: 2
+  title: Real Test
+
+? Test.Real.S02E01.hdtv.proper
+: episode: 1
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  season: 2
+  title: Test Real
+
+? Test.S02E01.hdtv.proper
+: episode: 1
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  season: 2
+  title: Test
+
+? Test.S02E01.hdtv.real.repack.proper
+: episode: 1
+  source: HDTV
+  other: Proper
+  proper_count: 3
+  season: 2
+  title: Test
+
+? Date.Show.03-29-2012.HDTV.XViD-FlexGet
+: date: 2012-03-29
+  source: HDTV
+  release_group: FlexGet
+  title: Date Show
+  video_codec: Xvid
+
+? Something.1x5.Season.Complete-FlexGet
+: episode: 5
+  other: Complete
+  season: 1
+  title: Something
+  release_group: FlexGet
+
+? Something Seasons 1 & 2 - Complete
+: other: Complete
+  season:
+  - 1
+  - 2
+  title: Something
+
+? Something Seasons 4 Complete
+: other: Complete
+  season: 4
+  title: Something
+
+? Something.1xAll.Season.Complete-FlexGet
+: other: Complete
+  season: 1
+  title: Something
+  release_group: FlexGet
+
+? Something.1xAll-FlexGet
+: other: Complete
+  season: 1
+  title: Something
+  release_group: FlexGet
+
+? FlexGet.US.S2013E14.Title.Here.720p.HDTV.AAC5.1.x264-NOGRP
+: audio_channels: '5.1'
+  audio_codec: AAC
+  country: US
+  episode: 14
+  source: HDTV
+  release_group: NOGRP
+  screen_size: 720p
+  season: 2013
+  title: FlexGet
+  episode_title: Title Here
+  video_codec: H.264
+  year: 2013
+
+? FlexGet.14.of.21.Title.Here.720p.HDTV.AAC5.1.x264-NOGRP
+: audio_channels: '5.1'
+  audio_codec: AAC
+  episode_count: 21
+  episode: 14
+  source: HDTV
+  release_group: NOGRP
+  screen_size: 720p
+  title: FlexGet
+  episode_title: Title Here
+  video_codec: H.264
+
+? FlexGet.Series.2013.14.of.21.Title.Here.720p.HDTV.AAC5.1.x264-NOGRP
+: audio_channels: '5.1'
+  audio_codec: AAC
+  episode_count: 21
+  episode: 14
+  source: HDTV
+  release_group: NOGRP
+  screen_size: 720p
+  season: 2013
+  title: FlexGet
+  episode_title: Title Here
+  video_codec: H.264
+  year: 2013
+
+? Something.S04E05E09
+: episode: # 1.x guessit this as a range from 5 to 9. But not sure if it should ...
+  - 5
+  - 9
+  season: 4
+  title: Something
+
+? FooBar 360 1080i
+: options: --episode-prefer-number
+  episode: 360
+  screen_size: 1080i
+  title: FooBar
+
+? FooBar 360 1080i
+: episode: 60
+  season: 3
+  screen_size: 1080i
+  title: FooBar
+
+? FooBar 360
+: season: 3
+  episode: 60
+  title: FooBar
+  -screen_size: 360p
+
+? BarFood christmas special HDTV
+: options: --expected-title BarFood
+  source: HDTV
+  title: BarFood
+  episode_title: christmas special
+  episode_details: Special
+
+? Something.2008x12.13-FlexGet
+: title: Something
+  date: 2008-12-13
+  episode_title: FlexGet
+
+? '[Ignored] Test 12'
+: episode: 12
+  release_group: Ignored
+  title: Test
+
+? '[FlexGet] Test 12'
+: episode: 12
+  release_group: FlexGet
+  title: Test
+
+? Test.13.HDTV-Ignored
+: episode: 13
+  source: HDTV
+  release_group: Ignored
+  title: Test
+
+? Test.13.HDTV-Ignored
+: options: --expected-series test
+  episode: 13
+  source: HDTV
+  release_group: Ignored
+  title: Test
+
+? Test.13.HDTV-Ignored
+: title: Test
+  episode: 13
+  source: HDTV
+  release_group: Ignored
+
+? Test.13.HDTV-Ignored
+: episode: 13
+  source: HDTV
+  release_group: Ignored
+  title: Test
+
+? Test.13.HDTV-FlexGet
+: episode: 13
+  source: HDTV
+  release_group: FlexGet
+  title: Test
+
+? Test.14.HDTV-Name
+: episode: 14
+  source: HDTV
+  release_group: Name
+  title: Test
+
+? Real.Time.With.Bill.Maher.2014.10.31.HDTV.XviD-AFG.avi
+: date: 2014-10-31
+  source: HDTV
+  release_group: AFG
+  title: Real Time With Bill Maher
+  video_codec: Xvid
+
+? Arrow.S03E21.Al.Sah-Him.1080p.WEB-DL.DD5.1.H.264-BS.mkv
+: title: Arrow
+  season: 3
+  episode: 21
+  episode_title: Al Sah-Him
+  screen_size: 1080p
+  audio_codec: Dolby Digital
+  audio_channels: "5.1"
+  video_codec: H.264
+  release_group: BS
+  source: Web
+
+? How to Make It in America - S02E06 - I'm Sorry, Who's Yosi?.mkv
+: title: How to Make It in America
+  season: 2
+  episode: 6
+  episode_title: I'm Sorry, Who's Yosi?
+
+? 24.S05E07.FRENCH.DVDRip.XviD-FiXi0N.avi
+: episode: 7
+  source: DVD
+  other: Rip
+  language: fr
+  season: 5
+  title: '24'
+  video_codec: Xvid
+  release_group: FiXi0N
+
+? 12.Monkeys.S01E12.FRENCH.BDRip.x264-VENUE.mkv
+: episode: 12
+  source: Blu-ray
+  other: Rip
+  language: fr
+  release_group: VENUE
+  season: 1
+  title: 12 Monkeys
+  video_codec: H.264
+
+? 90.Day.Fiance.S02E07.I.Have.To.Tell.You.Something.720p.HDTV.x264-W4F
+: episode: 7
+  source: HDTV
+  screen_size: 720p
+  season: 2
+  title: 90 Day Fiance
+  episode_title: I Have To Tell You Something
+  release_group: W4F
+
+? Doctor.Who.2005.S04E06.FRENCH.LD.DVDRip.XviD-TRACKS.avi
+: episode: 6
+  source: DVD
+  language: fr
+  release_group: TRACKS
+  season: 4
+  title: Doctor Who
+  other: [Line Dubbed, Rip]
+  video_codec: Xvid
+  year: 2005
+
+? Astro.Le.Petit.Robot.S01E01+02.FRENCH.DVDRiP.X264.INT-BOOLZ.mkv
+: episode: [1, 2]
+  source: DVD
+  other: Rip
+  language: fr
+  release_group: INT-BOOLZ
+  season: 1
+  title: Astro Le Petit Robot
+  video_codec: H.264
+
+? Annika.Bengtzon.2012.E01.Le.Testament.De.Nobel.FRENCH.DVDRiP.XViD-STVFRV.avi
+: episode: 1
+  source: DVD
+  other: Rip
+  language: fr
+  release_group: STVFRV
+  title: Annika Bengtzon
+  episode_title: Le Testament De Nobel
+  video_codec: Xvid
+  year: 2012
+
+? Dead.Set.02.FRENCH.LD.DVDRip.XviD-EPZ.avi
+: episode: 2
+  source: DVD
+  language: fr
+  other: [Line Dubbed, Rip]
+  release_group: EPZ
+  title: Dead Set
+  video_codec: Xvid
+
+? Phineas and Ferb S01E00 & S01E01 & S01E02
+: episode: [0, 1, 2]
+  season: 1
+  title: Phineas and Ferb
+
+? Show.Name.S01E02.S01E03.HDTV.XViD.Etc-Group
+: episode: [2, 3]
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - S01E02 - S01E03 - S01E04 - Ep Name
+: episode: [2, 3, 4]
+  season: 1
+  title: Show Name
+  episode_title: Ep Name
+
+? Show.Name.1x02.1x03.HDTV.XViD.Etc-Group
+: episode: [2, 3]
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - 1x02 - 1x03 - 1x04 - Ep Name
+: episode: [2, 3, 4]
+  season: 1
+  title: Show Name
+  episode_title: Ep Name
+
+? Show.Name.S01E02.HDTV.XViD.Etc-Group
+: episode: 2
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - S01E02 - My Ep Name
+: episode: 2
+  season: 1
+  title: Show Name
+  episode_title: My Ep Name
+
+? Show Name - S01.E03 - My Ep Name
+: episode: 3
+  season: 1
+  title: Show Name
+  episode_title: My Ep Name
+
+? Show.Name.S01E02E03.HDTV.XViD.Etc-Group
+: episode: [2, 3]
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - S01E02-03 - My Ep Name
+: episode: [2, 3]
+  season: 1
+  title: Show Name
+  episode_title: My Ep Name
+
+? Show.Name.S01.E02.E03
+: episode: [2, 3]
+  season: 1
+  title: Show Name
+
+? Show_Name.1x02.HDTV_XViD_Etc-Group
+: episode: 2
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - 1x02 - My Ep Name
+: episode: 2
+  season: 1
+  title: Show Name
+  episode_title: My Ep Name
+
+? Show_Name.1x02x03x04.HDTV_XViD_Etc-Group
+: episode: [2, 3, 4]
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show Name - 1x02-03-04 - My Ep Name
+: episode: [2, 3, 4]
+  season: 1
+  title: Show Name
+  episode_title: My Ep Name
+
+# 1x guess this as episode 100 but 101 as episode 1 season 1.
+? Show.Name.100.Event.2010.11.23.HDTV.XViD.Etc-Group
+: date: 2010-11-23
+  season: 1
+  episode: 0
+  source: HDTV
+  release_group: Etc-Group
+  title: Show Name
+  episode_title: Event
+  video_codec: Xvid
+
+? Show.Name.101.Event.2010.11.23.HDTV.XViD.Etc-Group
+: date: 2010-11-23
+  season: 1
+  episode: 1
+  source: HDTV
+  release_group: Etc-Group
+  title: Show Name
+  episode_title: Event
+  video_codec: Xvid
+
+? Show.Name.2010.11.23.HDTV.XViD.Etc-Group
+: date: 2010-11-23
+  source: HDTV
+  release_group: Etc-Group
+  title: Show Name
+
+? Show Name - 2010-11-23 - Ep Name
+: date: 2010-11-23
+  title: Show Name
+  episode_title: Ep Name
+
+? Show Name Season 1 Episode 2 Ep Name
+: episode: 2
+  season: 1
+  title: Show Name
+  episode_title: Ep Name
+
+? Show.Name.S01.HDTV.XViD.Etc-Group
+: source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? Show.Name.E02-03
+: episode: [2, 3]
+  title: Show Name
+
+? Show.Name.E02.2010
+: episode: 2
+  year: 2010
+  title: Show Name
+
+? Show.Name.E23.Test
+: episode: 23
+  title: Show Name
+  episode_title: Test
+
+? Show.Name.Part.3.HDTV.XViD.Etc-Group
+: part: 3
+  title: Show Name
+  source: HDTV
+  video_codec: Xvid
+  release_group: Etc-Group
+  type: movie
+  # Fallback to movie type because we can't tell it's a series ...
+
+? Show.Name.Part.1.and.Part.2.Blah-Group
+: part: [1, 2]
+  title: Show Name
+  type: movie
+  # Fallback to movie type because we can't tell it's a series ...
+
+? Show Name - 01 - Ep Name
+: episode: 1
+  title: Show Name
+  episode_title: Ep Name
+
+? 01 - Ep Name
+: episode: 1
+  title: Ep Name
+
+? Show.Name.102.HDTV.XViD.Etc-Group
+: episode: 2
+  source: HDTV
+  release_group: Etc-Group
+  season: 1
+  title: Show Name
+  video_codec: Xvid
+
+? '[HorribleSubs] Maria the Virgin Witch - 01 [720p].mkv'
+: episode: 1
+  release_group: HorribleSubs
+  screen_size: 720p
+  title: Maria the Virgin Witch
+
+? '[ISLAND]One_Piece_679_[VOSTFR]_[V1]_[8bit]_[720p]_[EB7838FC].mp4'
+: crc32: EB7838FC
+  episode: 679
+  release_group: ISLAND
+  screen_size: 720p
+  title: One Piece
+  subtitle_language: fr
+  color_depth: 8-bit
+  version: 1
+
+? '[ISLAND]One_Piece_679_[VOSTFR]_[8bit]_[720p]_[EB7838FC].mp4'
+: crc32: EB7838FC
+  episode: 679
+  release_group: ISLAND
+  screen_size: 720p
+  title: One Piece
+  subtitle_language: fr
+  color_depth: 8-bit
+
+? '[Kaerizaki-Fansub]_One_Piece_679_[VOSTFR][HD_1280x720].mp4'
+: episode: 679
+  other: HD
+  release_group: Kaerizaki-Fansub
+  screen_size: 720p
+  title: One Piece
+  subtitle_language: fr
+
+? '[Kaerizaki-Fansub]_One_Piece_679_[VOSTFR][FANSUB][HD_1280x720].mp4'
+: episode: 679
+  other: [Fan Subtitled, HD]
+  release_group: Kaerizaki-Fansub
+  screen_size: 720p
+  title: One Piece
+  subtitle_language: fr
+
+? '[Kaerizaki-Fansub]_One_Piece_681_[VOSTFR][HD_1280x720]_V2.mp4'
+: episode: 681
+  other: HD
+  release_group: Kaerizaki-Fansub
+  screen_size: 720p
+  title: One Piece
+  subtitle_language: fr
+  version: 2
+
+? '[Kaerizaki-Fansub] High School DxD New 04 VOSTFR HD (1280x720) V2.mp4'
+: episode: 4
+  other: HD
+  release_group: Kaerizaki-Fansub
+  screen_size: 720p
+  title: High School DxD New
+  subtitle_language: fr
+  version: 2
+
+? '[Kaerizaki-Fansub] One Piece 603 VOSTFR PS VITA (960x544) V2.mp4'
+: episode: 603
+  release_group: Kaerizaki-Fansub
+  other: PS Vita
+  screen_size: 960x544
+  title: One Piece
+  subtitle_language: fr
+  version: 2
+
+? '[Group Name] Show Name.13'
+: episode: 13
+  release_group: Group Name
+  title: Show Name
+
+? '[Group Name] Show Name - 13'
+: episode: 13
+  release_group: Group Name
+  title: Show Name
+
+? '[Group Name] Show Name 13'
+: episode: 13
+  release_group: Group Name
+  title: Show Name
+
+# [Group Name] Show Name.13-14
+# [Group Name] Show Name - 13-14
+# Show Name 13-14
+
+? '[Stratos-Subs]_Infinite_Stratos_-_12_(1280x720_H.264_AAC)_[379759DB]'
+: audio_codec: AAC
+  crc32: 379759DB
+  episode: 12
+  release_group: Stratos-Subs
+  screen_size: 720p
+  title: Infinite Stratos
+  video_codec: H.264
+
+# [ShinBunBu-Subs] Bleach - 02-03 (CX 1280x720 x264 AAC)
+
+? '[SGKK] Bleach 312v1 [720p/MKV]'
+: episode: 312
+  release_group: SGKK
+  screen_size: 720p
+  title: Bleach
+  version: 1
+
+? '[Ayako]_Infinite_Stratos_-_IS_-_07_[H264][720p][EB7838FC]'
+: crc32: EB7838FC
+  episode: 7
+  release_group: Ayako
+  screen_size: 720p
+  title: Infinite Stratos
+  video_codec: H.264
+
+? '[Ayako] Infinite Stratos - IS - 07v2 [H264][720p][44419534]'
+: crc32: '44419534'
+  episode: 7
+  release_group: Ayako
+  screen_size: 720p
+  title: Infinite Stratos
+  video_codec: H.264
+  version: 2
+
+? '[Ayako-Shikkaku] Oniichan no Koto Nanka Zenzen Suki Janain Dakara ne - 10 [LQ][h264][720p] [8853B21C]'
+: crc32: 8853B21C
+  episode: 10
+  release_group: Ayako-Shikkaku
+  screen_size: 720p
+  title: Oniichan no Koto Nanka Zenzen Suki Janain Dakara ne
+  video_codec: H.264
+
+? Bleach - s16e03-04 - 313-314
+? Bleach.s16e03-04.313-314-GROUP
+? Bleach s16e03e04 313-314
+: title: Bleach
+  season: 16
+  episode: [3, 4]
+  absolute_episode: [313, 314]
+
+? Bleach - 313-314
+: options: -E
+  episode: [313, 314]
+  title: Bleach
+
+? '[ShinBunBu-Subs] Bleach - 02-03 (CX 1280x720 x264 AAC)'
+: audio_codec: AAC
+  episode: [2, 3]
+  release_group: ShinBunBu-Subs
+  screen_size: 720p
+  title: Bleach
+  video_codec: H.264
+
+? 003. Show Name - Ep Name.avi
+: episode: 3
+  title: Show Name
+  episode_title: Ep Name
+
+? 003-004. Show Name - Ep Name.avi
+: episode: [3, 4]
+  title: Show Name
+  episode_title: Ep Name
+
+? One Piece - 102
+: episode: 2
+  season: 1
+  title: One Piece
+
+? "[ACX]_Wolf's_Spirit_001.mkv"
+: episode: 1
+  release_group: ACX
+  title: "Wolf's Spirit"
+
+? Project.Runway.S14E00.and.S14E01.(Eng.Subs).SDTV.x264-[2Maverick].mp4
+: episode: [0, 1]
+  source: TV
+  release_group: 2Maverick
+  season: 14
+  title: Project Runway
+  subtitle_language: en
+  video_codec: H.264
+
+? '[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_16-20_[720p][10bit].torrent'
+: episode: [16, 17, 18, 19, 20]
+  release_group: Hatsuyuki-Kaitou
+  screen_size: 720p
+  title: Fairy Tail 2
+  color_depth: 10-bit
+
+? '[Hatsuyuki-Kaitou]_Fairy_Tail_2_-_16-20_(191-195)_[720p][10bit].torrent'
+: episode: [16, 17, 18, 19, 20]
+  absolute_episode: [191, 192, 193, 194, 195]
+  release_group: Hatsuyuki-Kaitou
+  screen_size: 720p
+  title: Fairy Tail 2
+
+? "Looney Tunes 1940x01 Porky's Last Stand.mkv"
+: episode: 1
+  season: 1940
+  title: Looney Tunes
+  episode_title: Porky's Last Stand
+  year: 1940
+
+? The.Good.Wife.S06E01.E10.720p.WEB-DL.DD5.1.H.264-CtrlHD/The.Good.Wife.S06E09.Trust.Issues.720p.WEB-DL.DD5.1.H.264-CtrlHD.mkv
+: audio_channels: '5.1'
+  audio_codec: Dolby Digital
+  episode: 9
+  source: Web
+  release_group: CtrlHD
+  screen_size: 720p
+  season: 6
+  title: The Good Wife
+  episode_title: Trust Issues
+  video_codec: H.264
+
+? Fear the Walking Dead - 01x02 - So Close, Yet So Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv
+: episode: 2
+  language: fr
+  other: Proper
+  proper_count: 1
+  season: 1
+  title: Fear the Walking Dead
+  episode_title: So Close, Yet So Far
+
+? Fear the Walking Dead - 01x02 - En Close, Yet En Far.REPACK-KILLERS.French.C.updated.Addic7ed.com.mkv
+: episode: 2
+  language: fr
+  other: Proper
+  proper_count: 1
+  season: 1
+  title: Fear the Walking Dead
+  episode_title: En Close, Yet En Far
+
+? /av/unsorted/The.Daily.Show.2015.07.22.Jake.Gyllenhaal.720p.HDTV.x264-BATV.mkv
+: date: 2015-07-22
+  source: HDTV
+  release_group: BATV
+  screen_size: 720p
+  title: The Daily Show
+  episode_title: Jake Gyllenhaal
+  video_codec: H.264
+
+? "[7.1.7.8.5] Foo Bar - 11 (H.264) [5235532D].mkv"
+: episode: 11
+
+? my 720p show S01E02
+: options: -T "my 720p show"
+  title: my 720p show
+  season: 1
+  episode: 2
+
+? my 720p show S01E02 720p
+: options: -T "my 720p show"
+  title: my 720p show
+  season: 1
+  episode: 2
+  screen_size: 720p
+
+? -my 720p show S01E02
+: options: -T "re:my \d+p show"
+  screen_size: 720p
+
+? Show S01E02
+: options: -T "The Show"
+  title: Show
+  season: 1
+  episode: 2
+
+? Foo's &amp; Bars (2009) S01E01 720p XviD-2HD[AOEU]
+: episode: 1
+  release_group: 2HD[AOEU]
+  screen_size: 720p
+  season: 1
+  title: Foo's &amp; Bars
+  video_codec: Xvid
+  year: 2009
+
+? Date.Series.10-11-2008.XViD
+: date: 2008-11-10
+  title: Date
+  video_codec: Xvid
+
+? Scrubs/SEASON-06/Scrubs.S06E09.My.Perspective.DVDRip.XviD-WAT/scrubs.s06e09.dvdrip.xvid-wat.avi
+: container: avi
+  episode: 9
+  episode_title: My Perspective
+  source: DVD
+  other: Rip
+  release_group: WAT
+  season: 6
+  title: Scrubs
+  video_codec: Xvid
+
+? '[PuyaSubs!] Digimon Adventure tri - 01 [720p][F9967949].mkv'
+: container: mkv
+  crc32: F9967949
+  episode: 1
+  release_group: PuyaSubs!
+  screen_size: 720p
+  title: Digimon Adventure tri
+
+? Sherlock.S01.720p.BluRay.x264-AVCHD
+: source: Blu-ray
+  screen_size: 720p
+  season: 1
+  title: Sherlock
+  video_codec: H.264
+
+? Running.Wild.With.Bear.Grylls.S02E07.Michael.B.Jordan.PROPER.HDTV.x264-W4F.avi
+: container: avi
+  episode: 7
+  episode_title: Michael B Jordan
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  release_group: W4F
+  season: 2
+  title: Running Wild With Bear Grylls
+  video_codec: H.264
+
+? Homeland.S05E11.Our.Man.in.Damascus.German.Sub.720p.HDTV.x264.iNTERNAL-BaCKToRG
+: episode: 11
+  episode_title: Our Man in Damascus
+  source: HDTV
+  other: Internal
+  release_group: BaCKToRG
+  screen_size: 720p
+  season: 5
+  subtitle_language: de
+  title: Homeland
+  type: episode
+  video_codec: H.264
+
+? Breaking.Bad.S01E01.2008.BluRay.VC1.1080P.5.1.WMV-NOVO
+: title: Breaking Bad
+  season: 1
+  episode: 1
+  year: 2008
+  source: Blu-ray
+  screen_size: 1080p
+  audio_channels: '5.1'
+  container: WMV
+  release_group: NOVO
+  type: episode
+
+? Cosmos.A.Space.Time.Odyssey.S01E02.HDTV.x264.PROPER-LOL
+: title: Cosmos A Space Time Odyssey
+  season: 1
+  episode: 2
+  source: HDTV
+  video_codec: H.264
+  other: Proper
+  proper_count: 1
+  release_group: LOL
+  type: episode
+
+? Fear.The.Walking.Dead.S02E01.HDTV.x264.AAC.MP4-k3n
+: title: Fear The Walking Dead
+  season: 2
+  episode: 1
+  source: HDTV
+  video_codec: H.264
+  audio_codec: AAC
+  container: mp4
+  release_group: k3n
+  type: episode
+
+? Elementary.S01E01.Pilot.DVDSCR.x264.PREAiR-NoGRP
+: title: Elementary
+  season: 1
+  episode: 1
+  episode_details: Pilot
+  episode_title: Pilot
+  source: DVD
+  video_codec: H.264
+  other: [Screener, Preair]
+  release_group: NoGRP
+  type: episode
+
+? Once.Upon.a.Time.S05E19.HDTV.x264.REPACK-LOL[ettv]
+: title: Once Upon a Time
+  season: 5
+  episode: 19
+  source: HDTV
+  video_codec: H.264
+  other: Proper
+  proper_count: 1
+  release_group: LOL[ettv]
+  type: episode
+
+? Show.Name.S01E03.WEB-DL.x264.HUN-nIk
+: title: Show Name
+  season: 1
+  episode: 3
+  source: Web
+  video_codec: H.264
+  language: hu
+  release_group: nIk
+  type: episode
+
+? Game.of.Thrones.S6.Ep5.X265.Dolby.2.0.KTM3.mp4
+: audio_channels: '2.0'
+  audio_codec: Dolby Digital
+  container: mp4
+  episode: 5
+  release_group: KTM3
+  season: 6
+  title: Game of Thrones
+  type: episode
+  video_codec: H.265
+
+? Fargo.-.Season.1.-.720p.BluRay.-.x264.-.ShAaNiG
+: source: Blu-ray
+  release_group: ShAaNiG
+  screen_size: 720p
+  season: 1
+  title: Fargo
+  type: episode
+  video_codec: H.264
+
+? Show.Name.S02E02.Episode.Title.1080p.WEB-DL.x264.5.1Ch.-.Group
+: audio_channels: '5.1'
+  episode: 2
+  episode_title: Episode Title
+  source: Web
+  release_group: Group
+  screen_size: 1080p
+  season: 2
+  title: Show Name
+  type: episode
+  video_codec: H.264
+
+? Breaking.Bad.S01E01.2008.BluRay.VC1.1080P.5.1.WMV-NOVO
+: audio_channels: '5.1'
+  container: wmv
+  episode: 1
+  source: Blu-ray
+  release_group: NOVO
+  screen_size: 1080p
+  season: 1
+  title: Breaking Bad
+  type: episode
+  year: 2008
+
+? Cosmos.A.Space.Time.Odyssey.S01E02.HDTV.x264.PROPER-LOL
+: episode: 2
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  release_group: LOL
+  season: 1
+  title: Cosmos A Space Time Odyssey
+  type: episode
+  video_codec: H.264
+
+? Elementary.S01E01.Pilot.DVDSCR.x264.PREAiR-NoGRP
+: episode: 1
+  episode_details: Pilot
+  episode_title: Pilot
+  source: DVD
+  other:
+  - Screener
+  - Preair
+  release_group: NoGRP
+  season: 1
+  title: Elementary
+  type: episode
+  video_codec: H.264
+
+? Fear.The.Walking.Dead.S02E01.HDTV.x264.AAC.MP4-k3n.mp4
+: audio_codec: AAC
+  container: mp4
+  episode: 1
+  source: HDTV
+  release_group: k3n
+  season: 2
+  title: Fear The Walking Dead
+  type: episode
+  video_codec: H.264
+
+? Game.of.Thrones.S03.1080p.BluRay.DTS-HD.MA.5.1.AVC.REMUX-FraMeSToR
+: audio_channels: '5.1'
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: Remux
+  release_group: FraMeSToR
+  screen_size: 1080p
+  season: 3
+  title: Game of Thrones
+  type: episode
+
+? Show.Name.S01E02.HDTV.x264.NL-subs-ABC
+: episode: 2
+  source: HDTV
+  release_group: ABC
+  season: 1
+  subtitle_language: nl
+  title: Show Name
+  type: episode
+  video_codec: H.264
+
+? Friends.S01-S10.COMPLETE.720p.BluRay.x264-PtM
+: source: Blu-ray
+  other: Complete
+  release_group: PtM
+  screen_size: 720p
+  season: # Should it be [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] ?
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  title: Friends
+  type: episode
+  video_codec: H.264
+
+? Duck.Dynasty.S02E07.Streik.German.DOKU.DL.WS.DVDRiP.x264-CDP
+: episode: 7
+  episode_title: Streik German
+  source: DVD
+  language: mul
+  other: [Documentary, Widescreen, Rip]
+  release_group: CDP
+  season: 2
+  title: Duck Dynasty
+  type: episode
+  video_codec: H.264
+
+? Family.Guy.S13E14.JOLO.German.AC3D.DL.720p.WebHD.x264-CDD
+: audio_codec: Dolby Digital
+  episode: 14
+  episode_title: JOLO German
+  source: Web
+  language: mul
+  release_group: CDD
+  screen_size: 720p
+  season: 13
+  title: Family Guy
+  type: episode
+  video_codec: H.264
+
+? How.I.Met.Your.Mother.COMPLETE.SERIES.DVDRip.XviD-AR
+: options: -L en -C us
+  source: DVD
+  other: [Complete, Rip]
+  release_group: AR
+  title: How I Met Your Mother
+  type: movie # Should be episode
+  video_codec: Xvid
+
+? Show Name The Complete Seasons 1 to 5 720p BluRay x265 HEVC-SUJAIDR[UTR]
+: source: Blu-ray
+  other: Complete
+  release_group: SUJAIDR[UTR]
+  screen_size: 720p
+  season:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  title: Show Name
+  type: episode
+  video_codec: H.265
+
+? Fear.the.Walking.Dead.-.Season.2.epi.02.XviD.Eng.Ac3-5.1.sub.ita.eng.iCV-MIRCrew
+: options: -t episode
+  audio_channels: '5.1'
+  audio_codec: Dolby Digital
+  episode: 2
+  episode_title: epi
+  language: en
+  release_group: iCV-MIRCrew
+  season: 2
+  subtitle_language: it
+  title: Fear the Walking Dead
+  type: episode
+  video_codec: Xvid
+
+? Game.Of.Thrones.S06E04.720p.PROPER.HDTV.x264-HDD
+: episode: 4
+  source: HDTV
+  other: Proper
+  proper_count: 1
+  release_group: HDD
+  screen_size: 720p
+  season: 6
+  title: Game Of Thrones
+  type: episode
+  video_codec: H.264
+
+? Marvels.Daredevil.S02E04.WEBRip.x264-NF69.mkv
+: container: mkv
+  episode: 4
+  source: Web
+  other: Rip
+  release_group: NF69
+  season: 2
+  title: Marvels Daredevil
+  type: episode
+  video_codec: H.264
+
+? The.Walking.Dead.S06E01.FRENCH.1080p.WEB-DL.DD5.1.HEVC.x265-GOLF68
+: audio_channels: '5.1'
+  audio_codec: Dolby Digital
+  episode: 1
+  source: Web
+  language: fr
+  release_group: GOLF68
+  screen_size: 1080p
+  season: 6
+  title: The Walking Dead
+  type: episode
+  video_codec: H.265
+
+? American.Crime.S01E03.FASTSUB.VOSTFR.720p.HDTV.x264-F4ST
+: episode: 3
+  source: HDTV
+  other: Fast Subtitled
+  release_group: F4ST
+  screen_size: 720p
+  season: 1
+  subtitle_language: fr
+  title: American Crime
+  type: episode
+  video_codec: H.264
+
+? Gotham.S02E12.FASTSUB.VOSTFR.HDTV.X264-F4ST3R
+: episode: 12
+  source: HDTV
+  other: Fast Subtitled
+  release_group: F4ST3R
+  season: 2
+  subtitle_language: fr
+  title: Gotham
+  type: episode
+  video_codec: H.264
+
+# WEBRip + LD
+? Australian.Story.2016.05.23.Into.The.Fog.of.War.Part.1.360p.LDTV.WEBRIP.[MPup]
+: title: Australian Story
+  date: 2016-05-23
+  episode_title: Into The Fog of War
+  part: 1
+  screen_size: 360p
+  other: [Low Definition, Rip]
+  source: Web
+  release_group: MPup
+  type: episode
+
+# AHDTV
+? Show.Name.S04E06.FRENCH.AHDTV.XviD
+: title: Show Name
+  season: 4
+  episode: 6
+  language: fr
+  source: Analog HDTV
+  video_codec: Xvid
+  type: episode
+
+# WEBDLRip
+? Show.Name.s06e14.WEBDLRip.-qqss44.avi
+: title: Show Name
+  season: 6
+  episode: 14
+  source: Web
+  other: Rip
+  release_group: qqss44
+  container: avi
+  type: episode
+
+# WEBCap
+? Steven.Universe.S03E06.Steven.Floats.720p.WEBCap.x264-SRS
+: title: Steven Universe
+  season: 3
+  episode: 6
+  episode_title: Steven Floats
+  screen_size: 720p
+  source: Web
+  other: Rip
+  video_codec: H.264
+  release_group: SRS
+  type: episode
+
+# DSR
+? Show.Name.S05E09.Some.Episode.Title.WS.DSR.x264-[NY2]
+: title: Show Name
+  season: 5
+  episode: 9
+  episode_title: Some Episode Title
+  other: Widescreen
+  source: Satellite
+  video_codec: H.264
+  release_group: NY2
+  type: episode
+
+# DSRip
+? Squidbillies.S04E05.WS.DSRip.XviD-aAF
+: title: Squidbillies
+  season: 4
+  episode: 5
+  other: [Widescreen, Rip]
+  source: Satellite
+  video_codec: Xvid
+  release_group: aAF
+  type: episode
+
+
+? /series/The.B*.B*.T*.S10E01.1080p.HDTV.X264-DIMENSION[rarbg]/The.B*.B*.T*.S10E01.1080p.HDTV.X264-DIMENSION.mkv
+: container: mkv
+  episode: 1
+  source: HDTV
+  release_group: DIMENSION
+  screen_size: 1080p
+  season: 10
+  title: The B B T
+  type: episode
+  video_codec: H.264
+
+? '[Y-F] Very long Show Name Here - 03 Vostfr HD 8bits'
+: release_group: Y-F
+  title: Very long Show Name Here
+  episode: 3
+  subtitle_language: fr
+  other: HD
+  color_depth: 8-bit
+  type: episode
+
+? '[.www.site.com.].-.Snooze.and.Go.Sleep.S03E02.1080p.HEVC.x265-MeGusta'
+: episode: 2
+  release_group: MeGusta
+  screen_size: 1080p
+  season: 3
+  title: Snooze and Go Sleep
+  type: episode
+  video_codec: H.265
+  website: www.site.com
+
+? Show.Name.S01.720p.HDTV.DD5.1.x264-Group/show.name.0106.720p-group.mkv
+: title: Show Name
+  season: 1
+  screen_size: 720p
+  source: HDTV
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: Group
+  episode: 6
+  container: mkv
+  type: episode
+
+
+? Coupling Season 1 - 4 Complete DVDRip/Coupling Season 4/Coupling - (4x03) - Bed Time.mkv
+: title: Coupling
+  other: [Complete, Rip]
+  source: DVD
+  season: 4
+  episode: 3
+  episode_title: Bed Time
+  container: mkv
+  type: episode
+
+
+? Vice.News.Tonight.2016.10.10.1080p.HBO.WEBRip.AAC2.0.H.264-monkee
+: title: Vice News Tonight
+  date: 2016-10-10
+  screen_size: 1080p
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  type: episode
+
+? frasier.s8e6-768660.srt
+: container: srt
+  episode: 6
+  episode_title: '768660'
+  season: 8
+  title: frasier
+  type: episode
+
+? Show.Name.S03E15.480p.177mb.Proper.HDTV.x264
+: title: Show Name
+  season: 3
+  episode: 15
+  screen_size: 480p
+  size: 177MB
+  other: Proper
+  proper_count: 1
+  source: HDTV
+  video_codec: H.264
+  type: episode
+
+? Show.Name.S03E15.480p.4.8GB.Proper.HDTV.x264
+: title: Show Name
+  season: 3
+  episode: 15
+  screen_size: 480p
+  size: 4.8GB
+  other: Proper
+  proper_count: 1
+  source: HDTV
+  video_codec: H.264
+  type: episode
+
+? Show.Name.S03.1.1TB.Proper.HDTV.x264
+: title: Show Name
+  season: 3
+  size: 1.1TB
+  other: Proper
+  proper_count: 1
+  source: HDTV
+  video_codec: H.264
+  type: episode
+
+? Some.Show.S02E14.1080p.HDTV.X264-reenc.GROUP
+? Some.Show.S02E14.1080p.HDTV.X264-re-enc.GROUP
+? Some.Show.S02E14.1080p.HDTV.X264-re-encoded.GROUP
+? Some.Show.S02E14.1080p.HDTV.X264-reencoded.GROUP
+: title: Some Show
+  season: 2
+  episode: 14
+  screen_size: 1080p
+  source: HDTV
+  video_codec: H.264
+  other: Reencoded
+  release_group: GROUP
+  type: episode
+
+# DDP is DD+
+? Show.Name.2016.S01E01.2160p.AMZN.WEBRip.DDP5.1.x264-Group
+: title: Show Name
+  year: 2016
+  season: 1
+  episode: 1
+  screen_size: 2160p
+  streaming_service: Amazon Prime
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: Group
+  type: episode
+
+? Show Name S02e19 [Mux - H264 - Ita Aac] DLMux by UBi
+: title: Show Name
+  season: 2
+  episode: 19
+  video_codec: H.264
+  language: it
+  audio_codec: AAC
+  source: Web
+  other: Mux
+  release_group: UBi
+  type: episode
+
+? Show Name S01e10[Mux - 1080p - H264 - Ita Eng Ac3 - Sub Ita Eng]DLMux By GiuseppeTnT Littlelinx
+: title: Show Name
+  season: 1
+  episode: 10
+  screen_size: 1080p
+  video_codec: H.264
+  language: [it, en]
+  source: Web
+  other: Mux
+  audio_codec: Dolby Digital
+  subtitle_language: [it, en]
+  release_group: GiuseppeTnT Littlelinx
+  type: episode
+
+? Show Name S04e07-08 [H264 - Ita Aac] HDTVMux by Group
+: title: Show Name
+  season: 4
+  episode: [7, 8]
+  video_codec: H.264
+  language: it
+  audio_codec: AAC
+  source: HDTV
+  other: Mux
+  release_group: Group
+  type: episode
+
+? Show Name 3x18 Un Tuffo Nel Passato ITA HDTVMux x264 Group
+: title: Show Name
+  season: 3
+  episode: 18
+  episode_title: Un Tuffo Nel Passato
+  language: it
+  source: HDTV
+  other: Mux
+  video_codec: H.264
+  release_group: Group
+  type: episode
+
+? Show.Name.S03.1080p.BlurayMUX.AVC.DTS-HD.MA
+: title: Show Name
+  season: 3
+  screen_size: 1080p
+  source: Blu-ray
+  other: Mux
+  video_codec: H.264
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  type: episode
+
+? Show.Name.-.07.(2016).[RH].[English.Dubbed][WEBRip]..[HD.1080p]
+: options: -t episode
+  episode: 7
+  source: Web
+  other: Rip
+  language: en
+  other: [HD, Rip]
+  screen_size: 1080p
+  title: Show Name
+  type: episode
+  year: 2016
+
+? Show.Name.-.476-479.(2007).[HorribleSubs][WEBRip]..[HD.720p]
+: options: -t episode
+  episode:
+  - 476
+  - 477
+  - 478
+  - 479
+  source: Web
+  other: [Rip, HD]
+  release_group: HorribleSubs
+  screen_size: 720p
+  title: Show Name
+  type: episode
+  year: 2007
+
+? /11.22.63/Season 1/11.22.63.106.hdtv-abc
+: options: -T 11.22.63
+  title: 11.22.63
+  season: 1
+  episode: 6
+  source: HDTV
+  release_group: abc
+  type: episode
+
+? Proof.2015.S01E10.1080p.WEB-DL.DD5.1.H.264-KINGS.mkv
+: title: Proof
+  season: 1
+  episode: 10
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: KINGS
+  container: mkv
+  type: episode
+
+# Hardcoded subtitles
+? Show.Name.S06E16.HC.SWESUB.HDTV.x264
+: title: Show Name
+  season: 6
+  episode: 16
+  other: Hardcoded Subtitles
+  source: HDTV
+  video_codec: H.264
+  subtitle_language: sv
+  type: episode
+
+? From [ WWW.TORRENTING.COM ] - White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM/White.Rabbit.Project.S01E08.1080p.NF.WEBRip.DD5.1.x264-ViSUM.mkv
+: title: White Rabbit Project
+  website: WWW.TORRENTING.COM
+  season: 1
+  episode: 8
+  screen_size: 1080p
+  streaming_service: Netflix
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: ViSUM
+  container: mkv
+  type: episode
+
+? /tv/Daniel Tiger's Neighborhood/S02E06 - Playtime Is Different.mp4
+: season: 2
+  episode: 6
+  title: Daniel Tiger's Neighborhood
+  episode_title: Playtime Is Different
+  container: mp4
+  type: episode
+
+? Zoo.S02E05.1080p.WEB-DL.DD5.1.H.264.HKD/160725_02.mkv
+: title: Zoo
+  season: 2
+  episode: 5
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: HKD
+  container: mkv
+  type: episode
+
+? We.Bare.Bears.S01E14.Brother.Up.1080p.WEB-DL.AAC2.0.H.264-TVSmash/mxNMuJWeO7PUWCMEwqKSsS6D8Vs9S6V3PHD.mkv
+: title: We Bare Bears
+  season: 1
+  episode: 14
+  episode_title: Brother Up
+  screen_size: 1080p
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: TVSmash
+  container: mkv
+  type: episode
+
+? Beyond.S01E02.Tempus.Fugit.720p.FREE.WEBRip.AAC2.0.x264-BTW/gNWDXow11s7E0X7GTDrZ.mkv
+: title: Beyond
+  season: 1
+  episode: 2
+  episode_title: Tempus Fugit
+  screen_size: 720p
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTW
+  container: mkv
+  type: episode
+
+? Bones.S12E02.The.Brain.In.The.Bot.1080p.WEB-DL.DD5.1.H.264-R2D2/161219_06.mkv
+: title: Bones
+  season: 12
+  episode: 2
+  episode_title: The Brain In The Bot
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: R2D2
+  container: mkv
+  type: episode
+
+? The.Messengers.2015.S01E07.1080p.WEB-DL.DD5.1.H264.Nlsubs-Q/QoQ-sbuSLN.462.H.1.5DD.LD-BEW.p0801.70E10S.5102.sregnesseM.ehT.mkv
+: title: The Messengers
+  year: 2015
+  season: 1
+  episode: 7
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  subtitle_language: nl
+  release_group: Q
+  container: mkv
+  type: episode
+
+? /Finding.Carter.S02E01.Love.the.Way.You.Lie.1080p.WEB-DL.AAC2.0.H.264-NL/LN-462.H.0.2CAA.LD-BEW.p0801.eiL.uoY.yaW.eht.evoL.10E20S.retraC.gnidniF.mkv
+: title: Finding Carter
+  season: 2
+  episode: 1
+  episode_title: Love the Way You Lie
+  screen_size: 1080p
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: NL
+  container: mkv
+  type: episode
+
+? Mr.Robot.S02E12.1080p.WEB-DL.DD5.1-NL.Subs-Het.Robot.Team.OYM/sbuS LN-1.5DD LD-BEW p0801 21E20S toboR .rM.mkv
+: title: Mr Robot
+  season: 2
+  episode: 12
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  release_group: Het.Robot.Team.OYM
+  type: episode
+
+? Show.Name.-.Temporada.1.720p.HDTV.x264[Cap.102]SPANISH.AUDIO-NEWPCT
+? /Show Name/Season 01/Show.Name.-.Temporada.1.720p.HDTV.x264[Cap.102]SPANISH.AUDIO-NEWPCT
+? /Show Name/Temporada 01/Show.Name.-.Temporada.1.720p.HDTV.x264[Cap.102]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 1
+  episode: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct
+? Show Name - Temporada 4 [HDTV][Cap.408][Espanol Castellano]
+? Show Name - Temporada 4 [HDTV][Cap.408][Español Castellano]
+: title: Show Name
+  season: 4
+  episode: 8
+  source: HDTV
+  language: ca
+  type: episode
+
+# newpct
+? -Show Name - Temporada 4 [HDTV][Cap.408][Espanol Castellano]
+? -Show Name - Temporada 4 [HDTV][Cap.408][Español Castellano]
+: release_group: Castellano
+
+# newpct
+? Show.Name.-.Temporada1.[HDTV][Cap.105][Español.Castellano]
+: title: Show Name
+  source: HDTV
+  season: 1
+  episode: 5
+  language: ca
+  type: episode
+
+# newpct
+? Show.Name.-.Temporada1.[HDTV][Cap.105][Español]
+: title: Show Name
+  source: HDTV
+  season: 1
+  episode: 5
+  language: es
+  type: episode
+
+# newpct - season and episode with range:
+? Show.Name.-.Temporada.1.720p.HDTV.x264[Cap.102_104]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 1
+  episode: [2, 3, 4]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct - season and episode (2 digit season)
+? Show.Name.-.Temporada.15.720p.HDTV.x264[Cap.1503]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 15
+  episode: 3
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct - season and episode (2 digit season with range)
+? Show.Name.-.Temporada.15.720p.HDTV.x264[Cap.1503_1506]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 15
+  episode: [3, 4, 5, 6]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct - season and episode:
+? Show.Name.-.Temp.1.720p.HDTV.x264[Cap.102]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 1
+  episode: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct - season and episode:
+? Show.Name.-.Tem.1.720p.HDTV.x264[Cap.102]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 1
+  episode: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  type: episode
+
+# newpct - season and episode:
+? Show.Name.-.Tem.1.720p.HDTV.x264[Cap.112_114.Final]SPANISH.AUDIO-NEWPCT
+: title: Show Name
+  season: 1
+  episode: [12, 13, 14]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: es
+  release_group: NEWPCT
+  episode_details: Final
+  type: episode
+
+? Mastercook Italia - Stagione 6 (2016) 720p ep13 spyro.mkv
+: title: Mastercook Italia
+  season: 6
+  episode: 13
+  year: 2016
+  screen_size: 720p
+  episode_title: spyro
+  container: mkv
+  type: episode
+
+? Mastercook Italia - Stagione 6 (2016) 720p Episodio 13 spyro.mkv
+: title: Mastercook Italia
+  season: 6
+  year: 2016
+  screen_size: 720p
+  episode: 13
+  episode_title: spyro
+  container: mkv
+  type: episode
+
+# Italian releases
+? Show Name 3x18 Un Tuffo Nel Passato ITA HDTVMux x264 NovaRip
+: title: Show Name
+  season: 3
+  episode: 18
+  episode_title: Un Tuffo Nel Passato
+  language: it
+  source: HDTV
+  other: Mux
+  video_codec: H.264
+  release_group: NovaRip
+  type: episode
+
+# Italian releases
+? Show Name 3x18 Un Tuffo Nel Passato ITA HDTVMux x264 NovaRip
+: title: Show Name
+  season: 3
+  episode: 18
+  episode_title: Un Tuffo Nel Passato
+  language: it
+  source: HDTV
+  other: Mux
+  video_codec: H.264
+  release_group: NovaRip
+  type: episode
+
+# Subbed: No language hint
+? Show.Name.S06E03.1080p.HDTV.Legendado
+: subtitle_language: und
+
+# Subbed: No language hint
+? Show.Name.S01E09.Subbed.1080p.BluRay.x264-RRH
+: title: Show Name
+  season: 1
+  episode: 9
+  subtitle_language: und
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: RRH
+  type: episode
+
+# Legendado PT-BR
+? Show.Name.S06E05.1080p.WEBRip.Legendado.PT-BR
+? Show.Name.S06E05.1080p.WEBRip.Legendas.PT-BR
+? Show.Name.S06E05.1080p.WEBRip.Legenda.PT-BR
+: title: Show Name
+  season: 6
+  episode: 5
+  screen_size: 1080p
+  source: Web
+  other: Rip
+  subtitle_language: pt-BR
+  type: episode
+
+? Show.Name.S01E07.Super, Title.WEB-DL 720p.br.srt
+: title: Show Name
+  season: 1
+  episode: 7
+  episode_title: Super, Title
+  source: Web
+  screen_size: 720p
+  subtitle_language: pt-BR
+  container: srt
+  type: episode
+
+? -Show.Name.S01E07.Super, Title.WEB-DL 720p.br.srt
+: language: pt-BR
+
+# Legendado PT
+? Show.Name.S06E05.1080p.WEBRip.Legendado.PT
+: title: Show Name
+  season: 6
+  episode: 5
+  screen_size: 1080p
+  source: Web
+  other: Rip
+  subtitle_language: pt
+  type: episode
+
+? Show.Name.S05E01.SPANISH.SUBBED.720p.HDTV.x264-sPHD
+: title: Show Name
+  season: 5
+  episode: 1
+  subtitle_language: spa
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: sPHD
+  type: episode
+
+? Show.Name.S01E01.German.Subbed.HDTV.XviD-ASAP
+: title: Show Name
+  season: 1
+  episode: 1
+  subtitle_language: deu
+  source: HDTV
+  video_codec: Xvid
+  release_group: ASAP
+  type: episode
+
+? Show.Name.S04E21.Aint.Nothing.Like.the.Real.Thing.German.Custom.Subbed.720p.HDTV.x264.iNTERNAL-BaCKToRG
+: title: Show Name
+  season: 4
+  episode: 21
+  episode_title: Aint Nothing Like the Real Thing
+  subtitle_language: deu
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  type: episode
+
+? Show.Name.S01.Season.Complet.WEBRiP.Ro.Subbed.TM
+: title: Show Name
+  season: 1
+  other: [Complete, Rip]
+  source: Web
+  subtitle_language: ro
+  type: episode
+
+? Show.Name.(2013).Season.3.-.Eng.Soft.Subtitles.720p.WEBRip.x264.[MKV,AC3,5.1].Ehhhh
+: title: Show Name
+  year: 2013
+  season: 3
+  subtitle_language: en
+  screen_size: 720p
+  source: Web
+  other: Rip
+  video_codec: H.264
+  container: mkv
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  release_group: Ehhhh
+  type: episode
+
+# Dublado
+? Show.Name.S02E03.720p.HDTV.x264-Belex.-.Dual.Audio.-.Dublado
+: title: Show Name
+  season: 2
+  episode: 3
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: Belex
+  other: Dual Audio
+  language: und
+  type: episode
+
+? Show.Name.S06E10.1080p.WEB-DL.DUAL.[Dublado].RK
+: title: Show Name
+  season: 6
+  episode: 10
+  screen_size: 1080p
+  source: Web
+  other: Dual Audio
+  language: und
+  release_group: RK
+  type: episode
+
+? Show.Name.S06E12.720p.WEB-DL.Dual.Audio.Dublado
+: title: Show Name
+  season: 6
+  episode: 12
+  screen_size: 720p
+  source: Web
+  other: Dual Audio
+  language: und
+  type: episode
+
+? Show.Name.S05E07.720p.DUBLADO.HDTV.x264-0SEC-pia.mkv
+: title: Show Name
+  season: 5
+  episode: 7
+  screen_size: 720p
+  language: und
+  source: HDTV
+  video_codec: H.264
+  release_group: 0SEC-pia
+  container: mkv
+  type: episode
+
+? Show.Name.S02E07.Shiva.AC3.Dubbed.WEBRip.x264
+: title: Show Name
+  season: 2
+  episode: 7
+  episode_title: Shiva
+  audio_codec: Dolby Digital
+  language: und
+  source: Web
+  other: Rip
+  video_codec: H.264
+  type: episode
+
+# Legendas
+? Show.Name.S05.1080p.BluRay.x264-Belex.-.Dual.Audio.+.Legendas
+: title: Show Name
+  season: 5
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: Belex
+  other: Dual Audio
+  subtitle_language: und
+  type: episode
+
+# Legendas
+? Show.Name.S05.1080p.BluRay.x264-Belex.-.Dual.Audio.+.Legendas
+: title: Show Name
+  season: 5
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: Belex
+  other: Dual Audio
+  subtitle_language: und
+  type: episode
+
+# Subtitulado
+? Show.Name.S01E03.HDTV.Subtitulado.Esp.SC
+? Show.Name.S01E03.HDTV.Subtitulado.Espanol.SC
+? Show.Name.S01E03.HDTV.Subtitulado.Español.SC
+: title: Show Name
+  season: 1
+  episode: 3
+  source: HDTV
+  subtitle_language: es
+  release_group: SC
+  type: episode
+
+# Subtitles/Subbed
+? Show.Name.S02E08.720p.WEB-DL.Subtitles
+? Show.Name.S02E08.Subbed.720p.WEB-DL
+: title: Show Name
+  season: 2
+  episode: 8
+  screen_size: 720p
+  source: Web
+  subtitle_language: und
+  type: episode
+
+# Dubbed
+? Show.Name.s01e01.german.Dubbed
+: title: Show Name
+  season: 1
+  episode: 1
+  language: de
+  type: episode
+
+? Show.Name.S06E05.Das.Toor.German.AC3.Dubbed.HDTV.German
+: title: Show Name
+  season: 6
+  episode: 5
+  language: de
+  audio_codec: Dolby Digital
+  source: HDTV
+  type: episode
+
+? Show.Name.S01E01.Savage.Season.GERMAN.DUBBED.WS.HDTVRip.x264-TVP
+: title: Show Name
+  season: 1
+  episode: 1
+  episode_title: Savage Season
+  language: de
+  other: [Widescreen, Rip]
+  source: HDTV
+  video_codec: H.264
+  release_group: TVP
+  type: episode
+
+# Dubbed
+? "[AnimeRG].Show.Name.-.03.[Eng.Dubbed].[720p].[WEB-DL].[JRR]"
+: title: Show Name
+  episode: 3
+  language: en
+  screen_size: 720p
+  source: Web
+  release_group: JRR
+  type: episode
+
+# Dubbed
+? "[RH].Show.Name.-.03.[English.Dubbed].[1080p]"
+: title: Show Name
+  episode: 3
+  language: en
+  screen_size: 1080p
+  release_group: RH
+  type: episode
+
+# Hebsubs
+? Show.Name.S05E05.HDTV.XviD-AFG.HebSubs
+: title: Show Name
+  season: 5
+  episode: 5
+  source: HDTV
+  video_codec: Xvid
+  release_group: AFG
+  subtitle_language: he
+  type: episode
+
+? Show Name - S02E31 - Episode 55 (720p.HDTV)
+: title: Show Name
+  season: 2
+  episode: 31
+  episode_title: Episode 55
+  screen_size: 720p
+  source: HDTV
+  type: episode
+
+# Scenario: Removing invalid season and episode matches. Correct episode_title match
+? Show.Name.S02E06.eps2.4.m4ster-s1ave.aes.1080p.AMZN.WEBRip.DD5.1.x264-GROUP
+: title: Show Name
+  season: 2
+  episode: 6
+  episode_title: eps2 4 m4ster-s1ave aes
+  screen_size: 1080p
+  streaming_service: Amazon Prime
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: GROUP
+  type: episode
+
+? Show.Name.S01E05.3xpl0its.wmv.720p.WEBdl.EN-SUB.x264-[MULVAcoded].mkv
+: title: Show Name
+  season: 1
+  episode: 5
+  episode_title: 3xpl0its
+  screen_size: 720p
+  source: Web
+  subtitle_language: en
+  video_codec: H.264
+  type: episode
+
+# Regression: S4L release group detected as season 4
+# https://github.com/guessit-io/guessit/issues/352
+? Show Name S01E06 DVD-RIP x264-S4L
+: title: Show Name
+  season: 1
+  episode: 6
+  source: DVD
+  video_codec: H.264
+  release_group: S4L
+  type: episode
+
+# Corner case with only date and 720p
+? The.Show.Name.2016.05.18.720.HDTV.x264-GROUP.VTV
+: title: The Show Name
+  date: 2016-05-18
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: GROUP.VTV
+  type: episode
+
+# Corner case with only date and 720p
+? -The.Show.Name.2016.05.18.720.HDTV.x264-GROUP.VTV
+: season: 7
+  episode: 20
+
+# https://github.com/guessit-io/guessit/issues/308 (conflict with screen size)
+? "[SuperGroup].Show.Name.-.06.[720.Hi10p][1F5578AC]"
+: title: Show Name
+  episode: 6
+  screen_size: 720p
+  color_depth: 10-bit
+  crc32: 1F5578AC
+  release_group: SuperGroup
+  type: episode
+
+# https://github.com/guessit-io/guessit/issues/308 (conflict with screen size)
+? "[SuperGroup].Show.Name.-.06.[1080.Hi10p][1F5578AC]"
+: title: Show Name
+  episode: 6
+  screen_size: 1080p
+  color_depth: 10-bit
+  crc32: 1F5578AC
+  release_group: SuperGroup
+  type: episode
+
+? "[MK-Pn8].Dimension.W.-.05.[720p][Hi10][Dual][TV-Dub][EDA6E7F1]"
+: options: -C us -L und
+  release_group: MK-Pn8
+  title: Dimension W
+  episode: 5
+  screen_size: 720p
+  color_depth: 10-bit
+  other: Dual Audio
+  source: TV
+  language: und
+  crc32: EDA6E7F1
+  type: episode
+
+? "[Zero-Raws].Show.Name.493-498.&.500-507.(CX.1280x720.VFR.x264.AAC)"
+: release_group: Zero-Raws
+  title: Show Name
+  episode: [493, 494, 495, 496, 497, 498, 500, 501, 502, 503, 504, 505, 506, 507]
+  screen_size: 720p
+  subtitle_language: fr
+  video_codec: H.264
+  audio_codec: AAC
+  type: episode
+
+# NetflixUHD
+? Show.Name.S01E06.NetflixUHD
+: title: Show Name
+  season: 1
+  episode: 6
+  streaming_service: Netflix
+  other: Ultra HD
+  type: episode
+
+? Show.Name.S04E13.FINAL.MULTI.DD51.2160p.NetflixUHDRip.x265-TVS
+: title: Show Name
+  season: 4
+  episode: 13
+  episode_details: Final
+  language: mul
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  screen_size: 2160p
+  streaming_service: Netflix
+  source: Ultra HDTV
+  other: Rip
+  video_codec: H.265
+  release_group: TVS
+  type: episode
+
+? Show.Name.S06E11.Of.Late.I.Think.of.Rosewood.iTunesHD.x264
+: title: Show Name
+  season: 6
+  episode: 11
+  episode_title: Of Late I Think of Rosewood
+  streaming_service: iTunes
+  other: HD
+  video_codec: H.264
+  type: episode
+
+? Show.Name.S01.720p.iTunes.h264-Group
+: title: Show Name
+  season: 1
+  screen_size: 720p
+  streaming_service: iTunes
+  video_codec: H.264
+  release_group: Group
+  type: episode
+
+? Show.Name.1x01.eps1.0.hellofriend.(HDiTunes.Ac3.Esp).(2015).By.Malaguita.avi
+: title: Show Name
+  season: 1
+  episode: 1
+  episode_title: eps1 0 hellofriend
+  other: HD
+  streaming_service: iTunes
+  audio_codec: Dolby Digital
+  language: spa
+  year: 2015
+  container: avi
+  type: episode
+
+? "[Hanamaru&LoliHouse] The Dragon Dentist - 01 [WebRip 1920x1080 HEVC-yuv420p10 AAC].mkv"
+: release_group: Hanamaru&LoliHouse
+  title: The Dragon Dentist
+  episode: 1
+  source: Web
+  other: Rip
+  screen_size: 1080p
+  video_codec: H.265
+  color_depth: 10-bit
+  audio_codec: AAC
+  container: mkv
+  type: episode
+
+? Show Name - Season 1 Episode 50
+: title: Show Name
+  season: 1
+  episode: 50
+  type: episode
+
+? Vikings.Seizoen.4.1080p.Web.NLsubs
+: title: Vikings
+  season: 4
+  screen_size: 1080p
+  source: Web
+  subtitle_language: nl
+  type: episode
+
+? Star.Wars.Rebels.S01E01.Spark.of.Rebellion.ALTERNATE.CUT.HDTV.x264-W4F.mp4
+: title: Star Wars Rebels
+  season: 1
+  episode: 1
+  episode_title: Spark of Rebellion
+  edition: Alternative Cut
+  source: HDTV
+  video_codec: H.264
+  release_group: W4F
+  container: mp4
+  type: episode
+
+? DCs.Legends.of.Tomorrow.S02E12.HDTV.XviD-FUM
+: title: DCs Legends of Tomorrow
+  season: 2
+  episode: 12
+  source: HDTV
+  video_codec: Xvid
+  release_group: FUM
+  type: episode
+
+? DC's Legends of Tomorrow 2016 - S02E02
+: title: DC's Legends of Tomorrow
+  year: 2016
+  season: 2
+  episode: 2
+  type: episode
+
+? Broadchurch.S01.DIRFIX.720p.BluRay.x264-SHORTBREHD
+: title: Broadchurch
+  season: 1
+  other: Proper
+  screen_size: 720p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: SHORTBREHD
+  proper_count: 1
+  type: episode
+
+? Simply Red - 2016-07-08 Montreux Jazz Festival 720p
+: title: Simply Red
+  date: 2016-07-08
+  episode_title: Montreux Jazz Festival
+  screen_size: 720p
+  type: episode
+
+? Ridiculousness.S07E14.iNTERNAL.HDTV.x264-YesTV
+: title: Ridiculousness
+  season: 7
+  episode: 14
+  other: Internal
+  source: HDTV
+  video_codec: H.264
+  release_group: YesTV
+  type: episode
+
+? Stephen.Colbert.2016.05.25.James.McAvoy.iNTERNAL.XviD-AFG
+: title: Stephen Colbert
+  date: 2016-05-25
+  episode_title: James McAvoy
+  other: Internal
+  video_codec: Xvid
+  release_group: AFG
+  type: episode
+
+? The.100.S01E13.iNTERNAL.READNFO.720p.HDTV.x264-2HD
+: title: The 100
+  season: 1
+  episode: 13
+  other: [Internal, Read NFO]
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: 2HD
+  type: episode
+
+? The.100.S01E13.READ.NFO.720p.HDTV.x264-2HD
+: title: The 100
+  season: 1
+  episode: 13
+  other: Read NFO
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: 2HD
+  type: episode
+
+? Dr.Ken.S01E21.SAMPLEFIX.720p.HDTV.x264-SVA
+: title: Dr Ken
+  season: 1
+  episode: 21
+  other: Proper
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: SVA
+  type: episode
+
+? Rick and Morty Season 1 [UNCENSORED] [BDRip] [1080p] [HEVC]
+: title: Rick and Morty
+  season: 1
+  edition: Uncensored
+  other: Rip
+  source: Blu-ray
+  screen_size: 1080p
+  video_codec: H.265
+  type: episode
+
+? 12.Monkeys.S01E01.LiMiTED.FRENCH.1080p.WEB-DL.H264-AUTHORiTY
+: title: 12 Monkeys
+  season: 1
+  episode: 1
+  edition: Limited
+  language: french
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: AUTHORiTY
+  type: episode
+
+? Undateable.2014.S03E05.West.Feed.HDTV.x264-2HD
+: title: Undateable
+  year: 2014
+  season: 3
+  episode: 5
+  other: West Coast Feed
+  source: HDTV
+  video_codec: H.264
+  release_group: 2HD
+  type: episode
+
+? Undateable.2014.S02E07-E08.Live.Episode.West.Coast.Feed.HDTV.x264-2HD
+: title: Undateable
+  year: 2014
+  season: 2
+  episode: [7, 8]
+  other: West Coast Feed
+  source: HDTV
+  video_codec: H.264
+  release_group: 2HD
+  type: episode
+
+? Undateable.S03E01-E02.LIVE.EAST.FEED.720p.HDTV.x264-KILLERS
+: title: Undateable
+  season: 3
+  episode: [1, 2]
+  other: East Coast Feed
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: KILLERS
+  type: episode
+
+? Undateable.2014.S02E07.Live.Episode.East.Coast.Feed.HDTV.x264-2HD
+: title: Undateable
+  year: 2014
+  season: 2
+  episode: 7
+  other: East Coast Feed
+  source: HDTV
+  video_codec: H.264
+  release_group: 2HD
+  type: episode
+
+? Undateable.2014.S02E07.East.Coast.Feed.720p.WEB-DL.DD5.1.H.264-NTb
+: title: Undateable
+  year: 2014
+  season: 2
+  episode: 7
+  other: East Coast Feed
+  screen_size: 720p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NTb
+  type: episode
+
+? True Detective S02E04 720p HDTV x264-0SEC [GloDLS].mkv
+: title: True Detective
+  season: 2
+  episode: 4
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: 0SEC [GloDLS]
+  container: mkv
+  type: episode
+
+? Anthony.Bourdain.Parts.Unknown.S09E01.Los.Angeles.720p.HDTV.x264-MiNDTHEGAP
+: title: Anthony Bourdain Parts Unknown
+  season: 9
+  episode: 1
+  episode_title: Los Angeles
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: MiNDTHEGAP
+  type: episode
+
+? -feud.s01e05.and.the.winner.is.(the.oscars.of.1963).720p.amzn.webrip.dd5.1.x264-casstudio.mkv
+: year: 1963
+
+? feud.s01e05.and.the.winner.is.(the.oscars.of.1963).720p.amzn.webrip.dd5.1.x264-casstudio.mkv
+: title: feud
+  season: 1
+  episode: 5
+  episode_title: and the winner is
+  screen_size: 720p
+  streaming_service: Amazon Prime
+  source: Web
+  other: Rip
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: casstudio
+  container: mkv
+  type: episode
+
+? Adventure.Time.S08E16.Elements.Part.1.Skyhooks.720p.WEB-DL.AAC2.0.H.264-RTN.mkv
+: title: Adventure Time
+  season: 8
+  episode: 16
+  episode_title: Elements Part 1 Skyhooks
+  screen_size: 720p
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: RTN
+  container: mkv
+  type: episode
+
+? D:\TV\SITCOMS (CLASSIC)\That '70s Show\Season 07\That '70s Show - S07E22 - 2000 Light Years from Home.mkv
+: title: That '70s Show
+  season: 7
+  episode: 22
+  episode_title: 2000 Light Years from Home
+  container: mkv
+  type: episode
+
+? Show.Name.S02E01.Super.Title.720p.WEB-DL.DD5.1.H.264-ABC.nzb
+: title: Show Name
+  season: 2
+  episode: 1
+  episode_title: Super Title
+  screen_size: 720p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: ABC
+  container: nzb
+  type: episode
+
+? "[SGKK] Bleach 312v1 [720p/mkv]-Group.mkv"
+: title: Bleach
+  episode: 312
+  version: 1
+  screen_size: 720p
+  release_group: Group
+  container: mkv
+  type: episode
+
+? The.Expanse.S02E08.720p.WEBRip.x264.EAC3-KiNGS.mkv
+: title: The Expanse
+  season: 2
+  episode: 8
+  screen_size: 720p
+  source: Web
+  other: Rip
+  video_codec: H.264
+  audio_codec: Dolby Digital Plus
+  release_group: KiNGS
+  container: mkv
+  type: episode
+
+? Series_name.2005.211.episode.title.avi
+: title: Series name
+  year: 2005
+  season: 2
+  episode: 11
+  episode_title: episode title
+  container: avi
+  type: episode
+
+? the.flash.2014.208.hdtv-lol[ettv].mkv
+: title: the flash
+  year: 2014
+  season: 2
+  episode: 8
+  source: HDTV
+  release_group: lol[ettv]
+  container: mkv
+  type: episode
+
+? "[Despair-Paradise].Kono.Subarashii.Sekai.ni.Shukufuku.wo!.2.-..09.vostfr.FHD"
+: release_group: Despair-Paradise
+  title: Kono Subarashii Sekai ni Shukufuku wo! 2
+  episode: 9
+  subtitle_language: fr
+  other: Full HD
+  type: episode
+
+? Whose Line is it anyway/Season 01/Whose.Line.is.it.Anyway.US.S13E01.720p.WEB.x264-TBS.mkv
+: title: Whose Line is it Anyway
+  season: 13
+  episode: 1
+  country: US
+  screen_size: 720p
+  source: Web
+  video_codec: H.264
+  release_group: TBS
+  container: mkv
+  type: episode
+
+? Planet.Earth.II.S01.2160p.UHD.BluRay.HDR.DTS-HD.MA5.1.x265-ULTRAHDCLUB
+: title: Planet Earth II
+  season: 1
+  screen_size: 2160p
+  source: Ultra HD Blu-ray
+  other: HDR10
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  audio_channels: '5.1'
+  video_codec: H.265
+  release_group: ULTRAHDCLUB
+  type: episode
+
+? Reizen.Waes.S03.FLEMISH.1080p.HDTV.MP2.H.264-NOGRP/Reizen.Waes.S03E05.China.PART1.FLEMISH.1080p.HDTV.MP2.H.264-NOGRP.mkv
+: title: Reizen Waes
+  season: 3
+  episode: 5
+  part: 1
+  language: nl-BE
+  screen_size: 1080p
+  source: HDTV
+  video_codec: H.264
+  release_group: NOGRP
+  container: mkv
+  type: episode
+
+? "/folder/Marvels.Agent.Carter.S02E05.The.Atomic.Job.1080p.WEB-DL.DD5.1.H264-Coo7[rartv]/Marvel's.Agent.Carter.S02E05.The.Atomic.Job.1080p.WEB-DL.DD5.1.H.264-Coo7.mkv"
+: title: Marvel's Agent Carter
+  season: 2
+  episode: 5
+  episode_title: The Atomic Job
+  release_group: Coo7
+  type: episode
+
+? My.Name.Is.Earl.S01-S04.DVDRip.XviD-AR
+: title: My Name Is Earl
+  season: [1, 2, 3, 4]
+  source: DVD
+  other: Rip
+  video_codec: Xvid
+  release_group: AR
+  type: episode
+
+? American.Dad.S01E01.Pilot.DVDRip.x264-CS
+: title: American Dad
+  season: 1
+  episode: 1
+  episode_details: Pilot
+  source: DVD
+  other: Rip
+  video_codec: H.264
+  release_group: CS
+  type: episode
+
+? Black.Sails.S01E01.HDTV.XviD.HebSubs-DR
+: title: Black Sails
+  season: 1
+  episode: 1
+  source: HDTV
+  video_codec: Xvid
+  subtitle_language: he
+  release_group: DR
+  type: episode
+
+? The.West.Wing.S04E06.Game.On.720p.WEB-DL.AAC2.0.H.264-MC
+: title: The West Wing
+  season: 4
+  episode: 6
+  episode_title: Game On
+  screen_size: 720p
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: MC
+  type: episode
+
+? 12.Monkeys.S02E05.1080p.WEB-DL.DD5.1.H.264-NA
+: title: 12 Monkeys
+  season: 2
+  episode: 5
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NA
+  type: episode
+
+? Fear.the.Walking.Dead.S03E07.1080p.AMZN.WEBRip.DD5.1.x264-VLAD[rarbg]/Fear.the.Walking.Dead.S03E07.1080p.AMZN.WEB-DL.DD+5.1.H.264-VLAD.mkv
+: title: Fear the Walking Dead
+  season: 3
+  episode: 7
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: VLAD
+  container: mkv
+  type: episode
+
+? American.Crime.S01E02.1080p.WEB-DL.DD5.1.H.264-NL
+: title: American Crime
+  season: 1
+  episode: 2
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NL
+  type: episode
+
+? Better.Call.Saul.S02.720p.HDTV.x264-TL
+: title: Better Call Saul
+  season: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: TL
+  type: episode
+
+? 60.Minutes.2008.12.14.HDTV.XviD-YT
+: options: -T '60 Minutes'
+  title: 60 Minutes
+  date: 2008-12-14
+  source: HDTV
+  video_codec: Xvid
+  release_group: YT
+  type: episode
+
+? Storm.Chasers.Season.1
+: title: Storm Chasers
+  season: 1
+  type: episode
+
+? Faking.It.2014.S03E08.720p.HDTV.x264-AVS
+: title: Faking It
+  year: 2014
+  season: 3
+  episode: 8
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: AVS
+  type: episode
+
+? /series/Marvel's Agents of S.H.I.E.L.D/Season 4/Marvels.Agents.of.S.H.I.E.L.D.S04E01.The.Ghost.1080p.WEB-DL.DD5.1.H.264-AG.mkv
+: title: Marvels Agents of S.H.I.E.L.D.
+  season: 4
+  episode: 1
+  episode_title: The Ghost
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: AG
+  container: mkv
+  type: episode
+
+? "[FASubs & TTF] Inuyasha - 099 [DVD] [B15AA1AC].mkv"
+: release_group: FASubs & TTF
+  title: Inuyasha
+  episode: 99
+  source: DVD
+  crc32: B15AA1AC
+  container: mkv
+  type: episode
+
+? Show.Name.S01E03.PL.SUBBED.480p.WEBRiP.x264
+: title: Show Name
+  season: 1
+  episode: 3
+  subtitle_language: pl
+  screen_size: 480p
+  source: Web
+  other: Rip
+  video_codec: H.264
+  type: episode
+
+? Show.Name.s10e15(233).480p.BDRip-AVC.Ukr.hurtom
+: title: Show Name
+  season: 10
+  episode: 15
+  screen_size: 480p
+  source: Blu-ray
+  other: Rip
+  video_codec: H.264
+  language: uk
+  release_group: hurtom
+  type: episode
+
+? Goof.Troop.1x24.Waste.Makes.Haste.720p.HDTV.x264.CZ-SDTV
+: title: Goof Troop
+  season: 1
+  episode: 24
+  episode_title: Waste Makes Haste
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  language: cs
+  release_group: SDTV
+  type: episode
+
+? Marvels.Daredevil.S02E11.German.DL.DUBBED.2160p.WebUHD.x264-UHDTV
+: title: Marvels Daredevil
+  season: 2
+  episode: 11
+  language: [de, mul]
+  screen_size: 2160p
+  source: Web
+  video_codec: H.264
+  release_group: UHDTV
+  type: episode
+
+? BBC The Story of China 1 of 6 - Ancestors CC HDTV x264 AC3 2.0 720p mkv
+: title: BBC The Story of China
+  episode: 1
+  episode_count: 6
+  episode_title: Ancestors
+  source: HDTV
+  video_codec: H.264
+  audio_codec: Dolby Digital
+  audio_channels: '2.0'
+  screen_size: 720p
+  container: mkv
+  type: episode
+
+? Duck.Dynasty.S09E04.Drone.Survivor.720p.AE.WEBRip.AAC2.0.H264-BTW[rartv]
+: title: Duck Dynasty
+  season: 9
+  episode: 4
+  episode_title: Drone Survivor
+  screen_size: 720p
+  streaming_service: A&E
+  source: Web
+  other: Rip
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTW[rartv]
+  type: episode
+
+? Mr.Selfridge.S04E03.720p.WEB-DL.AAC2.0.H264-MS[rartv]
+: title: Mr Selfridge
+  season: 4
+  episode: 3
+  screen_size: 720p
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: MS[rartv]
+  type: episode
+
+? Second.Chance.S01E02.One.More.Notch.1080p.WEB-DL.DD5.1.H264-SC[rartv]
+: title: Second Chance
+  season: 1
+  episode: 2
+  episode_title: One More Notch
+  screen_size: 1080p
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: rartv
+  type: episode
+
+? Total.Divas.S05E01.720p.HDTV.AAC2.0.H.264-SC-SDH
+: title: Total Divas
+  season: 5
+  episode: 1
+  screen_size: 720p
+  source: HDTV
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: SDH
+  type: episode
+
+? Marvel's Jessica Jones (2015) s01e09 - AKA Sin Bin.mkv
+: title: Marvel's Jessica Jones
+  season: 1
+  episode: 9
+  episode_title: AKA Sin Bin
+  container: mkv
+  type: episode
+
+? Hotel.Hell.S01E01.720p.DD5.1.448kbps-ALANiS
+: title: Hotel Hell
+  season: 1
+  episode: 1
+  screen_size: 720p
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  audio_bit_rate: 448Kbps
+  release_group: ALANiS
+  type: episode
+
+? Greys.Anatomy.S07D1.NTSC.DVDR-ToF
+: title: Greys Anatomy
+  season: 7
+  disc: 1
+  other: NTSC
+  source: DVD
+  release_group: ToF
+  type: episode
+
+? Greys.Anatomy.S07D1.NTSC.DVDR-ToF
+: title: Greys Anatomy
+  season: 7
+  disc: 1
+  other: NTSC
+  source: DVD
+  release_group: ToF
+  type: episode
+
+? Greys.Anatomy.S07D1-3&5.NTSC.DVDR-ToF
+: title: Greys Anatomy
+  season: 7
+  disc: [1, 2, 3, 5]
+  other: NTSC
+  source: DVD
+  release_group: ToF
+  type: episode
+
+? El.Principe.2014.S01D01.SPANiSH.COMPLETE.BLURAY-COJONUDO
+: title: El Principe
+  year: 2014
+  season: 1
+  disc: 1
+  language: spa
+  other: Complete
+  source: Blu-ray
+  release_group: COJONUDO
+  type: episode
+
+? The Simpsons - Season 2 Complete [DVDRIP VP7 KEGGERMAN
+: title: The Simpsons
+  season: 2
+  other: [Complete, Rip]
+  source: DVD
+  video_codec: VP7
+  release_group: KEGGERMAN
+  type: episode
+
+? Barney & Friends_ Easy as ABC (Season 9_ Episode 15)_VP8_Vorbis_360p.webm
+: title: Barney & Friends Easy as ABC
+  season: 9
+  episode: 15
+  video_codec: VP8
+  audio_codec: Vorbis
+  screen_size: 360p
+  container: webm
+  type: episode
+
+? Victoria.S01.1080p.BluRay.HEVC.DTSMA.LPCM.PGS-OZM
+: title: Victoria
+  season: 1
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.265
+  audio_codec: [DTS-HD, LPCM]
+  audio_profile: Master Audio
+  # Does it worth to add subtitle_format? Such rare case
+  # subtitle_format: PGS
+  # release_group: OZM
+  type: episode
+
+? The.Prisoners.S01E03.1080p.DM.AAC2.0.x264-BTN
+: title: The Prisoners
+  season: 1
+  episode: 3
+  screen_size: 1080p
+  source: Digital Master
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTN
+  type: episode
+
+? Panorama.S2013E25.Broken.by.Battle.1080p.DM.AAC2.0.x264-BTN
+: title: Panorama
+  season: 2013
+  episode: 25
+  episode_title: Broken by Battle
+  screen_size: 1080p
+  source: Digital Master
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTN
+  type: episode
+
+? Our.World.S2014E11.Chinas.Model.Army.720p.DM.AAC2.0.x264-BTN
+: title: Our World
+  season: 2014
+  episode: 11
+  episode_title: Chinas Model Army
+  screen_size: 720p
+  source: Digital Master
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: BTN
+  type: episode
+
+? Storyville.S2016E08.My.Nazi.Legacy.1080p.DM.x264-BTN
+: title: Storyville
+  season: 2016
+  episode: 8
+  episode_title: My Nazi Legacy
+  screen_size: 1080p
+  source: Digital Master
+  video_codec: H.264
+  release_group: BTN
+  type: episode
+
+? Comedians.in.Cars.Getting.Coffee.S07E01.1080p.DM.FLAC2.0.x264-NTb
+: title: Comedians in Cars Getting Coffee
+  season: 7
+  episode: 1
+  screen_size: 1080p
+  source: Digital Master
+  audio_codec: FLAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: NTb
+  type: episode
+
+? "[SomeGroup-Fansub]_Show_Name_727_[VOSTFR][HD_1280x720]"
+: release_group: SomeGroup-Fansub
+  title: Show Name
+  episode: 727
+  subtitle_language: fr
+  other: HD
+  screen_size: 720p
+  type: episode
+
+? "[GROUP]Show_Name_726_[VOSTFR]_[V1]_[8bit]_[720p]_[2F7B3FA2]"
+: release_group: GROUP
+  title: Show Name
+  episode: 726
+  subtitle_language: fr
+  version: 1
+  color_depth: 8-bit
+  screen_size: 720p
+  crc32: 2F7B3FA2
+  type: episode
+
+? Show Name 445 VOSTFR par Fansub-Resistance (1280*720) - version MQ
+: title: Show Name
+  episode: 445
+  subtitle_language: fr
+  screen_size: 720p
+  type: episode
+
+? Anime Show Episode 159 v2 [VOSTFR][720p][AAC].mp4
+: title: Anime Show
+  episode: 159
+  version: 2
+  subtitle_language: fr
+  screen_size: 720p
+  audio_codec: AAC
+  container: mp4
+  type: episode
+
+? "[Group] Anime Super Episode 161 [VOSTFR][720p].mp4"
+: release_group: Group
+  title: Anime Super
+  episode: 161
+  subtitle_language: fr
+  screen_size: 720p
+  container: mp4
+  type: episode
+
+? Anime Show Episode 59 v2 [VOSTFR][720p][AAC].mp4
+: title: Anime Show
+  episode: 59
+  version: 2
+  subtitle_language: fr
+  screen_size: 720p
+  audio_codec: AAC
+  container: mp4
+  type: episode
+
+? Show.Name.-.476-479.(2007).[HorribleSubs][WEBRip]..[HD.720p]
+: title: Show Name
+  episode: [476, 477, 478, 479]
+  year: 2007
+  release_group: HorribleSubs
+  source: Web
+  other: [Rip, HD]
+  screen_size: 720p
+  type: episode
+
+? Show Name - 722 [HD_1280x720].mp4
+: title: Show Name
+  episode: 722
+  other: HD
+  screen_size: 720p
+  container: mp4
+  type: episode
+
+? Show!.Name.2.-.10.(2016).[HorribleSubs][WEBRip]..[HD.720p]
+: title: Show! Name 2
+  episode: 10
+  year: 2016
+  release_group: HorribleSubs
+  source: Web
+  other: [Rip, HD]
+  screen_size: 720p
+  type: episode
+
+? 'C:\folder\[GROUP]_An_Anime_Show_100_-_10_[1080p]_mkv'
+: options: -T 'An Anime Show 100'
+  release_group: GROUP
+  title: An Anime Show 100
+  episode: 10
+  screen_size: 1080p
+  container: mkv
+  type: episode
+
+? "[Group].Show.Name!.Super!!.-.05.[720p][AAC].mp4"
+: release_group: Group
+  title: Show Name! Super!!
+  episode: 5
+  screen_size: 720p
+  audio_codec: AAC
+  container: mp4
+  type: episode
+
+? "[GROUP].Mobile.Suit.Gundam.Unicorn.RE.0096.-.14.[720p].mkv"
+: options: -T 'Mobile Suit Gundam Unicorn RE 0096'
+  release_group: GROUP
+  title: Mobile Suit Gundam Unicorn RE 0096
+  episode: 14
+  screen_size: 720p
+  container: mkv
+  type: episode
+
+? Show.Name.-.Other Name.-.02.(1280x720.HEVC.AAC)
+: title: Show Name
+  alternative_title: Other Name
+  episode: 2
+  screen_size: 720p
+  video_codec: H.265
+  audio_codec: AAC
+  type: episode
+
+? "[GroupName].Show.Name.-.02.5.(Special).[BD.1080p]"
+: release_group: GroupName
+  title: Show Name
+  episode: 2
+  episode_details: Special
+  screen_size: 1080p
+  source: Blu-ray
+  type: episode
+
+? "[Group].Show.Name.2.The.Big.Show.-.11.[1080p]"
+: title: Show Name 2 The Big Show
+  episode: 11
+  screen_size: 1080p
+  type: episode
+
+? "[SuperGroup].Show.Name.-.Still.Name.-.11.[1080p]"
+: release_group: SuperGroup
+  title: Show Name
+  alternative_title: Still Name
+  episode: 11
+  screen_size: 1080p
+  type: episode
+
+? "[SuperGroup].Show.Name.-.462"
+: release_group: SuperGroup
+  title: Show Name
+  episode: 462
+  type: episode
+
+? Show.Name.10.720p
+: title: Show Name
+  episode: 10
+  screen_size: 720p
+  type: episode
+
+? "[Group].Show.Name.G2.-.19.[1080p]"
+: release_group: Group
+  title: Show Name G2
+  episode: 19
+  screen_size: 1080p
+  type: episode
+
+? "[Group].Show.Name.S2.-.19.[1080p]"
+? /Show.Name.S2/[Group].Show.Name.S2.-.19.[1080p]
+? /Show Name S2/[Group].Show.Name.S2.-.19.[1080p]
+: options: -T 'Show Name S2'
+  release_group: Group
+  title: Show Name S2
+  episode: 19
+  screen_size: 1080p
+  type: episode
+
+? "[ABC]_Show_Name_001.mkv"
+: release_group: ABC
+  title: Show Name
+  episode: 1
+  container: mkv
+  type: episode
+
+? 003-005. Show Name - Ep Name.mkv
+: episode: [3, 4, 5]
+  title: Show Name
+  episode_title: Ep Name
+  container: mkv
+  type: episode
+
+? 003. Show Name - Ep Name.mkv
+: episode: 3
+  title: Show Name
+  episode_title: Ep Name
+  container: mkv
+  type: episode
+
+? 165.Show Name.s08e014
+: absolute_episode: 165
+  title: Show Name
+  season: 8
+  episode: 14
+  type: episode
+
+? Show Name - 16x03-05 - 313-315
+? Show.Name.16x03-05.313-315-GROUP
+? Show Name 16x03-05 313-315
+? Show Name - 313-315 - s16e03-05
+? Show.Name.313-315.s16e03-05
+? Show Name 313-315 s16e03-05
+: title: Show Name
+  absolute_episode: [313, 314, 315]
+  season: 16
+  episode: [3, 4, 5]
+  type: episode
+
+? Show Name 13-16
+: title: Show Name
+  episode: [13, 14, 15, 16]
+  type: episode
+
+? Show Name 804 vostfr HD
+: options: --episode-prefer-number
+  title: Show Name
+  episode: 804
+  subtitle_language: fr
+  other: HD
+  type: episode
+
+? "[Doki] Re Zero kara Hajimeru Isekai Seikatsu - 01 1920x1080 Hi10P BD FLAC [7F64383D].mkv"
+: release_group: Doki
+  title: Re Zero kara Hajimeru Isekai Seikatsu
+  episode: 1
+  screen_size: 1080p
+  aspect_ratio: 1.778
+  video_profile: High 10
+  color_depth: 10-bit
+  source: Blu-ray
+  audio_codec: FLAC
+  crc32: 7F64383D
+  container: mkv
+  type: episode
+
+? Shark Tank (AU) - S02E01 - HDTV-720p.mkv
+: title: Shark Tank
+  country: AU
+  season: 2
+  episode: 1
+  source: HDTV
+  screen_size: 720p
+  container: mkv
+  type: episode
+
+? "[HorribleSubs] Garo - Vanishing Line - 01 [1080p].mkv"
+: release_group: HorribleSubs
+  title: Garo
+  alternative_title: Vanishing Line
+  episode: 1
+  screen_size: 1080p
+  container: mkv
+  type: episode
+
+? "[HorribleSubs] Yowamushi Pedal - Glory Line - 01 [1080p].mkv"
+: release_group: HorribleSubs
+  title: Yowamushi Pedal
+  alternative_title: Glory Line
+  episode: 1
+  screen_size: 1080p
+  container: mkv
+  type: episode
+
+? c:\Temp\autosubliminal\completed\2 Broke Girls\Season 01\2 Broke Girls - S01E01 - HDTV-720p Proper - x264 AC3 - IMMERSE - [2011-09-19].mkv
+: title: 2 Broke Girls
+  season: 1
+  episode: 1
+  source: HDTV
+  screen_size: 720p
+  other: Proper
+  video_codec: H.264
+  audio_codec: Dolby Digital
+  release_group: IMMERSE
+  date: 2011-09-19
+  container: mkv
+  type: episode
+
+? c:\Temp\postprocessing\Marvels.Agents.of.S.H.I.E.L.D.s01e02.0.8.4.720p.WEB.DL.mkv
+: title: Marvels Agents of S.H.I.E.L.D.
+  season: 1
+  episode: 2
+  episode_title: 0.8.4.
+  screen_size: 720p
+  source: Web
+  container: mkv
+  type: episode
+
+? Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles
+: title: Mind Field
+  season: 2
+  episode: 6
+  episode_title: The Power of Suggestion
+  screen_size: 1440p
+  video_codec: H.264
+  source: Web
+  subtitle_language: und
+  type: episode
+
+? The Power of Suggestion - Mind Field S2 (Ep 6) (1440p_24fps_H264-384kbit_AAC 6Ch).mp4
+: title: The Power of Suggestion
+  alternative_title: Mind Field
+  season: 2
+  episode: 6
+  screen_size: 1440p
+  frame_rate: 24fps
+  video_codec: H.264
+  audio_bit_rate: 384Kbps
+  audio_codec: AAC
+  audio_channels: '5.1'
+  container: mp4
+  type: episode
+
+? Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles/The Power of Suggestion - Mind Field S2 (Ep 6) (1440p_24fps_H264-384kbit_AAC 6Ch).mp4
+: season: 2
+  episode: 6
+  title: The Power of Suggestion
+  alternative_title: Mind Field
+  screen_size: 1440p
+  frame_rate: 24fps
+  video_codec: H.264
+  source: Web
+  subtitle_language: und
+  audio_bit_rate: 384Kbps
+  audio_codec: AAC
+  audio_channels: '5.1'
+  container: mp4
+  type: episode
+
+? Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles/The Power of Suggestion - Mind Field S2 (Ep 6) (English).srt
+: title: Mind Field
+  season: 2
+  episode: 6
+  episode_title: The Power of Suggestion
+  screen_size: 1440p
+  video_codec: H.264
+  source: Web
+  subtitle_language: en
+  container: srt
+  type: episode
+
+? Mind.Field.S02E06.The.Power.of.Suggestion.1440p.H264.WEBDL.Subtitles/The Power of Suggestion - Mind Field S2 (Ep 6) (Korean).srt
+: title: Mind Field
+  season: 2
+  episode: 6
+  episode_title: The Power of Suggestion
+  screen_size: 1440p
+  video_codec: H.264
+  source: Web
+  subtitle_language: ko
+  container: srt
+  type: episode
+
+? '[HorribleSubs] Overlord II - 01 [1080p] 19.1mbits - 120fps.mkv'
+: release_group: HorribleSubs
+  title: Overlord II
+  episode: 1
+  screen_size: 1080p
+  video_bit_rate: 19.1Mbps
+  frame_rate: 120fps
+  container: mkv
+  type: episode
+
+? One Piece - 720
+: title: One Piece
+  season: 7
+  episode: 20
+  type: episode
+
+? foobar.213.avi
+: options: -E
+  title: foobar
+  episode: 213
+  container: avi
+  type: episode
+
+? FooBar - 360 368p-Grp
+: options: -E
+  title: FooBar
+  episode: 360
+  screen_size: 368p
+  release_group: Grp
+  type: episode
+
+? wwiis.most.daring.raids.s01e04.storming.mussolinis.island.1080p.web.h.264-edhd-sample.mkv
+: title: wwiis most daring raids
+  season: 1
+  episode: 4
+  episode_title: storming mussolinis island
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: edhd
+  other: Sample
+  container: mkv
+  type: episode
+
+? WWIIs.Most.Daring.Raids.S01E04.Storming.Mussolinis.Island.1080p.WEB.h264-EDHD/wwiis.most.daring.raids.s01e04.storming.mussolinis.island.1080p.web.h.264-edhd-sample.mkv
+: title: wwiis most daring raids
+  season: 1
+  episode: 4
+  episode_title: Storming Mussolinis Island
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: edhd
+  other: Sample
+  container: mkv
+  type: episode
+
+? dcs.legends.of.tomorrow.s02e01.1080p.bluray.x264-rovers.proof
+: title: dcs legends of tomorrow
+  season: 2
+  episode: 1
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: rovers
+  other: Proof
+  type: episode
+
+? dcs.legends.of.tomorrow.s02e01.720p.bluray.x264-demand.sample.mkv
+: title: dcs legends of tomorrow
+  season: 2
+  episode: 1
+  screen_size: 720p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: demand
+  other: Sample
+  container: mkv
+  type: episode
+
+? Season 06/e01.1080p.bluray.x264-wavey-obfuscated.mkv
+: season: 6
+  episode: 1
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  title: wavey
+  other: Obfuscated
+  container: mkv
+  type: episode
+
+? Hells.Kitchen.US.S17E08.1080p.HEVC.x265-MeGusta-Obfuscated/c48db7d2aeb040e8a920a9fd6effcbf4.mkv
+: title: Hells Kitchen
+  country: US
+  season: 17
+  episode: 8
+  screen_size: 1080p
+  video_codec: H.265
+  release_group: MeGusta
+  other: Obfuscated
+  uuid: c48db7d2aeb040e8a920a9fd6effcbf4
+  container: mkv
+  type: episode
+
+? Blue.Bloods.S08E09.1080p.HEVC.x265-MeGusta-Obfuscated/afaae96ae7a140e0981ced2a79221751.mkv
+: title: Blue Bloods
+  season: 8
+  episode: 9
+  screen_size: 1080p
+  video_codec: H.265
+  release_group: MeGusta
+  other: Obfuscated
+  container: mkv
+  type: episode
+
+? MacGyver.2016.S02E09.CD-ROM.and.Hoagie.Foil.1080p.AMZN.WEBRip.DDP5.1.x264-NTb-Scrambled/c329b27187d44a94b4a25b21502db552.mkv
+: title: MacGyver
+  year: 2016
+  season: 2
+  episode: 9
+  screen_size: 1080p
+  streaming_service: Amazon Prime
+  source: Web
+  other: [Rip, Obfuscated]
+  audio_codec: Dolby Digital Plus
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: NTb
+  uuid: c329b27187d44a94b4a25b21502db552
+  container: mkv
+  type: episode
+
+? The.Late.Late.Show.with.James.Corden.2017.11.27.Armie.Hammer.Juno.Temple.Charlie.Puth.1080p.AMZN.WEB-DL.DDP2.0.H.264-monkee-Scrambled/42e7e8a48eb7454aaebebcf49705ce41.mkv
+: title: The Late Late Show with James Corden
+  date: 2017-11-27
+  episode_title: Armie Hammer Juno Temple Charlie Puth
+  screen_size: 1080p
+  streaming_service: Amazon Prime
+  source: Web
+  audio_codec: Dolby Digital Plus
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: monkee
+  other: Obfuscated
+  uuid: 42e7e8a48eb7454aaebebcf49705ce41
+  container: mkv
+  type: episode
+
+? Educating Greater Manchester S01E07 720p HDTV x264-PLUTONiUM-AsRequested
+: title: Educating Greater Manchester
+  season: 1
+  episode: 7
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: PLUTONiUM
+  other: Repost
+  type: episode
+
+? Im A Celebrity Get Me Out Of Here S17E14 HDTV x264-PLUTONiUM-xpost
+: title: Im A Celebrity Get Me Out Of Here
+  season: 17
+  episode: 14
+  source: HDTV
+  video_codec: H.264
+  release_group: PLUTONiUM
+  other: Repost
+  type: episode
+
+? Tales S01E08 All I Need Method Man Featuring Mary J Blige 720p BET WEBRip AAC2 0 x264-RTN-xpost
+: title: Tales
+  season: 1
+  episode: 8
+  episode_title: All I Need Method Man Featuring Mary J Blige
+  screen_size: 720p
+  source: Web
+  other: [Rip, Repost]
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: RTN
+  type: episode
+
+? This is Us S01E11 Herzensangelegenheiten German DL WS DVDRip x264-CDP-xpost
+: options: --exclude country
+  title: This is Us
+  season: 1
+  episode: 11
+  episode_title: Herzensangelegenheiten
+  language:
+  - de
+  - mul
+  other:
+  - Widescreen
+  - Rip
+  - Repost
+  source: DVD
+  video_codec: H.264
+  release_group: CDP
+  type: episode
+
+? The Girlfriend Experience S02E10 1080p WEB H264-STRiFE-postbot
+: title: The Girlfriend Experience
+  season: 2
+  episode: 10
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: STRiFE
+  other: Repost
+  type: episode
+
+? The.Girlfriend.Experience.S02E10.1080p.WEB.H264-STRiFE-postbot/90550c1adaf44c47b60d24f59603bb98.mkv
+: title: The Girlfriend Experience
+  season: 2
+  episode: 10
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: STRiFE
+  other: Repost
+  uuid: 90550c1adaf44c47b60d24f59603bb98
+  container: mkv
+  type: episode
+
+? 24.S01E02.1080p.BluRay.REMUX.AVC.DD.2.0-EPSiLON-xpost/eb518eaf33f641a1a8c6e0973a67aec2.mkv
+: title: '24'
+  season: 1
+  episode: 2
+  screen_size: 1080p
+  source: Blu-ray
+  other: [Remux, Repost]
+  video_codec: H.264
+  audio_codec: Dolby Digital
+  audio_channels: '2.0'
+  release_group: EPSiLON
+  uuid: eb518eaf33f641a1a8c6e0973a67aec2
+  container: mkv
+  type: episode
+
+? Educating.Greater.Manchester.S01E02.720p.HDTV.x264-PLUTONiUM-AsRequested/47fbcb2393aa4b5cbbb340d3173ca1a9.mkv
+: title: Educating Greater Manchester
+  season: 1
+  episode: 2
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: PLUTONiUM
+  other: Repost
+  uuid: 47fbcb2393aa4b5cbbb340d3173ca1a9
+  container: mkv
+  type: episode
+
+? Stranger.Things.S02E05.Chapter.Five.Dig.Dug.720p.NF.WEBRip.DD5.1.x264-PSYPHER-AsRequested-Obfuscated
+: title: Stranger Things
+  season: 2
+  episode: 5
+  episode_title: Chapter Five Dig Dug
+  screen_size: 720p
+  streaming_service: Netflix
+  source: Web
+  other: [Rip, Repost, Obfuscated]
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  video_codec: H.264
+  release_group: PSYPHER
+  type: episode
+
+? Show.Name.-.Season.1.3.4-.Mp4.1080p
+: title: Show Name
+  season: [1, 3, 4]
+  container: mp4
+  screen_size: 1080p
+  type: episode
