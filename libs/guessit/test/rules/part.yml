@@ -1,0 +1,18 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? Filename Part 3.mkv
+? Filename Part III.mkv
+? Filename Part Three.mkv
+? Filename Part Trois.mkv
+: title: Filename
+  part: 3
+
+? Part 3
+? Part III
+? Part Three
+? Part Trois
+? Part3
+: part: 3
+
+? -Something.Apt.1
+: part: 1

@@ -1,0 +1,944 @@
+? Movies/Fear and Loathing in Las Vegas (1998)/Fear.and.Loathing.in.Las.Vegas.720p.HDDVD.DTS.x264-ESiR.mkv
+: type: movie
+  title: Fear and Loathing in Las Vegas
+  year: 1998
+  screen_size: 720p
+  source: HD-DVD
+  audio_codec: DTS
+  video_codec: H.264
+  release_group: ESiR
+
+? Series/Duckman/Duckman - 101 (01) - 20021107 - I, Duckman.avi
+: type: episode
+  title: Duckman
+  season: 1
+  episode: 1
+  episode_title: I, Duckman
+  date: 2002-11-07
+
+? Series/Neverwhere/Neverwhere.05.Down.Street.[tvu.org.ru].avi
+: type: episode
+  title: Neverwhere
+  episode: 5
+  episode_title: Down Street
+  website: tvu.org.ru
+
+? Neverwhere.05.Down.Street.[tvu.org.ru].avi
+: type: episode
+  title: Neverwhere
+  episode: 5
+  episode_title: Down Street
+  website: tvu.org.ru
+
+? Series/Breaking Bad/Minisodes/Breaking.Bad.(Minisodes).01.Good.Cop.Bad.Cop.WEBRip.XviD.avi
+: type: episode
+  title: Breaking Bad
+  episode_format: Minisode
+  episode: 1
+  episode_title: Good Cop Bad Cop
+  source: Web
+  other: Rip
+  video_codec: Xvid
+
+? Series/Kaamelott/Kaamelott - Livre V - Ep 23 - Le Forfait.avi
+: type: episode
+  title: Kaamelott
+  episode: 23
+  episode_title: Le Forfait
+
+? Movies/The Doors (1991)/09.03.08.The.Doors.(1991).BDRip.720p.AC3.X264-HiS@SiLUHD-English.[sharethefiles.com].mkv
+: type: movie
+  title: The Doors
+  year: 1991
+  date: 2008-03-09
+  source: Blu-ray
+  screen_size: 720p
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  release_group: HiS@SiLUHD
+  language: english
+  website: sharethefiles.com
+
+? Movies/M.A.S.H. (1970)/MASH.(1970).[Divx.5.02][Dual-Subtitulos][DVDRip].ogm
+: type: movie
+  title: MASH
+  year: 1970
+  video_codec: DivX
+  source: DVD
+  other: [Dual Audio, Rip]
+
+? the.mentalist.501.hdtv-lol.mp4
+: type: episode
+  title: the mentalist
+  season: 5
+  episode: 1
+  source: HDTV
+  release_group: lol
+
+? the.simpsons.2401.hdtv-lol.mp4
+: type: episode
+  title: the simpsons
+  season: 24
+  episode: 1
+  source: HDTV
+  release_group: lol
+
+? Homeland.S02E01.HDTV.x264-EVOLVE.mp4
+: type: episode
+  title: Homeland
+  season: 2
+  episode: 1
+  source: HDTV
+  video_codec: H.264
+  release_group: EVOLVE
+
+? /media/Band_of_Brothers-e01-Currahee.mkv
+: type: episode
+  title: Band of Brothers
+  episode: 1
+  episode_title: Currahee
+
+? /media/Band_of_Brothers-x02-We_Stand_Alone_Together.mkv
+: type: episode
+  title: Band of Brothers
+  bonus: 2
+  bonus_title: We Stand Alone Together
+
+? /movies/James_Bond-f21-Casino_Royale-x02-Stunts.mkv
+: type: movie
+  title: Casino Royale
+  film_title: James Bond
+  film: 21
+  bonus: 2
+  bonus_title: Stunts
+
+? /TV Shows/new.girl.117.hdtv-lol.mp4
+: type: episode
+  title: new girl
+  season: 1
+  episode: 17
+  source: HDTV
+  release_group: lol
+
+? The.Office.(US).1x03.Health.Care.HDTV.XviD-LOL.avi
+: type: episode
+  title: The Office
+  country: US
+  season: 1
+  episode: 3
+  episode_title: Health Care
+  source: HDTV
+  video_codec: Xvid
+  release_group: LOL
+
+? The_Insider-(1999)-x02-60_Minutes_Interview-1996.mp4
+: type: movie
+  title: The Insider
+  year: 1999
+  bonus: 2
+  bonus_title: 60 Minutes Interview-1996
+
+? OSS_117--Cairo,_Nest_of_Spies.mkv
+: type: movie
+  title: OSS 117
+  alternative_title: Cairo, Nest of Spies
+
+? Rush.._Beyond_The_Lighted_Stage-x09-Between_Sun_and_Moon-2002_Hartford.mkv
+: type: movie
+  title: Rush Beyond The Lighted Stage
+  bonus: 9
+  bonus_title: Between Sun and Moon
+  year: 2002
+
+? House.Hunters.International.S56E06.720p.hdtv.x264.mp4
+: type: episode
+  title: House Hunters International
+  season: 56
+  episode: 6
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+
+? White.House.Down.2013.1080p.BluRay.DTS-HD.MA.5.1.x264-PublicHD.mkv
+: type: movie
+  title: White House Down
+  year: 2013
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  video_codec: H.264
+  release_group: PublicHD
+  audio_channels: "5.1"
+
+? White.House.Down.2013.1080p.BluRay.DTSHD.MA.5.1.x264-PublicHD.mkv
+: type: movie
+  title: White House Down
+  year: 2013
+  screen_size: 1080p
+  source: Blu-ray
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  video_codec: H.264
+  release_group: PublicHD
+  audio_channels: "5.1"
+
+? Hostages.S01E01.Pilot.for.Air.720p.WEB-DL.DD5.1.H.264-NTb.nfo
+: type: episode
+  title: Hostages
+  episode_title: Pilot for Air
+  season: 1
+  episode: 1
+  screen_size: 720p
+  source: Web
+  audio_channels: "5.1"
+  video_codec: H.264
+  audio_codec: Dolby Digital
+  release_group: NTb
+
+? Despicable.Me.2.2013.1080p.BluRay.x264-VeDeTT.nfo
+: type: movie
+  title: Despicable Me 2
+  year: 2013
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: VeDeTT
+
+? Le Cinquieme Commando 1971 SUBFORCED FRENCH DVDRiP XViD AC3 Bandix.mkv
+: type: movie
+  audio_codec: Dolby Digital
+  source: DVD
+  other: Rip
+  release_group: Bandix
+  subtitle_language: French
+  title: Le Cinquieme Commando
+  video_codec: Xvid
+  year: 1971
+
+? Le Seigneur des Anneaux - La Communauté de l'Anneau - Version Longue - BDRip.mkv
+: type: movie
+  title: Le Seigneur des Anneaux
+  source: Blu-ray
+  other: Rip
+
+? La petite bande (Michel Deville - 1983) VF PAL MP4 x264 AAC.mkv
+: type: movie
+  audio_codec: AAC
+  language: French
+  title: La petite bande
+  video_codec: H.264
+  year: 1983
+  other: PAL
+
+? Retour de Flammes (Gregor Schnitzler 2003) FULL DVD.iso
+: type: movie
+  source: DVD
+  title: Retour de Flammes
+  type: movie
+  year: 2003
+
+? A.Common.Title.Special.2014.avi
+: type: movie
+  year: 2014
+  title: A Common Title Special
+
+? A.Common.Title.2014.Special.avi
+: type: episode
+  year: 2014
+  title: A Common Title
+  episode_title: Special
+  episode_details: Special
+
+? A.Common.Title.2014.Special.Edition.avi
+: type: movie
+  year: 2014
+  title: A Common Title
+  edition: Special
+
+? Downton.Abbey.2013.Christmas.Special.HDTV.x264-FoV.mp4
+: type: episode
+  year: 2013
+  title: Downton Abbey
+  episode_title: Christmas Special
+  video_codec: H.264
+  release_group: FoV
+  source: HDTV
+  episode_details: Special
+
+? Doctor_Who_2013_Christmas_Special.The_Time_of_The_Doctor.HD
+: type: episode
+  title: Doctor Who
+  other: HD
+  episode_details: Special
+  episode_title: Christmas Special The Time of The Doctor
+  year: 2013
+
+? Doctor Who 2005 50th Anniversary Special The Day of the Doctor 3.avi
+: type: episode
+  title: Doctor Who
+  episode_details: Special
+  episode_title: 50th Anniversary Special The Day of the Doctor 3
+  year: 2005
+
+? Robot Chicken S06-Born Again Virgin Christmas Special HDTV x264.avi
+: type: episode
+  title: Robot Chicken
+  source: HDTV
+  season: 6
+  episode_title: Born Again Virgin Christmas Special
+  video_codec: H.264
+  episode_details: Special
+
+? Wicked.Tuna.S03E00.Head.To.Tail.Special.HDTV.x264-YesTV
+: type: episode
+  title: Wicked Tuna
+  episode_title: Head To Tail Special
+  release_group: YesTV
+  season: 3
+  episode: 0
+  video_codec: H.264
+  source: HDTV
+  episode_details: Special
+
+? The.Voice.UK.S03E12.HDTV.x264-C4TV
+: episode: 12
+  video_codec: H.264
+  source: HDTV
+  title: The Voice
+  release_group: C4TV
+  season: 3
+  country: United Kingdom
+  type: episode
+
+? /tmp/star.trek.9/star.trek.9.mkv
+: type: movie
+  title: star trek 9
+
+? star.trek.9.mkv
+: type: movie
+  title: star trek 9
+
+? FlexGet.S01E02.TheName.HDTV.xvid
+: episode: 2
+  source: HDTV
+  season: 1
+  title: FlexGet
+  episode_title: TheName
+  type: episode
+  video_codec: Xvid
+
+? FlexGet.S01E02.TheName.HDTV.xvid
+: episode: 2
+  source: HDTV
+  season: 1
+  title: FlexGet
+  episode_title: TheName
+  type: episode
+  video_codec: Xvid
+
+? some.series.S03E14.Title.Here.720p
+: episode: 14
+  screen_size: 720p
+  season: 3
+  title: some series
+  episode_title: Title Here
+  type: episode
+
+? '[the.group] Some.Series.S03E15.Title.Two.720p'
+: episode: 15
+  release_group: the.group
+  screen_size: 720p
+  season: 3
+  title: Some Series
+  episode_title: Title Two
+  type: episode
+
+? 'HD 720p: Some series.S03E16.Title.Three'
+: episode: 16
+  other: HD
+  screen_size: 720p
+  season: 3
+  title: Some series
+  episode_title: Title Three
+  type: episode
+
+? Something.Season.2.1of4.Ep.Title.HDTV.torrent
+: episode_count: 4
+  episode: 1
+  source: HDTV
+  season: 2
+  title: Something
+  episode_title: Title
+  type: episode
+  container: torrent
+
+? Show-A (US) - Episode Title S02E09 hdtv
+: country: US
+  episode: 9
+  source: HDTV
+  season: 2
+  title: Show-A
+  type: episode
+
+? Jack's.Show.S03E01.blah.1080p
+: episode: 1
+  screen_size: 1080p
+  season: 3
+  title: Jack's Show
+  episode_title: blah
+  type: episode
+
+? FlexGet.epic
+: title: FlexGet epic
+  type: movie
+
+? FlexGet.Apt.1
+: title: FlexGet Apt 1
+  type: movie
+
+? FlexGet.aptitude
+: title: FlexGet aptitude
+  type: movie
+
+? FlexGet.Step1
+: title: FlexGet Step1
+  type: movie
+
+? Movies/El Bosque Animado (1987)/El.Bosque.Animado.[Jose.Luis.Cuerda.1987].[Xvid-Dvdrip-720 * 432].avi
+: source: DVD
+  other: Rip
+  screen_size: 720x432
+  title: El Bosque Animado
+  video_codec: Xvid
+  year: 1987
+  type: movie
+
+? Movies/El Bosque Animado (1987)/El.Bosque.Animado.[Jose.Luis.Cuerda.1987].[Xvid-Dvdrip-720x432].avi
+: source: DVD
+  other: Rip
+  screen_size: 720x432
+  title: El Bosque Animado
+  video_codec: Xvid
+  year: 1987
+  type: movie
+
+? 2009.shoot.fruit.chan.multi.dvd9.pal
+: source: DVD
+  language: mul
+  other: PAL
+  title: shoot fruit chan
+  type: movie
+  year: 2009
+
+? 2009.shoot.fruit.chan.multi.dvd5.pal
+: source: DVD
+  language: mul
+  other: PAL
+  title: shoot fruit chan
+  type: movie
+  year: 2009
+
+? The.Flash.2014.S01E01.PREAIR.WEBRip.XviD-EVO.avi
+: episode: 1
+  source: Web
+  other: [Preair, Rip]
+  release_group: EVO
+  season: 1
+  title: The Flash
+  type: episode
+  video_codec: Xvid
+  year: 2014
+
+? Ice.Lake.Rebels.S01E06.Ice.Lake.Games.720p.HDTV.x264-DHD
+: episode: 6
+  source: HDTV
+  release_group: DHD
+  screen_size: 720p
+  season: 1
+  title: Ice Lake Rebels
+  episode_title: Ice Lake Games
+  type: episode
+  video_codec: H.264
+
+? The League - S06E10 - Epi Sexy.mkv
+: episode: 10
+  season: 6
+  title: The League
+  episode_title: Epi Sexy
+  type: episode
+
+? Stay (2005) [1080p]/Stay.2005.1080p.BluRay.x264.YIFY.mp4
+: source: Blu-ray
+  release_group: YIFY
+  screen_size: 1080p
+  title: Stay
+  type: movie
+  video_codec: H.264
+  year: 2005
+
+? /media/live/A/Anger.Management.S02E82.720p.HDTV.X264-DIMENSION.mkv
+: source: HDTV
+  release_group: DIMENSION
+  screen_size: 720p
+  title: Anger Management
+  type: episode
+  season: 2
+  episode: 82
+  video_codec: H.264
+
+? "[Figmentos] Monster 34 - At the End of Darkness [781219F1].mkv"
+: type: episode
+  release_group: Figmentos
+  title: Monster
+  episode: 34
+  episode_title: At the End of Darkness
+  crc32: 781219F1
+
+? Game.of.Thrones.S05E07.720p.HDTV-KILLERS.mkv
+: type: episode
+  episode: 7
+  source: HDTV
+  release_group: KILLERS
+  screen_size: 720p
+  season: 5
+  title: Game of Thrones
+
+? Game.of.Thrones.S05E07.HDTV.720p-KILLERS.mkv
+: type: episode
+  episode: 7
+  source: HDTV
+  release_group: KILLERS
+  screen_size: 720p
+  season: 5
+  title: Game of Thrones
+
+? Parks and Recreation - [04x12] - Ad Campaign.avi
+: type: episode
+  title: Parks and Recreation
+  season: 4
+  episode: 12
+  episode_title: Ad Campaign
+
+? Star Trek Into Darkness (2013)/star.trek.into.darkness.2013.720p.web-dl.h264-publichd.mkv
+: type: movie
+  title: Star Trek Into Darkness
+  year: 2013
+  screen_size: 720p
+  source: Web
+  video_codec: H.264
+  release_group: publichd
+
+? /var/medias/series/The Originals/Season 02/The.Originals.S02E15.720p.HDTV.X264-DIMENSION.mkv
+: type: episode
+  title: The Originals
+  season: 2
+  episode: 15
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: DIMENSION
+
+? Test.S01E01E07-FooBar-Group.avi
+: container: avi
+  episode:
+  - 1
+  - 7
+  episode_title: FooBar-Group  # Make sure it doesn't conflict with uuid
+  season: 1
+  title: Test
+  type: episode
+
+? TEST.S01E02.2160p.NF.WEBRip.x264.DD5.1-ABC
+: audio_channels: '5.1'
+  audio_codec: Dolby Digital
+  episode: 2
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 2160p
+  season: 1
+  streaming_service: Netflix
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.2015.12.30.720p.WEBRip.h264-ABC
+: date: 2015-12-30
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 720p
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S01E10.24.1080p.NF.WEBRip.AAC2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 10
+  episode_title: '24'
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 1080p
+  season: 1
+  streaming_service: Netflix
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S01E10.24.1080p.NF.WEBRip.AAC2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 10
+  episode_title: '24'
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 1080p
+  season: 1
+  streaming_service: Netflix
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S01E10.24.1080p.NF.WEBRip.AAC.2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 10
+  episode_title: '24'
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 1080p
+  season: 1
+  streaming_service: Netflix
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S05E02.720p.iP.WEBRip.AAC2.0.H264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 2
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 720p
+  season: 5
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S03E07.720p.WEBRip.AAC2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 7
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 720p
+  season: 3
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S15E15.24.1080p.FREE.WEBRip.AAC2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 15
+  episode_title: '24'
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 1080p
+  season: 15
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.S11E11.24.720p.ETV.WEBRip.AAC2.0.x264-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  episode: 11
+  episode_title: '24'
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 720p
+  season: 11
+  title: TEST
+  type: episode
+  video_codec: H.264
+
+? TEST.2015.1080p.HC.WEBRip.x264.AAC2.0-ABC
+: audio_channels: '2.0'
+  audio_codec: AAC
+  source: Web
+  other: Rip
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.7.1-ABC
+: audio_channels: '7.1'
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: 3D
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.7.1-ABC
+: audio_channels: '7.1'
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: 3D
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? TEST.2015.1080p.3D.BluRay.Half-OU.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC
+: audio_channels: '7.1'
+  audio_codec:
+  - DTS-HD
+  - Dolby TrueHD
+  - Dolby Atmos
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: 3D
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? TEST.2015.1080p.3D.BluRay.Half-SBS.x264.DTS-HD.MA.TrueHD.7.1.Atmos-ABC
+: audio_channels: '7.1'
+  audio_codec:
+  - DTS-HD
+  - Dolby TrueHD
+  - Dolby Atmos
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: 3D
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  video_codec: H.264
+  year: 2015
+
+? TEST.2015.1080p.BluRay.REMUX.AVC.DTS-HD.MA.TrueHD.7.1.Atmos-ABC
+: audio_channels: '7.1'
+  audio_codec:
+  - DTS-HD
+  - Dolby TrueHD
+  - Dolby Atmos
+  audio_profile: Master Audio
+  source: Blu-ray
+  other: Remux
+  release_group: ABC
+  screen_size: 1080p
+  title: TEST
+  type: movie
+  year: 2015
+
+? Gangs of New York 2002 REMASTERED 1080p BluRay x264-AVCHD
+: source: Blu-ray
+  edition: Remastered
+  screen_size: 1080p
+  title: Gangs of New York
+  type: movie
+  video_codec: H.264
+  year: 2002
+
+? Peep.Show.S06E02.DVDrip.x264-faks86.mkv
+: container: mkv
+  episode: 2
+  source: DVD
+  other: Rip
+  release_group: faks86
+  season: 6
+  title: Peep Show
+  type: episode
+  video_codec: H.264
+
+# Episode title is indeed 'October 8, 2014'
+# https://thetvdb.com/?tab=episode&seriesid=82483&seasonid=569935&id=4997362&lid=7
+? The Soup - 11x41 - October 8, 2014.mp4
+: container: mp4
+  episode: 41
+  episode_title: October 8, 2014
+  season: 11
+  title: The Soup
+  type: episode
+
+? Red.Rock.S02E59.WEB-DLx264-JIVE
+: episode: 59
+  season: 2
+  source: Web
+  release_group: JIVE
+  title: Red Rock
+  type: episode
+  video_codec: H.264
+
+? Pawn.Stars.S12E31.Deals.On.Wheels.PDTVx264-JIVE
+: episode: 31
+  episode_title: Deals On Wheels
+  season: 12
+  source: Digital TV
+  release_group: JIVE
+  title: Pawn Stars
+  type: episode
+  video_codec: H.264
+
+? Duck.Dynasty.S09E09.Van.He-llsing.HDTVx264-JIVE
+: episode: 9
+  episode_title: Van He-llsing
+  season: 9
+  source: HDTV
+  release_group: JIVE
+  title: Duck Dynasty
+  type: episode
+  video_codec: H.264
+
+? ATKExotics.16.01.24.Ava.Alba.Watersports.XXX.1080p.MP4-KTR
+: title: ATKExotics
+  episode_title: Ava Alba Watersports
+  other: XXX
+  screen_size: 1080p
+  container: mp4
+  release_group: KTR
+  type: episode
+
+? PutaLocura.15.12.22.Spanish.Luzzy.XXX.720p.MP4-oRo
+: title: PutaLocura
+  episode_title: Spanish Luzzy
+  other: XXX
+  screen_size: 720p
+  container: mp4
+  release_group: oRo
+  type: episode
+
+? French Maid Services - Lola At Your Service WEB-DL SPLIT SCENES MP4-RARBG
+: title: French Maid Services
+  alternative_title: Lola At Your Service
+  source: Web
+  container: mp4
+  release_group: RARBG
+  type: movie
+
+? French Maid Services - Lola At Your Service - Marc Dorcel WEB-DL SPLIT SCENES MP4-RARBG
+: title: French Maid Services
+  alternative_title: [Lola At Your Service, Marc Dorcel]
+  source: Web
+  container: mp4
+  release_group: RARBG
+  type: movie
+
+? PlayboyPlus.com_16.01.23.Eleni.Corfiate.Playboy.Romania.XXX.iMAGESET-OHRLY
+: episode_title: Eleni Corfiate Playboy Romania
+  other: XXX
+  type: episode
+
+? TeenPornoPass - Anna - Beautiful Ass Deep Penetrated 720p mp4
+: title: TeenPornoPass
+  alternative_title:
+  - Anna
+  - Beautiful Ass Deep Penetrated
+  screen_size: 720p
+  container: mp4
+  type: movie
+
+? SexInJeans.Gina.Gerson.Super.Nasty.Asshole.Pounding.With.Gina.In.Jeans.A.Devil.In.Denim.The.Finest.Ass.Fuck.Frolicking.mp4
+: title: SexInJeans Gina Gerson Super Nasty Asshole Pounding With Gina In Jeans A Devil In Denim The Finest Ass Fuck Frolicking
+  container: mp4
+  type: movie
+
+? TNA Impact Wrestling HDTV 2017-06-22 720p H264 AVCHD-SC-SDH
+: title: TNA Impact Wrestling
+  source: HDTV
+  date: 2017-06-22
+  screen_size: 720p
+  video_codec: H.264
+  release_group: SDH
+  type: episode
+
+? Katy Perry - Pepsi & Billboard Summer Beats Concert Series 2012 1080i HDTV 20 Mbps DD2.0 MPEG2-TrollHD.ts
+: title: Katy Perry
+  alternative_title: Pepsi & Billboard Summer Beats Concert
+  year: 2012
+  screen_size: 1080i
+  source: HDTV
+  video_bit_rate: 20Mbps
+  audio_codec: Dolby Digital
+  audio_channels: '2.0'
+  video_codec: MPEG-2
+  release_group: TrollHD
+  container: ts
+
+? Justin Timberlake - MTV Video Music Awards 2013 1080i 32 Mbps DTS-HD 5.1.ts
+: title: Justin Timberlake
+  alternative_title: MTV Video Music Awards
+  year: 2013
+  screen_size: 1080i
+  video_bit_rate: 32Mbps
+  audio_codec: DTS-HD
+  audio_channels: '5.1'
+  container: ts
+  type: movie
+
+? Chuck Berry The Very Best Of Chuck Berry(2010)[320 Kbps]
+: title: Chuck Berry The Very Best Of Chuck Berry
+  year: 2010
+  audio_bit_rate: 320Kbps
+  type: movie
+
+? Title Name [480p][1.5Mbps][.mp4]
+: title: Title Name
+  screen_size: 480p
+  video_bit_rate: 1.5Mbps
+  container: mp4
+  type: movie
+
+? This.is.Us
+: options: --no-embedded-config
+  title: This is Us
+  type: movie
+
+? This.is.Us
+: options: --excludes country
+  title: This is Us
+  type: movie
+
+? MotoGP.2016x03.USA.Race.BTSportHD.1080p25
+: title: MotoGP
+  season: 2016
+  year: 2016
+  episode: 3
+  screen_size: 1080p
+  frame_rate: 25fps
+  type: episode
+
+? BBC.Earth.South.Pacific.2010.D2.1080p.24p.BD25.DTS-HD
+: title: BBC Earth South Pacific
+  year: 2010
+  screen_size: 1080p
+  frame_rate: 24fps
+  source: Blu-ray
+  audio_codec: DTS-HD
+  type: movie
