@@ -1882,7 +1882,7 @@
         } else {
             protocol = 'http';
         }
-        sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + "/" + $('#settings_sonarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
+        sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + $('#settings_sonarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
 
         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
             if (data.status) {
@@ -1921,7 +1921,7 @@
         } else {
             protocol = 'http';
         }
-        radarr_url = $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + "/" + $('#settings_radarr_baseurl').val().replace(/^\/|\/$/g, '') + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
+        radarr_url = $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + $('#settings_radarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
 
         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(radarr_url), function (data) {
             if (data.status) {

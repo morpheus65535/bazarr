@@ -1750,7 +1750,7 @@ def api_history():
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
     try:
-        result = requests.get(protocol + "://" + url).json()['version']
+        result = requests.get(protocol + "://" + url, allow_redirects=False).json()['version']
     except:
         return dict(status=False)
     else:
