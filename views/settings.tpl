@@ -1507,6 +1507,12 @@
         else {
             $('.auth_option').show();
         };
+        if ($('#settings_auth_type').val() == "form") {
+            $('#settings_auth_password').val('');
+        }
+        else {
+            $('#settings_auth_password').val('{{settings_auth[2]}}');
+        };
     });
 
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
