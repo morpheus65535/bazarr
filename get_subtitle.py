@@ -17,6 +17,7 @@ from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 import cPickle as pickle
 import codecs
+from get_providers import get_providers, get_providers_auth
 
 # configure the cache
 region.configure('dogpile.cache.memory')
@@ -201,7 +202,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
     else:
         try:
             best_subtitle = subtitle
-            download_subtitles([best_subtitle])
+            download_subtitles([best_subtitle], providers=provider, provider_configs=providers_auth)
         except Exception as e:
             logging.exception('Error downloading subtitles for ' + path)
             return None
@@ -265,25 +266,10 @@ def series_download_subtitles(no):
     c_db = conn_db.cursor()
     episodes_details = c_db.execute('SELECT path, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId = ? AND missing_subtitles != "[]"' + monitored_only_query_string, (no,)).fetchall()
     series_details = c_db.execute("SELECT hearing_impaired FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
-    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
     
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
         
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
@@ -300,25 +286,10 @@ def movies_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movie = c_db.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired FROM table_movies WHERE radarrId = ?", (no,)).fetchone()
-    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username': providers[2], 'password': providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     for language in ast.literal_eval(movie[1]):
         if language is not None:
@@ -334,25 +305,10 @@ def wanted_download_subtitles(path):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'", (path_replace_reverse(path),)).fetchall()
-    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
         
     for episode in episodes_details:
         attempt = episode[6]
@@ -390,25 +346,10 @@ def wanted_download_subtitles_movie(path):
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movies_details = c_db.execute("SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE path = ? AND missing_subtitles != '[]'", (path_replace_reverse_movie(path),)).fetchall()
-    enabled_providers = c_db.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c_db.close()
 
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username': providers[2], 'password': providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     for movie in movies_details:
         attempt = movie[6]
