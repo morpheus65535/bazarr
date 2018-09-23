@@ -48,48 +48,49 @@ def update_movies():
 
             for movie in r.json():
                 if movie['hasFile'] is True:
-                    try:
-                        overview = unicode(movie['overview'])
-                    except:
-                        overview = ""
-                    try:
-                        poster_big = movie['images'][0]['url']
-                        poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
-                    except:
-                        poster = ""
-                    try:
-                        fanart = movie['images'][1]['url']
-                    except:
-                        fanart = ""
-
                     if 'movieFile' in movie:
-                        if 'sceneName' in movie['movieFile']:
-                            sceneName = movie['movieFile']['sceneName']
+                        try:
+                            overview = unicode(movie['overview'])
+                        except:
+                            overview = ""
+                        try:
+                            poster_big = movie['images'][0]['url']
+                            poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
+                        except:
+                            poster = ""
+                        try:
+                            fanart = movie['images'][1]['url']
+                        except:
+                            fanart = ""
+
+                        if 'movieFile' in movie:
+                            if 'sceneName' in movie['movieFile']:
+                                sceneName = movie['movieFile']['sceneName']
+                            else:
+                                sceneName = None
                         else:
                             sceneName = None
-                    else:
-                        sceneName = None
 
-                    # Add movies in radarr to current movies list
-                    current_movies_radarr.append(unicode(movie['tmdbId']))
+                        # Add movies in radarr to current movies list
+                        current_movies_radarr.append(unicode(movie['tmdbId']))
 
-                    # Detect file separator
-                    if movie['path'][0] == "/":
-                        separator = "/"
-                    else:
-                        separator = "\\"
-
-                    # Update or insert movies list in database table
-                    try:
-                        if movie_default_enabled is True:
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                        # Detect file separator
+                        if movie['path'][0] == "/":
+                            separator = "/"
                         else:
-                            c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
-                    except:
-                        c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
+                            separator = "\\"
 
-                    # Commit changes to database table
-                    db.commit()
+                        # Update or insert movies list in database table
+                        try:
+                            if movie_default_enabled is True:
+                                c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                            else:
+                                c.execute('''INSERT INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', (movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                        except:
+                            c.execute('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', (movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
+
+                        # Commit changes to database table
+                        db.commit()
 
             # Delete movies not in radarr anymore
             added_movies = list(set(current_movies_radarr) - set(current_movies_db_list))
