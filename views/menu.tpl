@@ -101,7 +101,7 @@
 								<div class="ten wide column">
 									<div class="ui search">
 										<div class="ui left icon fluid input">
-											<input class="prompt" type="text" placeholder="Search the series in your library">
+											<input class="prompt" type="text" placeholder="Search in your library">
 											<i class="searchicon search icon"></i>
 										</div>
 									</div>
