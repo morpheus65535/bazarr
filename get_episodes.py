@@ -31,11 +31,19 @@ def sync_episodes():
     c = db.cursor()
 
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored FROM table_episodes').fetchall()
+    current_episodes_db = c.execute('SELECT sonarrEpisodeId FROM table_episodes').fetchall()
+
+    current_episodes_db_list = [x[0] for x in current_episodes_db]
+    current_episodes_sonarr = []
+    episodes_to_update = []
+    episodes_to_add = []
 
     # Get sonarrId for each series from database
-    current_episodes_sonarr = []
     seriesIdList = c.execute("SELECT sonarrSeriesId FROM table_shows").fetchall()
+
+    # Close database connection
+    c.close()
+
     for seriesId in seriesIdList:
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
@@ -61,26 +69,40 @@ def sync_episodes():
                                     sceneName = episode['episodeFile']['sceneName']
                                 else:
                                     sceneName = None
-                                current_episodes_sonarr.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored']))))
 
-    added_episodes = list(set(current_episodes_sonarr) - set(current_episodes_db))
-    removed_episodes = list(set(current_episodes_db) - set(current_episodes_sonarr))
+                                # Add episodes in sonarr to current episode list
+                                current_episodes_sonarr.append(episode['id'])
 
-    for removed_episode in removed_episodes:
-        c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode[1],))
+                                if episode['id'] in current_episodes_db_list:
+                                    episodes_to_update.append((episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored'])), episode['id']))
+                                else:
+                                    episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored']))))
+
+    removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
+
+    # Update or insert movies in DB
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+
+    updated_result = c.executemany('''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''', episodes_to_update)
+    db.commit()
+
+    try:
+        added_result = c.executemany('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', episodes_to_add)
+    except sqlite3.IntegrityError as e:
+        logging.exception("You're probably an early adopter of Bazarr and this is a known issue. Please open an issue on Github and we'll fix this.")
+    else:
         db.commit()
 
-    for added_episode in added_episodes:
-        try:
-            c.execute('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', added_episode)
-        except sqlite3.IntegrityError as e:
-            logging.exception("You're probably an early adopter of Bazarr and this is a known issue. Please open an issue on Github and we'll fix this.")
-        else:
-            db.commit()
-            store_subtitles(path_replace(added_episode[3]))
+    for removed_episode in removed_episodes:
+        c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode,))
+        db.commit()
 
     # Close database connection
     c.close()
+
+    for added_episode in episodes_to_add:
+        store_subtitles(path_replace(added_episode[3]))
 
     logging.debug('All episodes synced from Sonarr into database.')
 
