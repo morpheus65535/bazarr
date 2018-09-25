@@ -16,10 +16,6 @@ def update_series():
     serie_default_language = get_general_settings()[16]
     serie_default_hi = get_general_settings()[17]
 
-    # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-
     if apikey_sonarr == None:
         pass
     else:
@@ -39,10 +35,20 @@ def update_series():
         except requests.exceptions.RequestException as err:
             logging.exception("Error trying to get series from Sonarr.")
         else:
+            # Open database connection
+            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c = db.cursor()
+
             # Get current shows in DB
             current_shows_db = c.execute('SELECT tvdbId FROM table_shows').fetchall()
+
+            # Close database connection
+            db.close()
+
             current_shows_db_list = [x[0] for x in current_shows_db]
             current_shows_sonarr = []
+            series_to_update = []
+            series_to_add = []
 
             for show in r.json():
                 try:
@@ -62,28 +68,42 @@ def update_series():
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['tvdbId'])
 
-                # Update or insert shows list in database table
-                try:
+                if show['tvdbId'] in current_shows_db_list:
+                    series_to_update.append((show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),show['sortTitle'],show["tvdbId"]))
+                else:
                     if serie_default_enabled is True:
-                        c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], serie_default_language, serie_default_hi, show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
-                        list_missing_subtitles(show["id"])
+                        series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language, serie_default_hi, show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
                     else:
-                        c.execute('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?)''', (show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
-                except:
-                    c.execute('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ? WHERE tvdbid = ?''', (show["title"],show["path"],show["tvdbId"],show["id"],overview,poster,fanart,profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),show['sortTitle'],show["tvdbId"]))
+                        series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
+
+            # Update or insert series in DB
+            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c = db.cursor()
+
+            updated_result = c.executemany('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ? WHERE tvdbid = ?''', series_to_update)
+            db.commit()
+
+            if serie_default_enabled is True:
+                added_result = c.executemany('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', series_to_add)
+                db.commit()
+            else:
+                added_result = c.executemany('''INSERT INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?)''', series_to_add)
+                db.commit()
+            db.close()
+
+            for show in series_to_add:
+                list_missing_subtitles(show[5])
 
             # Delete shows not in Sonarr anymore
             deleted_items = []
             for item in current_shows_db_list:
                 if item not in current_shows_sonarr:
                     deleted_items.append(tuple([item]))
+            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            c = db.cursor()
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?',deleted_items)
-
-            # Commit changes to database table
             db.commit()
-
-    # Close database connection
-    db.close()
+            db.close()
 
 def get_profile_list():
     from get_settings import get_sonarr_settings
