@@ -313,26 +313,29 @@ def serieseditor():
     output = template('serieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language)
     return output
 
+
 @route(base_url + 'search_json/<query>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_json(query):
     authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-
-    c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title", ('%'+query+'%',))
-    series = c.fetchall()
-
-    c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
-    movies = c.fetchall()
-
+    
     search_list = []
-    for serie in series:
-        search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
-
-    for movie in movies:
-        search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
-
+    if get_general_settings()[12] is True:
+        c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
+                  ('%' + query + '%',))
+        series = c.fetchall()
+        for serie in series:
+            search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
+    
+    if get_general_settings()[13] is True:
+        c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
+        movies = c.fetchall()
+        for movie in movies:
+            search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
+    c.close()
+    
     response.content_type = 'application/json'
     return dict(items=search_list)
 
