@@ -30,8 +30,7 @@
 				background-position:center center;
 			}
 			#divdetails {
-				background-color: #000000;
-				opacity: 0.9;
+				background-color: rgba(0, 0, 0, 0.9);
 				color: #ffffff;
 				margin-top: 6em;
 				margin-bottom: 3em;
@@ -109,7 +108,7 @@
 					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
 				<h2>
-                    %if details[13] is True:
+                    %if details[13] == 'True':
                     <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
                     %else:
                     <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>

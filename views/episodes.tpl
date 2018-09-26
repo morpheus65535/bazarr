@@ -31,8 +31,7 @@
 				background-position:center center;
 			}
 			#divdetails {
-				background-color: #000000;
-				opacity: 0.9;
+				background-color: rgba(0, 0, 0, 0.9);
 				color: #ffffff;
 				margin-top: 6em;
 				margin-bottom: 3em;
