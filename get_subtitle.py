@@ -124,10 +124,11 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         hi = False
     language_set = set()
     for lang in ast.literal_eval(language):
-        if lang == 'pob':
+        babelFishLanguage = alpha3_from_alpha2(lang);
+        if babelFishLanguage == 'pob':
             language_set.add(Language('por', 'BR'))
         else:
-            language_set.add(Language(alpha3_from_alpha2(lang)))
+            language_set.add(Language(babelFishLanguage))
     try:
         if sceneName != "None":
             video = Video.fromname(sceneName)
