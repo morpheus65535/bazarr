@@ -175,7 +175,7 @@
 								%for episode in season:
 									<tr>
 										<td class="collapsing">
-                                            %if episode[9] is True:
+                                            %if episode[9] == 'True':
                                             <span data-tooltip="Episode monitored in Sonarr"><i class="bookmark icon"></i></span>
                                             %else:
                                             <span data-tooltip="Episode unmonitored in Sonarr"><i class="bookmark outline icon"></i></span>
