@@ -38,7 +38,6 @@
 				background-color: #333333;
 				box-shadow: 0 0 10px 1px #333;
 				padding: 10px;
-				margin-bottom: -2em !important;
 			}
 			.label, .value {
 				color: white !important;
