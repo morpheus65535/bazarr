@@ -113,18 +113,18 @@
                     </div>
                 </div>
             </div>
+
+			% restart_required = c.execute("SELECT configured, updated FROM system").fetchone()
+			% c.close()
+
+			% if restart_required[1] == '1' and restart_required[0] == '1':
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings.</div></div></div>
+			% elif restart_required[1] == '1':
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update.</div></div></div>
+			% elif restart_required[0] == '1':
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings.</div></div></div>
+			% end
 		</div>
-
-    	% restart_required = c.execute("SELECT configured, updated FROM system").fetchone()
-    	% c.close()
-
-		% if restart_required[1] == '1' and restart_required[0] == '1':
-			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings.</div></div></div>
-		% elif restart_required[1] == '1':
-			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update.</div></div></div>
-		% elif restart_required[0] == '1':
-			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings.</div></div></div>
-		% end
     </body>
 </html>
 
