@@ -4,7 +4,6 @@
 		<style>
             #divmenu {
 				background-color: #000000;
-				opacity: 0.8;
 				padding-top: 2em;
 				padding-bottom: 1em;
 				padding-left: 1em;
