@@ -152,7 +152,17 @@
 
     if (window.location.href.indexOf("episodes") > -1) {
     	$('.menu').css('background', '#000000');
+    	$('.menu').css('opacity', '0.8');
     	$('#divmenu').css('background', '#000000');
+    	$('#divmenu').css('opacity', '0.8');
+    	$('#divmenu').css('box-shadow', '0px 0px 5px 5px #000000');
+    }
+    else if (window.location.href.indexOf("movie/") > -1) {
+    	$('.menu').css('background', '#000000');
+    	$('.menu').css('opacity', '0.8');
+    	$('#divmenu').css('background', '#000000');
+    	$('#divmenu').css('opacity', '0.8');
+    	$('#divmenu').css('box-shadow', '0px 0px 5px 5px #000000');
     }
     else {
     	$('.menu').css('background', '#272727');
