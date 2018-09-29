@@ -1658,6 +1658,9 @@ def test_url(protocol, url):
     else:
         return dict(status=True, version=result)
 
+import warnings
+# Mute DeprecationWarning
+warnings.simplefilter("ignore", DeprecationWarning)
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress', app=app)
