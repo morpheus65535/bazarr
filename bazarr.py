@@ -800,6 +800,8 @@ def save_settings():
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
+    if settings_general_baseurl.endswith('/') is False:
+        settings_general_baseurl += '/'
     settings_general_loglevel = request.forms.get('settings_general_loglevel')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
