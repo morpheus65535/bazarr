@@ -750,6 +750,7 @@ def save_subtitles(video, subtitles, single=False, directory=None, encoding=None
             continue
 
         # create subtitle path
+        subtitle_path = None
         subtitle_path = get_subtitle_path(video.name, None if single else subtitle.language)
         if directory is not None:
             subtitle_path = os.path.join(directory, os.path.split(subtitle_path)[1])
