@@ -29,6 +29,8 @@ def get_general_settings():
 
         if cfg.has_option('general', 'base_url'):
             base_url = cfg.get('general', 'base_url')
+            if base_url.endswith('/') is False:
+                base_url += '/'
         else:
             base_url = '/'
 
