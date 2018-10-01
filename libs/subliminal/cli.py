@@ -407,7 +407,7 @@ def download(obj, provider, refiner, language, age, directory, encoding, single,
     # save subtitles
     total_subtitles = 0
     for v, subtitles in downloaded_subtitles.items():
-        saved_subtitles = save_subtitles(v, subtitles, single=single, directory=directory, encoding=encoding)[0]
+        saved_subtitles = save_subtitles(v, subtitles, single=single, directory=directory, encoding=encoding)
         total_subtitles += len(saved_subtitles)
 
         if verbose > 0:

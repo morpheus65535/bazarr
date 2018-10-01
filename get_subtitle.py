@@ -9,6 +9,7 @@ import time
 from datetime import datetime, timedelta
 from babelfish import Language
 from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
+from subliminal.subtitle import get_subtitle_path
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
@@ -78,11 +79,11 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     logging.error('Error saving subtitles file to disk.')
                     return None
                 else:
-                    downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]
+                    downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                     downloaded_language = language_from_alpha3(language)
                     downloaded_language_code2 = alpha2_from_alpha3(language)
                     downloaded_language_code3 = language
-                    downloaded_path = result[1]
+                    downloaded_path = get_subtitle_path(path, language=lang_obj)
                     if used_sceneName == True:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name: " + sceneName
                     else:
@@ -221,11 +222,11 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 logging.exception('Error saving subtitles file to disk.')
                 return None
             else:
-                downloaded_provider = str(result[0][0]).strip('<>').split(' ')[0][:-8]
+                downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
                 downloaded_language = language_from_alpha3(language)
                 downloaded_language_code2 = alpha2_from_alpha3(language)
                 downloaded_language_code3 = language
-                downloaded_path = result[1]
+                downloaded_path = get_subtitle_path(path, language=lang_obj)
                 message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
 
                 if use_postprocessing is True:
