@@ -1,4 +1,4 @@
-bazarr_version = '0.6.4'
+bazarr_version = '0.6.5'
 
 import gc
 gc.enable()
@@ -85,7 +85,8 @@ import hashlib
 import time
 
 from get_languages import load_language_in_db, language_from_alpha3
-from get_providers import *
+from get_providers import load_providers, get_providers, get_providers_auth
+load_providers()
 
 from get_series import *
 from get_episodes import *
@@ -312,26 +313,29 @@ def serieseditor():
     output = template('serieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language)
     return output
 
+
 @route(base_url + 'search_json/<query>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_json(query):
     authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-
-    c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title", ('%'+query+'%',))
-    series = c.fetchall()
-
-    c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
-    movies = c.fetchall()
-
+    
     search_list = []
-    for serie in series:
-        search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
-
-    for movie in movies:
-        search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
-
+    if get_general_settings()[12] is True:
+        c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
+                  ('%' + query + '%',))
+        series = c.fetchall()
+        for serie in series:
+            search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
+    
+    if get_general_settings()[13] is True:
+        c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
+        movies = c.fetchall()
+        for movie in movies:
+            search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
+    c.close()
+    
     response.content_type = 'application/json'
     return dict(items=search_list)
 
@@ -796,6 +800,8 @@ def save_settings():
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
+    if settings_general_baseurl.endswith('/') is False:
+        settings_general_baseurl += '/'
     settings_general_loglevel = request.forms.get('settings_general_loglevel')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
@@ -1473,28 +1479,8 @@ def get_subtitle():
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     # tvdbid = request.forms.get('tvdbid')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-    enabled_providers = c.fetchall()
-    c.close()
-
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     try:
         result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
@@ -1518,28 +1504,8 @@ def manual_search_json():
     language = request.forms.get('language')
     hi = request.forms.get('hi')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-    enabled_providers = c.fetchall()
-    c.close()
-
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     data = manual_search(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
     return dict(data=data)
@@ -1559,19 +1525,8 @@ def manual_get_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    provider = c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
-    c.close()
-    providers_auth = {}
-    try:
-        if provider[2] is not '' and provider[3] is not '':
-            provider_auth = providers_auth.append(provider[0])
-            provider_auth.update({'username':providers[2], 'password':providers[3]})
-        else:
-            providers_auth = None
-    except:
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     try:
         result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth, sceneName, 'series')
@@ -1597,28 +1552,8 @@ def get_subtitle_movie():
     radarrId = request.forms.get('radarrId')
     # tmdbid = request.forms.get('tmdbid')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-    enabled_providers = c.fetchall()
-    c.close()
-
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     try:
         result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
@@ -1642,28 +1577,8 @@ def manual_search_movie_json():
     language = request.forms.get('language')
     hi = request.forms.get('hi')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1")
-    enabled_providers = c.fetchall()
-    c.close()
-
-    providers_list = []
-    providers_auth = {}
-    if len(enabled_providers) > 0:
-        for provider in enabled_providers:
-            providers_list.append(provider[0])
-            try:
-                if provider[2] is not '' and provider[3] is not '':
-                    provider_auth = providers_auth.append(provider[0])
-                    provider_auth.update({'username':providers[2], 'password':providers[3]})
-                else:
-                    providers_auth = None
-            except:
-                providers_auth = None
-    else:
-        providers_list = None
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
     return dict(data=data)
@@ -1682,19 +1597,8 @@ def manual_get_subtitle_movie():
     subtitle = request.forms.get('subtitle')
     radarrId = request.forms.get('radarrId')
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-    c = db.cursor()
-    provider = c.execute("SELECT * FROM table_settings_providers WHERE name = ?",(selected_provider,)).fetchone()
-    c.close()
-    providers_auth = {}
-    try:
-        if provider[2] is not '' and provider[3] is not '':
-            provider_auth = providers_auth.append(provider[0])
-            provider_auth.update({'username':providers[2], 'password':providers[3]})
-        else:
-            providers_auth = None
-    except:
-        providers_auth = None
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
 
     try:
         result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth, sceneName, 'movie')
@@ -1756,6 +1660,9 @@ def test_url(protocol, url):
     else:
         return dict(status=True, version=result)
 
+import warnings
+# Mute DeprecationWarning
+warnings.simplefilter("ignore", DeprecationWarning)
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
 run(host=ip, port=port, server='waitress', app=app)

@@ -768,4 +768,4 @@ def save_subtitles(video, subtitles, single=False, directory=None, encoding=None
         if single:
             break
 
-    return [saved_subtitles, subtitle_path]
+    return saved_subtitles

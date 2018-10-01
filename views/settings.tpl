@@ -1509,6 +1509,20 @@
         };
     });
 
+    // Load default value for Settings_auth_type
+    $('#settings_auth_type').dropdown('clear');
+    $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
+
+    // Remove value from Password input when changing to Form login to prevent bad password saving
+    $("#settings_auth_type").change(function() {
+        if ($(this).val() == 'form'){
+            $('#settings_auth_password').val('');
+            }
+        else {
+            $('#settings_auth_password').val('{{settings_auth[2]}}');
+        }
+    });
+
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
         $("#settings_serie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
@@ -1669,8 +1683,6 @@
     %if settings_general[19] is not None:
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
-    $('#settings_auth_type').dropdown('clear');
-    $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();
     $('#settings_radarr_sync').dropdown();
