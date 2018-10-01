@@ -57,6 +57,7 @@ configure_logging()
 
 import requests
 if get_proxy_settings()[0] != 'None':
+    logging.debug('BAZARR Applying proxy settings.')
     if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
         proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
     else:
@@ -100,6 +101,7 @@ from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 
 # Reset restart required warning on start
+logging.debug('BAZARR Clearing restart required warning.')
 conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
 c = conn.cursor()
 c.execute("UPDATE system SET configured = 0, updated = 0")
@@ -111,6 +113,7 @@ load_language_in_db()
 
 from get_settings import get_auth_settings
 
+logging.debug('BAZARR Applying authentication settings')
 aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
 
 app = app()

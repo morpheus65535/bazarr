@@ -10,20 +10,20 @@ if os.path.exists(config_dir) is False:
     # Create config_dir directory tree
     try:
         os.mkdir(os.path.join(config_dir))
-        logging.debug("Created data directory")
+        logging.debug("BAZARR Created data directory")
     except OSError:
         logging.exception("The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
 if os.path.exists(os.path.join(config_dir, 'config')) is False:
     os.mkdir(os.path.join(config_dir, 'config'))
-    logging.debug("Created config folder")
+    logging.debug("BAZARR Created config folder")
 if os.path.exists(os.path.join(config_dir, 'db')) is False:
     os.mkdir(os.path.join(config_dir, 'db'))
-    logging.debug("Created db folder")
+    logging.debug("BAZARR Created db folder")
 if os.path.exists(os.path.join(config_dir, 'log')) is False:
     os.mkdir(os.path.join(config_dir, 'log'))
-    logging.debug("Created log folder")
+    logging.debug("BAZARR Created log folder")
 
 config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
 

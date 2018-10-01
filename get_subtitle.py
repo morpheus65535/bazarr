@@ -63,7 +63,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             try:
                 best_subtitle = best_subtitles[video][0]
             except:
-                logging.debug('No subtitles found for ' + path)
+                logging.debug('BAZARR No subtitles found for ' + path)
                 return None
             else:
                 single = get_general_settings()[7]
@@ -341,7 +341,7 @@ def wanted_download_subtitles(path):
                             history_log(1, episode[3], episode[2], message)
                             send_notifications(episode[3], episode[2], message)
                     else:
-                        logging.debug('Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
+                        logging.debug('BAZARR Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
 
 
 def wanted_download_subtitles_movie(path):
