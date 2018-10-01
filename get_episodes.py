@@ -87,12 +87,8 @@ def sync_episodes():
     updated_result = c.executemany('''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''', episodes_to_update)
     db.commit()
 
-    try:
-        added_result = c.executemany('''INSERT INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', episodes_to_add)
-    except sqlite3.IntegrityError as e:
-        logging.exception("You're probably an early adopter of Bazarr and this is a known issue. Please open an issue on Github and we'll fix this.")
-    else:
-        db.commit()
+    added_result = c.executemany('''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', episodes_to_add)
+    db.commit()
 
     for removed_episode in removed_episodes:
         c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode,))
