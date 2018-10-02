@@ -18,11 +18,13 @@ def gitconfig():
     try:
         username = config_read.get_value("user", "name")
     except:
+        logging.debug('BAZARR Settings git username')
         config_write.set_value("user", "name", "Bazarr")
     
     try:
         email = config_read.get_value("user", "email")
     except:
+        logging.debug('BAZARR Settings git email')
         config_write.set_value("user", "email", "bazarr@fake.email")
 
 def check_and_apply_update():

@@ -222,7 +222,8 @@ def image_proxy(url):
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
         image_buffer = BytesIO(requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content)
-    except:
+    except Exception as e:
+        logging.exception('Unable to get image from Sonarr.')
         return None
     else:
         image_buffer.seek(0)
@@ -1443,7 +1444,8 @@ def remove_subtitles():
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to delete file from disk.')
         pass
     store_subtitles(unicode(episodePath))
     list_missing_subtitles(sonarrSeriesId)
@@ -1462,7 +1464,8 @@ def remove_subtitles_movie():
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log_movie(0, radarrId, result)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to delete file from disk.')
         pass
     store_subtitles_movie(unicode(moviePath))
     list_missing_subtitles_movies(radarrId)
@@ -1493,7 +1496,8 @@ def get_subtitle():
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to save file to disk.')
         pass
 
 @route(base_url + 'manual_search', method='POST')
@@ -1539,7 +1543,8 @@ def manual_get_subtitle():
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to save file to disk.')
         pass
 
 @route(base_url + 'get_subtitle_movie', method='POST')
@@ -1566,7 +1571,8 @@ def get_subtitle_movie():
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to save file to disk.')
         pass
 
 @route(base_url + 'manual_search_movie', method='POST')
@@ -1611,7 +1617,8 @@ def manual_get_subtitle_movie():
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
-    except OSError:
+    except OSError as e:
+        logging.exception('Error trying to save file to disk.')
         pass
 
 def configured():
@@ -1658,7 +1665,8 @@ def api_history():
 def test_url(protocol, url):
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False).json()['version']
-    except:
+    except Exception as e:
+        logging.debug('BAZARR Unable to test this URL.')
         return dict(status=False)
     else:
         return dict(status=True, version=result)
