@@ -105,9 +105,9 @@ def get_general_settings():
             serie_default_language = []
 
         if cfg.has_option('general', 'serie_default_hi'):
-            serie_default_hi = cfg.getboolean('general', 'serie_default_hi')
+            serie_default_hi = cfg.get('general', 'serie_default_hi')
         else:
-            serie_default_hi = False
+            serie_default_hi = 'False'
 
         if cfg.has_option('general', 'movie_default_enabled'):
                 movie_default_enabled = cfg.getboolean('general', 'movie_default_enabled')
@@ -120,9 +120,9 @@ def get_general_settings():
             movie_default_language = []
 
         if cfg.has_option('general', 'movie_default_hi'):
-            movie_default_hi = cfg.getboolean('general', 'movie_default_hi')
+            movie_default_hi = cfg.get('general', 'movie_default_hi')
         else:
-            movie_default_hi = False
+            movie_default_hi = 'False'
 
         if cfg.has_option('general', 'page_size'):
             page_size = cfg.get('general', 'page_size')
@@ -167,10 +167,10 @@ def get_general_settings():
         path_mappings_movie = []
         serie_default_enabled = False
         serie_default_language = []
-        serie_default_hi = False
+        serie_default_hi = 'False'
         movie_default_enabled = False
         movie_default_language = []
-        movie_default_hi = False
+        movie_default_hi = 'False'
         page_size = '25'
         minimum_score_movie = '70'
         use_embedded_subs = False
