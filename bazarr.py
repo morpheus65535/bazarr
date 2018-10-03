@@ -60,7 +60,7 @@ def shutdown_bazarr(restarting):
             except:
                 logging.error("Unable to delete pid file.")
             else:
-                logging.info('Bazarr restarting...')
+                logging.info('Bazarr stopping...')
                 if restarting is False:
                     stopfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.stop'))
                     file = open(stopfile, 'w')
