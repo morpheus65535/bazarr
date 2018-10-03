@@ -79,7 +79,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     logging.error('Error saving subtitles file to disk.')
                     return None
                 else:
-                    downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
+                    downloaded_provider = subtitle.provider_name
                     downloaded_language = language_from_alpha3(language)
                     downloaded_language_code2 = alpha2_from_alpha3(language)
                     downloaded_language_code3 = language
@@ -222,7 +222,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 logging.exception('Error saving subtitles file to disk.')
                 return None
             else:
-                downloaded_provider = str(result[0]).strip('<>').split(' ')[0][:-8]
+                downloaded_provider = subtitle.provider_name
                 downloaded_language = language_from_alpha3(language)
                 downloaded_language_code2 = alpha2_from_alpha3(language)
                 downloaded_language_code3 = language
