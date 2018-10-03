@@ -5,6 +5,8 @@ gc.enable()
 
 from get_argv import config_dir, no_update
 
+from daemon import shutdown_bazarr, restart_bazarr
+
 import os
 import sys
 reload(sys)
@@ -186,6 +188,14 @@ def logout():
 def redirect_root():
     authorize()
     redirect (base_url)
+
+@route(base_url + 'shutdown')
+def shutdown():
+    shutdown_bazarr(False)
+
+@route(base_url + 'restart')
+def restart():
+    restart_bazarr()
 
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)

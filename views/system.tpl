@@ -46,6 +46,10 @@
 		% include('menu.tpl')
 			
 		<div id="fondblanc" class="ui container">
+			<div class="ui basic icon buttons" style="float: right;">
+				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
+				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
+			</div>
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
@@ -206,5 +210,29 @@
 
 	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
 		$('#loader').addClass('active');
+	})
+
+	$('#shutdown').click(function(){
+		$.ajax({
+			url: "{{base_url}}shutdown",
+			async: false
+		})
+		.fail(function(){
+			document.open();
+			document.write('Bazarr has shutdown.');
+			document.close();
+		});
+	})
+
+	$('#restart').click(function(){
+		$.ajax({
+			url: "{{base_url}}restart",
+			async: false
+		})
+		.done(function(){
+    		document.open();
+			document.write('Bazarr is restarting. Please reload page manually until it come back (should be less than 30 seconds).');
+			document.close();
+		});
 	})
 </script>
