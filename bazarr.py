@@ -3,6 +3,7 @@ import threading
 import time
 import os
 import signal
+import platform
 import logging
 import sys
 import getopt
@@ -17,7 +18,7 @@ arguments = []
 try:
     opts, args = getopt.getopt(sys.argv[1:],"h:",["no-update", "config="])
 except getopt.GetoptError:
-    print 'daemon.py -h --no-update --config <config_directory>'
+    print 'bazarr.py -h --no-update --config <config_directory>'
     sys.exit(2)
 for opt, arg in opts:
     arguments.append(opt)
@@ -26,7 +27,7 @@ for opt, arg in opts:
 
 
 def start_bazarr():
-    script = ['python','main.py'] + globals()['arguments']
+    script = ['python','bazarr/main.py'] + globals()['arguments']
 
     pidfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.pid'))
     if os.path.exists(pidfile):
@@ -78,6 +79,44 @@ def restart_bazarr():
     file.close()
 
 
+# GetExitCodeProcess uses a special exit code to indicate that the process is
+# still running.
+_STILL_ACTIVE = 259
+
+
+def is_pid_running(pid):
+    return (_is_pid_running_on_windows(pid) if platform.system() == "Windows"
+            else _is_pid_running_on_unix(pid))
+
+
+def _is_pid_running_on_unix(pid):
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _is_pid_running_on_windows(pid):
+    import ctypes.wintypes
+
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(1, 0, pid)
+    if handle == 0:
+        return False
+
+    # If the process exited recently, a pid may still exist for the handle.
+    # So, check if we can get the exit code.
+    exit_code = ctypes.wintypes.DWORD()
+    is_running = (
+            kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)) == 0)
+    kernel32.CloseHandle(handle)
+
+    # See if we couldn't get the exit code or the exit code indicates that the
+    # process is still running.
+    return is_running or exit_code.value == _STILL_ACTIVE
+
+
 if __name__ == '__main__':
     pidfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.pid'))
     restartfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.restart'))
@@ -109,6 +148,19 @@ if __name__ == '__main__':
             else:
                 shutdown_bazarr(True)
                 start_bazarr()
+
+        if os.path.exists(pidfile):
+            try:
+                file = open(pidfile, 'r')
+            except:
+                logging.error("Error trying to read pid file.")
+            else:
+                pid = int(file.read())
+                file.close()
+
+                if is_pid_running(pid) is False:
+                    logging.warn('Bazarr unexpectedly exited. Starting it back.')
+                    start_bazarr()
 
 
     daemon()

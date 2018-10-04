@@ -1,4 +1,4 @@
-bazarr_version = '0.6.5'
+bazarr_version = '0.6.6'
 
 import gc
 gc.enable()
@@ -11,7 +11,7 @@ import os
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs/'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
 
 import sqlite3
 from init import *
@@ -69,7 +69,7 @@ if get_proxy_settings()[0] != 'None':
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app
 import bottle
-bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), 'views/'))
+bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
 
@@ -200,7 +200,7 @@ def restart():
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
-    return static_file(path, root=os.path.join(os.path.dirname(__file__), 'static'))
+    return static_file(path, root=os.path.join(os.path.dirname(__file__), '../static'))
 
 @route(base_url + 'emptylog')
 @custom_auth_basic(check_credentials)

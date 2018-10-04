@@ -2,7 +2,7 @@ import os
 import sys
 import getopt
 
-config_dir = os.path.join(os.path.dirname(__file__), 'data/')
+config_dir = os.path.join(os.path.dirname(__file__), '../data/')
 no_update = False
 
 try:
