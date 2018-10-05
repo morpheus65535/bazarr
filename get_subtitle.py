@@ -79,10 +79,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     logging.error('Error saving subtitles file to disk.')
                     return None
                 else:
-                    downloaded_provider = subtitle.provider_name
-                    downloaded_language = language_from_alpha3(language)
-                    downloaded_language_code2 = alpha2_from_alpha3(language)
-                    downloaded_language_code3 = language
+                    downloaded_provider = result[0].provider_name
+                    downloaded_language = language_from_alpha3(result[0].language.alpha3)
+                    downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
+                    downloaded_language_code3 = result[0].language.alpha3
                     downloaded_path = get_subtitle_path(path, language=lang_obj)
                     if used_sceneName == True:
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using this scene name: " + sceneName
@@ -222,10 +222,10 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 logging.exception('Error saving subtitles file to disk.')
                 return None
             else:
-                downloaded_provider = subtitle.provider_name
-                downloaded_language = language_from_alpha3(language)
-                downloaded_language_code2 = alpha2_from_alpha3(language)
-                downloaded_language_code3 = language
+                downloaded_provider = result[0].provider_name
+                downloaded_language = language_from_alpha3(result[0].language.alpha3)
+                downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
+                downloaded_language_code3 = result[0].language.alpha3
                 downloaded_path = get_subtitle_path(path, language=lang_obj)
                 message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
 
