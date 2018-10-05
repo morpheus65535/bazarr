@@ -161,7 +161,7 @@ def get_general_settings():
         minimum_score = '90'
         use_scenename = False
         use_postprocessing = False
-        postprocessing_cmd = False
+        postprocessing_cmd = ''
         use_sonarr = False
         use_radarr = False
         path_mappings_movie = []
