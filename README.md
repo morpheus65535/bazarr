@@ -4,7 +4,6 @@ Bazarr is a companion application to Sonarr and Radarr. It can manage and downlo
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
 # Status
-[![Build status](https://travis-ci.org/morpheus65535/bazarr.svg?branch=master)](https://travis-ci.org/morpheus65535/bazarr)
 [![GitHub issues](https://img.shields.io/github/issues/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/issues)
 [![GitHub stars](https://img.shields.io/github/stars/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/stargazers)
 [![Docker Pulls](https://img.shields.io/docker/pulls/linuxserver/bazarr.svg?style=flat-square)](https://hub.docker.com/r/linuxserver/bazarr/)
