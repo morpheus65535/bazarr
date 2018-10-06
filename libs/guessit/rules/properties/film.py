@@ -7,11 +7,10 @@ from rebulk import Rebulk, AppendMatch, Rule
 from rebulk.remodule import re
 
 from ..common.formatters import cleanup
-from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
 
 
-def film(config):  # pylint:disable=unused-argument
+def film():
     """
     Builder for rebulk object.
     :return: Created Rebulk object
@@ -19,8 +18,7 @@ def film(config):  # pylint:disable=unused-argument
     """
     rebulk = Rebulk().regex_defaults(flags=re.IGNORECASE, validate_all=True, validator={'__parent__': seps_surround})
 
-    rebulk.regex(r'f(\d{1,2})', name='film', private_parent=True, children=True, formatter=int,
-                 disabled=lambda context: is_disabled(context, 'film'))
+    rebulk.regex(r'f(\d{1,2})', name='film', private_parent=True, children=True, formatter=int)
 
     rebulk.rules(FilmTitleRule)
 
@@ -35,10 +33,7 @@ class FilmTitleRule(Rule):
 
     properties = {'film_title': [None]}
 
-    def enabled(self, context):
-        return not is_disabled(context, 'film_title')
-
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         bonus_number = matches.named('film', lambda match: not match.private, index=0)
         if bonus_number:
             filepath = matches.markers.at_match(bonus_number, lambda marker: marker.name == 'path', 0)

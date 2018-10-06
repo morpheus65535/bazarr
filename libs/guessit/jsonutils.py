@@ -4,9 +4,6 @@
 JSON Utils
 """
 import json
-
-from six import text_type
-
 try:
     from collections import OrderedDict
 except ImportError:  # pragma: no-cover
@@ -30,6 +27,6 @@ class GuessitEncoder(json.JSONEncoder):
             ret['end'] = o.end
             return ret
         elif hasattr(o, 'name'):  # Babelfish languages/countries long name
-            return text_type(o.name)
+            return str(o.name)
         else:  # pragma: no cover
-            return text_type(o)
+            return str(o)

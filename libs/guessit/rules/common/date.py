@@ -42,7 +42,7 @@ def _is_int(string):
         return False
 
 
-def _guess_day_first_parameter(groups):  # pylint:disable=inconsistent-return-statements
+def _guess_day_first_parameter(groups):
     """
     If day_first is not defined, use some heuristic to fix it.
     It helps to solve issues with python dateutils 2.5.3 parser changes.
@@ -67,7 +67,7 @@ def _guess_day_first_parameter(groups):  # pylint:disable=inconsistent-return-st
         return True
 
 
-def search_date(string, year_first=None, day_first=None):  # pylint:disable=inconsistent-return-statements
+def search_date(string, year_first=None, day_first=None):
     """Looks for date patterns, and if found return the date and group span.
 
     Assumes there are sentinels at the beginning and end of the string that

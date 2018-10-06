@@ -9,31 +9,26 @@ from rebulk import Rebulk, Rule, AppendMatch, RemoveMatch, RenameMatch, POST_PRO
 
 from ..common import seps, title_seps
 from ..common.formatters import cleanup
-from ..common.pattern import is_disabled
 from ..properties.title import TitleFromPosition, TitleBaseRule
 from ..properties.type import TypeProcessor
 
 
-def episode_title(config):  # pylint:disable=unused-argument
+def episode_title():
     """
     Builder for rebulk object.
-
-    :param config: rule configuration
-    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
     previous_names = ('episode', 'episode_details', 'episode_count',
                       'season', 'season_count', 'date', 'title', 'year')
 
-    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'episode_title'))
-    rebulk = rebulk.rules(RemoveConflictsWithEpisodeTitle(previous_names),
-                          EpisodeTitleFromPosition(previous_names),
-                          AlternativeTitleReplace(previous_names),
-                          TitleToEpisodeTitle,
-                          Filepart3EpisodeTitle,
-                          Filepart2EpisodeTitle,
-                          RenameEpisodeTitleWhenMovieType)
+    rebulk = Rebulk().rules(RemoveConflictsWithEpisodeTitle(previous_names),
+                            EpisodeTitleFromPosition(previous_names),
+                            AlternativeTitleReplace(previous_names),
+                            TitleToEpisodeTitle,
+                            Filepart3EpisodeTitle,
+                            Filepart2EpisodeTitle,
+                            RenameEpisodeTitleWhenMovieType)
     return rebulk
 
 
@@ -48,7 +43,7 @@ class RemoveConflictsWithEpisodeTitle(Rule):
     def __init__(self, previous_names):
         super(RemoveConflictsWithEpisodeTitle, self).__init__()
         self.previous_names = previous_names
-        self.next_names = ('streaming_service', 'screen_size', 'source',
+        self.next_names = ('streaming_service', 'screen_size', 'format',
                            'video_codec', 'audio_codec', 'other', 'container')
         self.affected_if_holes_after = ('part', )
         self.affected_names = ('part', 'year')
@@ -58,11 +53,13 @@ class RemoveConflictsWithEpisodeTitle(Rule):
         for filepart in matches.markers.named('path'):
             for match in matches.range(filepart.start, filepart.end,
                                        predicate=lambda m: m.name in self.affected_names):
-                before = matches.range(filepart.start, match.start, predicate=lambda m: not m.private, index=-1)
+                before = matches.previous(match, index=0,
+                                          predicate=lambda m, fp=filepart: not m.private and m.start >= fp.start)
                 if not before or before.name not in self.previous_names:
                     continue
 
-                after = matches.range(match.end, filepart.end, predicate=lambda m: not m.private, index=0)
+                after = matches.next(match, index=0,
+                                     predicate=lambda m, fp=filepart: not m.private and m.end <= fp.end)
                 if not after or after.name not in self.next_names:
                     continue
 
@@ -103,15 +100,16 @@ class TitleToEpisodeTitle(Rule):
         for title in titles:
             title_groups[title.value].append(title)
 
-        episode_titles = []
         if len(title_groups) < 2:
-            return episode_titles
+            return
 
+        episode_titles = []
         for title in titles:
             if matches.previous(title, lambda match: match.name == 'episode'):
                 episode_titles.append(title)
 
-        return episode_titles
+        if episode_titles:
+            return episode_titles
 
     def then(self, matches, when_response, context):
         for title in when_response:
@@ -152,7 +150,7 @@ class EpisodeTitleFromPosition(TitleBaseRule):
             return False
         return super(EpisodeTitleFromPosition, self).should_remove(match, matches, filepart, hole, context)
 
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         if matches.named('episode_title'):
             return
         return super(EpisodeTitleFromPosition, self).when(matches, context)
@@ -169,7 +167,7 @@ class AlternativeTitleReplace(Rule):
         super(AlternativeTitleReplace, self).__init__()
         self.previous_names = previous_names
 
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         if matches.named('episode_title'):
             return
 
@@ -204,7 +202,7 @@ class RenameEpisodeTitleWhenMovieType(Rule):
     dependency = TypeProcessor
     consequence = RenameMatch
 
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         if matches.named('episode_title', lambda m: 'alternative-replaced' not in m.tags) \
                 and not matches.named('type', lambda m: m.value == 'episode'):
             return matches.named('episode_title')
@@ -228,7 +226,7 @@ class Filepart3EpisodeTitle(Rule):
     """
     consequence = AppendMatch('title')
 
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         fileparts = matches.markers.named('path')
         if len(fileparts) < 3:
             return
@@ -269,7 +267,7 @@ class Filepart2EpisodeTitle(Rule):
     """
     consequence = AppendMatch('title')
 
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         fileparts = matches.markers.named('path')
         if len(fileparts) < 2:
             return
