@@ -27,7 +27,7 @@ for opt, arg in opts:
 
 
 def start_bazarr():
-    script = ['python','bazarr/main.py'] + globals()['arguments']
+    script = [sys.executable, os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr/main.py'))] + globals()['arguments']
 
     pidfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.pid'))
     if os.path.exists(pidfile):
