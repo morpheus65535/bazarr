@@ -5,13 +5,16 @@ gc.enable()
 
 from get_argv import config_dir, no_update
 
-from bazarr import shutdown_bazarr, restart_bazarr
-
 import os
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
+
+import os
+import sys
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from bazarr import shutdown_bazarr, restart_bazarr
 
 import sqlite3
 from init import *
