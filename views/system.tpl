@@ -41,7 +41,7 @@
 	</head>
 	<body>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id='loader_text' class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 			
@@ -225,6 +225,7 @@
 	})
 
 	$('#restart').click(function(){
+		$('#loader_text').text("Bazarr is restarting, please wait...");
 		$.ajax({
 			url: "{{base_url}}restart",
 			async: true
@@ -236,7 +237,7 @@
 
 	function ping() {
 		$.ajax({
-			url: window.location.href,
+			url: '{{base_url}}',
 			success: function(result) {
 				window.location.reload();
 			}
