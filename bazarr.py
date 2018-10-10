@@ -30,20 +30,17 @@ def start_bazarr():
     script = [sys.executable, os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr/main.py'))] + globals()['arguments']
 
     pidfile = os.path.normcase(os.path.join(os.path.dirname(__file__), 'bazarr.pid'))
-    if os.path.exists(pidfile):
-        logging.error("Bazarr already running, please stop it first.")
+    ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT)
+    try:
+        file = open(pidfile,'w')
+    except:
+        logging.error("Error trying to write pid file.")
     else:
-        ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT)
-        try:
-            file = open(pidfile,'w')
-        except:
-            logging.error("Error trying to write pid file.")
-        else:
-            file.write(str(ep.pid))
-            file.close()
-            logging.info("Bazarr starting with process id: " + str(ep.pid) + "...")
-            for line in iter(ep.stdout.readline, ''):
-                sys.stdout.write(line)
+        file.write(str(ep.pid))
+        file.close()
+        logging.info("Bazarr starting with process id: " + str(ep.pid) + "...")
+        for line in iter(ep.stdout.readline, ''):
+            sys.stdout.write(line)
 
 
 def shutdown_bazarr(restarting):

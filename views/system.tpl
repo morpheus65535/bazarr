@@ -208,7 +208,7 @@
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	})
 
-	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').click(function(){
 		$('#loader').addClass('active');
 	})
 
@@ -217,7 +217,7 @@
 			url: "{{base_url}}shutdown",
 			async: false
 		})
-		.fail(function(){
+		.always(function(){
 			document.open();
 			document.write('Bazarr has shutdown.');
 			document.close();
@@ -227,12 +227,19 @@
 	$('#restart').click(function(){
 		$.ajax({
 			url: "{{base_url}}restart",
-			async: false
+			async: true
 		})
 		.done(function(){
-    		document.open();
-			document.write('Bazarr is restarting. Please reload page manually until it come back (should be less than 30 seconds).');
-			document.close();
+    		setTimeout(function(){ setInterval(ping, 2000); },8000);
 		});
 	})
+
+	function ping() {
+		$.ajax({
+			url: window.location.href,
+			success: function(result) {
+				window.location.reload();
+			}
+		});
+	}
 </script>
