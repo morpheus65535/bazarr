@@ -13,9 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
 
 import os
 import sys
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from bazarr import shutdown_bazarr, restart_bazarr
-
+import signal
 import sqlite3
 from init import *
 from update_db import *
@@ -194,11 +192,26 @@ def redirect_root():
 
 @route(base_url + 'shutdown')
 def shutdown():
-    shutdown_bazarr(False)
+    try:
+        stop_file = open(os.path.join(os.pardir, "bazarr.stop file"), "w")
+    except:
+        logging.CRITICAL('Cannot create bazarr.stop.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        server.
 
 @route(base_url + 'restart')
 def restart():
-    restart_bazarr()
+    try:
+        restart_file = open(os.path.join(os.pardir, "bazarr.restart"), "w")
+    except:
+        logging.CRITICAL('Cannot create bazarr.restart file.')
+    else:
+        restart_file.write('')
+        restart_file.close()
+        os.kill(os.getpid(), signal.SIGINT)
+
 
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
@@ -1678,5 +1691,5 @@ import warnings
 warnings.simplefilter("ignore", DeprecationWarning)
 
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-run(host=ip, port=port, server='waitress', app=app)
+server = run(host=ip, port=port, server='waitress', app=app)
 logging.info('Bazarr has been stopped.')
