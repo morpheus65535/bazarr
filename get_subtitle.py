@@ -42,7 +42,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     postprocessing_cmd = get_general_settings()[11]
 
     try:
-        if sceneName is None or use_scenename is False:
+        if sceneName == "None" or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
@@ -63,8 +63,6 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             logging.exception("Error trying to get subtitle list from provider")
         else:
             subtitles_list = []
-            #for s in subtitles:
-            #    {s: compute_score(s, video, hearing_impaired=hi)}
             sorted_subtitles = sorted([(s, compute_score(s, video, hearing_impaired=hi)) for s in subtitles], key=operator.itemgetter(1), reverse=True)
             for s, preliminary_score in sorted_subtitles:
                 if media_type == "movie":
@@ -162,7 +160,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
     postprocessing_cmd = get_general_settings()[11]
 
     try:
-        if sceneName is None or use_scenename is False:
+        if sceneName == "None" or use_scenename is False:
             used_sceneName = False
             video = scan_video(path)
         else:
