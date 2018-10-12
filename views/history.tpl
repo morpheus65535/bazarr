@@ -28,6 +28,7 @@
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 1em;
+				overflow-x:auto;
 			}
 			#logs {
 				margin-top: 4em;

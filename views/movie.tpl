@@ -51,6 +51,7 @@
 				padding-right: 2em;
 				padding-bottom: 1em;
 				text-color: black;
+				overflow-x:auto;
 			}
 			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
 				background: transparent !important;
