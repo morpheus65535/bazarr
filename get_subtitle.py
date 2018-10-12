@@ -314,7 +314,7 @@ def series_download_subtitles(no):
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
             if language is not None:
-                message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), series_details[0], providers_list, providers_auth, episode[3], 'series')
+                message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), series_details[0], providers_list, providers_auth, str(episode[3]), 'series')
                 if message is not None:
                     store_subtitles(path_replace(episode[0]))
                     history_log(1, no, episode[2], message)
@@ -333,7 +333,7 @@ def movies_download_subtitles(no):
 
     for language in ast.literal_eval(movie[1]):
         if language is not None:
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[3], 'movie')
+            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, str(movie[3]), 'movie')
             if message is not None:
                 store_subtitles_movie(path_replace_movie(movie[0]))
                 history_log_movie(1, no, message)
@@ -372,7 +372,7 @@ def wanted_download_subtitles(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, episode[5], 'series')
+                        message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, str(episode[5]), 'series')
                         if message is not None:
                             store_subtitles(path_replace(episode[0]))
                             list_missing_subtitles(episode[3])
@@ -413,7 +413,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, movie[5], 'movie')
+                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, str(movie[5]), 'movie')
                         if message is not None:
                             store_subtitles_movie(path_replace_movie(movie[0]))
                             list_missing_subtitles_movies(movie[3])
