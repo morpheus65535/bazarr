@@ -102,44 +102,47 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     logging.exception('Error saving subtitles file to disk.')
                     return None
                 else:
-                    downloaded_provider = result[0].provider_name
-                    downloaded_language = language_from_alpha3(result[0].language.alpha3)
-                    downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
-                    downloaded_language_code3 = result[0].language.alpha3
-                    downloaded_path = get_subtitle_path(path, language=language_set)
-                    if used_sceneName == True:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using this scene name: " + sceneName
-                    else:
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using filename guessing."
-
-                    if use_postprocessing is True:
-                        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
-                        try:
-                            if os.name == 'nt':
-                                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                                # wait for the process to terminate
-                                out_codepage, err_codepage = codepage.communicate()
-                                encoding = out_codepage.split(':')[-1].strip()
-
-                            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                            # wait for the process to terminate
-                            out, err = process.communicate()
-
-                            if os.name == 'nt':
-                                out = out.decode(encoding)
-
-                        except:
-                            if out == "":
-                                logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                            else:
-                                logging.error('Post-processing result for file ' + path + ' : ' + out)
+                    if len(result) > 0:
+                        downloaded_provider = result[0].provider_name
+                        downloaded_language = language_from_alpha3(result[0].language.alpha3)
+                        downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
+                        downloaded_language_code3 = result[0].language.alpha3
+                        downloaded_path = get_subtitle_path(path, language=language_set)
+                        if used_sceneName == True:
+                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using this scene name: " + sceneName
                         else:
-                            if out == "":
-                                logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                            else:
-                                logging.info('Post-processing result for file ' + path + ' : ' + out)
+                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using filename guessing."
 
-                    return message
+                        if use_postprocessing is True:
+                            command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
+                            try:
+                                if os.name == 'nt':
+                                    codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                    # wait for the process to terminate
+                                    out_codepage, err_codepage = codepage.communicate()
+                                    encoding = out_codepage.split(':')[-1].strip()
+
+                                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                # wait for the process to terminate
+                                out, err = process.communicate()
+
+                                if os.name == 'nt':
+                                    out = out.decode(encoding)
+
+                            except:
+                                if out == "":
+                                    logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                                else:
+                                    logging.error('Post-processing result for file ' + path + ' : ' + out)
+                            else:
+                                if out == "":
+                                    logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                                else:
+                                    logging.info('Post-processing result for file ' + path + ' : ' + out)
+
+                        return message
+                    else:
+                        return None
             else:
                 return None
 
@@ -260,41 +263,44 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 logging.exception('Error saving subtitles file to disk.')
                 return None
             else:
-                downloaded_provider = result[0].provider_name
-                downloaded_language = language_from_alpha3(result[0].language.alpha3)
-                downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
-                downloaded_language_code3 = result[0].language.alpha3
-                downloaded_path = get_subtitle_path(path, language=lang_obj)
-                message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
+                if len(result) > 0:
+                    downloaded_provider = result[0].provider_name
+                    downloaded_language = language_from_alpha3(result[0].language.alpha3)
+                    downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
+                    downloaded_language_code3 = result[0].language.alpha3
+                    downloaded_path = get_subtitle_path(path, language=lang_obj)
+                    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(score) + "% using manual search."
 
-                if use_postprocessing is True:
-                    command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
-                    try:
-                        if os.name == 'nt':
-                            codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    if use_postprocessing is True:
+                        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
+                        try:
+                            if os.name == 'nt':
+                                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                # wait for the process to terminate
+                                out_codepage, err_codepage = codepage.communicate()
+                                encoding = out_codepage.split(':')[-1].strip()
+
+                            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                             # wait for the process to terminate
-                            out_codepage, err_codepage = codepage.communicate()
-                            encoding = out_codepage.split(':')[-1].strip()
+                            out, err = process.communicate()
 
-                        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        # wait for the process to terminate
-                        out, err = process.communicate()
+                            if os.name == 'nt':
+                                out = out.decode(encoding)
 
-                        if os.name == 'nt':
-                            out = out.decode(encoding)
-
-                    except:
-                        if out == "":
-                            logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                        except:
+                            if out == "":
+                                logging.error('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                            else:
+                                logging.error('Post-processing result for file ' + path + ' : ' + out)
                         else:
-                            logging.error('Post-processing result for file ' + path + ' : ' + out)
-                    else:
-                        if out == "":
-                            logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                        else:
-                            logging.info('Post-processing result for file ' + path + ' : ' + out)
+                            if out == "":
+                                logging.info('Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                            else:
+                                logging.info('Post-processing result for file ' + path + ' : ' + out)
 
-                return message
+                    return message
+                else:
+                    return None
 
 def series_download_subtitles(no):
     if get_general_settings()[24] is True:
