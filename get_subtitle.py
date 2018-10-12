@@ -30,7 +30,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         hi = False
     language_set = set()
-    if language == 'pb':
+    if language == 'pob':
         language_set.add(Language('por', 'BR'))
     else:
         language_set.add(Language(language))
@@ -153,10 +153,11 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         hi = False
     language_set = set()
     for lang in ast.literal_eval(language):
-        if lang == 'pb':
+        lang = alpha3_from_alpha2(lang)
+        if lang == 'pob':
             language_set.add(Language('por', 'BR'))
         else:
-            language_set.add(Language(alpha3_from_alpha2(lang)))
+            language_set.add(Language(lang))
 
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
@@ -225,11 +226,10 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
 
-    if language == 'pb':
-        language = alpha3_from_alpha2(language)
+    language = alpha3_from_alpha2(language)
+    if language == 'pob':
         lang_obj = Language('por', 'BR')
     else:
-        language = alpha3_from_alpha2(language)
         lang_obj = Language(language)
 
     try:
