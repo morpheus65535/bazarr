@@ -23,7 +23,6 @@ from get_settings import get_general_settings, get_proxy_settings
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-logger = logging.getLogger('waitress')
 log_level = get_general_settings()[4]
 if log_level is None:
     log_level = "INFO"
@@ -52,6 +51,7 @@ def configure_logging():
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("subliminal").setLevel(logging.CRITICAL)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
+    #logging.getLogger("cherrypy").propagate = False
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
@@ -73,6 +73,8 @@ import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 bottle.debug(True)
 bottle.TEMPLATES.clear()
+
+from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from beaker.middleware import SessionMiddleware
 from cork import Cork
@@ -199,7 +201,14 @@ def shutdown():
     else:
         stop_file.write('')
         stop_file.close()
-        server.
+        print "before"
+        server.stop()
+        print "after"
+        try:
+            os._exit(0)
+        except Exception as e:
+            logging.exception('Error while exiting Bazarr.')
+        print "exited"
 
 @route(base_url + 'restart')
 def restart():
@@ -210,7 +219,7 @@ def restart():
     else:
         restart_file.write('')
         restart_file.close()
-        os.kill(os.getpid(), signal.SIGINT)
+        server.stop()
 
 
 @route(base_url + 'static/:path#.+#', name='static')
@@ -1690,6 +1699,13 @@ import warnings
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-server = run(host=ip, port=port, server='waitress', app=app)
-logging.info('Bazarr has been stopped.')
+#logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+#server = run(host=ip, port=port, server='waitress', app=app)
+#logging.info('Bazarr has been stopped.')
+
+server = CherryPyWSGIServer((str(ip), int(port)), app)
+
+try:
+    server.start()
+except KeyboardInterrupt:
+    server.stop()

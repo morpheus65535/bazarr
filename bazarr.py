@@ -2,12 +2,9 @@ import subprocess as sp
 import threading
 import time
 import os
-import signal
-import platform
 import logging
 import sys
 import getopt
-import atexit
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
