@@ -47,3 +47,6 @@ def updated():
     c.execute("UPDATE system SET updated = 1")
     conn.commit()
     c.close()
+
+    from main import restart
+    restart()

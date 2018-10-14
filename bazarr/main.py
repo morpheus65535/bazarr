@@ -51,7 +51,6 @@ def configure_logging():
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("subliminal").setLevel(logging.CRITICAL)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
-    #logging.getLogger("cherrypy").propagate = False
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
@@ -195,27 +194,20 @@ def redirect_root():
 @route(base_url + 'shutdown')
 def shutdown():
     try:
-        stop_file = open(os.path.join(os.pardir, "bazarr.stop file"), "w")
-    except:
-        logging.CRITICAL('Cannot create bazarr.stop.')
+        stop_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('Cannot create bazarr.stop file.')
     else:
         stop_file.write('')
         stop_file.close()
-        print "before"
         server.stop()
-        print "after"
-        try:
-            os._exit(0)
-        except Exception as e:
-            logging.exception('Error while exiting Bazarr.')
-        print "exited"
 
 @route(base_url + 'restart')
 def restart():
     try:
-        restart_file = open(os.path.join(os.pardir, "bazarr.restart"), "w")
-    except:
-        logging.CRITICAL('Cannot create bazarr.restart file.')
+        restart_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.restart"), "w")
+    except Exception as e:
+        logging.error('Cannot create bazarr.restart file.')
     else:
         restart_file.write('')
         restart_file.close()
@@ -1699,13 +1691,6 @@ import warnings
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-#logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-#server = run(host=ip, port=port, server='waitress', app=app)
-#logging.info('Bazarr has been stopped.')
-
 server = CherryPyWSGIServer((str(ip), int(port)), app)
-
-try:
-    server.start()
-except KeyboardInterrupt:
-    server.stop()
+logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+server.start()
