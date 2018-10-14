@@ -29,10 +29,13 @@ dir_name = os.path.dirname(__file__)
 def start_bazarr():
     script = [sys.executable, os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr/main.py'))] + globals()['arguments']
 
-    ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT)
+    ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
     logging.info("Bazarr starting...")
-    for line in iter(ep.stdout.readline, ''):
-        sys.stdout.write(line)
+    try:
+        for line in iter(ep.stdout.readline, ''):
+            sys.stdout.write(line)
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':

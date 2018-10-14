@@ -1693,4 +1693,8 @@ warnings.simplefilter("ignore", DeprecationWarning)
 
 server = CherryPyWSGIServer((str(ip), int(port)), app)
 logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-server.start()
+try:
+    print('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+    server.start()
+except KeyboardInterrupt:
+    shutdown()
