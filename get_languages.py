@@ -31,7 +31,7 @@ def language_from_alpha2(lang):
         result = c.execute('''SELECT name FROM table_settings_languages WHERE code2 = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 def language_from_alpha3(lang):
@@ -43,7 +43,7 @@ def language_from_alpha3(lang):
         result = c.execute('''SELECT name FROM table_settings_languages WHERE code3 = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 def alpha2_from_alpha3(lang):
@@ -55,7 +55,7 @@ def alpha2_from_alpha3(lang):
         result = c.execute('''SELECT code2 FROM table_settings_languages WHERE code3 = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 def alpha2_from_language(lang):
@@ -65,7 +65,7 @@ def alpha2_from_language(lang):
         result = c.execute('''SELECT code2 FROM table_settings_languages WHERE name = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 def alpha3_from_alpha2(lang):
@@ -75,7 +75,7 @@ def alpha3_from_alpha2(lang):
         result = c.execute('''SELECT code3 FROM table_settings_languages WHERE code2 = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 def alpha3_from_language(lang):
@@ -85,7 +85,7 @@ def alpha3_from_language(lang):
         result = c.execute('''SELECT code3 FROM table_settings_languages WHERE name = ?''', (lang,)).fetchone()[0]
     except:
         result = None
-    db.close
+    db.close()
     return result
 
 if __name__ == '__main__':
