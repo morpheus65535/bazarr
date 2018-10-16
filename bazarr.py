@@ -2,15 +2,8 @@ import subprocess as sp
 import threading
 import time
 import os
-import logging
 import sys
 import getopt
-
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-out_hdlr = logging.StreamHandler(sys.stdout)
-out_hdlr.setLevel(logging.INFO)
-log.addHandler(out_hdlr)
 
 arguments = []
 try:
@@ -30,10 +23,11 @@ def start_bazarr():
     script = [sys.executable, os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr/main.py'))] + globals()['arguments']
 
     ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
-    logging.info("Bazarr starting...")
+    print "Bazarr starting..."
     try:
         for line in iter(ep.stdout.readline, ''):
             sys.stdout.write(line)
+            sys.stdout.flush()
     except KeyboardInterrupt:
         pass
 
@@ -58,16 +52,16 @@ if __name__ == '__main__':
             try:
                 os.remove(stopfile)
             except:
-                logging.error('Unable to delete stop file.')
+                print 'Unable to delete stop file.'
             else:
-                logging.info('Bazarr exited.')
+                print 'Bazarr exited.'
                 os._exit(0)
 
         if os.path.exists(restartfile):
             try:
                 os.remove(restartfile)
             except:
-                logging.error('Unable to delete restart file.')
+                print 'Unable to delete restart file.'
             else:
                 start_bazarr()
 
