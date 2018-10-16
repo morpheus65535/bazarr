@@ -1,6 +1,8 @@
 from get_argv import config_dir
 
 from get_settings import get_general_settings
+from scheduler import shutdown_scheduler
+from main import restart
 
 import os
 import logging
@@ -48,5 +50,8 @@ def updated():
     conn.commit()
     c.close()
 
-    from main import restart
+    # Shutdown the scheduler waiting for jobs to finish
+    shutdown_scheduler()
+
+    # Restart Bazarr
     restart()

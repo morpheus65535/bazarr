@@ -80,3 +80,6 @@ if integration[12] is True or integration[13] is True:
 sonarr_full_update()
 radarr_full_update()
 scheduler.start()
+
+def shutdown_scheduler():
+    scheduler.shutdown(wait=True)

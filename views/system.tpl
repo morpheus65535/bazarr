@@ -238,7 +238,7 @@
 	% from get_settings import get_general_settings
 	% ip = get_general_settings()[0]
 	% port = get_general_settings()[1]
-	% base_url = get_general_settings()[2] + "/"
+	% base_url = get_general_settings()[2]
 
 	if ("{{ip}}" == "0.0.0.0") {
 		public_ip = window.location.hostname;
