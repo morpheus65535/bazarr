@@ -235,11 +235,22 @@
 		});
 	})
 
+	% from get_settings import get_general_settings
+	% ip = get_general_settings()[0]
+	% port = get_general_settings()[1]
+	% base_url = get_general_settings()[2] + "/"
+
+	if ("{{ip}}" == "0.0.0.0") {
+		public_ip = window.location.hostname;
+	} else {
+		public_ip = "{{ip}}";
+	}
+
 	function ping() {
 		$.ajax({
-			url: '{{base_url}}',
+			url: 'http://' + public_ip + ':{{port}}{{base_url}}',
 			success: function(result) {
-				window.location.reload();
+				window.location.href= 'http://' + public_ip + ':{{port}}{{base_url}}';
 			}
 		});
 	}

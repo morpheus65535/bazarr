@@ -67,7 +67,7 @@ if get_proxy_settings()[0] != 'None':
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
 
-from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 bottle.debug(True)
@@ -164,6 +164,11 @@ def authorize():
 
 def post_get(name, default=''):
     return request.POST.get(name, default).strip()
+
+
+@hook('before_request')
+def enable_cors():
+    response.headers['Access-Control-Allow-Origin'] = '*'
 
 
 @route(base_url + 'login')
@@ -1695,7 +1700,6 @@ server = CherryPyWSGIServer((str(ip), int(port)), app)
 try:
     logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
     print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
-    sys.stdout.flush()
     server.start()
 except KeyboardInterrupt:
     shutdown()

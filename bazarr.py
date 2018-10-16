@@ -20,14 +20,13 @@ for opt, arg in opts:
 dir_name = os.path.dirname(__file__)
 
 def start_bazarr():
-    script = [sys.executable, os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr/main.py'))] + globals()['arguments']
+    script = [sys.executable, "-u", os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr/main.py'))] + globals()['arguments']
 
     ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
     print "Bazarr starting..."
     try:
         for line in iter(ep.stdout.readline, ''):
             sys.stdout.write(line)
-            sys.stdout.flush()
     except KeyboardInterrupt:
         pass
 
