@@ -232,10 +232,17 @@ def guess_matches(video, guess, partial=False):
         if video.title and 'title' in guess and sanitize(guess['title']) == sanitize(video.title):
             matches.add('title')
     # release_group
-    if (video.release_group and 'release_group' in guess and
-            sanitize_release_group(guess['release_group']) in
-            get_equivalent_release_groups(sanitize_release_group(video.release_group))):
-        matches.add('release_group')
+    if 'release_group' in guess:
+        release_groups = guess["release_group"]
+        if not isinstance(release_groups, types.ListType):
+            release_groups = [release_groups]
+
+        if video.release_group:
+            for release_group in release_groups:
+                if (sanitize_release_group(release_group) in
+                        get_equivalent_release_groups(sanitize_release_group(video.release_group))):
+                    matches.add('release_group')
+                    break
     # resolution
     if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
         matches.add('resolution')
