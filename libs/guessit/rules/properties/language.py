@@ -11,80 +11,55 @@ import babelfish
 from rebulk import Rebulk, Rule, RemoveMatch, RenameMatch
 from rebulk.remodule import re
 
-from ..common import seps
-from ..common.pattern import is_disabled
-from ..common.words import iter_words
+from ..common.words import iter_words, COMMON_WORDS
 from ..common.validators import seps_surround
 
 
-def language(config, common_words):
+def language():
     """
     Builder for rebulk object.
-
-    :param config: rule configuration
-    :type config: dict
-    :param common_words: common words
-    :type common_words: set
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    subtitle_both = config['subtitle_affixes']
-    subtitle_prefixes = sorted(subtitle_both + config['subtitle_prefixes'], key=length_comparator)
-    subtitle_suffixes = sorted(subtitle_both + config['subtitle_suffixes'], key=length_comparator)
-    lang_both = config['language_affixes']
-    lang_prefixes = sorted(lang_both + config['language_prefixes'], key=length_comparator)
-    lang_suffixes = sorted(lang_both + config['language_suffixes'], key=length_comparator)
-    weak_affixes = frozenset(config['weak_affixes'])
-
-    rebulk = Rebulk(disabled=lambda context: (is_disabled(context, 'language') and
-                                              is_disabled(context, 'subtitle_language')))
+    rebulk = Rebulk()
 
     rebulk.string(*subtitle_prefixes, name="subtitle_language.prefix", ignore_case=True, private=True,
-                  validator=seps_surround, tags=['release-group-prefix'],
-                  disabled=lambda context: is_disabled(context, 'subtitle_language'))
+                  validator=seps_surround, tags=['release-group-prefix'])
     rebulk.string(*subtitle_suffixes, name="subtitle_language.suffix", ignore_case=True, private=True,
-                  validator=seps_surround,
-                  disabled=lambda context: is_disabled(context, 'subtitle_language'))
+                  validator=seps_surround)
     rebulk.string(*lang_suffixes, name="language.suffix", ignore_case=True, private=True,
-                  validator=seps_surround, tags=['source-suffix'],
-                  disabled=lambda context: is_disabled(context, 'language'))
-
-    def find_languages(string, context=None):
-        """Find languages in the string
-
-        :return: list of tuple (property, Language, lang_word, word)
-        """
-        return LanguageFinder(context, subtitle_prefixes, subtitle_suffixes,
-                              lang_prefixes, lang_suffixes, weak_affixes).find(string)
-
-    rebulk.functional(find_languages,
-                      properties={'language': [None]},
-                      disabled=lambda context: not context.get('allowed_languages'))
-    rebulk.rules(SubtitleExtensionRule,
-                 SubtitlePrefixLanguageRule,
-                 SubtitleSuffixLanguageRule,
-                 RemoveLanguage,
-                 RemoveInvalidLanguages(common_words))
-
-    babelfish.language_converters['guessit'] = GuessitConverter(config['synonyms'])
+                  validator=seps_surround, tags=['format-suffix'])
+    rebulk.functional(find_languages, properties={'language': [None]})
+    rebulk.rules(SubtitlePrefixLanguageRule, SubtitleSuffixLanguageRule, SubtitleExtensionRule)
 
     return rebulk
 
 
+COMMON_WORDS_STRICT = frozenset(['brazil'])
+
 UNDETERMINED = babelfish.Language('und')
+
+SYN = {('ell', None): ['gr', 'greek'],
+       ('spa', None): ['esp', 'español', 'espanol'],
+       ('fra', None): ['français', 'vf', 'vff', 'vfi', 'vfq'],
+       ('swe', None): ['se'],
+       ('por', 'BR'): ['po', 'pb', 'pob', 'ptbr', 'br', 'brazilian'],
+       ('cat', None): ['català', 'castellano', 'espanol castellano', 'español castellano'],
+       ('ces', None): ['cz'],
+       ('ukr', None): ['ua'],
+       ('zho', None): ['cn'],
+       ('jpn', None): ['jp'],
+       ('hrv', None): ['scr'],
+       ('mul', None): ['multi', 'dl']}  # http://scenelingo.wordpress.com/2009/03/24/what-does-dl-mean/
 
 
 class GuessitConverter(babelfish.LanguageReverseConverter):  # pylint: disable=missing-docstring
     _with_country_regexp = re.compile(r'(.*)\((.*)\)')
     _with_country_regexp2 = re.compile(r'(.*)-(.*)')
 
-    def __init__(self, synonyms):
+    def __init__(self):
         self.guessit_exceptions = {}
-        for code, synlist in synonyms.items():
-            if '_' in code:
-                (alpha3, country) = code.split('_')
-            else:
-                (alpha3, country) = (code, None)
+        for (alpha3, country), synlist in SYN.items():
             for syn in synlist:
                 self.guessit_exceptions[syn.lower()] = (alpha3, country, None)
 
@@ -101,7 +76,15 @@ class GuessitConverter(babelfish.LanguageReverseConverter):  # pylint: disable=m
         return str(babelfish.Language(alpha3, country, script))
 
     def reverse(self, name):  # pylint:disable=arguments-differ
+        with_country = (GuessitConverter._with_country_regexp.match(name) or
+                        GuessitConverter._with_country_regexp2.match(name))
+
         name = name.lower()
+        if with_country:
+            lang = babelfish.Language.fromguessit(with_country.group(1).strip())
+            lang.country = babelfish.Country.fromguessit(with_country.group(2).strip())
+            return lang.alpha3, lang.country.alpha2 if lang.country else None, lang.script or None
+
         # exceptions come first, as they need to override a potential match
         # with any of the other guessers
         try:
@@ -113,8 +96,7 @@ class GuessitConverter(babelfish.LanguageReverseConverter):  # pylint: disable=m
                      babelfish.Language.fromalpha3b,
                      babelfish.Language.fromalpha2,
                      babelfish.Language.fromname,
-                     babelfish.Language.fromopensubtitles,
-                     babelfish.Language.fromietf]:
+                     babelfish.Language.fromopensubtitles]:
             try:
                 reverse = conv(name)
                 return reverse.alpha3, reverse.country, reverse.script
@@ -130,6 +112,24 @@ def length_comparator(value):
     """
     return len(value)
 
+
+babelfish.language_converters['guessit'] = GuessitConverter()
+
+
+subtitle_both = ['sub', 'subs', 'subbed', 'custom subbed', 'custom subs',
+                 'custom sub', 'customsubbed', 'customsubs', 'customsub',
+                 'soft subtitles', 'soft subs']
+subtitle_prefixes = sorted(subtitle_both +
+                           ['st', 'vost', 'subforced', 'fansub', 'hardsub',
+                            'legenda', 'legendas', 'legendado', 'subtitulado',
+                            'soft', 'subtitles'], key=length_comparator)
+subtitle_suffixes = sorted(subtitle_both +
+                           ['subforced', 'fansub', 'hardsub'], key=length_comparator)
+lang_both = ['dublado', 'dubbed', 'dub']
+lang_suffixes = sorted(lang_both + ['audio'], key=length_comparator)
+lang_prefixes = sorted(lang_both + ['true'], key=length_comparator)
+
+weak_prefixes = ('audio', 'true')
 
 _LanguageMatch = namedtuple('_LanguageMatch', ['property_name', 'word', 'lang'])
 
@@ -149,7 +149,7 @@ class LanguageWord(object):
         self.next_word = next_word
 
     @property
-    def extended_word(self):  # pylint:disable=inconsistent-return-statements
+    def extended_word(self):
         """
         Return the extended word for this instance, if any.
         """
@@ -175,17 +175,10 @@ def to_rebulk_match(language_match):
     end = word.end
     name = language_match.property_name
     if language_match.lang == UNDETERMINED:
-        return start, end, {
-            'name': name,
-            'value': word.value.lower(),
-            'formatter': babelfish.Language,
-            'tags': ['weak-language']
-        }
+        return start, end, dict(name=name, value=word.value.lower(),
+                                formatter=babelfish.Language, tags=['weak-language'])
 
-    return start, end, {
-        'name': name,
-        'value': language_match.lang
-    }
+    return start, end, dict(name=name, value=language_match.lang)
 
 
 class LanguageFinder(object):
@@ -193,21 +186,10 @@ class LanguageFinder(object):
     Helper class to search and return language matches: 'language' and 'subtitle_language' properties
     """
 
-    def __init__(self, context,
-                 subtitle_prefixes, subtitle_suffixes,
-                 lang_prefixes, lang_suffixes, weak_affixes):
-        allowed_languages = context.get('allowed_languages') if context else None
-        self.allowed_languages = set([l.lower() for l in allowed_languages or []])
-        self.weak_affixes = weak_affixes
-        self.prefixes_map = {}
-        self.suffixes_map = {}
-
-        if not is_disabled(context, 'subtitle_language'):
-            self.prefixes_map['subtitle_language'] = subtitle_prefixes
-            self.suffixes_map['subtitle_language'] = subtitle_suffixes
-
-        self.prefixes_map['language'] = lang_prefixes
-        self.suffixes_map['language'] = lang_suffixes
+    def __init__(self, allowed_languages):
+        self.parsed = dict()
+        self.allowed_languages = allowed_languages
+        self.common_words = COMMON_WORDS_STRICT if allowed_languages else COMMON_WORDS
 
     def find(self, string):
         """
@@ -268,11 +250,11 @@ class LanguageFinder(object):
         """
         tuples = [
             (language_word, language_word.next_word,
-             self.prefixes_map,
+             dict(subtitle_language=subtitle_prefixes, language=lang_prefixes),
              lambda string, prefix: string.startswith(prefix),
              lambda string, prefix: string[len(prefix):]),
             (language_word.next_word, language_word,
-             self.suffixes_map,
+             dict(subtitle_language=subtitle_suffixes, language=lang_suffixes),
              lambda string, suffix: string.endswith(suffix),
              lambda string, suffix: string[:len(string) - len(suffix)])
         ]
@@ -289,7 +271,7 @@ class LanguageFinder(object):
         if match:
             yield match
 
-    def find_match_for_word(self, word, fallback_word, affixes, is_affix, strip_affix):  # pylint:disable=inconsistent-return-statements
+    def find_match_for_word(self, word, fallback_word, affixes, is_affix, strip_affix):
         """
         Return the language match for the given word and affixes.
         """
@@ -298,6 +280,8 @@ class LanguageFinder(object):
                 continue
 
             word_lang = current_word.value.lower()
+            if word_lang in self.common_words:
+                continue
 
             for key, parts in affixes.items():
                 for part in parts:
@@ -307,31 +291,30 @@ class LanguageFinder(object):
                     match = None
                     value = strip_affix(word_lang, part)
                     if not value:
-                        if fallback_word and (
-                                abs(fallback_word.start - word.end) <= 1 or abs(word.start - fallback_word.end) <= 1):
-                            match = self.find_language_match_for_word(fallback_word, key=key)
+                        if fallback_word:
+                            match = self.find_language_match_for_word(fallback_word, key=key, force=True)
 
-                        if not match and part not in self.weak_affixes:
+                        if not match and part not in weak_prefixes:
                             match = self.create_language_match(key, LanguageWord(current_word.start, current_word.end,
                                                                                  'und', current_word.input_string))
-                    else:
+                    elif value not in self.common_words:
                         match = self.create_language_match(key, LanguageWord(current_word.start, current_word.end,
                                                                              value, current_word.input_string))
 
                     if match:
                         return match
 
-    def find_language_match_for_word(self, word, key='language'):  # pylint:disable=inconsistent-return-statements
+    def find_language_match_for_word(self, word, key='language', force=False):
         """
         Return the language match for the given word.
         """
         for current_word in (word.extended_word, word):
-            if current_word:
+            if current_word and (force or current_word.value.lower() not in self.common_words):
                 match = self.create_language_match(key, current_word)
                 if match:
                     return match
 
-    def create_language_match(self, key, word):  # pylint:disable=inconsistent-return-statements
+    def create_language_match(self, key, word):
         """
         Create a LanguageMatch for a given word
         """
@@ -340,21 +323,40 @@ class LanguageFinder(object):
         if lang is not None:
             return _LanguageMatch(property_name=key, word=word, lang=lang)
 
-    def parse_language(self, lang_word):  # pylint:disable=inconsistent-return-statements
+    def parse_language(self, lang_word):
         """
         Parse the lang_word into a valid Language.
 
         Multi and Undetermined languages are also valid languages.
         """
+        if lang_word in self.parsed:
+            return self.parsed[lang_word]
+
         try:
             lang = babelfish.Language.fromguessit(lang_word)
-            if ((hasattr(lang, 'name') and lang.name.lower() in self.allowed_languages) or
-                    (hasattr(lang, 'alpha2') and lang.alpha2.lower() in self.allowed_languages) or
-                    lang.alpha3.lower() in self.allowed_languages):
+            if self.allowed_languages:
+                if (hasattr(lang, 'name') and lang.name.lower() in self.allowed_languages) \
+                        or (hasattr(lang, 'alpha2') and lang.alpha2.lower() in self.allowed_languages) \
+                        or lang.alpha3.lower() in self.allowed_languages:
+                    self.parsed[lang_word] = lang
+                    return lang
+            # Keep language with alpha2 equivalent. Others are probably
+            # uncommon languages.
+            elif lang in ('mul', UNDETERMINED) or hasattr(lang, 'alpha2'):
+                self.parsed[lang_word] = lang
                 return lang
 
+            self.parsed[lang_word] = None
         except babelfish.Error:
-            pass
+            self.parsed[lang_word] = None
+
+
+def find_languages(string, context=None):
+    """Find languages in the string
+
+    :return: list of tuple (property, Language, lang_word, word)
+    """
+    return LanguageFinder(context.get('allowed_languages')).find(string)
 
 
 class SubtitlePrefixLanguageRule(Rule):
@@ -364,9 +366,6 @@ class SubtitlePrefixLanguageRule(Rule):
     consequence = RemoveMatch
 
     properties = {'subtitle_language': [None]}
-
-    def enabled(self, context):
-        return not is_disabled(context, 'subtitle_language')
 
     def when(self, matches, context):
         to_rename = []
@@ -413,9 +412,6 @@ class SubtitleSuffixLanguageRule(Rule):
 
     properties = {'subtitle_language': [None]}
 
-    def enabled(self, context):
-        return not is_disabled(context, 'subtitle_language')
-
     def when(self, matches, context):
         to_append = []
         to_remove = matches.named('subtitle_language.suffix')
@@ -440,64 +436,17 @@ class SubtitleExtensionRule(Rule):
     """
     Convert language guess as subtitle_language if next match is a subtitle extension.
 
-    Since it's a strong match, it also removes any conflicting source with it.
+    Since it's a strong match, it also removes any conflicting format with it.
     """
     consequence = [RemoveMatch, RenameMatch('subtitle_language')]
 
     properties = {'subtitle_language': [None]}
 
-    def enabled(self, context):
-        return not is_disabled(context, 'subtitle_language')
-
-    def when(self, matches, context):  # pylint:disable=inconsistent-return-statements
+    def when(self, matches, context):
         subtitle_extension = matches.named('container',
                                            lambda match: 'extension' in match.tags and 'subtitle' in match.tags,
                                            0)
         if subtitle_extension:
             subtitle_lang = matches.previous(subtitle_extension, lambda match: match.name == 'language', 0)
             if subtitle_lang:
-                for weak in matches.named('subtitle_language', predicate=lambda m: 'weak-language' in m.tags):
-                    weak.private = True
-
-                return matches.conflicting(subtitle_lang, lambda m: m.name == 'source'), subtitle_lang
-
-
-class RemoveLanguage(Rule):
-    """Remove language matches that were not converted to subtitle_language when language is disabled."""
-
-    consequence = RemoveMatch
-
-    def enabled(self, context):
-        return is_disabled(context, 'language')
-
-    def when(self, matches, context):
-        return matches.named('language')
-
-
-class RemoveInvalidLanguages(Rule):
-    """Remove language matches that matches the blacklisted common words."""
-
-    consequence = RemoveMatch
-
-    def __init__(self, common_words):
-        """Constructor."""
-        super(RemoveInvalidLanguages, self).__init__()
-        self.common_words = common_words
-
-    def when(self, matches, context):
-        to_remove = []
-        for match in matches.range(0, len(matches.input_string),
-                                   predicate=lambda m: m.name in ('language', 'subtitle_language')):
-            if match.raw.lower() not in self.common_words:
-                continue
-
-            group = matches.markers.at_match(match, index=0, predicate=lambda m: m.name == 'group')
-            if group and (
-                    not matches.range(
-                        group.start, group.end, predicate=lambda m: m.name not in ('language', 'subtitle_language')
-                    ) and (not matches.holes(group.start, group.end, predicate=lambda m: m.value.strip(seps)))):
-                continue
-
-            to_remove.append(match)
-
-        return to_remove
+                return matches.conflicting(subtitle_lang, lambda m: m.name == 'format'), subtitle_lang

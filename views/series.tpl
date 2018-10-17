@@ -27,6 +27,7 @@
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 2em 3em 2em 3em;
+				overflow-x:auto;
 			}
 			#tableseries {
 				padding-top: 1em;

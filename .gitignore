@@ -5,3 +5,4 @@ cachefile.dbm
 *.db
 *.pyc
 .idea/*
+bazarr.pid

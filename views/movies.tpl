@@ -28,6 +28,7 @@
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 2em 3em 2em 3em;
+				overflow-x:auto;
 			}
 			#tablemovies {
 				padding-top: 1em;
@@ -52,15 +53,15 @@
 			<div class="ui basic buttons">
 				<button id="movieseditor" class="ui button"><i class="configure icon"></i>Movies Editor</button>
 			</div>
-			<table id="tablemovies" class="ui very basic selectable sortable table">
+			<table id="tablemovies" class="ui very basic selectable table">
 				<thead>
 					<tr>
 						<th></th>
 						<th class="sorted ascending">Name</th>
 						<th>Path</th>
-						<th>Audio language</th>
-						<th>Subtitles languages</th>
-						<th>Hearing-impaired</th>
+						<th>Audio<br>language</th>
+						<th>Subtitles<br>languages</th>
+						<th>Hearing-<br>impaired</th>
 						<th class="no-sort"></th>
 					</tr>
 				</thead>

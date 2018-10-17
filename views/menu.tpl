@@ -117,11 +117,11 @@
 			% c.close()
 
 			% if restart_required[1] == '1' and restart_required[0] == '1':
-				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings.</div></div></div>
+			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% elif restart_required[1] == '1':
-				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update.</div></div></div>
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% elif restart_required[0] == '1':
-				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings.</div></div></div>
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% end
 		</div>
     </body>
@@ -167,4 +167,35 @@
     	$('.menu').css('background', '#272727');
     	$('#divmenu').css('background', '#272727');
     }
+
+    $('#restart_link').click(function(){
+		$('#loader_text').text("Bazarr is restarting, please wait...");
+		$.ajax({
+			url: "{{base_url}}restart",
+			async: true
+		})
+		.done(function(){
+    		setTimeout(function(){ setInterval(ping, 2000); },8000);
+		});
+	})
+
+	% from get_settings import get_general_settings
+	% ip = get_general_settings()[0]
+	% port = get_general_settings()[1]
+	% base_url = get_general_settings()[2]
+
+	if ("{{ip}}" == "0.0.0.0") {
+		public_ip = window.location.hostname;
+	} else {
+		public_ip = "{{ip}}";
+	}
+
+	function ping() {
+		$.ajax({
+			url: 'http://' + public_ip + ':{{port}}{{base_url}}',
+			success: function(result) {
+				window.location.href= 'http://' + public_ip + ':{{port}}{{base_url}}';
+			}
+		});
+	}
 </script>

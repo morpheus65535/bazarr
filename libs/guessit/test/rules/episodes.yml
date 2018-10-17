@@ -156,7 +156,7 @@
 
 ? Show.Name.Season.1.3&5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.3 and 5.HDTV.XviD-GoodGroup[SomeTrash]
-: source: HDTV
+: format: HDTV
   release_group: GoodGroup[SomeTrash]
   season:
   - 1
@@ -164,12 +164,12 @@
   - 5
   title: Show Name
   type: episode
-  video_codec: Xvid
+  video_codec: XviD
 
 ? Show.Name.Season.1.2.3-5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.2.3~5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.2.3 to 5.HDTV.XviD-GoodGroup[SomeTrash]
-: source: HDTV
+: format: HDTV
   release_group: GoodGroup[SomeTrash]
   season:
   - 1
@@ -179,19 +179,18 @@
   - 5
   title: Show Name
   type: episode
-  video_codec: Xvid
+  video_codec: XviD
 
 ? The.Get.Down.S01EP01.FRENCH.720p.WEBRIP.XVID-STR
 : episode: 1
-  source: Web
-  other: Rip
+  format: WEBRip
   language: fr
   release_group: STR
   screen_size: 720p
   season: 1
   title: The Get Down
   type: episode
-  video_codec: Xvid
+  video_codec: XviD
 
 ? My.Name.Is.Earl.S01E01-S01E21.SWE-SUB
 : episode:
@@ -271,9 +270,3 @@
 ? Episode71
 ? Episode 71
 : episode: 71
-
-? S01D02.3-5-GROUP
-: disc: [2, 3, 4, 5]
-
-? S01D02&4-6&8
-: disc: [2, 4, 5, 6, 8]

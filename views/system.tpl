@@ -41,11 +41,15 @@
 	</head>
 	<body>
 		<div id='loader' class="ui page dimmer">
-		   	<div class="ui indeterminate text loader">Loading...</div>
+		   	<div id='loader_text' class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
 			
 		<div id="fondblanc" class="ui container">
+			<div class="ui basic icon buttons" style="float: right;">
+				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
+				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
+			</div>
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
@@ -204,7 +208,50 @@
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	})
 
-	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').click(function(){
 		$('#loader').addClass('active');
 	})
+
+	$('#shutdown').click(function(){
+		$.ajax({
+			url: "{{base_url}}shutdown",
+			async: false
+		})
+		.always(function(){
+			document.open();
+			document.write('Bazarr has shutdown.');
+			document.close();
+		});
+	})
+
+	$('#restart').click(function(){
+		$('#loader_text').text("Bazarr is restarting, please wait...");
+		$.ajax({
+			url: "{{base_url}}restart",
+			async: true
+		})
+		.done(function(){
+    		setTimeout(function(){ setInterval(ping, 2000); },8000);
+		});
+	})
+
+	% from get_settings import get_general_settings
+	% ip = get_general_settings()[0]
+	% port = get_general_settings()[1]
+	% base_url = get_general_settings()[2]
+
+	if ("{{ip}}" == "0.0.0.0") {
+		public_ip = window.location.hostname;
+	} else {
+		public_ip = "{{ip}}";
+	}
+
+	function ping() {
+		$.ajax({
+			url: 'http://' + public_ip + ':{{port}}{{base_url}}',
+			success: function(result) {
+				window.location.href= 'http://' + public_ip + ':{{port}}{{base_url}}';
+			}
+		});
+	}
 </script>

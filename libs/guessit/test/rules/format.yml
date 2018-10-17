@@ -1,0 +1,138 @@
+# Multiple input strings having same expected results can be chained.
+# Use - marker to check inputs that should not match results.
+? +VHS
+? +VHSRip
+? +VHS-Rip
+? +VhS_rip
+? +VHS.RIP
+? -VHSAnythingElse
+? -SomeVHS stuff
+? -VH
+? -VHx
+? -VHxRip
+: format: VHS
+
+? +Cam
+? +CamRip
+? +CaM Rip
+? +Cam_Rip
+? +cam.rip
+: format: Cam
+
+? +Telesync
+? +TS
+? +HD TS
+? -Hd.Ts # ts file extension
+? -HD.TS # ts file extension
+? +Hd-Ts
+: format: Telesync
+
+? +Workprint
+? +workPrint
+? +WorkPrint
+? +WP
+? -Work Print
+: format: Workprint
+
+? +Telecine
+? +teleCine
+? +TC
+? -Tele Cine
+: format: Telecine
+
+? +PPV
+? +ppv-rip
+: format: PPV
+
+? -TV
+? +SDTV
+? +SDTVRIP
+? +Rip sd tv
+? +TvRip
+? +Rip TV
+: format: TV
+
+? +DVB
+? +DVB-Rip
+? +DvBRiP
+? +pdTV
+? +Pd Tv
+: format: DVB
+
+? +DVD
+? +DVD-RIP
+? +video ts
+? +DVDR
+? +DVD 9
+? +dvd 5
+? -dvd ts
+: format: DVD
+  -format: ts
+
+? +HDTV
+? +tv rip hd
+? +HDtv Rip
+? +HdRip
+: format: HDTV
+
+? +VOD
+? +VodRip
+? +vod rip
+: format: VOD
+
+? +webrip
+? +Web Rip
+? +webdlrip
+? +web dl rip
+? +webcap
+? +web cap
+: format: WEBRip
+
+? +webdl
+? +Web DL
+? +webHD
+? +WEB hd
+? +web
+: format: WEB-DL
+
+? +HDDVD
+? +hd dvd
+? +hdDvdRip
+: format: HD-DVD
+
+? +BluRay
+? +BluRay rip
+? +BD
+? +BR
+? +BDRip
+? +BR rip
+? +BD5
+? +BD9
+? +BD25
+? +bd50
+: format: BluRay
+
+? XVID.NTSC.DVDR.nfo
+: format: DVD
+
+? AHDTV
+: format: AHDTV
+
+? dsr
+? dsrip
+? ds rip
+? dsrrip
+? dsr rip
+? satrip
+? sat rip
+? dth
+? dthrip
+? dth rip
+: format: SATRip
+
+? HDTC
+: format: HDTC
+
+? UHDTV
+? UHDRip
+: format: UHDTV
