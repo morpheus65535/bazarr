@@ -34,7 +34,8 @@ class EnlargeGroupMatches(CustomRule):
             for match in matches.ending(group.end - 1):
                 ending.append(match)
 
-        return starting, ending
+        if starting or ending:
+            return starting, ending
 
     def then(self, matches, when_response, context):
         starting, ending = when_response
@@ -225,12 +226,9 @@ class StripSeparators(CustomRule):
                     match.raw_end -= 1
 
 
-def processors(config):  # pylint:disable=unused-argument
+def processors():
     """
     Builder for rebulk object.
-
-    :param config: rule configuration
-    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """

@@ -28,6 +28,7 @@
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 3em;
+				overflow-x:auto;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;

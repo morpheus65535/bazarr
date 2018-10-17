@@ -8,12 +8,9 @@ from rebulk import Rebulk
 from rebulk.utils import find_all
 
 
-def path(config):  # pylint:disable=unused-argument
+def path():
     """
     Builder for rebulk object.
-
-    :param config: rule configuration
-    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
@@ -25,7 +22,6 @@ def path(config):  # pylint:disable=unused-argument
         Functional pattern to mark path elements.
 
         :param input_string:
-        :param context:
         :return:
         """
         ret = []

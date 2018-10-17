@@ -20,12 +20,6 @@ from guessit.jsonutils import GuessitEncoder
 from guessit.options import argument_parser, parse_options, load_config
 
 
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no-cover
-    from ordereddict import OrderedDict  # pylint:disable=import-error
-
-
 def guess_filename(filename, options):
     """
     Guess a single filename using given options
@@ -51,7 +45,7 @@ def guess_filename(filename, options):
         import yaml
         from guessit import yamlutils
 
-        ystr = yaml.dump({filename: OrderedDict(guess)}, Dumper=yamlutils.CustomDumper, default_flow_style=False,
+        ystr = yaml.dump({filename: dict(guess)}, Dumper=yamlutils.CustomDumper, default_flow_style=False,
                          allow_unicode=True)
         i = 0
         for yline in ystr.splitlines():

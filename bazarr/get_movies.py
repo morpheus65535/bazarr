@@ -106,7 +106,8 @@ def update_movies():
 
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
             c = db.cursor()
-            c.executemany('DELETE FROM table_movies WHERE tmdbId = ?', removed_movies)
+            for removed_movie in removed_movies:
+                c.execute('DELETE FROM table_movies WHERE tmdbId = ?', (removed_movie,))
             db.commit()
             db.close()
 

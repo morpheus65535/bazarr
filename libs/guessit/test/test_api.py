@@ -27,14 +27,6 @@ def test_forced_binary():
     assert ret and 'title' in ret and isinstance(ret['title'], six.binary_type)
 
 
-@pytest.mark.skipif('sys.version_info < (3, 4)', reason="Path is not available")
-def test_pathlike_object():
-    from pathlib import Path
-    path = Path('Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
-    ret = guessit(path)
-    assert ret and 'title' in ret
-
-
 def test_unicode_japanese():
     ret = guessit('[阿维达].Avida.2006.FRENCH.DVDRiP.XViD-PROD.avi')
     assert ret and 'title' in ret
