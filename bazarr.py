@@ -16,6 +16,9 @@ except getopt.GetoptError:
     sys.exit(2)
 for opt, arg in opts:
     arguments.append(opt)
+    if arg != '':
+        arguments.append(arg)
+
     if opt == '-h':
         print 'bazarr.py -h --no-update --config <config_directory>'
         sys.exit()
@@ -23,8 +26,6 @@ for opt, arg in opts:
         no_update = True
     elif opt in ("--config"):
         config_dir = arg
-    elif arg != '':
-        arguments.append(arg)
 
 
 dir_name = os.path.dirname(__file__)
