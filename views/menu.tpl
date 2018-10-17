@@ -190,11 +190,13 @@
 		public_ip = "{{ip}}";
 	}
 
+	protocol = window.location.protocol;
+
 	function ping() {
 		$.ajax({
-			url: 'http://' + public_ip + ':{{port}}{{base_url}}',
+			url: protocol + '://' + public_ip + ':{{port}}{{base_url}}',
 			success: function(result) {
-				window.location.href= 'http://' + public_ip + ':{{port}}{{base_url}}';
+				window.location.href= protocol + '://' + public_ip + ':{{port}}{{base_url}}';
 			}
 		});
 	}

@@ -199,7 +199,7 @@ def redirect_root():
 @route(base_url + 'shutdown')
 def shutdown():
     try:
-        stop_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.stop"), "w")
+        stop_file = open(os.path.join(config_dir, "bazarr.stop"), "w")
     except Exception as e:
         logging.error('Cannot create bazarr.stop file.')
     else:
@@ -215,7 +215,7 @@ def restart():
         logging.error('Cannot stop CherryPy.')
     else:
         try:
-            restart_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.restart"), "w")
+            restart_file = open(os.path.join(config_dir, "bazarr.restart"), "w")
         except Exception as e:
             logging.error('Cannot create bazarr.restart file.')
         else:
