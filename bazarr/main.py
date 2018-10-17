@@ -210,13 +210,17 @@ def shutdown():
 @route(base_url + 'restart')
 def restart():
     try:
-        restart_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.restart"), "w")
-    except Exception as e:
-        logging.error('Cannot create bazarr.restart file.')
-    else:
-        restart_file.write('')
-        restart_file.close()
         server.stop()
+    except:
+        logging.error('Cannot stop CherryPy.')
+    else:
+        try:
+            restart_file = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "bazarr.restart"), "w")
+        except Exception as e:
+            logging.error('Cannot create bazarr.restart file.')
+        else:
+            restart_file.write('')
+            restart_file.close()
 
 
 @route(base_url + 'static/:path#.+#', name='static')
