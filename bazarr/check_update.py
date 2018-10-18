@@ -8,7 +8,7 @@ import sqlite3
 
 import git
 
-current_working_directory = os.path.dirname(__file__)
+current_working_directory = os.path.dirname(os.path.dirname(__file__))
 
 def gitconfig():
     g = git.Repo.init(current_working_directory)
