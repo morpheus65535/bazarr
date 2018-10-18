@@ -37,7 +37,7 @@ def get_general_settings():
         if cfg.has_option('general', 'path_mappings'):
             path_mappings = cfg.get('general', 'path_mappings')
         else:
-            path_mappings = []
+            path_mappings = '[]'
 
         if cfg.has_option('general', 'log_level'):
             log_level = cfg.get('general', 'log_level')
@@ -92,7 +92,7 @@ def get_general_settings():
         if cfg.has_option('general', 'path_mappings_movie'):
             path_mappings_movie = cfg.get('general', 'path_mappings_movie')
         else:
-            path_mappings_movie = []
+            path_mappings_movie = '[]'
 
         if cfg.has_option('general', 'serie_default_enabled'):
             serie_default_enabled = cfg.getboolean('general', 'serie_default_enabled')
@@ -151,9 +151,9 @@ def get_general_settings():
 
     else:
         ip = '0.0.0.0'
-        port = '6768'
+        port = '6767'
         base_url = '/'
-        path_mappings = []
+        path_mappings = '[]'
         log_level = 'INFO'
         branch = 'master'
         auto_update = True
@@ -164,7 +164,7 @@ def get_general_settings():
         postprocessing_cmd = ''
         use_sonarr = False
         use_radarr = False
-        path_mappings_movie = []
+        path_mappings_movie = '[]'
         serie_default_enabled = False
         serie_default_language = []
         serie_default_hi = 'False'
@@ -366,7 +366,7 @@ def get_radarr_settings():
             full_update = 'Dayly'
     else:
         ip = '127.0.0.1'
-        port = '8989'
+        port = '7878'
         base_url = '/'
         ssl = False
         apikey = ''

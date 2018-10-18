@@ -88,6 +88,7 @@ import ast
 import hashlib
 import time
 import urllib
+from six import text_type
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
@@ -224,6 +225,229 @@ def restart():
             restart_file.close()
 
 
+@route(base_url + 'wizard')
+@custom_auth_basic(check_credentials)
+def wizard():
+    authorize()
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
+    settings_providers = c.execute("SELECT * FROM table_settings_providers ORDER BY name").fetchall()
+    c.close()
+    
+    settings_general = get_general_settings()
+    settings_sonarr = get_sonarr_settings()
+    settings_radarr = get_radarr_settings()
+    
+    return template('wizard', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general,
+                    settings_languages=settings_languages, settings_providers=settings_providers,
+                    settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, base_url=base_url)
+
+
+@route(base_url + 'save_wizard', method='POST')
+@custom_auth_basic(check_credentials)
+def save_settings():
+    authorize()
+    
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+    
+    settings_general_ip = request.forms.get('settings_general_ip')
+    settings_general_port = request.forms.get('settings_general_port')
+    settings_general_baseurl = request.forms.get('settings_general_baseurl')
+    if settings_general_baseurl.endswith('/') is False:
+        settings_general_baseurl += '/'
+    settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
+    settings_general_destpath = request.forms.getall('settings_general_destpath')
+    settings_general_pathmapping = []
+    settings_general_pathmapping.extend([list(a) for a in zip(settings_general_sourcepath, settings_general_destpath)])
+    settings_general_sourcepath_movie = request.forms.getall('settings_general_sourcepath_movie')
+    settings_general_destpath_movie = request.forms.getall('settings_general_destpath_movie')
+    settings_general_pathmapping_movie = []
+    settings_general_pathmapping_movie.extend(
+        [list(a) for a in zip(settings_general_sourcepath_movie, settings_general_destpath_movie)])
+    settings_general_single_language = request.forms.get('settings_general_single_language')
+    if settings_general_single_language is None:
+        settings_general_single_language = 'False'
+    else:
+        settings_general_single_language = 'True'
+    
+    settings_general_scenename = request.forms.get('settings_general_scenename')
+    if settings_general_scenename is None:
+        settings_general_scenename = 'False'
+    else:
+        settings_general_scenename = 'True'
+    
+    settings_general_embedded = request.forms.get('settings_general_embedded')
+    if settings_general_embedded is None:
+        settings_general_embedded = 'False'
+    else:
+        settings_general_embedded = 'True'
+    
+    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
+    if settings_general_adaptive_searching is None:
+        settings_general_adaptive_searching = 'False'
+    else:
+        settings_general_adaptive_searching = 'True'
+    settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
+    if settings_general_use_sonarr is None:
+        settings_general_use_sonarr = 'False'
+    else:
+        settings_general_use_sonarr = 'True'
+    settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
+    if settings_general_use_radarr is None:
+        settings_general_use_radarr = 'False'
+    else:
+        settings_general_use_radarr = 'True'
+    
+    cfg = ConfigParser()
+    
+    if not cfg.has_section('general'):
+        cfg.add_section('general')
+    
+    cfg.set('general', 'ip', text_type(settings_general_ip))
+    cfg.set('general', 'port', text_type(settings_general_port))
+    cfg.set('general', 'base_url', text_type(settings_general_baseurl))
+    cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
+    cfg.set('general', 'log_level', 'INFO')
+    cfg.set('general', 'branch', 'master')
+    cfg.set('general', 'auto_update', 'True')
+    cfg.set('general', 'single_language', text_type(settings_general_single_language))
+    cfg.set('general', 'minimum_score', '90')
+    cfg.set('general', 'use_scenename', text_type(settings_general_scenename))
+    cfg.set('general', 'use_postprocessing', 'False')
+    cfg.set('general', 'postprocessing_cmd', '')
+    cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
+    cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
+    cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
+    cfg.set('general', 'page_size', '25')
+    cfg.set('general', 'minimum_score_movie', '70')
+    cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
+    cfg.set('general', 'only_monitored', 'False')
+    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+    
+    if not cfg.has_section('proxy'):
+        cfg.add_section('proxy')
+    
+    cfg.set('proxy', 'type', "None")
+    cfg.set('proxy', 'url', "")
+    cfg.set('proxy', 'port', "")
+    cfg.set('proxy', 'username', "")
+    cfg.set('proxy', 'password', "")
+    cfg.set('proxy', 'exclude', "localhost,127.0.0.1")
+    
+    if not cfg.has_section('auth'):
+        cfg.add_section('auth')
+    
+    cfg.set('auth', 'type', "None")
+    cfg.set('auth', 'username', "")
+    cfg.set('auth', 'password', "")
+    
+    settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
+    settings_sonarr_port = request.forms.get('settings_sonarr_port')
+    settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
+    settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
+    if settings_sonarr_ssl is None:
+        settings_sonarr_ssl = 'False'
+    else:
+        settings_sonarr_ssl = 'True'
+    settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    
+    if not cfg.has_section('sonarr'):
+        cfg.add_section('sonarr')
+    
+    cfg.set('sonarr', 'ip', text_type(settings_sonarr_ip))
+    cfg.set('sonarr', 'port', text_type(settings_sonarr_port))
+    cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
+    cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
+    cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
+    cfg.set('sonarr', 'full_update', 'Daily')
+    
+    settings_radarr_ip = request.forms.get('settings_radarr_ip')
+    settings_radarr_port = request.forms.get('settings_radarr_port')
+    settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
+    settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
+    if settings_radarr_ssl is None:
+        settings_radarr_ssl = 'False'
+    else:
+        settings_radarr_ssl = 'True'
+    settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    print(settings_radarr_apikey)
+    if settings_radarr_apikey != '':
+        cfg.set('general', 'use_radarr', 'True')
+    else:
+        cfg.set('general', 'use_radarr', 'False')
+    
+    if not cfg.has_section('radarr'):
+        cfg.add_section('radarr')
+    
+    cfg.set('radarr', 'ip', text_type(settings_radarr_ip))
+    cfg.set('radarr', 'port', text_type(settings_radarr_port))
+    cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
+    cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
+    cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
+    cfg.set('radarr', 'full_update', 'Daily')
+    
+    settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
+    c.execute("UPDATE table_settings_providers SET enabled = 0")
+    for item in settings_subliminal_providers:
+        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+    
+    settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
+    c.execute("UPDATE table_settings_languages SET enabled = 0")
+    for item in settings_subliminal_languages:
+        c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
+    
+    settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
+    if settings_serie_default_enabled is None:
+        settings_serie_default_enabled = 'False'
+    else:
+        settings_serie_default_enabled = 'True'
+    cfg.set('general', 'serie_default_enabled', text_type(settings_serie_default_enabled))
+    
+    settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
+    if settings_serie_default_languages == "['None']":
+        settings_serie_default_languages = 'None'
+    cfg.set('general', 'serie_default_language', text_type(settings_serie_default_languages))
+    
+    settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
+    if settings_serie_default_hi is None:
+        settings_serie_default_hi = 'False'
+    else:
+        settings_serie_default_hi = 'True'
+    cfg.set('general', 'serie_default_hi', text_type(settings_serie_default_hi))
+    
+    settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
+    if settings_movie_default_enabled is None:
+        settings_movie_default_enabled = 'False'
+    else:
+        settings_movie_default_enabled = 'True'
+    cfg.set('general', 'movie_default_enabled', text_type(settings_movie_default_enabled))
+    
+    settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
+    if settings_movie_default_languages == "['None']":
+        settings_movie_default_languages = 'None'
+    cfg.set('general', 'movie_default_language', text_type(settings_movie_default_languages))
+    
+    settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
+    if settings_movie_default_hi is None:
+        settings_movie_default_hi = 'False'
+    else:
+        settings_movie_default_hi = 'True'
+    cfg.set('general', 'movie_default_hi', text_type(settings_movie_default_hi))
+    
+    with open(config_file, 'w+') as f:
+        cfg.write(f)
+    
+    logging.info('Config file created successfully')
+    
+    conn.commit()
+    c.close()
+    
+    configured()
+    redirect(base_url)
+
+
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
@@ -292,6 +516,8 @@ def redirect_root():
         redirect(base_url + 'series')
     elif get_general_settings()[13] is True:
         redirect(base_url + 'movies')
+    elif os.path.exists(os.path.join(config_dir, 'config/config.ini')) is False:
+        redirect(base_url + 'wizard')
     else:
         redirect(base_url + 'settings')
 
