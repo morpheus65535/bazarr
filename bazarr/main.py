@@ -87,6 +87,7 @@ import math
 import ast
 import hashlib
 import time
+import urllib
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
@@ -1689,6 +1690,7 @@ def api_history():
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
+    url = urllib.unquote(url)
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False).json()['version']
     except:
