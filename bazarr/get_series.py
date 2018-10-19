@@ -27,13 +27,13 @@ def update_series():
             r = requests.get(url_sonarr_api_series, timeout=15, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
-            logging.exception("Error trying to get series from Sonarr. Http error.")
+            logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
         except requests.exceptions.ConnectionError as errc:
-            logging.exception("Error trying to get series from Sonarr. Connection Error.")
+            logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
         except requests.exceptions.Timeout as errt:
-            logging.exception("Error trying to get series from Sonarr. Timeout Error.")
+            logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
         except requests.exceptions.RequestException as err:
-            logging.exception("Error trying to get series from Sonarr.")
+            logging.exception("BAZARR Error trying to get series from Sonarr.")
         else:
             # Open database connection
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -119,26 +119,26 @@ def get_profile_list():
         profiles_json = requests.get(url_sonarr_api_series, timeout=15, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr. Connection Error.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr. Timeout Error.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
 
     url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
     try:
         profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=15, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr. Connection Error.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr. Timeout Error.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
         error = True
-        logging.exception("Error trying to get profiles from Sonarr.")
+        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
 
     global profiles_list
     profiles_list = []

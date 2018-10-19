@@ -28,13 +28,13 @@ def update_movies():
             r = requests.get(url_radarr_api_movies, timeout=15, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
-            logging.exception("Error trying to get movies from Radarr. Http error.")
+            logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
         except requests.exceptions.ConnectionError as errc:
-            logging.exception("Error trying to get movies from Radarr. Connection Error.")
+            logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
         except requests.exceptions.Timeout as errt:
-            logging.exception("Error trying to get movies from Radarr. Timeout Error.")
+            logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
         except requests.exceptions.RequestException as err:
-            logging.exception("Error trying to get movies from Radarr.")
+            logging.exception("BAZARR Error trying to get movies from Radarr.")
         else:
             # Get current movies in DB
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -137,11 +137,11 @@ def get_profile_list():
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=15, verify=False)
     except requests.exceptions.ConnectionError as errc:
-        logging.exception("Error trying to get profiles from Radarr. Connection Error.")
+        logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
-        logging.exception("Error trying to get profiles from Radarr. Timeout Error.")
+        logging.exception("BAZARR Error trying to get profiles from Radarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
-        logging.exception("Error trying to get profiles from Radarr.")
+        logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
         for profile in profiles_json.json():

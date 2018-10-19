@@ -202,7 +202,7 @@ def shutdown():
     try:
         stop_file = open(os.path.join(config_dir, "bazarr.stop"), "w")
     except Exception as e:
-        logging.error('Cannot create bazarr.stop file.')
+        logging.error('BAZARR Cannot create bazarr.stop file.')
     else:
         stop_file.write('')
         stop_file.close()
@@ -213,12 +213,12 @@ def restart():
     try:
         server.stop()
     except:
-        logging.error('Cannot stop CherryPy.')
+        logging.error('BAZARR Cannot stop CherryPy.')
     else:
         try:
             restart_file = open(os.path.join(config_dir, "bazarr.restart"), "w")
         except Exception as e:
-            logging.error('Cannot create bazarr.restart file.')
+            logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
             restart_file.write('')
             restart_file.close()
@@ -236,7 +236,7 @@ def emptylog():
     ref = request.environ['HTTP_REFERER']
 
     fh.doRollover()
-    logging.info('Log file emptied')
+    logging.info('BAZARR Log file emptied')
 
     redirect(ref)
 
@@ -1298,7 +1298,7 @@ def save_settings():
     sonarr_full_update()
     radarr_full_update()
 
-    logging.info('Settings saved succesfully.')
+    logging.info('BAZARR Settings saved succesfully.')
 
     # reschedule full update task according to settings
     sonarr_full_update()
@@ -1425,13 +1425,13 @@ def system():
         r = requests.get(url_releases, timeout=15)
         r.raise_for_status()
     except requests.exceptions.HTTPError as errh:
-        logging.exception("Error trying to get releases from Github. Http error.")
+        logging.exception("BAZARR Error trying to get releases from Github. Http error.")
     except requests.exceptions.ConnectionError as errc:
-        logging.exception("Error trying to get releases from Github. Connection Error.")
+        logging.exception("BAZARR Error trying to get releases from Github. Connection Error.")
     except requests.exceptions.Timeout as errt:
-        logging.exception("Error trying to get releases from Github. Timeout Error.")
+        logging.exception("BAZARR Error trying to get releases from Github. Timeout Error.")
     except requests.exceptions.RequestException as err:
-        logging.exception("Error trying to get releases from Github.")
+        logging.exception("BAZARR Error trying to get releases from Github.")
     else:
         for release in r.json():
             releases.append([release['name'],release['body']])
@@ -1704,7 +1704,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 
 server = CherryPyWSGIServer((str(ip), int(port)), app)
 try:
-    logging.info('Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+    logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
     print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.start()
 except KeyboardInterrupt:

@@ -12,7 +12,7 @@ if os.path.exists(config_dir) is False:
         os.mkdir(os.path.join(config_dir))
         logging.debug("BAZARR Created data directory")
     except OSError:
-        logging.exception("The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
+        logging.exception("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
 if os.path.exists(os.path.join(config_dir, 'config')) is False:
@@ -119,7 +119,7 @@ try:
         cfg.write(configfile)
 
 
-    logging.info('Config file succesfully migrated from database')
+    logging.info('BAZARR Config file succesfully migrated from database')
 
 except sqlite3.OperationalError:
     if os.path.exists(config_file) is False:
@@ -206,7 +206,7 @@ except sqlite3.OperationalError:
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
 
-        logging.info('Config file created successfully')
+        logging.info('BAZARR Config file created successfully')
 try:
     # Get SQL script from file
     fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
@@ -225,7 +225,7 @@ try:
     # Close database connection
     db.close()
 
-    logging.info('Database created successfully')
+    logging.info('BAZARR Database created successfully')
 except:
     pass
 

@@ -34,13 +34,13 @@ def check_and_apply_update():
     g.fetch('origin')
     result = g.diff('--shortstat', 'origin/' + branch)
     if len(result) == 0:
-        logging.info('No new version of Bazarr available.')
+        logging.info('BAZARR No new version of Bazarr available.')
     else:
         g.reset('--hard', 'HEAD')
         g.checkout(branch)
         g.reset('--hard','origin/' + branch)
         g.pull()
-        logging.info('Bazarr updated to latest version and need to be restarted. ' + result)
+        logging.info('BAZARR Updated to latest version. Restart required. ' + result)
         updated()
 
 def updated():

@@ -10,15 +10,15 @@ from list_subtitles import list_missing_subtitles, store_subtitles, series_full_
     
 def update_all_episodes():
     series_full_scan_subtitles()
-    logging.info('All existing episode subtitles indexed from disk.')
+    logging.info('BAZARR All existing episode subtitles indexed from disk.')
     list_missing_subtitles()
-    logging.info('All missing episode subtitles updated in database.')
+    logging.info('BAZARR All missing episode subtitles updated in database.')
 
 def update_all_movies():
     movies_full_scan_subtitles()
-    logging.info('All existing movie subtitles indexed from disk.')
+    logging.info('BAZARR All existing movie subtitles indexed from disk.')
     list_missing_subtitles()
-    logging.info('All missing movie subtitles updated in database.')
+    logging.info('BAZARR All missing movie subtitles updated in database.')
 
 def sync_episodes():
     logging.debug('BAZARR Starting episode sync from Sonarr.')
@@ -51,13 +51,13 @@ def sync_episodes():
             r = requests.get(url_sonarr_api_episode, timeout=15, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
-            logging.exception("Error trying to get episodes from Sonarr. Http error.")
+            logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
         except requests.exceptions.ConnectionError as errc:
-            logging.exception("Error trying to get episodes from Sonarr. Connection Error.")
+            logging.exception("BAZARR Error trying to get episodes from Sonarr. Connection Error.")
         except requests.exceptions.Timeout as errt:
-            logging.exception("Error trying to get episodes from Sonarr. Timeout Error.")
+            logging.exception("BAZARR Error trying to get episodes from Sonarr. Timeout Error.")
         except requests.exceptions.RequestException as err:
-            logging.exception("Error trying to get episodes from Sonarr.")
+            logging.exception("BAZARR Error trying to get episodes from Sonarr.")
         else:
             for episode in r.json():
                 if 'hasFile' in episode:
