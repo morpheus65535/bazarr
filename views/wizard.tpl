@@ -341,7 +341,7 @@
                                 <label>Use scene name when available</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_scenename" class="ui toggle checkbox">
+                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[9]}}>
                                     <input name="settings_general_scenename" type="checkbox">
                                     <label></label>
                                 </div>
@@ -360,7 +360,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox">
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[23]}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
@@ -410,7 +410,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox">
+                                <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings_general[7]}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>

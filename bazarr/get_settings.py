@@ -67,7 +67,7 @@ def get_general_settings():
         if cfg.has_option('general', 'use_scenename'):
             use_scenename = cfg.getboolean('general', 'use_scenename')
         else:
-            use_scenename = False
+            use_scenename = True
 
         if cfg.has_option('general', 'use_postprocessing'):
             use_postprocessing = cfg.getboolean('general', 'use_postprocessing')
@@ -137,7 +137,7 @@ def get_general_settings():
         if cfg.has_option('general', 'use_embedded_subs'):
             use_embedded_subs = cfg.getboolean('general', 'use_embedded_subs')
         else:
-            use_embedded_subs = False
+            use_embedded_subs = True
 
         if cfg.has_option('general', 'only_monitored'):
             only_monitored = cfg.getboolean('general', 'only_monitored')
@@ -159,7 +159,7 @@ def get_general_settings():
         auto_update = True
         single_language = False
         minimum_score = '90'
-        use_scenename = False
+        use_scenename = True
         use_postprocessing = False
         postprocessing_cmd = ''
         use_sonarr = False
@@ -173,7 +173,7 @@ def get_general_settings():
         movie_default_hi = 'False'
         page_size = '25'
         minimum_score_movie = '70'
-        use_embedded_subs = False
+        use_embedded_subs = True
         only_monitored = False
         adaptive_searching = False
 

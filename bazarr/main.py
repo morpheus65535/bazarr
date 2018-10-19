@@ -274,15 +274,15 @@ def save_settings():
     
     settings_general_scenename = request.forms.get('settings_general_scenename')
     if settings_general_scenename is None:
-        settings_general_scenename = 'False'
-    else:
         settings_general_scenename = 'True'
+    else:
+        settings_general_scenename = 'False'
     
     settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
-        settings_general_embedded = 'False'
-    else:
         settings_general_embedded = 'True'
+    else:
+        settings_general_embedded = 'False'
     
     settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
     if settings_general_adaptive_searching is None:
@@ -1087,14 +1087,14 @@ def save_settings():
         settings_general_single_language = 'True'
     settings_general_scenename = request.forms.get('settings_general_scenename')
     if settings_general_scenename is None:
-        settings_general_scenename = 'False'
-    else:
         settings_general_scenename = 'True'
+    else:
+        settings_general_scenename = 'False'
     settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
-        settings_general_embedded = 'False'
-    else:
         settings_general_embedded = 'True'
+    else:
+        settings_general_embedded = 'False'
     settings_general_only_monitored = request.forms.get('settings_general_only_monitored')
     if settings_general_only_monitored is None:
         settings_general_only_monitored = 'False'
