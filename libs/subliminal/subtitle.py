@@ -6,6 +6,8 @@ import os
 import chardet
 import pysrt
 
+import types
+
 from .score import get_equivalent_release_groups
 from .video import Episode, Movie
 from .utils import sanitize, sanitize_release_group
@@ -230,19 +232,39 @@ def guess_matches(video, guess, partial=False):
         if video.title and 'title' in guess and sanitize(guess['title']) == sanitize(video.title):
             matches.add('title')
     # release_group
-    if (video.release_group and 'release_group' in guess and
-            sanitize_release_group(guess['release_group']) in
-            get_equivalent_release_groups(sanitize_release_group(video.release_group))):
-        matches.add('release_group')
+    if 'release_group' in guess:
+        release_groups = guess["release_group"]
+        if not isinstance(release_groups, types.ListType):
+            release_groups = [release_groups]
+
+        if video.release_group:
+            for release_group in release_groups:
+                if (sanitize_release_group(release_group) in
+                        get_equivalent_release_groups(sanitize_release_group(video.release_group))):
+                    matches.add('release_group')
+                    break
     # resolution
     if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
         matches.add('resolution')
     # format
-    # Guessit may return a list for `format`, which indicates a conflict in the guessing.
-    # We should match `format` only when it returns single value to avoid false `format` matches
-    if video.format and guess.get('format') and not isinstance(guess['format'], list) \
-            and guess['format'].lower() == video.format.lower():
-        matches.add('format')
+    if 'format' in guess:
+        formats = guess["format"]
+        if not isinstance(formats, types.ListType):
+            formats = [formats]
+
+        if video.format:
+            video_format = video.format
+            if video_format in ("HDTV", "SDTV", "TV"):
+                video_format = "TV"
+                logger.debug("Treating HDTV/SDTV the same")
+
+            for frmt in formats:
+                if frmt in ("HDTV", "SDTV"):
+                    frmt = "TV"
+
+                if frmt.lower() == video_format.lower():
+                    matches.add('format')
+                    break
     # video_codec
     if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
         matches.add('video_codec')

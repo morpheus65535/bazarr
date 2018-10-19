@@ -5,6 +5,9 @@ import os
 import sys
 import getopt
 
+config_dir = os.path.join(os.path.dirname(__file__), 'data/')
+no_update = False
+
 arguments = []
 try:
     opts, args = getopt.getopt(sys.argv[1:],"h:",["no-update", "config="])
@@ -15,6 +18,14 @@ for opt, arg in opts:
     arguments.append(opt)
     if arg != '':
         arguments.append(arg)
+
+    if opt == '-h':
+        print 'bazarr.py -h --no-update --config <config_directory>'
+        sys.exit()
+    elif opt in ("--no-update"):
+        no_update = True
+    elif opt in ("--config"):
+        config_dir = arg
 
 
 dir_name = os.path.dirname(__file__)
@@ -32,8 +43,8 @@ def start_bazarr():
 
 
 if __name__ == '__main__':
-    restartfile = os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr.restart'))
-    stopfile = os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr.stop'))
+    restartfile = os.path.normcase(os.path.join(config_dir, 'bazarr.restart'))
+    stopfile = os.path.normcase(os.path.join(config_dir, 'bazarr.stop'))
 
     try:
         os.remove(restartfile)
