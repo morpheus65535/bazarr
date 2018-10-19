@@ -928,7 +928,7 @@ $(document).ready(function() {
             $(".radarr_hide").show();
         },
         onUnchecked: function() {
-            $(".sonarr_hide").hide();
+            $(".radarr_hide").hide();
         }
     });
 
@@ -960,18 +960,6 @@ $(document).ready(function() {
                 $("#settings_embedded").checkbox('check');
             } else {
                 $("#settings_embedded").checkbox('uncheck');
-            }
-
-    if ($('#settings_only_monitored').data("monitored") == "True") {
-                $("#settings_only_monitored").checkbox('check');
-            } else {
-                $("#settings_only_monitored").checkbox('uncheck');
-            }
-
-    if ($('#settings_adaptive_searching').data("adaptive") == "True") {
-                $("#settings_adaptive_searching").checkbox('check');
-            } else {
-                $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
@@ -1091,10 +1079,6 @@ $(document).ready(function() {
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
-    $('#settings_sonarr_sync').dropdown('clear');
-    $('#settings_sonarr_sync').dropdown('set selected','{{!settings_sonarr[5]}}');
-    $('#settings_radarr_sync').dropdown('clear');
-    $('#settings_radarr_sync').dropdown('set selected','{{!settings_radarr[5]}}');
 
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
@@ -1106,8 +1090,6 @@ $(document).ready(function() {
     %if settings_general[19] is not None:
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
-    $('#settings_sonarr_sync').dropdown();
-    $('#settings_radarr_sync').dropdown();
 </script>
 
 <script>
@@ -1237,6 +1219,8 @@ $(document).ready(function() {
             onFailure: function(){
                 $('#form_validation_error').show();
                 $('#submit').addClass('disabled');
+                $('.prev2').addClass('disabled');
+                $('.prev3').addClass('disabled');
                 $('.next2').addClass('disabled');
                 $('.next3').addClass('disabled');
 
@@ -1246,6 +1230,8 @@ $(document).ready(function() {
             onSuccess: function(){
                 $('#form_validation_error').hide();
                 $('#submit').removeClass('disabled');
+                $('.prev2').removeClass('disabled');
+                $('.prev3').removeClass('disabled');
                 $('.next2').removeClass('disabled');
                 $('.next3').removeClass('disabled');
                 $('#loader').addClass('active');
