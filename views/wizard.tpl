@@ -834,8 +834,7 @@
 </html>
 
 <script>
-
-    $(document).ready(function() {
+$(document).ready(function() {
 
   $('.next1').click(function(e) {
 
@@ -849,9 +848,9 @@
 
   });
 
-  $('.prev1').click(function(e) {
+  $('.prev1').click(function(m) {
 
-    e.preventDefault();
+    m.preventDefault();
 
     $('#general').addClass('active');
     $('#subliminal').removeClass('active');
@@ -917,9 +916,6 @@
     $('#settings_use_sonarr').checkbox({
         onChecked: function() {
             $(".sonarr_hide").show();
-            $('#sonarr_validated').checkbox('uncheck');
-            $('.form').form('validate form');
-            $('#loader').removeClass('active');
         },
         onUnchecked: function() {
             $(".sonarr_hide").hide();
@@ -930,9 +926,6 @@
     $('#settings_use_radarr').checkbox({
         onChecked: function() {
             $(".radarr_hide").show();
-            $('#radarr_validated').checkbox('uncheck');
-            $('.form').form('validate form');
-            $('#loader').removeClass('active');
         },
         onUnchecked: function() {
             $(".sonarr_hide").hide();
