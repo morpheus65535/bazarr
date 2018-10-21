@@ -332,49 +332,6 @@
                     Prev
                 </button>
                     </div>
-
-                <div class="ui dividing header">Subtitles options</div>
-                <div class="twelve wide column">
-                    <div class="ui grid">
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Use scene name when available</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[9]}}>
-                                    <input name="settings_general_scenename" type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use the scene name from Sonarr/Radarr if available to circumvent usage of episode file renaming." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Use embedded subtitles</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[23]}}>
-                                    <input name="settings_general_embedded" type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use embedded subtitles in media files when determining missing ones." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui orange message">
@@ -948,18 +905,6 @@ $(document).ready(function() {
                 $("#settings_single_language").checkbox('check');
             } else {
                 $("#settings_single_language").checkbox('uncheck');
-            }
-
-    if ($('#settings_scenename').data("scenename") == "True") {
-                $("#settings_scenename").checkbox('check');
-            } else {
-                $("#settings_scenename").checkbox('uncheck');
-            }
-
-    if ($('#settings_embedded').data("embedded") == "True") {
-                $("#settings_embedded").checkbox('check');
-            } else {
-                $("#settings_embedded").checkbox('uncheck');
             }
 
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){

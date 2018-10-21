@@ -271,19 +271,6 @@ def save_settings():
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
-    
-    settings_general_scenename = request.forms.get('settings_general_scenename')
-    if settings_general_scenename is None:
-        settings_general_scenename = 'True'
-    else:
-        settings_general_scenename = 'False'
-    
-    settings_general_embedded = request.forms.get('settings_general_embedded')
-    if settings_general_embedded is None:
-        settings_general_embedded = 'True'
-    else:
-        settings_general_embedded = 'False'
-    
     settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
     if settings_general_adaptive_searching is None:
         settings_general_adaptive_searching = 'False'
@@ -301,6 +288,10 @@ def save_settings():
         settings_general_use_radarr = 'True'
     
     cfg = ConfigParser()
+
+    settings_general = get_general_settings()
+    settings_sonarr = get_sonarr_settings()
+    settings_radarr = get_radarr_settings()
     
     if not cfg.has_section('general'):
         cfg.add_section('general')
@@ -309,39 +300,39 @@ def save_settings():
     cfg.set('general', 'port', text_type(settings_general_port))
     cfg.set('general', 'base_url', text_type(settings_general_baseurl))
     cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', 'INFO')
-    cfg.set('general', 'branch', 'master')
-    cfg.set('general', 'auto_update', 'True')
+    cfg.set('general', 'log_level', text_type(get_general_settings()[4]))
+    cfg.set('general', 'branch', text_type(get_general_settings()[5]))
+    cfg.set('general', 'auto_update', text_type(get_general_settings()[6]))
     cfg.set('general', 'single_language', text_type(settings_general_single_language))
-    cfg.set('general', 'minimum_score', '90')
-    cfg.set('general', 'use_scenename', text_type(settings_general_scenename))
-    cfg.set('general', 'use_postprocessing', 'False')
-    cfg.set('general', 'postprocessing_cmd', '')
+    cfg.set('general', 'minimum_score', text_type(get_general_settings()[8]))
+    cfg.set('general', 'use_scenename', text_type(text_type(get_general_settings()[9])))
+    cfg.set('general', 'use_postprocessing', text_type(get_general_settings()[10]))
+    cfg.set('general', 'postprocessing_cmd', text_type(get_general_settings()[11]))
     cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
     cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
     cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
-    cfg.set('general', 'page_size', '25')
-    cfg.set('general', 'minimum_score_movie', '70')
-    cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
-    cfg.set('general', 'only_monitored', 'False')
+    cfg.set('general', 'page_size', text_type(get_general_settings()[21]))
+    cfg.set('general', 'minimum_score_movie', text_type(get_general_settings()[22]))
+    cfg.set('general', 'use_embedded_subs', text_type(get_general_settings()[23]))
+    cfg.set('general', 'only_monitored', text_type(get_general_settings()[24]))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
     
     if not cfg.has_section('proxy'):
         cfg.add_section('proxy')
     
-    cfg.set('proxy', 'type', "None")
-    cfg.set('proxy', 'url', "")
-    cfg.set('proxy', 'port', "")
-    cfg.set('proxy', 'username', "")
-    cfg.set('proxy', 'password', "")
-    cfg.set('proxy', 'exclude', "localhost,127.0.0.1")
+    cfg.set('proxy', 'type', text_type(get_proxy_settings()[0]))
+    cfg.set('proxy', 'url', text_type(get_proxy_settings()[1]))
+    cfg.set('proxy', 'port', text_type(get_proxy_settings()[2]))
+    cfg.set('proxy', 'username', text_type(get_proxy_settings()[3]))
+    cfg.set('proxy', 'password', text_type(get_proxy_settings()[4]))
+    cfg.set('proxy', 'exclude', text_type(get_proxy_settings()[5]))
     
     if not cfg.has_section('auth'):
         cfg.add_section('auth')
     
-    cfg.set('auth', 'type', "None")
-    cfg.set('auth', 'username', "")
-    cfg.set('auth', 'password', "")
+    cfg.set('auth', 'type', text_type(get_auth_settings()[0]))
+    cfg.set('auth', 'username', text_type(get_auth_settings()[1]))
+    cfg.set('auth', 'password', text_type(get_auth_settings()[2]))
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -361,7 +352,7 @@ def save_settings():
     cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
     cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
     cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
-    cfg.set('sonarr', 'full_update', 'Daily')
+    cfg.set('sonarr', 'full_update', text_type(get_sonarr_settings()[5]))
     
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -372,7 +363,6 @@ def save_settings():
     else:
         settings_radarr_ssl = 'True'
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
-    print(settings_radarr_apikey)
     if settings_radarr_apikey != '':
         cfg.set('general', 'use_radarr', 'True')
     else:
@@ -386,7 +376,7 @@ def save_settings():
     cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
     cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
     cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
-    cfg.set('radarr', 'full_update', 'Daily')
+    cfg.set('radarr', 'full_update', text_type(get_radarr_settings()[5]))
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")
@@ -1087,14 +1077,14 @@ def save_settings():
         settings_general_single_language = 'True'
     settings_general_scenename = request.forms.get('settings_general_scenename')
     if settings_general_scenename is None:
-        settings_general_scenename = 'True'
-    else:
         settings_general_scenename = 'False'
+    else:
+        settings_general_scenename = 'True'
     settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
-        settings_general_embedded = 'True'
-    else:
         settings_general_embedded = 'False'
+    else:
+        settings_general_embedded = 'True'
     settings_general_only_monitored = request.forms.get('settings_general_only_monitored')
     if settings_general_only_monitored is None:
         settings_general_only_monitored = 'False'
