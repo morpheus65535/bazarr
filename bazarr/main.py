@@ -288,10 +288,6 @@ def save_settings():
         settings_general_use_radarr = 'True'
     
     cfg = ConfigParser()
-
-    settings_general = get_general_settings()
-    settings_sonarr = get_sonarr_settings()
-    settings_radarr = get_radarr_settings()
     
     if not cfg.has_section('general'):
         cfg.add_section('general')
