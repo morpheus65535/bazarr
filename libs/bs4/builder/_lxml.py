@@ -5,13 +5,9 @@ __all__ = [
     'LXMLTreeBuilder',
     ]
 
-try:
-    from collections.abc import Callable # Python 3.6
-except ImportError , e:
-    from collections import Callable
-
 from io import BytesIO
 from StringIO import StringIO
+import collections
 from lxml import etree
 from bs4.element import (
     Comment,
@@ -62,7 +58,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         # Use the default parser.
         parser = self.default_parser(encoding)
 
-        if isinstance(parser, Callable):
+        if isinstance(parser, collections.Callable):
             # Instantiate the parser with default arguments
             parser = parser(target=self, strip_cdata=False, encoding=encoding)
         return parser
@@ -151,11 +147,11 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         attrs = dict(attrs)
         nsprefix = None
         # Invert each namespace map as it comes in.
-        if len(nsmap) == 0 and len(self.nsmaps) > 1:
-                # There are no new namespaces for this tag, but
-                # non-default namespaces are in play, so we need a
-                # separate tag stack to know when they end.
-                self.nsmaps.append(None)
+        if len(self.nsmaps) > 1:
+            # There are no new namespaces for this tag, but
+            # non-default namespaces are in play, so we need a
+            # separate tag stack to know when they end.
+            self.nsmaps.append(None)
         elif len(nsmap) > 0:
             # A new namespace mapping has come into play.
             inverted_nsmap = dict((value, key) for key, value in nsmap.items())

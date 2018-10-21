@@ -93,7 +93,7 @@ class TreeBuilder(object):
     preserve_whitespace_tags = set()
     empty_element_tags = None # A tag will be considered an empty-element
                               # tag when and only when it has no contents.
-    
+
     # A value for these tag/attribute combinations is a space- or
     # comma-separated list of CDATA, rather than a single CDATA.
     cdata_list_attributes = {}
@@ -125,7 +125,7 @@ class TreeBuilder(object):
         if self.empty_element_tags is None:
             return True
         return tag_name in self.empty_element_tags
-        
+
     def feed(self, markup):
         raise NotImplementedError()
 
@@ -235,17 +235,11 @@ class HTMLTreeBuilder(TreeBuilder):
     empty_element_tags = set([
         # These are from HTML5.
         'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'menuitem', 'meta', 'param', 'source', 'track', 'wbr',
-        
-        # These are from earlier versions of HTML and are removed in HTML5.
-        'basefont', 'bgsound', 'command', 'frame', 'image', 'isindex', 'nextid', 'spacer'
+
+        # These are from HTML4, removed in HTML5.
+        'spacer', 'frame'
     ])
 
-    # The HTML standard defines these as block-level elements. Beautiful
-    # Soup does not treat these elements differently from other elements,
-    # but it may do so eventually, and this information is available if
-    # you need to use it.
-    block_elements = set(["address", "article", "aside", "blockquote", "canvas", "dd", "div", "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li", "main", "nav", "noscript", "ol", "output", "p", "pre", "section", "table", "tfoot", "ul", "video"])
-    
     # The HTML standard defines these attributes as containing a
     # space-separated list of values, not a single value. That is,
     # class="foo bar" means that the 'class' attribute has two values,

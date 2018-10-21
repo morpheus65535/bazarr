@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+
+import platform
+is_windows_special_path = False
+
+if platform.system() == "Windows":
+    try:
+        __file__.decode("ascii")
+    except UnicodeDecodeError:
+        is_windows_special_path = True
+
+if not is_windows_special_path:
+    from concurrent.futures import ThreadPoolExecutor
+else:
+    ThreadPoolExecutor = object
+
+
 from datetime import datetime
 import io
 import itertools
@@ -388,7 +403,7 @@ def search_external_subtitles(path, directory=None):
     subtitles = {}
     for p in os.listdir(directory or dirpath):
         # keep only valid subtitle filenames
-        if not p.startswith(fileroot) or not p.lower().endswith(SUBTITLE_EXTENSIONS):
+        if not p.startswith(fileroot) or not p.endswith(SUBTITLE_EXTENSIONS):
             continue
 
         # extract the potential language code
@@ -420,7 +435,7 @@ def scan_video(path):
         raise ValueError('Path does not exist')
 
     # check video extension
-    if not path.lower().endswith(VIDEO_EXTENSIONS):
+    if not path.endswith(VIDEO_EXTENSIONS):
         raise ValueError('%r is not a valid video extension' % os.path.splitext(path)[1])
 
     dirpath, filename = os.path.split(path)
@@ -468,7 +483,7 @@ def scan_archive(path):
         rar = RarFile(path)
 
         # filter on video extensions
-        rar_filenames = [f for f in rar.namelist() if f.lower().endswith(VIDEO_EXTENSIONS)]
+        rar_filenames = [f for f in rar.namelist() if f.endswith(VIDEO_EXTENSIONS)]
 
         # no video found
         if not rar_filenames:
@@ -521,25 +536,16 @@ def scan_videos(path, age=None, archives=True):
             if dirname.startswith('.'):
                 logger.debug('Skipping hidden dirname %r in %r', dirname, dirpath)
                 dirnames.remove(dirname)
-            # Skip Sample folder
-            if dirname.lower() == 'sample':
-                logger.debug('Skipping sample dirname %r in %r', dirname, dirpath)
-                dirnames.remove(dirname)
 
         # scan for videos
         for filename in filenames:
             # filter on videos and archives
-            if not (filename.lower().endswith(VIDEO_EXTENSIONS) or
-                    archives and filename.lower().endswith(ARCHIVE_EXTENSIONS)):
+            if not (filename.endswith(VIDEO_EXTENSIONS) or archives and filename.endswith(ARCHIVE_EXTENSIONS)):
                 continue
 
             # skip hidden files
             if filename.startswith('.'):
                 logger.debug('Skipping hidden filename %r in %r', filename, dirpath)
-                continue
-            # skip 'sample' media files
-            if os.path.splitext(filename)[0].lower() == 'sample':
-                logger.debug('Skipping sample filename %r in %r', filename, dirpath)
                 continue
 
             # reconstruct the file path
@@ -562,13 +568,13 @@ def scan_videos(path, age=None, archives=True):
                     continue
 
             # scan
-            if filename.lower().endswith(VIDEO_EXTENSIONS):  # video
+            if filename.endswith(VIDEO_EXTENSIONS):  # video
                 try:
                     video = scan_video(filepath)
                 except ValueError:  # pragma: no cover
                     logger.exception('Error scanning video')
                     continue
-            elif archives and filename.lower().endswith(ARCHIVE_EXTENSIONS):  # archive
+            elif archives and filename.endswith(ARCHIVE_EXTENSIONS):  # archive
                 try:
                     video = scan_archive(filepath)
                 except (NotRarFile, RarCannotExec, ValueError):  # pragma: no cover

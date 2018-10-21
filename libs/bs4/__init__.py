@@ -21,15 +21,14 @@ http://www.crummy.com/software/BeautifulSoup/bs4/doc/
 # found in the LICENSE file.
 
 __author__ = "Leonard Richardson (leonardr@segfault.org)"
-__version__ = "4.6.3"
-__copyright__ = "Copyright (c) 2004-2018 Leonard Richardson"
+__version__ = "4.6.0"
+__copyright__ = "Copyright (c) 2004-2017 Leonard Richardson"
 __license__ = "MIT"
 
 __all__ = ['BeautifulSoup']
 
 import os
 import re
-import sys
 import traceback
 import warnings
 
@@ -83,46 +82,14 @@ class BeautifulSoup(Tag):
 
     ASCII_SPACES = '\x20\x0a\x09\x0c\x0d'
 
-    NO_PARSER_SPECIFIED_WARNING = "No parser was explicitly specified, so I'm using the best available %(markup_type)s parser for this system (\"%(parser)s\"). This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, it may use a different parser and behave differently.\n\nThe code that caused this warning is on line %(line_number)s of the file %(filename)s. To get rid of this warning, pass the additional argument 'features=\"%(parser)s\"' to the BeautifulSoup constructor.\n"
+    NO_PARSER_SPECIFIED_WARNING = "No parser was explicitly specified, so I'm using the best available %(markup_type)s parser for this system (\"%(parser)s\"). This usually isn't a problem, but if you run this code on another system, or in a different virtual environment, it may use a different parser and behave differently.\n\nThe code that caused this warning is on line %(line_number)s of the file %(filename)s. To get rid of this warning, change code that looks like this:\n\n BeautifulSoup(YOUR_MARKUP})\n\nto this:\n\n BeautifulSoup(YOUR_MARKUP, \"%(parser)s\")\n"
 
     def __init__(self, markup="", features=None, builder=None,
                  parse_only=None, from_encoding=None, exclude_encodings=None,
                  **kwargs):
-        """Constructor.
-
-        :param markup: A string or a file-like object representing
-        markup to be parsed.
-
-        :param features: Desirable features of the parser to be used. This
-        may be the name of a specific parser ("lxml", "lxml-xml",
-        "html.parser", or "html5lib") or it may be the type of markup
-        to be used ("html", "html5", "xml"). It's recommended that you
-        name a specific parser, so that Beautiful Soup gives you the
-        same results across platforms and virtual environments.
-
-        :param builder: A specific TreeBuilder to use instead of looking one
-        up based on `features`. You shouldn't need to use this.
-
-        :param parse_only: A SoupStrainer. Only parts of the document
-        matching the SoupStrainer will be considered. This is useful
-        when parsing part of a document that would otherwise be too
-        large to fit into memory.
-
-        :param from_encoding: A string indicating the encoding of the
-        document to be parsed. Pass this in if Beautiful Soup is
-        guessing wrongly about the document's encoding.
-
-        :param exclude_encodings: A list of strings indicating
-        encodings known to be wrong. Pass this in if you don't know
-        the document's encoding but you know Beautiful Soup's guess is
-        wrong.
-
-        :param kwargs: For backwards compatibility purposes, the
-        constructor accepts certain keyword arguments used in
-        Beautiful Soup 3. None of these arguments do anything in
-        Beautiful Soup 4 and there's no need to actually pass keyword
-        arguments into the constructor.
-        """
+        """The Soup object is initialized as the 'root tag', and the
+        provided markup (which can be a string or a file-like object)
+        is fed into the underlying parser."""
 
         if 'convertEntities' in kwargs:
             warnings.warn(
@@ -204,35 +171,14 @@ class BeautifulSoup(Tag):
                 else:
                     markup_type = "HTML"
 
-                # This code adapted from warnings.py so that we get the same line
-                # of code as our warnings.warn() call gets, even if the answer is wrong
-                # (as it may be in a multithreading situation).
-                caller = None
-                try:
-                    caller = sys._getframe(1)
-                except ValueError:
-                    pass
-                if caller:
-                    globals = caller.f_globals
-                    line_number = caller.f_lineno
-                else:
-                    globals = sys.__dict__
-                    line_number= 1                    
-                filename = globals.get('__file__')
-                if filename:
-                    fnl = filename.lower()
-                    if fnl.endswith((".pyc", ".pyo")):
-                        filename = filename[:-1]
-                if filename:
-                    # If there is no filename at all, the user is most likely in a REPL,
-                    # and the warning is not necessary.
-                    values = dict(
-                        filename=filename,
-                        line_number=line_number,
-                        parser=builder.NAME,
-                        markup_type=markup_type
-                    )
-                    warnings.warn(self.NO_PARSER_SPECIFIED_WARNING % values, stacklevel=2)
+                caller = traceback.extract_stack()[0]
+                filename = caller[0]
+                line_number = caller[1]
+                warnings.warn(self.NO_PARSER_SPECIFIED_WARNING % dict(
+                    filename=filename,
+                    line_number=line_number,
+                    parser=builder.NAME,
+                    markup_type=markup_type))
 
         self.builder = builder
         self.is_xml = builder.is_xml
@@ -356,10 +302,9 @@ class BeautifulSoup(Tag):
         self.preserve_whitespace_tag_stack = []
         self.pushTag(self)
 
-    def new_tag(self, name, namespace=None, nsprefix=None, attrs={}, **kwattrs):
+    def new_tag(self, name, namespace=None, nsprefix=None, **attrs):
         """Create a new tag associated with this soup."""
-        kwattrs.update(attrs)
-        return Tag(None, self.builder, name, namespace, nsprefix, kwattrs)
+        return Tag(None, self.builder, name, namespace, nsprefix, attrs)
 
     def new_string(self, s, subclass=NavigableString):
         """Create a new NavigableString associated with this soup."""

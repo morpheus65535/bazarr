@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 import logging
 import re
-
+import _strptime
 import requests
 
 from .. import __short_version__

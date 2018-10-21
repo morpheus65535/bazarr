@@ -605,7 +605,7 @@ class SiblingTest(TreeTest):
                     </html>'''
         # All that whitespace looks good but makes the tests more
         # difficult. Get rid of it.
-        markup = re.compile(r"\n\s*").sub("", markup)
+        markup = re.compile("\n\s*").sub("", markup)
         self.tree = self.soup(markup)
 
 
@@ -703,12 +703,12 @@ class TestTagCreation(SoupTest):
     """Test the ability to create new tags."""
     def test_new_tag(self):
         soup = self.soup("")
-        new_tag = soup.new_tag("foo", bar="baz", attrs={"name": "a name"})
+        new_tag = soup.new_tag("foo", bar="baz")
         self.assertTrue(isinstance(new_tag, Tag))
         self.assertEqual("foo", new_tag.name)
-        self.assertEqual(dict(bar="baz", name="a name"), new_tag.attrs)
+        self.assertEqual(dict(bar="baz"), new_tag.attrs)
         self.assertEqual(None, new_tag.parent)
-        
+
     def test_tag_inherits_self_closing_rules_from_builder(self):
         if XML_BUILDER_PRESENT:
             xml_soup = BeautifulSoup("", "lxml-xml")
@@ -821,26 +821,6 @@ class TestTreeModification(SoupTest):
         soup = self.soup(text)
         self.assertRaises(ValueError, soup.a.insert, 0, soup.a)
 
-    def test_insert_beautifulsoup_object_inserts_children(self):
-        """Inserting one BeautifulSoup object into another actually inserts all
-        of its children -- you'll never combine BeautifulSoup objects.
-        """
-        soup = self.soup("<p>And now, a word:</p><p>And we're back.</p>")
-        
-        text = "<p>p2</p><p>p3</p>"
-        to_insert = self.soup(text)
-        soup.insert(1, to_insert)
-
-        for i in soup.descendants:
-            assert not isinstance(i, BeautifulSoup)
-        
-        p1, p2, p3, p4 = list(soup.children)
-        self.assertEquals("And now, a word:", p1.string)
-        self.assertEquals("p2", p2.string)
-        self.assertEquals("p3", p3.string)
-        self.assertEquals("And we're back.", p4.string)
-        
-        
     def test_replace_with_maintains_next_element_throughout(self):
         soup = self.soup('<p><a>one</a><b>three</b></p>')
         a = soup.a
@@ -1206,7 +1186,7 @@ class TestElementObjects(SoupTest):
             tag = soup.bTag
         self.assertEqual(soup.b, tag)
         self.assertEqual(
-            '.bTag is deprecated, use .find("b") instead. If you really were looking for a tag called bTag, use .find("bTag")',
+            '.bTag is deprecated, use .find("b") instead.',
             str(w[0].message))
 
     def test_has_attr(self):
@@ -1439,21 +1419,13 @@ class TestSubstitutions(SoupTest):
                 u"<b>&lt;&lt;Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!&gt;&gt;</b>"))
 
     def test_formatter_html(self):
-        markup = u"<br><b>&lt;&lt;Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!&gt;&gt;</b>"
+        markup = u"<b>&lt;&lt;Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!&gt;&gt;</b>"
         soup = self.soup(markup)
         decoded = soup.decode(formatter="html")
         self.assertEqual(
             decoded,
-            self.document_for("<br/><b>&lt;&lt;Sacr&eacute; bleu!&gt;&gt;</b>"))
+            self.document_for("<b>&lt;&lt;Sacr&eacute; bleu!&gt;&gt;</b>"))
 
-    def test_formatter_html5(self):
-        markup = u"<br><b>&lt;&lt;Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!&gt;&gt;</b>"
-        soup = self.soup(markup)
-        decoded = soup.decode(formatter="html5")
-        self.assertEqual(
-            decoded,
-            self.document_for("<br><b>&lt;&lt;Sacr&eacute; bleu!&gt;&gt;</b>"))
-        
     def test_formatter_minimal(self):
         markup = u"<b>&lt;&lt;Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!&gt;&gt;</b>"
         soup = self.soup(markup)
@@ -1474,14 +1446,14 @@ class TestSubstitutions(SoupTest):
                           self.document_for(u"<b><<Sacr\N{LATIN SMALL LETTER E WITH ACUTE} bleu!>></b>"))
 
     def test_formatter_custom(self):
-        markup = u"<b>&lt;foo&gt;</b><b>bar</b><br/>"
+        markup = u"<b>&lt;foo&gt;</b><b>bar</b>"
         soup = self.soup(markup)
         decoded = soup.decode(formatter = lambda x: x.upper())
         # Instead of normal entity conversion code, the custom
         # callable is called on every string.
         self.assertEqual(
             decoded,
-            self.document_for(u"<b><FOO></b><b>BAR</b><br>"))
+            self.document_for(u"<b><FOO></b><b>BAR</b>"))
 
     def test_formatter_is_run_on_attribute_values(self):
         markup = u'<a href="http://a.com?a=b&c=é">e</a>'
@@ -1526,7 +1498,7 @@ class TestSubstitutions(SoupTest):
             u'<div>\n foo\n <pre>  \tbar\n  \n  </pre>\n baz\n</div>',
             soup.div.prettify())
 
-    def test_prettify_accepts_formatter_function(self):
+    def test_prettify_accepts_formatter(self):
         soup = BeautifulSoup("<html><body>foo</body></html>", 'html.parser')
         pretty = soup.prettify(formatter = lambda x: x.upper())
         self.assertTrue("FOO" in pretty)
@@ -2074,17 +2046,5 @@ class TestSoupSelector(TreeTest):
     def test_multiple_select_nested(self):
         self.assertSelects('body > div > x, y > z', ['xid', 'zidb'])
 
-    def test_select_duplicate_elements(self):
-        # When markup contains duplicate elements, a multiple select
-        # will find all of them.
-        markup = '<div class="c1"/><div class="c2"/><div class="c1"/>'
-        soup = BeautifulSoup(markup, 'html.parser')
-        selected = soup.select(".c1, .c2")
-        self.assertEquals(3, len(selected))
 
-        # Verify that find_all finds the same elements, though because
-        # of an implementation detail it finds them in a different
-        # order.
-        for element in soup.find_all(class_=['c1', 'c2']):
-            assert element in selected
 

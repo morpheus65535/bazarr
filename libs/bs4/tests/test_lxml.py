@@ -46,12 +46,6 @@ class LXMLTreeBuilderSmokeTest(SoupTest, HTMLTreeBuilderSmokeTest):
         self.assertSoupEquals(
             "<p>foo&#1000000000;bar</p>", "<p>foobar</p>")
 
-    def test_entities_in_foreign_document_encoding(self):
-        # We can't implement this case correctly because by the time we
-        # hear about markup like "&#147;", it's been (incorrectly) converted into
-        # a string like u'\x93'
-        pass
-        
     # In lxml < 2.3.5, an empty doctype causes a segfault. Skip this
     # test if an old version of lxml is installed.
 

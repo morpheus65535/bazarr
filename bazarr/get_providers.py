@@ -3,6 +3,7 @@ from get_argv import config_dir
 import sqlite3
 import os
 from subliminal import provider_manager
+from subliminal_patch import provider_manager
 import collections
 
 def load_providers():

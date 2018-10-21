@@ -37,7 +37,7 @@ def diagnose(data):
                 name)
 
     if 'lxml' in basic_parsers:
-        basic_parsers.append("lxml-xml")
+        basic_parsers.append(["lxml", "xml"])
         try:
             from lxml import etree
             print "Found lxml version %s" % ".".join(map(str,etree.LXML_VERSION))
@@ -56,27 +56,21 @@ def diagnose(data):
 
     if hasattr(data, 'read'):
         data = data.read()
+    elif os.path.exists(data):
+        print '"%s" looks like a filename. Reading data from the file.' % data
+        with open(data) as fp:
+            data = fp.read()
     elif data.startswith("http:") or data.startswith("https:"):
         print '"%s" looks like a URL. Beautiful Soup is not an HTTP client.' % data
         print "You need to use some other library to get the document behind the URL, and feed that document to Beautiful Soup."
         return
-    else:
-        try:
-            if os.path.exists(data):
-                print '"%s" looks like a filename. Reading data from the file.' % data
-                with open(data) as fp:
-                    data = fp.read()
-        except ValueError:
-            # This can happen on some platforms when the 'filename' is
-            # too long. Assume it's data and not a filename.
-            pass
-        print
+    print
 
     for parser in basic_parsers:
         print "Trying to parse your markup with %s" % parser
         success = False
         try:
-            soup = BeautifulSoup(data, features=parser)
+            soup = BeautifulSoup(data, parser)
             success = True
         except Exception, e:
             print "%s could not parse the markup." % parser

@@ -1,4 +1,3 @@
-# encoding: utf-8
 """Helper classes for tests."""
 
 # Use of this source code is governed by a BSD-style license that can be
@@ -151,14 +150,6 @@ class HTMLTreeBuilderSmokeTest(object):
             soup.encode("utf-8").replace(b"\n", b""),
             markup.replace(b"\n", b""))
 
-    def test_namespaced_html(self):
-        """When a namespaced XML document is parsed as HTML it should
-        be treated as HTML with weird tag names.
-        """
-        markup = b"""<ns1:foo>content</ns1:foo><ns1:foo/><ns2:foo/>"""
-        soup = self.soup(markup)
-        self.assertEqual(2, len(soup.find_all("ns1:foo")))
-        
     def test_processing_instruction(self):
         # We test both Unicode and bytestring to verify that
         # process_markup correctly sets processing_instruction_class
@@ -320,26 +311,6 @@ Hello, world!
     def test_angle_brackets_in_attribute_values_are_escaped(self):
         self.assertSoupEquals('<a b="<a>"></a>', '<a b="&lt;a&gt;"></a>')
 
-    def test_strings_resembling_character_entity_references(self):
-        # "&T" and "&p" look like incomplete character entities, but they are
-        # not.
-        self.assertSoupEquals(
-            u"<p>&bull; AT&T is in the s&p 500</p>",
-            u"<p>\u2022 AT&amp;T is in the s&amp;p 500</p>"
-        )
-
-    def test_entities_in_foreign_document_encoding(self):
-        # &#147; and &#148; are invalid numeric entities referencing
-        # Windows-1252 characters. &#45; references a character common
-        # to Windows-1252 and Unicode, and &#9731; references a
-        # character only found in Unicode.
-        #
-        # All of these entities should be converted to Unicode
-        # characters.
-        markup = "<p>&#147;Hello&#148; &#45;&#9731;</p>"
-        soup = self.soup(markup)
-        self.assertEquals(u"“Hello” -☃", soup.p.string)
-        
     def test_entities_in_attributes_converted_to_unicode(self):
         expect = u'<p id="pi\N{LATIN SMALL LETTER N WITH TILDE}ata"></p>'
         self.assertSoupEquals('<p id="pi&#241;ata"></p>', expect)
@@ -363,7 +334,7 @@ Hello, world!
         self.assertSoupEquals("&#10000000000000;", expect)
         self.assertSoupEquals("&#x10000000000000;", expect)
         self.assertSoupEquals("&#1000000000;", expect)
-        
+
     def test_multipart_strings(self):
         "Mostly to prevent a recurrence of a bug in the html5lib treebuilder."
         soup = self.soup("<html><h2>\nfoo</h2><p></p></html>")
@@ -653,17 +624,6 @@ class XMLTreeBuilderSmokeTest(object):
         self.assertEqual(
             soup.encode("utf-8"), markup)
 
-    def test_nested_namespaces(self):
-        doc = b"""<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<parent xmlns="http://ns1/">
-<child xmlns="http://ns2/" xmlns:ns3="http://ns3/">
-<grandchild ns3:attr="value" xmlns="http://ns4/"/>
-</child>
-</parent>"""
-        soup = self.soup(doc)
-        self.assertEqual(doc, soup.encode())
-        
     def test_formatter_processes_script_tag_for_xml_documents(self):
         doc = """
   <script type="text/javascript">

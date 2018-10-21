@@ -2,10 +2,7 @@
 # found in the LICENSE file.
 __license__ = "MIT"
 
-try:
-    from collections.abc import Callable # Python 3.6
-except ImportError , e:
-    from collections import Callable
+import collections
 import re
 import shlex
 import sys
@@ -15,7 +12,7 @@ from bs4.dammit import EntitySubstitution
 DEFAULT_OUTPUT_ENCODING = "utf-8"
 PY3K = (sys.version_info[0] > 2)
 
-whitespace_re = re.compile(r"\s+")
+whitespace_re = re.compile("\s+")
 
 def _alias(attr):
     """Alias one attribute name to another for backward compatibility"""
@@ -72,7 +69,7 @@ class ContentMetaAttributeValue(AttributeValueWithCharsetSubstitution):
     The value of the 'content' attribute will be one of these objects.
     """
 
-    CHARSET_RE = re.compile(r"((^|;)\s*charset=)([^;]*)", re.M)
+    CHARSET_RE = re.compile("((^|;)\s*charset=)([^;]*)", re.M)
 
     def __new__(cls, original_value):
         match = cls.CHARSET_RE.search(original_value)
@@ -126,41 +123,6 @@ class HTMLAwareEntitySubstitution(EntitySubstitution):
         return cls._substitute_if_appropriate(
             ns, EntitySubstitution.substitute_xml)
 
-class Formatter(object):
-    """Contains information about how to format a parse tree."""
-    
-    # By default, represent void elements as <tag/> rather than <tag>
-    void_element_close_prefix = '/'
-
-    def substitute_entities(self, *args, **kwargs):
-        """Transform certain characters into named entities."""
-        raise NotImplementedError()
-
-class HTMLFormatter(Formatter):
-    """The default HTML formatter."""
-    def substitute(self, *args, **kwargs):
-        return HTMLAwareEntitySubstitution.substitute_html(*args, **kwargs)
-
-class MinimalHTMLFormatter(Formatter):
-    """A minimal HTML formatter."""
-    def substitute(self, *args, **kwargs):
-        return HTMLAwareEntitySubstitution.substitute_xml(*args, **kwargs)
-    
-class HTML5Formatter(HTMLFormatter):
-    """An HTML formatter that omits the slash in a void tag."""
-    void_element_close_prefix = None
-
-class XMLFormatter(Formatter):
-    """Substitute only the essential XML entities."""
-    def substitute(self, *args, **kwargs):
-        return EntitySubstitution.substitute_xml(*args, **kwargs)
-
-class HTMLXMLFormatter(Formatter):
-    """Format XML using HTML rules."""
-    def substitute(self, *args, **kwargs):
-        return HTMLAwareEntitySubstitution.substitute_html(*args, **kwargs)
-
-    
 class PageElement(object):
     """Contains the navigational information for some part of the page
     (either a tag or a piece of text)"""
@@ -169,49 +131,40 @@ class PageElement(object):
     # to methods like encode() and prettify():
     #
     # "html" - All Unicode characters with corresponding HTML entities
-    #   are converted to those entities on output.
-    # "html5" - The same as "html", but empty void tags are represented as
-    #   <tag> rather than <tag/>
-    # "minimal" - Bare ampersands and angle brackets are converted to
+    #   are converted to those entities on output. 
+   # "minimal" - Bare ampersands and angle brackets are converted to
     #   XML entities: &amp; &lt; &gt;
     # None - The null formatter. Unicode characters are never
     #   converted to entities.  This is not recommended, but it's
     #   faster than "minimal".
-    # A callable function - it will be called on every string that needs to undergo entity substitution.
-    # A Formatter instance - Formatter.substitute(string) will be called on every string that
+    # A function - This function will be called on every string that
     #  needs to undergo entity substitution.
     #
 
-    # In an HTML document, the default "html", "html5", and "minimal"
-    # functions will leave the contents of <script> and <style> tags
-    # alone. For an XML document, all tags will be given the same
-    # treatment.
+    # In an HTML document, the default "html" and "minimal" functions
+    # will leave the contents of <script> and <style> tags alone. For
+    # an XML document, all tags will be given the same treatment.
 
     HTML_FORMATTERS = {
-        "html" : HTMLFormatter(),
-        "html5" : HTML5Formatter(),
-        "minimal" : MinimalHTMLFormatter(),
+        "html" : HTMLAwareEntitySubstitution.substitute_html,
+        "minimal" : HTMLAwareEntitySubstitution.substitute_xml,
         None : None
         }
 
     XML_FORMATTERS = {
-        "html" : HTMLXMLFormatter(),
-        "minimal" : XMLFormatter(),
+        "html" : EntitySubstitution.substitute_html,
+        "minimal" : EntitySubstitution.substitute_xml,
         None : None
         }
 
     def format_string(self, s, formatter='minimal'):
         """Format the given string using the given formatter."""
-        if isinstance(formatter, basestring):
+        if not callable(formatter):
             formatter = self._formatter_for_name(formatter)
         if formatter is None:
             output = s
         else:
-            if callable(formatter):
-                # Backwards compatibility -- you used to pass in a formatting method.
-                output = formatter(s)
-            else:
-                output = formatter.substitute(s)
+            output = formatter(s)
         return output
 
     @property
@@ -241,9 +194,11 @@ class PageElement(object):
     def _formatter_for_name(self, name):
         "Look up a formatter function based on its name and the tree."
         if self._is_xml:
-            return self.XML_FORMATTERS.get(name, XMLFormatter())
+            return self.XML_FORMATTERS.get(
+                name, EntitySubstitution.substitute_xml)
         else:
-            return self.HTML_FORMATTERS.get(name, HTMLFormatter())
+            return self.HTML_FORMATTERS.get(
+                name, HTMLAwareEntitySubstitution.substitute_xml)
 
     def setup(self, parent=None, previous_element=None, next_element=None,
               previous_sibling=None, next_sibling=None):
@@ -361,14 +316,6 @@ class PageElement(object):
             and not isinstance(new_child, NavigableString)):
             new_child = NavigableString(new_child)
 
-        from bs4 import BeautifulSoup
-        if isinstance(new_child, BeautifulSoup):
-            # We don't want to end up with a situation where one BeautifulSoup
-            # object contains another. Insert the children one at a time.
-            for subchild in list(new_child.contents):
-                self.insert(position, subchild)
-                position += 1
-            return
         position = min(position, len(self.contents))
         if hasattr(new_child, 'parent') and new_child.parent is not None:
             # We're 'inserting' an element that's already one
@@ -589,21 +536,14 @@ class PageElement(object):
             elif isinstance(name, basestring):
                 # Optimization to find all tags with a given name.
                 if name.count(':') == 1:
-                    # This is a name with a prefix. If this is a namespace-aware document,
-                    # we need to match the local name against tag.name. If not,
-                    # we need to match the fully-qualified name against tag.name.
-                    prefix, local_name = name.split(':', 1)
+                    # This is a name with a prefix.
+                    prefix, name = name.split(':', 1)
                 else:
                     prefix = None
-                    local_name = name
                 result = (element for element in generator
                           if isinstance(element, Tag)
-                          and (
-                              element.name == name
-                          ) or (
-                              element.name == local_name
-                              and (prefix is None or element.prefix == prefix)
-                          )
+                            and element.name == name
+                          and (prefix is None or element.prefix == prefix)
                 )
                 return ResultSet(strainer, result)
         results = ResultSet(strainer)
@@ -922,7 +862,7 @@ class Tag(PageElement):
             self.can_be_empty_element = builder.can_be_empty_element(name)
         else:
             self.can_be_empty_element = False
-            
+
     parserClass = _alias("parser_class")  # BS3
 
     def __copy__(self):
@@ -1106,10 +1046,8 @@ class Tag(PageElement):
             # BS3: soup.aTag -> "soup.find("a")
             tag_name = tag[:-3]
             warnings.warn(
-                '.%(name)sTag is deprecated, use .find("%(name)s") instead. If you really were looking for a tag called %(name)sTag, use .find("%(name)sTag")' % dict(
-                    name=tag_name
-                )
-            )
+                '.%sTag is deprecated, use .find("%s") instead.' % (
+                    tag_name, tag_name))
             return self.find(tag_name)
         # We special case contents to avoid recursion.
         elif not tag.startswith("__") and not tag == "contents":
@@ -1191,10 +1129,11 @@ class Tag(PageElement):
            encoding.
         """
 
-        # First off, turn a string formatter into a Formatter object. This
+        # First off, turn a string formatter into a function. This
         # will stop the lookup from happening over and over again.
-        if not isinstance(formatter, Formatter) and not callable(formatter):
+        if not callable(formatter):
             formatter = self._formatter_for_name(formatter)
+
         attrs = []
         if self.attrs:
             for key, val in sorted(self.attrs.items()):
@@ -1223,9 +1162,7 @@ class Tag(PageElement):
             prefix = self.prefix + ":"
 
         if self.is_empty_element:
-            close = ''
-            if isinstance(formatter, Formatter):
-                close = formatter.void_element_close_prefix or close
+            close = '/'
         else:
             closeTag = '</%s%s>' % (prefix, self.name)
 
@@ -1296,9 +1233,9 @@ class Tag(PageElement):
         :param formatter: The output formatter responsible for converting
            entities to Unicode characters.
         """
-        # First off, turn a string formatter into a Formatter object. This
+        # First off, turn a string formatter into a function. This
         # will stop the lookup from happening over and over again.
-        if not isinstance(formatter, Formatter) and not callable(formatter):
+        if not callable(formatter):
             formatter = self._formatter_for_name(formatter)
 
         pretty_print = (indent_level is not None)
@@ -1411,29 +1348,15 @@ class Tag(PageElement):
         # Handle grouping selectors if ',' exists, ie: p,a
         if ',' in selector:
             context = []
-            selectors = [x.strip() for x in selector.split(",")]
-
-            # If a selector is mentioned multiple times we don't want
-            # to use it more than once.
-            used_selectors = set()
-
-            # We also don't want to select the same element more than once,
-            # if it's matched by multiple selectors.
-            selected_object_ids = set()
-            for partial_selector in selectors:
+            for partial_selector in selector.split(','):
+                partial_selector = partial_selector.strip()
                 if partial_selector == '':
                     raise ValueError('Invalid group selection syntax: %s' % selector)
-                if partial_selector in used_selectors:
-                    continue
-                used_selectors.add(partial_selector)
                 candidates = self.select(partial_selector, limit=limit)
                 for candidate in candidates:
-                    # This lets us distinguish between distinct tags that
-                    # represent the same markup.
-                    object_id = id(candidate)
-                    if object_id not in selected_object_ids:
+                    if candidate not in context:
                         context.append(candidate)
-                        selected_object_ids.add(object_id)
+
                 if limit and len(context) >= limit:
                     break
             return context
@@ -1495,7 +1418,7 @@ class Tag(PageElement):
                 if tag_name == '':
                     raise ValueError(
                         "A pseudo-class must be prefixed with a tag name.")
-                pseudo_attributes = re.match(r'([a-zA-Z\d-]+)\(([a-zA-Z\d]+)\)', pseudo)
+                pseudo_attributes = re.match('([a-zA-Z\d-]+)\(([a-zA-Z\d]+)\)', pseudo)
                 found = []
                 if pseudo_attributes is None:
                     pseudo_type = pseudo
@@ -1729,7 +1652,7 @@ class SoupStrainer(object):
             markup = markup_name
             markup_attrs = markup
         call_function_with_tag_data = (
-            isinstance(self.name, Callable)
+            isinstance(self.name, collections.Callable)
             and not isinstance(markup_name, Tag))
 
         if ((not self.name)
@@ -1809,7 +1732,7 @@ class SoupStrainer(object):
             # True matches any non-None value.
             return markup is not None
 
-        if isinstance(match_against, Callable):
+        if isinstance(match_against, collections.Callable):
             return match_against(markup)
 
         # Custom callables take the tag as an argument, but all

@@ -179,7 +179,7 @@ class Addic7edProvider(Provider):
 
         # make the search
         logger.info('Searching show ids with %r', params)
-        r = self.session.get(self.server_url + 'srch.php', params=params, timeout=10)
+        r = self.session.get(self.server_url + 'search.php', params=params, timeout=10)
         r.raise_for_status()
         soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
 
