@@ -6,3 +6,4 @@ cachefile.dbm
 *.pyc
 .idea/*
 bazarr.pid
+/venv
