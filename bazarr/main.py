@@ -49,7 +49,7 @@ def configure_logging():
     fh.setFormatter(f)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.DEBUG)
+    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
