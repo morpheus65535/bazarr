@@ -17,6 +17,8 @@ import signal
 import sqlite3
 from init import *
 from update_db import *
+from notifier import update_notifier
+update_notifier()
 
 
 from get_settings import get_general_settings, get_proxy_settings
@@ -248,7 +250,7 @@ def wizard():
 
 @route(base_url + 'save_wizard', method='POST')
 @custom_auth_basic(check_credentials)
-def save_settings():
+def save_wizard():
     authorize()
     
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -1323,197 +1325,16 @@ def save_settings():
     with open(config_file, 'wb') as f:
         cfg.write(f)
 
-    settings_notifier_Boxcar_enabled = request.forms.get('settings_notifier_Boxcar_enabled')
-    if settings_notifier_Boxcar_enabled == 'on':
-        settings_notifier_Boxcar_enabled = 1
-    else:
-        settings_notifier_Boxcar_enabled = 0
-    settings_notifier_Boxcar_url = request.forms.get('settings_notifier_Boxcar_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Boxcar'", (settings_notifier_Boxcar_enabled, settings_notifier_Boxcar_url))
-
-    settings_notifier_Faast_enabled = request.forms.get('settings_notifier_Faast_enabled')
-    if settings_notifier_Faast_enabled == 'on':
-        settings_notifier_Faast_enabled = 1
-    else:
-        settings_notifier_Faast_enabled = 0
-    settings_notifier_Faast_url = request.forms.get('settings_notifier_Faast_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Faast'", (settings_notifier_Faast_enabled, settings_notifier_Faast_url))
-
-    settings_notifier_Growl_enabled = request.forms.get('settings_notifier_Growl_enabled')
-    if settings_notifier_Growl_enabled == 'on':
-        settings_notifier_Growl_enabled = 1
-    else:
-        settings_notifier_Growl_enabled = 0
-    settings_notifier_Growl_url = request.forms.get('settings_notifier_Growl_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Growl'", (settings_notifier_Growl_enabled, settings_notifier_Growl_url))
-
-    settings_notifier_Join_enabled = request.forms.get('settings_notifier_Join_enabled')
-    if settings_notifier_Join_enabled == 'on':
-        settings_notifier_Join_enabled = 1
-    else:
-        settings_notifier_Join_enabled = 0
-    settings_notifier_Join_url = request.forms.get('settings_notifier_Join_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Join'", (settings_notifier_Join_enabled, settings_notifier_Join_url))
-
-    settings_notifier_KODI_enabled = request.forms.get('settings_notifier_KODI_enabled')
-    if settings_notifier_KODI_enabled == 'on':
-        settings_notifier_KODI_enabled = 1
-    else:
-        settings_notifier_KODI_enabled = 0
-    settings_notifier_KODI_url = request.forms.get('settings_notifier_KODI_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'KODI'", (settings_notifier_KODI_enabled, settings_notifier_KODI_url))
-
-    settings_notifier_Mattermost_enabled = request.forms.get('settings_notifier_Mattermost_enabled')
-    if settings_notifier_Mattermost_enabled == 'on':
-        settings_notifier_Mattermost_enabled = 1
-    else:
-        settings_notifier_Mattermost_enabled = 0
-    settings_notifier_Mattermost_url = request.forms.get('settings_notifier_Mattermost_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Mattermost'", (settings_notifier_Mattermost_enabled, settings_notifier_Mattermost_url))
-
-    settings_notifier_NMA_enabled = request.forms.get('settings_notifier_Notify My Android_enabled')
-    if settings_notifier_NMA_enabled == 'on':
-        settings_notifier_NMA_enabled = 1
-    else:
-        settings_notifier_NMA_enabled = 0
-    settings_notifier_NMA_url = request.forms.get('settings_notifier_Notify My Android_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Notify My Android'", (settings_notifier_NMA_enabled, settings_notifier_NMA_url))
-
-    settings_notifier_Prowl_enabled = request.forms.get('settings_notifier_Prowl_enabled')
-    if settings_notifier_Prowl_enabled == 'on':
-        settings_notifier_Prowl_enabled = 1
-    else:
-        settings_notifier_Prowl_enabled = 0
-    settings_notifier_Prowl_url = request.forms.get('settings_notifier_Prowl_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Prowl'", (settings_notifier_Prowl_enabled, settings_notifier_Prowl_url))
-
-    settings_notifier_Pushalot_enabled = request.forms.get('settings_notifier_Pushalot_enabled')
-    if settings_notifier_Pushalot_enabled == 'on':
-        settings_notifier_Pushalot_enabled = 1
-    else:
-        settings_notifier_Pushalot_enabled = 0
-    settings_notifier_Pushalot_url = request.forms.get('settings_notifier_Pushalot_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushalot'", (settings_notifier_Pushalot_enabled, settings_notifier_Pushalot_url))
-
-    settings_notifier_PushBullet_enabled = request.forms.get('settings_notifier_PushBullet_enabled')
-    if settings_notifier_PushBullet_enabled == 'on':
-        settings_notifier_PushBullet_enabled = 1
-    else:
-        settings_notifier_PushBullet_enabled = 0
-    settings_notifier_PushBullet_url = request.forms.get('settings_notifier_PushBullet_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'PushBullet'", (settings_notifier_PushBullet_enabled, settings_notifier_PushBullet_url))
-
-    settings_notifier_Pushjet_enabled = request.forms.get('settings_notifier_Pushjet_enabled')
-    if settings_notifier_Pushjet_enabled == 'on':
-        settings_notifier_Pushjet_enabled = 1
-    else:
-        settings_notifier_Pushjet_enabled = 0
-    settings_notifier_Pushjet_url = request.forms.get('settings_notifier_Pushjet_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushjet'", (settings_notifier_Pushjet_enabled, settings_notifier_Pushjet_url))
-
-    settings_notifier_Pushover_enabled = request.forms.get('settings_notifier_Pushover_enabled')
-    if settings_notifier_Pushover_enabled == 'on':
-        settings_notifier_Pushover_enabled = 1
-    else:
-        settings_notifier_Pushover_enabled = 0
-    settings_notifier_Pushover_url = request.forms.get('settings_notifier_Pushover_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushover'", (settings_notifier_Pushover_enabled, settings_notifier_Pushover_url))
-
-    settings_notifier_RocketChat_enabled = request.forms.get('settings_notifier_Rocket.Chat_enabled')
-    if settings_notifier_RocketChat_enabled == 'on':
-        settings_notifier_RocketChat_enabled = 1
-    else:
-        settings_notifier_RocketChat_enabled = 0
-    settings_notifier_RocketChat_url = request.forms.get('settings_notifier_Rocket.Chat_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Rocket.Chat'", (settings_notifier_RocketChat_enabled, settings_notifier_RocketChat_url))
-
-    settings_notifier_Slack_enabled = request.forms.get('settings_notifier_Slack_enabled')
-    if settings_notifier_Slack_enabled == 'on':
-        settings_notifier_Slack_enabled = 1
-    else:
-        settings_notifier_Slack_enabled = 0
-    settings_notifier_Slack_url = request.forms.get('settings_notifier_Slack_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Slack'", (settings_notifier_Slack_enabled, settings_notifier_Slack_url))
-
-    settings_notifier_SuperToasty_enabled = request.forms.get('settings_notifier_Super Toasty_enabled')
-    if settings_notifier_SuperToasty_enabled == 'on':
-        settings_notifier_SuperToasty_enabled = 1
-    else:
-        settings_notifier_SuperToasty_enabled = 0
-    settings_notifier_SuperToasty_url = request.forms.get('settings_notifier_Super Toasty_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Super Toasty'", (settings_notifier_SuperToasty_enabled, settings_notifier_SuperToasty_url))
-
-    settings_notifier_Telegram_enabled = request.forms.get('settings_notifier_Telegram_enabled')
-    if settings_notifier_Telegram_enabled == 'on':
-        settings_notifier_Telegram_enabled = 1
-    else:
-        settings_notifier_Telegram_enabled = 0
-    settings_notifier_Telegram_url = request.forms.get('settings_notifier_Telegram_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Telegram'", (settings_notifier_Telegram_enabled, settings_notifier_Telegram_url))
-
-    settings_notifier_Twitter_enabled = request.forms.get('settings_notifier_Twitter_enabled')
-    if settings_notifier_Twitter_enabled == 'on':
-        settings_notifier_Twitter_enabled = 1
-    else:
-        settings_notifier_Twitter_enabled = 0
-    settings_notifier_Twitter_url = request.forms.get('settings_notifier_Twitter_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Twitter'", (settings_notifier_Twitter_enabled, settings_notifier_Twitter_url))
-
-    settings_notifier_XBMC_enabled = request.forms.get('settings_notifier_XBMC_enabled')
-    if settings_notifier_XBMC_enabled == 'on':
-        settings_notifier_XBMC_enabled = 1
-    else:
-        settings_notifier_XBMC_enabled = 0
-    settings_notifier_XBMC_url = request.forms.get('settings_notifier_XBMC_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'XBMC'", (settings_notifier_XBMC_enabled, settings_notifier_XBMC_url))
-
-    settings_notifier_Discord_enabled = request.forms.get('settings_notifier_Discord_enabled')
-    if settings_notifier_Discord_enabled == 'on':
-        settings_notifier_Discord_enabled = 1
-    else:
-        settings_notifier_Discord_enabled = 0
-    settings_notifier_Discord_url = request.forms.get('settings_notifier_Discord_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Discord'", (settings_notifier_Discord_enabled, settings_notifier_Discord_url))
-
-    settings_notifier_E_Mail_enabled = request.forms.get('settings_notifier_E-Mail_enabled')
-    if settings_notifier_E_Mail_enabled == 'on':
-        settings_notifier_E_Mail_enabled = 1
-    else:
-        settings_notifier_E_Mail_enabled = 0
-    settings_notifier_E_Mail_url = request.forms.get('settings_notifier_E-Mail_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'E-Mail'", (settings_notifier_E_Mail_enabled, settings_notifier_E_Mail_url))
-
-    settings_notifier_Emby_enabled = request.forms.get('settings_notifier_Emby_enabled')
-    if settings_notifier_Emby_enabled == 'on':
-        settings_notifier_Emby_enabled = 1
-    else:
-        settings_notifier_Emby_enabled = 0
-    settings_notifier_Emby_url = request.forms.get('settings_notifier_Emby_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Emby'", (settings_notifier_Emby_enabled, settings_notifier_Emby_url))
-
-    settings_notifier_IFTTT_enabled = request.forms.get('settings_notifier_IFTTT_enabled')
-    if settings_notifier_IFTTT_enabled == 'on':
-        settings_notifier_IFTTT_enabled = 1
-    else:
-        settings_notifier_IFTTT_enabled = 0
-    settings_notifier_IFTTT_url = request.forms.get('settings_notifier_IFTTT_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'IFTTT'", (settings_notifier_IFTTT_enabled, settings_notifier_IFTTT_url))
-
-    settings_notifier_Stride_enabled = request.forms.get('settings_notifier_Stride_enabled')
-    if settings_notifier_Stride_enabled == 'on':
-        settings_notifier_Stride_enabled = 1
-    else:
-        settings_notifier_Stride_enabled = 0
-    settings_notifier_Stride_url = request.forms.get('settings_notifier_Stride_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Stride'", (settings_notifier_Stride_enabled, settings_notifier_Stride_url))
-
-    settings_notifier_Windows_enabled = request.forms.get('settings_notifier_Windows_enabled')
-    if settings_notifier_Windows_enabled == 'on':
-        settings_notifier_Windows_enabled = 1
-    else:
-        settings_notifier_Windows_enabled = 0
-    settings_notifier_Windows_url = request.forms.get('settings_notifier_Windows_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Windows'", (settings_notifier_Windows_enabled, settings_notifier_Windows_url))
+    notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
+    for notifier in notifiers:
+        enabled = request.forms.get('settings_notifier_' + notifier[0] + '_enabled')
+        if enabled == 'on':
+            enabled = 1
+        else:
+            enabled = 0
+        notifier_url = request.forms.get('settings_notifier_' + notifier[0] + '_url')
+        c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
+                  (enabled, notifier_url, notifier[0]))
 
     conn.commit()
     c.close()

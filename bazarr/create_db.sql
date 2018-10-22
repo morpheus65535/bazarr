@@ -20,6 +20,12 @@ CREATE TABLE "table_settings_providers" (
 	`password`  "text",
 	PRIMARY KEY(`name`)
 );
+CREATE TABLE "table_settings_notifier" (
+	`name` TEXT,
+	`url` TEXT,
+	`enabled` INTEGER,
+	PRIMARY KEY(`name`)
+);
 CREATE TABLE "table_settings_languages" (
 	`code3`	TEXT NOT NULL UNIQUE,
 	`code2`	TEXT,
