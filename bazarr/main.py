@@ -223,6 +223,8 @@ def restart():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
+            print 'Bazarr is being restarted...'
+            logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
 
