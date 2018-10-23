@@ -44,17 +44,8 @@ def check_and_apply_update():
         updated()
 
 def updated():
-    from scheduler import shutdown_scheduler
-    from main import restart
-
     conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE system SET updated = 1")
     conn.commit()
     c.close()
-
-    # Shutdown the scheduler waiting for jobs to finish
-    shutdown_scheduler()
-
-    # Restart Bazarr
-    restart()
