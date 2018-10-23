@@ -75,6 +75,11 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
     except:
         pass
 
+    try:
+        c.execute('alter table table_settings_languages add column "code3b" "text"')
+    except:
+        pass
+
 
     # Commit change to db
     db.commit()

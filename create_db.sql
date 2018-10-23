@@ -22,6 +22,7 @@ CREATE TABLE "table_settings_providers" (
 );
 CREATE TABLE "table_settings_languages" (
 	`code3`	TEXT NOT NULL UNIQUE,
+	`code3b`	TEXT,
 	`code2`	TEXT,
 	`name`	TEXT NOT NULL,
 	`enabled`	INTEGER,

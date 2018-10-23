@@ -771,7 +771,7 @@ def settings():
     authorize()
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
-    c.execute("SELECT * FROM table_settings_languages ORDER BY name")
+    c.execute("SELECT code3, code2, name, enabled FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
     c.execute("SELECT * FROM table_settings_providers ORDER BY name")
     settings_providers = c.fetchall()
