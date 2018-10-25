@@ -47,12 +47,17 @@ def configure_logging():
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
     fh.addFilter(BlacklistFilter())
-    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
+
     if log_level == 'debug':
+        logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
+        logging.getLogger("git").setLevel(logging.DEBUG)
+        logging.getLogger("apprise").setLevel(logging.DEBUG)
     else:
+        logging.getLogger("apscheduler").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
+        
+    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)

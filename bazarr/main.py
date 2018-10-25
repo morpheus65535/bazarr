@@ -188,7 +188,7 @@ def restart():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
-            print 'Bazarr is being restarted...'
+            # print 'Bazarr is being restarted...'
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
@@ -1895,7 +1895,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 server = CherryPyWSGIServer((str(ip), int(port)), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-    print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.start()
 except KeyboardInterrupt:
     shutdown()
