@@ -21,42 +21,7 @@ from update_db import *
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
-from logging.handlers import TimedRotatingFileHandler
-
-log_level = get_general_settings()[4]
-if log_level is None:
-    log_level = "INFO"
-
-class OneLineExceptionFormatter(logging.Formatter):
-    def formatException(self, exc_info):
-        """
-        Format an exception so that it prints on a single line.
-        """
-        result = super(OneLineExceptionFormatter, self).formatException(exc_info)
-        return repr(result) # or format into one line however you want to
-
-    def format(self, record):
-        s = super(OneLineExceptionFormatter, self).format(record)
-        if record.exc_text:
-            s = s.replace('\n', '') + '|'
-        return s
-
-def configure_logging():
-    global fh
-    fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1, backupCount=7)
-    f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
-                                  '%d/%m/%Y %H:%M:%S')
-    fh.setFormatter(f)
-    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
-    logging.getLogger("guessit").setLevel(logging.WARNING)
-    logging.getLogger("rebulk").setLevel(logging.WARNING)
-    logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
-    root = logging.getLogger()
-    root.setLevel(log_level)
-    root.addHandler(fh)
-
+from logger import configure_logging, empty_log
 configure_logging()
 
 import requests
@@ -449,7 +414,7 @@ def emptylog():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    fh.doRollover()
+    empty_log()
     logging.info('BAZARR Log file emptied')
 
     redirect(ref)
