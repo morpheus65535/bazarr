@@ -1029,7 +1029,11 @@ def save_settings():
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if settings_general_baseurl.endswith('/') is False:
         settings_general_baseurl += '/'
-    settings_general_loglevel = request.forms.get('settings_general_loglevel')
+    settings_general_debug = request.forms.get('settings_general_debug')
+    if settings_general_debug is None:
+        settings_general_debug = 'False'
+    else:
+        settings_general_debug = 'True'
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1092,7 +1096,7 @@ def save_settings():
     settings_general = get_general_settings()
 
     before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[4]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_debug), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
     cfg = ConfigParser()
@@ -1104,7 +1108,7 @@ def save_settings():
     cfg.set('general', 'port', text_type(settings_general_port))
     cfg.set('general', 'base_url', text_type(settings_general_baseurl))
     cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', text_type(settings_general_loglevel))
+    cfg.set('general', 'debug', text_type(settings_general_debug))
     cfg.set('general', 'branch', text_type(settings_general_branch))
     cfg.set('general', 'auto_update', text_type(settings_general_automatic))
     cfg.set('general', 'single_language', text_type(settings_general_single_language))

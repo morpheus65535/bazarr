@@ -7,10 +7,11 @@ from logging.handlers import TimedRotatingFileHandler
 from get_argv import config_dir
 from get_settings import get_general_settings
 
-log_level = get_general_settings()[4]
-if log_level is None:
+debug = get_general_settings()[4]
+if debug is False:
     log_level = "INFO"
-
+else:
+    log_level = "DEBUG"
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -48,7 +49,7 @@ def configure_logging():
     fh.setFormatter(f)
     fh.addFilter(BlacklistFilter())
 
-    if log_level == 'debug':
+    if debug is True:
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
@@ -63,11 +64,19 @@ def configure_logging():
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     log.setLevel(log_level)
     log.addHandler(fh)
-
+    
+    # Console logging
     ch = logging.StreamHandler()
     cf = NoExceptionFormatter('%(asctime)s - %(levelname)s :: %(message)s',
                                           '%Y-%m-%d %H:%M:%S')
     ch.setFormatter(cf)
+    
+    logging.getLogger("apscheduler").setLevel(logging.WARNING)
+    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
+    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
+    logging.getLogger("guessit").setLevel(logging.WARNING)
+    logging.getLogger("rebulk").setLevel(logging.WARNING)
+    logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     ch.setLevel(logging.INFO)
     log.addHandler(ch)
     

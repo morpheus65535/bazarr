@@ -135,17 +135,13 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Log Level</label>
+                                <label>Enable debug logging</label>
                             </div>
                             <div class="five wide column">
-                                <select name="settings_general_loglevel" id="settings_loglevel" class="ui fluid selection dropdown">
-                                    <option value="">Log Level</option>
-                                    <option value="DEBUG">Debug</option>
-                                    <option value="INFO">Info</option>
-                                    <option value="WARNING">Warning</option>
-                                    <option value="ERROR">Error</option>
-                                    <option value="CRITICAL">Critical</option>
-                                </select>
+                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings_general[4]}}>
+                                    <input name="settings_general_debug" type="checkbox">
+                                    <label></label>
+                                </div>
                             </div>
 
                             <div class="collapsed center aligned column">
@@ -1408,6 +1404,12 @@
                 $("#settings_automatic_div").checkbox('check');
             } else {
                 $("#settings_automatic_div").checkbox('uncheck');
+            }
+
+    if ($('#settings_debug').data("debug") == "True") {
+                $("#settings_debug").checkbox('check');
+            } else {
+                $("#settings_debug").checkbox('uncheck');
             }
 
     if ($('#settings_single_language').data("single-language") == "True") {
