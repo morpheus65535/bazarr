@@ -7,12 +7,13 @@ import logging
 import operator
 import subprocess
 import time
+import subliminal
+import subliminal_patch
 from datetime import datetime, timedelta
 from babelfish import Language
-from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
-from subliminal_patch import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
+from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, score, list_subtitles, download_subtitles
+from subliminal_patch.core import SZAsyncProviderPool as AsyncProviderPool
 from subliminal.subtitle import get_subtitle_path
-from subliminal_patch.subtitle import get_subtitle_path
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie

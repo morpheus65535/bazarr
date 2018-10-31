@@ -16,7 +16,9 @@ from exceptions import APIThrottled
 from subzero.lib.io import get_viable_encoding
 
 logger = logging.getLogger(__name__)
-pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))), "..", certifi.where()))
+pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))),
+                                         "..", "..", certifi.where()))
+
 try:
     default_ssl_context = ssl.create_default_context(cafile=pem_file)
 except AttributeError:

@@ -5,8 +5,9 @@ import os
 import enzyme
 import babelfish
 import logging
+import subliminal
+import subliminal_patch
 from subliminal import core
-from subliminal_patch import core
 import sqlite3
 import ast
 import langdetect
