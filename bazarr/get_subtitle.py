@@ -67,53 +67,66 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             logging.exception("BAZARR Error trying to get subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
-            sorted_subtitles = sorted([(s, compute_score(s, video, hearing_impaired=hi)) for s in subtitles], key=operator.itemgetter(1), reverse=True)
-            for s, preliminary_score in sorted_subtitles:
-                if media_type == "movie":
-                    if (preliminary_score / max_score * 100) < int(minimum_score_movie):
-                        continue
-                    matched = set(s.get_matches(video))
-                    if hi == s.hearing_impaired:
-                        matched.add('hearing_impaired')
-                    not_matched = set(score.movie_scores.keys()) - matched
-                    required = set(['title'])
-                    if any(elem in required for elem in not_matched):
-                        continue
-                elif media_type == "series":
-                    if (preliminary_score / max_score * 100) < int(minimum_score):
-                        continue
-                    matched = set(s.get_matches(video))
-                    if hi == s.hearing_impaired:
-                        matched.add('hearing_impaired')
-                    not_matched = set(score.episode_scores.keys()) - matched
-                    required = set(['series', 'season', 'episode'])
-                    if any(elem in required for elem in not_matched):
-                        continue
-                subtitles_list.append(s)
-            logging.debug('BAZARR ' + str(len(subtitles_list)) + " subtitles have been found for this file: " + path)
-            if len(subtitles_list) > 0:
-                try:
-                    best_subtitle = subtitles_list[0]
-                    download_subtitles([best_subtitle], providers=providers, provider_configs=providers_auth)
-                    logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
-                except Exception as e:
-                    logging.exception('BAZARR Error downloading subtitles for this file ' + path)
-                    return None
-                else:
+            try:
+                sorted_subtitles = sorted([(s, compute_score(s, video, hearing_impaired=hi)) for s in subtitles], key=operator.itemgetter(1), reverse=True)
+            except Exception as e:
+                logging.exception('BAZARR Exception raised while trying to compute score for this file: ' + path)
+                return None
+            else:
+                for s, preliminary_score in sorted_subtitles:
+                    if media_type == "movie":
+                        if (preliminary_score / max_score * 100) < int(minimum_score_movie):
+                            continue
+                        matched = set(s.get_matches(video))
+                        if hi == s.hearing_impaired:
+                            matched.add('hearing_impaired')
+                        not_matched = set(score.movie_scores.keys()) - matched
+                        required = set(['title'])
+                        if any(elem in required for elem in not_matched):
+                            continue
+                    elif media_type == "series":
+                        if (preliminary_score / max_score * 100) < int(minimum_score):
+                            continue
+                        matched = set(s.get_matches(video))
+                        if hi == s.hearing_impaired:
+                            matched.add('hearing_impaired')
+                        not_matched = set(score.episode_scores.keys()) - matched
+                        required = set(['series', 'season', 'episode'])
+                        if any(elem in required for elem in not_matched):
+                            continue
+                    subtitles_list.append(s)
+                logging.debug('BAZARR ' + str(len(subtitles_list)) + " subtitles have been found for this file: " + path)
+                if len(subtitles_list) > 0:
                     try:
-                        calculated_score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
-                        if used_sceneName == True:
-                            video = scan_video(path)
-                        single = get_general_settings()[7]
-                        if single is True:
-                            result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
-                        else:
-                            result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                        pdownload_result = False
+                        for subtitle in subtitles_list:
+                            download_result = p.download_subtitle(subtitle)
+                            if download_result == True:
+                                logging.debug('BAZARR Subtitles file downloaded from ' + str(subtitle.provider_name) + ' for this file: ' + path)
+                                break
+                            else:
+                                logging.warning('BAZARR Subtitles file skipped from ' + str(subtitle.provider_name) + ' for this file: ' + path + ' because no content was returned by the provider (probably throttled).')
+                                continue
+                        if download_result == False:
+                            logging.error('BAZARR Tried to download a subtitles for file: ' + path + " but we weren't able to do it this time (probably being throttled). Going to retry on next search.")
+                            return None
                     except Exception as e:
-                        logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
-                        pass
+                        logging.exception('BAZARR Error downloading subtitles for this file ' + path)
+                        return None
                     else:
-                        if len(result) > 0:
+                        try:
+                            calculated_score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
+                            if used_sceneName == True:
+                                video = scan_video(path)
+                            single = get_general_settings()[7]
+                            if single is True:
+                                result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
+                            else:
+                                result = save_subtitles(video, [subtitle], encoding='utf-8')
+                        except Exception as e:
+                            logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
+                            pass
+                        else:
                             downloaded_provider = result[0].provider_name
                             downloaded_language = language_from_alpha3(result[0].language.alpha3)
                             downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
@@ -153,11 +166,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                         logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 
                             return message
-                        else:
-                            logging.error('BAZARR Tried to download best subtitles available for file: ' + path + ' but it had no content. Going to retry on next search.')
-                            return None
-            else:
-                return None
+                else:
+                    logging.debug('BAZARR No subtitles were found for this file: ' + path)
+                    return None
     logging.debug('BAZARR Ended searching subtitles for file: ' + path)
 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
@@ -262,8 +273,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         pass
     else:
         try:
-            best_subtitle = subtitle
-            download_subtitles([best_subtitle], providers=provider, provider_configs=providers_auth)
+            download_subtitles([subtitle], providers=provider, provider_configs=providers_auth)
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
         except Exception as e:
             logging.exception('BAZARR Error downloading subtitles for this file ' + path)
@@ -271,13 +281,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         else:
             single = get_general_settings()[7]
             try:
-                score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
+                score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                 if used_sceneName == True:
                     video = scan_video(path)
                 if single is True:
-                    result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                    result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
                 else:
-                    result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                    result = save_subtitles(video, [subtitle], encoding='utf-8')
             except Exception as e:
                 logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
                 return None
@@ -320,7 +330,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
                     return message
                 else:
-                    logging.error('BAZARR Tried to manually download a subtitles for file: ' + path + ' but it had no content. Going to retry on next search.')
+                    logging.error('BAZARR Tried to manually download a subtitles for file: ' + path + " but we weren't able to do (probably throttled by ' + str(subtitle.provider_name) + '. Please retry later or select a subtitles from another provider.")
                     return None
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 

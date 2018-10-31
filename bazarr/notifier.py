@@ -3,6 +3,41 @@ from get_argv import config_dir
 import apprise
 import os
 import sqlite3
+import logging
+
+
+def update_notifier():
+    # define apprise object
+    a = apprise.Apprise()
+    
+    # Retrieve all of the details
+    results = a.details()
+    
+    notifiers_new = []
+    notifiers_old = []
+    
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    notifiers_current = c_db.execute('SELECT name FROM table_settings_notifier').fetchall()
+    for x in results['schemas']:
+        if x['service_name'] not in str(notifiers_current):
+            notifiers_new.append(x['service_name'])
+            logging.debug('Adding new notifier agent: ' + x['service_name'])
+        else:
+            notifiers_old.append(x['service_name'])
+    notifier_current = [i[0] for i in notifiers_current]
+    
+    notifiers_to_delete = list(set(notifier_current) - set(notifiers_old))
+    
+    for notifier_new in notifiers_new:
+        c_db.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (notifier_new, '0'))
+    
+    for notifier_to_delete in notifiers_to_delete:
+        c_db.execute('DELETE FROM `table_settings_notifier` WHERE name=?', (notifier_to_delete,))
+    
+    conn_db.commit()
+    c_db.close()
+
 
 def get_notifier_providers():
     conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)

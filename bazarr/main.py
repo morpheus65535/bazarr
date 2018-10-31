@@ -17,6 +17,8 @@ import signal
 import sqlite3
 from init import *
 from update_db import *
+from notifier import update_notifier
+update_notifier()
 
 
 from get_settings import get_general_settings, get_proxy_settings
@@ -49,7 +51,7 @@ def configure_logging():
     fh.setFormatter(f)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.DEBUG)
+    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
@@ -90,6 +92,7 @@ import ast
 import hashlib
 import time
 import urllib
+from six import text_type
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
@@ -222,8 +225,219 @@ def restart():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
+            print 'Bazarr is being restarted...'
+            logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
+
+
+@route(base_url + 'wizard')
+@custom_auth_basic(check_credentials)
+def wizard():
+    authorize()
+    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = db.cursor()
+    settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
+    settings_providers = c.execute("SELECT * FROM table_settings_providers ORDER BY name").fetchall()
+    c.close()
+    
+    settings_general = get_general_settings()
+    settings_sonarr = get_sonarr_settings()
+    settings_radarr = get_radarr_settings()
+    
+    return template('wizard', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general,
+                    settings_languages=settings_languages, settings_providers=settings_providers,
+                    settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, base_url=base_url)
+
+
+@route(base_url + 'save_wizard', method='POST')
+@custom_auth_basic(check_credentials)
+def save_wizard():
+    authorize()
+    
+    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    c = conn.cursor()
+    
+    settings_general_ip = request.forms.get('settings_general_ip')
+    settings_general_port = request.forms.get('settings_general_port')
+    settings_general_baseurl = request.forms.get('settings_general_baseurl')
+    if settings_general_baseurl.endswith('/') is False:
+        settings_general_baseurl += '/'
+    settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
+    settings_general_destpath = request.forms.getall('settings_general_destpath')
+    settings_general_pathmapping = []
+    settings_general_pathmapping.extend([list(a) for a in zip(settings_general_sourcepath, settings_general_destpath)])
+    settings_general_sourcepath_movie = request.forms.getall('settings_general_sourcepath_movie')
+    settings_general_destpath_movie = request.forms.getall('settings_general_destpath_movie')
+    settings_general_pathmapping_movie = []
+    settings_general_pathmapping_movie.extend(
+        [list(a) for a in zip(settings_general_sourcepath_movie, settings_general_destpath_movie)])
+    settings_general_single_language = request.forms.get('settings_general_single_language')
+    if settings_general_single_language is None:
+        settings_general_single_language = 'False'
+    else:
+        settings_general_single_language = 'True'
+    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
+    if settings_general_adaptive_searching is None:
+        settings_general_adaptive_searching = 'False'
+    else:
+        settings_general_adaptive_searching = 'True'
+    settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
+    if settings_general_use_sonarr is None:
+        settings_general_use_sonarr = 'False'
+    else:
+        settings_general_use_sonarr = 'True'
+    settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
+    if settings_general_use_radarr is None:
+        settings_general_use_radarr = 'False'
+    else:
+        settings_general_use_radarr = 'True'
+    
+    cfg = ConfigParser()
+    
+    if not cfg.has_section('general'):
+        cfg.add_section('general')
+    
+    cfg.set('general', 'ip', text_type(settings_general_ip))
+    cfg.set('general', 'port', text_type(settings_general_port))
+    cfg.set('general', 'base_url', text_type(settings_general_baseurl))
+    cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
+    cfg.set('general', 'log_level', text_type(get_general_settings()[4]))
+    cfg.set('general', 'branch', text_type(get_general_settings()[5]))
+    cfg.set('general', 'auto_update', text_type(get_general_settings()[6]))
+    cfg.set('general', 'single_language', text_type(settings_general_single_language))
+    cfg.set('general', 'minimum_score', text_type(get_general_settings()[8]))
+    cfg.set('general', 'use_scenename', text_type(text_type(get_general_settings()[9])))
+    cfg.set('general', 'use_postprocessing', text_type(get_general_settings()[10]))
+    cfg.set('general', 'postprocessing_cmd', text_type(get_general_settings()[11]))
+    cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
+    cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
+    cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
+    cfg.set('general', 'page_size', text_type(get_general_settings()[21]))
+    cfg.set('general', 'minimum_score_movie', text_type(get_general_settings()[22]))
+    cfg.set('general', 'use_embedded_subs', text_type(get_general_settings()[23]))
+    cfg.set('general', 'only_monitored', text_type(get_general_settings()[24]))
+    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+    
+    if not cfg.has_section('proxy'):
+        cfg.add_section('proxy')
+    
+    cfg.set('proxy', 'type', text_type(get_proxy_settings()[0]))
+    cfg.set('proxy', 'url', text_type(get_proxy_settings()[1]))
+    cfg.set('proxy', 'port', text_type(get_proxy_settings()[2]))
+    cfg.set('proxy', 'username', text_type(get_proxy_settings()[3]))
+    cfg.set('proxy', 'password', text_type(get_proxy_settings()[4]))
+    cfg.set('proxy', 'exclude', text_type(get_proxy_settings()[5]))
+    
+    if not cfg.has_section('auth'):
+        cfg.add_section('auth')
+    
+    cfg.set('auth', 'type', text_type(get_auth_settings()[0]))
+    cfg.set('auth', 'username', text_type(get_auth_settings()[1]))
+    cfg.set('auth', 'password', text_type(get_auth_settings()[2]))
+    
+    settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
+    settings_sonarr_port = request.forms.get('settings_sonarr_port')
+    settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
+    settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
+    if settings_sonarr_ssl is None:
+        settings_sonarr_ssl = 'False'
+    else:
+        settings_sonarr_ssl = 'True'
+    settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    
+    if not cfg.has_section('sonarr'):
+        cfg.add_section('sonarr')
+    
+    cfg.set('sonarr', 'ip', text_type(settings_sonarr_ip))
+    cfg.set('sonarr', 'port', text_type(settings_sonarr_port))
+    cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
+    cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
+    cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
+    cfg.set('sonarr', 'full_update', text_type(get_sonarr_settings()[5]))
+    
+    settings_radarr_ip = request.forms.get('settings_radarr_ip')
+    settings_radarr_port = request.forms.get('settings_radarr_port')
+    settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
+    settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
+    if settings_radarr_ssl is None:
+        settings_radarr_ssl = 'False'
+    else:
+        settings_radarr_ssl = 'True'
+    settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    if settings_radarr_apikey != '':
+        cfg.set('general', 'use_radarr', 'True')
+    else:
+        cfg.set('general', 'use_radarr', 'False')
+    
+    if not cfg.has_section('radarr'):
+        cfg.add_section('radarr')
+    
+    cfg.set('radarr', 'ip', text_type(settings_radarr_ip))
+    cfg.set('radarr', 'port', text_type(settings_radarr_port))
+    cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
+    cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
+    cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
+    cfg.set('radarr', 'full_update', text_type(get_radarr_settings()[5]))
+    
+    settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
+    c.execute("UPDATE table_settings_providers SET enabled = 0")
+    for item in settings_subliminal_providers:
+        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+    
+    settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
+    c.execute("UPDATE table_settings_languages SET enabled = 0")
+    for item in settings_subliminal_languages:
+        c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
+    
+    settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
+    if settings_serie_default_enabled is None:
+        settings_serie_default_enabled = 'False'
+    else:
+        settings_serie_default_enabled = 'True'
+    cfg.set('general', 'serie_default_enabled', text_type(settings_serie_default_enabled))
+    
+    settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
+    if settings_serie_default_languages == "['None']":
+        settings_serie_default_languages = 'None'
+    cfg.set('general', 'serie_default_language', text_type(settings_serie_default_languages))
+    
+    settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
+    if settings_serie_default_hi is None:
+        settings_serie_default_hi = 'False'
+    else:
+        settings_serie_default_hi = 'True'
+    cfg.set('general', 'serie_default_hi', text_type(settings_serie_default_hi))
+    
+    settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
+    if settings_movie_default_enabled is None:
+        settings_movie_default_enabled = 'False'
+    else:
+        settings_movie_default_enabled = 'True'
+    cfg.set('general', 'movie_default_enabled', text_type(settings_movie_default_enabled))
+    
+    settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
+    if settings_movie_default_languages == "['None']":
+        settings_movie_default_languages = 'None'
+    cfg.set('general', 'movie_default_language', text_type(settings_movie_default_languages))
+    
+    settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
+    if settings_movie_default_hi is None:
+        settings_movie_default_hi = 'False'
+    else:
+        settings_movie_default_hi = 'True'
+    cfg.set('general', 'movie_default_hi', text_type(settings_movie_default_hi))
+    
+    with open(config_file, 'w+') as f:
+        cfg.write(f)
+    
+    logging.info('Config file created successfully')
+    
+    conn.commit()
+    c.close()
+    
+    configured()
+    redirect(base_url)
 
 
 @route(base_url + 'static/:path#.+#', name='static')
@@ -294,6 +508,8 @@ def redirect_root():
         redirect(base_url + 'series')
     elif get_general_settings()[13] is True:
         redirect(base_url + 'movies')
+    elif os.path.exists(os.path.join(config_dir, 'config/config.ini')) is False:
+        redirect(base_url + 'wizard')
     else:
         redirect(base_url + 'settings')
 
@@ -303,11 +519,11 @@ def redirect_root():
 def series():
     authorize()
     single_language = get_general_settings()[7]
-
+    
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
-
+    
     c.execute("SELECT COUNT(*) FROM table_shows")
     missing_count = c.fetchone()
     missing_count = missing_count[0]
@@ -317,18 +533,27 @@ def series():
     page_size = int(get_general_settings()[21])
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-
+    
+    if get_general_settings()[24] is True:
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+    
     c.execute("SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
-    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' AND table_episodes.missing_subtitles IS NOT '[]' GROUP BY table_shows.sonarrSeriesId")
+    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' AND table_episodes.missing_subtitles IS NOT '[]'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
     missing_subtitles_list = c.fetchall()
-    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' GROUP BY table_shows.sonarrSeriesId")
+    c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
     total_subtitles_list = c.fetchall()
     c.close()
-    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size, current_port=port)
+    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data,
+                      missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
+                      languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
+                      single_language=single_language, page_size=page_size, current_port=port)
     return output
+
 
 @route(base_url + 'serieseditor')
 @custom_auth_basic(check_credentials)
@@ -1102,197 +1327,16 @@ def save_settings():
     with open(config_file, 'wb') as f:
         cfg.write(f)
 
-    settings_notifier_Boxcar_enabled = request.forms.get('settings_notifier_Boxcar_enabled')
-    if settings_notifier_Boxcar_enabled == 'on':
-        settings_notifier_Boxcar_enabled = 1
-    else:
-        settings_notifier_Boxcar_enabled = 0
-    settings_notifier_Boxcar_url = request.forms.get('settings_notifier_Boxcar_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Boxcar'", (settings_notifier_Boxcar_enabled, settings_notifier_Boxcar_url))
-
-    settings_notifier_Faast_enabled = request.forms.get('settings_notifier_Faast_enabled')
-    if settings_notifier_Faast_enabled == 'on':
-        settings_notifier_Faast_enabled = 1
-    else:
-        settings_notifier_Faast_enabled = 0
-    settings_notifier_Faast_url = request.forms.get('settings_notifier_Faast_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Faast'", (settings_notifier_Faast_enabled, settings_notifier_Faast_url))
-
-    settings_notifier_Growl_enabled = request.forms.get('settings_notifier_Growl_enabled')
-    if settings_notifier_Growl_enabled == 'on':
-        settings_notifier_Growl_enabled = 1
-    else:
-        settings_notifier_Growl_enabled = 0
-    settings_notifier_Growl_url = request.forms.get('settings_notifier_Growl_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Growl'", (settings_notifier_Growl_enabled, settings_notifier_Growl_url))
-
-    settings_notifier_Join_enabled = request.forms.get('settings_notifier_Join_enabled')
-    if settings_notifier_Join_enabled == 'on':
-        settings_notifier_Join_enabled = 1
-    else:
-        settings_notifier_Join_enabled = 0
-    settings_notifier_Join_url = request.forms.get('settings_notifier_Join_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Join'", (settings_notifier_Join_enabled, settings_notifier_Join_url))
-
-    settings_notifier_KODI_enabled = request.forms.get('settings_notifier_KODI_enabled')
-    if settings_notifier_KODI_enabled == 'on':
-        settings_notifier_KODI_enabled = 1
-    else:
-        settings_notifier_KODI_enabled = 0
-    settings_notifier_KODI_url = request.forms.get('settings_notifier_KODI_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'KODI'", (settings_notifier_KODI_enabled, settings_notifier_KODI_url))
-
-    settings_notifier_Mattermost_enabled = request.forms.get('settings_notifier_Mattermost_enabled')
-    if settings_notifier_Mattermost_enabled == 'on':
-        settings_notifier_Mattermost_enabled = 1
-    else:
-        settings_notifier_Mattermost_enabled = 0
-    settings_notifier_Mattermost_url = request.forms.get('settings_notifier_Mattermost_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Mattermost'", (settings_notifier_Mattermost_enabled, settings_notifier_Mattermost_url))
-
-    settings_notifier_NMA_enabled = request.forms.get('settings_notifier_Notify My Android_enabled')
-    if settings_notifier_NMA_enabled == 'on':
-        settings_notifier_NMA_enabled = 1
-    else:
-        settings_notifier_NMA_enabled = 0
-    settings_notifier_NMA_url = request.forms.get('settings_notifier_Notify My Android_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Notify My Android'", (settings_notifier_NMA_enabled, settings_notifier_NMA_url))
-
-    settings_notifier_Prowl_enabled = request.forms.get('settings_notifier_Prowl_enabled')
-    if settings_notifier_Prowl_enabled == 'on':
-        settings_notifier_Prowl_enabled = 1
-    else:
-        settings_notifier_Prowl_enabled = 0
-    settings_notifier_Prowl_url = request.forms.get('settings_notifier_Prowl_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Prowl'", (settings_notifier_Prowl_enabled, settings_notifier_Prowl_url))
-
-    settings_notifier_Pushalot_enabled = request.forms.get('settings_notifier_Pushalot_enabled')
-    if settings_notifier_Pushalot_enabled == 'on':
-        settings_notifier_Pushalot_enabled = 1
-    else:
-        settings_notifier_Pushalot_enabled = 0
-    settings_notifier_Pushalot_url = request.forms.get('settings_notifier_Pushalot_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushalot'", (settings_notifier_Pushalot_enabled, settings_notifier_Pushalot_url))
-
-    settings_notifier_PushBullet_enabled = request.forms.get('settings_notifier_PushBullet_enabled')
-    if settings_notifier_PushBullet_enabled == 'on':
-        settings_notifier_PushBullet_enabled = 1
-    else:
-        settings_notifier_PushBullet_enabled = 0
-    settings_notifier_PushBullet_url = request.forms.get('settings_notifier_PushBullet_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'PushBullet'", (settings_notifier_PushBullet_enabled, settings_notifier_PushBullet_url))
-
-    settings_notifier_Pushjet_enabled = request.forms.get('settings_notifier_Pushjet_enabled')
-    if settings_notifier_Pushjet_enabled == 'on':
-        settings_notifier_Pushjet_enabled = 1
-    else:
-        settings_notifier_Pushjet_enabled = 0
-    settings_notifier_Pushjet_url = request.forms.get('settings_notifier_Pushjet_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushjet'", (settings_notifier_Pushjet_enabled, settings_notifier_Pushjet_url))
-
-    settings_notifier_Pushover_enabled = request.forms.get('settings_notifier_Pushover_enabled')
-    if settings_notifier_Pushover_enabled == 'on':
-        settings_notifier_Pushover_enabled = 1
-    else:
-        settings_notifier_Pushover_enabled = 0
-    settings_notifier_Pushover_url = request.forms.get('settings_notifier_Pushover_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Pushover'", (settings_notifier_Pushover_enabled, settings_notifier_Pushover_url))
-
-    settings_notifier_RocketChat_enabled = request.forms.get('settings_notifier_Rocket.Chat_enabled')
-    if settings_notifier_RocketChat_enabled == 'on':
-        settings_notifier_RocketChat_enabled = 1
-    else:
-        settings_notifier_RocketChat_enabled = 0
-    settings_notifier_RocketChat_url = request.forms.get('settings_notifier_Rocket.Chat_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Rocket.Chat'", (settings_notifier_RocketChat_enabled, settings_notifier_RocketChat_url))
-
-    settings_notifier_Slack_enabled = request.forms.get('settings_notifier_Slack_enabled')
-    if settings_notifier_Slack_enabled == 'on':
-        settings_notifier_Slack_enabled = 1
-    else:
-        settings_notifier_Slack_enabled = 0
-    settings_notifier_Slack_url = request.forms.get('settings_notifier_Slack_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Slack'", (settings_notifier_Slack_enabled, settings_notifier_Slack_url))
-
-    settings_notifier_SuperToasty_enabled = request.forms.get('settings_notifier_Super Toasty_enabled')
-    if settings_notifier_SuperToasty_enabled == 'on':
-        settings_notifier_SuperToasty_enabled = 1
-    else:
-        settings_notifier_SuperToasty_enabled = 0
-    settings_notifier_SuperToasty_url = request.forms.get('settings_notifier_Super Toasty_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Super Toasty'", (settings_notifier_SuperToasty_enabled, settings_notifier_SuperToasty_url))
-
-    settings_notifier_Telegram_enabled = request.forms.get('settings_notifier_Telegram_enabled')
-    if settings_notifier_Telegram_enabled == 'on':
-        settings_notifier_Telegram_enabled = 1
-    else:
-        settings_notifier_Telegram_enabled = 0
-    settings_notifier_Telegram_url = request.forms.get('settings_notifier_Telegram_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Telegram'", (settings_notifier_Telegram_enabled, settings_notifier_Telegram_url))
-
-    settings_notifier_Twitter_enabled = request.forms.get('settings_notifier_Twitter_enabled')
-    if settings_notifier_Twitter_enabled == 'on':
-        settings_notifier_Twitter_enabled = 1
-    else:
-        settings_notifier_Twitter_enabled = 0
-    settings_notifier_Twitter_url = request.forms.get('settings_notifier_Twitter_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Twitter'", (settings_notifier_Twitter_enabled, settings_notifier_Twitter_url))
-
-    settings_notifier_XBMC_enabled = request.forms.get('settings_notifier_XBMC_enabled')
-    if settings_notifier_XBMC_enabled == 'on':
-        settings_notifier_XBMC_enabled = 1
-    else:
-        settings_notifier_XBMC_enabled = 0
-    settings_notifier_XBMC_url = request.forms.get('settings_notifier_XBMC_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'XBMC'", (settings_notifier_XBMC_enabled, settings_notifier_XBMC_url))
-
-    settings_notifier_Discord_enabled = request.forms.get('settings_notifier_Discord_enabled')
-    if settings_notifier_Discord_enabled == 'on':
-        settings_notifier_Discord_enabled = 1
-    else:
-        settings_notifier_Discord_enabled = 0
-    settings_notifier_Discord_url = request.forms.get('settings_notifier_Discord_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Discord'", (settings_notifier_Discord_enabled, settings_notifier_Discord_url))
-
-    settings_notifier_E_Mail_enabled = request.forms.get('settings_notifier_E-Mail_enabled')
-    if settings_notifier_E_Mail_enabled == 'on':
-        settings_notifier_E_Mail_enabled = 1
-    else:
-        settings_notifier_E_Mail_enabled = 0
-    settings_notifier_E_Mail_url = request.forms.get('settings_notifier_E-Mail_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'E-Mail'", (settings_notifier_E_Mail_enabled, settings_notifier_E_Mail_url))
-
-    settings_notifier_Emby_enabled = request.forms.get('settings_notifier_Emby_enabled')
-    if settings_notifier_Emby_enabled == 'on':
-        settings_notifier_Emby_enabled = 1
-    else:
-        settings_notifier_Emby_enabled = 0
-    settings_notifier_Emby_url = request.forms.get('settings_notifier_Emby_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Emby'", (settings_notifier_Emby_enabled, settings_notifier_Emby_url))
-
-    settings_notifier_IFTTT_enabled = request.forms.get('settings_notifier_IFTTT_enabled')
-    if settings_notifier_IFTTT_enabled == 'on':
-        settings_notifier_IFTTT_enabled = 1
-    else:
-        settings_notifier_IFTTT_enabled = 0
-    settings_notifier_IFTTT_url = request.forms.get('settings_notifier_IFTTT_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'IFTTT'", (settings_notifier_IFTTT_enabled, settings_notifier_IFTTT_url))
-
-    settings_notifier_Stride_enabled = request.forms.get('settings_notifier_Stride_enabled')
-    if settings_notifier_Stride_enabled == 'on':
-        settings_notifier_Stride_enabled = 1
-    else:
-        settings_notifier_Stride_enabled = 0
-    settings_notifier_Stride_url = request.forms.get('settings_notifier_Stride_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Stride'", (settings_notifier_Stride_enabled, settings_notifier_Stride_url))
-
-    settings_notifier_Windows_enabled = request.forms.get('settings_notifier_Windows_enabled')
-    if settings_notifier_Windows_enabled == 'on':
-        settings_notifier_Windows_enabled = 1
-    else:
-        settings_notifier_Windows_enabled = 0
-    settings_notifier_Windows_url = request.forms.get('settings_notifier_Windows_url')
-    c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = 'Windows'", (settings_notifier_Windows_enabled, settings_notifier_Windows_url))
+    notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
+    for notifier in notifiers:
+        enabled = request.forms.get('settings_notifier_' + notifier[0] + '_enabled')
+        if enabled == 'on':
+            enabled = 1
+        else:
+            enabled = 0
+        notifier_url = request.forms.get('settings_notifier_' + notifier[0] + '_url')
+        c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
+                  (enabled, notifier_url, notifier[0]))
 
     conn.commit()
     c.close()
