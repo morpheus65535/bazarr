@@ -41,11 +41,11 @@ def easter(year, method=EASTER_WESTERN):
 
     More about the algorithm may be found at:
 
-    `GM Arts: Easter Algorithms <http://www.gmarts.org/index.php?go=415>`_
+    http://users.chariot.net.au/~gmarts/eastalg.htm
 
     and
 
-    `The Calendar FAQ: Easter <https://www.tondering.dk/claus/cal/easter.php>`_
+    http://www.tondering.dk/claus/calendar.html
 
     """
 

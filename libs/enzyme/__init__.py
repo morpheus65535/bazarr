@@ -8,6 +8,7 @@ __copyright__ = 'Copyright 2013 Antoine Bertin'
 import logging
 from .exceptions import *
 from .mkv import *
+from .subtitle import *
 
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())

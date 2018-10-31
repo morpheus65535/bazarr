@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-import unittest
+from oslotest import base as test_base
 
 
-class TestCase(unittest.TestCase):
+class TestCase(test_base.BaseTestCase):
     pass

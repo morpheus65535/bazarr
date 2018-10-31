@@ -220,9 +220,13 @@ class Movie(Video):
         if 'title' not in guess:
             raise ValueError('Insufficient data to process the guess')
 
+        alternative_titles = []
+        if 'alternative_title' in guess:
+            alternative_titles.append(u"%s %s" % (guess['title'], guess['alternative_title']))
+
         return cls(name, guess['title'], format=guess.get('format'), release_group=guess.get('release_group'),
                    resolution=guess.get('screen_size'), video_codec=guess.get('video_codec'),
-                   audio_codec=guess.get('audio_codec'), year=guess.get('year'))
+                   audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles)
 
     @classmethod
     def fromname(cls, name):

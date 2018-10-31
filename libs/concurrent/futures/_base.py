@@ -6,7 +6,6 @@ import logging
 import threading
 import itertools
 import time
-import types
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
@@ -172,29 +171,6 @@ def _create_and_install_waiters(fs, return_when):
 
     return waiter
 
-
-def _yield_finished_futures(fs, waiter, ref_collect):
-    """
-    Iterate on the list *fs*, yielding finished futures one by one in
-    reverse order.
-    Before yielding a future, *waiter* is removed from its waiters
-    and the future is removed from each set in the collection of sets
-    *ref_collect*.
-
-    The aim of this function is to avoid keeping stale references after
-    the future is yielded and before the iterator resumes.
-    """
-    while fs:
-        f = fs[-1]
-        for futures_set in ref_collect:
-            futures_set.remove(f)
-        with f._condition:
-            f._waiters.remove(waiter)
-        del f
-        # Careful not to keep a reference to the popped value
-        yield fs.pop()
-
-
 def as_completed(fs, timeout=None):
     """An iterator over the given futures that yields each as it completes.
 
@@ -217,19 +193,16 @@ def as_completed(fs, timeout=None):
         end_time = timeout + time.time()
 
     fs = set(fs)
-    total_futures = len(fs)
     with _AcquireFutures(fs):
         finished = set(
                 f for f in fs
                 if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
         pending = fs - finished
         waiter = _create_and_install_waiters(fs, _AS_COMPLETED)
-    finished = list(finished)
+
     try:
-        for f in _yield_finished_futures(finished, waiter,
-                                         ref_collect=(fs,)):
-            f = [f]
-            yield f.pop()
+        for future in finished:
+            yield future
 
         while pending:
             if timeout is None:
@@ -239,7 +212,7 @@ def as_completed(fs, timeout=None):
                 if wait_timeout < 0:
                     raise TimeoutError(
                             '%d (of %d) futures unfinished' % (
-                            len(pending), total_futures))
+                            len(pending), len(fs)))
 
             waiter.event.wait(wait_timeout)
 
@@ -248,15 +221,11 @@ def as_completed(fs, timeout=None):
                 waiter.finished_futures = []
                 waiter.event.clear()
 
-            # reverse to keep finishing order
-            finished.reverse()
-            for f in _yield_finished_futures(finished, waiter,
-                                             ref_collect=(fs, pending)):
-                f = [f]
-                yield f.pop()
+            for future in finished:
+                yield future
+                pending.remove(future)
 
     finally:
-        # Remove waiter from unfinished futures
         for f in fs:
             with f._condition:
                 f._waiters.remove(waiter)
@@ -331,41 +300,22 @@ class Future(object):
                 callback(self)
             except Exception:
                 LOGGER.exception('exception calling callback for %r', self)
-            except BaseException:
-                # Explicitly let all other new-style exceptions through so
-                # that we can catch all old-style exceptions with a simple
-                # "except:" clause below.
-                #
-                # All old-style exception objects are instances of
-                # types.InstanceType, but "except types.InstanceType:" does
-                # not catch old-style exceptions for some reason.  Thus, the
-                # only way to catch all old-style exceptions without catching
-                # any new-style exceptions is to filter out the new-style
-                # exceptions, which all derive from BaseException.
-                raise
-            except:
-                # Because of the BaseException clause above, this handler only
-                # executes for old-style exception objects.
-                LOGGER.exception('exception calling callback for %r', self)
 
     def __repr__(self):
         with self._condition:
             if self._state == FINISHED:
                 if self._exception:
-                    return '<%s at %#x state=%s raised %s>' % (
-                        self.__class__.__name__,
-                        id(self),
+                    return '<Future at %s state=%s raised %s>' % (
+                        hex(id(self)),
                         _STATE_TO_DESCRIPTION_MAP[self._state],
                         self._exception.__class__.__name__)
                 else:
-                    return '<%s at %#x state=%s returned %s>' % (
-                        self.__class__.__name__,
-                        id(self),
+                    return '<Future at %s state=%s returned %s>' % (
+                        hex(id(self)),
                         _STATE_TO_DESCRIPTION_MAP[self._state],
                         self._result.__class__.__name__)
-            return '<%s at %#x state=%s>' % (
-                    self.__class__.__name__,
-                    id(self),
+            return '<Future at %s state=%s>' % (
+                    hex(id(self)),
                    _STATE_TO_DESCRIPTION_MAP[self._state])
 
     def cancel(self):
@@ -388,7 +338,7 @@ class Future(object):
         return True
 
     def cancelled(self):
-        """Return True if the future was cancelled."""
+        """Return True if the future has cancelled."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]
 
@@ -404,14 +354,7 @@ class Future(object):
 
     def __get_result(self):
         if self._exception:
-            if isinstance(self._exception, types.InstanceType):
-                # The exception is an instance of an old-style class, which
-                # means type(self._exception) returns types.ClassType instead
-                # of the exception's actual class type.
-                exception_type = self._exception.__class__
-            else:
-                exception_type = type(self._exception)
-            raise exception_type, self._exception, self._traceback
+            raise type(self._exception), self._exception, self._traceback
         else:
             return self._result
 
@@ -606,7 +549,7 @@ class Executor(object):
         raise NotImplementedError()
 
     def map(self, fn, *iterables, **kwargs):
-        """Returns an iterator equivalent to map(fn, iter).
+        """Returns a iterator equivalent to map(fn, iter).
 
         Args:
             fn: A callable that will take as many arguments as there are
@@ -633,14 +576,11 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                # reverse to keep finishing order
-                fs.reverse()
-                while fs:
-                    # Careful not to keep a reference to the popped future
+                for future in fs:
                     if timeout is None:
-                        yield fs.pop().result()
+                        yield future.result()
                     else:
-                        yield fs.pop().result(end_time - time.time())
+                        yield future.result(end_time - time.time())
             finally:
                 for future in fs:
                     future.cancel()

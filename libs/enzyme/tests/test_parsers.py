@@ -33,7 +33,7 @@ class EBMLTestCase(unittest.TestCase):
         self.stream.close()
 
     def check_element(self, element_id, element_type, element_name, element_level, element_position, element_size, element_data, element,
-                      ignore_element_types=None, ignore_element_names=None, max_level=None):
+                      ignore_element_types=None, ignore_element_names=None, max_level=None, include_element_names=None):
         """Recursively check an element"""
         # base
         self.assertTrue(element.id == element_id)
@@ -53,6 +53,8 @@ class EBMLTestCase(unittest.TestCase):
             element_data = [e for e in element_data if e[1] not in ignore_element_types]
         if ignore_element_names is not None:  # filter validation on element names
             element_data = [e for e in element_data if e[2] not in ignore_element_names]
+        if include_element_names is not None:  # filter validation on element names
+            element_data = [e for e in element_data if e[2] in include_element_names]
         if element.level == max_level:  # special check when maximum level is reached
             self.assertTrue(element.data is None)
             return
@@ -60,7 +62,7 @@ class EBMLTestCase(unittest.TestCase):
         for i in range(len(element.data)):
             self.check_element(element_data[i][0], element_data[i][1], element_data[i][2], element_data[i][3],
                                element_data[i][4], element_data[i][5], element_data[i][6], element.data[i], ignore_element_types,
-                               ignore_element_names, max_level)
+                               ignore_element_names, max_level,include_element_names)
 
     def test_parse_full(self):
         result = ebml.parse(self.stream, self.specs)
@@ -87,6 +89,15 @@ class EBMLTestCase(unittest.TestCase):
             self.check_element(self.validation[i][0], self.validation[i][1], self.validation[i][2], self.validation[i][3],
                                self.validation[i][4], self.validation[i][5], self.validation[i][6], result[i], ignore_element_names=ignore_element_names)
 
+    def test_parse_include_element_names(self):
+        include_element_names = ['Segment','Cluster']
+        result = ebml.parse(self.stream, self.specs, include_element_names=include_element_names)
+        self.validation = [e for e in self.validation if e[2] in include_element_names]
+        self.assertTrue(len(result) == len(self.validation))
+        for i in range(len(self.validation)):
+            self.check_element(self.validation[i][0], self.validation[i][1], self.validation[i][2], self.validation[i][3],
+                               self.validation[i][4], self.validation[i][5], self.validation[i][6], result[i], include_element_names=include_element_names)
+            
     def test_parse_max_level(self):
         max_level = 3
         result = ebml.parse(self.stream, self.specs, max_level=max_level)

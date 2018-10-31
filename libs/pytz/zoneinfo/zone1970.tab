@@ -2,7 +2,7 @@
 #
 # This file is in the public domain.
 #
-# From Paul Eggert (2017-10-01):
+# From Paul Eggert (2014-07-31):
 # This file contains a table where each row stands for a zone where
 # civil time stamps have agreed since 1970.  Columns are separated by
 # a single tab.  Lines beginning with '#' are comments.  All text uses
@@ -12,10 +12,10 @@
 #     of ISO 3166 2-character country codes.  See the file 'iso3166.tab'.
 # 2.  Latitude and longitude of the zone's principal location
 #     in ISO 6709 sign-degrees-minutes-seconds format,
-#     either ±DDMM±DDDMM or ±DDMMSS±DDDMMSS,
+#     either +-DDMM+-DDDMM or +-DDMMSS+-DDDMMSS,
 #     first latitude (+ is north), then longitude (+ is east).
 # 3.  Zone name used in value of TZ environment variable.
-#     Please see the theory.html file for how zone names are chosen.
+#     Please see the 'Theory' file for how zone names are chosen.
 #     If multiple zones overlap a country, each has a row in the
 #     table, with each column 1 containing the country code.
 # 4.  Comments; present if and only if a country has multiple zones.
@@ -132,7 +132,7 @@ CA	+6043-13503	America/Whitehorse	Pacific - Yukon (south)
 CA	+6404-13925	America/Dawson	Pacific - Yukon (north)
 CC	-1210+09655	Indian/Cocos
 CH,DE,LI	+4723+00832	Europe/Zurich	Swiss time
-CI,BF,GM,GN,ML,MR,SH,SL,SN,TG	+0519-00402	Africa/Abidjan
+CI,BF,GM,GN,ML,MR,SH,SL,SN,ST,TG	+0519-00402	Africa/Abidjan
 CK	-2114-15946	Pacific/Rarotonga
 CL	-3327-07040	America/Santiago	Chile (most areas)
 CL	-5309-07055	America/Punta_Arenas	Region of Magallanes
@@ -316,12 +316,10 @@ RU	+6445+17729	Asia/Anadyr	MSK+09 - Bering Sea
 SA,KW,YE	+2438+04643	Asia/Riyadh
 SB	-0932+16012	Pacific/Guadalcanal
 SC	-0440+05528	Indian/Mahe
-SD	+1536+03232	Africa/Khartoum
+SD,SS	+1536+03232	Africa/Khartoum
 SE	+5920+01803	Europe/Stockholm
 SG	+0117+10351	Asia/Singapore
 SR	+0550-05510	America/Paramaribo
-SS	+0451+03137	Africa/Juba
-ST	+0020+00644	Africa/Sao_Tome
 SV	+1342-08912	America/El_Salvador
 SY	+3330+03618	Asia/Damascus
 TC	+2128-07108	America/Grand_Turk
@@ -371,7 +369,7 @@ US	+593249-1394338	America/Yakutat	Alaska - Yakutat
 US	+643004-1652423	America/Nome	Alaska (west)
 US	+515248-1763929	America/Adak	Aleutian Islands
 US,UM	+211825-1575130	Pacific/Honolulu	Hawaii
-UY	-345433-0561245	America/Montevideo
+UY	-3453-05611	America/Montevideo
 UZ	+3940+06648	Asia/Samarkand	Uzbekistan (west)
 UZ	+4120+06918	Asia/Tashkent	Uzbekistan (east)
 VE	+1030-06656	America/Caracas

@@ -484,26 +484,6 @@ class CacheRegion(object):
         else:
             return self._LockWrapper()
 
-    # cached value
-    _actual_backend = None
-
-    @property
-    def actual_backend(self):
-        """Return the ultimate backend underneath any proxies.
-
-        The backend might be the result of one or more ``proxy.wrap``
-        applications. If so, derive the actual underlying backend.
-
-        .. versionadded:: 0.6.6
-
-        """
-        if self._actual_backend is None:
-            _backend = self.backend
-            while hasattr(_backend, 'proxied'):
-                _backend = _backend.proxied
-            self._actual_backend = _backend
-        return self._actual_backend
-
     def invalidate(self, hard=True):
         """Invalidate this :class:`.CacheRegion`.
 
@@ -819,7 +799,7 @@ class CacheRegion(object):
             value = self.backend.get(key)
             if (value is NO_VALUE or value.metadata['v'] != value_version or
                     self.region_invalidator.is_hard_invalidated(
-                        value.metadata["ct"])):
+                            value.metadata["ct"])):
                 raise NeedRegenerationException()
             ct = value.metadata["ct"]
             if self.region_invalidator.is_soft_invalidated(ct):
@@ -916,7 +896,7 @@ class CacheRegion(object):
 
             if (value is NO_VALUE or value.metadata['v'] != value_version or
                     self.region_invalidator.is_hard_invalidated(
-                        value.metadata['ct'])):
+                            value.metadata['v'])):
                 # dogpile.core understands a 0 here as
                 # "the value is not available", e.g.
                 # _has_value() will return False.

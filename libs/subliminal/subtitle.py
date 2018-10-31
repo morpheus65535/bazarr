@@ -6,8 +6,6 @@ import os
 import chardet
 import pysrt
 
-import types
-
 from .score import get_equivalent_release_groups
 from .video import Episode, Movie
 from .utils import sanitize, sanitize_release_group
@@ -240,19 +238,8 @@ def guess_matches(video, guess, partial=False):
     if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
         matches.add('resolution')
     # format
-    if 'format' in guess and video.format:
-        formats = guess["format"]
-        if not isinstance(formats, types.ListType):
-            formats = [formats]
-
-        video_formats = video.format
-        if not isinstance(video_formats, types.ListType):
-            video_formats = [video_formats]
-
-        lwr = lambda x: "tv" if x in ("HDTV", "SDTV", "TV") else x.lower()
-
-        if set(list(map(lwr, formats))) & set(list(map(lwr, video_formats))):
-            matches.add('format')
+    if video.format and 'format' in guess and guess['format'].lower() == video.format.lower():
+        matches.add('format')
     # video_codec
     if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
         matches.add('video_codec')

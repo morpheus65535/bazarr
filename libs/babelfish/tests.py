@@ -212,7 +212,7 @@ class TestLanguage(TestCase, _Py26FixTestCase):
         self.assertEqual(Language.fromcode('pob', 'opensubtitles'), Language('por', 'BR'))
         self.assertRaises(LanguageReverseError, lambda: Language.fromopensubtitles('zzz'))
         self.assertRaises(LanguageConvertError, lambda: Language('aaa').opensubtitles)
-        self.assertEqual(len(language_converters['opensubtitles'].codes), 606)
+        self.assertEqual(len(language_converters['opensubtitles'].codes), 607)
 
         # test with all the LANGUAGES from the opensubtitles api
         # downloaded from: http://www.opensubtitles.org/addons/export_languages.php
@@ -227,6 +227,10 @@ class TestLanguage(TestCase, _Py26FixTestCase):
             if alpha2:
                 self.assertEqual(Language.fromopensubtitles(idlang), Language.fromopensubtitles(alpha2))
         f.close()
+
+    def test_converter_opensubtitles_codes(self):
+        for code in language_converters['opensubtitles'].from_opensubtitles.keys():
+            self.assertIn(code, language_converters['opensubtitles'].codes)
 
     def test_fromietf_country_script(self):
         language = Language.fromietf('fra-FR-Latn')

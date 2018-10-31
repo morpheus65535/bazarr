@@ -65,30 +65,53 @@ class MKV(object):
                 continue
             if element_name == 'Info':
                 logger.info('Processing element %s from SeekHead at position %d', element_name, element_position)
-                stream.seek(element_position)
-                self.info = Info.fromelement(ebml.parse_element(stream, specs, True, ignore_element_names=['Void', 'CRC-32']))
+                element = self._load_element(stream, specs, element_position)
+                self.info = Info.fromelement(element)
             elif element_name == 'Tracks':
                 logger.info('Processing element %s from SeekHead at position %d', element_name, element_position)
-                stream.seek(element_position)
-                tracks = ebml.parse_element(stream, specs, True, ignore_element_names=['Void', 'CRC-32'])
+                tracks = self._load_element(stream, specs, element_position)
                 self.video_tracks.extend([VideoTrack.fromelement(t) for t in tracks if t['TrackType'].data == VIDEO_TRACK])
                 self.audio_tracks.extend([AudioTrack.fromelement(t) for t in tracks if t['TrackType'].data == AUDIO_TRACK])
                 self.subtitle_tracks.extend([SubtitleTrack.fromelement(t) for t in tracks if t['TrackType'].data == SUBTITLE_TRACK])
             elif element_name == 'Chapters':
                 logger.info('Processing element %s from SeekHead at position %d', element_name, element_position)
-                stream.seek(element_position)
-                self.chapters.extend([Chapter.fromelement(c) for c in ebml.parse_element(stream, specs, True, ignore_element_names=['Void', 'CRC-32'])[0] if c.name == 'ChapterAtom'])
+                element = self._load_element(stream, specs, element_position)
+                self.chapters.extend([Chapter.fromelement(c) for c in element[0] if c.name == 'ChapterAtom'])
             elif element_name == 'Tags':
                 logger.info('Processing element %s from SeekHead at position %d', element_name, element_position)
-                stream.seek(element_position)
-                self.tags.extend([Tag.fromelement(t) for t in ebml.parse_element(stream, specs, True, ignore_element_names=['Void', 'CRC-32'])])
+                element = self._load_element(stream, specs, element_position)
+                self.tags.extend([Tag.fromelement(t) for t in element])
             elif element_name == 'SeekHead' and self.recurse_seek_head:
                 logger.info('Processing element %s from SeekHead at position %d', element_name, element_position)
-                stream.seek(element_position)
-                self._parse_seekhead(ebml.parse_element(stream, specs, True, ignore_element_names=['Void', 'CRC-32']), segment, stream, specs)
+                element = self._load_element(stream, specs, element_position)
+                self._parse_seekhead(element, segment, stream, specs)
             else:
                 logger.debug('Element %s ignored', element_name)
             self._parsed_positions.add(element_position)
+            
+    def _load_element(self,stream, specs, position):
+        stream.seek(position)
+        element = ebml.parse_element(stream,specs)
+        element.load(stream, specs, ignore_element_names=['Void', 'CRC-32'])
+        return element
+    
+    def get_srt_subtitles_track_by_language(self):
+        """get a dictionary of the SRT subtitles track id's indexed by language"""
+        
+        subtitles = dict()
+        for track in self.subtitle_tracks:
+
+            logger.info("Found subtitle language %s, with codec %s and lacing %s",
+                         track.language,track.codec_id,track.lacing)
+            
+            if not track.is_srt():
+                logger.debug("Ignoring subtitle language %s with codec %s",track.language,track.codec_id)
+            elif track.lacing:
+                logger.info("Ignoring subtitle language %s with lacing %s",track.language,track.lacing)
+            else:
+                subtitles[track.language] = track
+
+        return subtitles        
 
     def to_dict(self):
         return {'info': self.info.__dict__, 'video_tracks': [t.__dict__ for t in self.video_tracks],
@@ -103,6 +126,7 @@ class Info(object):
     """Object for the Info EBML element"""
     def __init__(self, title=None, duration=None, date_utc=None, timecode_scale=None, muxing_app=None, writing_app=None):
         self.title = title
+        self.timecode_scale = timecode_scale
         self.duration = timedelta(microseconds=duration * (timecode_scale or 1000000) // 1000) if duration else None
         self.date_utc = date_utc
         self.muxing_app = muxing_app
@@ -119,7 +143,7 @@ class Info(object):
         title = element.get('Title')
         duration = element.get('Duration')
         date_utc = element.get('DateUTC')
-        timecode_scale = element.get('TimecodeScale')
+        timecode_scale = element.get('TimecodeScale',1000000)
         muxing_app = element.get('MuxingApp')
         writing_app = element.get('WritingApp')
         return cls(title, duration, date_utc, timecode_scale, muxing_app, writing_app)
@@ -133,7 +157,7 @@ class Info(object):
 
 class Track(object):
     """Base object for the Tracks EBML element"""
-    def __init__(self, type=None, number=None, name=None, language=None, enabled=None, default=None, forced=None, lacing=None,  # @ReservedAssignment
+    def __init__(self, type=None, number=None, name=None, language=None, enabled=None, default=None, forced=None, lacing=None,
                  codec_id=None, codec_name=None):
         self.type = type
         self.number = number
@@ -154,10 +178,10 @@ class Track(object):
         :type element: :class:`~enzyme.parsers.ebml.Element`
 
         """
-        type = element.get('TrackType')  # @ReservedAssignment
+        type = element.get('TrackType')
         number = element.get('TrackNumber', 0)
         name = element.get('Name')
-        language = element.get('Language', 'eng')
+        language = element.get('Language','eng')
         enabled = bool(element.get('FlagEnabled', 1))
         default = bool(element.get('FlagDefault', 1))
         forced = bool(element.get('FlagForced', 0))
@@ -201,7 +225,7 @@ class VideoTrack(Track):
         videotrack.width = element['Video'].get('PixelWidth', 0)
         videotrack.height = element['Video'].get('PixelHeight', 0)
         videotrack.interlaced = bool(element['Video'].get('FlagInterlaced', False))
-        videotrack.stereo_mode = element['Video'].get('StereoMode', 0)
+        videotrack.stereo_mode = element['Video'].get('StereoMode')
         videotrack.crop = {}
         if 'PixelCropTop' in element['Video']:
             videotrack.crop['top'] = element['Video']['PixelCropTop']
@@ -211,10 +235,10 @@ class VideoTrack(Track):
             videotrack.crop['left'] = element['Video']['PixelCropLeft']
         if 'PixelCropRight' in element['Video']:
             videotrack.crop['right'] = element['Video']['PixelCropRight']
-        videotrack.display_unit = element['Video'].get('DisplayUnit')
         videotrack.display_width = element['Video'].get('DisplayWidth')
         videotrack.display_height = element['Video'].get('DisplayHeight')
-        videotrack.aspect_ratio_type = element['Video'].get('AspectRatioType', 0)
+        videotrack.display_unit = element['Video'].get('DisplayUnit')
+        videotrack.aspect_ratio_type = element['Video'].get('AspectRatioType')
         return videotrack
 
     def __repr__(self):
@@ -245,7 +269,7 @@ class AudioTrack(Track):
         audiotrack = super(AudioTrack, cls).fromelement(element)
         audiotrack.sampling_frequency = element['Audio'].get('SamplingFrequency', 8000.0)
         audiotrack.channels = element['Audio'].get('Channels', 1)
-        audiotrack.output_sampling_frequency = element['Audio'].get('OutputSamplingFrequency', audiotrack.sampling_frequency)
+        audiotrack.output_sampling_frequency = element['Audio'].get('OutputSamplingFrequency')
         audiotrack.bit_depth = element['Audio'].get('BitDepth')
         return audiotrack
 
@@ -256,8 +280,9 @@ class AudioTrack(Track):
 
 class SubtitleTrack(Track):
     """Object for the Tracks EBML element with :data:`SUBTITLE_TRACK` TrackType"""
-    pass
-
+    
+    def is_srt(self):
+        return self.codec_id == 'S_TEXT/UTF8'
 
 class Tag(object):
     """Object for the Tag EBML element"""

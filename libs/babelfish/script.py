@@ -4,7 +4,6 @@
 # Use of this source code is governed by the 3-clause BSD license
 # that can be found in the LICENSE file.
 #
-from __future__ import unicode_literals
 from collections import namedtuple
 from pkg_resources import resource_stream  # @UnresolvedImport
 from . import basestr

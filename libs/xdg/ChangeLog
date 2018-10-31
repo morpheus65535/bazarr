@@ -1,0 +1,253 @@
+Version 0.25 (December 2012)
+    * Add support for $XDG_RUNTIME_DIR, Debian bug #656338.
+    * Allow desktop entry files that are not encoded in UTF-8, Debian bug #693855.
+    * Mime: Add support for subclasses and aliases.
+
+Version 0.24 (October 2012)
+    * Update allowed DesktopEntry categories following changes to the
+      specification.
+    * Fix removal of empty submenu, freedesktop bug #54747.
+    * Documentation is now available on RTD: http://pyxdg.readthedocs.org/
+    * A few more tests, and some code cleanup.
+    * Fix failure to parse some menu files when kde-config is missing,
+      freedesktop bug #56426.
+
+Version 0.23 (July 2012)
+    * Fix a test for non-UTF-8 locales.
+
+Version 0.22 (July 2012)
+    * Better unicode handling in several modules.
+    * Fix for sorting non-ASCII menu entries, freedesktop bug #52492.
+    * More tests.
+
+Version 0.21 (July 2012)
+    * Tests can now be run conveniently using nosetests, and cover more of the
+      code.
+    * BaseDirectory: New save_cache_path() function, freedesktop bug #26458.
+    * Config: Default icon theme is 'hicolor', not 'highcolor'.
+    * Menu: Obsolete Rule.compile() method removed.
+    * DesktopEntry: Corrected spelling of checkCategories() method, freedesktop
+      bug #24974.
+    * DesktopEntry: Consider Actions and Keywords keys standard.
+    * DesktopEntry: Accept non-ASCII Keywords.
+    * DesktopEntry: Update list of environments valid for OnlyShowIn.
+    * Mime: Fix get_type_by_contents() in Python 3.
+    * RecentFiles: Minor bug fixes.
+
+Version 0.20 (June 2012)
+    * Compatible with Python 3; requires Python 2.6 or later
+    * Clean up accidental GPL license notice in Menu.py
+    * Add test scripts for xdg.Mime, xdg.Locale and xdg.RecentFiles
+    * Fixes for icon theme validation
+    * Fix exception in xdg.Mime
+    * Replace invalid string exceptions
+    * Fall back to default base directories if $XDG* environment variables are
+      set but empty.
+    * Remove use of deprecated os.popen3 in Menu.py
+    * Correct URLs in README
+
+Version 0.19
+    * IniFile.py: add support for trusted desktop files (thanks to karl mikaelsson)
+    * DesktopEntry.py: Support spec version 1.0, Debian bug #563660
+    * MimeType.py: Fix parsing of in memory data, Debian bug #563718
+    * DesktopEntry.py: Fix constructor, Debian bug #551297, #562951, #562952
+
+Version 0.18
+
+    * DesktopEntry.py: Add getMimeTypes() method, correctly returning strings
+    * DesktopEntry.py: Deprecated getMimeType() returning list of regex
+    * Menu.py: Add support for XDG_MENU_PREFIX
+    * Mime.py: Add get_type_by_contents()
+
+Version 0.17
+
+2008-10-30 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py: Python <= 2.3 compatibility fix
+    * DesktopEntry.py: Fix wrong indention
+
+Version 0.16
+
+2008-08-07 Heinrich Wendel <h_wendel@cojobo.net>
+	* IconTheme.py: Add more directories to the pixmap path
+
+2008-03-02 Heinrich Wendel <h_wendel@cojobo.net>
+    * IniFile.py: Fix saving of relative filenames
+    * IniFile.py, DesktopEntry.py: Fix __cmp__ method
+	* IniFile.py, IconTheme.py: Better error handling
+
+Version 0.15
+
+2005-08-10 Heinrich Wendel <h_wendel@cojoob.net>
+    * Menu.py: Add support for TryExec
+
+2005-08-09 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py: Unicode bug fixed!
+    * IconTheme.py: small speedup
+
+2005-08-04 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py, IconTheme.py: Bugfixes...
+    * MenuEditor.py: Make xml nice; add hide/unhide functions
+
+Versinon 0.14
+
+2005-06-02 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py, MenuEditor.py: Bugfixes...
+
+version 0.13
+
+2005-06-01 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py, MenuEditor.py: Bugfixes...
+    * Config.py: Add root_mode
+
+Version 0.12
+
+2005-05-30 Heinrich Wendel <h_wendel@cojobo.net>
+    * MenuEditor.py: New in this release, use to edit Menus thx to Travis
+    Watkins <alleykat@gmail.com> and Matt Kynaston <mattkyn@gmail.com> for
+    their help
+    * Menu.py, IniFile.py, DesktopEntry.py: Lot of bugfixing...
+    * BaseDirectory.py: Add xdg_cache_home
+    * IconTheme.py, Config.py: More caching stuff, make cachetime
+    configurable
+
+Version 0.11
+
+2005-05-23 Heinrich Wendel <h_wendel@cojobo.net>
+    * DesktopEntry.p, Menu.py: A lot of bugfixes, thx to Travis Watkins
+    <alleykat@gmail.com>
+
+2005-05-02 Heinrich Wendel <h_wendel@cojobo.net>
+    * Config.py:
+    Module to configure Basic Settings, currently available:
+    - Locale, IconTheme, IconSize, WindowManager
+    * Locale.py:
+    Internal Module to support Locales
+    * Mime.py:
+    Implementation of the Mime Specification
+    * Menu.py:
+    Now supports LegacyDirs
+    * RecentFiles.py:
+    Implementation of the Recent Files Specification
+
+Version 0.10
+
+2005-04-26 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py:
+    various bug fixing to support version 1.0.draft-1
+
+2005-04-13 Heinrich Wendel <h_wendel@cojobo.net>
+    * IniFily.py:
+    Detect if a .desktop file was edited
+    * Menu.py
+    Fix bug caused by excluding NoDisplay/Hidden Items to early
+
+Version 0.9
+
+2005-03-23 Heinrich Wendel <h_wendel@cojobo.net>
+    * IniFile.py:
+    various speedups
+    * Menu.py:
+    add support for <MergeFile type="parent">, menu-spec-0.91
+
+2005-03-21 Heinrich Wendel <h_wendel@cojobo.net>
+    * IniFily.py:
+    Small fixes
+    * Menu.py:
+    remove __preparse and don't edit the parsed document, so menu editing is
+    possible
+    store parsed document in Menu.Doc
+    store document name in Menu.Filename
+
+2005-03-18 Heinrich Wendel <h_wendel@cojobo.net>
+    * Menu.py:
+    fix basename argument, thx to Matt Kynaston <mattkyn@gmail.com>;
+    make it comply to menu-spec-0.9
+
+2004-30-11 Heinrich Wendel <h_wendel@cojobo.net>
+    * Update BaseDirectory.py to the current ROX version
+
+Version 0.8
+
+2004-10-18  Ross Burton  <ross@burtonini.com>
+    * xdg/DesktopEntry.py, xdg/IconTheme.py:
+    Add . to the literal FileExtensions so that the checks work.
+    * xdg/Menu.py:
+    Don't read .desktop-* files, only .desktop
+
+2004-10-18  Martin Grimme  <martin@pycage.de>
+    * xdg/IconTheme.py (getIconPath): The "hicolor" theme has to be used as
+    the fallback.
+    * xdg/IniFile.py (IniFile.getList): Fixed bug in splitting up strings.
+
+Version 0.7
+
+2004-09-04 Heinrich Wendel <h_wendel@cojobo.net>
+    * Add 'import codecs' to IniFile, needed by write support
+    * Fix parsing of lists with only one entry
+
+Version 0.6
+
+2004-08-04 Heinrich Wendel <h_wendel@cojobo.net>
+    * Performance Improvements
+
+Version 0.5
+
+2004-03-29 Heinrich Wendel <h_wendel@cojobo.net>
+    * Finished Support for menu-spec 0.7
+
+2004-03-27 Heinrich Wendel <h_wendel@cojobo.net>
+    * 5* speed improvement in Menu.py parsing code
+
+2004-03-20 Heinrich Wendel <h_wendel@cojobo.net>
+    * check values of Categories/OnlyShowIn keys
+    * various misc changes
+
+2004-03-17 Martin Grimme  <martin@pycage.de>
+
+    * xdg/Menu.py (__preparse): 
+    * xdg/IconTheme.py (IconTheme.parse): Made compatible with Python 2.3
+    (None is a keyword).
+    (__parseTheme): Prepend new icon themes to make sure that they have
+    priority when looking up icons.
+    (icondirs): Add "~/.icons" to the paths where to look for icons. Users
+    may have icon themes installed in their home directory.
+
+2003-10-08 Heinrich Wendel <h_wendel@cojobo.net>
+    * Completed write-support in IniFile
+
+2003-10-05 Heinrich Wendel <h_wendel@cojobo.net>
+    * Added support for Hidden and NoDisplay in menu-spec
+    * inital write-support in IniFile
+
+2003-10-04 Heinrich Wendel <h_wendel@cojobo.net>
+    * License change to LGPL-2
+    * initial support for menu-spec 0.7
+
+Version 0.4
+
+2003-09-30 Heinrich Wendel <h_wendel@cojobo.net>
+    * Bugfix release
+
+Version 0.3
+
+2003-09-12 Heinrich Wendel <h_wendel@cojobo.net>
+    * Complete IconSpec implementation, including cache and validation
+
+2003-09-07 Heinrich Wendel <h_wendel@cojobo.net>
+
+    * Basedir spec converted to version 0.6
+    * First part of separating DesktopEntry backend in IniFile
+    * added getPath(...) function to Menu.py
+
+Version 0.2
+
+2003-09-05 Heinrich Wendel <h_wendel@cojobo.net>
+
+    * Rewrite of menu-spec code
+    * Taken basedir-spec code from ROX
+
+Version 0.1
+
+2003-08-08 Heinrich Wendel <h_wendel@cojobo.net>
+
+    * initial public release

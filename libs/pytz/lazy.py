@@ -1,11 +1,8 @@
 from threading import RLock
 try:
-    from collections.abc import Mapping as DictMixin
-except ImportError:  # Python < 3.3
-    try:
-        from UserDict import DictMixin  # Python 2
-    except ImportError:  # Python 3.0-3.3
-        from collections import Mapping as DictMixin
+    from UserDict import DictMixin
+except ImportError:
+    from collections import Mapping as DictMixin
 
 
 # With lazy loading, we might end up with multiple threads triggering
@@ -16,7 +13,6 @@ _fill_lock = RLock()
 class LazyDict(DictMixin):
     """Dictionary populated on first use."""
     data = None
-
     def __getitem__(self, key):
         if self.data is None:
             _fill_lock.acquire()
