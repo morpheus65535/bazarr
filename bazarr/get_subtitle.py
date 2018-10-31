@@ -61,6 +61,52 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         language_hook=None
     """
 
+    """
+    throttle_callback:
+    
+    VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled)
+    
+    PROVIDER_THROTTLE_MAP = {
+        "default": {
+            TooManyRequests: (datetime.timedelta(hours=1), "1 hour"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
+            ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
+            APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
+        },
+        "opensubtitles": {
+            TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
+            DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+            APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
+        },
+        "addic7ed": {
+            DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
+            TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        }
+    }
+    
+    throttle_callback gist:
+        def provider_throttle(self, name, exception):
+            cls = getattr(exception, "__class__")
+            cls_name = getattr(cls, "__name__")
+            if cls not in VALID_THROTTLE_EXCEPTIONS:
+                for valid_cls in VALID_THROTTLE_EXCEPTIONS:
+                    if isinstance(cls, valid_cls):
+                        cls = valid_cls
+    
+            throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
+                PROVIDER_THROTTLE_MAP["default"].get(cls, None)
+    
+            if not throttle_data:
+                return
+    
+            throttle_delta, throttle_description = throttle_data    
+            throttle_until = datetime.datetime.now() + throttle_delta
+            
+            # save throttle_until together with provider name somewhere, then implement dynamic provider_list based on
+            # that
+
+    """
+
     try:
         if sceneName == "None" or use_scenename is False:
             used_sceneName = False
