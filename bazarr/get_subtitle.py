@@ -10,9 +10,11 @@ import time
 import subliminal
 import subliminal_patch
 from datetime import datetime, timedelta
-from babelfish import Language
-from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, score, list_subtitles, download_subtitles
+from subzero.language import Language
+from subzero.video import parse_video
+from subliminal import region, Video, download_best_subtitles, save_subtitles, score, list_subtitles, download_subtitles
 from subliminal_patch.core import SZAsyncProviderPool as AsyncProviderPool
+from subliminal_patch.score import compute_score
 from subliminal.subtitle import get_subtitle_path
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
@@ -25,7 +27,10 @@ import codecs
 from get_providers import get_providers, get_providers_auth
 
 # configure the cache
+
+# fixme: do this inside a setup routine
 region.configure('dogpile.cache.memory')
+
 
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, media_type):
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
@@ -45,10 +50,21 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
 
+    # todo:
+    """
+    AsyncProviderPool:
+    implement:
+        blacklist=None, 
+        throttle_callback=None,
+        pre_download_hook=None, 
+        post_download_hook=None, 
+        language_hook=None
+    """
+
     try:
         if sceneName == "None" or use_scenename is False:
             used_sceneName = False
-            video = scan_video(path)
+            video = parse_video(path, None, providers=providers)
         else:
             used_sceneName = True
             video = Video.fromname(sceneName)
@@ -118,7 +134,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                         try:
                             calculated_score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
                             if used_sceneName == True:
-                                video = scan_video(path)
+                                video = parse_video(path, None, providers=providers)
                             single = get_general_settings()[7]
                             if single is True:
                                 result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
@@ -193,7 +209,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
     try:
         if sceneName == "None" or use_scenename is False:
             used_sceneName = False
-            video = scan_video(path)
+            video = parse_video(path, None, providers=providers)
         else:
             used_sceneName = True
             video = Video.fromname(sceneName)
@@ -265,7 +281,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
     try:
         if sceneName is None or use_scenename is False:
             used_sceneName = False
-            video = scan_video(path)
+            video = parse_video(path, None, providers={provider})
         else:
             used_sceneName = True
             video = Video.fromname(sceneName)
@@ -284,7 +300,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             try:
                 score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                 if used_sceneName == True:
-                    video = scan_video(path)
+                    video = parse_video(path, None, providers={provider})
                 if single is True:
                     result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
                 else:
