@@ -40,7 +40,10 @@
                 width: 640px;
                 height: 480px;
                 margin: 20px;
-}
+            }
+            [data-tooltip]:after {
+                z-index: 2;
+            }
         </style>
     </head>
     <body>
