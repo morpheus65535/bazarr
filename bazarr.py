@@ -1,16 +1,19 @@
+# coding=utf-8
+
 import subprocess as sp
 import threading
 import time
 import os
 import sys
 
-from bazarr.get_argv import config_dir, arguments
+from bazarr import libs
+from bazarr.get_args import args
 
 dir_name = os.path.dirname(__file__)
 
 
 def start_bazarr():
-    script = [sys.executable, "-u", os.path.normcase(os.path.join(globals()['dir_name'], 'bazarr/main.py'))] + arguments
+    script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
 
     ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
     print "Bazarr starting..."
@@ -22,8 +25,8 @@ def start_bazarr():
 
 
 if __name__ == '__main__':
-    restartfile = os.path.normcase(os.path.join(config_dir, 'bazarr.restart'))
-    stopfile = os.path.normcase(os.path.join(config_dir, 'bazarr.stop'))
+    restartfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.restart'))
+    stopfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.stop'))
 
     try:
         os.remove(restartfile)

@@ -1,14 +1,16 @@
-from get_argv import config_dir
+# coding=utf-8
 
 import os
 import sqlite3
 
+from get_args import args
+
 # Check if database exist
-if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
+if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-    
+
     # Execute tables modifications
     try:
         c.execute('alter table table_settings_providers add column "username" "text"')
@@ -54,7 +56,6 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
         c.execute('alter table table_settings_languages add column "code3b" "text"')
     except:
         pass
-
 
     # Commit change to db
     db.commit()

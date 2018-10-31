@@ -1,12 +1,14 @@
-from get_argv import config_dir
+# coding=utf-8
 
 import os
 import re
-
 import ast
+
+from get_args import args
 from configparser import ConfigParser
 
-config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
+config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
+
 
 def get_general_settings():
     cfg = ConfigParser()
@@ -29,7 +31,7 @@ def get_general_settings():
 
         if cfg.has_option('general', 'base_url'):
             base_url = cfg.get('general', 'base_url')
-            if base_url.endswith('/') is False:
+            if not base_url.endswith('/'):
                 base_url += '/'
         else:
             base_url = '/'
@@ -110,7 +112,7 @@ def get_general_settings():
             serie_default_hi = 'False'
 
         if cfg.has_option('general', 'movie_default_enabled'):
-                movie_default_enabled = cfg.getboolean('general', 'movie_default_enabled')
+            movie_default_enabled = cfg.getboolean('general', 'movie_default_enabled')
         else:
             movie_default_enabled = False
 
@@ -143,7 +145,7 @@ def get_general_settings():
             only_monitored = cfg.getboolean('general', 'only_monitored')
         else:
             only_monitored = False
-            
+
         if cfg.has_option('general', 'adaptive_searching'):
             adaptive_searching = cfg.getboolean('general', 'adaptive_searching')
         else:
@@ -177,7 +179,11 @@ def get_general_settings():
         only_monitored = False
         adaptive_searching = False
 
-    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored, adaptive_searching]
+    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score,
+            use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie,
+            serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,
+            movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored,
+            adaptive_searching]
 
 
 def get_auth_settings():
@@ -224,12 +230,12 @@ def get_proxy_settings():
             proxy_type = cfg.get('proxy', 'type')
         else:
             proxy_type = 'None'
-            
+
         if cfg.has_option('proxy', 'url'):
             url = cfg.get('proxy', 'url')
         else:
             url = ''
-            
+
         if cfg.has_option('proxy', 'port'):
             port = cfg.get('proxy', 'port')
         else:
@@ -244,7 +250,7 @@ def get_proxy_settings():
             password = cfg.get('proxy', 'password')
         else:
             password = ''
-            
+
         if cfg.has_option('proxy', 'exclude'):
             exclude = cfg.get('proxy', 'exclude')
         else:
@@ -321,8 +327,6 @@ def get_sonarr_settings():
     url_sonarr = protocol_sonarr + "://" + ip + ":" + port + base_url
     url_sonarr_short = protocol_sonarr + "://" + ip + ":" + port
 
-
-
     return [ip, port, base_url, ssl, apikey, full_update, url_sonarr, url_sonarr_short]
 
 
@@ -379,7 +383,7 @@ def get_radarr_settings():
 
     if base_url is None:
         base_url = "/"
-    if base_url.startswith("/") is False:
+    if not base_url.startswith("/"):
         base_url = "/" + base_url
     if base_url.endswith("/"):
         base_url = base_url[:-1]
@@ -387,8 +391,7 @@ def get_radarr_settings():
     url_radarr = protocol_radarr + "://" + ip + ":" + port + base_url
     url_radarr_short = protocol_radarr + "://" + ip + ":" + port
 
-    return [ip, port, base_url, ssl, apikey, full_update, url_radarr , url_radarr_short]
-
+    return [ip, port, base_url, ssl, apikey, full_update, url_radarr, url_radarr_short]
 
 
 def path_replace(path):
@@ -402,6 +405,7 @@ def path_replace(path):
             break
     return path
 
+
 def path_replace_reverse(path):
     for path_mapping in path_mappings:
         if path_mapping[1] in path:
@@ -412,6 +416,7 @@ def path_replace_reverse(path):
                 path = path.replace('\\', '/')
             break
     return path
+
 
 def path_replace_movie(path):
     for path_mapping in path_mappings_movie:
@@ -424,6 +429,7 @@ def path_replace_movie(path):
             break
     return path
 
+
 def path_replace_reverse_movie(path):
     for path_mapping in path_mappings_movie:
         if path_mapping[1] in path:
@@ -435,6 +441,7 @@ def path_replace_reverse_movie(path):
             break
     return path
 
+
 def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3):
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
@@ -444,6 +451,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2)
     pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3)
     return pp_command
+
 
 result = get_general_settings()
 ip = result[0]

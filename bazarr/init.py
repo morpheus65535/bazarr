@@ -1,31 +1,36 @@
+# coding=utf-8
+
 import os
 import sqlite3
 import logging
+import time
 
+from cork import Cork
 from configparser import ConfigParser
-from get_argv import config_dir
+from get_args import args
 
-# Check if config_dir exist
-if os.path.exists(config_dir) is False:
+# Check if args.config_dir exist
+if not os.path.exists(args.config_dir):
     # Create config_dir directory tree
     try:
-        os.mkdir(os.path.join(config_dir))
+        os.mkdir(os.path.join(args.config_dir))
         logging.debug("BAZARR Created data directory")
     except OSError:
-        logging.exception("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
+        logging.exception(
+            "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
-if os.path.exists(os.path.join(config_dir, 'config')) is False:
-    os.mkdir(os.path.join(config_dir, 'config'))
+if not os.path.exists(os.path.join(args.config_dir, 'config')):
+    os.mkdir(os.path.join(args.config_dir, 'config'))
     logging.debug("BAZARR Created config folder")
-if os.path.exists(os.path.join(config_dir, 'db')) is False:
-    os.mkdir(os.path.join(config_dir, 'db'))
+if not os.path.exists(os.path.join(args.config_dir, 'db')):
+    os.mkdir(os.path.join(args.config_dir, 'db'))
     logging.debug("BAZARR Created db folder")
-if os.path.exists(os.path.join(config_dir, 'log')) is False:
-    os.mkdir(os.path.join(config_dir, 'log'))
+if not os.path.exists(os.path.join(args.config_dir, 'log')):
+    os.mkdir(os.path.join(args.config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
 
-config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
+config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 cfg = ConfigParser()
 try:
@@ -37,7 +42,7 @@ try:
     fd.close()
 
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Execute script and commit change to database
@@ -59,18 +64,16 @@ except Exception:
 if cfg.has_section('auth'):
     if cfg.has_option('auth', 'enabled'):
         enabled = cfg.getboolean('auth', 'enabled')
-        if enabled is True:
+        if enabled:
             cfg.set('auth', 'type', 'basic')
-        elif enabled is False:
+        else:
             cfg.set('auth', 'type', 'None')
         cfg.remove_option('auth', 'enabled')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
 
-from cork import Cork
-import time
-if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json'))) is False:
-    cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
+if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+    cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
 
     cork._store.roles[''] = 100
     cork._store.save_roles()

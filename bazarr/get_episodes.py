@@ -1,18 +1,22 @@
-from get_argv import config_dir
+# coding=utf-8
 
 import os
 import sqlite3
 import requests
 import logging
 
+from get_args import args
 from get_settings import path_replace
-from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, movies_full_scan_subtitles
-    
+from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, \
+    movies_full_scan_subtitles
+
+
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
     list_missing_subtitles()
     logging.info('BAZARR All missing episode subtitles updated in database.')
+
 
 def update_all_movies():
     movies_full_scan_subtitles()
@@ -20,14 +24,15 @@ def update_all_movies():
     list_missing_subtitles()
     logging.info('BAZARR All missing movie subtitles updated in database.')
 
+
 def sync_episodes():
     logging.debug('BAZARR Starting episode sync from Sonarr.')
     from get_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
-    
+
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Get current episodes id in DB
@@ -74,20 +79,30 @@ def sync_episodes():
                                 current_episodes_sonarr.append(episode['id'])
 
                                 if episode['id'] in current_episodes_db_list:
-                                    episodes_to_update.append((episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored'])), episode['id']))
+                                    episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
+                                                               episode['seasonNumber'], episode['episodeNumber'],
+                                                               sceneName, str(bool(episode['monitored'])),
+                                                               episode['id']))
                                 else:
-                                    episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'], episode['episodeFile']['path'], episode['seasonNumber'], episode['episodeNumber'], sceneName, str(bool(episode['monitored']))))
+                                    episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
+                                                            episode['episodeFile']['path'], episode['seasonNumber'],
+                                                            episode['episodeNumber'], sceneName,
+                                                            str(bool(episode['monitored']))))
 
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
     # Update or insert movies in DB
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
-    updated_result = c.executemany('''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''', episodes_to_update)
+    updated_result = c.executemany(
+        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''',
+        episodes_to_update)
     db.commit()
 
-    added_result = c.executemany('''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', episodes_to_add)
+    added_result = c.executemany(
+        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        episodes_to_add)
     db.commit()
 
     for removed_episode in removed_episodes:
