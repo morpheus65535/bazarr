@@ -3,7 +3,7 @@ bazarr_version = '0.6.7'
 import gc
 gc.enable()
 
-from get_argv import config_dir, no_update
+from get_argv import config_dir, no_update, console_debug
 
 import os
 import sys
@@ -29,6 +29,7 @@ log_level = get_general_settings()[4]
 if log_level is None:
     log_level = "INFO"
 
+
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
         """
@@ -43,8 +44,8 @@ class OneLineExceptionFormatter(logging.Formatter):
             s = s.replace('\n', '') + '|'
         return s
 
-def configure_logging():
-    global fh
+
+def configure_logging(console_debug=False):
     fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1, backupCount=7)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
@@ -52,14 +53,29 @@ def configure_logging():
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
     logging.getLogger("subliminal").setLevel(logging.CRITICAL)
+    logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
+    logging.getLogger("subzero").setLevel(logging.WARNING)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     root = logging.getLogger()
     root.setLevel(log_level)
     root.addHandler(fh)
 
-configure_logging()
+    if console_debug:
+        logging.getLogger("subliminal").setLevel(logging.DEBUG)
+        logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
+        logging.getLogger("subzero").setLevel(logging.DEBUG)
+        sh = logging.StreamHandler(sys.stdout)
+        cf = logging.Formatter('%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) '
+                               '- %(message)s')
+        sh.setFormatter(cf)
+        root.addHandler(sh)
+
+
+configure_logging(console_debug=console_debug)
+
 
 import requests
 if get_proxy_settings()[0] != 'None':
