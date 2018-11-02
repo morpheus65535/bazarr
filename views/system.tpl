@@ -49,6 +49,10 @@
 			<div class="ui basic icon buttons" style="float: right;">
 				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
 				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
+                % from get_settings import get_auth_settings
+                % if get_auth_settings()[0] != 'None':
+                <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
+                % end
 			</div>
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
@@ -233,7 +237,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="wikipedia w icon"></i><a href=https://github.com/morpheus65535/bazarr/wiki">Bazarr Wiki</a>
+                                        <i class="wikipedia w icon"></i><a href="https://github.com/morpheus65535/bazarr/wiki">Bazarr Wiki</a>
                                     </div>
                                 </div>
                             </div>
@@ -363,6 +367,10 @@
 		});
 	})
 
+    $('#logout').click(function(){
+		window.location = '{{base_url}}logout';
+	})
+
 	$('#restart').click(function(){
 		$('#loader_text').text("Bazarr is restarting, please wait...");
 		$.ajax({
@@ -374,7 +382,7 @@
 		});
 	})
 
-	% from get_settings import get_general_settings
+    % from get_settings import get_general_settings
 	% ip = get_general_settings()[0]
 	% port = get_general_settings()[1]
 	% base_url = get_general_settings()[2]
