@@ -24,6 +24,11 @@ if os.path.exists(os.path.join(config_dir, 'db')) is False:
 if os.path.exists(os.path.join(config_dir, 'log')) is False:
     os.mkdir(os.path.join(config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
+    
+if not os.path.exists(os.path.join(config_dir, 'config', 'releases.txt')):
+    from check_update import check_releases
+    check_releases()
+    logging.debug("BAZARR Created releases file")
 
 config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
 

@@ -53,6 +53,7 @@
 			<div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
+                <a class="tabs item" data-tab="status">Status</a>
 				<a class="tabs item" data-tab="releases">Releases</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
@@ -114,6 +115,144 @@
 					</div>
                     %end
 				</div>
+			</div>
+            <div class="ui bottom attached tab segment" data-tab="status">
+				<div class="ui dividing header">About</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Version</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{bazarr_version}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Operation system</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{operation_system}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        % from get_settings import get_general_settings
+                        % if get_general_settings()[12]:
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Sonarr version</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{sonarr_version}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        % end
+                        % if get_general_settings()[13]:
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Radarr version</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{radarr_version}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        % end
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Python version</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{python_version}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Bazarr config dir</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{config_dir}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Bazarr directory</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{bazarr_dir}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui dividing header">More info</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Source</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <i class="github icon"></i><a href="https://github.com/morpheus65535/bazarr">Bazarr on GitHub</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Wiki</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <i class="wikipedia w icon"></i><a href=https://github.com/morpheus65535/bazarr/wiki">Bazarr Wiki</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Discord</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <i class="discord icon"></i><a href="https://discord.gg/MH2e2eb">Bazarr on Discord</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
 			</div>
 
 			<div class="ui bottom attached tab segment" data-tab="releases">

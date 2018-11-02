@@ -7,7 +7,9 @@ from get_movies import update_movies
 from list_subtitles import store_subtitles
 from get_subtitle import wanted_search_missing_subtitles
 if no_update is False:
-    from check_update import check_and_apply_update
+    from check_update import check_and_apply_update, check_releases
+else:
+    from check_update import check_releases
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -66,6 +68,10 @@ if no_update is False:
         scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
     else:
         scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name='Update bazarr from source on Github')
+        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_release', name='Update release info')
+else:
+    scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+                      id='update_release', name='Update release info')
 
 if integration[12] is True:
     scheduler.add_job(update_series, IntervalTrigger(minutes=1), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_series', name='Update series list from Sonarr')
