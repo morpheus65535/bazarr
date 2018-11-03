@@ -51,7 +51,7 @@
 				padding-left: 2em;
 				padding-right: 2em;
 				padding-bottom: 1em;
-				overflow-x:auto;
+				overflow-x: auto;
 			}
 			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
 				background: transparent !important;
@@ -165,6 +165,7 @@
 									<tr>
 										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
+                                        <th class="collapsing"></th>
 										<th>Title</th>
 										<th class="collapsing">Existing<br>subtitles</th>
 										<th class="collapsing">Missing<br>subtitles</th>
@@ -182,7 +183,12 @@
                                             %end
                                         </td>
 										<td>{{episode[3]}}</td>
-										<td>{{episode[0]}}</td>
+                                        <td>
+                                        % if episode[8] is not None:
+                                            <span data-tooltip="{{episode[8]}}"><i class="info circle icon"></i></span>
+                                        % end
+                                        </td>
+										<td><span data-tooltip="{{episode[1]}}">{{episode[0]}}</span></td>
 										<td>
 										%if episode[4] is not None:
 										%	actual_languages = ast.literal_eval(episode[4])
@@ -208,7 +214,7 @@
 										%end
 										</td>
 										<td>
-										%try:
+                                        %try:
 											%if episode[6] is not None:
 											%	missing_languages = ast.literal_eval(episode[6])
                                             %   missing_languages.sort()
@@ -216,15 +222,34 @@
 											%	missing_languages = None
 											%end
 											%if missing_languages is not None:
+                                                %from get_subtitle import search_active
+                                                %from get_settings import get_general_settings
                                                 %for language in missing_languages:
-                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
-													{{language}}
-													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                    %if episode[10] is not None and get_general_settings()[25]:
+                                                        %for lang in ast.literal_eval(episode[10]):
+                                                            %if language in lang:
+                                                                %active = search_active(lang[1])
+                                                                %if active:
+                                                                    <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+													                {{language}}
+                                                                    <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                                %else:
+                                                                    <a data-tooltip="Exclude from automatic search" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+													                {{language}}
+                                                                    <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+                                                                %end
+                                                            %end
+                                                        %end
+                                                    %else:
+                                                        <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                            {{language}}
+                                                        <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                    %end
 												</a>
-												%end
+                                                %end
 											%end
-										%except:
-											%pass
+                                        %except:
+                                            %pass
 										%end
 										</td>
 										<td>
