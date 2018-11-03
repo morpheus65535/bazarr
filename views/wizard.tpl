@@ -347,7 +347,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
                                         %for provider in settings_providers:
@@ -390,7 +390,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Languages</option>
                                         %enabled_languages = []
                                         %for language in settings_languages:
@@ -436,7 +436,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
@@ -493,7 +493,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
