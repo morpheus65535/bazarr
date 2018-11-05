@@ -33,6 +33,9 @@
                 opacity: 0.45 !important;
                 pointer-events: none !important;
             }
+            [data-tooltip]:after {
+                z-index: 2;
+            }
         </style>
     </head>
     <body>
