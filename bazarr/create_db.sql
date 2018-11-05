@@ -28,10 +28,10 @@ CREATE TABLE "table_settings_notifier" (
 );
 CREATE TABLE "table_settings_languages" (
 	`code3`	TEXT NOT NULL UNIQUE,
-	`code3b`	TEXT,
 	`code2`	TEXT,
 	`name`	TEXT NOT NULL,
 	`enabled`	INTEGER,
+	`code3b`	TEXT,
 	PRIMARY KEY(`code3`)
 );
 CREATE TABLE "table_history" (
