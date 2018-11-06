@@ -69,11 +69,11 @@
 					<tr class="selectable">
 						<td class="collapsing">
 						%if row[0] == 0:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been erased." data-inverted="">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
 						%elif row[0] == 1:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
 						%end
@@ -95,7 +95,7 @@
 							%end
 						</td>
 						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[4]))}}" data-inverted="">
+							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[4]))}}" data-inverted="" data-position="top left">
 								{{pretty.date(int(row[4]))}}
 							</div>
 						</td>

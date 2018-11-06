@@ -120,6 +120,9 @@
 				<p style='margin-top: 3em;'>
 					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
 					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+					% if details[12] is not None:
+					<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
+					% end
 				</p>
 				<p style='margin-top: 2em;'>
 					%for language in subs_languages_list:
