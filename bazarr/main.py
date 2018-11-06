@@ -74,8 +74,11 @@ if get_proxy_settings()[0] != 'None':
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
-bottle.debug(True)
-bottle.TEMPLATES.clear()
+if "PYCHARM_HOSTED" in os.environ:
+    bottle.debug(True)
+    bottle.TEMPLATES.clear()
+else:
+    bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
