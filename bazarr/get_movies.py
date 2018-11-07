@@ -50,7 +50,7 @@ def update_movies():
             for movie in r.json():
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        if movie['movieFile']['relativePath'] is not None:
+                        if movie["path"] != None and movie['movieFile']['relativePath'] != None:
                             try:
                                 overview = unicode(movie['overview'])
                             except:

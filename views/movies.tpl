@@ -72,17 +72,22 @@
 					<tr class="selectable">
 						<td>
 							%if row[8] == "True":
-							<span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+							<span data-tooltip="Movie monitored in Radarr" data-inverted="" data-position="top left"><i class="bookmark icon"></i></span>
 							%else:
-							<span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+							<span data-tooltip="Movie unmonitored in Radarr" data-inverted="" data-position="top left"><i class="bookmark outline icon"></i></span>
 							%end
 						</td>
-						<td><a href="{{base_url}}movie/{{row[5]}}">{{row[1]}}</a></td>
+						<td>
+							% if row[9] is not None:
+							<span data-tooltip="Scenename is: {{row[9]}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
+							% end
+							<a href="{{base_url}}movie/{{row[5]}}">{{row[1]}}</a>
+						</td>
 						<td>
 							%if os.path.isfile(row[2]):
-							<span data-tooltip="This path seems to be valid." data-inverted=""><i class="checkmark icon"></i></span>
+							<span data-tooltip="This path seems to be valid." data-inverted="" data-position="top left"><i class="checkmark icon"></i></span>
 							%else:
-							<span data-tooltip="This path doesn't seems to be valid." data-inverted=""><i class="warning sign icon"></i></span>
+							<span data-tooltip="This path doesn't seems to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
 							%end
 							{{row[2]}}
 						</td>
@@ -105,7 +110,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit movies" data-inverted="" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit movies" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>

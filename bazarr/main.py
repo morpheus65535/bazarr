@@ -74,8 +74,11 @@ if get_proxy_settings()[0] != 'None':
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
-bottle.debug(True)
-bottle.TEMPLATES.clear()
+if "PYCHARM_HOSTED" in os.environ:
+    bottle.debug(True)
+    bottle.TEMPLATES.clear()
+else:
+    bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
@@ -721,7 +724,7 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
