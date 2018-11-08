@@ -53,6 +53,8 @@ blue info circle icon \\
 yellow warning circle icon \\
 %elif line[1] == 'ERROR':
 red bug icon \\
+%elif line[1] == 'DEBUG':
+bug icon \\
 %end
 %except:
 %pass
