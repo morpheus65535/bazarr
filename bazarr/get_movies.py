@@ -80,12 +80,12 @@ def update_movies():
                                 separator = "\\"
 
                             if unicode(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append((movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
+                                movies_to_update.append((movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie['sortTitle'],movie["tmdbId"]))
                             else:
                                 if movie_default_enabled is True:
-                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
                                 else:
-                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
                         else:
                             logging.error('BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator + movie['movieFile']['relativePath'])
 
@@ -93,14 +93,14 @@ def update_movies():
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
             c = db.cursor()
 
-            updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', movies_to_update)
+            updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle= ? WHERE tmdbid = ?''', movies_to_update)
             db.commit()
 
             if movie_default_enabled is True:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
                 db.commit()
             else:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
                 db.commit()
             db.close()
 
