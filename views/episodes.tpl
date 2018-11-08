@@ -214,26 +214,27 @@
 										</td>
 										<td>
                                         %try:
-											%if episode[6] is not None:
-											%	missing_languages = ast.literal_eval(episode[6])
-                                            %   missing_languages.sort()
-											%else:
-											%	missing_languages = None
-											%end
-											%if missing_languages is not None:
-                                                %from get_subtitle import search_active
-                                                %from get_settings import get_general_settings
-                                                %for language in missing_languages:
-                                                    %if episode[10] is not None and get_general_settings()[25]:
-                                                        %for lang in ast.literal_eval(episode[10]):
-                                                            %if language in lang:
-                                                                %active = search_active(lang[1])
-                                                                %if active:
+                                        <%
+                                            if episode[6] is not None:
+                                                missing_languages = ast.literal_eval(episode[6])
+                                                missing_languages.sort()
+										    else:
+												missing_languages = None
+											end
+											if missing_languages is not None:
+                                                from get_subtitle import search_active
+                                                from get_settings import get_general_settings
+                                                for language in missing_languages:
+                                                    if episode[10] is not None and get_general_settings()[25]:
+                                                        for lang in ast.literal_eval(episode[10]):
+                                                            if language in lang:
+                                                                if search_active(lang[1]):
+                                        %>
                                                                     <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
                                                                 %else:
-                                                                    <a data-tooltip="Excluded from automatic search" data-position="top right" data-inverted="" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
                                                                 %end

@@ -76,23 +76,27 @@
 						</td>
 						<td>{{row[2]}}</td>
 						<td>
-						%missing_languages = ast.literal_eval(row[3])
-						%if missing_languages is not None:
-                            %from get_subtitle import search_active
-                            %from get_settings import get_general_settings
-							%for language in missing_languages:
-                                %if row[9] is not None and get_general_settings()[25]:
-                                        %for lang in ast.literal_eval(row[9]):
-                                            %if language in lang:
-                                                %active = search_active(lang[1])
-                                                %if active:
+                        <%
+                        missing_languages = ast.literal_eval(row[3])
+						if missing_languages is not None:
+                            from get_subtitle import search_active
+                            from get_settings import get_general_settings
+							for language in missing_languages:
+                                if row[9] is not None and get_general_settings()[25]:
+                                        for lang in ast.literal_eval(row[9]):
+                                            if language in lang:
+                                                active = search_active(lang[1])
+                                                if active:
+                        %>
                                                     <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                    </a>
                                                 %else:
-                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+                                                    </a>
                                                 %end
                                             %end
                                         %end
@@ -100,6 +104,7 @@
                                         <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                             {{language}}
                                         <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                        </a>
                                 %end
 
 							%end
