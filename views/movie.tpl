@@ -170,7 +170,8 @@
 						</tbody>
 					</table>
 					<%
-					missing_subs_languages = ast.literal_eval(str(details[11]))
+					missing_subs_languages = ast.literal_eval(details[11])
+                    from get_subtitle import search_active
 					if missing_subs_languages is not None:
 					%>
 					<table class="ui very basic single line selectable table">
@@ -182,12 +183,32 @@
 					</table>
 					<%
 						for missing_subs_language in missing_subs_languages:
+						    if details[14] is not None and get_general_settings()[25]:
+                                for lang in ast.literal_eval(details[14]):
+                                    if missing_subs_language in lang:
+                                        if search_active(lang[1]):
 					%>
 							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>
+                                        %else:
+                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language))}}
+								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							</a>
 					<%
+                                        end
+                                    end
+                                end
+                            else:
+                    %>
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language))}}
+								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							</a>
+                    <%
+                            end
 						end
 					end
 					%>
