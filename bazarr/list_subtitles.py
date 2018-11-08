@@ -100,7 +100,7 @@ def store_subtitles_movie(file):
                 actual_subtitles.append([str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
             else:
                 if os.path.splitext(subtitle)[1] != ".sub":
-                    with open(path_replace_movie(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                    with open(path_replace_movie(os.path.join(os.path.dirname(file.encode("UTF-8")), subtitle)), 'r') as f:
                         text = list(islice(f, 100))
                         text = ' '.join(text)
                         encoding = UnicodeDammit(text)
