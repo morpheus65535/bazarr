@@ -79,7 +79,7 @@
 						</td>
 						<td><a href="{{base_url}}movie/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
-							%if os.path.isfile(row[2]):
+							%if os.path.isfile(row[2].encode("UTF-8")):
 							<span data-tooltip="This path seems to be valid." data-inverted=""><i class="checkmark icon"></i></span>
 							%else:
 							<span data-tooltip="This path doesn't seems to be valid." data-inverted=""><i class="warning sign icon"></i></span>
