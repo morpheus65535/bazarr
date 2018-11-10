@@ -23,7 +23,7 @@ update_notifier()
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
-from logger import configure_logging, empty_log
+from logger import configure_logging, empty_log, update_settings
 configure_logging()
 
 import requests
@@ -1100,8 +1100,8 @@ def save_settings():
 
     settings_general = get_general_settings()
 
-    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[4]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_debug), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
     cfg = ConfigParser()
@@ -1129,6 +1129,8 @@ def save_settings():
     cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+    
+    update_settings(settings_general_debug)
 
     if after != before:
         configured()
