@@ -50,54 +50,57 @@ def update_movies():
             for movie in r.json():
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
-                        try:
-                            overview = unicode(movie['overview'])
-                        except:
-                            overview = ""
-                        try:
-                            poster_big = movie['images'][0]['url']
-                            poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
-                        except:
-                            poster = ""
-                        try:
-                            fanart = movie['images'][1]['url']
-                        except:
-                            fanart = ""
+                        if movie["path"] != None and movie['movieFile']['relativePath'] != None:
+                            try:
+                                overview = unicode(movie['overview'])
+                            except:
+                                overview = ""
+                            try:
+                                poster_big = movie['images'][0]['url']
+                                poster = os.path.splitext(poster_big)[0] + '-500' + os.path.splitext(poster_big)[1]
+                            except:
+                                poster = ""
+                            try:
+                                fanart = movie['images'][1]['url']
+                            except:
+                                fanart = ""
 
-                        if 'sceneName' in movie['movieFile']:
-                            sceneName = movie['movieFile']['sceneName']
-                        else:
-                            sceneName = None
-
-                        # Add movies in radarr to current movies list
-                        current_movies_radarr.append(unicode(movie['tmdbId']))
-
-                        # Detect file separator
-                        if movie['path'][0] == "/":
-                            separator = "/"
-                        else:
-                            separator = "\\"
-
-                        if unicode(movie['tmdbId']) in current_movies_db_list:
-                            movies_to_update.append((movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie["tmdbId"]))
-                        else:
-                            if movie_default_enabled is True:
-                                movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                            if 'sceneName' in movie['movieFile']:
+                                sceneName = movie['movieFile']['sceneName']
                             else:
-                                movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored']))))
+                                sceneName = None
+
+                            # Add movies in radarr to current movies list
+                            current_movies_radarr.append(unicode(movie['tmdbId']))
+
+                            # Detect file separator
+                            if movie['path'][0] == "/":
+                                separator = "/"
+                            else:
+                                separator = "\\"
+
+                            if unicode(movie['tmdbId']) in current_movies_db_list:
+                                movies_to_update.append((movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie['sortTitle'],movie["tmdbId"]))
+                            else:
+                                if movie_default_enabled is True:
+                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
+                                else:
+                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
+                        else:
+                            logging.error('BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator + movie['movieFile']['relativePath'])
 
             # Update or insert movies in DB
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
             c = db.cursor()
 
-            updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ? WHERE tmdbid = ?''', movies_to_update)
+            updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle= ? WHERE tmdbid = ?''', movies_to_update)
             db.commit()
 
             if movie_default_enabled is True:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
                 db.commit()
             else:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
                 db.commit()
             db.close()
 

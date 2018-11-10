@@ -96,70 +96,76 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                 logging.debug('BAZARR ' + str(len(subtitles_list)) + " subtitles have been found for this file: " + path)
                 if len(subtitles_list) > 0:
                     try:
-                        best_subtitle = subtitles_list[0]
-                        download_subtitles([best_subtitle], providers=providers, provider_configs=providers_auth)
-                        logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
+                        pdownload_result = False
+                        for subtitle in subtitles_list:
+                            download_result = p.download_subtitle(subtitle)
+                            if download_result == True:
+                                logging.debug('BAZARR Subtitles file downloaded from ' + str(subtitle.provider_name) + ' for this file: ' + path)
+                                break
+                            else:
+                                logging.warning('BAZARR Subtitles file skipped from ' + str(subtitle.provider_name) + ' for this file: ' + path + ' because no content was returned by the provider (probably throttled).')
+                                continue
+                        if download_result == False:
+                            logging.error('BAZARR Tried to download a subtitles for file: ' + path + " but we weren't able to do it this time (probably being throttled). Going to retry on next search.")
+                            return None
                     except Exception as e:
                         logging.exception('BAZARR Error downloading subtitles for this file ' + path)
                         return None
                     else:
                         try:
-                            calculated_score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
+                            calculated_score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
                             if used_sceneName == True:
                                 video = scan_video(path)
                             single = get_general_settings()[7]
                             if single is True:
-                                result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                                result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
                             else:
-                                result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                                result = save_subtitles(video, [subtitle], encoding='utf-8')
                         except Exception as e:
                             logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
                             pass
                         else:
-                            if len(result) > 0:
-                                downloaded_provider = result[0].provider_name
-                                downloaded_language = language_from_alpha3(result[0].language.alpha3)
-                                downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
-                                downloaded_language_code3 = result[0].language.alpha3
-                                downloaded_path = get_subtitle_path(path, language=language_set)
-                                logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
-                                if used_sceneName == True:
-                                    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using this scene name: " + sceneName
-                                else:
-                                    message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using filename guessing."
-
-                                if use_postprocessing is True:
-                                    command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
-                                    try:
-                                        if os.name == 'nt':
-                                            codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                                            # wait for the process to terminate
-                                            out_codepage, err_codepage = codepage.communicate()
-                                            encoding = out_codepage.split(':')[-1].strip()
-
-                                        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                                        # wait for the process to terminate
-                                        out, err = process.communicate()
-
-                                        if os.name == 'nt':
-                                            out = out.decode(encoding)
-
-                                    except:
-                                        if out == "":
-                                            logging.error('BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                        else:
-                                            logging.error('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                                    else:
-                                        if out == "":
-                                            logging.info('BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                        else:
-                                            logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-
-                                return message
+                            downloaded_provider = result[0].provider_name
+                            downloaded_language = language_from_alpha3(result[0].language.alpha3)
+                            downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
+                            downloaded_language_code3 = result[0].language.alpha3
+                            downloaded_path = get_subtitle_path(path, language=language_set)
+                            logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
+                            if used_sceneName == True:
+                                message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using this scene name: " + sceneName
                             else:
-                                logging.error('BAZARR Tried to download best subtitles available for file: ' + path + ' but it had no content. Going to retry on next search.')
-                                return None
+                                message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(calculated_score) + "% using filename guessing."
+
+                            if use_postprocessing is True:
+                                command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2, downloaded_language_code3)
+                                try:
+                                    if os.name == 'nt':
+                                        codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                        # wait for the process to terminate
+                                        out_codepage, err_codepage = codepage.communicate()
+                                        encoding = out_codepage.split(':')[-1].strip()
+
+                                    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                    # wait for the process to terminate
+                                    out, err = process.communicate()
+
+                                    if os.name == 'nt':
+                                        out = out.decode(encoding)
+
+                                except:
+                                    if out == "":
+                                        logging.error('BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                                    else:
+                                        logging.error('BAZARR Post-processing result for file ' + path + ' : ' + out)
+                                else:
+                                    if out == "":
+                                        logging.info('BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+                                    else:
+                                        logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+
+                            return message
                 else:
+                    logging.debug('BAZARR No subtitles were found for this file: ' + path)
                     return None
     logging.debug('BAZARR Ended searching subtitles for file: ' + path)
 
@@ -265,8 +271,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         pass
     else:
         try:
-            best_subtitle = subtitle
-            download_subtitles([best_subtitle], providers=provider, provider_configs=providers_auth)
+            download_subtitles([subtitle], providers=provider, provider_configs=providers_auth)
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
         except Exception as e:
             logging.exception('BAZARR Error downloading subtitles for this file ' + path)
@@ -274,13 +279,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         else:
             single = get_general_settings()[7]
             try:
-                score = round(float(compute_score(best_subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
+                score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                 if used_sceneName == True:
                     video = scan_video(path)
                 if single is True:
-                    result = save_subtitles(video, [best_subtitle], single=True, encoding='utf-8')
+                    result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
                 else:
-                    result = save_subtitles(video, [best_subtitle], encoding='utf-8')
+                    result = save_subtitles(video, [subtitle], encoding='utf-8')
             except Exception as e:
                 logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
                 return None
@@ -323,7 +328,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
                     return message
                 else:
-                    logging.error('BAZARR Tried to manually download a subtitles for file: ' + path + ' but it had no content. Going to retry on next search.')
+                    logging.error('BAZARR Tried to manually download a subtitles for file: ' + path + " but we weren't able to do (probably throttled by ' + str(subtitle.provider_name) + '. Please retry later or select a subtitles from another provider.")
                     return None
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
