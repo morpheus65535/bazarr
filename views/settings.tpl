@@ -146,12 +146,6 @@
                                     <label></label>
                                 </div>
                             </div>
-
-                            <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
-                                    <i class="yellow warning sign icon"></i>
-                                </div>
-                            </div>
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon" data-tooltip="Debug logging should only be enabled temporarily" data-inverted="">
                                     <i class="help circle large icon"></i>
