@@ -218,8 +218,6 @@
                                             if episode[6] is not None:
                                                 missing_languages = ast.literal_eval(episode[6])
                                                 missing_languages.sort()
-										    else:
-												missing_languages = None
 											end
 											if missing_languages is not None:
                                                 from get_subtitle import search_active
@@ -233,10 +231,12 @@
                                                                     <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                                    </a>
                                                                 %else:
                                                                     <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+                                                                    </a>
                                                                 %end
                                                             %end
                                                         %end
@@ -244,8 +244,8 @@
                                                         <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
                                                             {{language}}
                                                         <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                        </a>
                                                     %end
-												</a>
                                                 %end
 											%end
                                         %except:
