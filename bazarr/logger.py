@@ -152,7 +152,6 @@ def update_settings(debug):
         level = "INFO"
     else:
         level = "DEBUG"
-    print debug, level
     logger.setLevel(level)
     for handler in logger.handlers:
         handler.setLevel(level)
