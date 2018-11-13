@@ -71,6 +71,13 @@ if cfg.has_section('auth'):
         cfg.remove_option('auth', 'enabled')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
+            
+if cfg.has_section('general'):
+    if cfg.has_option('general', 'log_level'):
+        cfg.remove_option('general', 'log_level')
+        cfg.set('general', 'debug', 'False')
+        with open(config_file, 'w+') as configfile:
+            cfg.write(configfile)
 
 from cork import Cork
 import time

@@ -23,42 +23,7 @@ update_notifier()
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
-from logging.handlers import TimedRotatingFileHandler
-
-log_level = get_general_settings()[4]
-if log_level is None:
-    log_level = "INFO"
-
-class OneLineExceptionFormatter(logging.Formatter):
-    def formatException(self, exc_info):
-        """
-        Format an exception so that it prints on a single line.
-        """
-        result = super(OneLineExceptionFormatter, self).formatException(exc_info)
-        return repr(result) # or format into one line however you want to
-
-    def format(self, record):
-        s = super(OneLineExceptionFormatter, self).format(record)
-        if record.exc_text:
-            s = s.replace('\n', '') + '|'
-        return s
-
-def configure_logging():
-    global fh
-    fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1, backupCount=7)
-    f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
-                                  '%d/%m/%Y %H:%M:%S')
-    fh.setFormatter(f)
-    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
-    logging.getLogger("guessit").setLevel(logging.WARNING)
-    logging.getLogger("rebulk").setLevel(logging.WARNING)
-    logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
-    root = logging.getLogger()
-    root.setLevel(log_level)
-    root.addHandler(fh)
-
+from logger import configure_logging, empty_log, update_settings
 configure_logging()
 
 import requests
@@ -228,7 +193,7 @@ def restart():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
-            print 'Bazarr is being restarted...'
+            # print 'Bazarr is being restarted...'
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
@@ -454,7 +419,7 @@ def emptylog():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    fh.doRollover()
+    empty_log()
     logging.info('BAZARR Log file emptied')
 
     redirect(ref)
@@ -1069,7 +1034,11 @@ def save_settings():
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if settings_general_baseurl.endswith('/') is False:
         settings_general_baseurl += '/'
-    settings_general_loglevel = request.forms.get('settings_general_loglevel')
+    settings_general_debug = request.forms.get('settings_general_debug')
+    if settings_general_debug is None:
+        settings_general_debug = 'False'
+    else:
+        settings_general_debug = 'True'
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1131,8 +1100,8 @@ def save_settings():
 
     settings_general = get_general_settings()
 
-    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[4]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_loglevel), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
     cfg = ConfigParser()
@@ -1144,7 +1113,7 @@ def save_settings():
     cfg.set('general', 'port', text_type(settings_general_port))
     cfg.set('general', 'base_url', text_type(settings_general_baseurl))
     cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', text_type(settings_general_loglevel))
+    cfg.set('general', 'debug', text_type(settings_general_debug))
     cfg.set('general', 'branch', text_type(settings_general_branch))
     cfg.set('general', 'auto_update', text_type(settings_general_automatic))
     cfg.set('general', 'single_language', text_type(settings_general_single_language))
@@ -1160,6 +1129,8 @@ def save_settings():
     cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+    
+    update_settings(settings_general_debug)
 
     if after != before:
         configured()
@@ -1763,7 +1734,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 server = CherryPyWSGIServer((str(ip), int(port)), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-    print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.start()
 except KeyboardInterrupt:
     shutdown()
