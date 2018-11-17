@@ -45,7 +45,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 
 You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tree/master/screenshot) directory but it should look familiar:
 
-![Series](/screenshot/series.png?raw=true "Series")
+![Series](/screenshot/1-series/series-2-episodes.png?raw=true "Series")
 
 ### License
 
