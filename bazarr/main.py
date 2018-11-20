@@ -470,6 +470,7 @@ def image_proxy_movies(url):
 
 
 @route(base_url)
+@route(base_url.rstrip('/'))
 @custom_auth_basic(check_credentials)
 def redirect_root():
     authorize()
