@@ -54,10 +54,10 @@ def store_subtitles(file):
                         encoding = UnicodeDammit(text)
                         try:
                             text = text.decode(encoding.original_encoding)
+                            detected_language = langdetect.detect(text)
                         except Exception as e:
                             logging.exception('BAZARR Error trying to detect character encoding for this subtitles file: ' + path_replace(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                         else:
-                            detected_language = langdetect.detect(text)
                             if len(detected_language) > 0:
                                 actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
 
@@ -106,10 +106,10 @@ def store_subtitles_movie(file):
                         encoding = UnicodeDammit(text)
                         try:
                             text = text.decode(encoding.original_encoding)
+                            detected_language = langdetect.detect(text)
                         except Exception as e:
                             logging.exception('BAZARR Error trying to detect character encoding for this subtitles file: ' + path_replace_movie(os.path.join(os.path.dirname(file), subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                         else:
-                            detected_language = langdetect.detect(text)
                             if len(detected_language) > 0:
                                 actual_subtitles.append([str(detected_language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
 
