@@ -183,7 +183,7 @@
 					</table>
 					<%
 						for missing_subs_language in missing_subs_languages:
-						    if details[14] is not None and get_general_settings()[25]:
+						    if details[14] is not None and get_general_settings()[25] and missing_subs_language in details[14]:
                                 for lang in ast.literal_eval(details[14]):
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
