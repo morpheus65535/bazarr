@@ -1059,9 +1059,6 @@
                 </div>
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
-                    <div class="ui orange message">
-                        <p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
-                    </div>
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">

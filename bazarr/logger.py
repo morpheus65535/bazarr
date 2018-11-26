@@ -1,19 +1,12 @@
 import os
-import sys
 import logging
 import re
 
 from logging.handlers import TimedRotatingFileHandler
 from get_argv import config_dir
-from get_settings import get_general_settings
 
 logger = logging.getLogger()
 
-debug = get_general_settings()[4]
-if debug is False:
-    log_level = "INFO"
-else:
-    log_level = "DEBUG"
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -39,7 +32,12 @@ class NoExceptionFormatter(logging.Formatter):
         return ''
 
 
-def configure_logging():
+def configure_logging(debug=False):
+    if not debug:
+        log_level = "INFO"
+    else:
+        log_level = "DEBUG"
+    
     logger.handlers = []
     
     logger.setLevel(log_level)
@@ -54,7 +52,7 @@ def configure_logging():
     # ch.addFilter(MyFilter())
     logger.addHandler(ch)
     
-    #File Logging
+    # File Logging
     global fh
     fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1,
                                   backupCount=7)
@@ -64,7 +62,7 @@ def configure_logging():
     fh.addFilter(BlacklistFilter())
     fh.addFilter(PublicIPFilter())
 
-    if debug is True:
+    if debug:
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
@@ -145,13 +143,3 @@ class PublicIPFilter(logging.Filter):
 
 def empty_log():
     fh.doRollover()
-    
-
-def update_settings(debug):
-    if debug == 'False':
-        level = "INFO"
-    else:
-        level = "DEBUG"
-    logger.setLevel(level)
-    for handler in logger.handlers:
-        handler.setLevel(level)

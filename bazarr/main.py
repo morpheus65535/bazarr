@@ -1,4 +1,4 @@
-bazarr_version = '0.6.7.1'
+bazarr_version = '0.6.8'
 
 import gc
 gc.enable()
@@ -23,8 +23,9 @@ update_notifier()
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
-from logger import configure_logging, empty_log, update_settings
-configure_logging()
+from logger import configure_logging, empty_log
+
+configure_logging(get_general_settings()[4])
 
 import requests
 if get_proxy_settings()[0] != 'None':
@@ -469,6 +470,7 @@ def image_proxy_movies(url):
 
 
 @route(base_url)
+@route(base_url.rstrip('/'))
 @custom_auth_basic(check_credentials)
 def redirect_root():
     authorize()
@@ -1129,8 +1131,6 @@ def save_settings():
     cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
     cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
-    
-    update_settings(settings_general_debug)
 
     if after != before:
         configured()
@@ -1300,6 +1300,8 @@ def save_settings():
 
     with open(config_file, 'wb') as f:
         cfg.write(f)
+
+    configure_logging(get_general_settings()[4])
 
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
