@@ -121,6 +121,9 @@ def update_movies():
                 store_subtitles_movie(path_replace_movie(added_path[0]))
             db.close()
 
+            for updated_movie in movies_to_update:
+                store_subtitles_movie(path_replace_movie(updated_movie[1]))
+
     logging.debug('BAZARR All movies synced from Radarr into database.')
 
     list_missing_subtitles_movies()

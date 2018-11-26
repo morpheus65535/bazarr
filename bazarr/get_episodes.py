@@ -97,6 +97,9 @@ def sync_episodes():
     # Close database connection
     c.close()
 
+    for updated_episode in episodes_to_update:
+        store_subtitles(path_replace(updated_episode[1]))
+
     for added_episode in episodes_to_add:
         store_subtitles(path_replace(added_episode[3]))
 
