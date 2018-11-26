@@ -126,24 +126,12 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Version</label>
+                                <label>Bazarr version</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
                                         {{bazarr_version}}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Operation system</label>
-                            </div>
-                            <div class="five wide column">
-                                <div class='field'>
-                                    <div class="ui fluid input">
-                                        {{operation_system}}
                                     </div>
                                 </div>
                             </div>
@@ -179,6 +167,18 @@
                         % end
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Operating system</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{operating_system}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Python version</label>
                             </div>
                             <div class="five wide column">
@@ -191,24 +191,24 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Bazarr config dir</label>
-                            </div>
-                            <div class="five wide column">
-                                <div class='field'>
-                                    <div class="ui fluid input">
-                                        {{config_dir}}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>Bazarr directory</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
                                         {{bazarr_dir}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Bazarr config directory</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        {{config_dir}}
                                     </div>
                                 </div>
                             </div>
