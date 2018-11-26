@@ -75,7 +75,7 @@
                             from get_subtitle import search_active
                             from get_settings import get_general_settings
 							for language in missing_languages:
-                                if row[6] is not None and get_general_settings()[25]:
+                                if row[6] is not None and get_general_settings()[25] and language in row[6]:
                                         for lang in ast.literal_eval(row[6]):
                                             if language in lang:
                                                 active = search_active(lang[1])
