@@ -222,6 +222,9 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
                         continue
                     if used_sceneName:
                         not_matched.remove('hash')
+                    if type(s) is LegendasTVSubtitle:
+                        # The pickle doesn't work very well with RAR (rarfile.RarFile) or ZIP (zipfile.ZipFile)
+                        s.archive.content = None
                 elif media_type == "series":
                     matched = set(s.get_matches(video))
                     if hi == s.hearing_impaired:
