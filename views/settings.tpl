@@ -1348,6 +1348,7 @@
                                 <div class='field'>
                                     <div id="settings_notifier_{{notifier[0]}}_url_div" class="ui fluid input">
                                         <input name="settings_notifier_{{notifier[0]}}_url" type="text" value="{{notifier[1] if notifier[1] != None else ''}}">
+                                            <div id="test_notification" class="ui blue button" data-notification="{{notifier[1]}}">Test Notification</div>
                                     </div>
                                 </div>
                             </div>
@@ -1364,6 +1365,18 @@
 
 
 <script>
+    $('#test_notification').click(function() {
+        $.ajax({
+            url: "{{base_url}}test_notification/" + $(this).data("notification"),
+            beforeSend: function () {
+                $('#loader').addClass('active');
+            },
+            complete: function () {
+                $('#loader').removeClass('active');
+            },
+            cache: false
+        });
+    });
 
     % from get_argv import no_update
     % if no_update is True:

@@ -380,7 +380,7 @@
 		.done(function(){
     		setTimeout(function(){ setInterval(ping, 2000); },8000);
 		});
-	})
+	});
 
     % from get_settings import get_general_settings
 	% ip = get_general_settings()[0]

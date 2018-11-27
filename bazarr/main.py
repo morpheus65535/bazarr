@@ -62,6 +62,7 @@ import hashlib
 import time
 import urllib
 from six import text_type
+import apprise
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
@@ -1728,6 +1729,20 @@ def test_url(protocol, url):
         return dict(status=False)
     else:
         return dict(status=True, version=result)
+
+
+@route(base_url + 'test_notification/<provider>', method='GET')
+@custom_auth_basic(check_credentials)
+def test_notification(provider):
+    print provider
+    apobj = apprise.Apprise()
+    apobj.add(provider)
+
+    apobj.notify(
+        title='Bazarr test notification',
+        body=('Test notification')
+    )
+
 
 import warnings
 # Mute DeprecationWarning
