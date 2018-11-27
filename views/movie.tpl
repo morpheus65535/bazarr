@@ -170,7 +170,11 @@
 						</tbody>
 					</table>
 					<%
-					missing_subs_languages = ast.literal_eval(details[11])
+					if details[11] is not None:
+						missing_subs_languages = ast.literal_eval(details[11])
+					else:
+						missing_subs_langauges = []
+					end
                     from get_subtitle import search_active
 					if missing_subs_languages is not None:
 					%>
