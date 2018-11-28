@@ -2,12 +2,6 @@
 
 import gc
 import sys
-import os
-import signal
-import sqlite3
-import logging
-import libs
-import requests
 import bottle
 import itertools
 import operator
@@ -15,7 +9,6 @@ import pretty
 import math
 import ast
 import hashlib
-import time
 import urllib
 import warnings
 
@@ -30,7 +23,6 @@ from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
 from cork import Cork
-from json import dumps
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 from datetime import datetime, timedelta
 from get_languages import load_language_in_db, language_from_alpha3
