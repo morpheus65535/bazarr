@@ -58,7 +58,6 @@ update_notifier()
 bazarr_version = '0.6.9'
 configure_logging(get_general_settings()[4] or args.debug)
 
-
 if get_proxy_settings()[0] != 'None':
     if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
         proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + \
@@ -69,7 +68,6 @@ if get_proxy_settings()[0] != 'None':
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
 
-
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 if "PYCHARM_HOSTED" in os.environ:
     bottle.debug(True)
@@ -77,9 +75,7 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
-
 load_providers()
-
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -684,7 +680,9 @@ def episodes(no):
         (str(no),)).fetchone()
     tvdbid = series_details[5]
 
-    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
+    episodes = c.execute(
+        "SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC",
+        (str(no),)).fetchall()
     number = len(episodes)
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
@@ -718,7 +716,9 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute(
+        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
+        (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -833,7 +833,9 @@ def movie(no):
     c = conn.cursor()
 
     movies_details = []
-    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
+    movies_details = c.execute(
+        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts FROM table_movies WHERE radarrId LIKE ?",
+        (str(no),)).fetchone()
     tmdbid = movies_details[5]
 
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
@@ -1011,7 +1013,9 @@ def wantedseries():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute(
+        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?",
+        (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data,
@@ -1042,7 +1046,9 @@ def wantedmovies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
+    c.execute(
+        "SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
+        (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data,
@@ -1171,8 +1177,12 @@ def save_settings():
 
     settings_general = get_general_settings()
 
-    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    before = (
+    unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]),
+    unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
+             unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
+             unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
     cfg = ConfigParser()
