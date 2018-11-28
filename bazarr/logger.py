@@ -94,7 +94,26 @@ class MyFilter(logging.Filter):
         return 1
 
 
-class BlacklistFilter(logging.Filter):
+class ArgsFilteringFilter(logging.Filter):
+    def filter_args(self, record, func):
+        if isinstance(record.args, (types.ListType, types.TupleType)):
+            final_args = []
+            for arg in record.args:
+                if not isinstance(arg, basestring):
+                    final_args.append(arg)
+                    continue
+
+                final_args.append(func(arg))
+            record.args = type(record.args)(final_args)
+        elif isinstance(record.args, dict):
+            for key, arg in record.args.items():
+                if not isinstance(arg, basestring):
+                    continue
+
+                record.args[key] = func(arg)
+
+
+class BlacklistFilter(ArgsFilteringFilter):
     """
     Log filter for blacklisted tokens and passwords
     """
@@ -106,7 +125,7 @@ class BlacklistFilter(logging.Filter):
         def mask_apikeys(s):
             apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', s)
             for apikey in apikeys:
-                s = arg.replace(apikey, 8 * '*' + apikey[-2:])
+                s = s.replace(apikey, 8 * '*' + apikey[-2:])
             return s
 
         try:
@@ -114,27 +133,13 @@ class BlacklistFilter(logging.Filter):
             for apikey in apikeys:
                 record.msg = record.msg.replace(apikey, 8 * '*' + apikey[-2:])
 
-            if isinstance(record.args, (types.ListType, types.TupleType)):
-                final_args = []
-                for arg in record.args:
-                    if not isinstance(arg, basestring):
-                        final_args.append(arg)
-                        continue
-
-                    final_args.append(mask_apikeys(arg))
-                record.args = type(record.args)(final_args)
-            elif isinstance(record.args, dict):
-                for key, arg in record.args.items():
-                    if not isinstance(arg, basestring):
-                        continue
-
-                    record.args[key] = mask_apikeys(arg)
+            self.filter_args(record, mask_apikeys)
         except:
             pass
         return 1
 
 
-class PublicIPFilter(logging.Filter):
+class PublicIPFilter(ArgsFilteringFilter):
     """
     Log filter for public IP addresses
     """
@@ -155,22 +160,7 @@ class PublicIPFilter(logging.Filter):
             for ip in ipv4:
                 record.msg = record.msg.replace(ip, ip.partition('.')[0] + '.***.***.***')
 
-            if isinstance(record.args, (types.ListType, types.TupleType)):
-                final_args = []
-                for arg in record.args:
-                    if not isinstance(arg, basestring):
-                        final_args.append(arg)
-                        continue
-
-                    final_args.append(mask_ipv4(arg))
-
-                record.args = type(record.args)(final_args)
-            elif isinstance(record.args, dict):
-                for key, arg in record.args.items():
-                    if not isinstance(arg, basestring):
-                        continue
-
-                    record.args[key] = mask_ipv4(arg)
+            self.filter_args(record, mask_ipv4)
         except:
             pass
 
