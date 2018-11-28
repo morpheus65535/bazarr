@@ -1,6 +1,9 @@
+# coding=utf-8
+
 import os
 import logging
 import re
+import types
 
 from logging.handlers import TimedRotatingFileHandler
 from get_args import args
@@ -83,12 +86,12 @@ def configure_logging(debug=False):
 
 class MyFilter(logging.Filter):
     def __init__(self):
-        pass
+        super(MyFilter, self).__init__()
 
     def filter(self, record):
         if record.name != 'root':
-            return False
-        return True
+            return 0
+        return 1
 
 
 class BlacklistFilter(logging.Filter):
@@ -100,21 +103,34 @@ class BlacklistFilter(logging.Filter):
         super(BlacklistFilter, self).__init__()
 
     def filter(self, record):
+        def mask_apikeys(s):
+            apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', s)
+            for apikey in apikeys:
+                s = arg.replace(apikey, 8 * '*' + apikey[-2:])
+            return s
+
         try:
             apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', record.msg)
             for apikey in apikeys:
                 record.msg = record.msg.replace(apikey, 8 * '*' + apikey[-2:])
 
-            args = []
-            for arg in record.args:
-                apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', arg) if isinstance(arg, basestring) else []
-                for apikey in apikeys:
-                    arg = arg.replace(apikey, 8 * '*' + apikey[-2:])
-                args.append(arg)
-            record.args = tuple(args)
+            if isinstance(record.args, (types.ListType, types.TupleType)):
+                args = []
+                for arg in record.args:
+                    if not isinstance(arg, basestring):
+                        continue
+
+                    args.append(mask_apikeys(arg))
+                record.args = tuple(args)
+            elif isinstance(record.args, dict):
+                for key, arg in record.args.items():
+                    if not isinstance(arg, basestring):
+                        continue
+
+                    record.args[key] = mask_apikeys(arg)
         except:
             pass
-        return True
+        return 1
 
 
 class PublicIPFilter(logging.Filter):
@@ -126,24 +142,37 @@ class PublicIPFilter(logging.Filter):
         super(PublicIPFilter, self).__init__()
 
     def filter(self, record):
+        def mask_ipv4(s):
+            ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', s)
+            for ip in ipv4:
+                s = s.replace(ip, ip.partition('.')[0] + '.***.***.***')
+            return s
+
         try:
             # Currently only checking for ipv4 addresses
             ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', record.msg)
             for ip in ipv4:
                 record.msg = record.msg.replace(ip, ip.partition('.')[0] + '.***.***.***')
 
-            args = []
-            for arg in record.args:
-                ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', arg) if isinstance(arg,
-                                                                                                  basestring) else []
-                for ip in ipv4:
-                    arg = arg.replace(ip, ip.partition('.')[0] + '.***.***.***')
-                args.append(arg)
-            record.args = tuple(args)
+            if isinstance(record.args, (types.ListType, types.TupleType)):
+                args = []
+                for arg in record.args:
+                    if not isinstance(arg, basestring):
+                        continue
+
+                    args.append(mask_ipv4(arg))
+
+                record.args = tuple(args)
+            elif isinstance(record.args, dict):
+                for key, arg in record.args.items():
+                    if not isinstance(arg, basestring):
+                        continue
+
+                    record.args[key] = mask_ipv4(arg)
         except:
             pass
 
-        return True
+        return 1
 
 
 def empty_log():
