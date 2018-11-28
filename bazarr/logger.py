@@ -122,7 +122,7 @@ class BlacklistFilter(logging.Filter):
                         continue
 
                     final_args.append(mask_apikeys(arg))
-                record.args = record.args = type(record.args)(final_args)
+                record.args = type(record.args)(final_args)
             elif isinstance(record.args, dict):
                 for key, arg in record.args.items():
                     if not isinstance(arg, basestring):
