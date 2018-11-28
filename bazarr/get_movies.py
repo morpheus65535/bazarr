@@ -104,7 +104,6 @@ def update_movies():
                 db.commit()
             db.close()
 
-            added_movies = list(set(current_movies_radarr) - set(current_movies_db_list))
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -114,12 +113,8 @@ def update_movies():
             db.commit()
             db.close()
 
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
-            c = db.cursor()
-            for added_movie in added_movies:
-                added_path = c.execute('SELECT path FROM table_movies WHERE tmdbId = ?', (added_movie,)).fetchone()
-                store_subtitles_movie(path_replace_movie(added_path[0]))
-            db.close()
+            for added_movie in movies_to_add:
+                store_subtitles_movie(path_replace_movie(added_movie[1]))
 
             for updated_movie in movies_to_update:
                 store_subtitles_movie(path_replace_movie(updated_movie[1]))
