@@ -30,7 +30,7 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
     
-if not os.path.exists(os.path.join(config_dir, 'config', 'releases.txt')):
+if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
     from check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")

@@ -67,7 +67,7 @@ def check_releases():
     else:
         for release in r.json():
             releases.append([release['name'], release['body']])
-        with open(os.path.join(config_dir, 'config', 'releases.txt'), 'w') as f:
+        with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
 
 
