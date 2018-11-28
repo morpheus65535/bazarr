@@ -115,13 +115,14 @@ class BlacklistFilter(logging.Filter):
                 record.msg = record.msg.replace(apikey, 8 * '*' + apikey[-2:])
 
             if isinstance(record.args, (types.ListType, types.TupleType)):
-                args = []
+                final_args = []
                 for arg in record.args:
                     if not isinstance(arg, basestring):
+                        final_args.append(arg)
                         continue
 
-                    args.append(mask_apikeys(arg))
-                record.args = tuple(args)
+                    final_args.append(mask_apikeys(arg))
+                record.args = record.args = type(record.args)(final_args)
             elif isinstance(record.args, dict):
                 for key, arg in record.args.items():
                     if not isinstance(arg, basestring):
@@ -155,14 +156,15 @@ class PublicIPFilter(logging.Filter):
                 record.msg = record.msg.replace(ip, ip.partition('.')[0] + '.***.***.***')
 
             if isinstance(record.args, (types.ListType, types.TupleType)):
-                args = []
+                final_args = []
                 for arg in record.args:
                     if not isinstance(arg, basestring):
+                        final_args.append(arg)
                         continue
 
-                    args.append(mask_ipv4(arg))
+                    final_args.append(mask_ipv4(arg))
 
-                record.args = tuple(args)
+                record.args = type(record.args)(final_args)
             elif isinstance(record.args, dict):
                 for key, arg in record.args.items():
                     if not isinstance(arg, basestring):
