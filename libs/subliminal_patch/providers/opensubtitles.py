@@ -163,12 +163,13 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         token = region.get("os_token", expiration_time=3600)
         if token is not NO_VALUE:
             try:
-                logger.debug('Trying previous token')
+                logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))
                 checked(lambda: self.server.NoOperation(token))
                 self.token = token
-                logger.debug("Using previous login token: %s", self.token)
+                logger.debug("Using previous login token: %r", token[:10]+"X"*(len(token)-10))
                 return
             except:
+                logger.debug('Token not valid.')
                 pass
 
         try:
@@ -298,6 +299,9 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             # foreign/forced *also* wanted
             elif also_foreign and foreign_parts_only:
                 language = Language.rebuild(language, forced=True)
+
+            if language not in languages:
+                continue
 
             query_parameters = _subtitle_item.get("QueryParameters")
 

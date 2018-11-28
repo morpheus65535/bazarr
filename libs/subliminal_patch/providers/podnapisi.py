@@ -175,7 +175,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
                 if pid in pids:
                     continue
 
-                language = Language.fromietf(subtitle_xml.find('language').text)
+                _language = Language.fromietf(subtitle_xml.find('language').text)
                 hearing_impaired = 'n' in (subtitle_xml.find('flags').text or '')
                 foreign = 'f' in (subtitle_xml.find('flags').text or '')
                 if only_foreign and not foreign:
@@ -185,7 +185,10 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
                     continue
 
                 elif also_foreign and foreign:
-                    language = Language.rebuild(language, forced=True)
+                    _language = Language.rebuild(_language, forced=True)
+
+                if language != _language:
+                    continue
 
                 page_link = subtitle_xml.find('url').text
                 releases = []
@@ -198,12 +201,12 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
                 r_year = int(subtitle_xml.find('year').text)
 
                 if is_episode:
-                    subtitle = self.subtitle_class(language, hearing_impaired, page_link, pid, releases, title,
+                    subtitle = self.subtitle_class(_language, hearing_impaired, page_link, pid, releases, title,
                                                    season=r_season, episode=r_episode, year=r_year,
                                                    asked_for_release_group=video.release_group,
                                                    asked_for_episode=episode)
                 else:
-                    subtitle = self.subtitle_class(language, hearing_impaired, page_link, pid, releases, title,
+                    subtitle = self.subtitle_class(_language, hearing_impaired, page_link, pid, releases, title,
                                                    year=r_year, asked_for_release_group=video.release_group)
 
 

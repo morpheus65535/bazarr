@@ -2,6 +2,7 @@
 
 from subliminal.providers.subscenter import SubsCenterProvider as _SubsCenterProvider, \
     SubsCenterSubtitle as _SubsCenterSubtitle
+from subzero.language import Language
 
 
 class SubsCenterSubtitle(_SubsCenterSubtitle):
@@ -21,6 +22,7 @@ class SubsCenterSubtitle(_SubsCenterSubtitle):
 
 
 class SubsCenterProvider(_SubsCenterProvider):
+    languages = {Language.fromalpha2(l) for l in ['he']}
     subtitle_class = SubsCenterSubtitle
     hearing_impaired_verifiable = True
     server_url = 'http://www.subscenter.info/he/'

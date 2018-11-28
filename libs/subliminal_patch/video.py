@@ -12,6 +12,7 @@ class Video(Video_):
     hints = None
     season_fully_aired = None
     audio_languages = None
+    external_subtitle_languages = None
 
     def __init__(self, name, format=None, release_group=None, resolution=None, video_codec=None, audio_codec=None,
                  imdb_id=None, hashes=None, size=None, subtitle_languages=None, audio_languages=None):
@@ -22,3 +23,4 @@ class Video(Video_):
         self.plexapi_metadata = {}
         self.hints = {}
         self.audio_languages = audio_languages or set()
+        self.external_subtitle_languages = set()

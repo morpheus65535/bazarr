@@ -33,8 +33,9 @@ def fix_inconsistent_naming(title):
     :rtype: str
 
     """
-    return _fix_inconsistent_naming(title, {"DC's Legends of Tomorrow": "Legends of Tomorrow",
-                                            "Marvel's Jessica Jones": "Jessica Jones"})
+    return _fix_inconsistent_naming(title, {"Stargate Origins": "Stargate: Origins",
+                                            "Marvel's Agents of S.H.I.E.L.D.": "Marvels+Agents+of+S.H.I.E.L.D",
+                                            "Mayans M.C.": "Mayans MC"}, True )
 
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,7 @@ class HosszupuskaSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         # series
-        if video.series and sanitize(self.series) == sanitize(video.series):
+        if video.series and ( sanitize(self.series) == sanitize(fix_inconsistent_naming(video.series)) or sanitize(self.series) == sanitize(video.series)):
             matches.add('series')
         # season
         if video.season and self.season == video.season:
@@ -150,7 +151,7 @@ class HosszupuskaProvider(Provider, ProviderSubtitleArchiveMixin):
         seasona = "%02d" % season
         episodea = "%02d" % episode
         series = fix_inconsistent_naming(series)
-        seriesa = series.replace(' ', '+').replace('\'', '')
+        seriesa = series.replace(' ', '+')
 
         # get the episode page
         logger.info('Getting the page for episode %s', episode)

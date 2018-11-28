@@ -63,12 +63,12 @@ class DroneAPIClient(object):
             out[key] = quote(value)
         return out
 
-    def get(self, endpoint, **params):
+    def get(self, endpoint, requests_kwargs=None, **params):
         url = urljoin(self.api_url, endpoint)
         params = self.build_params(params)
 
         # perform the request
-        r = self.session.get(url, params=params)
+        r = self.session.get(url, params=params, **(requests_kwargs or {}))
         r.raise_for_status()
 
         # get the response as json
@@ -79,8 +79,8 @@ class DroneAPIClient(object):
             return j
         return []
 
-    def status(self):
-        return self.get("system/status")
+    def status(self, **kwargs):
+        return self.get("system/status", requests_kwargs=kwargs)
 
     def update_video(self, video, scene_name):
         """

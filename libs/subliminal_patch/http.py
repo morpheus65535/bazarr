@@ -16,9 +16,7 @@ from exceptions import APIThrottled
 from subzero.lib.io import get_viable_encoding
 
 logger = logging.getLogger(__name__)
-pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))),
-                                         "..", "..", certifi.where()))
-
+pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))), "..", certifi.where()))
 try:
     default_ssl_context = ssl.create_default_context(cafile=pem_file)
 except AttributeError:
@@ -33,9 +31,16 @@ custom_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
 
 class CertifiSession(Session):
+    timeout = 10
+
     def __init__(self):
         super(CertifiSession, self).__init__()
         self.verify = pem_file
+
+    def request(self, *args, **kwargs):
+        if kwargs.get('timeout') is None:
+            kwargs['timeout'] = self.timeout
+        return super(CertifiSession, self).request(*args, **kwargs)
 
 
 class RetryingSession(CertifiSession):

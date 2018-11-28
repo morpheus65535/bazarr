@@ -33,11 +33,10 @@ class CommonFixes(SubtitleTextModification):
         # line = : text
         NReProcessor(re.compile(r'(?u)(^\W*:\s*(?=\w+))'), "", name="CM_empty_colon_start"),
 
-        # multi space
-        NReProcessor(re.compile(r'(?u)(\s{2,})'), " ", name="CM_multi_space"),
-
         # fix music symbols
-        NReProcessor(re.compile(ur'(?u)(?:^[-\s]*[*#¶]+(?![^\s\-*#¶]))|(?:[*#¶]+\s*$)'), u"♪", name="CM_music_symbols"),
+        NReProcessor(re.compile(ur'(?u)(^[-\s]*[*#¶]+\s*)|(\s*[*#¶]+\s*$)'),
+                     lambda x: u"♪ " if x.group(1) else u" ♪",
+                     name="CM_music_symbols"),
 
         # '' = "
         NReProcessor(re.compile(ur'(?u)([\'’ʼ❜‘‛][\'’ʼ❜‘‛]+)'), u'"', name="CM_double_apostrophe"),

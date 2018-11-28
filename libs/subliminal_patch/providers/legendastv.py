@@ -7,7 +7,8 @@ from subliminal.exceptions import ConfigurationError
 from subliminal.providers.legendastv import LegendasTVSubtitle as _LegendasTVSubtitle, \
     LegendasTVProvider as _LegendasTVProvider, Episode, Movie, guess_matches, guessit, sanitize, region, type_map, \
     raise_for_status, json, SHOW_EXPIRATION_TIME, title_re, season_re, datetime, pytz, NO_VALUE, releases_key, \
-    SUBTITLE_EXTENSIONS
+    SUBTITLE_EXTENSIONS, language_converters
+from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class LegendasTVSubtitle(_LegendasTVSubtitle):
 
 
 class LegendasTVProvider(_LegendasTVProvider):
+    languages = {Language(*l) for l in language_converters['legendastv'].to_legendastv.keys()}
     subtitle_class = LegendasTVSubtitle
 
     def __init__(self, username=None, password=None):

@@ -21,6 +21,10 @@ class TVsubtitlesSubtitle(_TVsubtitlesSubtitle):
 
 
 class TVsubtitlesProvider(_TVsubtitlesProvider):
+    languages = {Language('por', 'BR')} | {Language(l) for l in [
+        'ara', 'bul', 'ces', 'dan', 'deu', 'ell', 'eng', 'fin', 'fra', 'hun', 'ita', 'jpn', 'kor', 'nld', 'pol', 'por',
+        'ron', 'rus', 'spa', 'swe', 'tur', 'ukr', 'zho'
+    ]}
     subtitle_class = TVsubtitlesSubtitle
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)

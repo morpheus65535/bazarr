@@ -17,17 +17,23 @@ def has_external_subtitle(part_id, stored_subs, language):
 
 
 def set_existing_languages(video, video_info, external_subtitles=False, embedded_subtitles=False, known_embedded=None,
-                           stored_subs=None, languages=None, only_one=False):
+                           stored_subs=None, languages=None, only_one=False, known_metadata_subs=None):
     logger.debug(u"Determining existing subtitles for %s", video.name)
 
+    external_langs_found = set()
     # scan for external subtitles
-    external_langs_found = set(search_external_subtitles(video.name, languages=languages,
-                                                         only_one=only_one).values())
+    if known_metadata_subs:
+        # existing metadata subtitles
+        external_langs_found = known_metadata_subs
+
+    external_langs_found.update(set(search_external_subtitles(video.name, languages=languages,
+                                                              only_one=only_one).values()))
 
     # found external subtitles should be considered?
     if external_subtitles:
         # |= is update, thanks plex
         video.subtitle_languages.update(external_langs_found)
+        video.external_subtitle_languages.update(external_langs_found)
 
     else:
         # did we already download subtitles for this?

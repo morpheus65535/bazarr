@@ -1,6 +1,7 @@
 # coding=utf-8
-from babelfish.exceptions import LanguageError
+import types
 
+from babelfish.exceptions import LanguageError
 from babelfish import Language as Language_, basestr
 
 
@@ -34,7 +35,12 @@ def wrap_forced(f):
         cls = args[0]
         args = args[1:]
         s = args.pop(0)
-        base, forced = s.split(":") if ":" in s else (s, False)
+        forced = None
+        if isinstance(s, types.StringTypes):
+            base, forced = s.split(":") if ":" in s else (s, False)
+        else:
+            base = s
+
         instance = f(cls, base, *args, **kwargs)
         if isinstance(instance, Language):
             instance.forced = forced == "forced"

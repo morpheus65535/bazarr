@@ -117,10 +117,6 @@ SZ_FIX_DATA = {
 }
 
 SZ_FIX_DATA_GLOBAL = {
-    "PartialWordsAlways": {
-        u"¶¶": u"♫",
-        u"¶": u"♪"
-    }
 }
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import logging
 
 from subliminal.providers.napiprojekt import NapiProjektProvider as _NapiProjektProvider, \
     NapiProjektSubtitle as _NapiProjektSubtitle, get_subhash
+from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class NapiProjektSubtitle(_NapiProjektSubtitle):
 
 
 class NapiProjektProvider(_NapiProjektProvider):
+    languages = {Language.fromalpha2(l) for l in ['pl']}
     subtitle_class = NapiProjektSubtitle
 
     def query(self, language, hash):
