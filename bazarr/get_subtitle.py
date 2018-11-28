@@ -107,6 +107,34 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             
             # save throttle_until together with provider name somewhere, then implement dynamic provider_list based on
             # that
+            
+    provider_configs=
+                {'addic7ed': {'username': Prefs['provider.addic7ed.username'],
+                              'password': Prefs['provider.addic7ed.password'],
+                              'use_random_agents': cast_bool(Prefs['provider.addic7ed.use_random_agents1']),
+                              },
+                 'opensubtitles': {'username': Prefs['provider.opensubtitles.username'],
+                                   'password': Prefs['provider.opensubtitles.password'],
+                                   'use_tag_search': self.exact_filenames,
+                                   'only_foreign': self.forced_only,
+                                   'also_foreign': self.forced_also,
+                                   'is_vip': cast_bool(Prefs['provider.opensubtitles.is_vip']),
+                                   'use_ssl': os_use_https,
+                                   'timeout': self.advanced.providers.opensubtitles.timeout or 15,
+                                   'skip_wrong_fps': os_skip_wrong_fps,
+                                   },
+                 'podnapisi': {
+                     'only_foreign': self.forced_only,
+                     'also_foreign': self.forced_also,
+                 },
+                 'subscene': {
+                     'only_foreign': self.forced_only,
+                 },
+                 'legendastv': {'username': Prefs['provider.legendastv.username'],
+                                'password': Prefs['provider.legendastv.password'],
+                                },
+                 'assrt': {'token': Prefs['provider.assrt.token'], }
+                 }
 
     """
 
