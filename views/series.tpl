@@ -79,9 +79,9 @@
 						<td><a href="{{base_url}}episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 							%if os.path.isdir(row[2]):
-							<span data-tooltip="This path seems to be valid." data-inverted=""><i class="checkmark icon"></i></span>
+							<span data-tooltip="This path seems to be valid." data-inverted="" data-position="top left"><i class="checkmark icon"></i></span>
 							%else:
-							<span data-tooltip="This path doesn't seems to be valid." data-inverted=""><i class="warning sign icon"></i></span>
+							<span data-tooltip="This path doesn't seems to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
 							%end
 							{{row[2]}}
 						</td>
@@ -127,7 +127,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>

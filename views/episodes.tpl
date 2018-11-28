@@ -51,7 +51,7 @@
 				padding-left: 2em;
 				padding-right: 2em;
 				padding-bottom: 1em;
-				overflow-x:auto;
+				overflow-x: auto;
 			}
 			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
 				background: transparent !important;
@@ -102,8 +102,8 @@
 			<div id="divdetails" class="ui container">
 				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy{{details[2]}}">
 				<div class="ui right floated basic icon buttons">
-					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles"><i class="ui inverted large compact refresh icon"></i></button>
+					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles"><i class="ui inverted huge compact search icon"></i></button>
 					<%
 					subs_languages = ast.literal_eval(str(details[7]))
 					subs_languages_list = []
@@ -113,7 +113,7 @@
 						end
 					end
 					%>
-					<button id="config" class="ui button" data-tooltip="Edit series" data-inverted="" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+					<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
 				<h2>{{details[0]}}</h2>
 				<p>{{details[1]}}</p>
@@ -165,7 +165,7 @@
 									<tr>
 										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
-										<th>Title</th>
+                                       <th>Title</th>
 										<th class="collapsing">Existing<br>subtitles</th>
 										<th class="collapsing">Missing<br>subtitles</th>
 										<th class="collapsing">Manual<br>search</th>
@@ -176,13 +176,18 @@
 									<tr>
 										<td class="collapsing">
                                             %if episode[9] == 'True':
-                                            <span data-tooltip="Episode monitored in Sonarr"><i class="bookmark icon"></i></span>
+                                            <span data-tooltip="Episode monitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark icon"></i></span>
                                             %else:
-                                            <span data-tooltip="Episode unmonitored in Sonarr"><i class="bookmark outline icon"></i></span>
+                                            <span data-tooltip="Episode unmonitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark outline icon"></i></span>
                                             %end
                                         </td>
 										<td>{{episode[3]}}</td>
-										<td>{{episode[0]}}</td>
+										<td>
+											% if episode[8] is not None:
+											<span data-tooltip="Scenename is: {{episode[8]}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
+                                       	% end
+											<span data-tooltip="Path is: {{episode[1]}}" data-inverted='' data-position="top left">{{episode[0]}}</span>
+										</td>
 										<td>
 										%if episode[4] is not None:
 										%	actual_languages = ast.literal_eval(episode[4])
@@ -208,23 +213,43 @@
 										%end
 										</td>
 										<td>
-										%try:
-											%if episode[6] is not None:
-											%	missing_languages = ast.literal_eval(episode[6])
-                                            %   missing_languages.sort()
-											%else:
-											%	missing_languages = None
+                                        %try:
+                                        <%
+                                            if episode[6] is not None:
+                                                missing_languages = ast.literal_eval(episode[6])
+                                                missing_languages.sort()
+											end
+											if missing_languages is not None:
+                                                from get_subtitle import search_active
+                                                from get_settings import get_general_settings
+                                                for language in missing_languages:
+                                                    if episode[10] is not None and get_general_settings()[25] and language in episode[10]:
+                                                        for lang in ast.literal_eval(episode[10]):
+                                                            if language in lang:
+                                                                if search_active(lang[1]):
+                                        %>
+                                                                    <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+													                {{language}}
+                                                                    <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                                    </a>
+                                                                %else:
+                                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+													                {{language}}
+                                                                    <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+                                                                    </a>
+                                                                %end
+                                                            %end
+                                                        %end
+                                                    %else:
+                                                        <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                            {{language}}
+                                                        <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                        </a>
+                                                    %end
+                                                %end
 											%end
-											%if missing_languages is not None:
-                                                %for language in missing_languages:
-                                                <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{details[4]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
-													{{language}}
-													<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
-												</a>
-												%end
-											%end
-										%except:
-											%pass
+                                        %except:
+                                            %pass
 										%end
 										</td>
 										<td>

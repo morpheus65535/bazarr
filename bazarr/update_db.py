@@ -37,6 +37,11 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         pass
 
     try:
+        c.execute('alter table table_movies add column "sortTitle" "text"')
+    except:
+        pass
+
+    try:
         rows = c.execute('SELECT name FROM table_settings_notifier WHERE name = "Kodi/XBMC"').fetchall()
         if len(rows) == 0:
             providers = [['KODI', 'Kodi/XBMC'], ['Windows', 'Windows Notification'], ['Super Toasty', 'Toasty'],

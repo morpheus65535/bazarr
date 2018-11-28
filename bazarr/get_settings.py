@@ -41,10 +41,10 @@ def get_general_settings():
         else:
             path_mappings = '[]'
 
-        if cfg.has_option('general', 'log_level'):
-            log_level = cfg.get('general', 'log_level')
+        if cfg.has_option('general', 'debug'):
+            debug = cfg.getboolean('general', 'debug')
         else:
-            log_level = 'INFO'
+            debug = False
 
         if cfg.has_option('general', 'branch'):
             branch = cfg.get('general', 'branch')
@@ -156,7 +156,7 @@ def get_general_settings():
         port = '6767'
         base_url = '/'
         path_mappings = '[]'
-        log_level = 'INFO'
+        debug = False
         branch = 'master'
         auto_update = True
         single_language = False
@@ -179,11 +179,7 @@ def get_general_settings():
         only_monitored = False
         adaptive_searching = False
 
-    return [ip, port, base_url, path_mappings, log_level, branch, auto_update, single_language, minimum_score,
-            use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie,
-            serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,
-            movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored,
-            adaptive_searching]
+    return [ip, port, base_url, path_mappings, debug, branch, auto_update, single_language, minimum_score, use_scenename, use_postprocessing, postprocessing_cmd, use_sonarr, use_radarr, path_mappings_movie, serie_default_enabled, serie_default_language, serie_default_hi, movie_default_enabled,movie_default_language, movie_default_hi, page_size, minimum_score_movie, use_embedded_subs, only_monitored, adaptive_searching]
 
 
 def get_auth_settings():
@@ -458,7 +454,7 @@ ip = result[0]
 port = result[1]
 base_url = result[2]
 path_mappings = ast.literal_eval(result[3])
-log_level = result[4]
+debug = result[4]
 branch = result[5]
 automatic = result[6]
 single_language = result[7]

@@ -33,6 +33,9 @@
                 opacity: 0.45 !important;
                 pointer-events: none !important;
             }
+            [data-tooltip]:after {
+                z-index: 2;
+            }
         </style>
     </head>
     <body>
@@ -135,22 +138,12 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Log Level</label>
+                                <label>Enable debug logging</label>
                             </div>
                             <div class="five wide column">
-                                <select name="settings_general_loglevel" id="settings_loglevel" class="ui fluid selection dropdown">
-                                    <option value="">Log Level</option>
-                                    <option value="DEBUG">Debug</option>
-                                    <option value="INFO">Info</option>
-                                    <option value="WARNING">Warning</option>
-                                    <option value="ERROR">Error</option>
-                                    <option value="CRITICAL">Critical</option>
-                                </select>
-                            </div>
-
-                            <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
-                                    <i class="yellow warning sign icon"></i>
+                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings_general[4]}}>
+                                    <input name="settings_general_debug" type="checkbox">
+                                    <label></label>
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
@@ -1066,9 +1059,6 @@
                 </div>
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
-                    <div class="ui orange message">
-                        <p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
-                    </div>
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -1076,7 +1066,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
                                         %for provider in settings_providers:
@@ -1202,7 +1192,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Languages</option>
                                         %enabled_languages = []
                                         %for language in settings_languages:
@@ -1248,7 +1238,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
@@ -1305,7 +1295,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
@@ -1408,6 +1398,12 @@
                 $("#settings_automatic_div").checkbox('check');
             } else {
                 $("#settings_automatic_div").checkbox('uncheck');
+            }
+
+    if ($('#settings_debug').data("debug") == "True") {
+                $("#settings_debug").checkbox('check');
+            } else {
+                $("#settings_debug").checkbox('uncheck');
             }
 
     if ($('#settings_single_language').data("single-language") == "True") {

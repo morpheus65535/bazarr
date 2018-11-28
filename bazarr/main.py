@@ -13,19 +13,15 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from get_settings import get_general_settings, get_proxy_settings
-from logging.handlers import TimedRotatingFileHandler
+from logger import configure_logging, empty_log
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 gc.enable()
 update_notifier()
 
-bazarr_version = '0.6.7'
-
-log_level = get_general_settings()[4]
-if log_level is None:
-    log_level = "INFO"
-
+bazarr_version = '0.6.9'
+configure_logging(get_general_settings()[4])
 
 class OneLineExceptionFormatter(logging.Formatter):
     def formatException(self, exc_info):
@@ -41,42 +37,7 @@ class OneLineExceptionFormatter(logging.Formatter):
             s = s.replace('\n', '') + '|'
         return s
 
-
-fh = None
-
-
-def configure_logging(console_debug=False):
-    global fh
-    fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log', 'bazarr.log'), when="midnight", interval=1,
-                                  backupCount=7)
-    f = OneLineExceptionFormatter('%(asctime)s|%(levelname)s|%(message)s|',
-                                  '%d/%m/%Y %H:%M:%S')
-    fh.setFormatter(f)
-    logging.getLogger("enzyme").setLevel(logging.CRITICAL)
-    logging.getLogger("apscheduler").setLevel(logging.WARNING)
-    logging.getLogger("subliminal").setLevel(logging.CRITICAL)
-    logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
-    logging.getLogger("subzero").setLevel(logging.WARNING)
-    logging.getLogger("guessit").setLevel(logging.WARNING)
-    logging.getLogger("rebulk").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
-    root = logging.getLogger()
-    root.setLevel(log_level)
-    root.addHandler(fh)
-
-    if console_debug:
-        logging.getLogger("subliminal").setLevel(logging.DEBUG)
-        logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
-        logging.getLogger("subzero").setLevel(logging.DEBUG)
-        sh = logging.StreamHandler(sys.stdout)
-        cf = logging.Formatter('%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) '
-                               '- %(message)s')
-        sh.setFormatter(cf)
-        root.addHandler(sh)
-
-
-configure_logging(console_debug=args.debug)
+configure_logging(get_general_settings()[4])
 
 import requests
 
@@ -94,8 +55,11 @@ from bottle import route, run, template, static_file, request, redirect, respons
 import bottle
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
-bottle.debug(True)
-bottle.TEMPLATES.clear()
+if "PYCHARM_HOSTED" in os.environ:
+    bottle.debug(True)
+    bottle.TEMPLATES.clear()
+else:
+    bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
@@ -253,7 +217,7 @@ def restart():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
-            print 'Bazarr is being restarted...'
+            # print 'Bazarr is being restarted...'
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
@@ -480,7 +444,7 @@ def emptylog():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    fh.doRollover()
+    empty_log()
     logging.info('BAZARR Log file emptied')
 
     redirect(ref)
@@ -536,6 +500,7 @@ def image_proxy_movies(url):
 
 
 @route(base_url)
+@route(base_url.rstrip('/'))
 @custom_auth_basic(check_credentials)
 def redirect_root():
     authorize()
@@ -737,9 +702,7 @@ def episodes(no):
         (str(no),)).fetchone()
     tvdbid = series_details[5]
 
-    episodes = c.execute(
-        "SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC",
-        (str(no),)).fetchall()
+    episodes = c.execute("SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC", (str(no),)).fetchall()
     number = len(episodes)
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
@@ -773,9 +736,7 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored FROM table_movies ORDER BY title ASC LIMIT ? OFFSET ?",
-        (page_size, offset,))
+    c.execute("SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -890,9 +851,7 @@ def movie(no):
     c = conn.cursor()
 
     movies_details = []
-    movies_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored FROM table_movies WHERE radarrId LIKE ?",
-        (str(no),)).fetchone()
+    movies_details = c.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts FROM table_movies WHERE radarrId LIKE ?", (str(no),)).fetchone()
     tmdbid = movies_details[5]
 
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
@@ -1070,9 +1029,7 @@ def wantedseries():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
+    c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data,
@@ -1103,9 +1060,7 @@ def wantedmovies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    c.execute(
-        "SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
+    c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
     return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data,
@@ -1167,7 +1122,11 @@ def save_settings():
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if not settings_general_baseurl.endswith('/'):
         settings_general_baseurl += '/'
-    settings_general_loglevel = request.forms.get('settings_general_loglevel')
+    settings_general_debug = request.forms.get('settings_general_debug')
+    if settings_general_debug is None:
+        settings_general_debug = 'False'
+    else:
+        settings_general_debug = 'True'
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1230,14 +1189,8 @@ def save_settings():
 
     settings_general = get_general_settings()
 
-    before = (
-    unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[4]),
-    unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]),
-    unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
-             unicode(settings_general_loglevel), unicode(settings_general_pathmapping),
-             unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr),
-             unicode(settings_general_pathmapping_movie))
+    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
     cfg = ConfigParser()
@@ -1249,7 +1202,7 @@ def save_settings():
     cfg.set('general', 'port', text_type(settings_general_port))
     cfg.set('general', 'base_url', text_type(settings_general_baseurl))
     cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', text_type(settings_general_loglevel))
+    cfg.set('general', 'debug', text_type(settings_general_debug))
     cfg.set('general', 'branch', text_type(settings_general_branch))
     cfg.set('general', 'auto_update', text_type(settings_general_automatic))
     cfg.set('general', 'single_language', text_type(settings_general_single_language))
@@ -1438,6 +1391,8 @@ def save_settings():
     with open(config_file, 'wb') as f:
         cfg.write(f)
 
+    configure_logging(get_general_settings()[4])
+
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
         enabled = request.forms.get('settings_notifier_' + notifier[0] + '_enabled')
@@ -1578,25 +1533,32 @@ def system():
         page_size = int(get_general_settings()[21])
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
-    releases = []
-    url_releases = 'https://api.github.com/repos/morpheus65535/Bazarr/releases'
-    try:
-        r = requests.get(url_releases, timeout=15)
-        r.raise_for_status()
-    except requests.exceptions.HTTPError as errh:
-        logging.exception("BAZARR Error trying to get releases from Github. Http error.")
-    except requests.exceptions.ConnectionError as errc:
-        logging.exception("BAZARR Error trying to get releases from Github. Connection Error.")
-    except requests.exceptions.Timeout as errt:
-        logging.exception("BAZARR Error trying to get releases from Github. Timeout Error.")
-    except requests.exceptions.RequestException as err:
-        logging.exception("BAZARR Error trying to get releases from Github.")
-    else:
-        for release in r.json():
-            releases.append([release['name'], release['body']])
+    with open(os.path.join(config_dir, 'config', 'releases.txt'), 'r') as f:
+        releases = ast.literal_eval(f.read())
 
-    return template('system', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, task_list=task_list,
-                    row_count=row_count, max_page=max_page, page_size=page_size, releases=releases, current_port=port)
+    import platform
+    url_sonarr = get_sonarr_settings()[6]
+    apikey_sonarr = get_sonarr_settings()[4]
+    sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
+    try:
+        sonarr_version = requests.get(sv, timeout=15, verify=False)
+    except:
+        sonarr_version = ''
+
+    url_radarr = get_radarr_settings()[6]
+    apikey_radarr = get_radarr_settings()[4]
+    sv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    try:
+        radarr_version = requests.get(sv, timeout=15, verify=False)
+    except:
+        radarr_version = ''
+
+    return template('system', __file__=__file__, bazarr_version=bazarr_version,
+                    sonarr_version=sonarr_version.json()['version'], radarr_version=radarr_version.json()['version'],
+                    operating_system=platform.platform(), python_version=platform.python_version(),
+                    config_dir=config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
+                    base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
+                    releases=releases, current_port=port)
 
 
 @route(base_url + 'logs/<page:int>')
@@ -1886,7 +1848,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 server = CherryPyWSGIServer((str(ip), int(port)), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
-    print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.start()
 except KeyboardInterrupt:
     shutdown()

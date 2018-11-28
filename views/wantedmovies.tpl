@@ -65,17 +65,41 @@
 						<td colspan="2">No missing movie subtitles.</td>
 					</tr>
 				%end
-				%for row in rows:
+                %for row in rows:
 					<tr class="selectable">
 						<td><a href="{{base_url}}movie/{{row[2]}}">{{row[0]}}</a></td>
 						<td>
-						%missing_languages = ast.literal_eval(row[1])
-						%if missing_languages is not None:
-							%for language in missing_languages:
-							<a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} class="get_subtitle ui tiny label">
-								{{language}}
-								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
-							</a>
+						<%
+                        missing_languages = ast.literal_eval(row[1])
+						if missing_languages is not None:
+                            from get_subtitle import search_active
+                            from get_settings import get_general_settings
+							for language in missing_languages:
+                                if row[6] is not None and get_general_settings()[25] and language in row[6]:
+                                        for lang in ast.literal_eval(row[6]):
+                                            if language in lang:
+                                                active = search_active(lang[1])
+                                                if active:
+                        %>
+                                                    <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} class="get_subtitle ui tiny label">
+								                        {{language}}
+                                                        <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							                        </a>
+                                                %else:
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} class="get_subtitle ui tiny label">
+								                        {{language}}
+                                                        <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+							                        </a>
+                                                %end
+                                            %end
+                                        %end
+                                %else:
+                                        <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} class="get_subtitle ui tiny label">
+								            {{language}}
+                                            <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							            </a>
+                                %end
+
 							%end
 						%end
 						</td>

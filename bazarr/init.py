@@ -29,6 +29,11 @@ if not os.path.exists(os.path.join(args.config_dir, 'db')):
 if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
+    
+if not os.path.exists(os.path.join(config_dir, 'config', 'releases.txt')):
+    from check_update import check_releases
+    check_releases()
+    logging.debug("BAZARR Created releases file")
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
@@ -69,6 +74,13 @@ if cfg.has_section('auth'):
         else:
             cfg.set('auth', 'type', 'None')
         cfg.remove_option('auth', 'enabled')
+        with open(config_file, 'w+') as configfile:
+            cfg.write(configfile)
+            
+if cfg.has_section('general'):
+    if cfg.has_option('general', 'log_level'):
+        cfg.remove_option('general', 'log_level')
+        cfg.set('general', 'debug', 'False')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
 

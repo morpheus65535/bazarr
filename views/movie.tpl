@@ -120,6 +120,9 @@
 				<p style='margin-top: 3em;'>
 					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
 					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+					% if details[12] is not None:
+					<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
+					% end
 				</p>
 				<p style='margin-top: 2em;'>
 					%for language in subs_languages_list:
@@ -167,7 +170,12 @@
 						</tbody>
 					</table>
 					<%
-					missing_subs_languages = ast.literal_eval(str(details[11]))
+					if details[11] is not None:
+						missing_subs_languages = ast.literal_eval(details[11])
+					else:
+						missing_subs_languages = []
+					end
+                	from get_subtitle import search_active
 					if missing_subs_languages is not None:
 					%>
 					<table class="ui very basic single line selectable table">
@@ -179,12 +187,32 @@
 					</table>
 					<%
 						for missing_subs_language in missing_subs_languages:
+						    if details[14] is not None and get_general_settings()[25] and missing_subs_language in details[14]:
+                                for lang in ast.literal_eval(details[14]):
+                                    if missing_subs_language in lang:
+                                        if search_active(lang[1]):
 					%>
 							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
 							</a>
+                                        %else:
+                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language))}}
+								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							</a>
 					<%
+                                        end
+                                    end
+                                end
+                            else:
+                    %>
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language))}}
+								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+							</a>
+                    <%
+                            end
 						end
 					end
 					%>

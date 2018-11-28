@@ -40,7 +40,10 @@
                 width: 640px;
                 height: 480px;
                 margin: 20px;
-}
+            }
+            [data-tooltip]:after {
+                z-index: 2;
+            }
         </style>
     </head>
     <body>
@@ -334,9 +337,6 @@
                     </div>
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
-                    <div class="ui orange message">
-                        <p>Be aware that the more providers you enable, the longer it will take everytime you search for a subtitles.</p>
-                    </div>
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -344,7 +344,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
                                         %for provider in settings_providers:
@@ -387,7 +387,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Languages</option>
                                         %enabled_languages = []
                                         %for language in settings_languages:
@@ -433,7 +433,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:
@@ -490,7 +490,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
-                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid selection dropdown">
+                                    <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
                                         %if settings_general[7] is False:
                                         <option value="">Languages</option>
                                         %else:

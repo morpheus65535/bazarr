@@ -27,6 +27,7 @@ from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth
 from get_args import args
+from subliminal.providers.legendastv import LegendasTVSubtitle
 
 # configure the cache
 
@@ -165,7 +166,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     'BAZARR ' + str(len(subtitles_list)) + " subtitles have been found for this file: " + path)
                 if len(subtitles_list) > 0:
                     try:
-                        pdownload_result = False
+                        download_result = False
                         for subtitle in subtitles_list:
                             download_result = p.download_subtitle(subtitle)
                             if download_result == True:
@@ -202,7 +203,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                             downloaded_language = language_from_alpha3(result[0].language.alpha3)
                             downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
                             downloaded_language_code3 = result[0].language.alpha3
-                            downloaded_path = get_subtitle_path(path, language=language_set)
+                            downloaded_path = get_subtitle_path(path, downloaded_language_code2)
                             logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                             if used_sceneName == True:
                                 message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
@@ -302,6 +303,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
                         continue
                     if used_sceneName:
                         not_matched.remove('hash')
+
                 elif media_type == "series":
                     matched = set(s.get_matches(video))
                     if hi == s.hearing_impaired:
@@ -312,11 +314,17 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
                         continue
                     if used_sceneName:
                         not_matched.remove('hash')
+
+                if type(s) is LegendasTVSubtitle:
+                    # The pickle doesn't work very well with RAR (rarfile.RarFile) or ZIP (zipfile.ZipFile)
+                    s.archive.content = None
+
                 subtitles_list.append(
                     dict(score=round((compute_score(s, video, hearing_impaired=hi) / max_score * 100), 2),
                          language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name, subtitle=codecs.encode(pickle.dumps(s), "base64").decode(),
                          url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
+
             subtitles_dict = {}
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(subtitles_dict)) + " subtitles have been found for this file: " + path)
@@ -381,7 +389,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                     downloaded_language = language_from_alpha3(result[0].language.alpha3)
                     downloaded_language_code2 = alpha2_from_alpha3(result[0].language.alpha3)
                     downloaded_language_code3 = result[0].language.alpha3
-                    downloaded_path = get_subtitle_path(path, language=lang_obj)
+                    downloaded_path = get_subtitle_path(path, downloaded_language_code2)
                     logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                     message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
                         score) + "% using manual search."
