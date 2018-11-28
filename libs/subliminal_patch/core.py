@@ -514,7 +514,8 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
 
     # guess
     hints["single_value"] = True
-    hints["expected_title"] = [hints["title"]]
+    if "title" in hints:
+        hints["expected_title"] = [hints["title"]]
 
     guessed_result = guessit(guess_from, options=hints)
     logger.debug('GuessIt found: %s', json.dumps(guessed_result, cls=GuessitEncoder, indent=4, ensure_ascii=False))
