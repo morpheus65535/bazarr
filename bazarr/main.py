@@ -7,6 +7,17 @@ import signal
 import sqlite3
 import logging
 import libs
+import requests
+import bottle
+import itertools
+import operator
+import pretty
+import math
+import ast
+import hashlib
+import time
+import urllib
+import warnings
 
 from get_args import args
 from init import *
@@ -14,75 +25,16 @@ from update_db import *
 from notifier import update_notifier
 from get_settings import get_general_settings, get_proxy_settings
 from logger import configure_logging, empty_log
-
-reload(sys)
-sys.setdefaultencoding('utf8')
-gc.enable()
-update_notifier()
-
-bazarr_version = '0.6.9'
-configure_logging(get_general_settings()[4])
-
-class OneLineExceptionFormatter(logging.Formatter):
-    def formatException(self, exc_info):
-        """
-        Format an exception so that it prints on a single line.
-        """
-        result = super(OneLineExceptionFormatter, self).formatException(exc_info)
-        return repr(result)  # or format into one line however you want to
-
-    def format(self, record):
-        s = super(OneLineExceptionFormatter, self).format(record)
-        if record.exc_text:
-            s = s.replace('\n', '') + '|'
-        return s
-
-configure_logging(get_general_settings()[4])
-
-import requests
-
-if get_proxy_settings()[0] != 'None':
-    if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + \
-                get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
-    else:
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
-    os.environ['HTTP_PROXY'] = str(proxy)
-    os.environ['HTTPS_PROXY'] = str(proxy)
-    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
-
-from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
-import bottle
-
-bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
-if "PYCHARM_HOSTED" in os.environ:
-    bottle.debug(True)
-    bottle.TEMPLATES.clear()
-else:
-    bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
-
 from cherrypy.wsgiserver import CherryPyWSGIServer
-
+from io import BytesIO
+from six import text_type
 from beaker.middleware import SessionMiddleware
 from cork import Cork
 from json import dumps
-import itertools
-import operator
-import pretty
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 from datetime import datetime, timedelta
-from io import BytesIO
-import math
-import ast
-import hashlib
-import time
-import urllib
-from six import text_type
-
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
-
-load_providers()
-
 from get_series import *
 from get_episodes import *
 from get_settings import base_url, ip, port, path_replace, path_replace_movie
@@ -96,6 +48,38 @@ from get_subtitle import download_subtitle, series_download_subtitles, movies_do
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
+from get_settings import get_auth_settings
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+gc.enable()
+update_notifier()
+
+bazarr_version = '0.6.9'
+configure_logging(get_general_settings()[4] or args.debug)
+
+
+if get_proxy_settings()[0] != 'None':
+    if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
+        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + \
+                get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+    else:
+        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+    os.environ['HTTP_PROXY'] = str(proxy)
+    os.environ['HTTPS_PROXY'] = str(proxy)
+    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
+
+
+bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
+if "PYCHARM_HOSTED" in os.environ:
+    bottle.debug(True)
+    bottle.TEMPLATES.clear()
+else:
+    bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
+
+
+load_providers()
+
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -106,8 +90,6 @@ c.close()
 
 # Load languages in database
 load_language_in_db()
-
-from get_settings import get_auth_settings
 
 aaa = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')))
 
@@ -1533,7 +1515,7 @@ def system():
         page_size = int(get_general_settings()[21])
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
-    with open(os.path.join(config_dir, 'config', 'releases.txt'), 'r') as f:
+    with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         releases = ast.literal_eval(f.read())
 
     import platform
@@ -1556,7 +1538,7 @@ def system():
     return template('system', __file__=__file__, bazarr_version=bazarr_version,
                     sonarr_version=sonarr_version.json()['version'], radarr_version=radarr_version.json()['version'],
                     operating_system=platform.platform(), python_version=platform.python_version(),
-                    config_dir=config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
+                    config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
                     releases=releases, current_port=port)
 
@@ -1839,8 +1821,6 @@ def test_url(protocol, url):
     else:
         return dict(status=True, version=result)
 
-
-import warnings
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)

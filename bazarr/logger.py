@@ -3,7 +3,7 @@ import logging
 import re
 
 from logging.handlers import TimedRotatingFileHandler
-from get_argv import config_dir
+from get_args import args
 
 logger = logging.getLogger()
 
@@ -54,7 +54,7 @@ def configure_logging(debug=False):
     
     # File Logging
     global fh
-    fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1,
+    fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
                                   backupCount=7)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
@@ -65,6 +65,8 @@ def configure_logging(debug=False):
     if debug:
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
+        logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
+        logging.getLogger("subzero").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
         logging.getLogger("apprise").setLevel(logging.DEBUG)
     else:
@@ -94,7 +96,7 @@ class BlacklistFilter(logging.Filter):
     Log filter for blacklisted tokens and passwords
     """
     def __init__(self):
-        pass
+        super(BlacklistFilter, self).__init__()
 
     def filter(self, record):
         try:
@@ -119,7 +121,7 @@ class PublicIPFilter(logging.Filter):
     Log filter for public IP addresses
     """
     def __init__(self):
-        pass
+        super(PublicIPFilter, self).__init__()
 
     def filter(self, record):
         try:
