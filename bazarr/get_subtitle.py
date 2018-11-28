@@ -307,9 +307,8 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
     except:
         logging.exception("BAZARR Error trying to get video information for this file: " + path)
     else:
-        if media_type == "movie":
-            max_score = 120.0
-        elif media_type == "series":
+        max_score = 120.0
+        if media_type == "series":
             max_score = 360.0
 
         try:
@@ -320,24 +319,23 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         else:
             subtitles_list = []
             for s in subtitles:
-                {s: compute_score(s, video, hearing_impaired=hi)}
+                matched = set(s.get_matches(video))
+                not_matched = set()
                 if media_type == "movie":
-                    matched = set(s.get_matches(video))
                     if hi == s.hearing_impaired:
                         matched.add('hearing_impaired')
                     not_matched = set(score.movie_scores.keys()) - matched
-                    required = set(['title'])
+                    required = {'title'}
                     if any(elem in required for elem in not_matched):
                         continue
                     if used_sceneName:
                         not_matched.remove('hash')
 
                 elif media_type == "series":
-                    matched = set(s.get_matches(video))
                     if hi == s.hearing_impaired:
                         matched.add('hearing_impaired')
                     not_matched = set(score.episode_scores.keys()) - matched
-                    required = set(['series', 'season', 'episode'])
+                    required = {'series', 'season', 'episode'}
                     if any(elem in required for elem in not_matched):
                         continue
                     if used_sceneName:
@@ -348,16 +346,15 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
                     s.archive.content = None
 
                 subtitles_list.append(
-                    dict(score=round((compute_score(s, video, hearing_impaired=hi) / max_score * 100), 2),
+                    dict(score=round((compute_score(matched, s, video, hearing_impaired=hi) / max_score * 100), 2),
                          language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name, subtitle=codecs.encode(pickle.dumps(s), "base64").decode(),
                          url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
 
-            subtitles_dict = {}
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(subtitles_dict)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
-            return (subtitles_dict)
+            return subtitles_dict
 
 
 def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, media_type):
