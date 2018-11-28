@@ -117,22 +117,20 @@ class BlacklistFilter(ArgsFilteringFilter):
     """
     Log filter for blacklisted tokens and passwords
     """
+    APIKEY_RE = re.compile(r'apikey(?:=|%3D)([a-zA-Z0-9]+)')
 
     def __init__(self):
         super(BlacklistFilter, self).__init__()
 
     def filter(self, record):
         def mask_apikeys(s):
-            apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', s)
+            apikeys = self.APIKEY_RE.findall(s)
             for apikey in apikeys:
                 s = s.replace(apikey, 8 * '*' + apikey[-2:])
             return s
 
         try:
-            apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', record.msg)
-            for apikey in apikeys:
-                record.msg = record.msg.replace(apikey, 8 * '*' + apikey[-2:])
-
+            record.msg = mask_apikeys(record.msg)
             self.filter_args(record, mask_apikeys)
         except:
             pass
@@ -143,23 +141,21 @@ class PublicIPFilter(ArgsFilteringFilter):
     """
     Log filter for public IP addresses
     """
+    IPV4_RE = re.compile(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})')
 
     def __init__(self):
         super(PublicIPFilter, self).__init__()
 
     def filter(self, record):
         def mask_ipv4(s):
-            ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', s)
+            ipv4 = self.IPV4_RE.findall(s)
             for ip in ipv4:
                 s = s.replace(ip, ip.partition('.')[0] + '.***.***.***')
             return s
 
         try:
             # Currently only checking for ipv4 addresses
-            ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', record.msg)
-            for ip in ipv4:
-                record.msg = record.msg.replace(ip, ip.partition('.')[0] + '.***.***.***')
-
+            record.msg = mask_ipv4(record.msg)
             self.filter_args(record, mask_ipv4)
         except:
             pass
