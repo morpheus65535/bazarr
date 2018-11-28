@@ -7,12 +7,7 @@ from get_movies import update_movies
 from list_subtitles import store_subtitles
 from get_subtitle import wanted_search_missing_subtitles
 from get_args import args
-
-if not args.no_update:
-    from check_update import check_and_apply_update
-else:
-    from check_update import check_releases
-
+from check_update import check_and_apply_update, check_releases
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
