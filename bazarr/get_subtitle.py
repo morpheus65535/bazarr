@@ -57,11 +57,11 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
                min_score_special_ep=180 * 100 / 360.0):
-    max_score = 120
+    max_score = 120.0
     min_score = max_score * min_score_movie_perc / 100.0
     scores = subliminal_scores.movie_scores.keys()
     if media_type == "series":
-        max_score = 360
+        max_score = 360.0
         min_score = max_score * min_score_series_perc / 100.0
         scores = subliminal_scores.episode_scores.keys()
         if video.is_special:
