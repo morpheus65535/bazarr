@@ -114,7 +114,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     language_set = set()
 
     if not isinstance(language, types.ListType):
-        language = list(language)
+        language = [language]
 
     for l in language:
         if l == 'pob':
