@@ -347,7 +347,8 @@
 			language: $(this).attr("data-language"),
 			hi: $(this).attr("data-hi"),
 			radarrId: $(this).attr("data-radarrId"),
-			tmdbid: {{tmdbid}}
+			tmdbid: {{tmdbid}},
+			title: "{{!details[0]}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -417,7 +418,7 @@
 			language: language,
 			hi: hi,
 			radarrId: radarrId,
-			title: $(this).data("movie_title")
+			title: "{{!details[0]}}"
 		};
 
 		$('#search_result').DataTable( {

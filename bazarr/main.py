@@ -1623,13 +1623,15 @@ def get_subtitle():
     hi = request.forms.get('hi')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
     # tvdbid = request.forms.get('tvdbid')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     try:
-        result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
+        result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, title,
+                                   'series')
         if result is not None:
             history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
@@ -1702,12 +1704,13 @@ def get_subtitle_movie():
     hi = request.forms.get('hi')
     radarrId = request.forms.get('radarrId')
     # tmdbid = request.forms.get('tmdbid')
+    title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     try:
-        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
+        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
         if result is not None:
             history_log_movie(1, radarrId, result)
             send_notifications_movie(radarrId, result)
