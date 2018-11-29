@@ -14,7 +14,8 @@ import subliminal_patch
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
-from subliminal import region, Video, download_best_subtitles, save_subtitles, score, list_subtitles, download_subtitles
+from subliminal import region, Video, download_best_subtitles, save_subtitles, score as subliminal_scores, \
+    list_subtitles, download_subtitles
 from subliminal_patch.core import SZAsyncProviderPool as AsyncProviderPool
 from subliminal_patch.score import compute_score
 from subliminal.subtitle import get_subtitle_path
@@ -282,7 +283,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
-    subtitles_dict = {}
+    final_subtitles = []
 
     if hi == "True":
         hi = True
@@ -302,62 +303,68 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
 
     try:
         if sceneName == "None" or not use_scenename:
-            used_sceneName = False
             video = parse_video(path, None, providers=providers)
         else:
-            used_sceneName = True
             video = Video.fromname(sceneName)
     except:
         logging.exception("BAZARR Error trying to get video information for this file: " + path)
     else:
+        min_score = 60.0
         max_score = 120.0
+        scores = subliminal_scores.movie_scores.keys()
         if media_type == "series":
+            min_score = 240.0
             max_score = 360.0
+            scores = subliminal_scores.episode_scores.keys()
+            if video.is_special:
+                min_score = 180
+
+        scores = set(scores)
 
         try:
-            with AsyncProviderPool(max_workers=None, providers=providers, provider_configs=providers_auth) as p:
-                subtitles = p.list_subtitles(video, language_set)
+            subtitles = list_subtitles([video], language_set,
+                                       providers=providers,
+                                       provider_configs=providers_auth,
+                                       pool_class=AsyncProviderPool,  # fixme: make async optional
+                                       throttle_callback=None,  # fixme
+                                       language_hook=None)  # fixme
         except Exception as e:
             logging.exception("BAZARR Error trying to get subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
-            for s in subtitles:
-                matched = set(s.get_matches(video))
-                not_matched = set()
-                if media_type == "movie":
-                    if hi == s.hearing_impaired:
-                        matched.add('hearing_impaired')
-                    not_matched = set(score.movie_scores.keys()) - matched
-                    required = {'title'}
-                    if any(elem in required for elem in not_matched):
-                        continue
-                    if used_sceneName:
-                        not_matched.remove('hash')
 
-                elif media_type == "series":
-                    if hi == s.hearing_impaired:
-                        matched.add('hearing_impaired')
-                    not_matched = set(score.episode_scores.keys()) - matched
-                    required = {'series', 'season', 'episode'}
-                    if any(elem in required for elem in not_matched):
-                        continue
-                    if used_sceneName:
-                        not_matched.remove('hash')
+            for s in subtitles[video]:
+                try:
+                    matches = s.get_matches(video)
+                except AttributeError:
+                    continue
 
-                if type(s) is LegendasTVSubtitle:
-                    # The pickle doesn't work very well with RAR (rarfile.RarFile) or ZIP (zipfile.ZipFile)
-                    s.archive.content = None
+                # skip wrong season/episodes
+                if media_type == "series":
+                    can_verify_series = True
+                    if not s.hash_verifiable and "hash" in matches:
+                        can_verify_series = False
+
+                    if can_verify_series and not {"series", "season", "episode"}.issubset(matches):
+                        logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
+                        continue
+
+                not_matched = scores - matches
+                score = compute_score(matches, s, video, hearing_impaired=hi)
+                if score < min_score:
+                    continue
 
                 subtitles_list.append(
-                    dict(score=round((compute_score(matched, s, video, hearing_impaired=hi) / max_score * 100), 2),
+                    dict(score=round((score / max_score * 100), 2),
                          language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired),
-                         provider=s.provider_name, subtitle=codecs.encode(pickle.dumps(s), "base64").decode(),
-                         url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
+                         provider=s.provider_name,
+                         subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
+                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched)))
 
-            subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
-            logging.debug('BAZARR ' + str(len(subtitles_dict)) + " subtitles have been found for this file: " + path)
+            final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
+            logging.debug('BAZARR ' + str(len(final_subtitles)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
-    return subtitles_dict
+    return final_subtitles
 
 
 def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, media_type):
