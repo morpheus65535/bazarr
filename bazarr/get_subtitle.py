@@ -16,11 +16,10 @@ import subliminal_patch
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
-from subliminal import region, Video, score as subliminal_scores, \
+from subliminal import region, score as subliminal_scores, \
     list_subtitles
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
-from subliminal.subtitle import get_subtitle_path
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, \
@@ -30,7 +29,6 @@ from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth
 from get_args import args
-from subliminal.providers.legendastv import LegendasTVSubtitle
 
 # configure the cache
 
@@ -90,6 +88,12 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
 
 
 def force_unicode(s):
+    """
+    Ensure a string is unicode, not encoded; used for enforcing file paths to be unicode upon saving a subtitle,
+    to prevent encoding issues when saving a subtitle to a non-ascii path.
+    :param s: string
+    :return: unicode string
+    """
     if not isinstance(s, types.UnicodeType):
         try:
             s = s.decode("utf-8")
