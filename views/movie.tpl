@@ -348,7 +348,7 @@
 			hi: $(this).attr("data-hi"),
 			radarrId: $(this).attr("data-radarrId"),
 			tmdbid: {{tmdbid}},
-			title: "{{!details[0]}}"
+			title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -418,7 +418,7 @@
 			language: language,
 			hi: hi,
 			radarrId: radarrId,
-			title: "{{!details[0]}}"
+			title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#search_result').DataTable( {

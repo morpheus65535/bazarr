@@ -400,7 +400,7 @@
 			hi: $(this).attr("data-hi"),
 			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
 			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId'),
-			title: "{{!details[0]}}"
+			title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -475,7 +475,7 @@
 			hi: hi,
 			sonarrSeriesId: sonarrSeriesId,
 			sonarrEpisodeId: sonarrEpisodeId,
-			title: "{{!details[0]}}"
+			title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#search_result').DataTable( {
