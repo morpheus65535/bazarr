@@ -245,7 +245,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(subtitles_dict)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
-            return(subtitles_dict)
+        return(subtitles_dict)
 
 def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, media_type):
     logging.debug('BAZARR Manually downloading subtitles for this file: ' + path)
