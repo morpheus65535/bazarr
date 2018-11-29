@@ -1650,11 +1650,12 @@ def manual_search_json():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
-    data = manual_search(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
+    data = manual_search(episodePath, language, hi, providers_list, providers_auth, sceneName, title, 'series')
     return dict(data=data)
 
 
@@ -1727,11 +1728,12 @@ def manual_search_movie_json():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
-    data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
+    data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
     return dict(data=data)
 
 

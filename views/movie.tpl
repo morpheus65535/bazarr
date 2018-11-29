@@ -416,7 +416,8 @@
 			sceneName: sceneName,
 			language: language,
 			hi: hi,
-			radarrId: radarrId
+			radarrId: radarrId,
+			title: $(this).data("movie_title")
 		};
 
 		$('#search_result').DataTable( {

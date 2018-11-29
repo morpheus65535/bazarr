@@ -473,7 +473,8 @@
 			language: language,
 			hi: hi,
 			sonarrSeriesId: sonarrSeriesId,
-			sonarrEpisodeId: sonarrEpisodeId
+			sonarrEpisodeId: sonarrEpisodeId,
+			title: $(this).data("series_title")
 		};
 
 		$('#search_result').DataTable( {

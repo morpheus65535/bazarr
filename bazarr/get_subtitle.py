@@ -280,7 +280,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     logging.debug('BAZARR Ended searching subtitles for file: ' + path)
 
 
-def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
+def manual_search(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
     final_subtitles = []
@@ -301,11 +301,16 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
 
+    hints = {"title": title}
+    dont_use_actual_file = False
+    if sceneName != "None" and use_scenename:
+        # use the sceneName but keep the folder structure for better guessing
+        path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
+        dont_use_actual_file = True
+
     try:
-        if sceneName == "None" or not use_scenename:
-            video = parse_video(path, None, providers=providers)
-        else:
-            video = Video.fromname(sceneName)
+        video = parse_video(path, hints=hints, providers=providers, dry_run=dont_use_actual_file)
+
     except:
         logging.exception("BAZARR Error trying to get video information for this file: " + path)
     else:
