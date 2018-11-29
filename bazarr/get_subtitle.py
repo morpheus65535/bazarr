@@ -397,14 +397,16 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
         try:
-            download_subtitles([subtitle], providers={provider}, provider_configs=providers_auth,
-                               pool_class=SZAsyncProviderPool,
-                               throttle_callback=None)  # fixme
+            download_success = download_subtitles([subtitle], providers={provider}, provider_configs=providers_auth,
+                                                  pool_class=SZAsyncProviderPool,
+                                                  throttle_callback=None)  # fixme
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
         except Exception as e:
             logging.exception('BAZARR Error downloading subtitles for this file ' + path)
             return None
         else:
+            if not download_success:
+                logging.exception('BAZARR Error downloading subtitles for this file ' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 saved_subtitles = save_subtitles(video.name, [subtitle], single=single,
