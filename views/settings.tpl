@@ -1364,9 +1364,8 @@
 
 
 <script>
-
-    % from get_argv import no_update
-    % if no_update is True:
+    % from get_args import args
+    % if args.no_update:
     $("#div_update").hide();
     % end
 

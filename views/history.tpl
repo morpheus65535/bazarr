@@ -50,7 +50,6 @@
 		</div>
 		% include('menu.tpl')
 
-        % from get_argv import config_dir
         % import os
 		% from get_settings import get_general_settings
 
