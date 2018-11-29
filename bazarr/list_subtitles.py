@@ -104,7 +104,9 @@ def store_subtitles_movie(file):
             except:
                 pass
 
-        subtitles = core.search_external_subtitles(file)
+        # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
+        #   subtitles outside the media file folder
+        subtitles = search_external_subtitles(file)
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
 
         for subtitle, language in subtitles.iteritems():
