@@ -93,16 +93,22 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         hi = False
     language_set = set()
-    if language == 'pob':
-        language_set.add(Language('por', 'BR'))
-    else:
-        language_set.add(Language(language))
+
+    if not isinstance(language, types.ListType):
+        language = list(language)
+
+    for l in language:
+        if l == 'pob':
+            language_set.add(Language('por', 'BR'))
+        else:
+            language_set.add(Language(l))
 
     use_scenename = get_general_settings()[9]
     minimum_score = get_general_settings()[8]
     minimum_score_movie = get_general_settings()[22]
     use_postprocessing = get_general_settings()[10]
     postprocessing_cmd = get_general_settings()[11]
+    single = get_general_settings()[7]
 
     # todo:
     """
@@ -212,7 +218,6 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     continue
 
                 try:
-                    single = get_general_settings()[7]
                     saved_subtitles = save_subtitles(video.name, subtitles, single=single,
                                                      tags=None,  # fixme
                                                      directory=None,  # fixme
