@@ -558,7 +558,8 @@
 				language: $(button).attr("data-language"),
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
-				sonarrEpisodeId: sonarrEpisodeId
+				sonarrEpisodeId: sonarrEpisodeId,
+				title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

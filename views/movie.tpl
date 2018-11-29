@@ -500,7 +500,8 @@
 				sceneName: sceneName,
 				language: $(button).attr("data-language"),
 				hi: hi,
-				radarrId: radarrId
+				radarrId: radarrId,
+				title: '{{!details[0].replace("'", "\\'")}}'
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

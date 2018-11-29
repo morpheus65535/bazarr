@@ -1675,13 +1675,14 @@ def manual_get_subtitle():
     subtitle = request.forms.get('subtitle')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     try:
         result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth,
-                                          sceneName, 'series')
+                                          sceneName, title, 'series')
         if result is not None:
             history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
@@ -1753,13 +1754,14 @@ def manual_get_subtitle_movie():
     selected_provider = request.forms.get('provider')
     subtitle = request.forms.get('subtitle')
     radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
     try:
         result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth,
-                                          sceneName, 'movie')
+                                          sceneName, title, 'movie')
         if result is not None:
             history_log_movie(1, radarrId, result)
             send_notifications_movie(radarrId, result)
