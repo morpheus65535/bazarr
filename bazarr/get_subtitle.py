@@ -223,7 +223,8 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                                        providers=providers,
                                                        provider_configs=providers_auth,
                                                        pool_class=SZAsyncProviderPool,
-                                                       compute_score=compute_score, throttle_time=None,  # fixme
+                                                       compute_score=compute_score,
+                                                       throttle_time=None,  # fixme
                                                        blacklist=None,  # fixme
                                                        throttle_callback=None,  # fixme
                                                        pre_download_hook=None,  # fixme
