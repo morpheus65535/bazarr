@@ -39,6 +39,16 @@ region.configure('dogpile.cache.memory')
 
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
+    """
+    Construct `Video` instance
+    :param path: path to video
+    :param title: series/movie title
+    :param sceneName: sceneName
+    :param use_scenename: use sceneName
+    :param providers: provider list for selective hashing
+    :param media_type: movie/series
+    :return: `Video` instance
+    """
     hints = {"title": title, "type": "movie" if media_type == "movie" else "episode"}
     dont_use_actual_file = False
     if sceneName != "None" and use_scenename:
@@ -57,6 +67,15 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
                min_score_special_ep=180 * 100 / 360.0):
+    """
+    Get score range for a video.
+    :param video: `Video` instance
+    :param media_type: movie/series
+    :param min_score_movie_perc: Percentage of max score for min score of movies
+    :param min_score_series_perc: Percentage of max score for min score of series
+    :param min_score_special_ep: Percentage of max score for min score of series special episode
+    :return: tuple(min_score, max_score, set(scores))
+    """
     max_score = 120.0
     min_score = max_score * min_score_movie_perc / 100.0
     scores = subliminal_scores.movie_scores.keys()
@@ -383,7 +402,8 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         else:
             try:
                 score = round(subtitle.score / max_score * 100, 2)
-                saved_subtitles = save_subtitles(video.name, [subtitle], single=single)
+                saved_subtitles = save_subtitles(video.name, [subtitle], single=single,
+                                                 path_decoder=force_unicode)
 
             except Exception as e:
                 logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
