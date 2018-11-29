@@ -35,7 +35,7 @@ def fix_inconsistent_naming(title):
     """
     return _fix_inconsistent_naming(title, {"Stargate Origins": "Stargate: Origins",
                                             "Marvel's Agents of S.H.I.E.L.D.": "Marvels+Agents+of+S.H.I.E.L.D",
-                                            "Mayans M.C.": "Mayans MC"}, True )
+                                            "Mayans M.C.": "Mayans MC"}, True)
 
 
 logger = logging.getLogger(__name__)

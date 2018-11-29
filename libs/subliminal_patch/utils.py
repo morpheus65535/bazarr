@@ -60,4 +60,3 @@ def fix_inconsistent_naming(title, inconsistent_titles_dict=None, no_sanitize=Fa
     else:
         return sanitize(title)
     # return fixed and sanitized title
-    return title

@@ -24,9 +24,26 @@ from subliminal import Episode
 from subliminal import Movie
 from subliminal.providers.podnapisi import PodnapisiProvider as _PodnapisiProvider, \
     PodnapisiSubtitle as _PodnapisiSubtitle
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
+
+
+def fix_inconsistent_naming(title):
+    """Fix titles with inconsistent naming using dictionary and sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    d = {}
+    nt = title.replace("Marvels", "").replace("Marvel's", "")
+    if nt != title:
+        d[title] = nt
+
+    return _fix_inconsistent_naming(title, d)
 
 
 class PodnapisiSubtitle(_PodnapisiSubtitle):
@@ -53,8 +70,8 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
         # episode
         if isinstance(video, Episode):
             # series
-            if video.series and (sanitize(self.title) in (
-                    sanitize(name) for name in [video.series] + video.alternative_series)):
+            if video.series and (fix_inconsistent_naming(self.title) in (
+                    fix_inconsistent_naming(name) for name in [video.series] + video.alternative_series)):
                 matches.add('series')
             # year
             if video.original_series and self.year is None or video.year and video.year == self.year:
@@ -113,7 +130,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
 
         season = episode = None
         if isinstance(video, Episode):
-            titles = [video.series] + video.alternative_series
+            titles = [fix_inconsistent_naming(title) for title in [video.series] + video.alternative_series]
             season = video.season
             episode = video.episode
         else:
