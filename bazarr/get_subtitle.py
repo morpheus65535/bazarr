@@ -362,10 +362,7 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
 
 def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually downloading subtitles for this file: ' + path)
-    if hi == "True":
-        hi = True
-    else:
-        hi = False
+
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = get_general_settings()[9]
     use_postprocessing = get_general_settings()[10]
