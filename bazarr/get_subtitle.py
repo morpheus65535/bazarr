@@ -172,6 +172,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
+
+    subtitles_dict = {}
+
     if hi == "True":
         hi = True
     else:
@@ -239,7 +242,6 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
                         # The pickle doesn't work very well with RAR (rarfile.RarFile) or ZIP (zipfile.ZipFile)
                         s.archive.content = None
                 subtitles_list.append(dict(score=round((compute_score(s, video, hearing_impaired=hi) / max_score * 100), 2), language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired), provider=s.provider_name, subtitle=codecs.encode(pickle.dumps(s), "base64").decode(), url=s.page_link, matches=list(matched), dont_matches=list(not_matched)))
-            subtitles_dict = {}
             subtitles_dict = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(subtitles_dict)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
