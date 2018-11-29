@@ -1526,7 +1526,7 @@ def system():
     apikey_sonarr = get_sonarr_settings()[4]
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
     try:
-        sonarr_version = requests.get(sv, timeout=15, verify=False)
+        sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
     except:
         sonarr_version = ''
 
@@ -1534,12 +1534,12 @@ def system():
     apikey_radarr = get_radarr_settings()[4]
     sv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
     try:
-        radarr_version = requests.get(sv, timeout=15, verify=False)
+        radarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
     except:
         radarr_version = ''
 
     return template('system', __file__=__file__, bazarr_version=bazarr_version,
-                    sonarr_version=sonarr_version.json()['version'], radarr_version=radarr_version.json()['version'],
+                    sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
