@@ -523,7 +523,7 @@ def series():
         "SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
     total_subtitles_list = c.fetchall()
     c.close()
-    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data,
+    output = template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
                       single_language=single_language, page_size=page_size, current_port=port)
