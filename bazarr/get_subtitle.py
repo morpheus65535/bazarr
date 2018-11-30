@@ -263,10 +263,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if video.used_scene_name:
                             message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
-                                (subtitle.score * 100 / max_score)) + "% using this scene name: " + sceneName
+                                round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
                             message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
-                                (subtitle.score * 100 / max_score)) + "% using filename guessing."
+                                round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
 
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
