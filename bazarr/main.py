@@ -37,7 +37,7 @@ if get_proxy_settings()[0] != 'None':
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
 
-from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 if "PYCHARM_HOSTED" in os.environ:
@@ -46,7 +46,10 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
-from cherrypy.wsgiserver import CherryPyWSGIServer
+from gevent.pywsgi import WSGIServer
+from geventwebsocket import WebSocketError
+from geventwebsocket.handler import WebSocketHandler
+#from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from beaker.middleware import SessionMiddleware
 from cork import Cork
@@ -1729,14 +1732,28 @@ def test_url(protocol, url):
     else:
         return dict(status=True, version=result)
 
+@route(base_url + 'websocket')
+def handle_websocket():
+    wsock = request.environ.get('wsgi.websocket')
+    if not wsock:
+        abort(400, 'Expected WebSocket request.')
+
+    while True:
+        try:
+            message = wsock.receive()
+            wsock.send("Your message was: %r" % message)
+        except WebSocketError:
+            break
+
+
 import warnings
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-server = CherryPyWSGIServer((str(ip), int(port)), app)
+server = WSGIServer((str(ip), int(port)), app, handler_class=WebSocketHandler)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
     # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
-    server.start()
+    server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

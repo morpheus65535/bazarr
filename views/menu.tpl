@@ -207,3 +207,10 @@
 		});
 	}
 </script>
+
+<script type="text/javascript">
+    var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
+    ws.onmessage = function (evt) {
+        console.log(evt.data);
+    };
+</script>
