@@ -5,7 +5,6 @@ import re
 import io
 
 from zipfile import ZipFile
-from lxml.etree import XMLSyntaxError
 
 from guessit import guessit
 from subliminal.subtitle import guess_matches
@@ -19,6 +18,7 @@ except ImportError:
         import xml.etree.cElementTree as etree
     except ImportError:
         import xml.etree.ElementTree as etree
+
 from babelfish import language_converters
 from subliminal import Episode
 from subliminal import Movie
@@ -175,7 +175,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
             try:
                 content = self.session.get(self.server_url + 'search/old', params=params, timeout=10).content
                 xml = etree.fromstring(content)
-            except XMLSyntaxError:
+            except etree.ParseError:
                 logger.error("Wrong data returned: %r", content)
                 break
 
