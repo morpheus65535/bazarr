@@ -61,6 +61,7 @@ import ast
 import hashlib
 import time
 import urllib
+import platform
 from six import text_type
 
 from get_languages import load_language_in_db, language_from_alpha3
@@ -84,6 +85,11 @@ c = conn.cursor()
 c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
+
+logging.debug('Bazarr version: %s', bazarr_version)
+logging.debug('Bazarr branch: %s', get_general_settings()[5])
+logging.debug('Operating system: %s', platform.platform())
+logging.debug('Python version: %s', platform.python_version())
 
 # Load languages in database
 load_language_in_db()
