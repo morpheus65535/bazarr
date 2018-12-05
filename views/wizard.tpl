@@ -1179,7 +1179,6 @@ $(document).ready(function() {
                 $('.prev3').removeClass('disabled');
                 $('.next2').removeClass('disabled');
                 $('.next3').removeClass('disabled');
-                $('#loader').addClass('active');
             }
         })
     ;
