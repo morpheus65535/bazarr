@@ -225,7 +225,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="github icon"></i><a href="https://github.com/morpheus65535/bazarr">Bazarr on GitHub</a>
+                                        <i class="github icon"></i><a id="link" href="https://github.com/morpheus65535/bazarr" target="_blank">Bazarr on GitHub</a>
                                     </div>
                                 </div>
                             </div>
@@ -237,7 +237,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="wikipedia w icon"></i><a href="https://github.com/morpheus65535/bazarr/wiki">Bazarr Wiki</a>
+                                        <i class="wikipedia w icon"></i><a id="link" href="https://github.com/morpheus65535/bazarr/wiki" target="_blank">Bazarr Wiki</a>
                                     </div>
                                 </div>
                             </div>
@@ -249,7 +249,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="discord icon"></i><a href="https://discord.gg/MH2e2eb">Bazarr on Discord</a>
+                                        <i class="discord icon"></i><a id="link" href="https://discord.gg/MH2e2eb" target="_blank">Bazarr on Discord</a>
                                     </div>
                                 </div>
                             </div>
@@ -351,7 +351,7 @@
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	})
 
-	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').click(function(){
+	$('a:not(.tabs, #link), button:not(.cancel, #download_log), #restart').click(function(){
 		$('#loader').addClass('active');
 	})
 
