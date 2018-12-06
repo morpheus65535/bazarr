@@ -1451,24 +1451,31 @@ def system():
         releases = ast.literal_eval(f.read())
 
     import platform
+    use_sonarr = get_general_settings()[12]
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
-    try:
-        sonarr_version = requests.get(sv, timeout=15, verify=False)
-    except:
-        sonarr_version = ''
+    sonarr_version = ''
+    if use_sonarr:
+        try:
+            sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
+        except:
+            pass
 
+    use_radarr = get_general_settings()[13]
     url_radarr = get_radarr_settings()[6]
     apikey_radarr = get_radarr_settings()[4]
-    sv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
-    try:
-        radarr_version = requests.get(sv, timeout=15, verify=False)
-    except:
-        radarr_version = ''
+    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    radarr_version = ''
+    if use_radarr:
+        try:
+            radarr_version = requests.get(rv, timeout=15, verify=False).json()['version']
+        except:
+            pass
+
 
     return template('system', __file__=__file__, bazarr_version=bazarr_version,
-                    sonarr_version=sonarr_version.json()['version'], radarr_version=radarr_version.json()['version'],
+                    sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
