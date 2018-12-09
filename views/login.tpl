@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -24,7 +24,7 @@
       height: 100%;
     }
     .image {
-      margin-top: 0px;
+      margin-top: 0;
     }
     .column {
       max-width: 450px;
@@ -63,9 +63,6 @@
     </form>
   </div>
 </div>
-
-
-</form>
 
 </body>
 </html>

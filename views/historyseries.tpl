@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -20,15 +20,6 @@
 		<style>
 			body {
 				background-color: #272727;
-			}
-			#fondblanc {
-				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding: 3em;
-				overflow-x:auto;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
@@ -198,22 +189,22 @@
 	    sessionStorage.clear();
 	}
 
-	$('a, i').click(function(){
+	$('a, i').on('click', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#loader').addClass('active');
-	})
+	});
 
-	$('.fast.backward').click(function(){
+	$('.fast.backward').on('click', function(){
 		loadURLseries(1);
-	})
-	$('.backward:not(.fast)').click(function(){
+	});
+	$('.backward:not(.fast)').on('click', function(){
 		loadURLseries({{int(page)-1}});
-	})
-	$('.forward:not(.fast)').click(function(){
+	});
+	$('.forward:not(.fast)').on('click', function(){
 		loadURLseries({{int(page)+1}});
-	})
-	$('.fast.forward').click(function(){
+	});
+	$('.fast.forward').on('click', function(){
 		loadURLseries({{int(max_page)}});
-	})
+	});
 </script>

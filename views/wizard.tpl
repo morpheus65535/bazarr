@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
     <head>
         <!DOCTYPE html>
         <script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -24,8 +24,8 @@
             }
             #fondblanc {
                 background-color: #ffffff;
-                border-radius: 0px;
-                box-shadow: 0px 0px 5px 5px #ffffff;
+                border-radius: 0;
+                box-shadow: 0 0 5px 5px #ffffff;
                 margin-top: 32px;
                 margin-bottom: 3em;
                 padding: 1em;
@@ -791,9 +791,9 @@
 </html>
 
 <script>
-$(document).ready(function() {
+$(function() {
 
-  $('.next1').click(function(e) {
+  $('.next1').on('click', function(e) {
 
     e.preventDefault();
 
@@ -805,7 +805,7 @@ $(document).ready(function() {
 
   });
 
-  $('.prev1').click(function(m) {
+  $('.prev1').on('click', function(m) {
 
     m.preventDefault();
 
@@ -817,7 +817,7 @@ $(document).ready(function() {
 
   });
 
-  $('.next2').click(function(e) {
+  $('.next2').on('click', function(e) {
 
     e.preventDefault();
 
@@ -829,7 +829,7 @@ $(document).ready(function() {
 
   });
 
-  $('.prev2').click(function(m) {
+  $('.prev2').on('click', function(m) {
 
     m.preventDefault();
 
@@ -841,7 +841,7 @@ $(document).ready(function() {
 
   });
 
-  $('.next3').click(function(e) {
+  $('.next3').on('click', function(e) {
 
     e.preventDefault();
 
@@ -853,7 +853,7 @@ $(document).ready(function() {
 
   });
 
-  $('.prev3').click(function(m) {
+  $('.prev3').on('click', function(m) {
 
     m.preventDefault();
 
@@ -866,9 +866,7 @@ $(document).ready(function() {
   });
 
 });
-</script>
 
-<script>
     $(".sonarr_hide").hide();
     $('#settings_use_sonarr').checkbox({
         onChecked: function() {
@@ -889,19 +887,19 @@ $(document).ready(function() {
         }
     });
 
-    if ($('#sonarr_ssl_div').data("ssl") == "True") {
+    if ($('#sonarr_ssl_div').data("ssl") === "True") {
                 $("#sonarr_ssl_div").checkbox('check');
             } else {
                 $("#sonarr_ssl_div").checkbox('uncheck');
             }
 
-    if ($('#radarr_ssl_div').data("ssl") == "True") {
+    if ($('#radarr_ssl_div').data("ssl") === "True") {
                 $("#radarr_ssl_div").checkbox('check');
             } else {
                 $("#radarr_ssl_div").checkbox('uncheck');
             }
 
-    if ($('#settings_single_language').data("single-language") == "True") {
+    if ($('#settings_single_language').data("single-language") === "True") {
                 $("#settings_single_language").checkbox('check');
             } else {
                 $("#settings_single_language").checkbox('uncheck');
@@ -910,13 +908,13 @@ $(document).ready(function() {
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
         $("#settings_serie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
-        )
+        );
         $("#settings_movie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
         )
     });
 
-    $('#settings_languages').dropdown('setting', 'onRemove', function(val, txt){
+    $('#settings_languages').dropdown('setting', 'onRemove', function(val){
         $("#settings_serie_default_languages").dropdown('remove selected', val);
         $("#settings_serie_default_languages option[value='" + val + "']").remove();
 
@@ -924,13 +922,13 @@ $(document).ready(function() {
         $("#settings_movie_default_languages option[value='" + val + "']").remove();
     });
 
-    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_serie_default_enabled_div').data("enabled") === "True") {
         $("#settings_serie_default_enabled_div").checkbox('check');
     } else {
         $("#settings_serie_default_enabled_div").checkbox('uncheck');
     }
 
-    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_serie_default_enabled_div').data("enabled") === "True") {
         $("#settings_serie_default_languages").removeClass('disabled');
         $("#settings_serie_default_hi_div").removeClass('disabled');
     } else {
@@ -949,19 +947,19 @@ $(document).ready(function() {
         }
     });
 
-    if ($('#settings_serie_default_hi_div').data("hi") == "True") {
+    if ($('#settings_serie_default_hi_div').data("hi") === "True") {
         $("#settings_serie_default_hi_div").checkbox('check');
     } else {
         $("#settings_serie_default_hi_div").checkbox('uncheck');
     }
 
-    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_movie_default_enabled_div').data("enabled") === "True") {
         $("#settings_movie_default_enabled_div").checkbox('check');
     } else {
         $("#settings_movie_default_enabled_div").checkbox('uncheck');
     }
 
-    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_movie_default_enabled_div').data("enabled") === "True") {
         $("#settings_movie_default_languages").removeClass('disabled');
         $("#settings_movie_default_hi_div").removeClass('disabled');
     } else {
@@ -980,7 +978,7 @@ $(document).ready(function() {
         }
     });
 
-    if ($('#settings_movie_default_hi_div').data("hi") == "True") {
+    if ($('#settings_movie_default_hi_div').data("hi") === "True") {
         $("#settings_movie_default_hi_div").checkbox('check');
     } else {
         $("#settings_movie_default_hi_div").checkbox('uncheck');
@@ -998,7 +996,7 @@ $(document).ready(function() {
         $("#settings_movie_default_languages").attr('multiple');
     }
 
-    $("#settings_single_language").change(function(i, obj) {
+    $("#settings_single_language").on('change', function() {
         if ($("#settings_single_language").checkbox('is checked')) {
             $("#settings_serie_default_languages").dropdown('clear');
             $("#settings_movie_default_languages").dropdown('clear');
@@ -1035,9 +1033,7 @@ $(document).ready(function() {
     %if settings_general[19] is not None:
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
     %end
-</script>
 
-<script>
     // form validation
     $('#wizard_form')
         .form({
@@ -1190,18 +1186,18 @@ $(document).ready(function() {
         $('.form').form('validate field', 'settings_subliminal_languages');
     });
 
-    $( document ).ready(function() {
+    $(function() {
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
 
-    $('#wizard_form').focusout(function() {
+    $('#wizard_form').on('focusout', function() {
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
 
-    $('#sonarr_validate').click(function() {
+    $('#sonarr_validate').on('click', function() {
         if ($('#sonarr_ssl_div').checkbox('is checked')) {
             protocol = 'https';
         } else {
@@ -1222,25 +1218,25 @@ $(document).ready(function() {
                 $('#loader').removeClass('active');
             }
         });
-    })
+    });
 
-    $('.sonarr_config').keyup(function() {
+    $('.sonarr_config').on('keyup', function() {
         $('#sonarr_validated').checkbox('uncheck');
         $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#settings_sonarr_ssl').change(function() {
+    $('#settings_sonarr_ssl').on('change', function() {
         $('#sonarr_validated').checkbox('uncheck');
         $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
     $("#sonarr_validated").checkbox('check');
 
-    $('#radarr_validate').click(function() {
+    $('#radarr_validate').on('click', function() {
         if ($('#radarr_ssl_div').checkbox('is checked')) {
             protocol = 'https';
         } else {
@@ -1261,21 +1257,21 @@ $(document).ready(function() {
                 $('#loader').removeClass('active');
             }
         });
-    })
+    });
 
-    $('.radarr_config').keyup(function() {
+    $('.radarr_config').on('keyup', function() {
         $('#radarr_validated').checkbox('uncheck');
         $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#settings_radarr_ssl').change(function() {
+    $('#settings_radarr_ssl').on('change', function() {
         $('#radarr_validated').checkbox('uncheck');
         $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
     $("#radarr_validated").checkbox('check');
 </script>
