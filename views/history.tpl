@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -23,15 +23,12 @@
 			}
 			#fondblanc {
 				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
+				border-radius: 0;
+				box-shadow: 0 0 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 1em;
 				overflow-x:auto;
-			}
-			#logs {
-				margin-top: 4em;
 			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
@@ -77,16 +74,15 @@
 
 <script>
 	$('.menu .item')
-		.tab()
-	;
+		.tab();
 
-	$('#series_tab').click(function() {
+	$('#series_tab').on('click', function() {
 	    loadURLseries(1);
-	})
+	});
 
-	$('#movies_tab').click(function() {
+	$('#movies_tab').on('click', function() {
 	    loadURLmovies(1);
-	})
+	});
 
 	function loadURLseries(page) {
 		$.ajax({
@@ -110,25 +106,25 @@
 	    });
 	}
 
-	$('a:not(.tabs), button:not(.cancel, #download_log)').click(function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log)').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
-	if ($('#series_tab').data("enabled") == "True") {
+	if ($('#series_tab').data("enabled") === "True") {
         $("#series_tab").removeClass('disabled');
     } else {
         $("#series_tab").addClass('disabled');
     }
 
-    if ($('#movies_tab').data("enabled") == "True") {
+    if ($('#movies_tab').data("enabled") === "True") {
         $("#movies_tab").removeClass('disabled');
     } else {
         $("#movies_tab").addClass('disabled');
     }
-	if ($('#series_tab').data("enabled") == "True") {
+	if ($('#series_tab').data("enabled") === "True") {
         $( "#series_tab" ).trigger( "click" );
     }
-    if ($('#series_tab').data("enabled") == "False" && $('#movies_tab').data("enabled") == "True") {
+    if ($('#series_tab').data("enabled") === "False" && $('#movies_tab').data("enabled") === "True") {
         $( "#movies_tab" ).trigger( "click" );
     }
 </script>

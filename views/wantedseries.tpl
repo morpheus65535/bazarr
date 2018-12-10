@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -20,14 +20,6 @@
 		<style>
 			body {
 				background-color: #272727;
-			}
-			#fondblanc {
-				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding: 2em 3em 2em 3em;
 			}
 			#tablehistory {
 				padding-top: 2em;
@@ -90,12 +82,12 @@
                         %>
                                                     <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                                                          {{language}}
-                                                    <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                                    <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                     </a>
                                                 %else:
                                                     <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                                                          {{language}}
-                                                    <i style="margin-left:3px; margin-right:0px" class="search red icon"></i>
+                                                    <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                     </a>
                                                 %end
                                             %end
@@ -103,7 +95,7 @@
                                 %else:
                                         <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
                                             {{language}}
-                                        <i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+                                        <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                         </a>
                                 %end
 
@@ -154,30 +146,30 @@
 
 
 <script>
-	$('a, button').click(function(){
+	$('a, button').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
-	$('.fast.backward').click(function(){
+	$('.fast.backward').on('click', function(){
 		loadURLseries(1);
-	})
-	$('.backward:not(.fast)').click(function(){
+	});
+	$('.backward:not(.fast)').on('click', function(){
 		loadURLseries({{int(page)-1}});
-	})
-	$('.forward:not(.fast)').click(function(){
+	});
+	$('.forward:not(.fast)').on('click', function(){
 		loadURLseries({{int(page)+1}});
-	})
-	$('.fast.forward').click(function(){
+	});
+	$('.fast.forward').on('click', function(){
 		loadURLseries({{int(max_page)}});
-	})
+	});
 
-	$('#wanted_search_missing_subtitles').click(function(){
+	$('#wanted_search_missing_subtitles').on('click', function(){
 		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}wanted_search_missing_subtitles';
-	})
+	});
 
-	$('.get_subtitle').click(function(){
-		    var values = {
+	$('.get_subtitle').on('click', function(){
+		    const values = {
 		            episodePath: $(this).attr("data-episodePath"),
 		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),

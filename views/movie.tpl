@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -36,14 +36,14 @@
 				margin-bottom: 3em;
 				padding: 2em;
 				border-radius: 1px;
-				box-shadow: 0px 0px 5px 5px #000000;
+				box-shadow: 0 0 5px 5px #000000;
 				min-height: calc(250px + 4em);
 			}
 			#fondblanc {
 				background-color: #ffffff;
 				opacity: 0.9;
 				border-radius: 1px;
-				box-shadow: 0px 0px 3px 3px #ffffff;
+				box-shadow: 0 0 3px 3px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding-top: 2em;
@@ -170,8 +170,12 @@
 						</tbody>
 					</table>
 					<%
-					missing_subs_languages = ast.literal_eval(details[11])
-                    from get_subtitle import search_active
+					if details[11] is not None:
+						missing_subs_languages = ast.literal_eval(details[11])
+					else:
+						missing_subs_languages = []
+					end
+                	from get_subtitle import search_active
 					if missing_subs_languages is not None:
 					%>
 					<table class="ui very basic single line selectable table">
@@ -190,12 +194,12 @@
 					%>
 							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
-								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
                             <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
-								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
 					<%
                                         end
@@ -205,7 +209,7 @@
                     %>
                             <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
-								<i style="margin-left:3px; margin-right:0px" class="search icon"></i>
+								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                     <%
                             end
@@ -301,18 +305,18 @@
 </html>
 
 <script>
-	$('#scan_disk').click(function(){
+	$('#scan_disk').on('click', function(){
 		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
-	})
+	});
 
-	$('#search_missing_subtitles').click(function(){
+	$('#search_missing_subtitles').on('click', function(){
 		$('#loader_text').text("Searching for missing subtitles...");
 		window.location = '{{base_url}}search_missing_subtitles_movie/{{no}}';
-	})
+	});
 
-	$('.remove_subtitles').click(function(){
-		var values = {
+	$('.remove_subtitles').on('click', function(){
+		const values = {
 			moviePath: $(this).attr("data-moviePath"),
 			language: $(this).attr("data-language"),
 			subtitlesPath: $(this).attr("data-subtitlesPath"),
@@ -334,10 +338,10 @@
 		$(document).ajaxStop(function(){
 			window.location.reload();
 		});
-	})
+	});
 
-	$('.get_subtitle').click(function(){
-		var values = {
+	$('.get_subtitle').on('click', function(){
+		const values = {
 			moviePath: $(this).attr("data-moviePath"),
 			sceneName: $(this).attr("data-sceneName"),
 			language: $(this).attr("data-language"),
@@ -360,19 +364,18 @@
 		$(document).ajaxStop(function(){
 			window.location.reload();
 		});
-	})
+	});
 
-	$('a, .menu .item, button:not(#config, .cancel, .manual_search)').click(function(){
+	$('a, .menu .item, button:not(#config, .cancel, .manual_search)').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
 	$('.modal')
 		.modal({
 			autofocus: false
-		})
-	;
+		});
 
-	$('#config').click(function(){
+	$('#config').on('click', function(){
 		$('#movie_form').attr('action', '{{base_url}}edit_movie/{{no}}');
 
 		$("#movie_title").html($(this).data("title"));
@@ -381,10 +384,10 @@
 		$("#movie_audio_language").html($(this).data("audio"));
 
 		$('#movie_languages').dropdown('clear');
-		var languages_array = eval($(this).data("languages"));
+		const languages_array = eval($(this).data("languages"));
 		$('#movie_languages').dropdown('set selected',languages_array);
 
-		if ($(this).data("hearing-impaired") == "True") {
+		if ($(this).data("hearing-impaired") === "True") {
 			$("#movie_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#movie_hearing-impaired_div").checkbox('uncheck');
@@ -394,20 +397,19 @@
 			.modal({
 				centered: true
 			})
-			.modal('show')
-		;
-	})
+			.modal('show');
+	});
 
-	$('.manual_search').click(function(){
+	$('.manual_search').on('click', function(){
 		$("#movie_title_span").html($(this).data("movie_title"));
 
-		moviePath = $(this).attr("data-moviePath"),
-		sceneName = $(this).attr("data-sceneName"),
-		language = $(this).attr("data-language"),
-		hi = $(this).attr("data-hi"),
-		radarrId = $(this).attr("data-radarrId")
+		moviePath = $(this).attr("data-moviePath");
+		sceneName = $(this).attr("data-sceneName");
+		language = $(this).attr("data-language");
+		hi = $(this).attr("data-hi");
+		radarrId = $(this).attr("data-radarrId");
 
-		var values = {
+		const values = {
 			moviePath: moviePath,
 			sceneName: sceneName,
 			language: language,
@@ -450,19 +452,19 @@
 				},
 				{ data: null,
 				render: function ( data, type, row ) {
-					var array_matches = data.matches;
-					var array_dont_matches = data.dont_matches;
-					var i;
-					text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">'
+					const array_matches = data.matches;
+					const array_dont_matches = data.dont_matches;
+					let i;
+					let text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">';
 					text += array_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					text += '</div><i class="dropdown icon"></i><div class="menu">';
 					for (i = 0; i < array_matches.length; i++) {
 						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
 					}
 					text += '</div></div>';
-					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">'
+					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">';
 					text += array_dont_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">'
+					text += '</div><i class="dropdown icon"></i><div class="menu">';
 					for (i = 0; i < array_dont_matches.length; i++) {
 						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
 					}
@@ -484,10 +486,10 @@
 			})
 			.modal('show')
 		;
-	})
+	});
 
 	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
-		var values = {
+		const values = {
 				subtitle: $(button).attr("data-subtitle"),
 				provider: $(button).attr("data-provider"),
 				moviePath: moviePath,
@@ -511,5 +513,5 @@
 		$(document).ajaxStop(function(){
 			window.location.reload();
 		});
-	}
+	};
 </script>

@@ -1,6 +1,9 @@
+# coding=utf-8
+
 import os
 import logging
 import re
+import types
 
 from logging.handlers import TimedRotatingFileHandler
 from get_argv import config_dir
@@ -15,7 +18,7 @@ class OneLineExceptionFormatter(logging.Formatter):
         """
         result = super(OneLineExceptionFormatter, self).formatException(exc_info)
         return repr(result)  # or format into one line however you want to
-    
+
     def format(self, record):
         s = super(OneLineExceptionFormatter, self).format(record)
         if record.exc_text:
@@ -27,7 +30,7 @@ class NoExceptionFormatter(logging.Formatter):
     def format(self, record):
         record.exc_text = ''  # ensure formatException gets called
         return super(NoExceptionFormatter, self).format(record)
-    
+
     def formatException(self, record):
         return ''
 
@@ -37,21 +40,21 @@ def configure_logging(debug=False):
         log_level = "INFO"
     else:
         log_level = "DEBUG"
-    
+
     logger.handlers = []
-    
+
     logger.setLevel(log_level)
 
     # Console logging
     ch = logging.StreamHandler()
-    cf = NoExceptionFormatter('%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) '
-                               '- %(message)s')
+    cf = (debug and logging.Formatter or NoExceptionFormatter)(
+        '%(asctime)-15s - %(name)-32s (%(thread)x) :  %(levelname)s (%(module)s:%(lineno)d) - %(message)s')
     ch.setFormatter(cf)
 
     ch.setLevel(log_level)
     # ch.addFilter(MyFilter())
     logger.addHandler(ch)
-    
+
     # File Logging
     global fh
     fh = TimedRotatingFileHandler(os.path.join(config_dir, 'log/bazarr.log'), when="midnight", interval=1,
@@ -70,75 +73,92 @@ def configure_logging(debug=False):
     else:
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
-        
+
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     fh.setLevel(log_level)
     logger.addHandler(fh)
-    
+
 
 class MyFilter(logging.Filter):
     def __init__(self):
-        pass
-    
+        super(MyFilter, self).__init__()
+
     def filter(self, record):
         if record.name != 'root':
-            return False
-        return True
-    
+            return 0
+        return 1
 
-class BlacklistFilter(logging.Filter):
+
+class ArgsFilteringFilter(logging.Filter):
+    def filter_args(self, record, func):
+        if isinstance(record.args, (types.ListType, types.TupleType)):
+            final_args = []
+            for arg in record.args:
+                if not isinstance(arg, basestring):
+                    final_args.append(arg)
+                    continue
+
+                final_args.append(func(arg))
+            record.args = type(record.args)(final_args)
+        elif isinstance(record.args, dict):
+            for key, arg in record.args.items():
+                if not isinstance(arg, basestring):
+                    continue
+
+                record.args[key] = func(arg)
+
+
+class BlacklistFilter(ArgsFilteringFilter):
     """
     Log filter for blacklisted tokens and passwords
     """
+    APIKEY_RE = re.compile(r'apikey(?:=|%3D)([a-zA-Z0-9]+)')
+
     def __init__(self):
-        pass
+        super(BlacklistFilter, self).__init__()
 
     def filter(self, record):
-        try:
-            apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', record.msg)
+        def mask_apikeys(s):
+            apikeys = self.APIKEY_RE.findall(s)
             for apikey in apikeys:
-                record.msg = record.msg.replace(apikey, 8 * '*' + apikey[-2:])
-    
-            args = []
-            for arg in record.args:
-                apikeys = re.findall(r'apikey(?:=|%3D)([a-zA-Z0-9]+)', arg) if isinstance(arg, basestring) else []
-                for apikey in apikeys:
-                    arg = arg.replace(apikey, 8 * '*' + apikey[-2:])
-                args.append(arg)
-            record.args = tuple(args)
+                s = s.replace(apikey, 8 * '*' + apikey[-2:])
+            return s
+
+        try:
+            record.msg = mask_apikeys(record.msg)
+            self.filter_args(record, mask_apikeys)
         except:
             pass
-        return True
+        return 1
 
 
-class PublicIPFilter(logging.Filter):
+class PublicIPFilter(ArgsFilteringFilter):
     """
     Log filter for public IP addresses
     """
+    IPV4_RE = re.compile(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})')
+
     def __init__(self):
-        pass
+        super(PublicIPFilter, self).__init__()
 
     def filter(self, record):
+        def mask_ipv4(s):
+            ipv4 = self.IPV4_RE.findall(s)
+            for ip in ipv4:
+                s = s.replace(ip, ip.partition('.')[0] + '.***.***.***')
+            return s
+
         try:
             # Currently only checking for ipv4 addresses
-            ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', record.msg)
-            for ip in ipv4:
-                record.msg = record.msg.replace(ip, ip.partition('.')[0] + '.***.***.***')
-
-            args = []
-            for arg in record.args:
-                ipv4 = re.findall(r'[0-9]+(?:\.[0-9]+){3}(?!\d*-[a-z0-9]{6})', arg) if isinstance(arg, basestring) else []
-                for ip in ipv4:
-                    arg = arg.replace(ip, ip.partition('.')[0] + '.***.***.***')
-                args.append(arg)
-            record.args = tuple(args)
+            record.msg = mask_ipv4(record.msg)
+            self.filter_args(record, mask_ipv4)
         except:
             pass
 
-        return True
+        return 1
 
 
 def empty_log():
