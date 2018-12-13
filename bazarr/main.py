@@ -1,5 +1,7 @@
 bazarr_version = '0.6.9'
 
+from gevent import monkey; monkey.patch_all()
+
 import gc
 gc.enable()
 
@@ -20,6 +22,7 @@ from update_db import *
 from notifier import update_notifier
 update_notifier()
 
+import queue
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
@@ -1739,12 +1742,8 @@ def handle_websocket():
         abort(400, 'Expected WebSocket request.')
 
     while True:
-        try:
-            message = wsock.receive()
-            wsock.send("Your message was: %r" % message)
-        except WebSocketError:
-            break
-
+        while not q4ws.empty():
+            wsock.send(q4ws.get_nowait())
 
 import warnings
 # Mute DeprecationWarning

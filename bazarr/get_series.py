@@ -1,4 +1,6 @@
 from get_argv import config_dir
+from queue import q4ws
+import datetime
 
 import os
 import sqlite3
@@ -9,6 +11,7 @@ from get_settings import get_general_settings
 from list_subtitles import list_missing_subtitles
 
 def update_series():
+    q4ws.put("Update series list from Sonarr is running...")
     from get_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
@@ -51,6 +54,7 @@ def update_series():
             series_to_add = []
 
             for show in r.json():
+                q4ws.put("Getting data for this show: " + show['title'])
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -104,6 +108,8 @@ def update_series():
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?',deleted_items)
             db.commit()
             db.close()
+
+    q4ws.put("Update series list from Sonarr is ended.")
 
 def get_profile_list():
     from get_settings import get_sonarr_settings

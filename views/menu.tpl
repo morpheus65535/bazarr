@@ -1,6 +1,8 @@
 <html>
     <head>
         <!DOCTYPE html>
+		<link href="{{base_url}}static/noty/noty.css" rel="stylesheet">
+		<script src="{{base_url}}static/noty/noty.min.js" type="text/javascript"></script>
 		<style>
             #divmenu {
 				background-color: #000000;
@@ -211,6 +213,13 @@
 <script type="text/javascript">
     var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
     ws.onmessage = function (evt) {
-        console.log(evt.data);
+        new Noty({
+			text: evt.data,
+			timeout: 3000,
+			killer: true,
+    		type: 'success',
+			layout: 'bottomRight',
+			theme: 'semanticui'
+		}).show();
     };
 </script>
