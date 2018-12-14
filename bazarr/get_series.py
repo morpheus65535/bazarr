@@ -1,5 +1,5 @@
 from get_argv import config_dir
-from queue import q4ws
+from queueconfig import q4ws
 import datetime
 
 import os
@@ -54,7 +54,7 @@ def update_series():
             series_to_add = []
 
             for show in r.json():
-                q4ws.put("Getting data for this show: " + show['title'])
+                q4ws.put("Getting series data for this show: " + show['title'])
                 try:
                     overview = unicode(show['overview'])
                 except:

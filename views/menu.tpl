@@ -216,8 +216,7 @@
         new Noty({
 			text: evt.data,
 			timeout: 3000,
-			killer: true,
-    		type: 'success',
+			type: 'success',
 			layout: 'bottomRight',
 			theme: 'semanticui'
 		}).show();

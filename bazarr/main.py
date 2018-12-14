@@ -1,6 +1,6 @@
 bazarr_version = '0.6.9'
 
-from gevent import monkey; monkey.patch_all()
+import gevent
 
 import gc
 gc.enable()
@@ -22,7 +22,7 @@ from update_db import *
 from notifier import update_notifier
 update_notifier()
 
-import queue
+import queueconfig
 
 from get_settings import get_general_settings, get_proxy_settings
 import logging
@@ -1736,14 +1736,19 @@ def test_url(protocol, url):
         return dict(status=True, version=result)
 
 @route(base_url + 'websocket')
+@custom_auth_basic(check_credentials)
 def handle_websocket():
     wsock = request.environ.get('wsgi.websocket')
     if not wsock:
         abort(400, 'Expected WebSocket request.')
 
     while True:
-        while not q4ws.empty():
-            wsock.send(q4ws.get_nowait())
+    #    try:
+        while not queueconfig.q4ws.empty():
+            wsock.send(queueconfig.q4ws.get_nowait())
+        gevent.sleep(0)
+    #    except WebSocketError:
+    #        break
 
 import warnings
 # Mute DeprecationWarning
