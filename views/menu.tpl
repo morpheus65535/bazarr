@@ -222,7 +222,7 @@
 				close: null
 			},
 			killer: true,
-    		type: 'success',
+    		type: 'info',
 			layout: 'bottomRight',
 			theme: 'semanticui'
 		}).show();

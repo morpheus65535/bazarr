@@ -1,7 +1,5 @@
 bazarr_version = '0.6.9'
 
-import gevent
-
 import gc
 gc.enable()
 
@@ -49,6 +47,8 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
+
+import gevent
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
