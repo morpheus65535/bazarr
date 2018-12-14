@@ -216,7 +216,13 @@
         new Noty({
 			text: evt.data,
 			timeout: 3000,
-			type: 'success',
+			progressBar: false,
+			animation: {
+				open: null,
+				close: null
+			},
+			killer: true,
+    		type: 'success',
 			layout: 'bottomRight',
 			theme: 'semanticui'
 		}).show();

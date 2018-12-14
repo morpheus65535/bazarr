@@ -1742,13 +1742,15 @@ def handle_websocket():
     if not wsock:
         abort(400, 'Expected WebSocket request.')
 
+    queueconfig.q4ws.empty()
+
     while True:
-    #    try:
-        while not queueconfig.q4ws.empty():
-            wsock.send(queueconfig.q4ws.get_nowait())
-        gevent.sleep(0)
-    #    except WebSocketError:
-    #        break
+        try:
+            while not queueconfig.q4ws.empty():
+                wsock.send(queueconfig.q4ws.get_nowait())
+            gevent.sleep(0)
+        except WebSocketError:
+            break
 
 import warnings
 # Mute DeprecationWarning
