@@ -1348,7 +1348,7 @@
                                 <div class='field'>
                                     <div id="settings_notifier_{{notifier[0]}}_url_div" class="ui fluid input">
                                         <input name="settings_notifier_{{notifier[0]}}_url" type="text" value="{{notifier[1] if notifier[1] != None else ''}}">
-                                            <div class="test_notification ui blue button" data-notification="{{notifier[1]}}">Test Notification</div>
+                                        <div class="test_notification ui blue button" data-notification="{{notifier[1]}}">Test Notification</div>
                                     </div>
                                 </div>
                             </div>
@@ -1367,7 +1367,7 @@
 <script>
     $('.test_notification').on('click', function() {
         $.ajax({
-            url: "{{base_url}}test_notification/" + encodeURIComponent($(this).data("notification")),
+            url: "{{base_url}}test_notification/" + encodeURIComponent($(this).prev().val()),
             beforeSend: function () {
                 $('#loader').addClass('active');
             },
