@@ -1,7 +1,4 @@
-from get_argv import config_dir
-
-from get_settings import get_general_settings
-
+# coding=utf-8
 import os
 import logging
 import sqlite3
@@ -9,6 +6,10 @@ import json
 import requests
 
 import git
+
+from get_argv import config_dir
+
+from config import settings
 
 current_working_directory = os.path.dirname(os.path.dirname(__file__))
 
@@ -32,7 +33,7 @@ def gitconfig():
 def check_and_apply_update():
     gitconfig()
     check_releases()
-    branch = get_general_settings()[5]
+    branch = settings.general.branch
     g = git.cmd.Git(current_working_directory)
     g.fetch('origin')
     result = g.diff('--shortstat', 'origin/' + branch)

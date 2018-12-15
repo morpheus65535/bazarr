@@ -1,9 +1,10 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import apprise
 import os
 import sqlite3
 import logging
+
+from get_argv import config_dir
 
 
 def update_notifier():
@@ -16,7 +17,7 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
     
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     notifiers_current = c_db.execute('SELECT name FROM table_settings_notifier').fetchall()
     for x in results['schemas']:
@@ -40,36 +41,40 @@ def update_notifier():
 
 
 def get_notifier_providers():
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     providers = c_db.execute('SELECT name, url FROM table_settings_notifier WHERE enabled = 1').fetchall()
     c_db.close()
 
     return providers
 
+
 def get_series_name(sonarrSeriesId):
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     data = c_db.execute('SELECT title FROM table_shows WHERE sonarrSeriesId = ?', (sonarrSeriesId,)).fetchone()
     c_db.close()
 
     return data[0]
 
+
 def get_episode_name(sonarrEpisodeId):
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     data = c_db.execute('SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId = ?', (sonarrEpisodeId,)).fetchone()
     c_db.close()
 
     return data[0], data[1], data[2]
 
+
 def get_movies_name(radarrId):
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     data = c_db.execute('SELECT title FROM table_movies WHERE radarrId = ?', (radarrId,)).fetchone()
     c_db.close()
 
     return data[0]
+
 
 def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     providers = get_notifier_providers()
@@ -102,3 +107,4 @@ def send_notifications_movie(radarrId, message):
         title='Bazarr notification',
         body=movie + ' : ' + message,
     )
+    

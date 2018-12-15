@@ -11,8 +11,6 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../libs/'))
 
-import os
-import sys
 import signal
 import sqlite3
 from init import *
@@ -21,21 +19,21 @@ from notifier import update_notifier
 update_notifier()
 
 
-from get_settings import get_general_settings, get_proxy_settings
 import logging
 from logger import configure_logging, empty_log
+from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 
-configure_logging(get_general_settings()[4])
+configure_logging(settings.general.debug)
 
 import requests
-if get_proxy_settings()[0] != 'None':
-    if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+if settings.proxy.type != 'None':
+    if settings.proxy.username != '' and settings.proxy.password != '':
+        proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + settings.proxy.url + ':' + settings.proxy.port
     else:
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+        proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
     os.environ['HTTP_PROXY'] = str(proxy)
     os.environ['HTTPS_PROXY'] = str(proxy)
-    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
+    os.environ['NO_PROXY'] = str(settings.proxy.exclude)
 
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
 import bottle
@@ -71,7 +69,7 @@ load_providers()
 
 from get_series import *
 from get_episodes import *
-from get_settings import base_url, ip, port, path_replace, path_replace_movie
+from helper import path_replace, path_replace_movie
 if no_update is False:
     from check_update import check_and_apply_update
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, list_missing_subtitles, list_missing_subtitles_movies
@@ -80,22 +78,21 @@ from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 
+
 # Reset restart required warning on start
-conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
 c = conn.cursor()
 c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
 
 logging.debug('Bazarr version: %s', bazarr_version)
-logging.debug('Bazarr branch: %s', get_general_settings()[5])
+logging.debug('Bazarr branch: %s', settings.general.branch)
 logging.debug('Operating system: %s', platform.platform())
 logging.debug('Python version: %s', platform.python_version())
 
 # Load languages in database
 load_language_in_db()
-
-from get_settings import get_auth_settings
 
 aaa = Cork(os.path.normpath(os.path.join(config_dir, 'config')))
 
@@ -109,13 +106,13 @@ session_opts = {
     'session.validate_key': True
 }
 app = SessionMiddleware(app, session_opts)
-login_auth = get_auth_settings()[0]
+login_auth = settings.auth.type
 
 
 def custom_auth_basic(check):
     def decorator(func):
         def wrapper(*a, **ka):
-            if get_auth_settings()[0] == 'basic':
+            if settings.auth.type == 'basic':
                 user, password = request.auth or (None, None)
                 if user is None or not check(user, password):
                     err = HTTPError(401, "Access denied")
@@ -128,11 +125,11 @@ def custom_auth_basic(check):
         return wrapper
     return decorator
 
-def check_credentials(user, pw):
-    from get_settings import get_auth_settings
 
-    username = get_auth_settings()[1]
-    password = get_auth_settings()[2]
+def check_credentials(user, pw):
+
+    username = settings.auth.username
+    password = settings.auth.password
     if hashlib.md5(pw).hexdigest() == password and user == username:
         return True
     return False
@@ -178,6 +175,7 @@ def redirect_root():
     authorize()
     redirect (base_url)
 
+
 @route(base_url + 'shutdown')
 def shutdown():
     try:
@@ -188,6 +186,7 @@ def shutdown():
         stop_file.write('')
         stop_file.close()
         server.stop()
+
 
 @route(base_url + 'restart')
 def restart():
@@ -211,19 +210,15 @@ def restart():
 @custom_auth_basic(check_credentials)
 def wizard():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
     settings_providers = c.execute("SELECT * FROM table_settings_providers ORDER BY name").fetchall()
     c.close()
     
-    settings_general = get_general_settings()
-    settings_sonarr = get_sonarr_settings()
-    settings_radarr = get_radarr_settings()
-    
-    return template('wizard', bazarr_version=bazarr_version, settings_general=settings_general,
+    return template('wizard', bazarr_version=bazarr_version, settings=settings,
                     settings_languages=settings_languages, settings_providers=settings_providers,
-                    settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, base_url=base_url)
+                    base_url=base_url)
 
 
 @route(base_url + 'save_wizard', method='POST')
@@ -231,7 +226,7 @@ def wizard():
 def save_wizard():
     authorize()
     
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
     
     settings_general_ip = request.forms.get('settings_general_ip')
@@ -278,39 +273,39 @@ def save_wizard():
     cfg.set('general', 'port', text_type(settings_general_port))
     cfg.set('general', 'base_url', text_type(settings_general_baseurl))
     cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', text_type(get_general_settings()[4]))
-    cfg.set('general', 'branch', text_type(get_general_settings()[5]))
-    cfg.set('general', 'auto_update', text_type(get_general_settings()[6]))
+    cfg.set('general', 'debug', text_type(settings.general.debug))
+    cfg.set('general', 'branch', text_type(settings.general.branch))
+    cfg.set('general', 'auto_update', text_type(settings.general.auto_update))
     cfg.set('general', 'single_language', text_type(settings_general_single_language))
-    cfg.set('general', 'minimum_score', text_type(get_general_settings()[8]))
-    cfg.set('general', 'use_scenename', text_type(text_type(get_general_settings()[9])))
-    cfg.set('general', 'use_postprocessing', text_type(get_general_settings()[10]))
-    cfg.set('general', 'postprocessing_cmd', text_type(get_general_settings()[11]))
+    cfg.set('general', 'minimum_score', text_type(settings.general.minimum_score))
+    cfg.set('general', 'use_scenename', text_type(text_type(settings.general.use_scenename)))
+    cfg.set('general', 'use_postprocessing', text_type(settings.general.use_postprocessing))
+    cfg.set('general', 'postprocessing_cmd', text_type(settings.general.postprocessing_cmd))
     cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
     cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
     cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
-    cfg.set('general', 'page_size', text_type(get_general_settings()[21]))
-    cfg.set('general', 'minimum_score_movie', text_type(get_general_settings()[22]))
-    cfg.set('general', 'use_embedded_subs', text_type(get_general_settings()[23]))
-    cfg.set('general', 'only_monitored', text_type(get_general_settings()[24]))
+    cfg.set('general', 'page_size', text_type(settings.general.page_size))
+    cfg.set('general', 'minimum_score_movie', text_type(settings.general.minimum_score_movie))
+    cfg.set('general', 'use_embedded_subs', text_type(settings.general.use_embedded_subs))
+    cfg.set('general', 'only_monitored', text_type(settings.general.only_monitored))
     cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
     
     if not cfg.has_section('proxy'):
         cfg.add_section('proxy')
     
-    cfg.set('proxy', 'type', text_type(get_proxy_settings()[0]))
-    cfg.set('proxy', 'url', text_type(get_proxy_settings()[1]))
-    cfg.set('proxy', 'port', text_type(get_proxy_settings()[2]))
-    cfg.set('proxy', 'username', text_type(get_proxy_settings()[3]))
-    cfg.set('proxy', 'password', text_type(get_proxy_settings()[4]))
-    cfg.set('proxy', 'exclude', text_type(get_proxy_settings()[5]))
+    cfg.set('proxy', 'type', text_type(settings.proxy.type))
+    cfg.set('proxy', 'url', text_type(settings.proxy.url))
+    cfg.set('proxy', 'port', text_type(settings.proxy.port))
+    cfg.set('proxy', 'username', text_type(settings.proxy.username))
+    cfg.set('proxy', 'password', text_type(settings.proxy.password))
+    cfg.set('proxy', 'exclude', text_type(settings.proxy.exclude))
     
     if not cfg.has_section('auth'):
         cfg.add_section('auth')
     
-    cfg.set('auth', 'type', text_type(get_auth_settings()[0]))
-    cfg.set('auth', 'username', text_type(get_auth_settings()[1]))
-    cfg.set('auth', 'password', text_type(get_auth_settings()[2]))
+    cfg.set('auth', 'type', text_type(settings.auth.type))
+    cfg.set('auth', 'username', text_type(settings.auth.username))
+    cfg.set('auth', 'password', text_type(settings.auth.password))
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -330,7 +325,7 @@ def save_wizard():
     cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
     cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
     cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
-    cfg.set('sonarr', 'full_update', text_type(get_sonarr_settings()[5]))
+    cfg.set('sonarr', 'full_update', text_type(settings.sonarr.full_update))
     
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -354,7 +349,7 @@ def save_wizard():
     cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
     cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
     cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
-    cfg.set('radarr', 'full_update', text_type(get_radarr_settings()[5]))
+    cfg.set('radarr', 'full_update', text_type(settings.radarr.full_update))
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     c.execute("UPDATE table_settings_providers SET enabled = 0")
@@ -442,9 +437,7 @@ def download_log():
 @custom_auth_basic(check_credentials)
 def image_proxy(url):
     authorize()
-    url_sonarr = get_sonarr_settings()[6]
-    url_sonarr_short = get_sonarr_settings()[7]
-    apikey = get_sonarr_settings()[4]
+    apikey = settings.sonarr.apikey
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
         image_buffer = BytesIO(requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content)
@@ -460,9 +453,7 @@ def image_proxy(url):
 @custom_auth_basic(check_credentials)
 def image_proxy_movies(url):
     authorize()
-    url_radarr = get_radarr_settings()[6]
-    url_radarr_short = get_radarr_settings()[7]
-    apikey = get_radarr_settings()[4]
+    apikey = settings.radarr.apikey
     try:
         url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         image_buffer = BytesIO(requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
@@ -481,9 +472,9 @@ def image_proxy_movies(url):
 @custom_auth_basic(check_credentials)
 def redirect_root():
     authorize()
-    if get_general_settings()[12] is True:
+    if settings.general.use_sonarr is True:
         redirect(base_url + 'series')
-    elif get_general_settings()[13] is True:
+    elif settings.general.use_radarr is True:
         redirect(base_url + 'movies')
     elif os.path.exists(os.path.join(config_dir, 'config/config.ini')) is False:
         redirect(base_url + 'wizard')
@@ -495,9 +486,9 @@ def redirect_root():
 @custom_auth_basic(check_credentials)
 def series():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.single_language
     
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
     
@@ -507,11 +498,11 @@ def series():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    if get_general_settings()[24] is True:
+    if settings.general.only_monitored is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -528,7 +519,7 @@ def series():
     output = template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=port)
+                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
     return output
 
 
@@ -536,9 +527,9 @@ def series():
 @custom_auth_basic(check_credentials)
 def serieseditor():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.single_language
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
@@ -551,7 +542,7 @@ def serieseditor():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
+    output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=settings.general.port)
     return output
 
 
@@ -559,18 +550,18 @@ def serieseditor():
 @custom_auth_basic(check_credentials)
 def search_json(query):
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     
     search_list = []
-    if get_general_settings()[12] is True:
+    if settings.general.use_sonarr is True:
         c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
                   ('%' + query + '%',))
         series = c.fetchall()
         for serie in series:
             search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
     
-    if get_general_settings()[13] is True:
+    if settings.general.use_radarr is True:
         c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
         movies = c.fetchall()
         for movie in movies:
@@ -593,7 +584,7 @@ def edit_series(no):
     else:
         lang = 'None'
 
-    single_language = get_general_settings()[7]
+    single_language = settings.general.single_language
     if single_language is True:
         if str(lang) == "['None']":
             lang = 'None'
@@ -610,7 +601,7 @@ def edit_series(no):
     else:
         hi = "False"
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (str(lang), hi, no))
     conn.commit()
@@ -619,6 +610,7 @@ def edit_series(no):
     list_missing_subtitles(no)
 
     redirect(ref)
+
 
 @route(base_url + 'edit_serieseditor', method='POST')
 @custom_auth_basic(check_credentials)
@@ -631,7 +623,7 @@ def edit_serieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
 
     for serie in series:
@@ -652,14 +644,14 @@ def edit_serieseditor():
 
     redirect(ref)
 
+
 @route(base_url + 'episodes/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
 def episodes(no):
     authorize()
-    # single_language = get_general_settings()[7]
-    url_sonarr_short = get_sonarr_settings()[7]
+    # single_language = settings.general.single_language
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
     c = conn.cursor()
 
@@ -676,15 +668,16 @@ def episodes(no):
     for key, season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
 
-    return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number, current_port=port)
+    return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number, current_port=settings.general.port)
+
 
 @route(base_url + 'movies')
 @custom_auth_basic(check_credentials)
 def movies():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.single_language
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
@@ -694,7 +687,7 @@ def movies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
@@ -703,16 +696,17 @@ def movies():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size, current_port=port)
+    output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size, current_port=settings.general.port)
     return output
+
 
 @route(base_url + 'movieseditor')
 @custom_auth_basic(check_credentials)
 def movieseditor():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.single_language
 
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
@@ -725,8 +719,9 @@ def movieseditor():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
+    output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=settings.general.port)
     return output
+
 
 @route(base_url + 'edit_movieseditor', method='POST')
 @custom_auth_basic(check_credentials)
@@ -739,7 +734,7 @@ def edit_movieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
 
     for movie in movies:
@@ -759,6 +754,7 @@ def edit_movieseditor():
         list_missing_subtitles_movies(movie)
 
     redirect(ref)
+
 
 @route(base_url + 'edit_movie/<no:int>', method='POST')
 @custom_auth_basic(check_credentials)
@@ -782,7 +778,7 @@ def edit_movie(no):
     else:
         hi = "False"
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ? WHERE radarrId LIKE ?", (str(lang), hi, no))
     conn.commit()
@@ -792,14 +788,14 @@ def edit_movie(no):
 
     redirect(ref)
 
+
 @route(base_url + 'movie/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
 def movie(no):
     authorize()
-    # single_language = get_general_settings()[7]
-    url_radarr_short = get_radarr_settings()[7]
+    # single_language = settings.general.single_language
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace_movie)
     c = conn.cursor()
 
@@ -810,7 +806,8 @@ def movie(no):
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
 
-    return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid, current_port=port)
+    return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid, current_port=settings.general.port)
+
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -832,6 +829,7 @@ def scan_disk_movie(no):
 
     redirect(ref)
 
+
 @route(base_url + 'search_missing_subtitles/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_missing_subtitles(no):
@@ -841,6 +839,7 @@ def search_missing_subtitles(no):
     series_download_subtitles(no)
 
     redirect(ref)
+
 
 @route(base_url + 'search_missing_subtitles_movie/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -852,17 +851,19 @@ def search_missing_subtitles_movie(no):
 
     redirect(ref)
 
+
 @route(base_url + 'history')
 @custom_auth_basic(check_credentials)
 def history():
     authorize()
-    return template('history', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('history', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
+
 
 @route(base_url + 'historyseries')
 @custom_auth_basic(check_credentials)
 def historyseries():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_history")
@@ -871,7 +872,7 @@ def historyseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
@@ -894,13 +895,14 @@ def historyseries():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
+    return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=settings.general.port)
+
 
 @route(base_url + 'historymovies')
 @custom_auth_basic(check_credentials)
 def historymovies():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     c.execute("SELECT COUNT(*) FROM table_history_movie")
@@ -909,7 +911,7 @@ def historymovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
@@ -932,23 +934,25 @@ def historymovies():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
-    return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
+    return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=settings.general.port)
+
 
 @route(base_url + 'wanted')
 @custom_auth_basic(check_credentials)
 def wanted():
     authorize()
-    return template('wanted', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('wanted', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
+
 
 @route(base_url + 'wantedseries')
 @custom_auth_basic(check_credentials)
 def wantedseries():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    if get_general_settings()[24] is True:
+    if settings.general.only_monitored is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -959,24 +963,25 @@ def wantedseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedseries', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
+    return template('wantedseries', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=settings.general.port)
+
 
 @route(base_url + 'wantedmovies')
 @custom_auth_basic(check_credentials)
 def wantedmovies():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    if get_general_settings()[24] is True:
+    if settings.general.only_monitored is True:
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -987,14 +992,15 @@ def wantedmovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
     c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedmovies', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
+    return template('wantedmovies', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=settings.general.port)
+
 
 @route(base_url + 'wanted_search_missing_subtitles')
 @custom_auth_basic(check_credentials)
@@ -1006,11 +1012,12 @@ def wanted_search_missing_subtitles_list():
 
     redirect(ref)
 
+
 @route(base_url + 'settings')
 @custom_auth_basic(check_credentials)
-def settings():
+def _settings():
     authorize()
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
@@ -1020,14 +1027,9 @@ def settings():
     settings_notifier = c.fetchall()
     c.close()
 
-    from get_settings import get_general_settings, get_proxy_settings, get_auth_settings, get_radarr_settings, get_sonarr_settings
-    settings_general = get_general_settings()
-    settings_proxy = get_proxy_settings()
-    settings_auth = get_auth_settings()
-    settings_sonarr = get_sonarr_settings()
-    settings_radarr = get_radarr_settings()
 
-    return template('settings', bazarr_version=bazarr_version, settings_general=settings_general, settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url, current_port=port)
+    return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages, settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url, current_port=settings.general.port)
+
 
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
@@ -1035,7 +1037,7 @@ def save_settings():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
 
     settings_general_ip = request.forms.get('settings_general_ip')
@@ -1107,9 +1109,7 @@ def save_settings():
         settings_general_use_radarr = 'True'
     settings_page_size = request.forms.get('settings_page_size')
 
-    settings_general = get_general_settings()
-
-    before = (unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]), unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
+    before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url), unicode(settings.general.path_mappings), unicode(settings.general.use_sonarr), unicode(settings.general.use_radarr), unicode(settings.general.path_mappings_movie))
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
     from six import text_type
 
@@ -1141,9 +1141,6 @@ def save_settings():
 
     if after != before:
         configured()
-    get_general_settings()
-    
-    settings_proxy = get_proxy_settings()
 
     if not cfg.has_section('proxy'):
         cfg.add_section('proxy')
@@ -1155,7 +1152,7 @@ def save_settings():
     settings_proxy_password = request.forms.get('settings_proxy_password')
     settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
     
-    before_proxy_password = (unicode(settings_proxy[0]), unicode(settings_proxy[5]))
+    before_proxy_password = (unicode(settings.proxy.type), unicode(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
@@ -1172,15 +1169,13 @@ def save_settings():
         cfg.set('proxy', 'password', text_type(settings_proxy_password))
         cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
 
-    settings_auth = get_auth_settings()
-
     settings_auth_type = request.forms.get('settings_auth_type')
     settings_auth_username = request.forms.get('settings_auth_username')
     settings_auth_password = request.forms.get('settings_auth_password')
 
-    if get_auth_settings()[0] != settings_auth_type:
+    if settings.auth.type != settings_auth_type:
         configured()
-    if settings_auth[2] == settings_auth_password:
+    if settings.auth.password == settings_auth_password:
         cfg.set('auth', 'type', text_type(settings_auth_type))
         cfg.set('auth', 'username', text_type(settings_auth_username))
     else:
@@ -1204,7 +1199,7 @@ def save_settings():
         else:
             aaa._beaker_session.delete()
     else:
-        if settings_auth[2] != settings_auth_password:
+        if settings.auth.password  != settings_auth_password:
             aaa.user(settings_auth_username).update(role='', pwd=settings_auth_password)
             if settings_auth_type == 'basic' or settings_auth_type == 'None':
                 pass
@@ -1308,7 +1303,7 @@ def save_settings():
     with open(config_file, 'wb') as f:
         cfg.write(f)
 
-    configure_logging(get_general_settings()[4])
+    configure_logging(settings.general.debug)
 
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
@@ -1334,6 +1329,7 @@ def save_settings():
 
     redirect(ref)
 
+
 @route(base_url + 'check_update')
 @custom_auth_basic(check_credentials)
 def check_update():
@@ -1345,10 +1341,12 @@ def check_update():
 
     redirect(ref)
 
+
 @route(base_url + 'system')
 @custom_auth_basic(check_credentials)
 def system():
     authorize()
+    
     def get_time_from_interval(interval):
         interval_clean = interval.split('[')
         interval_clean = interval_clean[1][:-1]
@@ -1390,6 +1388,7 @@ def system():
 
         return text
 
+
     def get_time_from_cron(cron):
         text = "at "
         hour = str(cron[5])
@@ -1427,7 +1426,6 @@ def system():
 
         return text
 
-
     task_list = []
     for job in scheduler.get_jobs():
         if job.next_run_time is not None:
@@ -1445,16 +1443,15 @@ def system():
         for i, l in enumerate(f, 1):
             pass
         row_count = i
-        page_size = int(get_general_settings()[21])
+        page_size = int(settings.general.page_size)
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
     with open(os.path.join(config_dir, 'config', 'releases.txt'), 'r') as f:
         releases = ast.literal_eval(f.read())
 
     import platform
-    use_sonarr = get_general_settings()[12]
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
+    use_sonarr = settings.general.use_sonarr
+    apikey_sonarr = settings.sonarr.apikey
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_version = ''
     if use_sonarr:
@@ -1463,9 +1460,8 @@ def system():
         except:
             pass
 
-    use_radarr = get_general_settings()[13]
-    url_radarr = get_radarr_settings()[6]
-    apikey_radarr = get_radarr_settings()[4]
+    use_radarr = settings.general.use_radarr
+    apikey_radarr = settings.radarr.apikey
     rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
     radarr_version = ''
     if use_radarr:
@@ -1480,14 +1476,14 @@ def system():
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
-                    releases=releases, current_port=port)
+                    releases=releases, current_port=settings.general.port)
 
 
 @route(base_url + 'logs/<page:int>')
 @custom_auth_basic(check_credentials)
 def get_logs(page):
     authorize()
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
     logs_complete = []
@@ -1495,7 +1491,8 @@ def get_logs(page):
         logs_complete.append(line.rstrip())
     logs = logs_complete[begin:end]
 
-    return template('logs', logs=logs, base_url=base_url, current_port=port)
+    return template('logs', logs=logs, base_url=base_url, current_port=settings.general.port)
+
 
 @route(base_url + 'execute/<taskid>')
 @custom_auth_basic(check_credentials)
@@ -1575,6 +1572,7 @@ def get_subtitle():
     except OSError:
         pass
 
+
 @route(base_url + 'manual_search', method='POST')
 @custom_auth_basic(check_credentials)
 def manual_search_json():
@@ -1591,6 +1589,7 @@ def manual_search_json():
 
     data = manual_search(episodePath, language, hi, providers_list, providers_auth, sceneName, 'series')
     return dict(data=data)
+
 
 @route(base_url + 'manual_get_subtitle', method='POST')
 @custom_auth_basic(check_credentials)
@@ -1621,6 +1620,7 @@ def manual_get_subtitle():
     except OSError:
         pass
 
+
 @route(base_url + 'get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle_movie():
@@ -1648,6 +1648,7 @@ def get_subtitle_movie():
     except OSError:
         pass
 
+
 @route(base_url + 'manual_search_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def manual_search_movie_json():
@@ -1664,6 +1665,7 @@ def manual_search_movie_json():
 
     data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, 'movie')
     return dict(data=data)
+
 
 @route(base_url + 'manual_get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
@@ -1693,44 +1695,50 @@ def manual_get_subtitle_movie():
     except OSError:
         pass
 
+
 def configured():
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE system SET configured = 1")
     conn.commit()
     c.close()
 
+
 @route(base_url + 'api/series/wanted')
 def api_wanted():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC").fetchall()
     c.close()
     return dict(subtitles=data)
 
+
 @route(base_url + 'api/series/history')
 def api_history():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
     c.close()
     return dict(subtitles=data)
 
+
 @route(base_url + 'api/movies/wanted')
 def api_wanted():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC").fetchall()
     c.close()
     return dict(subtitles=data)
 
+
 @route(base_url + 'api/movies/history')
 def api_history():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute("SELECT table_movies.title, strftime('%Y-%m-%d', datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description FROM table_history_movie INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId WHERE table_history_movie.action = '1' ORDER BY id DESC").fetchall()
     c.close()
     return dict(subtitles=data)
+
 
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -1761,9 +1769,9 @@ import warnings
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-server = CherryPyWSGIServer((str(ip), int(port)), app)
+server = CherryPyWSGIServer((str(settings.general.ip), int(settings.general.port)), app)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(settings.general.port) + str(base_url))
     # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.start()
 except KeyboardInterrupt:

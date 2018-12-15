@@ -220,9 +220,9 @@
 											end
 											if missing_languages is not None:
                                                 from get_subtitle import search_active
-                                                from get_settings import get_general_settings
+                                                from config import settings
                                                 for language in missing_languages:
-                                                    if episode[10] is not None and get_general_settings()[25] and language in episode[10]:
+                                                    if episode[10] is not None and settings.general.adaptive_searching and language in episode[10]:
                                                         for lang in ast.literal_eval(episode[10]):
                                                             if language in lang:
                                                                 if search_active(lang[1]):

@@ -1,21 +1,23 @@
-from get_argv import config_dir
-
-import gc
-import os
-import enzyme
-import babelfish
-import logging
-from subliminal import core
-import sqlite3
 import ast
-import langdetect
-from bs4 import UnicodeDammit
+import gc
+import logging
+import os
+import sqlite3
 from itertools import islice
 
-from get_settings import path_replace_reverse, path_replace, path_replace_reverse_movie, path_replace_movie, get_general_settings
+import enzyme
+import langdetect
+from bs4 import UnicodeDammit
+from subliminal import core
+
+from get_argv import config_dir
 from get_languages import alpha2_from_alpha3
+from config import settings
+from helper import path_replace, path_replace_movie, path_replace_reverse, \
+    path_replace_reverse_movie
 
 gc.enable()
+
 
 def store_subtitles(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
@@ -29,7 +31,7 @@ def store_subtitles(file):
                 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        if alpha2_from_alpha3(subtitle_track.language) != None:
+                        if alpha2_from_alpha3(subtitle_track.language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_track.language))
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang,None])
@@ -51,7 +53,7 @@ def store_subtitles(file):
             pass
         else:
             for subtitle, language in subtitles.iteritems():
-                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
+                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append([str("pb"), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
                 elif str(language) != 'und':
@@ -101,7 +103,7 @@ def store_subtitles_movie(file):
 
                 for subtitle_track in mkv.subtitle_tracks:
                     try:
-                        if alpha2_from_alpha3(subtitle_track.language) != None:
+                        if alpha2_from_alpha3(subtitle_track.language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_track.language))
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
@@ -146,7 +148,7 @@ def store_subtitles_movie(file):
                                     logging.debug("BAZARR external subtitles detected and analysis guessed this language: " + str(detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
 
-        conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+        conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
         logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
         c_db.execute("UPDATE table_movies SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse_movie(file)))
@@ -167,30 +169,30 @@ def list_missing_subtitles(*no):
         query_string = " WHERE table_shows.sonarrSeriesId = " + str(no[0])
     except:
         pass
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_subtitles = c_db.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
     c_db.close()
 
     missing_subtitles_global = []
-    use_embedded_subs = get_general_settings()[23]
+    use_embedded_subs = settings.general.use_embedded_subs
     for episode_subtitles in episodes_subtitles:
         actual_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        if episode_subtitles[1] != None:
-            if use_embedded_subs is True:
+        if episode_subtitles[1] is not None:
+            if use_embedded_subs:
                 actual_subtitles = ast.literal_eval(episode_subtitles[1])
             else:
                 actual_subtitles_temp = ast.literal_eval(episode_subtitles[1])
                 for subtitle in actual_subtitles_temp:
-                    if subtitle[1] != None:
+                    if subtitle[1] is not None:
                         actual_subtitles.append(subtitle)
-        if episode_subtitles[2] != None:
+        if episode_subtitles[2] is not None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
         actual_subtitles_list = []
-        if desired_subtitles == None:
+        if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
         else:
             for item in actual_subtitles:
@@ -201,7 +203,7 @@ def list_missing_subtitles(*no):
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles[0]]))
             
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     c_db.executemany("UPDATE table_episodes SET missing_subtitles = ? WHERE sonarrEpisodeId = ?", (missing_subtitles_global))
     conn_db.commit()
@@ -214,30 +216,30 @@ def list_missing_subtitles_movies(*no):
         query_string = " WHERE table_movies.radarrId = " + str(no[0])
     except:
         pass
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movies_subtitles = c_db.execute("SELECT radarrId, subtitles, languages FROM table_movies" + query_string).fetchall()
     c_db.close()
 
     missing_subtitles_global = []
-    use_embedded_subs = get_general_settings()[23]
+    use_embedded_subs = settings.general.use_embedded_subs
     for movie_subtitles in movies_subtitles:
         actual_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        if movie_subtitles[1] != None:
-            if use_embedded_subs is True:
+        if movie_subtitles[1] is not None:
+            if use_embedded_subs:
                 actual_subtitles = ast.literal_eval(movie_subtitles[1])
             else:
                 actual_subtitles_temp = ast.literal_eval(movie_subtitles[1])
                 for subtitle in actual_subtitles_temp:
-                    if subtitle[1] != None:
+                    if subtitle[1] is not None:
                         actual_subtitles.append(subtitle)
-        if movie_subtitles[2] != None:
+        if movie_subtitles[2] is not None:
             desired_subtitles = ast.literal_eval(movie_subtitles[2])
         actual_subtitles_list = []
-        if desired_subtitles == None:
+        if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', movie_subtitles[0]]))
         else:
             for item in actual_subtitles:
@@ -248,14 +250,15 @@ def list_missing_subtitles_movies(*no):
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles[0]]))
 
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     c_db.executemany("UPDATE table_movies SET missing_subtitles = ? WHERE radarrId = ?", (missing_subtitles_global))
     conn_db.commit()
     c_db.close()
 
+
 def series_full_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
@@ -266,7 +269,7 @@ def series_full_scan_subtitles():
     gc.collect()
 
 def movies_full_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movies = c_db.execute("SELECT path FROM table_movies").fetchall()
     c_db.close()
@@ -277,7 +280,7 @@ def movies_full_scan_subtitles():
     gc.collect()
 
 def series_scan_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
     c_db.close()
@@ -289,7 +292,7 @@ def series_scan_subtitles(no):
 
 
 def movies_scan_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movies = c_db.execute("SELECT path FROM table_movies WHERE radarrId = ?", (no,)).fetchall()
     c_db.close()

@@ -1,12 +1,15 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import os
 import sqlite3
 
+from get_argv import config_dir
+from scheduler import execute_now
+from config import settings
+
 # Check if database exist
-if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
+if os.path.exists(os.path.join(config_dir, 'db', 'bazarr.db')):
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     
     # Execute tables modifications
@@ -70,13 +73,9 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
     except:
         pass
     else:
-        from scheduler import execute_now
-        from get_settings import get_general_settings
-
-        integration = get_general_settings()
-        if integration[12] is True:
+        if settings.general.use_sonarr:
             execute_now('sync_episodes')
-        if integration[13] is True:
+        if settings.general.use_radarr:
             execute_now('update_movies')
 
     try:
@@ -85,11 +84,7 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
     except:
         pass
     else:
-        from scheduler import execute_now
-        from get_settings import get_general_settings
-
-        integration = get_general_settings()
-        if integration[12] is True:
+        if settings.general.use_sonarr:
             execute_now('sync_episodes')
 
     try:
@@ -98,11 +93,8 @@ if os.path.exists(os.path.join(config_dir, 'db/bazarr.db')) == True:
     except:
         pass
     else:
-        from scheduler import execute_now
-        from get_settings import get_general_settings
-
-        integration = get_general_settings()
-        if integration[13] is True:
+        if settings.general.use_radarr:
             execute_now('update_movies')
 
     db.close()
+    

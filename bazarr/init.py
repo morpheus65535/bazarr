@@ -1,3 +1,4 @@
+# coding=utf-8
 import os
 import sqlite3
 import logging
@@ -5,10 +6,11 @@ import time
 
 from cork import Cork
 from configparser import ConfigParser
+from check_update import check_releases
 from get_argv import config_dir
 
 # Check if config_dir exist
-if os.path.exists(config_dir) is False:
+if not os.path.exists(config_dir):
     # Create config_dir directory tree
     try:
         os.mkdir(os.path.join(config_dir))
@@ -17,22 +19,21 @@ if os.path.exists(config_dir) is False:
         logging.exception("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
-if os.path.exists(os.path.join(config_dir, 'config')) is False:
+if not os.path.exists(os.path.join(config_dir, 'config')):
     os.mkdir(os.path.join(config_dir, 'config'))
     logging.debug("BAZARR Created config folder")
-if os.path.exists(os.path.join(config_dir, 'db')) is False:
+if not os.path.exists(os.path.join(config_dir, 'db')):
     os.mkdir(os.path.join(config_dir, 'db'))
     logging.debug("BAZARR Created db folder")
-if os.path.exists(os.path.join(config_dir, 'log')) is False:
+if not os.path.exists(os.path.join(config_dir, 'log')):
     os.mkdir(os.path.join(config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
     
 if not os.path.exists(os.path.join(config_dir, 'config', 'releases.txt')):
-    from check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
-config_file = os.path.normpath(os.path.join(config_dir, 'config/config.ini'))
+config_file = os.path.normpath(os.path.join(config_dir, 'config', 'config.ini'))
 
 cfg = ConfigParser()
 try:
@@ -44,7 +45,7 @@ try:
     fd.close()
 
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Execute script and commit change to database
@@ -81,7 +82,7 @@ if cfg.has_section('general'):
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
 
-if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json'))) is False:
+if not os.path.exists(os.path.normpath(os.path.join(config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
 
     cork._store.roles[''] = 100

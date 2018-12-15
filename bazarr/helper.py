@@ -1,4 +1,5 @@
 # coding=utf-8
+import ast
 import os
 import re
 
@@ -6,7 +7,7 @@ from config import settings
 
 
 def path_replace(path):
-    for path_mapping in settings.general.path_mappings:
+    for path_mapping in ast.literal_eval(settings.general.path_mappings):
         if path_mapping[0] in path:
             path = path.replace(path_mapping[0], path_mapping[1])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -18,7 +19,7 @@ def path_replace(path):
 
 
 def path_replace_reverse(path):
-    for path_mapping in settings.general.path_mappings:
+    for path_mapping in ast.literal_eval(settings.general.path_mappings):
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -30,7 +31,7 @@ def path_replace_reverse(path):
 
 
 def path_replace_movie(path):
-    for path_mapping in settings.general.path_mappings_movie:
+    for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
         if path_mapping[0] in path:
             path = path.replace(path_mapping[0], path_mapping[1])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -42,7 +43,7 @@ def path_replace_movie(path):
 
 
 def path_replace_reverse_movie(path):
-    for path_mapping in settings.general.path_mappings_movie:
+    for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):

@@ -1,12 +1,14 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import os
 import sqlite3
 import time
 
+from get_argv import config_dir
+
+
 def history_log(action, sonarrSeriesId, sonarrEpisodeId, description):
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Get Sonarr API URL from database config table
@@ -21,7 +23,7 @@ def history_log(action, sonarrSeriesId, sonarrEpisodeId, description):
 
 def history_log_movie(action, radarrId, description):
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     history = c.execute('''INSERT INTO table_history_movie(action, radarrId, timestamp, description) VALUES (?, ?, ?, ?)''', (action, radarrId, time.time(), description))

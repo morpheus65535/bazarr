@@ -47,14 +47,12 @@
 		</div>
 		% include('menu.tpl')
 
-        % from get_argv import config_dir
-        % import os
-		% from get_settings import get_general_settings
+		% from config import settings
 
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
-				<a id="series_tab" class="tabs item active" data-enabled="{{get_general_settings()[12]}}" data-tab="series">Series</a>
-				<a id="movies_tab" class="tabs item" data-enabled="{{get_general_settings()[13]}}" data-tab="movies">Movies</a>
+				<a id="series_tab" class="tabs item active" data-enabled="{{settings.general.use_sonarr}}" data-tab="series">Series</a>
+				<a id="movies_tab" class="tabs item" data-enabled="{{settings.general.use_radarr}}" data-tab="movies">Movies</a>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="series">
 				<div class="content">

@@ -1,8 +1,10 @@
-from get_argv import config_dir
-
+# coding=utf-8
+import os
 import sqlite3
 import pycountry
-import os
+
+from get_argv import config_dir
+
 
 def load_language_in_db():
     # Get languages list in langs tuple
@@ -11,7 +13,7 @@ def load_language_in_db():
         if hasattr(lang, 'alpha_2')]
 
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Insert languages in database table
@@ -31,6 +33,7 @@ def load_language_in_db():
     # Close database connection
     db.close()
 
+
 def language_from_alpha2(lang):
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -40,6 +43,7 @@ def language_from_alpha2(lang):
         result = None
     db.close()
     return result
+
 
 def language_from_alpha3(lang):
     if lang == 'fre':
@@ -53,6 +57,7 @@ def language_from_alpha3(lang):
     db.close()
     return result
 
+
 def alpha2_from_alpha3(lang):
     if lang == 'fre':
         lang = 'fra'
@@ -65,6 +70,7 @@ def alpha2_from_alpha3(lang):
     db.close()
     return result
 
+
 def alpha2_from_language(lang):
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -74,6 +80,7 @@ def alpha2_from_language(lang):
         result = None
     db.close()
     return result
+
 
 def alpha3_from_alpha2(lang):
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
@@ -85,6 +92,7 @@ def alpha3_from_alpha2(lang):
     db.close()
     return result
 
+
 def alpha3_from_language(lang):
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
     c = db.cursor()
@@ -94,6 +102,7 @@ def alpha3_from_language(lang):
         result = None
     db.close()
     return result
+
 
 if __name__ == '__main__':
     load_language_in_db()

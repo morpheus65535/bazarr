@@ -390,7 +390,6 @@ def get_radarr_settings():
     return [ip, port, base_url, ssl, apikey, full_update, url_radarr , url_radarr_short]
 
 
-
 def path_replace(path):
     for path_mapping in path_mappings:
         if path_mapping[0] in path:

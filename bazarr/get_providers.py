@@ -1,16 +1,19 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import sqlite3
 import os
-from subliminal import provider_manager
 import collections
+
+from subliminal import provider_manager
+
+from get_argv import config_dir
+
 
 def load_providers():
     # Get providers list from subliminal
     providers_list = sorted(provider_manager.names())
 
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Remove unsupported providers
@@ -34,7 +37,7 @@ def load_providers():
 
 
 def get_providers():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     c.close()
@@ -50,7 +53,7 @@ def get_providers():
 
 
 def get_providers_auth():
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1 AND username is not NULL AND password is not NULL").fetchall()
     c.close()

@@ -1,23 +1,23 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import os
 import sqlite3
 import requests
 import logging
 
-from get_settings import get_general_settings, path_replace_movie
+from get_argv import config_dir
+from config import settings, url_radarr
+from helper import path_replace_movie
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
+
 
 def update_movies():
     logging.debug('BAZARR Starting movie sync from Radarr.')
-    from get_settings import get_radarr_settings
-    url_radarr = get_radarr_settings()[6]
-    apikey_radarr = get_radarr_settings()[4]
-    movie_default_enabled = get_general_settings()[18]
-    movie_default_language = get_general_settings()[19]
-    movie_default_hi = get_general_settings()[20]
+    apikey_radarr = settings.radarr.apikey
+    movie_default_enabled = settings.general.movie_default_enabled
+    movie_default_language = settings.general.movie_default_language
+    movie_default_hi = settings.general.movie_default_hi
 
-    if apikey_radarr == None:
+    if apikey_radarr is None:
         pass
     else:
         get_profile_list()
@@ -124,11 +124,9 @@ def update_movies():
     list_missing_subtitles_movies()
     logging.debug('BAZARR All movie missing subtitles updated in database.')
 
+
 def get_profile_list():
-    from get_settings import get_radarr_settings
-    url_radarr = get_radarr_settings()[6]
-    # url_radarr_short = get_radarr_settings()[7]
-    apikey_radarr = get_radarr_settings()[4]
+    apikey_radarr = settings.radarr.apikey
 
     # Get profiles data from radarr
     global profiles_list
@@ -148,10 +146,12 @@ def get_profile_list():
         for profile in profiles_json.json():
             profiles_list.append([profile['id'], profile['language'].capitalize()])
 
+
 def profile_id_to_language(id):
     for profile in profiles_list:
         if id == profile[0]:
             return profile[1]
+
 
 if __name__ == '__main__':
     update_movies()

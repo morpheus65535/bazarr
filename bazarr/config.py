@@ -44,6 +44,7 @@ def read(config_file):
 
 
 settings = read(os.path.join(os.path.join(config_dir, 'config', 'config.ini')))
+base_url = settings.general.base_url
 
 # sonarr url
 if settings.sonarr.ssl:

@@ -68,7 +68,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
+                                        <input name="settings_general_ip" type="text" value="{{settings.general.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -92,7 +92,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_general_port" type="text" value="{{settings_general[1]}}">
+                                        <input name="settings_general_port" type="text" value="{{settings.general.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -115,10 +115,10 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    %if settings_general[2] is None:
+                                    %if settings.general.base_url is None:
                                     %	base_url = "/"
                                     %else:
-                                    %	base_url = settings_general[2]
+                                    %	base_url = settings.general.base_url
                                     %end
                                     <input name="settings_general_baseurl" type="text" value="{{base_url}}">
                                 </div>
@@ -141,7 +141,7 @@
                                 <label>Enable debug logging</label>
                             </div>
                             <div class="five wide column">
-                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings_general[4]}}>
+                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings.general.debug}}>
                                     <input name="settings_general_debug" type="checkbox">
                                     <label></label>
                                 </div>
@@ -216,7 +216,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_url" name="settings_proxy_url" type="text" value="{{settings_proxy[1]}}">
+                                        <input id="settings_proxy_url" name="settings_proxy_url" type="text" value="{{settings.proxy.url}}">
                                     </div>
                                 </div>
                             </div>
@@ -229,7 +229,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_port" name="settings_proxy_port" type="text" value="{{settings_proxy[2]}}">
+                                        <input id="settings_proxy_port" name="settings_proxy_port" type="text" value="{{settings.proxy.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -242,7 +242,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_username" name="settings_proxy_username" type="text" value="{{settings_proxy[3]}}">
+                                        <input id="settings_proxy_username" name="settings_proxy_username" type="text" value="{{settings.proxy.username}}">
                                     </div>
                                 </div>
                             </div>
@@ -261,7 +261,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_password" name="settings_proxy_password" type="password" value="{{settings_proxy[4]}}">
+                                        <input id="settings_proxy_password" name="settings_proxy_password" type="password" value="{{settings.proxy.password}}">
                                     </div>
                                 </div>
                             </div>
@@ -281,7 +281,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings_proxy[5]}}">
+                                        <input id="settings_proxy_exclude" name="settings_proxy_exclude" type="text" value="{{settings.proxy.exclude}}">
                                     </div>
                                 </div>
                             </div>
@@ -335,7 +335,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_username" name="settings_auth_username" type="text" autocomplete="nope" value="{{settings_auth[1]}}">
+                                        <input id="settings_auth_username" name="settings_auth_username" type="text" autocomplete="nope" value="{{settings.auth.username}}">
                                     </div>
                                 </div>
                             </div>
@@ -348,7 +348,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_auth_password" name="settings_auth_password" type="password" autocomplete="new-password" value="{{settings_auth[2]}}">
+                                        <input id="settings_auth_password" name="settings_auth_password" type="password" autocomplete="new-password" value="{{settings.auth.password}}">
                                     </div>
                                 </div>
                             </div>
@@ -372,7 +372,7 @@
                                 <label>Use Sonarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings_general[12]}}>
+                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings.general.use_sonarr}}>
                                     <input name="settings_general_use_sonarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -391,7 +391,7 @@
                                 <label>Use Radarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings_general[13]}}>
+                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings.general.use_radarr}}>
                                     <input name="settings_general_use_radarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -411,8 +411,8 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
-                        %if settings_general[3] is not None:
-                        %	path_substitutions = ast.literal_eval(settings_general[3])
+                        %if settings.general.path_mappings is not None:
+                        %	path_substitutions = ast.literal_eval(settings.general.path_mappings)
                         %else:
                         %	path_substitutions = []
                         %end
@@ -485,8 +485,8 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
-                        %if settings_general[14] is not None:
-                        %	path_substitutions_movie = ast.literal_eval(settings_general[14])
+                        %if settings.general.path_mappings_movie is not None:
+                        %	path_substitutions_movie = ast.literal_eval(settings.general.path_mappings_movie)
                         %else:
                         %	path_substitutions_movie = []
                         %end
@@ -566,7 +566,7 @@
                                 <label>Use post-processing</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings_general[10]}}>
+                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings.general.use_postprocessing}}>
                                     <input name="settings_general_use_postprocessing" type="checkbox">
                                     <label></label>
                                 </div>
@@ -586,7 +586,7 @@
                             </div>
                             <div class="five wide column">
                                 <div id="settings_general_postprocessing_cmd_div" class="ui fluid input">
-                                    <input name="settings_general_postprocessing_cmd" type="text" value="{{settings_general[11] if settings_general[11] != None else ''}}">
+                                    <input name="settings_general_postprocessing_cmd" type="text" value="{{settings.general.postprocessing_cmd if settings.general.postprocessing_cmd != None else ''}}">
                                 </div>
                             </div>
                         </div>
@@ -660,7 +660,7 @@
                                 <label>Automatic</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings_general[6]}}>
+                                <div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings.general.auto_update}}>
                                     <input name="settings_general_automatic" type="checkbox">
                                     <label></label>
                                 </div>
@@ -706,7 +706,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text" value="{{settings_sonarr[0]}}">
+                                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text" value="{{settings.sonarr.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -724,7 +724,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text" value="{{settings_sonarr[1]}}">
+                                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text" value="{{settings.sonarr.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -741,7 +741,7 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input id="settings_sonarr_baseurl" name="settings_sonarr_baseurl" class="sonarr_config" type="text" value="{{settings_sonarr[2]}}">
+                                    <input id="settings_sonarr_baseurl" name="settings_sonarr_baseurl" class="sonarr_config" type="text" value="{{settings.sonarr.base_url}}">
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
@@ -756,7 +756,7 @@
                                 <label>SSL enabled</label>
                             </div>
                             <div class="one wide column">
-                                <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_sonarr[3]}}>
+                                <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.sonarr.ssl}}>
                                     <input id="settings_sonarr_ssl" name="settings_sonarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
@@ -770,7 +770,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_sonarr_apikey" name="settings_sonarr_apikey" class="sonarr_config" type="text" value="{{settings_sonarr[4]}}">
+                                        <input id="settings_sonarr_apikey" name="settings_sonarr_apikey" class="sonarr_config" type="text" value="{{settings.sonarr.apikey}}">
                                     </div>
                                 </div>
                             </div>
@@ -832,7 +832,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_radarr_ip" name="settings_radarr_ip" type="text" class="radarr_config" value="{{settings_radarr[0]}}">
+                                        <input id="settings_radarr_ip" name="settings_radarr_ip" type="text" class="radarr_config" value="{{settings.radarr.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -850,7 +850,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_radarr_port" name="settings_radarr_port" type="text" class="radarr_config" value="{{settings_radarr[1]}}">
+                                        <input id="settings_radarr_port" name="settings_radarr_port" type="text" class="radarr_config" value="{{settings.radarr.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -867,7 +867,7 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input id="settings_radarr_baseurl" name="settings_radarr_baseurl" type="text" class="radarr_config" value="{{settings_radarr[2]}}">
+                                    <input id="settings_radarr_baseurl" name="settings_radarr_baseurl" type="text" class="radarr_config" value="{{settings.radarr.base_url}}">
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
@@ -882,7 +882,7 @@
                                 <label>SSL enabled</label>
                             </div>
                             <div class="one wide column">
-                                <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings_radarr[3]}}>
+                                <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.radarr.ssl}}>
                                     <input id="settings_radarr_ssl" name="settings_radarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
@@ -896,7 +896,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_radarr_apikey" name="settings_radarr_apikey" type="text" class="radarr_config" value="{{settings_radarr[4]}}">
+                                        <input id="settings_radarr_apikey" name="settings_radarr_apikey" type="text" class="radarr_config" value="{{settings.radarr.apikey}}">
                                     </div>
                                 </div>
                             </div>
@@ -945,7 +945,7 @@
                                 <label>Use scene name when available</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings_general[9]}}>
+                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings.general.use_scenename}}>
                                     <input name="settings_general_scenename" type="checkbox">
                                     <label></label>
                                 </div>
@@ -966,7 +966,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[8]}}">
+                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score}}">
                                     </div>
                                 </div>
                             </div>
@@ -986,7 +986,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings_general[22]}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score_movie}}">
                                     </div>
                                 </div>
                             </div>
@@ -1004,7 +1004,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings_general[23]}}>
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings.general.use_embedded_subs}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1023,7 +1023,7 @@
                                 <label>Download only monitored</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings_general[24]}}>
+                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings.general.only_monitored}}>
                                     <input name="settings_general_only_monitored" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1042,7 +1042,7 @@
                                 <label>Adaptive searching</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings_general[25]}}>
+                                <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings.general.adaptive_searching}}>
                                     <input name="settings_general_adaptive_searching" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1172,7 +1172,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings_general[7]}}>
+                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings.general.single_language}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1217,7 +1217,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[15]}}">
+                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.serie_default_enabled}}">
                                         <input name="settings_serie_default_enabled" id="settings_serie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1239,7 +1239,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings_general[7] is False:
+                                        %if settings.general.single_language is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1255,7 +1255,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[17]}}">
+                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.serie_default_hi}}">
                                         <input name="settings_serie_default_hi" id="settings_serie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1274,7 +1274,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings_general[18]}}">
+                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.movie_default_enabled}}">
                                         <input name="settings_movie_default_enabled" id="settings_movie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1296,7 +1296,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings_general[7] is False:
+                                        %if settings.general.single_language is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1312,7 +1312,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings_general[20]}}">
+                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.movie_default_hi}}">
                                         <input name="settings_movie_default_hi" id="settings_movie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1520,7 +1520,7 @@
 
     // Load default value for Settings_auth_type
     $('#settings_auth_type').dropdown('clear');
-    $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
+    $('#settings_auth_type').dropdown('set selected','{{!settings.auth.type}}');
 
     // Remove value from Password input when changing to Form login to prevent bad password saving
     $("#settings_auth_type").on('change', function() {
@@ -1528,7 +1528,7 @@
             $('#settings_auth_password').val('');
             }
         else {
-            $('#settings_auth_password').val('{{settings_auth[2]}}');
+            $('#settings_auth_password').val('{{settings.auth.password}}');
         }
     });
 
@@ -1665,32 +1665,32 @@
 
 
     $('#settings_loglevel').dropdown('clear');
-    $('#settings_loglevel').dropdown('set selected','{{!settings_general[4]}}');
+    $('#settings_loglevel').dropdown('set selected','{{!settings.general.debug}}');
     $('#settings_page_size').dropdown('clear');
-    $('#settings_page_size').dropdown('set selected','{{!settings_general[21]}}');
+    $('#settings_page_size').dropdown('set selected','{{!settings.general.page_size}}');
     $('#settings_proxy_type').dropdown('clear');
-    $('#settings_proxy_type').dropdown('set selected','{{!settings_proxy[0]}}');
+    $('#settings_proxy_type').dropdown('set selected','{{!settings.proxy.type}}');
     $('#settings_providers').dropdown('clear');
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
     $('#settings_branch').dropdown('clear');
-    $('#settings_branch').dropdown('set selected','{{!settings_general[5]}}');
+    $('#settings_branch').dropdown('set selected','{{!settings.general.branch}}');
     $('#settings_sonarr_sync').dropdown('clear');
-    $('#settings_sonarr_sync').dropdown('set selected','{{!settings_sonarr[5]}}');
+    $('#settings_sonarr_sync').dropdown('set selected','{{!settings.sonarr.full_update}}');
     $('#settings_radarr_sync').dropdown('clear');
-    $('#settings_radarr_sync').dropdown('set selected','{{!settings_radarr[5]}}');
+    $('#settings_radarr_sync').dropdown('set selected','{{!settings.radarr.full_update}}');
 
     $('#settings_loglevel').dropdown();
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
     $('#settings_serie_default_languages').dropdown();
     $('#settings_movie_default_languages').dropdown();
-    %if settings_general[16] is not None:
-    $('#settings_serie_default_languages').dropdown('set selected',{{!settings_general[16]}});
+    %if settings.general.serie_default_language is not None:
+    $('#settings_serie_default_languages').dropdown('set selected',{{!settings.general.serie_default_language}});
     %end
-    %if settings_general[19] is not None:
-    $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
+    %if settings.general.movie_default_language is not None:
+    $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
     %end
     $('#settings_branch').dropdown();
     $('#settings_sonarr_sync').dropdown();

@@ -65,9 +65,9 @@
                         missing_languages = ast.literal_eval(row[1])
 						if missing_languages is not None:
                             from get_subtitle import search_active
-                            from get_settings import get_general_settings
+                            from config import settings
 							for language in missing_languages:
-                                if row[6] is not None and get_general_settings()[25] and language in row[6]:
+                                if row[6] is not None and settings.general.adaptive_searching and language in row[6]:
                                         for lang in ast.literal_eval(row[6]):
                                             if language in lang:
                                                 active = search_active(lang[1])

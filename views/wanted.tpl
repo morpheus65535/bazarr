@@ -36,9 +36,9 @@
 
 		% import os
 		% import sqlite3
-		% from get_settings import get_general_settings
+		% from config import settings
 
-        %if get_general_settings()[24]:
+        %if settings.general.only_monitored:
         %    monitored_only_query_string = ' AND monitored = "True"'
         %else:
         %    monitored_only_query_string = ""
@@ -54,17 +54,15 @@
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
 		% include('menu.tpl')
-			
-		% import os
 
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
-				<a id="series_tab" class="tabs item active" data-enabled="{{get_general_settings()[12]}}" data-tab="series">Series
+				<a id="series_tab" class="tabs item active" data-enabled="{{settings.general.use_sonarr}}" data-tab="series">Series
 					<div class="ui tiny yellow label">
 						{{wanted_series[0]}}
 					</div>
 				</a>
-				<a id="movies_tab" class="tabs item" data-enabled="{{get_general_settings()[13]}}" data-tab="movies">Movies
+				<a id="movies_tab" class="tabs item" data-enabled="{{settings.general.use_radarr}}" data-tab="movies">Movies
 					<div class="ui tiny green label">
 						{{wanted_movies[0]}}
 					</div>

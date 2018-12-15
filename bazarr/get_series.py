@@ -1,22 +1,21 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import os
 import sqlite3
 import requests
 import logging
 
-from get_settings import get_general_settings
+from get_argv import config_dir
+from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 
-def update_series():
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
-    serie_default_enabled = get_general_settings()[15]
-    serie_default_language = get_general_settings()[16]
-    serie_default_hi = get_general_settings()[17]
 
-    if apikey_sonarr == None:
+def update_series():
+    apikey_sonarr = settings.sonarr.apikey
+    serie_default_enabled = settings.general.serie_default_enabled
+    serie_default_language = settings.general.serie_default_language
+    serie_default_hi = settings.general.serie_default_hi
+
+    if apikey_sonarr is None:
         pass
     else:
         get_profile_list()
@@ -105,11 +104,9 @@ def update_series():
             db.commit()
             db.close()
 
+
 def get_profile_list():
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    # url_sonarr_short = get_sonarr_settings()[5]
-    apikey_sonarr = get_sonarr_settings()[4]
+    apikey_sonarr = settings.sonarr.apikey
 
     # Get profiles data from Sonarr
     error = False
@@ -154,6 +151,7 @@ def get_profile_list():
             sonarr_version = 3
             for profile in profiles_json_v3.json():
                 profiles_list.append([profile['id'], profile['name'].capitalize()])
+
 
 def profile_id_to_language(id):
     for profile in profiles_list:

@@ -163,3 +163,4 @@ class PublicIPFilter(ArgsFilteringFilter):
 
 def empty_log():
     fh.doRollover()
+    

@@ -1,18 +1,21 @@
-from get_argv import config_dir
-
+# coding=utf-8
 import os
 import sqlite3
 import requests
 import logging
 
-from get_settings import path_replace
+from get_argv import config_dir
+from config import settings, url_sonarr
+from helper import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, movies_full_scan_subtitles
-    
+
+
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
     list_missing_subtitles()
     logging.info('BAZARR All missing episode subtitles updated in database.')
+
 
 def update_all_movies():
     movies_full_scan_subtitles()
@@ -20,11 +23,10 @@ def update_all_movies():
     list_missing_subtitles()
     logging.info('BAZARR All missing movie subtitles updated in database.')
 
+
 def sync_episodes():
     logging.debug('BAZARR Starting episode sync from Sonarr.')
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
+    apikey_sonarr = settings.sonarr.apikey
     
     # Open database connection
     db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
