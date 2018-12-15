@@ -81,6 +81,7 @@
 		%import ast
 		%from get_languages import *
         %from config import settings
+        %from helper import path_replace_movie
 		%single_language = settings.general.single_language
 		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
