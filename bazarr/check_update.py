@@ -70,7 +70,7 @@ def check_releases():
 
 
 def updated():
-    conn = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
     c.execute("UPDATE system SET updated = 1")
     conn.commit()

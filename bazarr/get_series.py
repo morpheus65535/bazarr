@@ -35,7 +35,7 @@ def update_series():
             logging.exception("BAZARR Error trying to get series from Sonarr.")
         else:
             # Open database connection
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
 
             # Get current shows in DB
@@ -76,7 +76,7 @@ def update_series():
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"], show["tvdbId"], show["id"], overview, poster, fanart, profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
 
             # Update or insert series in DB
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
 
             updated_result = c.executemany('''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ? WHERE tvdbid = ?''', series_to_update)
@@ -98,7 +98,7 @@ def update_series():
             for item in current_shows_db_list:
                 if item not in current_shows_sonarr:
                     deleted_items.append(tuple([item]))
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?',deleted_items)
             db.commit()

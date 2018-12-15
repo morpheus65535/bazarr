@@ -76,7 +76,7 @@ def store_subtitles(file):
                                     logging.debug("BAZARR external subtitles detected and analysis guessed this language: " + str(detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
 
-        conn_db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+        conn_db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
         c_db = conn_db.cursor()
         logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
         c_db.execute("UPDATE table_episodes SET subtitles = ? WHERE path = ?", (str(actual_subtitles), path_replace_reverse(file)))

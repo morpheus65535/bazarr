@@ -37,7 +37,7 @@ def update_movies():
             logging.exception("BAZARR Error trying to get movies from Radarr.")
         else:
             # Get current movies in DB
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
             current_movies_db = c.execute('SELECT tmdbId FROM table_movies').fetchall()
             db.close()
@@ -90,7 +90,7 @@ def update_movies():
                             logging.error('BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator + movie['movieFile']['relativePath'])
 
             # Update or insert movies in DB
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
 
             updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle= ? WHERE tmdbid = ?''', movies_to_update)
@@ -106,7 +106,7 @@ def update_movies():
 
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
-            db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+            db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
             for removed_movie in removed_movies:
                 c.execute('DELETE FROM table_movies WHERE tmdbId = ?', (removed_movie,))

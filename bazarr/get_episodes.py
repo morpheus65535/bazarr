@@ -29,7 +29,7 @@ def sync_episodes():
     apikey_sonarr = settings.sonarr.apikey
     
     # Open database connection
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     # Get current episodes id in DB
@@ -83,7 +83,7 @@ def sync_episodes():
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
     # Update or insert movies in DB
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
     updated_result = c.executemany('''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''', episodes_to_update)

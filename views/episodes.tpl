@@ -89,7 +89,6 @@
 	<body>
 		%import ast
 		%from get_languages import *
-		%from get_settings import *
 		%single_language = get_general_settings()[7]
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">

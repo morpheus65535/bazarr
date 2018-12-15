@@ -35,7 +35,7 @@ def load_language_in_db():
 
 
 def language_from_alpha2(lang):
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT name FROM table_settings_languages WHERE code2 = ?''', (lang,)).fetchone()[0]
@@ -48,7 +48,7 @@ def language_from_alpha2(lang):
 def language_from_alpha3(lang):
     if lang == 'fre':
         lang = 'fra'
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT name FROM table_settings_languages WHERE code3 = ? OR code3b = ?''', (lang,lang)).fetchone()[0]
@@ -61,7 +61,7 @@ def language_from_alpha3(lang):
 def alpha2_from_alpha3(lang):
     if lang == 'fre':
         lang = 'fra'
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT code2 FROM table_settings_languages WHERE code3 = ? OR code3b = ?''', (lang,lang)).fetchone()[0]
@@ -72,7 +72,7 @@ def alpha2_from_alpha3(lang):
 
 
 def alpha2_from_language(lang):
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT code2 FROM table_settings_languages WHERE name = ?''', (lang,)).fetchone()[0]
@@ -83,7 +83,7 @@ def alpha2_from_language(lang):
 
 
 def alpha3_from_alpha2(lang):
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT code3 FROM table_settings_languages WHERE code2 = ?''', (lang,)).fetchone()[0]
@@ -94,7 +94,7 @@ def alpha3_from_alpha2(lang):
 
 
 def alpha3_from_language(lang):
-    db = sqlite3.connect(os.path.join(config_dir, 'db/bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     try:
         result = c.execute('''SELECT code3 FROM table_settings_languages WHERE name = ?''', (lang,)).fetchone()[0]
