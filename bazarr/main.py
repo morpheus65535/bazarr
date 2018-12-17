@@ -47,8 +47,14 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
+# Install gevent under user directory if it'S not already available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError:
+    from pip._internal import main as pipmain
+    pipmain(['install', '--user', 'gevent'])
+    import gevent
 
-import gevent
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
@@ -1742,12 +1748,13 @@ def handle_websocket():
     if not wsock:
         abort(400, 'Expected WebSocket request.')
 
-    queueconfig.q4ws.empty()
+    queueconfig.q4ws.clear()
 
     while True:
         try:
-            while not queueconfig.q4ws.empty():
-                wsock.send(queueconfig.q4ws.get_nowait())
+            if len(queueconfig.q4ws) > 0:
+                wsock.send(queueconfig.q4ws[0])
+                queueconfig.q4ws.popleft()
             gevent.sleep(0)
         except WebSocketError:
             break

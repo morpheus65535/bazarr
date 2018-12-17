@@ -11,7 +11,7 @@ from get_settings import get_general_settings
 from list_subtitles import list_missing_subtitles
 
 def update_series():
-    q4ws.put("Update series list from Sonarr is running...")
+    q4ws.append("Update series list from Sonarr is running...")
     from get_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
@@ -54,7 +54,7 @@ def update_series():
             series_to_add = []
 
             for show in r.json():
-                q4ws.put("Getting series data for this show: " + show['title'])
+                q4ws.append("Getting series data for this show: " + show['title'])
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -109,7 +109,7 @@ def update_series():
             db.commit()
             db.close()
 
-    q4ws.put("Update series list from Sonarr is ended.")
+    q4ws.append("Update series list from Sonarr is ended.")
 
 def get_profile_list():
     from get_settings import get_sonarr_settings

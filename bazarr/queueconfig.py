@@ -1,3 +1,4 @@
-from gevent import queue
+from collections import deque
+
 global q4ws
-q4ws = queue.Queue()
+q4ws = deque(maxlen=10)
