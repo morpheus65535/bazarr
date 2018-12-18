@@ -1744,12 +1744,12 @@ def test_url(protocol, url):
         return dict(status=True, version=result)
 
 
-@route(base_url + 'test_notification/<provider>', method='GET')
+@route(base_url + 'test_notification/<protocol>/<provider:path>', method='GET')
 @custom_auth_basic(check_credentials)
-def test_notification(provider):
+def test_notification(protocol, provider):
     provider = urllib.unquote(provider)
     apobj = apprise.Apprise()
-    apobj.add(provider)
+    apobj.add(protocol + "://" + provider)
 
     apobj.notify(
         title='Bazarr test notification',
