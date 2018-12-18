@@ -50,10 +50,16 @@ else:
 # Install gevent under user directory if it'S not already available. This one is required to use websocket.
 try:
     import gevent
-except ImportError:
-    from pip._internal import main as pipmain
-    pipmain(['install', '--user', 'gevent'])
-    import gevent
+except ImportError as e:
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        stop_file = open(os.path.join(config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
