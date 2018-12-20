@@ -1,4 +1,4 @@
-from get_argv import config_dir
+from get_argv import config_dir, no_update
 
 from get_settings import get_general_settings
 
@@ -8,7 +8,8 @@ import sqlite3
 import json
 import requests
 
-import git
+if not no_update:
+    import git
 
 current_working_directory = os.path.dirname(os.path.dirname(__file__))
 
