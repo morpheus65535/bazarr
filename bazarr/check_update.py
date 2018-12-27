@@ -1,11 +1,15 @@
-# coding=utf-8
+from get_argv import config_dir
+
+from get_settings import get_general_settings
+
 import os
 import logging
 import sqlite3
 import json
 import requests
 
-import git
+if not no_update:
+    import git
 
 from get_argv import config_dir
 
