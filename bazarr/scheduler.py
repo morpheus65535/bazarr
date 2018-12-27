@@ -19,7 +19,7 @@ from tzlocal import get_localzone
 
 
 def sonarr_full_update():
-    if settings.general.use_sonarr:
+    if settings.general.getboolean('use_sonarr'):
         full_update = settings.sonarr.full_update
         if full_update == "Daily":
             scheduler.add_job(update_all_episodes, CronTrigger(hour=4), max_instances=1, coalesce=True,
@@ -36,7 +36,7 @@ def sonarr_full_update():
 
 
 def radarr_full_update():
-    if settings.general.use_radarr:
+    if settings.general.getboolean('use_radarr'):
         full_update = settings.radarr.full_update
         if full_update == "Daily":
             scheduler.add_job(update_all_movies, CronTrigger(hour=5), max_instances=1, coalesce=True, misfire_grace_time=15,
@@ -70,14 +70,14 @@ else:
     scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
                       id='update_release', name='Update release info')
 
-if settings.general.use_sonarr:
+if settings.general.getboolean('use_sonarr'):
     scheduler.add_job(update_series, IntervalTrigger(minutes=1), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_series', name='Update series list from Sonarr')
     scheduler.add_job(sync_episodes, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr')
 
-if settings.general.use_radarr:
+if settings.general.getboolean('use_radarr'):
     scheduler.add_job(update_movies, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_movies', name='Update movies list from Radarr')
 
-if settings.general.use_sonarr or settings.general.use_radarr:
+if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr'):
     scheduler.add_job(wanted_search_missing_subtitles, IntervalTrigger(hours=3), max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
 
 sonarr_full_update()

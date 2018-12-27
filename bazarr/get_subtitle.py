@@ -42,10 +42,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         language_set.add(Language(language))
 
-    use_scenename = settings.general.use_scenename
+    use_scenename = settings.general.getboolean('use_scenename')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
-    use_postprocessing = settings.general.use_postprocessing
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     try:
@@ -122,7 +122,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                             calculated_score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / max_score * 100, 2)
                             if used_sceneName:
                                 video = scan_video(path)
-                            single = settings.general.single_language
+                            single = settings.general.getboolean('single_language')
                             if single is True:
                                 result = save_subtitles(video, [subtitle], single=True, encoding='utf-8')
                             else:
@@ -193,8 +193,8 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, medi
         else:
             language_set.add(Language(lang))
 
-    use_scenename = settings.general.use_scenename
-    use_postprocessing = settings.general.use_postprocessing
+    use_scenename = settings.general.getboolean('use_scenename')
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     try:
@@ -265,8 +265,8 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
         type_of_score = 360
     elif media_type == 'movie':
         type_of_score = 120
-    use_scenename = settings.general.use_scenename
-    use_postprocessing = settings.general.use_postprocessing
+    use_scenename = settings.general.getboolean('use_scenename')
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
 
     language = alpha3_from_alpha2(language)
@@ -293,7 +293,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             logging.exception('BAZARR Error downloading subtitles for this file ' + path)
             return None
         else:
-            single = settings.general.single_language
+            single = settings.general.getboolean('single_language')
             try:
                 score = round(float(compute_score(subtitle, video, hearing_impaired=hi)) / type_of_score * 100, 2)
                 if used_sceneName == True:
@@ -350,7 +350,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
 
 def series_download_subtitles(no):
-    if settings.general.only_monitored:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -482,7 +482,7 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    if settings.general.only_monitored:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -495,11 +495,11 @@ def wanted_search_missing_subtitles():
 
     c.close()
 
-    if settings.general.use_sonarr:
+    if settings.general.getboolean('use_sonarr'):
         for episode in episodes:
             wanted_download_subtitles(episode[0])
 
-    if settings.general.use_radarr:
+    if settings.general.getboolean('use_radarr'):
         for movie in movies:
             wanted_download_subtitles_movie(movie[0])
 
@@ -507,7 +507,7 @@ def wanted_search_missing_subtitles():
   
 
 def search_active(timestamp):
-    if settings.general.only_monitored:
+    if settings.general.getboolean('only_monitored'):
         search_deadline = timedelta(weeks=3)
         search_delta = timedelta(weeks=1)
         aa = datetime.fromtimestamp(float(timestamp))

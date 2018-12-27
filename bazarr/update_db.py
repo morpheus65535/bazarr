@@ -73,9 +73,9 @@ if os.path.exists(os.path.join(config_dir, 'db', 'bazarr.db')):
     except:
         pass
     else:
-        if settings.general.use_sonarr:
+        if settings.general.getboolean('use_sonarr'):
             execute_now('sync_episodes')
-        if settings.general.use_radarr:
+        if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
 
     try:
@@ -84,7 +84,7 @@ if os.path.exists(os.path.join(config_dir, 'db', 'bazarr.db')):
     except:
         pass
     else:
-        if settings.general.use_sonarr:
+        if settings.general.getboolean('use_sonarr'):
             execute_now('sync_episodes')
 
     try:
@@ -93,7 +93,7 @@ if os.path.exists(os.path.join(config_dir, 'db', 'bazarr.db')):
     except:
         pass
     else:
-        if settings.general.use_radarr:
+        if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
 
     db.close()

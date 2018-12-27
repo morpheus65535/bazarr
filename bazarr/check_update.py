@@ -1,21 +1,18 @@
-from get_argv import config_dir
-
-from get_settings import get_general_settings
-
+# coding=utf-8
 import os
 import logging
 import sqlite3
 import json
 import requests
 
+from get_argv import config_dir, no_update
+from config import settings
+
 if not no_update:
     import git
 
-from get_argv import config_dir
-
-from config import settings
-
 current_working_directory = os.path.dirname(os.path.dirname(__file__))
+
 
 def gitconfig():
     g = git.Repo.init(current_working_directory)
@@ -33,6 +30,7 @@ def gitconfig():
     except:
         logging.debug('BAZARR Settings git email')
         config_write.set_value("user", "email", "bazarr@fake.email")
+
 
 def check_and_apply_update():
     gitconfig()

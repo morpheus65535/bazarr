@@ -175,7 +175,7 @@ def list_missing_subtitles(*no):
     c_db.close()
 
     missing_subtitles_global = []
-    use_embedded_subs = settings.general.use_embedded_subs
+    use_embedded_subs = settings.general.getboolean('use_embedded_subs')
     for episode_subtitles in episodes_subtitles:
         actual_subtitles_temp = []
         actual_subtitles = []
@@ -222,7 +222,7 @@ def list_missing_subtitles_movies(*no):
     c_db.close()
 
     missing_subtitles_global = []
-    use_embedded_subs = settings.general.use_embedded_subs
+    use_embedded_subs = settings.general.getboolean('use_embedded_subs')
     for movie_subtitles in movies_subtitles:
         actual_subtitles_temp = []
         actual_subtitles = []

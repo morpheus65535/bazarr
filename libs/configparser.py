@@ -9,7 +9,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-from backports.configparser import (
+from backports.configparser2 import (
     RawConfigParser,
     ConfigParser,
     SafeConfigParser,
@@ -31,7 +31,6 @@ from backports.configparser import (
     InterpolationDepthError,
     ParsingError,
     MissingSectionHeaderError,
-    ConverterMapping,
 
     _UNSET,
     DEFAULTSECT,
@@ -39,14 +38,3 @@ from backports.configparser import (
     _default_dict,
     _ChainMap,
 )
-
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
-           "NoOptionError", "InterpolationError", "InterpolationDepthError",
-           "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "ParsingError", "MissingSectionHeaderError",
-           "ConfigParser", "SafeConfigParser", "RawConfigParser",
-           "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "LegacyInterpolation", "SectionProxy", "ConverterMapping",
-           "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
-
-# NOTE: names missing from __all__ imported anyway for backwards compatibility.

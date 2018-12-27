@@ -141,7 +141,7 @@
                                 <label>Enable debug logging</label>
                             </div>
                             <div class="five wide column">
-                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings.general.debug}}>
+                                <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings.general.getboolean('debug')}}>
                                     <input name="settings_general_debug" type="checkbox">
                                     <label></label>
                                 </div>
@@ -372,7 +372,7 @@
                                 <label>Use Sonarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings.general.use_sonarr}}>
+                                <div id="settings_use_sonarr" class="ui toggle checkbox" data-enabled={{settings.general.getboolean('use_sonarr')}}>
                                     <input name="settings_general_use_sonarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -391,7 +391,7 @@
                                 <label>Use Radarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings.general.use_radarr}}>
+                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings.general.getboolean('use_radarr')}}>
                                     <input name="settings_general_use_radarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -566,7 +566,7 @@
                                 <label>Use post-processing</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings.general.use_postprocessing}}>
+                                <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings.general.getboolean('use_postprocessing')}}>
                                     <input name="settings_general_use_postprocessing" type="checkbox">
                                     <label></label>
                                 </div>
@@ -660,7 +660,7 @@
                                 <label>Automatic</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings.general.auto_update}}>
+                                <div id="settings_automatic_div" class="ui toggle checkbox" data-automatic={{settings.general.getboolean('auto_update')}}>
                                     <input name="settings_general_automatic" type="checkbox">
                                     <label></label>
                                 </div>
@@ -756,7 +756,7 @@
                                 <label>SSL enabled</label>
                             </div>
                             <div class="one wide column">
-                                <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.sonarr.ssl}}>
+                                <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.sonarr.getboolean('ssl')}}>
                                     <input id="settings_sonarr_ssl" name="settings_sonarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
@@ -882,7 +882,7 @@
                                 <label>SSL enabled</label>
                             </div>
                             <div class="one wide column">
-                                <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.radarr.ssl}}>
+                                <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.radarr.getboolean('ssl')}}>
                                     <input id="settings_radarr_ssl" name="settings_radarr_ssl" type="checkbox">
                                     <label></label>
                                 </div>
@@ -945,7 +945,7 @@
                                 <label>Use scene name when available</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings.general.use_scenename}}>
+                                <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings.general.getboolean('use_scenename')}}>
                                     <input name="settings_general_scenename" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1004,7 +1004,7 @@
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings.general.use_embedded_subs}}>
+                                <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings.general.getboolean('use_embedded_subs')}}>
                                     <input name="settings_general_embedded" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1023,7 +1023,7 @@
                                 <label>Download only monitored</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings.general.only_monitored}}>
+                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings.general.getboolean('only_monitored')}}>
                                     <input name="settings_general_only_monitored" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1042,7 +1042,7 @@
                                 <label>Adaptive searching</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings.general.adaptive_searching}}>
+                                <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings.general.getboolean('adaptive_searching')}}>
                                     <input name="settings_general_adaptive_searching" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1172,7 +1172,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings.general.single_language}}>
+                                <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings.general.getboolean('single_language')}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>
@@ -1217,7 +1217,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.serie_default_enabled}}">
+                                    <div id="settings_serie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.getboolean('serie_default_enabled')}}">
                                         <input name="settings_serie_default_enabled" id="settings_serie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1239,7 +1239,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings.general.single_language is False:
+                                        %if settings.general.getboolean('single_language') is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1255,7 +1255,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.serie_default_hi}}">
+                                    <div id="settings_serie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.getboolean('serie_default_hi')}}">
                                         <input name="settings_serie_default_hi" id="settings_serie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1274,7 +1274,7 @@
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.movie_default_enabled}}">
+                                    <div id="settings_movie_default_enabled_div" class="ui toggle checkbox" data-enabled="{{settings.general.getboolean('movie_default_enabled')}}">
                                         <input name="settings_movie_default_enabled" id="settings_movie_default_enabled" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1296,7 +1296,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings.general.single_language is False:
+                                        %if settings.general.getboolean('single_language') is False:
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -1312,7 +1312,7 @@
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
-                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.movie_default_hi}}">
+                                    <div id="settings_movie_default_hi_div" class="ui toggle checkbox" data-hi="{{settings.general.getboolean('movie_default_hi')}}">
                                         <input name="settings_movie_default_hi" id="settings_movie_default_hi" type="checkbox">
                                         <label></label>
                                     </div>
@@ -1671,7 +1671,7 @@
 
 
     $('#settings_loglevel').dropdown('clear');
-    $('#settings_loglevel').dropdown('set selected','{{!settings.general.debug}}');
+    $('#settings_loglevel').dropdown('set selected','{{!settings.general.getboolean('debug')}}');
     $('#settings_page_size').dropdown('clear');
     $('#settings_page_size').dropdown('set selected','{{!settings.general.page_size}}');
     $('#settings_proxy_type').dropdown('clear');

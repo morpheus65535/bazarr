@@ -26,7 +26,7 @@
 		% import sqlite3
         % from config import settings
 
-        %if settings.general.only_monitored:
+        %if settings.general.getboolean('only_monitored'):
         %    monitored_only_query_string = ' AND monitored = "True"'
         %else:
         %    monitored_only_query_string = ""
@@ -50,13 +50,13 @@
 								<div class="sixteen wide column">
 									<div class="ui inverted borderless labeled icon massive menu six item">
 										<div class="ui container">
-											% if settings.general.use_sonarr:
+											% if settings.general.getboolean('use_sonarr'):
 											<a class="item" href="{{base_url}}series">
 												<i class="play icon"></i>
 												Series
 											</a>
                                             % end
-											% if settings.general.use_radarr:
+											% if settings.general.getboolean('use_radarr'):
 											<a class="item" href="{{base_url}}movies">
 												<i class="film icon"></i>
 												Movies
@@ -68,12 +68,12 @@
 											</a>
 											<a class="item" href="{{base_url}}wanted">
 												<i class="warning sign icon">
-													% if settings.general.use_sonarr:
+													% if settings.general.getboolean('use_sonarr'):
 													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
 														{{wanted_series[0]}}
 													</div>
 													% end
-													% if settings.general.use_radarr:
+													% if settings.general.getboolean('use_radarr'):
 													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
 														{{wanted_movies[0]}}
 													</div>

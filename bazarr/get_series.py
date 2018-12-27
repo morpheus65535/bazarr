@@ -11,7 +11,7 @@ from list_subtitles import list_missing_subtitles
 
 def update_series():
     apikey_sonarr = settings.sonarr.apikey
-    serie_default_enabled = settings.general.serie_default_enabled
+    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
 

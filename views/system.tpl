@@ -136,7 +136,7 @@
                                 </div>
                             </div>
                         </div>
-                        % if settings.general.use_sonarr:
+                        % if settings.general.getboolean('use_sonarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Sonarr version</label>
@@ -150,7 +150,7 @@
                             </div>
                         </div>
                         % end
-                        % if settings.general.use_radarr:
+                        % if settings.general.getboolean('use_radarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Radarr version</label>

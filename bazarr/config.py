@@ -1,53 +1,76 @@
 # coding=utf-8
 import os
-import configparser
+
+from simpleconfigparser import simpleconfigparser
 
 from get_argv import config_dir
 
+defaults = {
+    'general': {
+        'ip': '0.0.0.0',
+        'port': '6767',
+        'base_url': '/',
+        'path_mappings': '[]',
+        'debug': 'False',
+        'branch': 'master',
+        'auto_update': 'True',
+        'single_language': 'False',
+        'minimum_score': '90',
+        'use_scenename': 'True',
+        'use_postprocessing': 'False',
+        'postprocessing_cmd': '',
+        'use_sonarr': 'False',
+        'use_radarr': 'False',
+        'path_mappings_movie': '[]',
+        'serie_default_enabled': 'False',
+        'serie_default_language': '[]',
+        'serie_default_hi': 'False',
+        'movie_default_enabled': 'False',
+        'movie_default_language': [],
+        'movie_default_hi': 'False',
+        'page_size': '25',
+        'minimum_score_movie': '70',
+        'use_embedded_subs': 'True',
+        'only_monitored': 'False',
+        'adaptive_searching': 'False'
+},
+    'auth': {
+        'type': 'None',
+        'username': '',
+        'password': ''
+},
+    'sonarr': {
+        'ip': '127.0.0.1',
+        'port': '8989',
+        'base_url': '/',
+        'ssl': 'False',
+        'apikey': '',
+        'full_update': 'Daily'
+},
+    'radarr': {
+        'ip': '127.0.0.1',
+        'port': '7878',
+        'base_url': '/',
+        'ssl': 'False',
+        'apikey': '',
+        'full_update': 'Daily'
+},
+    'proxy': {
+        'type': 'None',
+        'url': '',
+        'port': '',
+        'username': '',
+        'password': '',
+        'exclude': 'localhost,127.0.0.1'
+}}
 
-class _ConfigSection(object):
-    """Hold settings for a section of the configuration file."""
+settings = simpleconfigparser(defaults=defaults)
+settings.read(os.path.join(config_dir, 'config', 'config.ini'))
 
-    def __getattr__(self, attr):
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-        else:
-            raise AttributeError('No "%s" setting in section.' % attr)
-
-    def __getitem__(self, item):
-        return getattr(self, item)
-
-    def __repr__(self):
-        return str(tuple(self.__dict__.keys()))
-
-
-def read(config_file):
-    """Read settings from file and return a dot notation object."""
-    config = configparser.ConfigParser()
-    config.read(unicode(config_file))
-
-    dotini = _ConfigSection()
-
-    for section in config.sections():
-
-        s = _ConfigSection()
-        for key, value in config.items(section):
-            if value == "True":
-                value = True
-            elif value == "False":
-                value = False
-            setattr(s, key, value)
-
-        setattr(dotini, section, s)
-
-    return dotini
-
-
-settings = read(os.path.join(os.path.join(config_dir, 'config', 'config.ini')))
 base_url = settings.general.base_url
 
 # sonarr url
-if settings.sonarr.ssl:
+if settings.sonarr.getboolean('ssl'):
     protocol_sonarr = "https"
 else:
     protocol_sonarr = "http"
@@ -63,7 +86,7 @@ url_sonarr = protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonar
 url_sonarr_short = protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port
 
 # radarr url
-if settings.radarr.ssl:
+if settings.radarr.getboolean('ssl'):
     protocol_radarr = "https"
 else:
     protocol_radarr = "http"

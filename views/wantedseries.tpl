@@ -74,7 +74,7 @@
                             from get_subtitle import search_active
                             from config import settings
 							for language in missing_languages:
-                                if row[9] is not None and settings.general.adaptive_searching and language in row[9]:
+                                if row[9] is not None and settings.general.getboolean('adaptive_searching') and language in row[9]:
                                         for lang in ast.literal_eval(row[9]):
                                             if language in lang:
                                                 active = search_active(lang[1])

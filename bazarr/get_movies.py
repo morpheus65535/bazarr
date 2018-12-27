@@ -13,7 +13,7 @@ from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 def update_movies():
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
-    movie_default_enabled = settings.general.movie_default_enabled
+    movie_default_enabled = settings.general.getboolean('movie_default_enabled')
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
 

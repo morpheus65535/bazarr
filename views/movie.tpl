@@ -82,7 +82,7 @@
 		%from get_languages import *
         %from config import settings
         %from helper import path_replace_movie
-		%single_language = settings.general.single_language
+		%single_language = settings.general.getboolean('single_language')
 		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
@@ -188,7 +188,7 @@
 					</table>
 					<%
 						for missing_subs_language in missing_subs_languages:
-						    if details[14] is not None and settings.general.adaptive_searching and missing_subs_language in details[14]:
+						    if details[14] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details[14]:
                                 for lang in ast.literal_eval(details[14]):
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):

@@ -367,7 +367,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings.general.single_language}}>
+                                <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings.general.getboolean('single_language')}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>
@@ -434,7 +434,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if not settings.general.single_language:
+                                        %if not settings.general.getboolean('single_language'):
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -491,7 +491,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if not settings.general.single_language:
+                                        %if not settings.general.getboolean('single_language'):
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
