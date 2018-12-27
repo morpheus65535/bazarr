@@ -32,7 +32,8 @@ defaults = {
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
         'only_monitored': 'False',
-        'adaptive_searching': 'False'
+        'adaptive_searching': 'False',
+        'enabled_providers': ''
 },
     'auth': {
         'type': 'None',
@@ -62,6 +63,18 @@ defaults = {
         'username': '',
         'password': '',
         'exclude': 'localhost,127.0.0.1'
+},
+    'opensubtitles': {
+        'username': '',
+        'password': ''
+},
+    'addic7ed': {
+        'username': '',
+        'password': ''
+},
+    'legendastv': {
+        'username': '',
+        'password': ''
 }}
 
 settings = simpleconfigparser(defaults=defaults)
