@@ -15,12 +15,15 @@ from itertools import islice
 from get_settings import path_replace_reverse, path_replace, path_replace_reverse_movie, path_replace_movie, get_general_settings
 from get_languages import alpha2_from_alpha3
 
+from queueconfig import q4ws
+
 gc.enable()
 
 def store_subtitles(file):
     # languages = []
     actual_subtitles = []
     if os.path.exists(file):
+        q4ws.append('Analyzing this file for subtitles: ' + file)
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
@@ -68,6 +71,8 @@ def store_subtitles(file):
             conn_db.commit()
 
             c_db.close()
+    else:
+        logging.error('BAZARR This file does not exist or is not accessible by Bazarr (check your path mapping?): ' + file)
 
     return actual_subtitles
 
@@ -76,6 +81,7 @@ def store_subtitles_movie(file):
     # languages = []
     actual_subtitles = []
     if os.path.exists(file):
+        q4ws.append('Analyzing this file for subtitles: ' + file)
         if os.path.splitext(file)[1] == '.mkv':
             try:
                 with open(file, 'rb') as f:
@@ -120,6 +126,8 @@ def store_subtitles_movie(file):
         conn_db.commit()
 
         c_db.close()
+    else:
+        logging.error('BAZARR This file does not exist or is not accessible by Bazarr (check your path mapping?): ' + file)
 
     return actual_subtitles
 
