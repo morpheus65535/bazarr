@@ -119,8 +119,9 @@ def update_movies():
             for added_movie in movies_to_add:
                 store_subtitles_movie(path_replace_movie(added_movie[1]))
 
-            #for updated_movie in movies_to_update:
-            #    store_subtitles_movie(path_replace_movie(updated_movie[1]))
+            # TODO: Commented until I find a way to make it store only episodes really updated.
+            # for updated_movie in movies_to_update:
+            #     store_subtitles_movie(path_replace_movie(updated_movie[1]))
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
 

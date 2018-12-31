@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -23,8 +23,8 @@
 			}
 			#fondblanc {
 				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
+				border-radius: 0;
+				box-shadow: 0 0 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 2em 3em 2em 3em;
@@ -100,8 +100,8 @@
 								%end
 							%end
 						</td>
-						<td>{{!"" if row[4] == None else row[4]}}</td>
-						<td {{!"style='background-color: #e8e8e8;'" if row[4] == None else ""}}>
+						<td>{{!"" if row[4] is None else row[4]}}</td>
+						<td {{!"style='background-color: #e8e8e8;'" if row[4] is None else ""}}>
 							<%
 							subs_languages_list = []
 							if subs_languages is not None:
@@ -223,26 +223,26 @@
 
 	$('table').tablesort();
 
-	$('a, button:not(.cancel)').click(function(){
+	$('a, button:not(.cancel)').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
-	$('.fast.backward').click(function(){
+	$('.fast.backward').on('click', function(){
 		location.href="?page=1";
-	})
-	$('.backward:not(.fast)').click(function(){
+	});
+	$('.backward:not(.fast)').on('click', function(){
 		location.href="?page={{int(page)-1}}";
-	})
-	$('.forward:not(.fast)').click(function(){
+	});
+	$('.forward:not(.fast)').on('click', function(){
 		location.href="?page={{int(page)+1}}";
-	})
-	$('.fast.forward').click(function(){
+	});
+	$('.fast.forward').on('click', function(){
 		location.href="?page={{int(max_page)}}";
-	})
+	});
 
-	$('#movieseditor').click(function(){
+	$('#movieseditor').on('click', function(){
 		window.location = '{{base_url}}movieseditor';
-	})
+	});
 
 	$('.modal')
 		.modal({
@@ -250,7 +250,7 @@
 		})
 	;
 
-	$('.config').click(function(){
+	$('.config').on('click', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#movies_form').attr('action', '{{base_url}}edit_movie/' + $(this).data("no"));
@@ -264,14 +264,14 @@
 		var languages_array = eval($(this).data("languages"));
 		$('#movies_languages').dropdown('set selected',languages_array);
 
-		if ($(this).data("hearing-impaired") == "True") {
+		if ($(this).data("hearing-impaired") === "True") {
 			$("#movies_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#movies_hearing-impaired_div").checkbox('uncheck');
 		}
 
 		$('.small.modal').modal('show');
-	})
+	});
 
 	$('#movies_languages').dropdown();
 </script>

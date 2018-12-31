@@ -1,7 +1,9 @@
 import os
 import sqlite3
 import logging
+import time
 
+from cork import Cork
 from configparser import ConfigParser
 from get_argv import config_dir
 
@@ -79,8 +81,6 @@ if cfg.has_section('general'):
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
 
-from cork import Cork
-import time
 if os.path.exists(os.path.normpath(os.path.join(config_dir, 'config/users.json'))) is False:
     cork = Cork(os.path.normpath(os.path.join(config_dir, 'config')), initialize=True)
 

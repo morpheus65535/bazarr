@@ -1,4 +1,4 @@
-bazarr_version = '0.6.9'
+bazarr_version = '0.6.9.1'
 
 import gc
 gc.enable()
@@ -79,7 +79,9 @@ import ast
 import hashlib
 import time
 import urllib
+import platform
 from six import text_type
+import apprise
 
 from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import load_providers, get_providers, get_providers_auth
@@ -102,6 +104,11 @@ c = conn.cursor()
 c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
+
+logging.debug('Bazarr version: %s', bazarr_version)
+logging.debug('Bazarr branch: %s', get_general_settings()[5])
+logging.debug('Operating system: %s', platform.platform())
+logging.debug('Python version: %s', platform.python_version())
 
 # Load languages in database
 load_language_in_db()
@@ -232,7 +239,7 @@ def wizard():
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
     
-    return template('wizard', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general,
+    return template('wizard', bazarr_version=bazarr_version, settings_general=settings_general,
                     settings_languages=settings_languages, settings_providers=settings_providers,
                     settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, base_url=base_url)
 
@@ -536,7 +543,7 @@ def series():
     c.execute("SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
     total_subtitles_list = c.fetchall()
     c.close()
-    output = template('series', __file__=__file__, bazarr_version=bazarr_version, rows=data,
+    output = template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
                       single_language=single_language, page_size=page_size, current_port=port)
@@ -562,7 +569,7 @@ def serieseditor():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('serieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
+    output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
     return output
 
 
@@ -687,7 +694,7 @@ def episodes(no):
     for key, season in itertools.groupby(episodes,operator.itemgetter(2)):
         seasons_list.append(list(season))
 
-    return template('episodes', __file__=__file__, bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number, current_port=port)
+    return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details, languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url, tvdbid=tvdbid, number=number, current_port=port)
 
 @route(base_url + 'movies')
 @custom_auth_basic(check_credentials)
@@ -714,7 +721,7 @@ def movies():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('movies', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size, current_port=port)
+    output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, single_language=single_language, page_size=page_size, current_port=port)
     return output
 
 @route(base_url + 'movieseditor')
@@ -736,7 +743,7 @@ def movieseditor():
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
     c.close()
-    output = template('movieseditor', __file__=__file__, bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
+    output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages, missing_count=missing_count, base_url=base_url, single_language=single_language, current_port=port)
     return output
 
 @route(base_url + 'edit_movieseditor', method='POST')
@@ -821,7 +828,7 @@ def movie(no):
     languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
     c.close()
 
-    return template('movie', __file__=__file__, bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid, current_port=port)
+    return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details, languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid, current_port=port)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -867,7 +874,7 @@ def search_missing_subtitles_movie(no):
 @custom_auth_basic(check_credentials)
 def history():
     authorize()
-    return template('history', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('history', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
 
 @route(base_url + 'historyseries')
 @custom_auth_basic(check_credentials)
@@ -905,7 +912,7 @@ def historyseries():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(4)))
-    return template('historyseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
+    return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
 
 @route(base_url + 'historymovies')
 @custom_auth_basic(check_credentials)
@@ -943,13 +950,13 @@ def historymovies():
     data = c.fetchall()
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
-    return template('historymovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
+    return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count, page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size, current_port=port)
 
 @route(base_url + 'wanted')
 @custom_auth_basic(check_credentials)
 def wanted():
     authorize()
-    return template('wanted', __file__=__file__, bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('wanted', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
 
 @route(base_url + 'wantedseries')
 @custom_auth_basic(check_credentials)
@@ -977,7 +984,7 @@ def wantedseries():
     c.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedseries', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
+    return template('wantedseries', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
 
 @route(base_url + 'wantedmovies')
 @custom_auth_basic(check_credentials)
@@ -1005,7 +1012,7 @@ def wantedmovies():
     c.execute("SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset,))
     data = c.fetchall()
     c.close()
-    return template('wantedmovies', __file__=__file__, bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
+    return template('wantedmovies', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size, current_port=port)
 
 @route(base_url + 'wanted_search_missing_subtitles')
 @custom_auth_basic(check_credentials)
@@ -1038,7 +1045,7 @@ def settings():
     settings_sonarr = get_sonarr_settings()
     settings_radarr = get_radarr_settings()
 
-    return template('settings', __file__=__file__, bazarr_version=bazarr_version, settings_general=settings_general, settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url, current_port=port)
+    return template('settings', bazarr_version=bazarr_version, settings_general=settings_general, settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages, settings_providers=settings_providers, settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url, current_port=port)
 
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
@@ -1463,24 +1470,31 @@ def system():
         releases = ast.literal_eval(f.read())
 
     import platform
+    use_sonarr = get_general_settings()[12]
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
-    try:
-        sonarr_version = requests.get(sv, timeout=15, verify=False)
-    except:
-        sonarr_version = ''
+    sonarr_version = ''
+    if use_sonarr:
+        try:
+            sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
+        except:
+            pass
 
+    use_radarr = get_general_settings()[13]
     url_radarr = get_radarr_settings()[6]
     apikey_radarr = get_radarr_settings()[4]
-    sv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
-    try:
-        radarr_version = requests.get(sv, timeout=15, verify=False)
-    except:
-        radarr_version = ''
+    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    radarr_version = ''
+    if use_radarr:
+        try:
+            radarr_version = requests.get(rv, timeout=15, verify=False).json()['version']
+        except:
+            pass
 
-    return template('system', __file__=__file__, bazarr_version=bazarr_version,
-                    sonarr_version=sonarr_version.json()['version'], radarr_version=radarr_version.json()['version'],
+
+    return template('system', bazarr_version=bazarr_version,
+                    sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
@@ -1746,6 +1760,20 @@ def test_url(protocol, url):
         return dict(status=False)
     else:
         return dict(status=True, version=result)
+
+
+@route(base_url + 'test_notification/<protocol>/<provider:path>', method='GET')
+@custom_auth_basic(check_credentials)
+def test_notification(protocol, provider):
+    provider = urllib.unquote(provider)
+    apobj = apprise.Apprise()
+    apobj.add(protocol + "://" + provider)
+
+    apobj.notify(
+        title='Bazarr test notification',
+        body=('Test notification')
+    )
+
 
 @route(base_url + 'websocket')
 @custom_auth_basic(check_credentials)

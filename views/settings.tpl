@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
     <head>
         <!DOCTYPE html>
         <script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -23,8 +23,8 @@
             }
             #fondblanc {
                 background-color: #ffffff;
-                border-radius: 0px;
-                box-shadow: 0px 0px 5px 5px #ffffff;
+                border-radius: 0;
+                box-shadow: 0 0 5px 5px #ffffff;
                 margin-top: 32px;
                 margin-bottom: 3em;
                 padding: 1em;
@@ -115,7 +115,7 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    %if settings_general[2] == None:
+                                    %if settings_general[2] is None:
                                     %	base_url = "/"
                                     %else:
                                     %	base_url = settings_general[2]
@@ -1348,6 +1348,7 @@
                                 <div class='field'>
                                     <div id="settings_notifier_{{notifier[0]}}_url_div" class="ui fluid input">
                                         <input name="settings_notifier_{{notifier[0]}}_url" type="text" value="{{notifier[1] if notifier[1] != None else ''}}">
+                                        <div class="test_notification ui blue button" data-notification="{{notifier[1]}}">Test Notification</div>
                                     </div>
                                 </div>
                             </div>
@@ -1364,6 +1365,24 @@
 
 
 <script>
+    $('.test_notification').on('click', function() {
+        const url_field = $(this).prev().val();
+        const url_protocol = url_field.split(':')[0];
+        const url_string = url_field.split('://')[1];
+        alert(url_protocol);
+        alert(url_string);
+
+        $.ajax({
+            url: "{{base_url}}test_notification/" + url_protocol + "/" + encodeURIComponent(url_string),
+            beforeSend: function () {
+                $('#loader').addClass('active');
+            },
+            complete: function () {
+                $('#loader').removeClass('active');
+            },
+            cache: false
+        });
+    });
 
     % from get_argv import no_update
     % if no_update is True:
@@ -1374,69 +1393,69 @@
         .tab()
     ;
 
-    $('a:not(.tabs), button:not(.cancel, .test)').click(function(){
+    $('a:not(.tabs), button:not(.cancel, .test)').on('click', function(){
         $('#loader').addClass('active');
-    })
+    });
 
-    $('a[target="_blank"]').click(function(){
+    $('a[target="_blank"]').on('click', function(){
         $('#loader').removeClass('active');
-    })
+    });
 
-    if ($('#sonarr_ssl_div').data("ssl") == "True") {
+    if ($('#sonarr_ssl_div').data("ssl") === "True") {
                 $("#sonarr_ssl_div").checkbox('check');
             } else {
                 $("#sonarr_ssl_div").checkbox('uncheck');
             }
 
-    if ($('#radarr_ssl_div').data("ssl") == "True") {
+    if ($('#radarr_ssl_div').data("ssl") === "True") {
                 $("#radarr_ssl_div").checkbox('check');
             } else {
                 $("#radarr_ssl_div").checkbox('uncheck');
             }
 
-    if ($('#settings_automatic_div').data("automatic") == "True") {
+    if ($('#settings_automatic_div').data("automatic") === "True") {
                 $("#settings_automatic_div").checkbox('check');
             } else {
                 $("#settings_automatic_div").checkbox('uncheck');
             }
 
-    if ($('#settings_debug').data("debug") == "True") {
+    if ($('#settings_debug').data("debug") === "True") {
                 $("#settings_debug").checkbox('check');
             } else {
                 $("#settings_debug").checkbox('uncheck');
             }
 
-    if ($('#settings_single_language').data("single-language") == "True") {
+    if ($('#settings_single_language').data("single-language") === "True") {
                 $("#settings_single_language").checkbox('check');
             } else {
                 $("#settings_single_language").checkbox('uncheck');
             }
 
-    if ($('#settings_scenename').data("scenename") == "True") {
+    if ($('#settings_scenename').data("scenename") === "True") {
                 $("#settings_scenename").checkbox('check');
             } else {
                 $("#settings_scenename").checkbox('uncheck');
             }
 
-    if ($('#settings_embedded').data("embedded") == "True") {
+    if ($('#settings_embedded').data("embedded") === "True") {
                 $("#settings_embedded").checkbox('check');
             } else {
                 $("#settings_embedded").checkbox('uncheck');
             }
 
-    if ($('#settings_only_monitored').data("monitored") == "True") {
+    if ($('#settings_only_monitored').data("monitored") === "True") {
                 $("#settings_only_monitored").checkbox('check');
             } else {
                 $("#settings_only_monitored").checkbox('uncheck');
             }
 
-    if ($('#settings_adaptive_searching').data("adaptive") == "True") {
+    if ($('#settings_adaptive_searching').data("adaptive") === "True") {
                 $("#settings_adaptive_searching").checkbox('check');
             } else {
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
-    if ($('#settings_use_postprocessing').data("postprocessing") == "True") {
+    if ($('#settings_use_postprocessing').data("postprocessing") === "True") {
                 $("#settings_use_postprocessing").checkbox('check');
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
             } else {
@@ -1444,7 +1463,7 @@
                 $("#settings_general_postprocessing_cmd_div").addClass('disabled');
             }
 
-    $("#settings_use_postprocessing").change(function(i, obj) {
+    $("#settings_use_postprocessing").on('change', function(i, obj) {
         if ($("#settings_use_postprocessing").checkbox('is checked')) {
                 $("#settings_general_postprocessing_cmd_div").removeClass('disabled');
             } else {
@@ -1452,7 +1471,7 @@
             }
     });
 
-    if ($('#settings_use_sonarr').data("enabled") == "True") {
+    if ($('#settings_use_sonarr').data("enabled") === "True") {
                 $("#settings_use_sonarr").checkbox('check');
                 $("#sonarr_tab").removeClass('disabled');
             } else {
@@ -1472,7 +1491,7 @@
         }
     });
 
-    if ($('#settings_use_radarr').data("enabled") == "True") {
+    if ($('#settings_use_radarr').data("enabled") === "True") {
                 $("#settings_use_radarr").checkbox('check');
                 $("#radarr_tab").removeClass('disabled');
             } else {
@@ -1492,17 +1511,17 @@
         }
     });
 
-    if ($('#settings_auth_type').val() == "None") {
+    if ($('#settings_auth_type').val() === "None") {
         $('.auth_option').hide();
-    };
+    }
 
     $('#settings_auth_type').dropdown('setting', 'onChange', function(){
-        if ($('#settings_auth_type').val() == "None") {
+        if ($('#settings_auth_type').val() === "None") {
             $('.auth_option').hide();
         }
         else {
             $('.auth_option').show();
-        };
+        }
     });
 
     // Load default value for Settings_auth_type
@@ -1510,8 +1529,8 @@
     $('#settings_auth_type').dropdown('set selected','{{!settings_auth[0]}}');
 
     // Remove value from Password input when changing to Form login to prevent bad password saving
-    $("#settings_auth_type").change(function() {
-        if ($(this).val() == 'form'){
+    $("#settings_auth_type").on('change', function() {
+        if ($(this).val() === 'form'){
             $('#settings_auth_password').val('');
             }
         else {
@@ -1522,7 +1541,7 @@
     $('#settings_languages').dropdown('setting', 'onAdd', function(val, txt){
         $("#settings_serie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
-        )
+        );
         $("#settings_movie_default_languages").append(
             $("<option></option>").attr("value", val).text(txt)
         )
@@ -1536,13 +1555,13 @@
         $("#settings_movie_default_languages option[value='" + val + "']").remove();
     });
 
-    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_serie_default_enabled_div').data("enabled") === "True") {
         $("#settings_serie_default_enabled_div").checkbox('check');
     } else {
         $("#settings_serie_default_enabled_div").checkbox('uncheck');
     }
 
-    if ($('#settings_serie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_serie_default_enabled_div').data("enabled") === "True") {
         $("#settings_serie_default_languages").removeClass('disabled');
         $("#settings_serie_default_hi_div").removeClass('disabled');
     } else {
@@ -1561,19 +1580,19 @@
         }
     });
 
-    if ($('#settings_serie_default_hi_div').data("hi") == "True") {
+    if ($('#settings_serie_default_hi_div').data("hi") === "True") {
         $("#settings_serie_default_hi_div").checkbox('check');
     } else {
         $("#settings_serie_default_hi_div").checkbox('uncheck');
     }
 
-    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_movie_default_enabled_div').data("enabled") === "True") {
         $("#settings_movie_default_enabled_div").checkbox('check');
     } else {
         $("#settings_movie_default_enabled_div").checkbox('uncheck');
     }
 
-    if ($('#settings_movie_default_enabled_div').data("enabled") == "True") {
+    if ($('#settings_movie_default_enabled_div').data("enabled") === "True") {
         $("#settings_movie_default_languages").removeClass('disabled');
         $("#settings_movie_default_hi_div").removeClass('disabled');
     } else {
@@ -1592,7 +1611,7 @@
         }
     });
 
-    if ($('#settings_movie_default_hi_div').data("hi") == "True") {
+    if ($('#settings_movie_default_hi_div').data("hi") === "True") {
         $("#settings_movie_default_hi_div").checkbox('check');
     } else {
         $("#settings_movie_default_hi_div").checkbox('uncheck');
@@ -1610,7 +1629,7 @@
         $("#settings_movie_default_languages").attr('multiple');
     }
 
-    $("#settings_single_language").change(function(i, obj) {
+    $("#settings_single_language").on('change', function() {
         if ($("#settings_single_language").checkbox('is checked')) {
             $("#settings_serie_default_languages").dropdown('clear');
             $("#settings_movie_default_languages").dropdown('clear');
@@ -1632,8 +1651,8 @@
         }
     });
 
-    $('.notifier_enabled').each(function(i, obj) {
-        if ($(this).data("enabled") == 1) {
+    $('.notifier_enabled').each(function() {
+        if ($(this).data("enabled") === 1) {
                 $(this).checkbox('check');
                 $('[id=\"' + $(this).data("notifier-url-div") + '\"]').removeClass('disabled');
             } else {
@@ -1642,7 +1661,7 @@
             }
     });
 
-    $('.notifier_enabled').change(function(i, obj) {
+    $('.notifier_enabled').on('change', function() {
         if ($(this).checkbox('is checked')) {
                 $('[id=\"' + $(this).data("notifier-url-div") + '\"]').removeClass('disabled');
             } else {
@@ -1830,31 +1849,31 @@
         })
     ;
 
-    if ($('#settings_proxy_type').val() == "None") {
+    if ($('#settings_proxy_type').val() === "None") {
         $('.proxy_option').hide();
-        $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
-        $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
-        $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+        $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty');
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty');
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]');
     }
     else {
-        $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
-        $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
-        $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
-    };
+        $('#settings_form').form('add rule', 'settings_proxy_url', 'empty');
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'empty');
+        $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]');
+    }
 
     $('#settings_proxy_type').dropdown('setting', 'onChange', function(){
-        if ($('#settings_proxy_type').val() == "None") {
+        if ($('#settings_proxy_type').val() === "None") {
             $('.proxy_option').hide();
-            $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty')
-            $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty')
-            $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]')
+            $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty');
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty');
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]');
         }
         else {
             $('.proxy_option').show();
-            $('#settings_form').form('add rule', 'settings_proxy_url', 'empty')
-            $('#settings_form').form('add rule', 'settings_proxy_port', 'empty')
-            $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]')
-        };
+            $('#settings_form').form('add rule', 'settings_proxy_url', 'empty');
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'empty');
+            $('#settings_form').form('add rule', 'settings_proxy_port', 'integer[1..65535]');
+        }
     });
 
     $('#settings_providers').dropdown('setting', 'onChange', function(){
@@ -1864,33 +1883,33 @@
         $('.form').form('validate field', 'settings_subliminal_languages');
     });
 
-    $('.submit').click(function() {
+    $('.submit').on('click', function() {
         alert('Settings saved.');
-    })
+    });
 
-    $( document ).ready(function() {
+    $(function() {
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
 
-    $('#settings_form').focusout(function() {
+    $('#settings_form').on('focusout', function() {
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#settings_auth_username').keyup(function() {
+    $('#settings_auth_username').on('keyup', function() {
     	$('#settings_auth_password').val('');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#sonarr_validate').click(function() {
+    $('#sonarr_validate').on('click', function() {
         if ($('#sonarr_ssl_div').checkbox('is checked')) {
             protocol = 'https';
         } else {
             protocol = 'http';
         }
-        sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + $('#settings_sonarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
+        const sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + $('#settings_sonarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
 
         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
             if (data.status) {
@@ -1905,31 +1924,31 @@
                 $('#loader').removeClass('active');
             }
         });
-    })
+    });
 
-    $('.sonarr_config').keyup(function() {
+    $('.sonarr_config').on('keyup', function() {
         $('#sonarr_validated').checkbox('uncheck');
         $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#settings_sonarr_ssl').change(function() {
+    $('#settings_sonarr_ssl').on('change', function() {
         $('#sonarr_validated').checkbox('uncheck');
         $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
     $("#sonarr_validated").checkbox('check');
 
-    $('#radarr_validate').click(function() {
+    $('#radarr_validate').on('click', function() {
         if ($('#radarr_ssl_div').checkbox('is checked')) {
             protocol = 'https';
         } else {
             protocol = 'http';
         }
-        radarr_url = $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + $('#settings_radarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
+        const radarr_url = $('#settings_radarr_ip').val() + ":" + $('#settings_radarr_port').val() + $('#settings_radarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_radarr_apikey').val();
 
         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(radarr_url), function (data) {
             if (data.status) {
@@ -1944,21 +1963,21 @@
                 $('#loader').removeClass('active');
             }
         });
-    })
+    });
 
-    $('.radarr_config').keyup(function() {
+    $('.radarr_config').on('keyup', function() {
         $('#radarr_validated').checkbox('uncheck');
         $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
-    $('#settings_radarr_ssl').change(function() {
+    $('#settings_radarr_ssl').on('change', function() {
         $('#radarr_validated').checkbox('uncheck');
         $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
-    })
+    });
 
     $("#radarr_validated").checkbox('check');
 </script>
