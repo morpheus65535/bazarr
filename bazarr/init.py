@@ -88,6 +88,7 @@ try:
     db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
+    settings_providers = c.execute("SELECT * FROM table_settings_providers").fetchall()
     c.execute("DROP TABLE table_settings_providers")
     db.close()
     
@@ -95,6 +96,7 @@ try:
     if len(enabled_providers) > 0:
         for provider in enabled_providers:
             providers_list.append(provider[0])
+        for provider in settings_providers:
             if provider[0] == 'opensubtitles':
                 settings.opensubtitles.username = provider[2]
                 settings.opensubtitles.password = provider[3]
