@@ -211,7 +211,13 @@
 </script>
 
 <script type="text/javascript">
-    var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
+	if (location.protocol != 'https:')
+	{
+		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
+	} else {
+		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
+	}
+
     ws.onmessage = function (evt) {
         new Noty({
 			text: evt.data,
