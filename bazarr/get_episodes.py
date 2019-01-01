@@ -3,6 +3,7 @@ import os
 import sqlite3
 import requests
 import logging
+from queueconfig import q4ws
 
 from get_argv import config_dir
 from config import settings, url_sonarr

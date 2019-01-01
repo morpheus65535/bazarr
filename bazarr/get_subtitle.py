@@ -17,7 +17,7 @@ from subliminal.providers.legendastv import LegendasTVSubtitle
 from subliminal.subtitle import get_subtitle_path
 
 from get_argv import config_dir
-from get_languages import alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha3
+from get_languages import alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha3, language_from_alpha2
 from get_providers import get_providers, get_providers_auth
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
