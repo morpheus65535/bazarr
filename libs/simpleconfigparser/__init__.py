@@ -24,7 +24,7 @@ THE SOFTWARE.
 """
 
 try:
-    from configparser import ConfigParser as configparser, NoOptionError, NoSectionError
+    from configparser2 import ConfigParser as configparser, NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
 
