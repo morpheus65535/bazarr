@@ -6,7 +6,8 @@ import sqlite3
 import json
 import requests
 
-import git
+if not no_update:
+    import git
 
 from get_args import args
 from get_settings import get_general_settings

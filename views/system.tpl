@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -23,8 +23,8 @@
 			}
 			#fondblanc {
 				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
+				border-radius: 0;
+				box-shadow: 0 0 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 1em;
@@ -50,7 +50,7 @@
 				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
 				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
                 % from get_settings import get_auth_settings
-                % if get_auth_settings()[0] != 'None':
+                % if get_auth_settings()[0] is not 'None':
                 <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
                 % end
 			</div>
@@ -225,7 +225,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="github icon"></i><a href="https://github.com/morpheus65535/bazarr">Bazarr on GitHub</a>
+                                        <i class="github icon"></i><a href="https://github.com/morpheus65535/bazarr" target="_blank">Bazarr on GitHub</a>
                                     </div>
                                 </div>
                             </div>
@@ -237,7 +237,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="wikipedia w icon"></i><a href="https://github.com/morpheus65535/bazarr/wiki">Bazarr Wiki</a>
+                                        <i class="wikipedia w icon"></i><a href="https://github.com/morpheus65535/bazarr/wiki" target="_blank">Bazarr Wiki</a>
                                     </div>
                                 </div>
                             </div>
@@ -249,7 +249,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="discord icon"></i><a href="https://discord.gg/MH2e2eb">Bazarr on Discord</a>
+                                        <i class="discord icon"></i><a href="https://discord.gg/MH2e2eb" target="_blank">Bazarr on Discord</a>
                                     </div>
                                 </div>
                             </div>
@@ -292,8 +292,7 @@
 
 <script>
 	$('.menu .item')
-		.tab()
-	;
+		.tab();
 
 	function loadURL(page) {
 		$.ajax({
@@ -322,40 +321,44 @@
 
 	loadURL(1);
 
-	$('.backward').click(function(){
+	$('.backward').on('click', function(){
 		loadURL(current_page - 1);
-	})
-	$('.fast.backward').click(function(){
+	});
+	$('.fast.backward').on('click', function(){
 		loadURL(1);
-	})
-	$('.forward').click(function(){
+	});
+	$('.forward').on('click', function(){
 		loadURL(current_page + 1);
-	})
-	$('.fast.forward').click(function(){
+	});
+	$('.fast.forward').on('click', function(){
 		loadURL({{int(max_page)}});
-	})
+	});
 
-	$('#refresh_log').click(function(){
+	$('#refresh_log').on('click', function(){
 		loadURL(current_page);
-	})
+	});
 
-	$('#download_log').click(function(){
+	$('#download_log').on('click', function(){
 		window.location = '{{base_url}}bazarr.log';
-	})
+	});
 
-	$('#empty_log').click(function(){
+	$('#empty_log').on('click', function(){
 		window.location = '{{base_url}}emptylog';
-	})
+	});
 
-	$('.execute').click(function(){
+	$('.execute').on('click', function(){
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
-	})
+	});
 
-	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').click(function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
-	$('#shutdown').click(function(){
+    $('a[target="_blank"]').on('click', function(){
+        $('#loader').removeClass('active');
+    });
+
+	$('#shutdown').on('click', function(){
 		$.ajax({
 			url: "{{base_url}}shutdown",
 			async: false
@@ -365,13 +368,13 @@
 			document.write('Bazarr has shutdown.');
 			document.close();
 		});
-	})
+	});
 
-    $('#logout').click(function(){
+    $('#logout').on('click', function(){
 		window.location = '{{base_url}}logout';
-	})
+	});
 
-	$('#restart').click(function(){
+	$('#restart').on('click', function(){
 		$('#loader_text').text("Bazarr is restarting, please wait...");
 		$.ajax({
 			url: "{{base_url}}restart",
@@ -379,15 +382,15 @@
 		})
 		.done(function(){
     		setTimeout(function(){ setInterval(ping, 2000); },8000);
-		});
-	})
+		})
+	});
 
     % from get_settings import get_general_settings
 	% ip = get_general_settings()[0]
 	% port = get_general_settings()[1]
 	% base_url = get_general_settings()[2]
 
-	if ("{{ip}}" == "0.0.0.0") {
+	if ("{{ip}}" === "0.0.0.0") {
 		public_ip = window.location.hostname;
 	} else {
 		public_ip = "{{ip}}";
@@ -395,7 +398,7 @@
 
 	protocol = window.location.protocol;
 
-	if (window.location.port == '{{current_port}}') {
+	if (window.location.port === '{{current_port}}') {
 	    public_port = '{{port}}';
     } else {
         public_port = window.location.port;

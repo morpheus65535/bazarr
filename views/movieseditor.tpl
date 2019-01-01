@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 	<head>
 		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
@@ -23,17 +23,14 @@
 			}
 			#fondblanc {
 				background-color: #ffffff;
-				border-radius: 0px;
-				box-shadow: 0px 0px 5px 5px #ffffff;
+				border-radius: 0;
+				box-shadow: 0 0 5px 5px #ffffff;
 				margin-top: 32px;
 				margin-bottom: 3em;
 				padding: 2em 3em 2em 3em;
 			}
 			#tablemovies {
 				padding-top: 1em;
-			}
-			#divdetails {
-				min-height: 250px;
 			}
 			#bottommenu {
 				background-color: #333333;
@@ -140,9 +137,9 @@
 
 	$('table').tablesort();
 
-	$('a, button').click(function(){
+	$('a, button').on('click', function(){
 		$('#loader').addClass('active');
-	})
+	});
 
 	$('.modal')
 		.modal({
@@ -150,7 +147,7 @@
 		})
 	;
 
-	$('.selected').change(function() {
+	$('.selected').on('change', function() {
 		$("#count").text($('.selected:checked').length);
 		if ( $('.selected:checked').length > 0 ) {
 			$('.select').removeClass('disabled');
@@ -161,19 +158,19 @@
 			$('#save').addClass('disabled');
 		}
 
-		var result = [];
+		const result = [];
 		$('.selected:checked').each(function(i){
 			result.push($(this).attr('id'));
 		});
 		$("#checked").val(result);
 	});
 
-	$('#selectall').change(function() {
+	$('#selectall').on('change', function() {
 		if ( $('#selectall').is(":checked") ) {
-			$('.selected').prop('checked', true).change();
+			$('.selected').prop('checked', true).trigger('change');
 		}
 		else {
-			$('.selected').prop('checked', false).change();
+			$('.selected').prop('checked', false).trigger('change');
 		}
 	});
 

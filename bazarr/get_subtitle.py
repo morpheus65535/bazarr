@@ -20,7 +20,7 @@ from subliminal import region, score as subliminal_scores, \
     list_subtitles
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
-from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
+from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie
@@ -29,6 +29,7 @@ from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth
 from get_args import args
+from queueconfig import q4ws
 
 # configure the cache
 
@@ -137,10 +138,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     """
     AsyncProviderPool:
     implement:
-        blacklist=None, 
+        blacklist=None,
         throttle_callback=None,
-        pre_download_hook=None, 
-        post_download_hook=None, 
+        pre_download_hook=None,
+        post_download_hook=None,
         language_hook=None
     """
 
@@ -182,7 +183,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
             if not throttle_data:
                 return
     
-            throttle_delta, throttle_description = throttle_data    
+            throttle_delta, throttle_description = throttle_data
             throttle_until = datetime.datetime.now() + throttle_delta
             
             # save throttle_until together with provider name somewhere, then implement dynamic provider_list based on
@@ -553,6 +554,7 @@ def wanted_download_subtitles(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                                     episode[4], providers_list, providers_auth, str(episode[5]),
                                                     episode[7], 'series')
@@ -599,6 +601,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
                                                     movie[4], providers_list, providers_auth, str(movie[5]), movie[7],
                                                     'movie')

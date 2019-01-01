@@ -4,6 +4,7 @@ import os
 import sqlite3
 import requests
 import logging
+from queueconfig import q4ws
 
 from get_args import args
 from get_settings import get_general_settings, path_replace_movie
@@ -11,6 +12,7 @@ from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 
 
 def update_movies():
+    q4ws.append("Update movies list from Radarr is running...")
     logging.debug('BAZARR Starting movie sync from Radarr.')
     from get_settings import get_radarr_settings
     url_radarr = get_radarr_settings()[6]
@@ -50,6 +52,7 @@ def update_movies():
             movies_to_add = []
 
             for movie in r.json():
+                q4ws.append("Getting data for this movie: " + movie['title'])
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if movie["path"] != None and movie['movieFile']['relativePath'] != None:
@@ -118,13 +121,16 @@ def update_movies():
             for added_movie in movies_to_add:
                 store_subtitles_movie(path_replace_movie(added_movie[1]))
 
-            for updated_movie in movies_to_update:
-                store_subtitles_movie(path_replace_movie(updated_movie[1]))
+            # TODO: Commented until I find a way to make it store only episodes really updated.
+            # for updated_movie in movies_to_update:
+            #     store_subtitles_movie(path_replace_movie(updated_movie[1]))
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
 
     list_missing_subtitles_movies()
     logging.debug('BAZARR All movie missing subtitles updated in database.')
+
+    q4ws.append("Update movies list from Radarr is ended.")
 
 
 def get_profile_list():

@@ -4,6 +4,7 @@ import os
 import sqlite3
 import requests
 import logging
+from queueconfig import q4ws
 
 from get_args import args
 from get_settings import path_replace
@@ -26,7 +27,8 @@ def update_all_movies():
 
 
 def sync_episodes():
-    logging.debug('BAZARR Starting episode sync from Sonarr.')
+    q4ws.append('Episodes sync from Sonarr started...')
+    logging.debug('BAZARR Starting episodes sync from Sonarr.')
     from get_settings import get_sonarr_settings
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
@@ -44,12 +46,13 @@ def sync_episodes():
     episodes_to_add = []
 
     # Get sonarrId for each series from database
-    seriesIdList = c.execute("SELECT sonarrSeriesId FROM table_shows").fetchall()
+    seriesIdList = c.execute("SELECT sonarrSeriesId, title FROM table_shows").fetchall()
 
     # Close database connection
     c.close()
 
     for seriesId in seriesIdList:
+        q4ws.append('Getting episodes data for this show: ' + seriesId[1])
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
@@ -123,3 +126,5 @@ def sync_episodes():
 
     list_missing_subtitles()
     logging.debug('BAZARR All missing subtitles updated in database.')
+
+    q4ws.append('Episodes sync from Sonarr ended.')
