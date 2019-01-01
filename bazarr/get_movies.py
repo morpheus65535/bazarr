@@ -3,6 +3,7 @@ import os
 import sqlite3
 import requests
 import logging
+from queueconfig import q4ws
 
 from get_argv import config_dir
 from config import settings, url_radarr
@@ -11,6 +12,7 @@ from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 
 
 def update_movies():
+    q4ws.append("Update movies list from Radarr is running...")
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
@@ -48,6 +50,7 @@ def update_movies():
             movies_to_add = []
 
             for movie in r.json():
+                q4ws.append("Getting data for this movie: " + movie['title'])
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if movie["path"] != None and movie['movieFile']['relativePath'] != None:
@@ -124,6 +127,8 @@ def update_movies():
 
     list_missing_subtitles_movies()
     logging.debug('BAZARR All movie missing subtitles updated in database.')
+
+    q4ws.append("Update movies list from Radarr is ended.")
 
 
 def get_profile_list():

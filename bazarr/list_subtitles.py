@@ -16,6 +16,8 @@ from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie
 
+from queueconfig import q4ws
+
 gc.enable()
 
 
@@ -23,6 +25,7 @@ def store_subtitles(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
+        q4ws.append('Analyzing this file for subtitles: ' + file)
         if os.path.splitext(file)[1] == '.mkv':
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
@@ -95,6 +98,7 @@ def store_subtitles_movie(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
+        q4ws.append('Analyzing this file for subtitles: ' + file)
         if os.path.splitext(file)[1] == '.mkv':
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:

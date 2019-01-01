@@ -1,4 +1,4 @@
-bazarr_version = '0.6.9.1'
+bazarr_version = '0.6.9.5'
 
 import gc
 gc.enable()
@@ -18,6 +18,7 @@ from update_db import *
 from notifier import update_notifier
 update_notifier()
 
+import queueconfig
 
 import logging
 from logger import configure_logging, empty_log
@@ -36,7 +37,7 @@ if settings.proxy.type != 'None':
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = str(settings.proxy.exclude)
 
-from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook
+from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 import bottle
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 if "PYCHARM_HOSTED" in os.environ:
@@ -45,7 +46,24 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
-from cherrypy.wsgiserver import CherryPyWSGIServer
+# Install gevent under user directory if it'S not already available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError as e:
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        stop_file = open(os.path.join(config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
+from gevent.pywsgi import WSGIServer
+from geventwebsocket import WebSocketError
+from geventwebsocket.handler import WebSocketHandler
+#from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from beaker.middleware import SessionMiddleware
 from cork import Cork
@@ -1732,14 +1750,31 @@ def test_notification(protocol, provider):
     )
 
 
+@route(base_url + 'websocket')
+@custom_auth_basic(check_credentials)
+def handle_websocket():
+    wsock = request.environ.get('wsgi.websocket')
+    if not wsock:
+        abort(400, 'Expected WebSocket request.')
+
+    queueconfig.q4ws.clear()
+
+    while True:
+        try:
+            if len(queueconfig.q4ws) > 0:
+                wsock.send(queueconfig.q4ws.popleft())
+            gevent.sleep(0)
+        except WebSocketError:
+            break
+
 import warnings
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-server = CherryPyWSGIServer((str(settings.general.ip), int(settings.general.port)), app)
+server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(settings.general.port) + str(base_url))
     # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
-    server.start()
+    server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

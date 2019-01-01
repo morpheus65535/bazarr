@@ -1,6 +1,8 @@
 <html lang="en">
     <head>
         <!DOCTYPE html>
+		<link href="{{base_url}}static/noty/noty.css" rel="stylesheet">
+		<script src="{{base_url}}static/noty/noty.min.js" type="text/javascript"></script>
 		<style>
             #divmenu {
 				background-color: #000000;
@@ -206,4 +208,29 @@
 			}
 		});
 	}
+</script>
+
+<script type="text/javascript">
+	if (location.protocol != 'https:')
+	{
+		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
+	} else {
+		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
+	}
+
+    ws.onmessage = function (evt) {
+        new Noty({
+			text: evt.data,
+			timeout: 3000,
+			progressBar: false,
+			animation: {
+				open: null,
+				close: null
+			},
+			killer: true,
+    		type: 'info',
+			layout: 'bottomRight',
+			theme: 'semanticui'
+		}).show();
+    };
 </script>
