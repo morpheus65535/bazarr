@@ -22,6 +22,7 @@ update_notifier()
 import logging
 from logger import configure_logging, empty_log
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
+from subliminal import provider_manager
 
 configure_logging(settings.general.getboolean('debug'))
 
@@ -64,8 +65,7 @@ from six import text_type
 import apprise
 
 from get_languages import load_language_in_db, language_from_alpha3
-from get_providers import load_providers, get_providers, get_providers_auth
-load_providers()
+from get_providers import get_providers, get_providers_auth
 
 from get_series import *
 from get_episodes import *
@@ -336,9 +336,7 @@ def save_wizard():
     settings.radarr.full_update = text_type(settings.radarr.full_update)
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
-    c.execute("UPDATE table_settings_providers SET enabled = 0")
-    for item in settings_subliminal_providers:
-        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+    settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1005,8 +1003,7 @@ def _settings():
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
-    c.execute("SELECT * FROM table_settings_providers ORDER BY name")
-    settings_providers = c.fetchall()
+    settings_providers = sorted(provider_manager.names())
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
@@ -1218,19 +1215,14 @@ def save_settings():
     settings.radarr.full_update = text_type(settings_radarr_sync)
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
-    c.execute("UPDATE table_settings_providers SET enabled = 0")
-    for item in settings_subliminal_providers:
-        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+    settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
 
-    settings_addic7ed_username = request.forms.get('settings_addic7ed_username')
-    settings_addic7ed_password = request.forms.get('settings_addic7ed_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'addic7ed'", (settings_addic7ed_username, settings_addic7ed_password))
-    settings_legendastv_username = request.forms.get('settings_legendastv_username')
-    settings_legendastv_password = request.forms.get('settings_legendastv_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'legendastv'", (settings_legendastv_username, settings_legendastv_password))
-    settings_opensubtitles_username = request.forms.get('settings_opensubtitles_username')
-    settings_opensubtitles_password = request.forms.get('settings_opensubtitles_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'opensubtitles'", (settings_opensubtitles_username, settings_opensubtitles_password))
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")

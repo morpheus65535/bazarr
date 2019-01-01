@@ -50,8 +50,8 @@
 				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
 				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
                 % from config import settings
-                % if settings.auth.type is not 'None':
-                <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
+                % if settings.auth.type != "None":
+                    <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
                 % end
 			</div>
 			<div class="ui top attached tabular menu">

@@ -1069,11 +1069,12 @@
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
+                                        %providers = settings.general.enabled_providers.lower().split(',')
                                         %for provider in settings_providers:
-                                        <option value="{{provider[0]}}">{{provider[0]}}</option>
-                                        %if provider[1] == True:
-                                        %	enabled_providers.append(str(provider[0]))
+                                        <option value="{{provider}}">{{provider}}</option>
                                         %end
+                                        %for provider in providers:
+                                        %enabled_providers.append(str(provider))
                                         %end
                                     </select>
                                 </div>
@@ -1103,20 +1104,14 @@
                             <div class="right aligned four wide column">
                                 <label>addic7ed</label>
                             </div>
-                            %for provider in settings_providers:
-                            %	if provider[0] == 'addic7ed':
-                            %		addic7ed_username = provider[2]
-                            %		addic7ed_password = provider[3]
-                            %	end
-                            %end
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_addic7ed_username" type="text" value="{{addic7ed_username if addic7ed_username != None else ''}}">
+                                    <input name="settings_addic7ed_username" type="text" value="{{settings.addic7ed.username if settings.addic7ed.username != None else ''}}">
                                 </div>
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_addic7ed_password" type="password" value="{{addic7ed_password if addic7ed_password != None else ''}}">
+                                    <input name="settings_addic7ed_password" type="password" value="{{settings.addic7ed.password if settings.addic7ed.password != None else ''}}">
                                 </div>
                             </div>
                         </div>
@@ -1124,20 +1119,14 @@
                             <div class="right aligned four wide column">
                                 <label>legendastv</label>
                             </div>
-                            %for provider in settings_providers:
-                            %	if provider[0] == 'legendastv':
-                            %		legendastv_username = provider[2]
-                            %		legendastv_password = provider[3]
-                            %	end
-                            %end
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_legendastv_username" type="text" value="{{legendastv_username if legendastv_username != None else ''}}">
+                                    <input name="settings_legendastv_username" type="text" value="{{settings.legendastv.username if settings.legendastv.username != None else ''}}">
                                 </div>
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_legendastv_password" type="password" value="{{legendastv_password if legendastv_password != None else ''}}">
+                                    <input name="settings_legendastv_password" type="password" value="{{settings.legendastv.password if settings.legendastv.password != None else ''}}">
                                 </div>
                             </div>
                         </div>
@@ -1145,20 +1134,14 @@
                             <div class="right aligned four wide column">
                                 <label>opensubtitles</label>
                             </div>
-                            %for provider in settings_providers:
-                            %	if provider[0] == 'opensubtitles':
-                            %		opensubtitles_username = provider[2]
-                            %		opensubtitles_password = provider[3]
-                            %	end
-                            %end
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_opensubtitles_username" type="text" value="{{opensubtitles_username if opensubtitles_username != None else ''}}">
+                                    <input name="settings_opensubtitles_username" type="text" value="{{settings.opensubtitles.username if settings.opensubtitles.username != None else ''}}">
                                 </div>
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    <input name="settings_opensubtitles_password" type="password" value="{{opensubtitles_password if opensubtitles_password != None else ''}}">
+                                    <input name="settings_opensubtitles_password" type="password" value="{{settings.opensubtitles.password if settings.opensubtitles.password != None else ''}}">
                                 </div>
                             </div>
                         </div>
