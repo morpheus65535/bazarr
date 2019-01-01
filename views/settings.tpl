@@ -1369,6 +1369,8 @@
         const url_field = $(this).prev().val();
         const url_protocol = url_field.split(':')[0];
         const url_string = url_field.split('://')[1];
+        alert(url_protocol);
+        alert(url_string);
 
         $.ajax({
             url: "{{base_url}}test_notification/" + url_protocol + "/" + encodeURIComponent(url_string),
