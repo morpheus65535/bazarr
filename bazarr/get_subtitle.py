@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from babelfish import Language
 from subliminal import region, scan_video, Video, download_best_subtitles, compute_score, save_subtitles, AsyncProviderPool, score, list_subtitles, download_subtitles
 from subliminal.subtitle import get_subtitle_path
-from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
+from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
 from bs4 import UnicodeDammit
 from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
@@ -21,6 +21,7 @@ import cPickle as pickle
 import codecs
 from get_providers import get_providers, get_providers_auth
 from subliminal.providers.legendastv import LegendasTVSubtitle
+from queueconfig import q4ws
 
 # configure the cache
 region.configure('dogpile.cache.memory')
@@ -417,6 +418,7 @@ def wanted_download_subtitles(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)), episode[4], providers_list, providers_auth, str(episode[5]), 'series')
                         if message is not None:
                             store_subtitles(path_replace(episode[0]))
@@ -458,6 +460,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4], providers_list, providers_auth, str(movie[5]), 'movie')
                         if message is not None:
                             store_subtitles_movie(path_replace_movie(movie[0]))
