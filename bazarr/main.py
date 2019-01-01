@@ -13,6 +13,8 @@ import hashlib
 import urllib
 import warnings
 import queueconfig
+import platform
+import apprise
 
 from get_args import args
 from init import *
@@ -1537,7 +1539,7 @@ def system():
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         releases = ast.literal_eval(f.read())
 
-    import platform
+    use_sonarr = get_general_settings()[12]
     url_sonarr = get_sonarr_settings()[6]
     apikey_sonarr = get_sonarr_settings()[4]
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
@@ -1547,7 +1549,8 @@ def system():
             sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
         except:
             pass
-
+        
+    use_radarr = get_general_settings()[13]
     url_radarr = get_radarr_settings()[6]
     apikey_radarr = get_radarr_settings()[4]
     rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
