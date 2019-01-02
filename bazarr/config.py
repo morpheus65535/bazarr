@@ -3,7 +3,7 @@ import os
 
 from simpleconfigparser import simpleconfigparser
 
-from get_argv import config_dir
+from get_args import args
 
 defaults = {
     'general': {
@@ -78,7 +78,7 @@ defaults = {
 }}
 
 settings = simpleconfigparser(defaults=defaults)
-settings.read(os.path.join(config_dir, 'config', 'config.ini'))
+settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
 

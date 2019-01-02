@@ -1082,7 +1082,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="ui dividing header">Providers authentication (optional)</div>
+                <div class="ui dividing header">Providers settings (optional)</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">

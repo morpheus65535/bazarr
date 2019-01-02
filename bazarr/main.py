@@ -32,10 +32,9 @@ from cork import Cork
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import datetime, timedelta
 from get_languages import load_language_in_db, language_from_alpha3
-from get_providers import load_providers, get_providers, get_providers_auth
+from get_providers import get_providers, get_providers_auth
 from get_series import *
 from get_episodes import *
-from get_settings import base_url, ip, port, path_replace, path_replace_movie
 
 if not args.no_update:
     from check_update import check_and_apply_update
@@ -47,7 +46,7 @@ from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
-from subliminal import provider_manager
+from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -81,15 +80,13 @@ try:
 except ImportError as e:
     logging.exception('BAZARR require gevent Python module to be installed using pip.')
     try:
-        stop_file = open(os.path.join(config_dir, "bazarr.stop"), "w")
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
     except Exception as e:
         logging.error('BAZARR Cannot create bazarr.stop file.')
     else:
         stop_file.write('')
         stop_file.close()
         os._exit(0)
-
-load_providers()
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -369,7 +366,7 @@ def save_wizard():
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi =  text_type(settings_movie_default_hi)
     
-    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
     
     logging.info('Config file created successfully')
@@ -1039,7 +1036,6 @@ def _settings():
     settings_notifier = c.fetchall()
     c.close()
 
-
     return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages, settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url, current_port=settings.general.port)
 
 
@@ -1299,7 +1295,7 @@ def save_settings():
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi =  text_type(settings_movie_default_hi)
 
-    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
     configure_logging(settings.general.getboolean('debug'))

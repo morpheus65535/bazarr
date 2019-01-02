@@ -347,11 +347,12 @@
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
+                                        %providers = settings.general.enabled_providers.lower().split(',')
                                         %for provider in settings_providers:
                                         <option value="{{provider}}">{{provider}}</option>
-                                        %if provider[1] == True:
-                                        %	enabled_providers.append(str(provider[0]))
                                         %end
+                                        %for provider in providers:
+                                        %enabled_providers.append(str(provider))
                                         %end
                                     </select>
                                 </div>
