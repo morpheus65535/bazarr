@@ -282,38 +282,15 @@ def save_wizard():
     else:
         settings_general_use_radarr = 'True'
     
-    
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
     settings.general.base_url = text_type(settings_general_baseurl)
     settings.general.path_mappings = text_type(settings_general_pathmapping)
-    settings.general.debug = text_type(settings.general.getboolean('debug'))
-    settings.general.branch = text_type(settings.general.branch)
-    settings.general.auto_update = text_type(settings.general.getboolean('auto_update'))
     settings.general.single_language = text_type(settings_general_single_language)
-    settings.general.minimum_score = text_type(settings.general.minimum_score)
-    settings.general.use_scenename = text_type(text_type(settings.general.getboolean('use_scenename')))
-    settings.general.use_postprocessing = text_type(settings.general.getboolean('use_postprocessing'))
-    settings.general.postprocessing_cmd = text_type(settings.general.postprocessing_cmd)
     settings.general.use_sonarr = text_type(settings_general_use_sonarr)
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
-    settings.general.page_size = text_type(settings.general.page_size)
-    settings.general.minimum_score_movie = text_type(settings.general.minimum_score_movie)
-    settings.general.use_embedded_subs = text_type(settings.general.getboolean('use_embedded_subs'))
-    settings.general.only_monitored = text_type(settings.general.getboolean('only_monitored'))
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
-    
-    settings.proxy.type = text_type(settings.proxy.type)
-    settings.proxy.url = text_type(settings.proxy.url)
-    settings.proxy.port = text_type(settings.proxy.port)
-    settings.proxy.username = text_type(settings.proxy.username)
-    settings.proxy.password = text_type(settings.proxy.password)
-    settings.proxy.exclude = text_type(settings.proxy.exclude)
-    
-    settings.auth.type = text_type(settings.auth.type)
-    settings.auth.username = text_type(settings.auth.username)
-    settings.auth.password = text_type(settings.auth.password)
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -330,7 +307,6 @@ def save_wizard():
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
     settings.sonarr.ssl = text_type(settings_sonarr_ssl)
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
-    settings.sonarr.full_update = text_type(settings.sonarr.full_update)
     
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -351,7 +327,6 @@ def save_wizard():
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
     settings.radarr.ssl = text_type(settings_radarr_ssl)
     settings.radarr.apikey = text_type(settings_radarr_apikey)
-    settings.radarr.full_update = text_type(settings.radarr.full_update)
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
