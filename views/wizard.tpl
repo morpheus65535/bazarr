@@ -348,7 +348,7 @@
                                         <option value="">Providers</option>
                                         %enabled_providers = []
                                         %for provider in settings_providers:
-                                        <option value="{{provider[0]}}">{{provider[0]}}</option>
+                                        <option value="{{provider}}">{{provider}}</option>
                                         %if provider[1] == True:
                                         %	enabled_providers.append(str(provider[0]))
                                         %end

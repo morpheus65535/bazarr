@@ -231,7 +231,7 @@ def wizard():
     db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
-    settings_providers = c.execute("SELECT * FROM table_settings_providers ORDER BY name").fetchall()
+    settings_providers = sorted(provider_manager.names())
     c.close()
     
     return template('wizard', bazarr_version=bazarr_version, settings=settings,
