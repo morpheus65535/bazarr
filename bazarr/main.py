@@ -20,7 +20,6 @@ from get_args import args
 from init import *
 from update_db import *
 from notifier import update_notifier
-from get_settings import get_general_settings, get_proxy_settings
 from logger import configure_logging, empty_log
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
@@ -47,25 +46,27 @@ from get_subtitle import download_subtitle, series_download_subtitles, movies_do
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
-from get_settings import get_auth_settings
+from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
+from subliminal import provider_manager
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 gc.enable()
 update_notifier()
 
-bazarr_version = '0.6.9.5'
-configure_logging(get_general_settings()[4] or args.debug)
+bazarr_version = '0.7.0'
 
-if get_proxy_settings()[0] != 'None':
-    if get_proxy_settings()[3] != '' and get_proxy_settings()[4] != '':
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[3] + ':' + get_proxy_settings()[4] + '@' + \
-                get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+configure_logging(settings.general.getboolean('debug') or args.debug)
+
+if settings.proxy.type != 'None':
+    if settings.proxy.username != '' and settings.proxy.password != '':
+        proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + \
+                settings.proxy.url + ':' + settings.proxy.port
     else:
-        proxy = get_proxy_settings()[0] + '://' + get_proxy_settings()[1] + ':' + get_proxy_settings()[2]
+        proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
     os.environ['HTTP_PROXY'] = str(proxy)
     os.environ['HTTPS_PROXY'] = str(proxy)
-    os.environ['NO_PROXY'] = str(get_proxy_settings()[5])
+    os.environ['NO_PROXY'] = str(settings.proxy.exclude)
 
 bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
 if "PYCHARM_HOSTED" in os.environ:
@@ -98,7 +99,7 @@ conn.commit()
 c.close()
 
 logging.debug('Bazarr version: %s', bazarr_version)
-logging.debug('Bazarr branch: %s', get_general_settings()[5])
+logging.debug('Bazarr branch: %s', settings.general.branch)
 logging.debug('Operating system: %s', platform.platform())
 logging.debug('Python version: %s', platform.python_version())
 
@@ -117,13 +118,13 @@ session_opts = {
     'session.validate_key': True
 }
 app = SessionMiddleware(app, session_opts)
-login_auth = get_auth_settings()[0]
+login_auth = settings.auth.type
 
 
 def custom_auth_basic(check):
     def decorator(func):
         def wrapper(*a, **ka):
-            if get_auth_settings()[0] == 'basic':
+            if settings.auth.type == 'basic':
                 user, password = request.auth or (None, None)
                 if user is None or not check(user, password):
                     err = HTTPError(401, "Access denied")
@@ -139,10 +140,9 @@ def custom_auth_basic(check):
 
 
 def check_credentials(user, pw):
-    from get_settings import get_auth_settings
 
-    username = get_auth_settings()[1]
-    password = get_auth_settings()[2]
+    username = settings.auth.username
+    password = settings.auth.password
     if hashlib.md5(pw).hexdigest() == password and user == username:
         return True
     return False
@@ -226,16 +226,12 @@ def wizard():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
-    settings_providers = c.execute("SELECT * FROM table_settings_providers ORDER BY name").fetchall()
+    settings_providers = sorted(provider_manager.names())
     c.close()
-
-    settings_general = get_general_settings()
-    settings_sonarr = get_sonarr_settings()
-    settings_radarr = get_radarr_settings()
-
-    return template('wizard', bazarr_version=bazarr_version, settings_general=settings_general,
+    
+    return template('wizard', bazarr_version=bazarr_version, settings=settings,
                     settings_languages=settings_languages, settings_providers=settings_providers,
-                    settings_sonarr=settings_sonarr, settings_radarr=settings_radarr, base_url=base_url)
+                    base_url=base_url)
 
 
 @route(base_url + 'save_wizard', method='POST')
@@ -280,50 +276,17 @@ def save_wizard():
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
-
-    cfg = ConfigParser()
-
-    if not cfg.has_section('general'):
-        cfg.add_section('general')
-
-    cfg.set('general', 'ip', text_type(settings_general_ip))
-    cfg.set('general', 'port', text_type(settings_general_port))
-    cfg.set('general', 'base_url', text_type(settings_general_baseurl))
-    cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'log_level', text_type(get_general_settings()[4]))
-    cfg.set('general', 'branch', text_type(get_general_settings()[5]))
-    cfg.set('general', 'auto_update', text_type(get_general_settings()[6]))
-    cfg.set('general', 'single_language', text_type(settings_general_single_language))
-    cfg.set('general', 'minimum_score', text_type(get_general_settings()[8]))
-    cfg.set('general', 'use_scenename', text_type(text_type(get_general_settings()[9])))
-    cfg.set('general', 'use_postprocessing', text_type(get_general_settings()[10]))
-    cfg.set('general', 'postprocessing_cmd', text_type(get_general_settings()[11]))
-    cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
-    cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
-    cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
-    cfg.set('general', 'page_size', text_type(get_general_settings()[21]))
-    cfg.set('general', 'minimum_score_movie', text_type(get_general_settings()[22]))
-    cfg.set('general', 'use_embedded_subs', text_type(get_general_settings()[23]))
-    cfg.set('general', 'only_monitored', text_type(get_general_settings()[24]))
-    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
-
-    if not cfg.has_section('proxy'):
-        cfg.add_section('proxy')
-
-    cfg.set('proxy', 'type', text_type(get_proxy_settings()[0]))
-    cfg.set('proxy', 'url', text_type(get_proxy_settings()[1]))
-    cfg.set('proxy', 'port', text_type(get_proxy_settings()[2]))
-    cfg.set('proxy', 'username', text_type(get_proxy_settings()[3]))
-    cfg.set('proxy', 'password', text_type(get_proxy_settings()[4]))
-    cfg.set('proxy', 'exclude', text_type(get_proxy_settings()[5]))
-
-    if not cfg.has_section('auth'):
-        cfg.add_section('auth')
-
-    cfg.set('auth', 'type', text_type(get_auth_settings()[0]))
-    cfg.set('auth', 'username', text_type(get_auth_settings()[1]))
-    cfg.set('auth', 'password', text_type(get_auth_settings()[2]))
-
+    
+    settings.general.ip = text_type(settings_general_ip)
+    settings.general.port = text_type(settings_general_port)
+    settings.general.base_url = text_type(settings_general_baseurl)
+    settings.general.path_mappings = text_type(settings_general_pathmapping)
+    settings.general.single_language = text_type(settings_general_single_language)
+    settings.general.use_sonarr = text_type(settings_general_use_sonarr)
+    settings.general.use_radarr = text_type(settings_general_use_radarr)
+    settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
+    settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
+    
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
@@ -333,17 +296,13 @@ def save_wizard():
     else:
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
-
-    if not cfg.has_section('sonarr'):
-        cfg.add_section('sonarr')
-
-    cfg.set('sonarr', 'ip', text_type(settings_sonarr_ip))
-    cfg.set('sonarr', 'port', text_type(settings_sonarr_port))
-    cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
-    cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
-    cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
-    cfg.set('sonarr', 'full_update', text_type(get_sonarr_settings()[5]))
-
+    
+    settings.sonarr.ip = text_type(settings_sonarr_ip)
+    settings.sonarr.port = text_type(settings_sonarr_port)
+    settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
+    settings.sonarr.ssl = text_type(settings_sonarr_ssl)
+    settings.sonarr.apikey = text_type(settings_sonarr_apikey)
+    
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
     settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
@@ -354,25 +313,19 @@ def save_wizard():
         settings_radarr_ssl = 'True'
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
     if settings_radarr_apikey != '':
-        cfg.set('general', 'use_radarr', 'True')
+        settings.general.use_radarr = 'True'
     else:
-        cfg.set('general', 'use_radarr', 'False')
-
-    if not cfg.has_section('radarr'):
-        cfg.add_section('radarr')
-
-    cfg.set('radarr', 'ip', text_type(settings_radarr_ip))
-    cfg.set('radarr', 'port', text_type(settings_radarr_port))
-    cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
-    cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
-    cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
-    cfg.set('radarr', 'full_update', text_type(get_radarr_settings()[5]))
-
+        settings.general.use_radarr = 'False'
+    
+    settings.radarr.ip = text_type(settings_radarr_ip)
+    settings.radarr.port = text_type(settings_radarr_port)
+    settings.radarr.base_url = text_type(settings_radarr_baseurl)
+    settings.radarr.ssl = text_type(settings_radarr_ssl)
+    settings.radarr.apikey = text_type(settings_radarr_apikey)
+    
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
-    c.execute("UPDATE table_settings_providers SET enabled = 0")
-    for item in settings_subliminal_providers:
-        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
-
+    settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
+    
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
     for item in settings_subliminal_languages:
@@ -383,42 +336,42 @@ def save_wizard():
         settings_serie_default_enabled = 'False'
     else:
         settings_serie_default_enabled = 'True'
-    cfg.set('general', 'serie_default_enabled', text_type(settings_serie_default_enabled))
-
+    settings.general.serie_default_enabled = text_type(settings_serie_default_enabled)
+    
     settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
     if settings_serie_default_languages == "['None']":
         settings_serie_default_languages = 'None'
-    cfg.set('general', 'serie_default_language', text_type(settings_serie_default_languages))
-
+    settings.general.serie_default_language = text_type(settings_serie_default_languages)
+    
     settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
-    cfg.set('general', 'serie_default_hi', text_type(settings_serie_default_hi))
-
+    settings.general.serie_default_hi = text_type(settings_serie_default_hi)
+    
     settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
         settings_movie_default_enabled = 'True'
-    cfg.set('general', 'movie_default_enabled', text_type(settings_movie_default_enabled))
-
+    settings.general.movie_default_enabled = text_type(settings_movie_default_enabled)
+    
     settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
-    cfg.set('general', 'movie_default_language', text_type(settings_movie_default_languages))
-
+    settings.general.movie_default_language = text_type(settings_movie_default_languages)
+    
     settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
-    cfg.set('general', 'movie_default_hi', text_type(settings_movie_default_hi))
-
-    with open(config_file, 'w+') as f:
-        cfg.write(f)
-
+    settings.general.movie_default_hi =  text_type(settings_movie_default_hi)
+    
+    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+    
     logging.info('Config file created successfully')
 
     conn.commit()
@@ -457,9 +410,7 @@ def download_log():
 @custom_auth_basic(check_credentials)
 def image_proxy(url):
     authorize()
-    url_sonarr = get_sonarr_settings()[6]
-    url_sonarr_short = get_sonarr_settings()[7]
-    apikey = get_sonarr_settings()[4]
+    apikey = settings.sonarr.apikey
     url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
     try:
         image_buffer = BytesIO(
@@ -477,9 +428,7 @@ def image_proxy(url):
 @custom_auth_basic(check_credentials)
 def image_proxy_movies(url):
     authorize()
-    url_radarr = get_radarr_settings()[6]
-    url_radarr_short = get_radarr_settings()[7]
-    apikey = get_radarr_settings()[4]
+    apikey = settings.radarr.apikey
     try:
         url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         image_buffer = BytesIO(
@@ -500,11 +449,11 @@ def image_proxy_movies(url):
 @custom_auth_basic(check_credentials)
 def redirect_root():
     authorize()
-    if get_general_settings()[12] is True:
+    if settings.general.getboolean('use_sonarr'):
         redirect(base_url + 'series')
-    elif get_general_settings()[13] is True:
+    elif settings.general.getboolean('use_radarr'):
         redirect(base_url + 'movies')
-    elif not os.path.exists(os.path.join(args.config_dir, 'config', 'config.ini')):
+    elif not settings.general.enabled_providers:
         redirect(base_url + 'wizard')
     else:
         redirect(base_url + 'settings')
@@ -514,7 +463,7 @@ def redirect_root():
 @custom_auth_basic(check_credentials)
 def series():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.getboolean('single_language')
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
@@ -526,11 +475,11 @@ def series():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
-    if get_general_settings()[24] is True:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -551,7 +500,7 @@ def series():
     output = template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=port)
+                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
     return output
 
 
@@ -559,7 +508,7 @@ def series():
 @custom_auth_basic(check_credentials)
 def serieseditor():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.getboolean('single_language')
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace)
@@ -577,7 +526,7 @@ def serieseditor():
     c.close()
     output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=port)
+                      current_port=settings.general.port)
     return output
 
 
@@ -589,14 +538,14 @@ def search_json(query):
     c = db.cursor()
 
     search_list = []
-    if get_general_settings()[12] is True:
+    if settings.general.getboolean('use_sonarr'):
         c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
                   ('%' + query + '%',))
         series = c.fetchall()
         for serie in series:
             search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
 
-    if get_general_settings()[13] is True:
+    if settings.general.getboolean('use_radarr'):
         c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
         movies = c.fetchall()
         for movie in movies:
@@ -619,7 +568,7 @@ def edit_series(no):
     else:
         lang = 'None'
 
-    single_language = get_general_settings()[7]
+    single_language = settings.general.getboolean('single_language')
     if single_language is True:
         if str(lang) == "['None']":
             lang = 'None'
@@ -685,8 +634,7 @@ def edit_serieseditor():
 @custom_auth_basic(check_credentials)
 def episodes(no):
     authorize()
-    # single_language = get_general_settings()[7]
-    url_sonarr_short = get_sonarr_settings()[7]
+    # single_language = settings.general.getboolean('single_language')
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace)
@@ -711,13 +659,13 @@ def episodes(no):
 
     return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details,
                     languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url,
-                    tvdbid=tvdbid, number=number, current_port=port)
+                    tvdbid=tvdbid, number=number, current_port=settings.general.port)
 
 @route(base_url + 'movies')
 @custom_auth_basic(check_credentials)
 def movies():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.getboolean('single_language')
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
@@ -729,7 +677,7 @@ def movies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
@@ -742,7 +690,7 @@ def movies():
     c.close()
     output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=port)
+                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
     return output
 
 
@@ -750,7 +698,7 @@ def movies():
 @custom_auth_basic(check_credentials)
 def movieseditor():
     authorize()
-    single_language = get_general_settings()[7]
+    single_language = settings.general.getboolean('single_language')
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     db.create_function("path_substitution", 1, path_replace_movie)
@@ -768,7 +716,7 @@ def movieseditor():
     c.close()
     output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=port)
+                      current_port=settings.general.port)
     return output
 
 
@@ -842,8 +790,7 @@ def edit_movie(no):
 @custom_auth_basic(check_credentials)
 def movie(no):
     authorize()
-    # single_language = get_general_settings()[7]
-    url_radarr_short = get_radarr_settings()[7]
+    # single_language = settings.general.getboolean('single_language')
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     conn.create_function("path_substitution", 1, path_replace_movie)
@@ -860,7 +807,7 @@ def movie(no):
 
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
                     languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
-                    current_port=port)
+                    current_port=settings.general.port)
 
 @route(base_url + 'scan_disk/<no:int>', method='GET')
 @custom_auth_basic(check_credentials)
@@ -910,7 +857,7 @@ def search_missing_subtitles_movie(no):
 @custom_auth_basic(check_credentials)
 def history():
     authorize()
-    return template('history', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('history', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
 
 
 @route(base_url + 'historyseries')
@@ -926,7 +873,7 @@ def historyseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
@@ -953,7 +900,7 @@ def historyseries():
     data = reversed(sorted(data, key=operator.itemgetter(4)))
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=port)
+                    current_port=settings.general.port)
 
 @route(base_url + 'historymovies')
 @custom_auth_basic(check_credentials)
@@ -968,7 +915,7 @@ def historymovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
@@ -995,13 +942,13 @@ def historymovies():
     data = reversed(sorted(data, key=operator.itemgetter(2)))
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=port)
+                    current_port=settings.general.port)
 
 @route(base_url + 'wanted')
 @custom_auth_basic(check_credentials)
 def wanted():
     authorize()
-    return template('wanted', bazarr_version=bazarr_version, base_url=base_url, current_port=port)
+    return template('wanted', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
 
 
 @route(base_url + 'wantedseries')
@@ -1012,7 +959,7 @@ def wantedseries():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    if get_general_settings()[24] is True:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -1023,7 +970,7 @@ def wantedseries():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
@@ -1034,7 +981,7 @@ def wantedseries():
     c.close()
     return template('wantedseries', bazarr_version=bazarr_version, rows=data,
                     missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
-                    current_port=port)
+                    current_port=settings.general.port)
 
 @route(base_url + 'wantedmovies')
 @custom_auth_basic(check_credentials)
@@ -1044,7 +991,7 @@ def wantedmovies():
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    if get_general_settings()[24] is True:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -1055,7 +1002,7 @@ def wantedmovies():
     page = request.GET.page
     if page == "":
         page = "1"
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
@@ -1066,7 +1013,7 @@ def wantedmovies():
     c.close()
     return template('wantedmovies', bazarr_version=bazarr_version, rows=data,
                     missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
-                    current_port=port)
+                    current_port=settings.general.port)
 
 @route(base_url + 'wanted_search_missing_subtitles')
 @custom_auth_basic(check_credentials)
@@ -1081,31 +1028,20 @@ def wanted_search_missing_subtitles_list():
 
 @route(base_url + 'settings')
 @custom_auth_basic(check_credentials)
-def settings():
+def _settings():
     authorize()
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     c.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_languages = c.fetchall()
-    c.execute("SELECT * FROM table_settings_providers ORDER BY name")
-    settings_providers = c.fetchall()
+    settings_providers = sorted(provider_manager.names())
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
 
-    from get_settings import get_general_settings, get_proxy_settings, get_auth_settings, get_radarr_settings, \
-        get_sonarr_settings
-    settings_general = get_general_settings()
-    settings_proxy = get_proxy_settings()
-    settings_auth = get_auth_settings()
-    settings_sonarr = get_sonarr_settings()
-    settings_radarr = get_radarr_settings()
 
-    return template('settings', bazarr_version=bazarr_version, settings_general=settings_general,
-                    settings_proxy=settings_proxy, settings_auth=settings_auth, settings_languages=settings_languages,
-                    settings_providers=settings_providers, settings_sonarr=settings_sonarr,
-                    settings_radarr=settings_radarr, settings_notifier=settings_notifier, base_url=base_url,
-                    current_port=port)
+    return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages, settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url, current_port=settings.general.port)
+
 
 @route(base_url + 'save_settings', method='POST')
 @custom_auth_basic(check_credentials)
@@ -1186,50 +1122,32 @@ def save_settings():
         settings_general_use_radarr = 'True'
     settings_page_size = request.forms.get('settings_page_size')
 
-    settings_general = get_general_settings()
+    before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url), unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')), unicode(settings.general.getboolean('use_radarr')), unicode(settings.general.path_mappings_movie))
+    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl), unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
 
-    before = (
-    unicode(settings_general[0]), int(settings_general[1]), unicode(settings_general[2]), unicode(settings_general[3]),
-    unicode(settings_general[12]), unicode(settings_general[13]), unicode(settings_general[14]))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
-             unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
-             unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    from six import text_type
-
-    cfg = ConfigParser()
-
-    with open(config_file, 'r') as f:
-        cfg.read_file(f)
-
-    cfg.set('general', 'ip', text_type(settings_general_ip))
-    cfg.set('general', 'port', text_type(settings_general_port))
-    cfg.set('general', 'base_url', text_type(settings_general_baseurl))
-    cfg.set('general', 'path_mappings', text_type(settings_general_pathmapping))
-    cfg.set('general', 'debug', text_type(settings_general_debug))
-    cfg.set('general', 'branch', text_type(settings_general_branch))
-    cfg.set('general', 'auto_update', text_type(settings_general_automatic))
-    cfg.set('general', 'single_language', text_type(settings_general_single_language))
-    cfg.set('general', 'minimum_score', text_type(settings_general_minimum_score))
-    cfg.set('general', 'use_scenename', text_type(settings_general_scenename))
-    cfg.set('general', 'use_postprocessing', text_type(settings_general_use_postprocessing))
-    cfg.set('general', 'postprocessing_cmd', text_type(settings_general_postprocessing_cmd))
-    cfg.set('general', 'use_sonarr', text_type(settings_general_use_sonarr))
-    cfg.set('general', 'use_radarr', text_type(settings_general_use_radarr))
-    cfg.set('general', 'path_mappings_movie', text_type(settings_general_pathmapping_movie))
-    cfg.set('general', 'page_size', text_type(settings_page_size))
-    cfg.set('general', 'minimum_score_movie', text_type(settings_general_minimum_score_movies))
-    cfg.set('general', 'use_embedded_subs', text_type(settings_general_embedded))
-    cfg.set('general', 'only_monitored', text_type(settings_general_only_monitored))
-    cfg.set('general', 'adaptive_searching', text_type(settings_general_adaptive_searching))
+    settings.general.ip = text_type(settings_general_ip)
+    settings.general.port = text_type(settings_general_port)
+    settings.general.base_url = text_type(settings_general_baseurl)
+    settings.general.path_mappings = text_type(settings_general_pathmapping)
+    settings.general.debug = text_type(settings_general_debug)
+    settings.general.branch = text_type(settings_general_branch)
+    settings.general.auto_update = text_type(settings_general_automatic)
+    settings.general.single_language = text_type(settings_general_single_language)
+    settings.general.minimum_score = text_type(settings_general_minimum_score)
+    settings.general.use_scenename = text_type(settings_general_scenename)
+    settings.general.use_postprocessing = text_type(settings_general_use_postprocessing)
+    settings.general.postprocessing_cmd = text_type(settings_general_postprocessing_cmd)
+    settings.general.use_sonarr = text_type(settings_general_use_sonarr)
+    settings.general.use_radarr = text_type(settings_general_use_radarr)
+    settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
+    settings.general.page_size = text_type(settings_page_size)
+    settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
+    settings.general.use_embedded_subs = text_type(settings_general_embedded)
+    settings.general.only_monitored = text_type(settings_general_only_monitored)
+    settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
 
     if after != before:
         configured()
-    get_general_settings()
-
-    settings_proxy = get_proxy_settings()
-
-    if not cfg.has_section('proxy'):
-        cfg.add_section('proxy')
 
     settings_proxy_type = request.forms.get('settings_proxy_type')
     settings_proxy_url = request.forms.get('settings_proxy_url')
@@ -1238,38 +1156,36 @@ def save_settings():
     settings_proxy_password = request.forms.get('settings_proxy_password')
     settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
 
-    before_proxy_password = (unicode(settings_proxy[0]), unicode(settings_proxy[5]))
+    before_proxy_password = (unicode(settings.proxy.type), unicode(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
-        cfg.set('proxy', 'type', text_type(settings_proxy_type))
-        cfg.set('proxy', 'url', text_type(settings_proxy_url))
-        cfg.set('proxy', 'port', text_type(settings_proxy_port))
-        cfg.set('proxy', 'username', text_type(settings_proxy_username))
-        cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
+        settings.proxy.type = text_type(settings_proxy_type)
+        settings.proxy.url = text_type(settings_proxy_url)
+        settings.proxy.port = text_type(settings_proxy_port)
+        settings.proxy.username = text_type(settings_proxy_username)
+        settings.proxy.exclude = text_type(settings_proxy_exclude)
     else:
-        cfg.set('proxy', 'type', text_type(settings_proxy_type))
-        cfg.set('proxy', 'url', text_type(settings_proxy_url))
-        cfg.set('proxy', 'port', text_type(settings_proxy_port))
-        cfg.set('proxy', 'username', text_type(settings_proxy_username))
-        cfg.set('proxy', 'password', text_type(settings_proxy_password))
-        cfg.set('proxy', 'exclude', text_type(settings_proxy_exclude))
-
-    settings_auth = get_auth_settings()
+        settings.proxy.type = text_type(settings_proxy_type)
+        settings.proxy.url = text_type(settings_proxy_url)
+        settings.proxy.port = text_type(settings_proxy_port)
+        settings.proxy.username = text_type(settings_proxy_username)
+        settings.proxy.password = text_type(settings_proxy_password)
+        settings.proxy.exclude = text_type(settings_proxy_exclude)
 
     settings_auth_type = request.forms.get('settings_auth_type')
     settings_auth_username = request.forms.get('settings_auth_username')
     settings_auth_password = request.forms.get('settings_auth_password')
 
-    if get_auth_settings()[0] != settings_auth_type:
+    if settings.auth.type != settings_auth_type:
         configured()
-    if settings_auth[2] == settings_auth_password:
-        cfg.set('auth', 'type', text_type(settings_auth_type))
-        cfg.set('auth', 'username', text_type(settings_auth_username))
+    if settings.auth.password == settings_auth_password:
+        settings.auth.type = text_type(settings_auth_type)
+        settings.auth.username = text_type(settings_auth_username)
     else:
-        cfg.set('auth', 'type', text_type(settings_auth_type))
-        cfg.set('auth', 'username', text_type(settings_auth_username))
-        cfg.set('auth', 'password', hashlib.md5(settings_auth_password).hexdigest())
+        settings.auth.type = text_type(settings_auth_type)
+        settings.auth.username = text_type(settings_auth_username)
+        settings.auth.password = hashlib.md5(settings_auth_password).hexdigest()
     if settings_auth_username not in aaa._store.users:
         cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
         cork._store.roles[''] = 100
@@ -1287,7 +1203,7 @@ def save_settings():
         else:
             aaa._beaker_session.delete()
     else:
-        if settings_auth[2] != settings_auth_password:
+        if settings.auth.password  != settings_auth_password:
             aaa.user(settings_auth_username).update(role='', pwd=settings_auth_password)
             if settings_auth_type == 'basic' or settings_auth_type == 'None':
                 pass
@@ -1305,12 +1221,12 @@ def save_settings():
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
 
-    cfg.set('sonarr', 'ip', text_type(settings_sonarr_ip))
-    cfg.set('sonarr', 'port', text_type(settings_sonarr_port))
-    cfg.set('sonarr', 'base_url', text_type(settings_sonarr_baseurl))
-    cfg.set('sonarr', 'ssl', text_type(settings_sonarr_ssl))
-    cfg.set('sonarr', 'apikey', text_type(settings_sonarr_apikey))
-    cfg.set('sonarr', 'full_update', text_type(settings_sonarr_sync))
+    settings.sonarr.ip = text_type(settings_sonarr_ip)
+    settings.sonarr.port = text_type(settings_sonarr_port)
+    settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
+    settings.sonarr.ssl = text_type(settings_sonarr_ssl)
+    settings.sonarr.apikey = text_type(settings_sonarr_apikey)
+    settings.sonarr.full_update = text_type(settings_sonarr_sync)
 
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -1323,30 +1239,22 @@ def save_settings():
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
     settings_radarr_sync = request.forms.get('settings_radarr_sync')
 
-    cfg.set('radarr', 'ip', text_type(settings_radarr_ip))
-    cfg.set('radarr', 'port', text_type(settings_radarr_port))
-    cfg.set('radarr', 'base_url', text_type(settings_radarr_baseurl))
-    cfg.set('radarr', 'ssl', text_type(settings_radarr_ssl))
-    cfg.set('radarr', 'apikey', text_type(settings_radarr_apikey))
-    cfg.set('radarr', 'full_update', text_type(settings_radarr_sync))
+    settings.radarr.ip = text_type(settings_radarr_ip)
+    settings.radarr.port = text_type(settings_radarr_port)
+    settings.radarr.base_url = text_type(settings_radarr_baseurl)
+    settings.radarr.ssl = text_type(settings_radarr_ssl)
+    settings.radarr.apikey = text_type(settings_radarr_apikey)
+    settings.radarr.full_update = text_type(settings_radarr_sync)
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
-    c.execute("UPDATE table_settings_providers SET enabled = 0")
-    for item in settings_subliminal_providers:
-        c.execute("UPDATE table_settings_providers SET enabled = '1' WHERE name = ?", (item,))
+    settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
 
-    settings_addic7ed_username = request.forms.get('settings_addic7ed_username')
-    settings_addic7ed_password = request.forms.get('settings_addic7ed_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'addic7ed'",
-              (settings_addic7ed_username, settings_addic7ed_password))
-    settings_legendastv_username = request.forms.get('settings_legendastv_username')
-    settings_legendastv_password = request.forms.get('settings_legendastv_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'legendastv'",
-              (settings_legendastv_username, settings_legendastv_password))
-    settings_opensubtitles_username = request.forms.get('settings_opensubtitles_username')
-    settings_opensubtitles_password = request.forms.get('settings_opensubtitles_password')
-    c.execute("UPDATE table_settings_providers SET username = ?, password = ? WHERE name = 'opensubtitles'",
-              (settings_opensubtitles_username, settings_opensubtitles_password))
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1358,43 +1266,43 @@ def save_settings():
         settings_serie_default_enabled = 'False'
     else:
         settings_serie_default_enabled = 'True'
-    cfg.set('general', 'serie_default_enabled', text_type(settings_serie_default_enabled))
+    settings.general.serie_default_enabled = text_type(settings_serie_default_enabled)
 
     settings_serie_default_languages = str(request.forms.getall('settings_serie_default_languages'))
     if settings_serie_default_languages == "['None']":
         settings_serie_default_languages = 'None'
-    cfg.set('general', 'serie_default_language', text_type(settings_serie_default_languages))
+    settings.general.serie_default_language = text_type(settings_serie_default_languages)
 
     settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
-    cfg.set('general', 'serie_default_hi', text_type(settings_serie_default_hi))
+    settings.general.serie_default_hi = text_type(settings_serie_default_hi)
 
     settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
         settings_movie_default_enabled = 'True'
-    cfg.set('general', 'movie_default_enabled', text_type(settings_movie_default_enabled))
+    settings.general.movie_default_enabled = text_type(settings_movie_default_enabled)
 
     settings_movie_default_languages = str(request.forms.getall('settings_movie_default_languages'))
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
-    cfg.set('general', 'movie_default_language', text_type(settings_movie_default_languages))
+    settings.general.movie_default_language = text_type(settings_movie_default_languages)
 
     settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
-    cfg.set('general', 'movie_default_hi', text_type(settings_movie_default_hi))
+    settings.general.movie_default_hi =  text_type(settings_movie_default_hi)
 
-    with open(config_file, 'wb') as f:
-        cfg.write(f)
+    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
 
-    configure_logging(get_general_settings()[4])
+    configure_logging(settings.general.getboolean('debug'))
 
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
@@ -1479,6 +1387,7 @@ def system():
 
         return text
 
+
     def get_time_from_cron(cron):
         text = "at "
         hour = str(cron[5])
@@ -1533,15 +1442,14 @@ def system():
         for i, l in enumerate(f, 1):
             pass
         row_count = i
-        page_size = int(get_general_settings()[21])
+        page_size = int(settings.general.page_size)
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         releases = ast.literal_eval(f.read())
 
-    use_sonarr = get_general_settings()[12]
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
+    use_sonarr = settings.general.getboolean('use_sonarr')
+    apikey_sonarr = settings.sonarr.apikey
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_version = ''
     if use_sonarr:
@@ -1549,10 +1457,9 @@ def system():
             sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
         except:
             pass
-        
-    use_radarr = get_general_settings()[13]
-    url_radarr = get_radarr_settings()[6]
-    apikey_radarr = get_radarr_settings()[4]
+
+    use_radarr = settings.general.getboolean('use_radarr')
+    apikey_radarr = settings.radarr.apikey
     rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
     radarr_version = ''
     if use_radarr:
@@ -1567,14 +1474,14 @@ def system():
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
-                    releases=releases, current_port=port)
+                    releases=releases, current_port=settings.general.port)
 
 
 @route(base_url + 'logs/<page:int>')
 @custom_auth_basic(check_credentials)
 def get_logs(page):
     authorize()
-    page_size = int(get_general_settings()[21])
+    page_size = int(settings.general.page_size)
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
     logs_complete = []
@@ -1582,7 +1489,8 @@ def get_logs(page):
         logs_complete.append(line.rstrip())
     logs = logs_complete[begin:end]
 
-    return template('logs', logs=logs, base_url=base_url, current_port=port)
+    return template('logs', logs=logs, base_url=base_url, current_port=settings.general.port)
+
 
 
 @route(base_url + 'execute/<taskid>')
@@ -1890,9 +1798,9 @@ def handle_websocket():
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 
-server = WSGIServer((str(ip), int(port)), app, handler_class=WebSocketHandler)
+server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url))
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(settings.general.port) + str(base_url))
     # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.serve_forever()
 except KeyboardInterrupt:

@@ -1,5 +1,4 @@
 # coding=utf-8
-
 import os
 import sqlite3
 import requests
@@ -7,10 +6,10 @@ import logging
 from queueconfig import q4ws
 
 from get_args import args
-from get_settings import path_replace
+from config import settings, url_sonarr
+from helper import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, \
     movies_full_scan_subtitles
-
 
 def update_all_episodes():
     series_full_scan_subtitles()
@@ -29,10 +28,8 @@ def update_all_movies():
 def sync_episodes():
     q4ws.append('Episodes sync from Sonarr started...')
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
-
+    apikey_sonarr = settings.sonarr.apikey
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()

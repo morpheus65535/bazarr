@@ -1,8 +1,8 @@
 # coding=utf-8
 
+import os
 import sqlite3
 import pycountry
-import os
 
 from get_args import args
 

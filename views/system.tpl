@@ -49,9 +49,9 @@
 			<div class="ui basic icon buttons" style="float: right;">
 				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
 				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
-                % from get_settings import get_auth_settings
-                % if get_auth_settings()[0] is not 'None':
-                <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
+                % from config import settings
+                % if settings.auth.type != "None":
+                    <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
                 % end
 			</div>
 			<div class="ui top attached tabular menu">
@@ -136,8 +136,7 @@
                                 </div>
                             </div>
                         </div>
-                        % from get_settings import get_general_settings
-                        % if get_general_settings()[12]:
+                        % if settings.general.getboolean('use_sonarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Sonarr version</label>
@@ -151,7 +150,7 @@
                             </div>
                         </div>
                         % end
-                        % if get_general_settings()[13]:
+                        % if settings.general.getboolean('use_radarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Radarr version</label>
@@ -385,10 +384,10 @@
 		})
 	});
 
-    % from get_settings import get_general_settings
-	% ip = get_general_settings()[0]
-	% port = get_general_settings()[1]
-	% base_url = get_general_settings()[2]
+    % from config import settings
+	% ip = settings.general.ip
+	% port = settings.general.port
+	% base_url = settings.general.base_url
 
 	if ("{{ip}}" === "0.0.0.0") {
 		public_ip = window.location.hostname;

@@ -26,9 +26,9 @@
 
 		% import os
 		% import sqlite3
-        % from get_settings import get_general_settings
+        % from config import settings
 
-        %if get_general_settings()[24]:
+        %if settings.general.getboolean('only_monitored'):
         %    monitored_only_query_string = ' AND monitored = "True"'
         %else:
         %    monitored_only_query_string = ""
@@ -52,13 +52,13 @@
 								<div class="sixteen wide column">
 									<div class="ui inverted borderless labeled icon massive menu six item">
 										<div class="ui container">
-											% if get_general_settings()[12]:
+											% if settings.general.getboolean('use_sonarr'):
 											<a class="item" href="{{base_url}}series">
 												<i class="play icon"></i>
 												Series
 											</a>
                                             % end
-											% if get_general_settings()[13]:
+											% if settings.general.getboolean('use_radarr'):
 											<a class="item" href="{{base_url}}movies">
 												<i class="film icon"></i>
 												Movies
@@ -70,12 +70,12 @@
 											</a>
 											<a class="item" href="{{base_url}}wanted">
 												<i class="warning sign icon">
-													% if get_general_settings()[12]:
+													% if settings.general.getboolean('use_sonarr'):
 													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
 														{{wanted_series[0]}}
 													</div>
 													% end
-													% if get_general_settings()[13]:
+													% if settings.general.getboolean('use_radarr'):
 													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
 														{{wanted_movies[0]}}
 													</div>
@@ -181,10 +181,10 @@
 		});
 	});
 
-	% from get_settings import get_general_settings
-	% ip = get_general_settings()[0]
-	% port = get_general_settings()[1]
-	% base_url = get_general_settings()[2]
+	% from config import settings
+	% ip = settings.general.ip
+	% port = settings.general.port
+	% base_url = settings.general.base_url
 
 	if ("{{ip}}" === "0.0.0.0") {
 		public_ip = window.location.hostname;

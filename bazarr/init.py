@@ -6,7 +6,9 @@ import logging
 import time
 
 from cork import Cork
-from configparser import ConfigParser
+from configparser2 import ConfigParser
+from config import settings
+from check_update import check_releases
 from get_args import args
 
 # Check if args.config_dir exist
@@ -31,7 +33,6 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
     logging.debug("BAZARR Created log folder")
     
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
-    from check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
@@ -83,6 +84,39 @@ if cfg.has_section('general'):
         cfg.set('general', 'debug', 'False')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
+
+# Move providers settings from DB to config file
+try:
+    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
+    settings_providers = c.execute("SELECT * FROM table_settings_providers").fetchall()
+    c.execute("DROP TABLE table_settings_providers")
+    db.close()
+    
+    providers_list = []
+    if len(enabled_providers) > 0:
+        for provider in enabled_providers:
+            providers_list.append(provider[0])
+        for provider in settings_providers:
+            if provider[0] == 'opensubtitles':
+                settings.opensubtitles.username = provider[2]
+                settings.opensubtitles.password = provider[3]
+            elif provider[0] == 'addic7ed':
+                settings.addic7ed.username = provider[2]
+                settings.addic7ed.password = provider[3]
+            elif provider[0] == 'legendastv':
+                settings.legendastv.username = provider[2]
+                settings.legendastv.password = provider[3]
+    else:
+        providers_list = None
+
+    settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
+    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+    
+except:
+    pass
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)

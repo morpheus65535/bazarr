@@ -89,8 +89,9 @@
 	<body>
 		%import ast
 		%from get_languages import *
-		%from get_settings import *
-		%single_language = get_general_settings()[7]
+        %from config import settings
+        %from helper import path_replace
+		%single_language = settings.general.getboolean('single_language')
 		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
@@ -220,9 +221,8 @@
 											end
 											if missing_languages is not None:
                                                 from get_subtitle import search_active
-                                                from get_settings import get_general_settings
                                                 for language in missing_languages:
-                                                    if episode[10] is not None and get_general_settings()[25] and language in episode[10]:
+                                                    if episode[10] is not None and settings.general.getboolean('adaptive_searching') and language in episode[10]:
                                                         for lang in ast.literal_eval(episode[10]):
                                                             if language in lang:
                                                                 if search_active(lang[1]):

@@ -22,8 +22,9 @@ from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, 
 from subliminal_patch.score import compute_score
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
 from bs4 import UnicodeDammit
-from get_settings import get_general_settings, pp_replace, path_replace, path_replace_movie, path_replace_reverse, \
-    path_replace_reverse_movie
+from config import settings
+from helper import path_replace, path_replace_movie, path_replace_reverse, \
+    path_replace_reverse_movie, pp_replace
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
@@ -127,12 +128,12 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         else:
             language_set.add(Language(l))
 
-    use_scenename = get_general_settings()[9]
-    minimum_score = get_general_settings()[8]
-    minimum_score_movie = get_general_settings()[22]
-    use_postprocessing = get_general_settings()[10]
-    postprocessing_cmd = get_general_settings()[11]
-    single = get_general_settings()[7]
+    use_scenename = settings.general.getboolean('use_scenename')
+    minimum_score = settings.general.minimum_score
+    minimum_score_movie = settings.general.minimum_score_movie
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    postprocessing_cmd = settings.general.postprocessing_cmd
+    single = settings.general.getboolean('single_language')
 
     # todo:
     """
@@ -327,11 +328,11 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
         else:
             language_set.add(Language(lang))
 
-    use_scenename = get_general_settings()[9]
-    minimum_score = get_general_settings()[8]
-    minimum_score_movie = get_general_settings()[22]
-    use_postprocessing = get_general_settings()[10]
-    postprocessing_cmd = get_general_settings()[11]
+    use_scenename = settings.general.getboolean('use_scenename')
+    minimum_score = settings.general.minimum_score
+    minimum_score_movie = settings.general.minimum_score_movie
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    postprocessing_cmd = settings.general.postprocessing_cmd
 
     video = get_video(path, title, sceneName, use_scenename, providers=providers, media_type=media_type)
     if video:
@@ -389,10 +390,10 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
     logging.debug('BAZARR Manually downloading subtitles for this file: ' + path)
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
-    use_scenename = get_general_settings()[9]
-    use_postprocessing = get_general_settings()[10]
-    postprocessing_cmd = get_general_settings()[11]
-    single = get_general_settings()[7]
+    use_scenename = settings.general.getboolean('use_scenename')
+    use_postprocessing = settings.general.getboolean('use_postprocessing')
+    postprocessing_cmd = settings.general.postprocessing_cmd
+    single = settings.general.getboolean('single_language')
 
     video = get_video(path, title, sceneName, use_scenename, providers={provider}, media_type=media_type)
     if video:
@@ -469,7 +470,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
 
 def series_download_subtitles(no):
-    if get_general_settings()[24] is True:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -621,7 +622,7 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    if get_general_settings()[24] is True:
+    if settings.general.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -636,13 +637,11 @@ def wanted_search_missing_subtitles():
 
     c.close()
 
-    integration = get_general_settings()
-
-    if integration[12] is True:
+    if settings.general.getboolean('use_sonarr'):
         for episode in episodes:
             wanted_download_subtitles(episode[0])
 
-    if integration[13] is True:
+    if settings.general.getboolean('use_radarr'):
         for movie in movies:
             wanted_download_subtitles_movie(movie[0])
 
@@ -650,7 +649,7 @@ def wanted_search_missing_subtitles():
 
 
 def search_active(timestamp):
-    if get_general_settings()[25] is True:
+    if settings.general.getboolean('only_monitored'):
         search_deadline = timedelta(weeks=3)
         search_delta = timedelta(weeks=1)
         aa = datetime.fromtimestamp(float(timestamp))

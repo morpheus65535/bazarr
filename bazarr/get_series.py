@@ -8,20 +8,18 @@ from queueconfig import q4ws
 import datetime
 
 from get_args import args
-from get_settings import get_general_settings
+from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 
 
 def update_series():
     q4ws.append("Update series list from Sonarr is running...")
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    apikey_sonarr = get_sonarr_settings()[4]
-    serie_default_enabled = get_general_settings()[15]
-    serie_default_language = get_general_settings()[16]
-    serie_default_hi = get_general_settings()[17]
+    apikey_sonarr = settings.sonarr.apikey
+    serie_default_enabled = settings.general.getboolean('serie_default_enabled')
+    serie_default_language = settings.general.serie_default_language
+    serie_default_hi = settings.general.serie_default_hi
 
-    if apikey_sonarr == None:
+    if apikey_sonarr is None:
         pass
     else:
         get_profile_list()
@@ -128,10 +126,7 @@ def update_series():
 
 
 def get_profile_list():
-    from get_settings import get_sonarr_settings
-    url_sonarr = get_sonarr_settings()[6]
-    # url_sonarr_short = get_sonarr_settings()[5]
-    apikey_sonarr = get_sonarr_settings()[4]
+    apikey_sonarr = settings.sonarr.apikey
 
     # Get profiles data from Sonarr
     error = False

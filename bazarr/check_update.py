@@ -1,5 +1,4 @@
 # coding=utf-8
-
 import os
 import logging
 import sqlite3
@@ -7,7 +6,7 @@ import json
 import requests
 
 from get_args import args
-from get_settings import get_general_settings
+from config import settings
 
 if not args.no_update:
     import git
@@ -36,7 +35,7 @@ def gitconfig():
 def check_and_apply_update():
     gitconfig()
     check_releases()
-    branch = get_general_settings()[5]
+    branch = settings.general.branch
     g = git.cmd.Git(current_working_directory)
     g.fetch('origin')
     result = g.diff('--shortstat', 'origin/' + branch)

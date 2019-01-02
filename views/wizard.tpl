@@ -105,7 +105,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_general_ip" type="text" value="{{settings_general[0]}}">
+                                        <input name="settings_general_ip" type="text" value="{{settings.general.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -129,7 +129,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input name="settings_general_port" type="text" value="{{settings_general[1]}}">
+                                        <input name="settings_general_port" type="text" value="{{settings.general.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -152,10 +152,10 @@
                             </div>
                             <div class="five wide column">
                                 <div class="ui fluid input">
-                                    %if settings_general[2] == None:
+                                    %if settings.general.base_url is None:
                                     %	base_url = "/"
                                     %else:
-                                    %	base_url = settings_general[2]
+                                    %	base_url = settings.general.base_url
                                     %end
                                     <input name="settings_general_baseurl" type="text">
                                 </div>
@@ -179,8 +179,8 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
-                        %if settings_general[3] is not None:
-                        %	path_substitutions = ast.literal_eval(settings_general[3])
+                        %if settings.general.path_mappings is not None:
+                        %	path_substitutions = ast.literal_eval(settings.general.path_mappings)
                         %else:
                         %	path_substitutions = []
                         %end
@@ -253,8 +253,8 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
-                        %if settings_general[14] is not None:
-                        %	path_substitutions_movie = ast.literal_eval(settings_general[14])
+                        %if settings.general.path_mappings_movie is not None:
+                        %	path_substitutions_movie = ast.literal_eval(settings.general.path_mappings_movie)
                         %else:
                         %	path_substitutions_movie = []
                         %end
@@ -348,7 +348,7 @@
                                         <option value="">Providers</option>
                                         %enabled_providers = []
                                         %for provider in settings_providers:
-                                        <option value="{{provider[0]}}">{{provider[0]}}</option>
+                                        <option value="{{provider}}">{{provider}}</option>
                                         %if provider[1] == True:
                                         %	enabled_providers.append(str(provider[0]))
                                         %end
@@ -367,7 +367,7 @@
                                 <label>Single language</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings_general[7]}}>
+                                <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings.general.getboolean('single_language')}}>
                                     <input name="settings_general_single_language" type="checkbox">
                                     <label></label>
                                 </div>
@@ -434,7 +434,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings_general[7] is False:
+                                        %if not settings.general.getboolean('single_language'):
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -491,7 +491,7 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_movie_default_languages" id="settings_movie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if settings_general[7] is False:
+                                        %if not settings.general.getboolean('single_language'):
                                         <option value="">Languages</option>
                                         %else:
                                         <option value="None">None</option>
@@ -574,7 +574,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text" value="{{settings_sonarr[0]}}">
+                                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text" value="{{settings.sonarr.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -592,7 +592,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text" value="{{settings_sonarr[1]}}">
+                                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text" value="{{settings.sonarr.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -685,7 +685,7 @@
                                 <label>Use Radarr</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_use_radarr" class="ui toggle checkbox" data-enabled={{settings_general[13]}}>
+                                <div id="settings_use_radarr" class="ui toggle checkbox">
                                     <input name="settings_general_use_radarr" type="checkbox">
                                     <label></label>
                                 </div>
@@ -706,7 +706,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_radarr_ip" name="settings_radarr_ip" type="text" class="radarr_config" value="{{settings_radarr[0]}}">
+                                        <input id="settings_radarr_ip" name="settings_radarr_ip" type="text" class="radarr_config" value="{{settings.radarr.ip}}">
                                     </div>
                                 </div>
                             </div>
@@ -724,7 +724,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <input id="settings_radarr_port" name="settings_radarr_port" type="text" class="radarr_config" value="{{settings_radarr[1]}}">
+                                        <input id="settings_radarr_port" name="settings_radarr_port" type="text" class="radarr_config" value="{{settings.radarr.port}}">
                                     </div>
                                 </div>
                             </div>
@@ -1027,11 +1027,11 @@ $(function() {
     $('#settings_languages').dropdown();
     $('#settings_serie_default_languages').dropdown();
     $('#settings_movie_default_languages').dropdown();
-    %if settings_general[16] is not None:
-    $('#settings_serie_default_languages').dropdown('set selected',{{!settings_general[16]}});
+    %if settings.general.serie_default_language is not None:
+    $('#settings_serie_default_languages').dropdown('set selected',{{!settings.general.serie_default_language}});
     %end
-    %if settings_general[19] is not None:
-    $('#settings_movie_default_languages').dropdown('set selected',{{!settings_general[19]}});
+    %if settings.general.movie_default_language is not None:
+    $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
     %end
 
     // form validation

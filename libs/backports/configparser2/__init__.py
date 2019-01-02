@@ -20,8 +20,7 @@ ConfigParser -- responsible for parsing a list of
     __init__(defaults=None, dict_type=_default_dict, allow_no_value=False,
              delimiters=('=', ':'), comment_prefixes=('#', ';'),
              inline_comment_prefixes=None, strict=True,
-             empty_lines_in_values=True, default_section='DEFAULT',
-             interpolation=<unset>, converters=<unset>):
+             empty_lines_in_values=True):
         Create the parser. When `defaults' is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
         must be appropriate for %()s string interpolation.
@@ -135,17 +134,15 @@ import re
 import sys
 import warnings
 
-from backports.configparser.helpers import OrderedDict as _default_dict
-from backports.configparser.helpers import ChainMap as _ChainMap
-from backports.configparser.helpers import from_none, open, str, PY2
+from backports.configparser2.helpers import OrderedDict as _default_dict
+from backports.configparser2.helpers import ChainMap as _ChainMap
+from backports.configparser2.helpers import from_none, open, str, PY2
 
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
-           "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "ParsingError", "MissingSectionHeaderError",
+           "InterpolationSyntaxError", "ParsingError",
+           "MissingSectionHeaderError",
            "ConfigParser", "SafeConfigParser", "RawConfigParser",
-           "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "LegacyInterpolation", "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
 DEFAULTSECT = "DEFAULT"
@@ -254,9 +251,12 @@ class InterpolationMissingOptionError(InterpolationError):
     """A string substitution required a setting which was not available."""
 
     def __init__(self, option, section, rawval, reference):
-        msg = ("Bad value substitution: option {0!r} in section {1!r} contains "
-               "an interpolation key {2!r} which is not a valid option name. "
-               "Raw value: {3!r}".format(option, section, reference, rawval))
+        msg = ("Bad value substitution:\n"
+               "\tsection: [%s]\n"
+               "\toption : %s\n"
+               "\tkey    : %s\n"
+               "\trawval : %s\n"
+               % (section, option, reference, rawval))
         InterpolationError.__init__(self, option, section, msg)
         self.reference = reference
         self.args = (option, section, rawval, reference)
@@ -274,11 +274,11 @@ class InterpolationDepthError(InterpolationError):
     """Raised when substitutions are nested too deeply."""
 
     def __init__(self, option, section, rawval):
-        msg = ("Recursion limit exceeded in value substitution: option {0!r} "
-               "in section {1!r} contains an interpolation key which "
-               "cannot be substituted in {2} steps. Raw value: {3!r}"
-               "".format(option, section, MAX_INTERPOLATION_DEPTH,
-                         rawval))
+        msg = ("Value interpolation too deeply recursive:\n"
+               "\tsection: [%s]\n"
+               "\toption : %s\n"
+               "\trawval : %s\n"
+               % (section, option, rawval))
         InterpolationError.__init__(self, option, section, msg)
         self.args = (option, section, rawval)
 
@@ -374,7 +374,7 @@ class BasicInterpolation(Interpolation):
 
     would resolve the "%(dir)s" to the value of dir.  All reference
     expansions are done late, on demand. If a user needs to use a bare % in
-    a configuration file, she can escape it by writing %%. Other % usage
+    a configuration file, she can escape it by writing %%. Other other % usage
     is considered a user error and raises `InterpolationSyntaxError'."""
 
     _KEYCRE = re.compile(r"%\(([^)]+)\)s")
@@ -394,9 +394,8 @@ class BasicInterpolation(Interpolation):
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
-        rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
-            raise InterpolationDepthError(option, section, rawval)
+            raise InterpolationDepthError(option, section, rest)
         while rest:
             p = rest.find("%")
             if p < 0:
@@ -421,7 +420,7 @@ class BasicInterpolation(Interpolation):
                     v = map[var]
                 except KeyError:
                     raise from_none(InterpolationMissingOptionError(
-                        option, section, rawval, var))
+                        option, section, rest, var))
                 if "%" in v:
                     self._interpolate_some(parser, option, accum, v,
                                            section, map, depth + 1)
@@ -455,9 +454,8 @@ class ExtendedInterpolation(Interpolation):
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
-        rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
-            raise InterpolationDepthError(option, section, rawval)
+            raise InterpolationDepthError(option, section, rest)
         while rest:
             p = rest.find("$")
             if p < 0:
@@ -494,7 +492,7 @@ class ExtendedInterpolation(Interpolation):
                             "More than one ':' found: %r" % (rest,))
                 except (KeyError, NoSectionError, NoOptionError):
                     raise from_none(InterpolationMissingOptionError(
-                        option, section, rawval, ":".join(path)))
+                        option, section, rest, ":".join(path)))
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
@@ -598,12 +596,10 @@ class RawConfigParser(MutableMapping):
         empty_lines_in_values = kwargs.get('empty_lines_in_values', True)
         default_section = kwargs.get('default_section', DEFAULTSECT)
         interpolation = kwargs.get('interpolation', _UNSET)
-        converters = kwargs.get('converters', _UNSET)
 
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()
-        self._converters = ConverterMapping(self)
         self._proxies = self._dict()
         self._proxies[default_section] = SectionProxy(self, default_section)
         if defaults:
@@ -631,8 +627,6 @@ class RawConfigParser(MutableMapping):
             self._interpolation = self._DEFAULT_INTERPOLATION
         if self._interpolation is None:
             self._interpolation = Interpolation()
-        if converters is not _UNSET:
-            self._converters.update(converters)
 
     def defaults(self):
         return self._defaults
@@ -813,40 +807,48 @@ class RawConfigParser(MutableMapping):
     def _get(self, section, conv, option, **kwargs):
         return conv(self.get(section, option, **kwargs))
 
-    def _get_conv(self, section, option, conv, **kwargs):
+    def getint(self, section, option, **kwargs):
         # keyword-only arguments
-        kwargs.setdefault('raw', False)
-        kwargs.setdefault('vars', None)
-        fallback = kwargs.pop('fallback', _UNSET)
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+        fallback = kwargs.get('fallback', _UNSET)
+
         try:
-            return self._get(section, conv, option, **kwargs)
+            return self._get(section, int, option, raw=raw, vars=vars)
         except (NoSectionError, NoOptionError):
             if fallback is _UNSET:
                 raise
-            return fallback
-
-    # getint, getfloat and getboolean provided directly for backwards compat
-    def getint(self, section, option, **kwargs):
-        # keyword-only arguments
-        kwargs.setdefault('raw', False)
-        kwargs.setdefault('vars', None)
-        kwargs.setdefault('fallback', _UNSET)
-        return self._get_conv(section, option, int, **kwargs)
+            else:
+                return fallback
 
     def getfloat(self, section, option, **kwargs):
         # keyword-only arguments
-        kwargs.setdefault('raw', False)
-        kwargs.setdefault('vars', None)
-        kwargs.setdefault('fallback', _UNSET)
-        return self._get_conv(section, option, float, **kwargs)
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+        fallback = kwargs.get('fallback', _UNSET)
+
+        try:
+            return self._get(section, float, option, raw=raw, vars=vars)
+        except (NoSectionError, NoOptionError):
+            if fallback is _UNSET:
+                raise
+            else:
+                return fallback
 
     def getboolean(self, section, option, **kwargs):
         # keyword-only arguments
-        kwargs.setdefault('raw', False)
-        kwargs.setdefault('vars', None)
-        kwargs.setdefault('fallback', _UNSET)
-        return self._get_conv(section, option, self._convert_to_boolean,
-                              **kwargs)
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+        fallback = kwargs.get('fallback', _UNSET)
+
+        try:
+            return self._get(section, self._convert_to_boolean, option,
+                             raw=raw, vars=vars)
+        except (NoSectionError, NoOptionError):
+            if fallback is _UNSET:
+                raise
+            else:
+                return fallback
 
     def items(self, section=_UNSET, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
@@ -1222,10 +1224,6 @@ class RawConfigParser(MutableMapping):
 
         return section, option, value
 
-    @property
-    def converters(self):
-        return self._converters
-
 
 class ConfigParser(RawConfigParser):
     """ConfigParser implementing interpolation."""
@@ -1266,10 +1264,6 @@ class SectionProxy(MutableMapping):
         """Creates a view on a section of the specified `name` in `parser`."""
         self._parser = parser
         self._name = name
-        for conv in parser.converters:
-            key = 'get' + conv
-            getter = functools.partial(self.get, _impl=getattr(parser, key))
-            setattr(self, key, getter)
 
     def __repr__(self):
         return '<Section: {0}>'.format(self._name)
@@ -1303,6 +1297,38 @@ class SectionProxy(MutableMapping):
         else:
             return self._parser.defaults()
 
+    def get(self, option, fallback=None, **kwargs):
+        # keyword-only arguments
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+
+        return self._parser.get(self._name, option, raw=raw, vars=vars,
+                                fallback=fallback)
+
+    def getint(self, option, fallback=None, **kwargs):
+        # keyword-only arguments
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+
+        return self._parser.getint(self._name, option, raw=raw, vars=vars,
+                                   fallback=fallback)
+
+    def getfloat(self, option, fallback=None, **kwargs):
+        # keyword-only arguments
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+
+        return self._parser.getfloat(self._name, option, raw=raw, vars=vars,
+                                     fallback=fallback)
+
+    def getboolean(self, option, fallback=None, **kwargs):
+        # keyword-only arguments
+        raw = kwargs.get('raw', False)
+        vars = kwargs.get('vars', None)
+
+        return self._parser.getboolean(self._name, option, raw=raw, vars=vars,
+                                       fallback=fallback)
+
     @property
     def parser(self):
         # The parser object of the proxy is read-only.
@@ -1312,79 +1338,3 @@ class SectionProxy(MutableMapping):
     def name(self):
         # The name of the section on a proxy is read-only.
         return self._name
-
-    def get(self, option, fallback=None, **kwargs):
-        """Get an option value.
-
-        Unless `fallback` is provided, `None` will be returned if the option
-        is not found.
-
-        """
-        # keyword-only arguments
-        kwargs.setdefault('raw', False)
-        kwargs.setdefault('vars', None)
-        _impl = kwargs.pop('_impl', None)
-        # If `_impl` is provided, it should be a getter method on the parser
-        # object that provides the desired type conversion.
-        if not _impl:
-            _impl = self._parser.get
-        return _impl(self._name, option, fallback=fallback, **kwargs)
-
-
-class ConverterMapping(MutableMapping):
-    """Enables reuse of get*() methods between the parser and section proxies.
-
-    If a parser class implements a getter directly, the value for the given
-    key will be ``None``. The presence of the converter name here enables
-    section proxies to find and use the implementation on the parser class.
-    """
-
-    GETTERCRE = re.compile(r"^get(?P<name>.+)$")
-
-    def __init__(self, parser):
-        self._parser = parser
-        self._data = {}
-        for getter in dir(self._parser):
-            m = self.GETTERCRE.match(getter)
-            if not m or not callable(getattr(self._parser, getter)):
-                continue
-            self._data[m.group('name')] = None   # See class docstring.
-
-    def __getitem__(self, key):
-        return self._data[key]
-
-    def __setitem__(self, key, value):
-        try:
-            k = 'get' + key
-        except TypeError:
-            raise ValueError('Incompatible key: {} (type: {})'
-                             ''.format(key, type(key)))
-        if k == 'get':
-            raise ValueError('Incompatible key: cannot use "" as a name')
-        self._data[key] = value
-        func = functools.partial(self._parser._get_conv, conv=value)
-        func.converter = value
-        setattr(self._parser, k, func)
-        for proxy in self._parser.values():
-            getter = functools.partial(proxy.get, _impl=func)
-            setattr(proxy, k, getter)
-
-    def __delitem__(self, key):
-        try:
-            k = 'get' + (key or None)
-        except TypeError:
-            raise KeyError(key)
-        del self._data[key]
-        for inst in itertools.chain((self._parser,), self._parser.values()):
-            try:
-                delattr(inst, k)
-            except AttributeError:
-                # don't raise since the entry was present in _data, silently
-                # clean up
-                continue
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
