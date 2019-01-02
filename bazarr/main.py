@@ -476,7 +476,7 @@ def redirect_root():
         redirect(base_url + 'series')
     elif settings.general.getboolean('use_radarr'):
         redirect(base_url + 'movies')
-    elif not os.path.exists(os.path.join(config_dir, 'config/config.ini')):
+    elif not settings.general.enabled_providers:
         redirect(base_url + 'wizard')
     else:
         redirect(base_url + 'settings')
