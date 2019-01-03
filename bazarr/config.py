@@ -66,11 +66,15 @@ defaults = {
 },
     'opensubtitles': {
         'username': '',
-        'password': ''
+        'password': '',
+        'vip': 'False',
+        'ssl': 'False',
+        'timeout': '15'
 },
     'addic7ed': {
         'username': '',
-        'password': ''
+        'password': '',
+        'random_agents': 'False'
 },
     'legendastv': {
         'username': '',

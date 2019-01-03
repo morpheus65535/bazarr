@@ -15,17 +15,19 @@ def get_providers():
 
 def get_providers_auth():
     providers_auth = {
-    'addic7ed': {
-        'username': settings.addic7ed.username,
-        'password': settings.addic7ed.password,
-    },
-    'opensubtitles': {
-        'username': settings.opensubtitles.username,
-        'password': settings.opensubtitles.password,
-    },
-    'legendastv': {
-        'username': settings.legendastv.username,
-        'password': settings.legendastv.password,
-    }}
-
+     'addic7ed': {'username': settings.addic7ed.username,
+                  'password': settings.addic7ed.password,
+                  'use_random_agents': settings.addic7ed.getboolean('random_agents'),
+                  },
+     'opensubtitles': {'username': settings.opensubtitles.username,
+                       'password': settings.opensubtitles.password,
+                       'is_vip': settings.opensubtitles.getboolean('vip'),
+                       'use_ssl': settings.opensubtitles.getboolean('ssl'),
+                       'timeout': int(settings.opensubtitles.timeout) or 15,
+                       },
+     'legendastv': {'username': settings.legendastv.username,
+                    'password': settings.legendastv.password,
+                    }
+     }
+    
     return providers_auth
