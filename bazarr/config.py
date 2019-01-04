@@ -67,9 +67,11 @@ defaults = {
     'opensubtitles': {
         'username': '',
         'password': '',
+        'use_tag_search': 'False',
         'vip': 'False',
         'ssl': 'False',
-        'timeout': '15'
+        'timeout': '15',
+        'skip_wrong_fps': 'False'
 },
     'addic7ed': {
         'username': '',
@@ -79,6 +81,9 @@ defaults = {
     'legendastv': {
         'username': '',
         'password': ''
+},
+    'assrt': {
+        'token': ''
 }}
 
 settings = simpleconfigparser(defaults=defaults)

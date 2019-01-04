@@ -46,6 +46,7 @@ from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
+from helper import path_replace_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
