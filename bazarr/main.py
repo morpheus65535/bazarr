@@ -1736,7 +1736,7 @@ def api_history():
 def test_url(protocol, url):
     url = urllib.unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False).json()['version']
+        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
     except:
         return dict(status=False)
     else:
