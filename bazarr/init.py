@@ -5,7 +5,10 @@ import logging
 import time
 
 from cork import Cork
-from configparser import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from configparser2 import ConfigParser
 from config import settings
 from check_update import check_releases
 from get_argv import config_dir
@@ -93,9 +96,13 @@ try:
     db.close()
     
     providers_list = []
-    if len(enabled_providers) > 0:
+    if enabled_providers:
         for provider in enabled_providers:
             providers_list.append(provider[0])
+    else:
+        providers_list = None
+        
+    if settings_providers:
         for provider in settings_providers:
             if provider[0] == 'opensubtitles':
                 settings.opensubtitles.username = provider[2]
@@ -106,8 +113,6 @@ try:
             elif provider[0] == 'legendastv':
                 settings.legendastv.username = provider[2]
                 settings.legendastv.password = provider[3]
-    else:
-        providers_list = None
 
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
     with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
