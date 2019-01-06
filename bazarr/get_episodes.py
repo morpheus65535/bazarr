@@ -35,7 +35,7 @@ def sync_episodes():
     c = db.cursor()
 
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrEpisodeId FROM table_episodes').fetchall()
+    current_episodes_db = c.execute('SELECT sonarrEpisodeId, path FROM table_episodes').fetchall()
 
     current_episodes_db_list = [x[0] for x in current_episodes_db]
     current_episodes_sonarr = []
@@ -99,15 +99,16 @@ def sync_episodes():
         c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode,))
         db.commit()
 
+    # Get episodes list after INSERT and UPDATE
+    episodes_now_in_db = c.execute('SELECT sonarrEpisodeId, path FROM table_episodes').fetchall()
+
     # Close database connection
     c.close()
 
-    # TODO: Commented until I find a way to make it store only episodes really updated.
-    #for updated_episode in episodes_to_update:
-    #    store_subtitles(path_replace(updated_episode[1]))
-
-    for added_episode in episodes_to_add:
-        store_subtitles(path_replace(added_episode[3]))
+    # Get only episodes added or modified and store subtitles for them
+    altered_episodes = set(episodes_now_in_db).difference(set(current_episodes_db))
+    for altered_episode in altered_episodes:
+        store_subtitles(path_replace(altered_episode[1]))
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 
