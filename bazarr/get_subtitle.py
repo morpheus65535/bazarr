@@ -486,14 +486,19 @@ def wanted_search_missing_subtitles():
     c = db.cursor()
 
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
+        monitored_only_query_string_sonarr = ' AND monitored = "True"'
     else:
-        monitored_only_query_string = ""
+        monitored_only_query_string_sonarr = ""
+    
+    if settings.radarr.getboolean('only_monitored'):
+        monitored_only_query_string_radarr = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string_radarr = ""
 
-    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
+    c.execute("SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr)
     episodes = c.fetchall()
 
-    c.execute("SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
+    c.execute("SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr)
     movies = c.fetchall()
 
     c.close()
