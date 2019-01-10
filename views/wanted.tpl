@@ -38,16 +38,22 @@
 		% import sqlite3
 		% from config import settings
 
-        %if settings.general.getboolean('only_monitored'):
-        %    monitored_only_query_string = ' AND monitored = "True"'
+        %if settings.sonarr.getboolean('only_monitored'):
+        %    monitored_only_query_string_sonarr = ' AND monitored = "True"'
         %else:
-        %    monitored_only_query_string = ""
+        %    monitored_only_query_string_sonarr = ""
+        %end
+
+        %if settings.radarr.getboolean('only_monitored'):
+        %    monitored_only_query_string_radarr = ' AND monitored = "True"'
+        %else:
+        %    monitored_only_query_string_radarr = ""
         %end
 
         % conn = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
     	% c = conn.cursor()
-		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string).fetchone()
-		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string).fetchone()
+		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr).fetchone()
+		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr).fetchone()
 		% c.close()
 
 		<div id='loader' class="ui page dimmer">

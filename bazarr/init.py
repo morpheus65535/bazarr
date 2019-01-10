@@ -85,6 +85,14 @@ if cfg.has_section('general'):
         cfg.set('general', 'debug', 'False')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
+    
+    if cfg.has_option('general', 'only_monitored'):
+        only_monitored = cfg.get('general', 'only_monitored')
+        cfg.set('sonarr', 'only_monitored', str(only_monitored))
+        cfg.set('radarr', 'only_monitored', str(only_monitored))
+        cfg.remove_option('general', 'only_monitored')
+        with open(config_file, 'w+') as configfile:
+            cfg.write(configfile)
 
 # Move providers settings from DB to config file
 try:

@@ -780,6 +780,26 @@
                                 </div>
                             </div>
                         </div>
+
+                            <div class="middle aligned row">
+                    <div class="right aligned four wide column">
+                        <label>Download only monitored</label>
+                    </div>
+                    <div class="one wide column">
+                        <div id="settings_only_monitored_sonarr" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('only_monitored')}}>
+                            <input name="settings_sonarr_only_monitored" type="checkbox">
+                            <label></label>
+                        </div>
+                    </div>
+                    <div class="collapsed column">
+                        <div class="collapsed center aligned column">
+                            <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored episodes in Sonarr." data-inverted="">
+                                <i class="help circle large icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                     </div>
                 </div>
 
@@ -906,6 +926,26 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                    <div class="right aligned four wide column">
+                        <label>Download only monitored</label>
+                    </div>
+                    <div class="one wide column">
+                        <div id="settings_only_monitored_radarr" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('only_monitored')}}>
+                            <input name="settings_radarr_only_monitored" type="checkbox">
+                            <label></label>
+                        </div>
+                    </div>
+                    <div class="collapsed column">
+                        <div class="collapsed center aligned column">
+                            <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored movies in Radarr." data-inverted="">
+                                <i class="help circle large icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                     </div>
                 </div>
 
@@ -1012,25 +1052,6 @@
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon" data-tooltip="Use embedded subtitles in media files when determining missing ones." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Download only monitored</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="settings_only_monitored" class="ui toggle checkbox" data-monitored={{settings.general.getboolean('only_monitored')}}>
-                                    <input name="settings_general_only_monitored" type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored episodes/movies in Sonarr/Radarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1424,10 +1445,16 @@
                 $("#settings_embedded").checkbox('uncheck');
             }
 
-    if ($('#settings_only_monitored').data("monitored") === "True") {
-                $("#settings_only_monitored").checkbox('check');
+    if ($('#settings_only_monitored_sonarr').data("monitored") === "True") {
+                $("#settings_only_monitored_sonarr").checkbox('check');
             } else {
-                $("#settings_only_monitored").checkbox('uncheck');
+                $("#settings_only_monitored_sonarr").checkbox('uncheck');
+            }
+
+    if ($('#settings_only_monitored_radarr').data("monitored") === "True") {
+                $("#settings_only_monitored_radarr").checkbox('check');
+            } else {
+                $("#settings_only_monitored_radarr").checkbox('uncheck');
             }
 
     if ($('#settings_adaptive_searching').data("adaptive") === "True") {

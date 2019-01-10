@@ -266,11 +266,6 @@ def save_wizard():
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
-    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
-    if settings_general_adaptive_searching is None:
-        settings_general_adaptive_searching = 'False'
-    else:
-        settings_general_adaptive_searching = 'True'
     settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
     if settings_general_use_sonarr is None:
         settings_general_use_sonarr = 'False'
@@ -290,7 +285,6 @@ def save_wizard():
     settings.general.use_sonarr = text_type(settings_general_use_sonarr)
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
-    settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -301,12 +295,18 @@ def save_wizard():
     else:
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    settings_sonarr_only_monitored = request.forms.get('settings_sonarr_only_monitored')
+    if settings_sonarr_only_monitored is None:
+        settings_sonarr_only_monitored = 'False'
+    else:
+        settings_sonarr_only_monitored = 'True'
     
     settings.sonarr.ip = text_type(settings_sonarr_ip)
     settings.sonarr.port = text_type(settings_sonarr_port)
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
     settings.sonarr.ssl = text_type(settings_sonarr_ssl)
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
+    settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
     
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
@@ -317,16 +317,18 @@ def save_wizard():
     else:
         settings_radarr_ssl = 'True'
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
-    if settings_radarr_apikey != '':
-        settings.general.use_radarr = 'True'
+    settings_radarr_only_monitored = request.forms.get('settings_radarr_only_monitored')
+    if settings_radarr_only_monitored is None:
+        settings_radarr_only_monitored = 'False'
     else:
-        settings.general.use_radarr = 'False'
+        settings_radarr_only_monitored = 'True'
     
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
     settings.radarr.ssl = text_type(settings_radarr_ssl)
     settings.radarr.apikey = text_type(settings_radarr_apikey)
+    settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
@@ -477,7 +479,7 @@ def series():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    if settings.general.getboolean('only_monitored'):
+    if settings.sonarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -927,7 +929,7 @@ def wantedseries():
     db.create_function("path_substitution", 1, path_replace)
     c = db.cursor()
 
-    if settings.general.getboolean('only_monitored'):
+    if settings.sonarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -956,7 +958,7 @@ def wantedmovies():
     db.create_function("path_substitution", 1, path_replace_movie)
     c = db.cursor()
 
-    if settings.general.getboolean('only_monitored'):
+    if settings.radarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -1053,11 +1055,6 @@ def save_settings():
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
-    settings_general_only_monitored = request.forms.get('settings_general_only_monitored')
-    if settings_general_only_monitored is None:
-        settings_general_only_monitored = 'False'
-    else:
-        settings_general_only_monitored = 'True'
     settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
     if settings_general_adaptive_searching is None:
         settings_general_adaptive_searching = 'False'
@@ -1104,7 +1101,6 @@ def save_settings():
     settings.general.page_size = text_type(settings_page_size)
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
-    settings.general.only_monitored = text_type(settings_general_only_monitored)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
 
     if after != before:
@@ -1180,6 +1176,11 @@ def save_settings():
     else:
         settings_sonarr_ssl = 'True'
     settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    settings_sonarr_only_monitored = request.forms.get('settings_sonarr_only_monitored')
+    if settings_sonarr_only_monitored is None:
+        settings_sonarr_only_monitored = 'False'
+    else:
+        settings_sonarr_only_monitored = 'True'
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
 
     settings.sonarr.ip = text_type(settings_sonarr_ip)
@@ -1187,6 +1188,7 @@ def save_settings():
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
     settings.sonarr.ssl = text_type(settings_sonarr_ssl)
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
+    settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
     settings.sonarr.full_update = text_type(settings_sonarr_sync)
 
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
@@ -1198,6 +1200,11 @@ def save_settings():
     else:
         settings_radarr_ssl = 'True'
     settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    settings_radarr_only_monitored = request.forms.get('settings_radarr_only_monitored')
+    if settings_radarr_only_monitored is None:
+        settings_radarr_only_monitored = 'False'
+    else:
+        settings_radarr_only_monitored = 'True'
     settings_radarr_sync = request.forms.get('settings_radarr_sync')
 
     settings.radarr.ip = text_type(settings_radarr_ip)
@@ -1205,6 +1212,7 @@ def save_settings():
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
     settings.radarr.ssl = text_type(settings_radarr_ssl)
     settings.radarr.apikey = text_type(settings_radarr_apikey)
+    settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.full_update = text_type(settings_radarr_sync)
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
