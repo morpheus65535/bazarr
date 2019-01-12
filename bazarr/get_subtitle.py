@@ -351,7 +351,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
 
 def series_download_subtitles(no):
-    if settings.general.getboolean('only_monitored'):
+    if settings.sonarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -485,7 +485,7 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    if settings.general.getboolean('only_monitored'):
+    if settings.sonarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -510,7 +510,7 @@ def wanted_search_missing_subtitles():
   
 
 def search_active(timestamp):
-    if settings.general.getboolean('only_monitored'):
+    if settings.general.getboolean('adaptive_searching'):
         search_deadline = timedelta(weeks=3)
         search_delta = timedelta(weeks=1)
         aa = datetime.fromtimestamp(float(timestamp))
