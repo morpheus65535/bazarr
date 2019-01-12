@@ -1287,7 +1287,10 @@ def save_settings():
     # reschedule full update task according to settings
     sonarr_full_update()
 
-    redirect(ref)
+    if ref.find('saved=true') > 0:
+        redirect(ref)
+    else:
+        redirect(ref + "?saved=true")
 
 
 @route(base_url + 'check_update')
