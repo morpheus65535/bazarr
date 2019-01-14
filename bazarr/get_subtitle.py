@@ -345,7 +345,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
 
                     return message
                 else:
-                    logging.error('BAZARR Tried to manually download a subtitles for file: ' + path + " but we weren't able to do (probably throttled by ' + str(subtitle.provider_name) + '. Please retry later or select a subtitles from another provider.")
+                    logging.error("BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(subtitle.provider_name) + ". Please retry later or select a subtitles from another provider.")
                     return None
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
