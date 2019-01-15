@@ -78,7 +78,7 @@ defaults = {
         'password': ''
 }}
 
-settings = simpleconfigparser(defaults=defaults, interpolation=None)
+settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
