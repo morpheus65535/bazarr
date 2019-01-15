@@ -44,11 +44,13 @@ class Subtitle(Subtitle_):
 
     pack_data = None
     _guessed_encoding = None
+    _is_valid = False
 
     def __init__(self, language, hearing_impaired=False, page_link=None, encoding=None, mods=None):
         super(Subtitle, self).__init__(language, hearing_impaired=hearing_impaired, page_link=page_link,
                                        encoding=encoding)
         self.mods = mods
+        self._is_valid = False
 
     def __repr__(self):
         return '<%s %r [%s:%s]>' % (
@@ -212,6 +214,9 @@ class Subtitle(Subtitle_):
         :rtype: bool
 
         """
+        if self._is_valid:
+            return True
+
         text = self.text
         if not text:
             return False
@@ -222,6 +227,7 @@ class Subtitle(Subtitle_):
         except Exception:
             logger.error("PySRT-parsing failed, trying pysubs2")
         else:
+            self._is_valid = True
             return True
 
         # something else, try to return srt
@@ -247,6 +253,7 @@ class Subtitle(Subtitle_):
             logger.exception("Couldn't convert subtitle %s to .srt format: %s", self, traceback.format_exc())
             return False
 
+        self._is_valid = True
         return True
 
     @classmethod
