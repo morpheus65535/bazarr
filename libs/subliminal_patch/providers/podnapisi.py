@@ -18,7 +18,6 @@ except ImportError:
         import xml.etree.cElementTree as etree
     except ImportError:
         import xml.etree.ElementTree as etree
-
 from babelfish import language_converters
 from subliminal import Episode
 from subliminal import Movie

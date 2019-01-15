@@ -84,32 +84,35 @@ class Addic7edProvider(_Addic7edProvider):
         # login
         if self.username and self.password:
             ccks = region.get("addic7ed_cookies", expiration_time=86400)
-            do_login = False
             if ccks != NO_VALUE:
-                self.session.cookies.update(ccks)
-                r = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10)
-                if r.status_code == 302:
-                    logger.info('Addic7ed: Login expired')
-                    do_login = True
-                else:
-                    logger.info('Addic7ed: Reusing old login')
-                    self.logged_in = True
+                try:
+                    self.session.cookies._cookies.update(ccks)
+                    r = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10)
+                    if r.status_code == 302:
+                        logger.info('Addic7ed: Login expired')
+                        region.delete("addic7ed_cookies")
+                    else:
+                        logger.info('Addic7ed: Reusing old login')
+                        self.logged_in = True
+                        return
+                except:
+                    pass
 
-            if do_login:
-                logger.info('Addic7ed: Logging in')
-                data = {'username': self.username, 'password': self.password, 'Submit': 'Log in'}
-                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10)
+            logger.info('Addic7ed: Logging in')
+            data = {'username': self.username, 'password': self.password, 'Submit': 'Log in'}
+            r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
+                                  headers={"Referer": self.server_url + "login.php"})
 
-                if "relax, slow down" in r.content:
-                    raise TooManyRequests(self.username)
+            if "relax, slow down" in r.content:
+                raise TooManyRequests(self.username)
 
-                if r.status_code != 302:
-                    raise AuthenticationError(self.username)
+            if r.status_code != 302:
+                raise AuthenticationError(self.username)
 
-                region.set("addic7ed_cookies", r.cookies)
+            region.set("addic7ed_cookies", self.session.cookies._cookies)
 
-                logger.debug('Addic7ed: Logged in')
-                self.logged_in = True
+            logger.debug('Addic7ed: Logged in')
+            self.logged_in = True
 
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)

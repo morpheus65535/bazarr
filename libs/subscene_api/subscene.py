@@ -25,6 +25,7 @@ this script that does the job by parsing the website"s pages.
 
 # imports
 import re
+
 import enum
 import sys
 
@@ -36,7 +37,7 @@ else:
     from contextlib import suppress
     from urllib2.request import Request, urlopen
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 
 # constants
 HEADERS = {
@@ -207,7 +208,7 @@ def section_exists(soup, section):
     return False
 
 
-def get_first_film(soup, section, session=None):
+def get_first_film(soup, section, year=None, session=None):
     tag_part = SectionsParts[section]
     tag = None
 
@@ -220,12 +221,26 @@ def get_first_film(soup, section, session=None):
     if not tag:
         return
 
-    url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
+    url = None
+
+    if not year:
+        url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
+    else:
+        for t in tag.findNext("ul").findAll("li"):
+            if isinstance(t, NavigableString) or not t.div:
+                continue
+
+            if str(year) in t.div.a.string:
+                url = SITE_DOMAIN + t.div.a.get("href")
+                break
+        if not url:
+            return
+
     return Film.from_url(url, session=session)
 
 
-def search(term, session=None, limit_to=SearchTypes.Exact):
-    soup = soup_for("%s/subtitles/title?q=%s" % (SITE_DOMAIN, term), session=session)
+def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact):
+    soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, "release" if release else "title", term), session=session)
 
     if "Subtitle search by" in str(soup):
         rows = soup.find("table").tbody.find_all("tr")
@@ -234,7 +249,7 @@ def search(term, session=None, limit_to=SearchTypes.Exact):
 
     for junk, search_type in SearchTypes.__members__.items():
         if section_exists(soup, search_type):
-            return get_first_film(soup, search_type)
+            return get_first_film(soup, search_type, year=year, session=session)
 
         if limit_to == search_type:
             return

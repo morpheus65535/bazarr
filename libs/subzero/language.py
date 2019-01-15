@@ -4,7 +4,6 @@ import types
 from babelfish.exceptions import LanguageError
 from babelfish import Language as Language_, basestr
 
-
 repl_map = {
     "dk": "da",
     "nld": "nl",

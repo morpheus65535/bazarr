@@ -150,7 +150,14 @@ class SubstationFormat(FormatBase):
                 if format_ == "ass":
                     return ass_rgba_to_color(v)
                 else:
-                    return ssa_rgb_to_color(v)
+                    try:
+                        return ssa_rgb_to_color(v)
+                    except ValueError:
+                        try:
+                            return ass_rgba_to_color(v)
+                        except:
+                            return Color(255, 255, 255, 0)
+
             elif f in {"bold", "underline", "italic", "strikeout"}:
                 return v == "-1"
             elif f in {"borderstyle", "encoding", "marginl", "marginr", "marginv", "layer", "alphalevel"}:

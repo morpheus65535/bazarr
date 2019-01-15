@@ -134,8 +134,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' \
-                                             '(KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3)' \
+                                             'Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)'
         logger.debug('User-Agent set to %s', self.session.headers['User-Agent'])
         self.session.headers['Referer'] = self.server_url
         logger.debug('Referer set to %s', self.session.headers['Referer'])
@@ -202,7 +202,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                 current_page = int(params['pg'])
 
             try:
-                sublist = soup.select('section.titlovi > ul.titlovi > li')
+                sublist = soup.select('section.titlovi > ul.titlovi > li.subtitleContainer.canEdit')
                 for sub in sublist:
                     # subtitle id
                     sid = sub.find(attrs={'data-id': True}).attrs['data-id']

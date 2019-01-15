@@ -56,7 +56,7 @@ class SSAStyle(object):
         self.encoding = 1 #: Charset
 
         for k, v in fields.items():
-            if k in self.FIELDS:
+            if k in self.FIELDS and v is not None:
                 setattr(self, k, v)
             else:
                 raise ValueError("SSAStyle has no field named %r" % k)

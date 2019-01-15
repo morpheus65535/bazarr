@@ -28,13 +28,16 @@ class CommonFixes(SubtitleTextModification):
         NReProcessor(re.compile(r'(?u)(\w|\b|\s|^)(-\s?-{1,2})'), ur"\1—", name="CM_multidash"),
 
         # line = _/-/\s
-        NReProcessor(re.compile(r'(?u)(^\W*[-_.:]+\W*$)'), "", name="CM_non_word_only"),
+        NReProcessor(re.compile(r'(?u)(^\W*[-_.:>~]+\W*$)'), "", name="CM_non_word_only"),
+
+        # remove >>
+        NReProcessor(re.compile(r'(?u)^\s?>>\s*'), "", name="CM_leading_crocodiles"),
 
         # line = : text
         NReProcessor(re.compile(r'(?u)(^\W*:\s*(?=\w+))'), "", name="CM_empty_colon_start"),
 
         # fix music symbols
-        NReProcessor(re.compile(ur'(?u)(^[-\s]*[*#¶]+\s*)|(\s*[*#¶]+\s*$)'),
+        NReProcessor(re.compile(ur'(?u)(^[-\s>~]*[*#¶]+\s*)|(\s*[*#¶]+\s*$)'),
                      lambda x: u"♪ " if x.group(1) else u" ♪",
                      name="CM_music_symbols"),
 
@@ -84,9 +87,6 @@ class CommonFixes(SubtitleTextModification):
         # ReProcessor(re.compile(r'(?u)("[^"\s][^"]+")([^\s.,!?)\]]+)'), r"\1 \2", name="CM_space_after_dblquote"),
 
         # space before ending doublequote?
-
-        # remove >>
-        NReProcessor(re.compile(r'(?u)^\s?>>\s*'), "", name="CM_leading_crocodiles"),
 
         # replace uppercase I with lowercase L in words
         NReProcessor(re.compile(ur'(?u)([a-zà-ž]+)(I+)'),
