@@ -367,8 +367,8 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
 
-                not_matched = scores - matches
                 score = compute_score(matches, s, video, hearing_impaired=hi)
+                not_matched = scores - matches
                 s.score = score
                 if score < min_score:
                     continue
