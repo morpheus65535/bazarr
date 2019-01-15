@@ -467,13 +467,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                         return message
                 else:
                     logging.error(
-                        'BAZARR Tried to manually download a subtitles for file: ' + path + " but we weren't able to do (probably throttled by ' + str(subtitle.provider_name) + '. Please retry later or select a subtitles from another provider.")
+                        "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(subtitle.provider_name) + ". Please retry later or select a subtitles from another provider.")
                     return None
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
 
 def series_download_subtitles(no):
-    if settings.general.getboolean('only_monitored'):
+    if settings.sonarr.getboolean('only_monitored'):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
@@ -625,17 +625,22 @@ def wanted_search_missing_subtitles():
     db.create_function("path_substitution_movie", 1, path_replace_movie)
     c = db.cursor()
 
-    if settings.general.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
+    if settings.sonarr.getboolean('only_monitored'):
+        monitored_only_query_string_sonarr = ' AND monitored = "True"'
     else:
-        monitored_only_query_string = ""
+        monitored_only_query_string_sonarr = ""
+    
+    if settings.radarr.getboolean('only_monitored'):
+        monitored_only_query_string_radarr = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string_radarr = ""
 
     c.execute(
-        "SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
+        "SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr)
     episodes = c.fetchall()
 
     c.execute(
-        "SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
+        "SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr)
     movies = c.fetchall()
 
     c.close()
@@ -652,7 +657,7 @@ def wanted_search_missing_subtitles():
 
 
 def search_active(timestamp):
-    if settings.general.getboolean('only_monitored'):
+    if settings.general.getboolean('adaptive_searching'):
         search_deadline = timedelta(weeks=3)
         search_delta = timedelta(weeks=1)
         aa = datetime.fromtimestamp(float(timestamp))

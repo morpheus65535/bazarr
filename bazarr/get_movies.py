@@ -42,7 +42,7 @@ def update_movies():
             # Get current movies in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
-            current_movies_db = c.execute('SELECT tmdbId FROM table_movies').fetchall()
+            current_movies_db = c.execute('SELECT tmdbId, path FROM table_movies').fetchall()
             db.close()
 
             current_movies_db_list = [x[0] for x in current_movies_db]
@@ -106,23 +106,23 @@ def update_movies():
             else:
                 added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
                 db.commit()
-            db.close()
 
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
             for removed_movie in removed_movies:
                 c.execute('DELETE FROM table_movies WHERE tmdbId = ?', (removed_movie,))
-            db.commit()
+                db.commit()
+
+            # Get movies list after INSERT and UPDATE
+            movies_now_in_db = c.execute('SELECT tmdbId, path FROM table_movies').fetchall()
+
+            # Close database connection
             db.close()
 
-            for added_movie in movies_to_add:
-                store_subtitles_movie(path_replace_movie(added_movie[1]))
-
-            # TODO: Commented until I find a way to make it store only episodes really updated.
-            # for updated_movie in movies_to_update:
-            #     store_subtitles_movie(path_replace_movie(updated_movie[1]))
+            # Get only movies added or modified and store subtitles for them
+            altered_movies = set(movies_now_in_db).difference(set(current_movies_db))
+            for altered_movie in altered_movies:
+                store_subtitles_movie(path_replace_movie(altered_movie[1]))
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
 

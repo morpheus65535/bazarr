@@ -31,7 +31,6 @@ defaults = {
         'page_size': '25',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
-        'only_monitored': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': ''
 },
@@ -46,7 +45,8 @@ defaults = {
         'base_url': '/',
         'ssl': 'False',
         'apikey': '',
-        'full_update': 'Daily'
+        'full_update': 'Daily',
+        'only_monitored': 'False',
 },
     'radarr': {
         'ip': '127.0.0.1',
@@ -54,7 +54,8 @@ defaults = {
         'base_url': '/',
         'ssl': 'False',
         'apikey': '',
-        'full_update': 'Daily'
+        'full_update': 'Daily',
+        'only_monitored': 'False',
 },
     'proxy': {
         'type': 'None',

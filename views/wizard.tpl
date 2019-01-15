@@ -48,7 +48,7 @@
     </head>
     <body>
         <div id='loader' class="ui page dimmer">
-            <div class="ui indeterminate text loader">Loading...</div>
+            <div class="ui indeterminate text loader">Saving settings...</div>
         </div>
 
         <div class="ui modal" id="browsemodal">
@@ -340,10 +340,185 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Enabled providers</label>
+                                <label>Addic7ed</label>
                             </div>
+                            <div class="one wide column">
+                                <div id="addic7ed" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="addic7ed_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_addic7ed_username" type="text" value="{{settings.addic7ed.username if settings.addic7ed.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_addic7ed_password" type="password" value="{{settings.addic7ed.password if settings.addic7ed.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>LegendasTV</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="legendastv" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="legendastv_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_legendastv_username" type="text" value="{{settings.legendastv.username if settings.legendastv.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_legendastv_password" type="password" value="{{settings.legendastv.password if settings.legendastv.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>OpenSubtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="opensubtitles" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="opensubtitles_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_opensubtitles_username" type="text" value="{{settings.opensubtitles.username if settings.opensubtitles.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_opensubtitles_password" type="password" value="{{settings.opensubtitles.password if settings.opensubtitles.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Podnapisi</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="podnapisi" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="podnapisi_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Shooter</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="shooter" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="shooter_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subscenter</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subscenter" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subcenter_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>TheSubDB</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="thesubdb" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="thesubdb_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>TVSubtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="tvsubtitles" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tvsubtitles_option" class="ui grid container">
+
+                        </div>
+
+
+                        <div class="middle aligned row">
                             <div class="eleven wide column">
-                                <div class='field'>
+                                <div class='field' hidden>
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
                                         %enabled_providers = []
@@ -649,6 +824,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="sonarr_hide middle aligned row">
+                        <div class="right aligned four wide column">
+                            <label>Download only monitored</label>
+                        </div>
+                        <div class="one wide column">
+                            <div id="settings_only_monitored_sonarr" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('only_monitored')}}>
+                                <input name="settings_sonarr_only_monitored" type="checkbox">
+                                <label></label>
+                            </div>
+                        </div>
+                        <div class="collapsed column">
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored episodes in Sonarr." data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
 
@@ -781,6 +975,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="radarr_hide middle aligned row">
+                        <div class="right aligned four wide column">
+                            <label>Download only monitored</label>
+                        </div>
+                        <div class="one wide column">
+                            <div id="settings_only_monitored_radarr" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('only_monitored')}}>
+                                <input name="settings_radarr_only_monitored" type="checkbox">
+                                <label></label>
+                            </div>
+                        </div>
+                        <div class="collapsed column">
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored movies in Radarr." data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
 
@@ -792,6 +1005,33 @@
 </html>
 
 <script>
+    function getQueryVariable(variable)
+    {
+           var query = window.location.search.substring(1);
+           var vars = query.split("&");
+           for (var i=0;i<vars.length;i++) {
+                   var pair = vars[i].split("=");
+                   if(pair[0] == variable){return pair[1];}
+           }
+           return(false);
+    }
+
+    if (getQueryVariable("saved") == 'true') {
+        new Noty({
+			text: 'Settings saved.',
+			timeout: 5000,
+			progressBar: false,
+			animation: {
+				open: null,
+				close: null
+			},
+			killer: true,
+    		type: 'info',
+			layout: 'bottomRight',
+			theme: 'semanticui'
+		}).show();
+    }
+
 $(function() {
 
   $('.next1').on('click', function(e) {
@@ -967,6 +1207,18 @@ $(function() {
         $("#settings_movie_default_languages").addClass('disabled');
         $("#settings_movie_default_hi_div").addClass('disabled');
     }
+
+    if ($('#settings_only_monitored_sonarr').data("monitored") === "True") {
+                $("#settings_only_monitored_sonarr").checkbox('check');
+            } else {
+                $("#settings_only_monitored_sonarr").checkbox('uncheck');
+            }
+
+    if ($('#settings_only_monitored_radarr').data("monitored") === "True") {
+                $("#settings_only_monitored_radarr").checkbox('check');
+            } else {
+                $("#settings_only_monitored_radarr").checkbox('uncheck');
+            }
 
     $('#settings_movie_default_enabled_div').checkbox({
         onChecked: function() {
@@ -1180,9 +1432,26 @@ $(function() {
         })
     ;
 
-    $('#settings_providers').dropdown('setting', 'onChange', function(){
-        $('.form').form('validate field', 'settings_subliminal_providers');
+    $("#settings_providers > option").each(function() {
+        $('#'+$(this).val()+'_option').hide();
     });
+
+    $("#settings_providers > option:selected").each(function() {
+        $('[id='+this.value+']').checkbox('check');
+        $('#'+$(this).val()+'_option').show();
+    });
+
+    $('.provider').checkbox({
+        onChecked: function() {
+            $('#settings_providers').dropdown('set selected', $(this).parent().attr('id'));
+            $('#'+$(this).parent().attr('id')+'_option').show();
+        },
+        onUnchecked: function() {
+            $('#settings_providers').dropdown('remove selected', $(this).parent().attr('id'));
+            $('#'+$(this).parent().attr('id')+'_option').hide();
+        }
+    });
+
     $('#settings_languages').dropdown('setting', 'onChange', function(){
         $('.form').form('validate field', 'settings_subliminal_languages');
     });
