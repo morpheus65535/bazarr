@@ -6,7 +6,7 @@ import logging
 import time
 
 from cork import Cork
-from configparser import ConfigParser
+from ConfigParser import ConfigParser
 from config import settings
 from check_update import check_releases
 from get_args import args
