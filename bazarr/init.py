@@ -34,7 +34,7 @@ if not os.path.exists(os.path.join(args.config_dir, 'db')):
 if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
-    
+
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
     check_releases()
     logging.debug("BAZARR Created releases file")
@@ -46,20 +46,20 @@ try:
     # Get SQL script from file
     fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
     script = fd.read()
-
+    
     # Close SQL script file
     fd.close()
-
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-
+    
     # Execute script and commit change to database
     c.executescript(script)
-
+    
     # Close database connection
     db.close()
-
+    
     logging.info('BAZARR Database created successfully')
 except:
     pass
@@ -80,7 +80,7 @@ if cfg.has_section('auth'):
         cfg.remove_option('auth', 'enabled')
         with open(config_file, 'w+') as configfile:
             cfg.write(configfile)
-            
+
 if cfg.has_section('general'):
     if cfg.has_option('general', 'log_level'):
         cfg.remove_option('general', 'log_level')
@@ -127,16 +127,16 @@ try:
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
     with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-    
+
 except:
     pass
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
-
+    
     cork._store.roles[''] = 100
     cork._store.save_roles()
-
+    
     tstamp = str(time.time())
     username = password = ''
     cork._store.users[username] = {

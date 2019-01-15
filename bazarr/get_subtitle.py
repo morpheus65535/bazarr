@@ -56,13 +56,13 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         # use the sceneName but keep the folder structure for better guessing
         path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
         dont_use_actual_file = True
-
+    
     try:
         video = parse_video(path, hints=hints, providers=providers, dry_run=dont_use_actual_file)
         video.used_scene_name = dont_use_actual_file
         video.original_name = original_name
         return video
-
+    
     except:
         logging.exception("BAZARR Error trying to get video information for this file: " + path)
 
@@ -87,7 +87,7 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
         scores = subliminal_scores.episode_scores.keys()
         if video.is_special:
             min_score = max_score * min_score_special_ep / 100.0
-
+    
     return min_score, max_score, set(scores)
 
 
@@ -113,30 +113,30 @@ def force_unicode(s):
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
-
+    
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
         hi = True
     else:
         hi = False
     language_set = set()
-
+    
     if not isinstance(language, types.ListType):
         language = [language]
-
+    
     for l in language:
         if l == 'pob':
             language_set.add(Language('por', 'BR'))
         else:
             language_set.add(Language(l))
-
+    
     use_scenename = settings.general.getboolean('use_scenename')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-
+    
     # todo:
     """
     AsyncProviderPool:
@@ -147,7 +147,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
         post_download_hook=None,
         language_hook=None
     """
-
+    
     """
     throttle_callback:
     
@@ -221,12 +221,12 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                  }
 
     """
-
+    
     video = get_video(path, title, sceneName, use_scenename, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
-
+        
         downloaded_subtitles = download_best_subtitles({video}, language_set, int(min_score), hi,
                                                        providers=providers,
                                                        provider_configs=providers_auth,
@@ -238,13 +238,13 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                                        pre_download_hook=None,  # fixme
                                                        post_download_hook=None,  # fixme
                                                        language_hook=None)  # fixme
-
+        
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.iteritems():
                 if not subtitles:
                     continue
-
+                
                 try:
                     saved_subtitles = save_subtitles(video.original_name, subtitles, single=single,
                                                      tags=None,  # fixme
@@ -271,7 +271,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                         else:
                             message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
-
+                        
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3)
@@ -282,15 +282,15 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                     # wait for the process to terminate
                                     out_codepage, err_codepage = codepage.communicate()
                                     encoding = out_codepage.split(':')[-1].strip()
-
+                                
                                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                                            stderr=subprocess.PIPE)
                                 # wait for the process to terminate
                                 out, err = process.communicate()
-
+                                
                                 if os.name == 'nt':
                                     out = out.decode(encoding)
-
+                            
                             except:
                                 if out == "":
                                     logging.error(
@@ -303,10 +303,10 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                         'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-
+                        
                         # fixme: support multiple languages at once
                         return message
-
+        
         if not saved_any:
             logging.debug('BAZARR No subtitles were found for this file: ' + path)
             return None
@@ -315,9 +315,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
-
+    
     final_subtitles = []
-
+    
     if hi == "True":
         hi = True
     else:
@@ -329,18 +329,18 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
             language_set.add(Language('por', 'BR'))
         else:
             language_set.add(Language(lang))
-
+    
     use_scenename = settings.general.getboolean('use_scenename')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
-
+    
     video = get_video(path, title, sceneName, use_scenename, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
-
+        
         try:
             subtitles = list_subtitles([video], language_set,
                                        providers=providers,
@@ -352,19 +352,19 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
             logging.exception("BAZARR Error trying to get subtitle list from provider for this file: " + path)
         else:
             subtitles_list = []
-
+            
             for s in subtitles[video]:
                 try:
                     matches = s.get_matches(video)
                 except AttributeError:
                     continue
-
+                
                 # skip wrong season/episodes
                 if media_type == "series":
                     can_verify_series = True
                     if not s.hash_verifiable and "hash" in matches:
                         can_verify_series = False
-
+                    
                     if can_verify_series and not {"series", "season", "episode"}.issubset(matches):
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
@@ -374,14 +374,14 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
                 s.score = score
                 if score < min_score:
                     continue
-
+                
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched)))
-
+            
             final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
@@ -390,13 +390,12 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
 
 def manual_download_subtitle(path, language, hi, subtitle, provider, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually downloading subtitles for this file: ' + path)
-
+    
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = settings.general.getboolean('use_scenename')
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-
     video = get_video(path, title, sceneName, use_scenename, providers={provider}, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
@@ -416,7 +415,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 score = round(subtitle.score / max_score * 100, 2)
                 saved_subtitles = save_subtitles(video.original_name, [subtitle], single=single,
                                                  path_decoder=force_unicode)
-
+            
             except Exception as e:
                 logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
                 return
@@ -431,7 +430,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
                             score) + "% using manual search."
-
+                        
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3)
@@ -442,15 +441,15 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                     # wait for the process to terminate
                                     out_codepage, err_codepage = codepage.communicate()
                                     encoding = out_codepage.split(':')[-1].strip()
-
+                                
                                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                                            stderr=subprocess.PIPE)
                                 # wait for the process to terminate
                                 out, err = process.communicate()
-
+                                
                                 if os.name == 'nt':
                                     out = out.decode(encoding)
-
+                            
                             except:
                                 if out == "":
                                     logging.error(
@@ -463,7 +462,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                         'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-
+                        
                         return message
                 else:
                     logging.error(
@@ -477,18 +476,19 @@ def series_download_subtitles(no):
         monitored_only_query_string = ' AND monitored = "True"'
     else:
         monitored_only_query_string = ""
-
+    
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute(
         'SELECT path, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId = ? AND missing_subtitles != "[]"' + monitored_only_query_string,
         (no,)).fetchall()
-    series_details = c_db.execute("SELECT hearing_impaired, title FROM table_shows WHERE sonarrSeriesId = ?", (no,)).fetchone()
+    series_details = c_db.execute("SELECT hearing_impaired, title FROM table_shows WHERE sonarrSeriesId = ?",
+                                  (no,)).fetchone()
     c_db.close()
-
+    
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-
+    
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
             if language is not None:
@@ -509,10 +509,10 @@ def movies_download_subtitles(no):
         "SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title FROM table_movies WHERE radarrId = ?",
         (no,)).fetchone()
     c_db.close()
-
+    
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-
+    
     for language in ast.literal_eval(movie[1]):
         if language is not None:
             message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
@@ -531,10 +531,10 @@ def wanted_download_subtitles(path):
         "SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.failedAttempts, table_shows.title FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'",
         (path_replace_reverse(path),)).fetchall()
     c_db.close()
-
+    
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-
+    
     for episode in episodes_details:
         attempt = episode[6]
         if type(attempt) == unicode:
@@ -547,18 +547,19 @@ def wanted_download_subtitles(path):
                 att = zip(*attempt)[0]
                 if language not in att:
                     attempt.append([language, time.time()])
-
+            
             conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c_db = conn_db.cursor()
             c_db.execute('UPDATE table_episodes SET failedAttempts = ? WHERE sonarrEpisodeId = ?',
                          (unicode(attempt), episode[2]))
             conn_db.commit()
             c_db.close()
-
+            
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
+                        q4ws.append(
+                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                                     episode[4], providers_list, providers_auth, str(episode[5]),
                                                     episode[7], 'series')
@@ -579,10 +580,10 @@ def wanted_download_subtitles_movie(path):
         "SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName, failedAttempts, title FROM table_movies WHERE path = ? AND missing_subtitles != '[]'",
         (path_replace_reverse_movie(path),)).fetchall()
     c_db.close()
-
+    
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-
+    
     for movie in movies_details:
         attempt = movie[6]
         if type(attempt) == unicode:
@@ -595,17 +596,18 @@ def wanted_download_subtitles_movie(path):
                 att = zip(*attempt)[0]
                 if language not in att:
                     attempt.append([language, time.time()])
-
+            
             conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c_db = conn_db.cursor()
             c_db.execute('UPDATE table_movies SET failedAttempts = ? WHERE radarrId = ?', (unicode(attempt), movie[2]))
             conn_db.commit()
             c_db.close()
-
+            
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        q4ws.append('Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
+                        q4ws.append(
+                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
                         message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
                                                     movie[4], providers_list, providers_auth, str(movie[5]), movie[7],
                                                     'movie')
@@ -638,21 +640,21 @@ def wanted_search_missing_subtitles():
     c.execute(
         "SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr)
     episodes = c.fetchall()
-
+    
     c.execute(
         "SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr)
     movies = c.fetchall()
-
+    
     c.close()
-
+    
     if settings.general.getboolean('use_sonarr'):
         for episode in episodes:
             wanted_download_subtitles(episode[0])
-
+    
     if settings.general.getboolean('use_radarr'):
         for movie in movies:
             wanted_download_subtitles_movie(movie[0])
-
+    
     logging.info('BAZARR Finished searching for missing subtitles. Check histories for more information.')
 
 

@@ -6,6 +6,7 @@ from get_series import update_series
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles
 from get_args import args
+
 if not args.no_update:
     from check_update import check_and_apply_update, check_releases
 else:
@@ -70,8 +71,10 @@ if not args.no_update:
         scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                           misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
     else:
-        scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr', name='Update bazarr from source on Github')
-        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15, id='update_release', name='Update release info')
+        scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr',
+                          name='Update bazarr from source on Github')
+        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                          misfire_grace_time=15, id='update_release', name='Update release info')
 else:
     scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
                       id='update_release', name='Update release info')

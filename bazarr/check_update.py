@@ -18,13 +18,13 @@ def gitconfig():
     g = git.Repo.init(current_working_directory)
     config_read = g.config_reader()
     config_write = g.config_writer()
-
+    
     try:
         username = config_read.get_value("user", "name")
     except:
         logging.debug('BAZARR Settings git username')
         config_write.set_value("user", "name", "Bazarr")
-
+    
     try:
         email = config_read.get_value("user", "email")
     except:

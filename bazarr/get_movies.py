@@ -19,12 +19,12 @@ def update_movies():
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
-
+    
     if apikey_radarr is None:
         pass
     else:
         get_profile_list()
-
+        
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
         try:
@@ -44,12 +44,12 @@ def update_movies():
             c = db.cursor()
             current_movies_db = c.execute('SELECT tmdbId, path FROM table_movies').fetchall()
             db.close()
-
+            
             current_movies_db_list = [x[0] for x in current_movies_db]
             current_movies_radarr = []
             movies_to_update = []
             movies_to_add = []
-
+            
             for movie in r.json():
                 q4ws.append("Getting data for this movie: " + movie['title'])
                 if movie['hasFile'] is True:
@@ -68,43 +68,66 @@ def update_movies():
                                 fanart = movie['images'][1]['url']
                             except:
                                 fanart = ""
-
+                            
                             if 'sceneName' in movie['movieFile']:
                                 sceneName = movie['movieFile']['sceneName']
                             else:
                                 sceneName = None
-
+                            
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(unicode(movie['tmdbId']))
-
+                            
                             # Detect file separator
                             if movie['path'][0] == "/":
                                 separator = "/"
                             else:
                                 separator = "\\"
-
+                            
                             if unicode(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append((movie["title"],movie["path"] + separator + movie['movieFile']['relativePath'],movie["tmdbId"],movie["id"],overview,poster,fanart,profile_id_to_language(movie['qualityProfileId']),sceneName,unicode(bool(movie['monitored'])),movie['sortTitle'],movie["tmdbId"]))
+                                movies_to_update.append((movie["title"],
+                                                         movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                         movie["tmdbId"], movie["id"], overview, poster, fanart,
+                                                         profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                         unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                         movie["tmdbId"]))
                             else:
                                 if movie_default_enabled is True:
-                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie_default_language, '[]', movie_default_hi, movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
+                                    movies_to_add.append((movie["title"],
+                                                          movie["path"] + separator + movie['movieFile'][
+                                                              'relativePath'], movie["tmdbId"], movie_default_language,
+                                                          '[]', movie_default_hi, movie["id"], overview, poster, fanart,
+                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                          unicode(bool(movie['monitored'])), movie['sortTitle']))
                                 else:
-                                    movies_to_add.append((movie["title"], movie["path"] + separator + movie['movieFile']['relativePath'], movie["tmdbId"], movie["tmdbId"], movie["tmdbId"], movie["id"], overview, poster, fanart, profile_id_to_language(movie['qualityProfileId']), sceneName, unicode(bool(movie['monitored'])),movie['sortTitle']))
+                                    movies_to_add.append((movie["title"],
+                                                          movie["path"] + separator + movie['movieFile'][
+                                                              'relativePath'], movie["tmdbId"], movie["tmdbId"],
+                                                          movie["tmdbId"], movie["id"], overview, poster, fanart,
+                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                          unicode(bool(movie['monitored'])), movie['sortTitle']))
                         else:
-                            logging.error('BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator + movie['movieFile']['relativePath'])
-
+                            logging.error(
+                                'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
+                                movie['movieFile']['relativePath'])
+            
             # Update or insert movies in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
-
-            updated_result = c.executemany('''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle= ? WHERE tmdbid = ?''', movies_to_update)
+            
+            updated_result = c.executemany(
+                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle= ? WHERE tmdbid = ?''',
+                movies_to_update)
             db.commit()
-
+            
             if movie_default_enabled is True:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany(
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    movies_to_add)
                 db.commit()
             else:
-                added_result = c.executemany('''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''', movies_to_add)
+                added_result = c.executemany(
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    movies_to_add)
                 db.commit()
 
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
@@ -125,20 +148,20 @@ def update_movies():
                 store_subtitles_movie(path_replace_movie(altered_movie[1]))
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
-
+    
     list_missing_subtitles_movies()
     logging.debug('BAZARR All movie missing subtitles updated in database.')
-
+    
     q4ws.append("Update movies list from Radarr is ended.")
 
 
 def get_profile_list():
     apikey_radarr = settings.radarr.apikey
-
+    
     # Get profiles data from radarr
     global profiles_list
     profiles_list = []
-
+    
     url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=15, verify=False)

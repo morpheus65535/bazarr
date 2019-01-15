@@ -12,26 +12,26 @@ def load_language_in_db():
     langs = [[lang.alpha_3, lang.alpha_2, lang.name]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2')]
-
+    
     # Open database connection
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-
+    
     # Insert languages in database table
     c.executemany('''INSERT OR IGNORE INTO table_settings_languages(code3, code2, name) VALUES(?, ?, ?)''', langs)
     c.execute('''INSERT OR IGNORE INTO table_settings_languages(code3, code2, name) VALUES(?, ?, ?)''',
               ('pob', 'pb', 'Brazilian Portuguese'))
-
+    
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
-
+    
     # Update languages in database table
     c.executemany('''UPDATE table_settings_languages SET code3b = ? WHERE code3 = ?''', langs)
-
+    
     # Commit changes to database table
     db.commit()
-
+    
     # Close database connection
     db.close()
 
