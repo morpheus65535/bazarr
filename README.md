@@ -51,3 +51,8 @@ You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tre
 
 * [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
 * Copyright 2010-2017
+
+## Support on Beerpay
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/morpheus65535/bazarr/badge.svg?style=beer-square)](https://beerpay.io/morpheus65535/bazarr)  [![Beerpay](https://beerpay.io/morpheus65535/bazarr/make-wish.svg?style=flat-square)](https://beerpay.io/morpheus65535/bazarr?focus=wish)
