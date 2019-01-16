@@ -51,6 +51,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
     """
     hints = {"title": title, "type": "movie" if media_type == "movie" else "episode"}
     dont_use_actual_file = False
+    original_path = path
     original_name = os.path.basename(path)
     if sceneName != "None" and use_scenename:
         # use the sceneName but keep the folder structure for better guessing
@@ -61,6 +62,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         video = parse_video(path, hints=hints, providers=providers, dry_run=dont_use_actual_file)
         video.used_scene_name = dont_use_actual_file
         video.original_name = original_name
+        video.original_path = original_path
         return video
     
     except:
@@ -246,7 +248,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     continue
                 
                 try:
-                    saved_subtitles = save_subtitles(video.original_name, subtitles, single=single,
+                    saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
                                                      tags=None,  # fixme
                                                      directory=None,  # fixme
                                                      chmod=None,  # fixme
@@ -413,7 +415,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 return
             try:
                 score = round(subtitle.score / max_score * 100, 2)
-                saved_subtitles = save_subtitles(video.original_name, [subtitle], single=single,
+                saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
                                                  path_decoder=force_unicode)
             
             except Exception as e:
