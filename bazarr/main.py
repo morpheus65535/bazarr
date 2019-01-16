@@ -325,6 +325,42 @@ def save_wizard():
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
         settings_subliminal_providers)
+
+    settings_addic7ed_random_agents = request.forms.get('settings_addic7ed_random_agents')
+    if settings_addic7ed_random_agents is None:
+        settings_addic7ed_random_agents = 'False'
+    else:
+        settings_addic7ed_random_agents = 'True'
+
+    settings_opensubtitles_vip = request.forms.get('settings_opensubtitles_vip')
+    if settings_opensubtitles_vip is None:
+        settings_opensubtitles_vip = 'False'
+    else:
+        settings_opensubtitles_vip = 'True'
+
+    settings_opensubtitles_ssl = request.forms.get('settings_opensubtitles_ssl')
+    if settings_opensubtitles_ssl is None:
+        settings_opensubtitles_ssl = 'False'
+    else:
+        settings_opensubtitles_ssl = 'True'
+
+    settings_opensubtitles_skip_wrong_fps = request.forms.get('settings_opensubtitles_skip_wrong_fps')
+    if settings_opensubtitles_skip_wrong_fps is None:
+        settings_opensubtitles_skip_wrong_fps = 'False'
+    else:
+        settings_opensubtitles_skip_wrong_fps = 'True'
+
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
+    settings.assrt.token = request.forms.get('settings_assrt_token')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
+    settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
+    settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
+    settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -371,8 +407,6 @@ def save_wizard():
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-    
-    logging.info('Config file created successfully')
     
     conn.commit()
     c.close()
@@ -1266,13 +1300,43 @@ def save_settings():
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
         settings_subliminal_providers)
+
+    settings_addic7ed_random_agents = request.forms.get('settings_addic7ed_random_agents')
+    if settings_addic7ed_random_agents is None:
+        settings_addic7ed_random_agents = 'False'
+    else:
+        settings_addic7ed_random_agents = 'True'
+
+    settings_opensubtitles_vip = request.forms.get('settings_opensubtitles_vip')
+    if settings_opensubtitles_vip is None:
+        settings_opensubtitles_vip = 'False'
+    else:
+        settings_opensubtitles_vip = 'True'
+        
+    settings_opensubtitles_ssl = request.forms.get('settings_opensubtitles_ssl')
+    if settings_opensubtitles_ssl is None:
+        settings_opensubtitles_ssl = 'False'
+    else:
+        settings_opensubtitles_ssl = 'True'
+        
+    settings_opensubtitles_skip_wrong_fps = request.forms.get('settings_opensubtitles_skip_wrong_fps')
+    if settings_opensubtitles_skip_wrong_fps is None:
+        settings_opensubtitles_skip_wrong_fps = 'False'
+    else:
+        settings_opensubtitles_skip_wrong_fps = 'True'
     
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
+    settings.assrt.token = request.forms.get('settings_assrt_token')
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
     settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
+    settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
+    settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
+    settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
