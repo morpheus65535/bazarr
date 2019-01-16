@@ -3,6 +3,11 @@ Bazarr is a companion application to Sonarr and Radarr. It manages and downloads
 
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
+## Support on Beerpay
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/morpheus65535/bazarr/badge.svg?style=beer-square)](https://beerpay.io/morpheus65535/bazarr)  [![Beerpay](https://beerpay.io/morpheus65535/bazarr/make-wish.svg?style=flat-square)](https://beerpay.io/morpheus65535/bazarr?focus=wish)
+
 # Status
 [![GitHub issues](https://img.shields.io/github/issues/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/issues)
 [![GitHub stars](https://img.shields.io/github/stars/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/stargazers)
@@ -51,8 +56,3 @@ You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tre
 
 * [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
 * Copyright 2010-2017
-
-## Support on Beerpay
-Hey dude! Help me out for a couple of :beers:!
-
-[![Beerpay](https://beerpay.io/morpheus65535/bazarr/badge.svg?style=beer-square)](https://beerpay.io/morpheus65535/bazarr)  [![Beerpay](https://beerpay.io/morpheus65535/bazarr/make-wish.svg?style=flat-square)](https://beerpay.io/morpheus65535/bazarr?focus=wish)
