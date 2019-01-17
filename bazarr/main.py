@@ -332,6 +332,13 @@ def save_wizard():
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(settings_subliminal_providers)
+
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
