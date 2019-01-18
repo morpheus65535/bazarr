@@ -150,7 +150,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        self.session.headers = {'User-Agent': "Bazarr/1"}
 
     def terminate(self):
         self.session.close()

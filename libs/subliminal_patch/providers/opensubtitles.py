@@ -121,7 +121,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
     def get_server_proxy(self, url, timeout=None):
         return ServerProxy(url, SubZeroRequestsTransport(use_https=self.use_ssl, timeout=timeout or self.timeout,
-                                                         user_agent=os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")))
+                                                         user_agent="Bazarr/1"))
 
     def log_in(self, server_url=None):
         if server_url:
@@ -132,7 +132,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         response = self.retry(
             lambda: checked(
                 lambda: self.server.LogIn(self.username, self.password, 'eng',
-                                          os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"))
+                                          "Bazarr/1")
             )
         )
 
