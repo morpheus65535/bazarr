@@ -167,7 +167,8 @@
 		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
-		            radarrId: $(this).attr("data-radarrId")
+		            radarrId: $(this).attr("data-radarrId"),
+                    title: '{{!row[0].replace("'", "\\'")}}'
 		    };
 		    $('#loader_text').text("Downloading subtitles...");
 			$('#loader').addClass('active');

@@ -491,7 +491,7 @@
 		;
 	});
 
-	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
+	function manual_get(button, episodePath, sceneName, hi){
 		const values = {
 				subtitle: $(button).attr("data-subtitle"),
 				provider: $(button).attr("data-provider"),

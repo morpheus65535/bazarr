@@ -175,7 +175,8 @@
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId")
+		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+                    title: '{{!row[0].replace("'", "\\'")}}'
 		    };
 		    $('#loader_text').text("Downloading subtitles...");
 			$('#loader').addClass('active');
