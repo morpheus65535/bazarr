@@ -1092,6 +1092,13 @@
                                     <label></label>
                                 </div>
                             </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Spanish" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div id="argenteam_option" class="ui grid container">
                         </div>
@@ -1158,6 +1165,13 @@
                                     <label></label>
                                 </div>
                             </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Chinese" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div id="assrt_option" class="ui grid container">
                             <div class="middle aligned row">
@@ -1182,6 +1196,13 @@
                                     <label></label>
                                 </div>
                             </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Hungarian" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div id="hosszupuska_option" class="ui grid container">
 
@@ -1195,6 +1216,13 @@
                                 <div id="legendastv" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="mostly pt-BR; UNRAR NEEDED" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1229,6 +1257,13 @@
                                 <div id="napiprojekt" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Polish" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1314,6 +1349,13 @@
                                         <label></label>
                                     </div>
                                 </div>
+                                <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Skip subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1329,36 +1371,6 @@
                             </div>
                         </div>
                         <div id="podnapisi_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Shooter</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="shooter" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="shooter_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Subscenter</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="subscenter" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="subcenter_option" class="ui grid container">
 
                         </div>
 
