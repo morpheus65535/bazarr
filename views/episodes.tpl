@@ -417,7 +417,7 @@
 		});
 	});
 
-	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').on('click', function(){
+	$('a:not(.manual_search), not(#donate), .menu .item, button:not(#config, .cancel)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 

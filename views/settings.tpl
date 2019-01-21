@@ -1215,21 +1215,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Subscenter</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="subscenter" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="subcenter_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>TheSubDB</label>
                             </div>
                             <div class="one wide column">
@@ -1532,7 +1517,7 @@
         .tab()
     ;
 
-    $('a:not(.tabs), button:not(.cancel, .test)').on('click', function(){
+    $('a:not(.tabs, #donate), button:not(.cancel, .test)').on('click', function(){
         $('#loader').addClass('active');
     });
 

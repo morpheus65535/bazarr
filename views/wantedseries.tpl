@@ -146,7 +146,7 @@
 
 
 <script>
-	$('a, button').on('click', function(){
+	$('a:not(#donate), button').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
