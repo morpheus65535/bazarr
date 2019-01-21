@@ -1517,7 +1517,7 @@
         .tab()
     ;
 
-    $('a:not(.tabs), button:not(.cancel, .test)').on('click', function(){
+    $('a:not(.tabs, #donate), button:not(.cancel, .test)').on('click', function(){
         $('#loader').addClass('active');
     });
 
