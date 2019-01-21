@@ -189,7 +189,7 @@
 	    sessionStorage.clear();
 	}
 
-	$('a, i, not(#donate)').on('click', function(){
+	$('a, i').on('click', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#loader').addClass('active');

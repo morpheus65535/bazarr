@@ -223,7 +223,7 @@
 
 	$('table').tablesort();
 
-	$('a:not(#donate), button:not(.cancel)').on('click', function(){
+	$('a, button:not(.cancel)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 

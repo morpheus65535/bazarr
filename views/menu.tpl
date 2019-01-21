@@ -97,7 +97,7 @@
 												<i class="laptop icon"></i>
 												System
 											</a>
-											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr" target="_blank">
+											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
 												<i class="red heart icon"></i>
 												Donate
 											</a>

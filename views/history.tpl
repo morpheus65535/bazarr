@@ -104,7 +104,7 @@
 	    });
 	}
 
-	$('a:not(.tabs, #donate), button:not(.cancel, #download_log)').on('click', function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 

@@ -367,7 +367,7 @@
 		});
 	});
 
-	$('a, not(#donate), .menu .item, button:not(#config, .cancel, .manual_search)').on('click', function(){
+	$('a, .menu .item, button:not(#config, .cancel, .manual_search)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 

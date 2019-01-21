@@ -349,7 +349,7 @@
 		window.location = '{{base_url}}execute/' + $(this).data("taskid");
 	});
 
-	$('a:not(.tabs, #donate), button:not(.cancel, #download_log), #restart').on('click', function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').on('click', function(){
 		$('#loader').addClass('active');
 	});
 

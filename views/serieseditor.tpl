@@ -137,7 +137,7 @@
 
 	$('table').tablesort();
 
-	$('a:not(#donate), button').on('click', function(){
+	$('a, button').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
