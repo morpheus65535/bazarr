@@ -1754,9 +1754,11 @@ def handle_websocket():
 
     while True:
         try:
-            if len(queueconfig.q4ws) > 0:
+            if queueconfig.q4ws:
                 wsock.send(queueconfig.q4ws.popleft())
-            gevent.sleep(0)
+                gevent.sleep(0.1)
+            else:
+                gevent.sleep(0.5)
         except WebSocketError:
             break
 
