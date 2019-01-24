@@ -1103,6 +1103,7 @@ def save_settings():
         settings_general_debug = 'False'
     else:
         settings_general_debug = 'True'
+    settings_general_chmod = request.forms.get('settings_general_chmod')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1138,6 +1139,11 @@ def save_settings():
         settings_general_adaptive_searching = 'False'
     else:
         settings_general_adaptive_searching = 'True'
+    settings_general_multithreading = request.forms.get('settings_general_multithreading')
+    if settings_general_multithreading is None:
+        settings_general_multithreading = 'False'
+    else:
+        settings_general_multithreading = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
     settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
@@ -1170,6 +1176,7 @@ def save_settings():
     settings.general.base_url = text_type(settings_general_baseurl)
     settings.general.path_mappings = text_type(settings_general_pathmapping)
     settings.general.debug = text_type(settings_general_debug)
+    settings.general.chmod = text_type(settings_general_chmod)
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
     settings.general.single_language = text_type(settings_general_single_language)
@@ -1184,6 +1191,7 @@ def save_settings():
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
+    settings.general.multithreading = text_type(settings_general_multithreading)
     
     if after != before:
         configured()

@@ -155,6 +155,26 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Set subtitle file permissions to</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div id="settings_chmod" class="ui fluid input">
+                                        <input name="settings_general_chmod" type="text"
+                                               value={{ settings.general.chmod }}>
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Integer, e.g.: 0775" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Page size</label>
                             </div>
                             <div class="five wide column">
@@ -1076,6 +1096,26 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Search enabled providers simultaneously</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_multithreading" class="ui toggle checkbox"
+                                     data-multithreading={{ settings.general.getboolean('multithreading') }}>
+                                    <input name="settings_general_multithreading" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Multithreading" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="ui dividing header">Subtitles providers</div>
@@ -1760,6 +1800,12 @@
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
 
+    if ($('#settings_multithreading').data("multithreading") === "True") {
+        $("#settings_multithreading").checkbox('check');
+    } else {
+        $("#settings_multithreading").checkbox('uncheck');
+    }
+
     if ($('#settings_addic7ed_random_agents').data("randomagents") === "True") {
                 $("#settings_addic7ed_random_agents").checkbox('check');
             } else {
@@ -2054,6 +2100,14 @@
                         },
                         {
                             type : 'empty'
+                        }
+                    ]
+                },
+                settings_general_chmod: {
+                    rules: [
+                        {
+                            type: 'regExp[^(0[0-7]{3})$]',
+                            prompt: 'Please use only 4-digit integers with leading 0 (e.g.: 775)'
                         }
                     ]
                 },
