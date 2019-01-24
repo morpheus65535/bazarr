@@ -2153,8 +2153,7 @@
                         }
                     ]
                 },
-                % if sys.platform.startswith('linux')
-    :
+                % if sys.platform.startswith('linux'):
                 settings_general_chmod: {
                     rules: [
                         {
@@ -2163,8 +2162,7 @@
                         }
                     ]
                 },
-    %
-    end
+                % end
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [
