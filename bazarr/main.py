@@ -46,7 +46,7 @@ from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
-from helper import path_replace_movie
+from helper import path_replace_movie, get_subtitle_destination_folder
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
@@ -268,6 +268,13 @@ def save_wizard():
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
+    settings_general_embedded = request.forms.get('settings_general_embedded')
+    if settings_general_embedded is None:
+        settings_general_embedded = 'False'
+    else:
+        settings_general_embedded = 'True'
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
     
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -277,6 +284,9 @@ def save_wizard():
     settings.general.use_sonarr = text_type(settings_general_use_sonarr)
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
+    settings.general.subfolder = text_type(settings_subfolder)
+    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
+    settings.general.use_embedded_subs = text_type(settings_general_embedded)
     
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -1163,6 +1173,8 @@ def save_settings():
     else:
         settings_general_use_radarr = 'True'
     settings_page_size = request.forms.get('settings_page_size')
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
     
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
@@ -1188,6 +1200,8 @@ def save_settings():
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
     settings.general.page_size = text_type(settings_page_size)
+    settings.general.subfolder = text_type(settings_subfolder)
+    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
@@ -1601,12 +1615,13 @@ def remove_subtitles():
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
-    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    subfolder = ('\\' + get_subtitle_destination_folder() + '\\') if get_subtitle_destination_folder() else '\\'
+    subtitlesPath = os.path.split(subtitlesPath)
     
     try:
-        os.remove(subtitlesPath)
+        os.remove(subtitlesPath[0] + subfolder + subtitlesPath[1])
         result = language_from_alpha3(language) + " subtitles deleted from disk."
-        history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
+        history_log_movie(0, radarrId, result)
     except OSError:
         pass
     store_subtitles(unicode(episodePath))
@@ -1621,9 +1636,11 @@ def remove_subtitles_movie():
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
     radarrId = request.forms.get('radarrId')
-    
+    subfolder = ('\\' + get_subtitle_destination_folder() + '\\') if get_subtitle_destination_folder() else '\\'
+    subtitlesPath = os.path.split(subtitlesPath)
+
     try:
-        os.remove(subtitlesPath)
+        os.remove(subtitlesPath[0] + subfolder + subtitlesPath[1])
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log_movie(0, radarrId, result)
     except OSError:

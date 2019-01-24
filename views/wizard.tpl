@@ -335,6 +335,82 @@
                     Prev
                 </button>
                     </div>
+
+                <div class="ui dividing header">Subtitles options</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_subfolder" id="settings_subfolder"
+                                        class="ui fluid selection dropdown">
+                                    <option value="current">Current</option>
+                                    <option value="sub">sub</option>
+                                    <option value="subs">subs</option>
+                                    <option value="subtitle">subtitle</option>
+                                    <option value="subtitles">subtitles</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='"current" is the folder the current media file lives in'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Custom Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_subfolder_custom" name="settings_subfolder_custom"
+                                               type="text" value="{{ settings.general.subfolder_custom }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='overrides "Subtitle Folder"; computes to real paths'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use embedded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_embedded" class="ui toggle checkbox"
+                                     data-embedded={{ settings.general.getboolean('use_embedded_subs') }}>
+                                    <input name="settings_general_embedded" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon"
+                                         data-tooltip="Use embedded subtitles in media files when determining missing ones."
+                                         data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
@@ -1288,6 +1364,11 @@ $(function() {
             } else {
                 $("#radarr_ssl_div").checkbox('uncheck');
             }
+    if ($('#settings_embedded').data("embedded") === "True") {
+        $("#settings_embedded").checkbox('check');
+    } else {
+        $("#settings_embedded").checkbox('uncheck');
+    }
 
     if ($('#settings_addic7ed_random_agents').data("randomagents") === "True") {
                 $("#settings_addic7ed_random_agents").checkbox('check');
@@ -1448,6 +1529,8 @@ $(function() {
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
+    $('#settings_subfolder').dropdown('clear');
+    $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
 
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();

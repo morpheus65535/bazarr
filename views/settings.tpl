@@ -152,7 +152,8 @@
                                 </div>
                             </div>
                         </div>
-
+                        % import sys
+                        % if sys.platform.startswith('linux'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Set subtitle file permissions to</label>
@@ -172,6 +173,7 @@
                                 </div>
                             </div>
                         </div>
+                        %end
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -1055,6 +1057,52 @@
                                     <div class="ui basic icon" data-tooltip="Minimum score for a movie subtitle to be downloaded (0 to 100)." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_subfolder" id="settings_subfolder"
+                                        class="ui fluid selection dropdown">
+                                    <option value="current">Current</option>
+                                    <option value="sub">sub</option>
+                                    <option value="subs">subs</option>
+                                    <option value="subtitle">subtitle</option>
+                                    <option value="subtitles">subtitles</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='"current" is the folder the current media file lives in'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Custom Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_subfolder_custom" name="settings_subfolder_custom"
+                                               type="text" value="{{ settings.general.subfolder_custom }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='overrides "Subtitle Folder"; computes to real paths'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
                                 </div>
                             </div>
                         </div>
@@ -2049,6 +2097,8 @@
     $('#settings_loglevel').dropdown('set selected','{{!settings.general.getboolean('debug')}}');
     $('#settings_page_size').dropdown('clear');
     $('#settings_page_size').dropdown('set selected','{{!settings.general.page_size}}');
+    $('#settings_subfolder').dropdown('clear');
+    $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
     $('#settings_proxy_type').dropdown('clear');
     $('#settings_proxy_type').dropdown('set selected','{{!settings.proxy.type}}');
     $('#settings_providers').dropdown('clear');
@@ -2103,6 +2153,8 @@
                         }
                     ]
                 },
+                % if sys.platform.startswith('linux')
+    :
                 settings_general_chmod: {
                     rules: [
                         {
@@ -2111,6 +2163,8 @@
                         }
                     ]
                 },
+    %
+    end
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [

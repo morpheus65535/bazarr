@@ -2,6 +2,7 @@
 import ast
 import os
 import re
+import types
 
 from config import settings
 
@@ -63,3 +64,50 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2)
     pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3)
     return pp_command
+
+
+def get_subtitle_destination_folder():
+    fld_custom = str(settings.general.subfolder_custom).strip() if settings.general.subfolder_custom else None
+    return fld_custom or (
+        settings.general.subfolder if settings.general.subfolder != "current" else None)
+
+
+def get_target_folder(file_path):
+    fld = None
+    fld_custom = str(settings.general.subfolder_custom).strip() \
+        if settings.general.subfolder_custom else None
+    
+    if fld_custom or settings.general.subfolder != "current":
+        # specific subFolder requested, create it if it doesn't exist
+        fld_base = os.path.split(file_path)[0]
+        if fld_custom:
+            if fld_custom.startswith("/"):
+                # absolute folder
+                fld = fld_custom
+            else:
+                fld = os.path.join(fld_base, fld_custom)
+        else:
+            fld = os.path.join(fld_base, settings.general.subfolder)
+        fld = force_unicode(fld)
+        if not os.path.exists(fld):
+            os.makedirs(fld)
+    return fld
+
+
+def force_unicode(s):
+    """
+    Ensure a string is unicode, not encoded; used for enforcing file paths to be unicode upon saving a subtitle,
+    to prevent encoding issues when saving a subtitle to a non-ascii path.
+    :param s: string
+    :return: unicode string
+    """
+    if not isinstance(s, types.UnicodeType):
+        try:
+            s = s.decode("utf-8")
+        except UnicodeDecodeError:
+            t = chardet.detect(s)
+            try:
+                s = s.decode(t["encoding"])
+            except UnicodeDecodeError:
+                s = UnicodeDammit(s).unicode_markup
+    return s

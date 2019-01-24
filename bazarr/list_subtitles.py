@@ -19,7 +19,7 @@ from get_args import args
 from get_languages import alpha2_from_alpha3
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
-    path_replace_reverse_movie
+    path_replace_reverse_movie, get_subtitle_destination_folder
 
 from queueconfig import q4ws
 
@@ -54,8 +54,8 @@ def store_subtitles(file):
         
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
-            # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
-            #   subtitles outside the media file folder
+            dest_folder = get_subtitle_destination_folder()
+            subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(file)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
@@ -134,9 +134,9 @@ def store_subtitles_movie(file):
                 pass
         else:
             logging.debug("BAZARR This file isn't an .mkv file.")
-        
-        # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
-        #   subtitles outside the media file folder
+
+        dest_folder = get_subtitle_destination_folder()
+        subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
         subtitles = search_external_subtitles(file)
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:

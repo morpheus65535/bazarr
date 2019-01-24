@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import sys
 import sqlite3
 import ast
 import logging
@@ -24,7 +25,7 @@ from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_
 from bs4 import UnicodeDammit
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
-    path_replace_reverse_movie, pp_replace
+    path_replace_reverse_movie, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
@@ -99,25 +100,6 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     return min_score, max_score, set(scores)
 
 
-def force_unicode(s):
-    """
-    Ensure a string is unicode, not encoded; used for enforcing file paths to be unicode upon saving a subtitle,
-    to prevent encoding issues when saving a subtitle to a non-ascii path.
-    :param s: string
-    :return: unicode string
-    """
-    if not isinstance(s, types.UnicodeType):
-        try:
-            s = s.decode("utf-8")
-        except UnicodeDecodeError:
-            t = chardet.detect(s)
-            try:
-                s = s.decode(t["encoding"])
-            except UnicodeDecodeError:
-                s = UnicodeDammit(s).unicode_markup
-    return s
-
-
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
@@ -183,10 +165,12 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     continue
                 
                 try:
+                    fld = get_target_folder(path)
+                    chmod = int(settings.general.chmod) if sys.platform.startswith('linux') else None
                     saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
                                                      tags=None,  # fixme
-                                                     directory=None,  # fixme
-                                                     chmod=int(settings.general.chmod),  # fixme
+                                                     directory=fld,
+                                                     chmod=chmod,
                                                      # formats=("srt", "vtt")
                                                      path_decoder=force_unicode
                                                      )
