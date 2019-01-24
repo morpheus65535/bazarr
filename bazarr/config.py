@@ -72,8 +72,8 @@ defaults = {
         'username': '',
         'password': '',
         'use_tag_search': 'False',
-        'vip': 'True',
-        'ssl': 'True',
+        'vip': 'False',
+        'ssl': 'False',
         'timeout': '15',
         'skip_wrong_fps': 'False'
     },
