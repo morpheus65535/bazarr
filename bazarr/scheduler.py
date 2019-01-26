@@ -67,9 +67,9 @@ else:
     scheduler = BackgroundScheduler()
 
 if not args.no_update:
-    if settings.sonarr.auto_update:
+    if settings.general.getboolean('auto-update'):
         scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                          misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
+        misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
     else:
         scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr',
                           name='Update bazarr from source on Github')

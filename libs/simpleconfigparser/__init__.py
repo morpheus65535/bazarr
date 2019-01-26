@@ -23,10 +23,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-try:
-    from configparser2 import ConfigParser as configparser, NoOptionError, NoSectionError
-except ImportError:
-    from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
+# Bazarr patch to use custom ConfigParser2:
+from ConfigParser2 import ConfigParser as configparser, NoOptionError, NoSectionError
+#try:
+#    from configparser2 import ConfigParser as configparser, NoOptionError, NoSectionError
+#except ImportError:
+#    from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
 
 
 class simpleconfigparser(configparser):

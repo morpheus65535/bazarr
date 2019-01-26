@@ -56,7 +56,7 @@
 						<div class="ui grid">
 								<div class="row">
 								<div class="sixteen wide column">
-									<div class="ui inverted borderless labeled icon massive menu six item">
+									<div class="ui inverted borderless labeled icon massive menu seven item">
 										<div class="ui container">
 											% if settings.general.getboolean('use_sonarr'):
 											<a class="item" href="{{base_url}}series">
@@ -96,6 +96,10 @@
 											<a class="item" href="{{base_url}}system">
 												<i class="laptop icon"></i>
 												System
+											</a>
+											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+												<i class="red heart icon"></i>
+												Donate
 											</a>
 										</div>
 									</div>
