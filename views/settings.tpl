@@ -1464,21 +1464,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Shooter</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="shooter" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="shooter_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>Subscene</label>
                             </div>
                             <div class="one wide column">
