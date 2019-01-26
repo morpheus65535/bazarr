@@ -1169,28 +1169,6 @@
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Argenteam</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="argenteam" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Spanish" data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="argenteam_option" class="ui grid container">
-                        </div>
-
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Addic7ed</label>
@@ -1245,6 +1223,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Argenteam</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="argenteam" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Spanish subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="argenteam_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Assrt</label>
                             </div>
                             <div class="one wide column">
@@ -1255,7 +1255,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Chinese" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1286,7 +1286,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Hungarian" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Hungarian subtitles provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1308,7 +1308,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="mostly pt-BR; UNRAR NEEDED" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Brazilian Portuguese subtitles provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1349,7 +1349,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Polish" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Polish subtitles provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1421,7 +1421,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use SSL connection to OS" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use SSL to connect to OpenSubtitles" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1439,7 +1439,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Skip subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Skip subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1459,6 +1459,51 @@
                             </div>
                         </div>
                         <div id="podnapisi_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Shooter</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="shooter" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="shooter_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subscene</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subscene" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subscene_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subscenter</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subscenter" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subscenter_option" class="ui grid container">
 
                         </div>
 
@@ -1925,7 +1970,7 @@
     $('#settings_use_radarr').checkbox({
         onChecked: function() {
             $("#radarr_tab").removeClass('disabled');
-            $('#sonarr_validated').checkbox('uncheck');
+            $('#radarr_validated').checkbox('uncheck');
             $('.form').form('validate form');
             $('#loader').removeClass('active');
         },
@@ -2419,14 +2464,14 @@
 
     $('.radarr_config').on('keyup', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
 
     $('#settings_radarr_ssl').on('change', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });

@@ -4,12 +4,11 @@ import os
 import sqlite3
 import logging
 import time
+import platform
+import rarfile
 
 from cork import Cork
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from configparser2 import ConfigParser
+from ConfigParser2 import ConfigParser
 from config import settings
 from check_update import check_releases
 from get_args import args
@@ -147,3 +146,41 @@ if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', '
         'creation_date': tstamp
     }
     cork._store.save_users()
+
+
+def init_binaries():
+    binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
+
+    unrar_exe = None
+    exe = None
+    if platform.system() == "Windows": # Windows
+        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
+
+    elif platform.system() == "Darwin": # MacOSX
+        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
+
+    elif platform.system() == "Linux": # Linux
+        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
+
+    else:
+        unrar_exe = "unrar"
+
+    if unrar_exe and os.path.isfile(unrar_exe):
+        exe = unrar_exe
+
+    rarfile.UNRAR_TOOL = exe
+    rarfile.ORIG_UNRAR_TOOL = exe
+    try:
+        rarfile.custom_check([rarfile.UNRAR_TOOL], True)
+    except:
+        logging.debug("custom check failed for: %s", exe)
+
+    rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
+    rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
+    rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
+    logging.info("Using UnRAR from: %s", exe)
+    unrar = exe
+
+    return unrar
+
+init_binaries()
