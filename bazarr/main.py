@@ -1,4 +1,4 @@
-bazarr_version = '0.7.0.5'
+# coding=utf-8
 
 import gc
 import sys
@@ -54,7 +54,7 @@ sys.setdefaultencoding('utf8')
 gc.enable()
 update_notifier()
 
-bazarr_version = '0.7.0'
+bazarr_version = '0.7.0.5'
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 
@@ -1405,7 +1405,7 @@ def save_settings():
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
-    configure_logging(settings.general.getboolean('debug'))
+    configure_logging(settings.general.getboolean('debug') or args.debug)
 
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
