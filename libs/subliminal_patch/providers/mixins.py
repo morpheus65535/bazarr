@@ -148,7 +148,8 @@ class ProviderSubtitleArchiveMixin(object):
                         subs_fallback.append(sub_name)
 
         if not matching_sub and not subs_unsure and not subs_fallback:
-            raise ProviderError("None of expected subtitle found in archive")
+            logger.error("None of expected subtitle found in archive")
+            return
 
         elif subs_unsure:
             matching_sub = subs_unsure[0]
