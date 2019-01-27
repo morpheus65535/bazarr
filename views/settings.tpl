@@ -1100,8 +1100,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='overrides "Subtitle Folder"; computes to real paths'
-                                     data-inverted="">
+                                     data-tooltip='overrides "Subtitle Folder"' data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -2162,6 +2161,7 @@
     // form validation
     $('#settings_form')
         .form({
+            on: 'blur',
             fields: {
                 settings_general_ip	: {
                     rules : [
@@ -2193,6 +2193,16 @@
                     ]
                 },
                 % end
+                settings_subfolder_custom : {
+                    rules : [
+                        {
+                            type: 'doesntContain[\\]',
+                        },
+                        {
+                            type: 'doesntContain[/]',
+                        }
+                    ]
+                },
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [
