@@ -1,3 +1,5 @@
+# coding=utf-8
+
 bazarr_version = '0.7.1'
 
 import gc
