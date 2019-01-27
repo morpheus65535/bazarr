@@ -32,8 +32,6 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from get_args import args
 from queueconfig import q4ws
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
-from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 
 # configure the cache
 
@@ -334,12 +332,14 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 logging.info("BAZARR All providers are throttled")
                 return None
         except Exception as e:
-            logging.exception('BAZARR Error downloading subtitles for this file ' + path + e)
+            logging.exception('BAZARR Error downloading subtitles for this file ' + path)
             return None
         else:
             if not subtitle.is_valid():
-                logging.exception('BAZARR Error downloading subtitles for this file ' + path)
+                q4ws.append('No valid subtitles file found for this file: ' + path)
+                logging.exception('BAZARR No valid subtitles file found for this file: ' + path)
                 return
+            logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
