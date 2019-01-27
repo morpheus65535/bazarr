@@ -1,4 +1,4 @@
-bazarr_version = '0.7.0.5'
+bazarr_version = '0.7.1'
 
 import gc
 import sys
