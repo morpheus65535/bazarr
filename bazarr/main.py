@@ -55,6 +55,7 @@ gc.enable()
 update_notifier()
 
 bazarr_version = '0.7.0.5'
+os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 
