@@ -414,21 +414,6 @@
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Argenteam</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="argenteam" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="argenteam_option" class="ui grid container">
-                        </div>
-
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Addic7ed</label>
@@ -483,12 +468,41 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Argenteam</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="argenteam" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Spanish subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="argenteam_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Assrt</label>
                             </div>
                             <div class="one wide column">
                                 <div id="assrt" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -515,6 +529,13 @@
                                     <label></label>
                                 </div>
                             </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Hungarian subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div id="hosszupuska_option" class="ui grid container">
 
@@ -528,6 +549,13 @@
                                 <div id="legendastv" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Brazilian Portuguese subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -562,6 +590,13 @@
                                 <div id="napiprojekt" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Polish subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -631,7 +666,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use SSL connection to OS" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use SSL to connect to OpenSubtitles" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -646,6 +681,13 @@
                                         <input type="checkbox" name="settings_opensubtitles_skip_wrong_fps">
                                         <label></label>
                                     </div>
+                                </div>
+                                <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Skip subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -667,16 +709,16 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Shooter</label>
+                                <label>Subscene</label>
                             </div>
                             <div class="one wide column">
-                                <div id="shooter" class="ui toggle checkbox provider">
+                                <div id="subscene" class="ui toggle checkbox provider">
                                     <input type="checkbox">
                                     <label></label>
                                 </div>
                             </div>
                         </div>
-                        <div id="shooter_option" class="ui grid container">
+                        <div id="subscene_option" class="ui grid container">
 
                         </div>
 
@@ -691,7 +733,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="subcenter_option" class="ui grid container">
+                        <div id="subscenter_option" class="ui grid container">
 
                         </div>
 
@@ -739,7 +781,6 @@
                         <div id="tvsubtitles_option" class="ui grid container">
 
                         </div>
-
 
                         <div class="middle aligned row">
                             <div class="eleven wide column">
