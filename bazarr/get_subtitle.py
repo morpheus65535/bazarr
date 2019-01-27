@@ -405,14 +405,15 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             download_subtitles([subtitle], providers={provider}, provider_configs=providers_auth,
                                                   pool_class=SZAsyncProviderPool,
                                                   throttle_callback=None)  # fixme
-            logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
         except Exception as e:
             logging.exception('BAZARR Error downloading subtitles for this file ' + path)
             return None
         else:
             if not subtitle.is_valid():
-                logging.exception('BAZARR Error downloading subtitles for this file ' + path)
+                q4ws.append('No valid subtitles file found for this file: ' + path)
+                logging.exception('BAZARR No valid subtitles file found for this file: ' + path)
                 return
+            logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
