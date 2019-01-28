@@ -86,7 +86,7 @@
                                             %end
                                         %end
                                 %else:
-                                        <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} class="get_subtitle ui tiny label">
+                                        <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId="{{row[2]}}" data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								            {{language}}
                                             <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							            </a>
@@ -119,12 +119,12 @@
 			    		 backward icon"></i>
 			    		{{page}} / {{max_page}}
 			    		<i class="\\
-			    		%if int(page) == int(max_page):
+			    		%if int(page) >= int(max_page):
 			    		disabled\\
 			    		%end
 			    		 forward icon"></i>
 			    		<i class="\\
-			    		%if int(page) == int(max_page):
+			    		%if int(page) >= int(max_page):
 			    		disabled\\
 			    		%end
 			    		 fast forward icon"></i>
@@ -168,7 +168,7 @@
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
 		            radarrId: $(this).attr("data-radarrId"),
-                    title: '{{!row[0].replace("'", "\\'")}}'
+                    title: $(this).attr("data-title")
 		    };
 		    $('#loader_text').text("Downloading subtitles...");
 			$('#loader').addClass('active');
