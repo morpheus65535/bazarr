@@ -37,7 +37,7 @@ class SubsSabBzSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
-        
+
         video_filename = video.name
         video_filename = os.path.basename(video_filename)
         video_filename, _ = os.path.splitext(video_filename)
@@ -76,11 +76,11 @@ class SubsSabBzProvider(Provider):
 
     def terminate(self):
         self.session.close()
-    
+
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
-        
+
         params = {
             'act': 'search',
             'movie': '',
@@ -112,7 +112,7 @@ class SubsSabBzProvider(Provider):
 
         soup = BeautifulSoup(response.content, 'html.parser')
         rows = soup.findAll('tr', {'class': 'subs-row'})
-        
+
         # Search on first 10 rows only
         for row in rows[:10]:
             a_element_wrapper = row.find('td', { 'class': 'c2field' })
@@ -122,7 +122,7 @@ class SubsSabBzProvider(Provider):
                     link = element.get('href')
                     logger.info('Found subtitle link %r', link)
                     subtitles = subtitles + self.download_archive_and_add_subtitle_files(link, language, video)
-        
+
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -130,7 +130,7 @@ class SubsSabBzProvider(Provider):
 
     def download_subtitle(self, subtitle):
         pass
-  
+
     def process_archive_subtitle_files(self, archiveStream, language, video):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
@@ -141,11 +141,11 @@ class SubsSabBzProvider(Provider):
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
-        
+
     def download_archive_and_add_subtitle_files(self, link, language, video ):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
-            'Referer': 'http://subs.sab.bz/index.php?' 
+            'Referer': 'http://subs.sab.bz/index.php?'
             })
         request.raise_for_status()
 
