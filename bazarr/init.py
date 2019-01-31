@@ -9,6 +9,7 @@ import rarfile
 
 from cork import Cork
 from ConfigParser2 import ConfigParser
+from whichcraft import which
 from config import settings
 from check_update import check_releases
 from get_args import args
@@ -153,8 +154,9 @@ def init_binaries():
 
     unrar_exe = None
     exe = None
+    installed_unrar = which('unrar')
 
-    if os.path.isfile("unrar"):
+    if installed_unrar and os.path.isfile(installed_unrar):
         unrar_exe = "unrar"
     else:
         if platform.system() == "Windows": # Windows
