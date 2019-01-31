@@ -15,7 +15,7 @@ import subliminal
 import subliminal_patch
 from datetime import datetime, timedelta
 from subzero.language import Language
-from subzero.video import parse_video
+from subzero.video import parse_video, refine_video
 from subliminal import region, score as subliminal_scores, \
     list_subtitles
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
@@ -63,6 +63,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         video.used_scene_name = dont_use_actual_file
         video.original_name = original_name
         video.original_path = original_path
+        refine_video(video)
         return video
     
     except:
