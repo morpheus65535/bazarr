@@ -417,7 +417,7 @@
 			language: language,
 			hi: hi,
 			radarrId: radarrId,
-			title: '{{!details[0].replace("'", "\\'")}}'
+			title: '{{!details[0].replace("'", "\'")}}'
 		};
 
 		$('#search_result').DataTable( {
@@ -427,12 +427,13 @@
 				zeroRecords: 'No subtitles found for this movie'
 		    },
 		    paging: true,
+			lengthChange: false,
+			pageLength: 5,
     		searching: false,
     		ordering: false,
     		processing: false,
         	serverSide: false,
-        	lengthMenu: [ [ 5, 10, 25, 50, 100 , -1 ] , [ 5, 10, 25, 50, 100, "All" ] ],
-    		ajax: {
+        	ajax: {
 				url: '{{base_url}}manual_search_movie',
 				type: 'POST',
                 data: values

@@ -1028,7 +1028,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score}}">
+                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.minimum_score}}">
                                     </div>
                                 </div>
                             </div>
@@ -1048,7 +1048,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score_movie}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.minimum_score_movie}}">
                                     </div>
                                 </div>
                             </div>

@@ -153,17 +153,18 @@ def init_binaries():
 
     unrar_exe = None
     exe = None
-    if platform.system() == "Windows": # Windows
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
 
-    elif platform.system() == "Darwin": # MacOSX
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
-
-    elif platform.system() == "Linux": # Linux
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
-
-    else:
+    if os.path.isfile("unrar"):
         unrar_exe = "unrar"
+    else:
+        if platform.system() == "Windows": # Windows
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
+
+        elif platform.system() == "Darwin": # MacOSX
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
+
+        elif platform.system() == "Linux": # Linux
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
 
     if unrar_exe and os.path.isfile(unrar_exe):
         exe = unrar_exe

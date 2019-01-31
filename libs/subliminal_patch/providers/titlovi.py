@@ -4,6 +4,7 @@ import io
 import logging
 import math
 import re
+from random import randint
 
 import rarfile
 
@@ -24,6 +25,7 @@ from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 from subzero.language import Language
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
@@ -134,8 +136,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.3)' \
-                                             'Gecko/20100401 Firefox/3.6.3 ( .NET CLR 3.5.30729)'
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         logger.debug('User-Agent set to %s', self.session.headers['User-Agent'])
         self.session.headers['Referer'] = self.server_url
         logger.debug('Referer set to %s', self.session.headers['Referer'])
@@ -223,7 +224,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                     if match:
                         try:
                             # decode language
-                            lang = Language.fromtitlovi(match.group('lang')+match.group('script'))
+                            lang = Language.fromtitlovi(match.group('lang') + match.group('script'))
                         except ValueError:
                             continue
 
