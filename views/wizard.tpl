@@ -357,7 +357,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='"current" is the folder the current media file lives in'
+                                     data-tooltip='Choose folder where you want to store/read the subtitles'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -379,7 +379,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='overrides "Subtitle Folder"; computes to real paths'
+                                     data-tooltip='Choose your own folder for the subtitles'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>

@@ -168,7 +168,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Integer, e.g.: 0775" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Must be integer, e.g.: 0775" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -1078,7 +1078,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='"current" is the folder the current media file lives in'
+                                     data-tooltip='Choose folder where you want to store/read the subtitles'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -1100,7 +1100,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='overrides "Subtitle Folder"' data-inverted="">
+                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -1157,7 +1157,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Multithreading" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Search multi providers at once (Don't choose this on low powered devices)" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
