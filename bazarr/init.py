@@ -153,11 +153,10 @@ def init_binaries():
     binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
     unrar_exe = None
-    exe = None
     installed_unrar = which('unrar')
 
     if installed_unrar and os.path.isfile(installed_unrar):
-        unrar_exe = "unrar"
+        unrar_exe = installed_unrar
     else:
         if platform.system() == "Windows": # Windows
             unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
@@ -168,22 +167,21 @@ def init_binaries():
         elif platform.system() == "Linux": # Linux
             unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
 
-    if unrar_exe and os.path.isfile(unrar_exe):
-        exe = unrar_exe
+    if not (unrar_exe and os.path.isfile(unrar_exe)):
+        raise Exception('No unrar library to use!')
 
-    rarfile.UNRAR_TOOL = exe
-    rarfile.ORIG_UNRAR_TOOL = exe
+    rarfile.UNRAR_TOOL = unrar_exe
+    rarfile.ORIG_UNRAR_TOOL = unrar_exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
     except:
-        logging.debug("custom check failed for: %s", exe)
+        logging.debug("custom check failed for: %s", unrar_exe)
 
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
-    logging.info("Using UnRAR from: %s", exe)
-    unrar = exe
+    logging.info("Using UnRAR from: %s", unrar_exe)
 
-    return unrar
+    return unrar_exe
 
 init_binaries()
