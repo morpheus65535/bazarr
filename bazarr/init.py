@@ -157,7 +157,7 @@ def init_binaries():
     installed_unrar = which('unrar')
 
     if installed_unrar and os.path.isfile(installed_unrar):
-        unrar_exe = "unrar"
+        unrar_exe = installed_unrar
     else:
         if platform.system() == "Windows": # Windows
             unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
