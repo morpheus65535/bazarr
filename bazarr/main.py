@@ -1618,7 +1618,7 @@ def remove_subtitles():
     subtitlesPath = request.forms.get('subtitlesPath')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    subfolder = ('\\' + get_subtitle_destination_folder() + '\\') if get_subtitle_destination_folder() else '\\'
+    subfolder = ('/' + get_subtitle_destination_folder() + '/') if get_subtitle_destination_folder() else '/'
     subtitlesPath = os.path.split(subtitlesPath)
     
     try:
@@ -1639,7 +1639,7 @@ def remove_subtitles_movie():
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
     radarrId = request.forms.get('radarrId')
-    subfolder = ('\\' + get_subtitle_destination_folder() + '\\') if get_subtitle_destination_folder() else '\\'
+    subfolder = ('/' + get_subtitle_destination_folder() + '/') if get_subtitle_destination_folder() else '/'
     subtitlesPath = os.path.split(subtitlesPath)
 
     try:

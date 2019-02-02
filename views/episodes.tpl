@@ -472,7 +472,7 @@
 			hi: hi,
 			sonarrSeriesId: sonarrSeriesId,
 			sonarrEpisodeId: sonarrEpisodeId,
-			title: '{{!details[0].replace("'", "\'")}}'
+			title: "{{!details[0].replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -556,7 +556,7 @@
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId,
-				title: '{{!details[0].replace("'", "\\'")}}'
+				title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
