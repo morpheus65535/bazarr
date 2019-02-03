@@ -58,22 +58,23 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         # use the sceneName but keep the folder structure for better guessing
         path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
         dont_use_actual_file = True
-    
-    try:
-        if providers:
+    if providers:
+        try:
             video = parse_video(path, hints=hints, providers=providers, dry_run=dont_use_actual_file)
             video.used_scene_name = dont_use_actual_file
             video.original_name = original_name
             video.original_path = original_path
-            refine_video(video)
+            try:
+                refine_video(video)
+            except Exception as e:
+                logging.debug('BAZARR Error trying to refine this file: ' + path)
+                pass
             return video
-        else:
-            logging.info("BAZARR All providers are throttled")
-            return None
-    
-    
-    except:
-        logging.exception("BAZARR Error trying to get video information for this file: " + path)
+        except:
+            logging.exception("BAZARR Error trying to get video information for this file: " + path)
+    else:
+        logging.info("BAZARR All providers are throttled")
+        return None
 
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
