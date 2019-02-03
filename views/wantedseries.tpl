@@ -80,12 +80,12 @@
                                                 active = search_active(lang[1])
                                                 if active:
                         %>
-                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
+                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                     </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                     </a>
