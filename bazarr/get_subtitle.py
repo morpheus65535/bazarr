@@ -63,7 +63,11 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         video.used_scene_name = dont_use_actual_file
         video.original_name = original_name
         video.original_path = original_path
-        refine_video(video)
+        try:
+            refine_video(video)
+        except Exception as e:
+            logging.debug('BAZARR Error trying to refine this file: ' + path)
+            pass
         return video
     
     except:
