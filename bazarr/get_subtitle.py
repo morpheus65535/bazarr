@@ -11,6 +11,7 @@ import cPickle as pickle
 import codecs
 import types
 import chardet
+import re
 import subliminal
 import subliminal_patch
 from ast import literal_eval
@@ -689,7 +690,7 @@ def refine_from_db(path, video):
         data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (path_replace_reverse(path),)).fetchone()
         db.close()
         if data != None:
-            video.series = data[0]
+            video.series = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             video.season = int(data[1])
             video.episode = int(data[2])
             video.title = data[3]
@@ -703,7 +704,7 @@ def refine_from_db(path, video):
         data = c.execute("SELECT title, year, alternativeTitles FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
         db.close()
         if data != None:
-            video.title = data[0]
+            video.title = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             if int(data[1]) > 0:
                 video.year = int(data[1])
             video.alternative_titles = ast.literal_eval(data[2])
