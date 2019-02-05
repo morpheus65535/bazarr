@@ -107,7 +107,7 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         pass
     else:
         if settings.general.getboolean('use_sonarr'):
-            execute_now('sync_episodes')
+            execute_now('update_series')
         if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
     
