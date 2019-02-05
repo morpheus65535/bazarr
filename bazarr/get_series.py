@@ -68,7 +68,10 @@ def update_series():
                     fanart = show['images'][0]['url'].split('?')[0]
                 except:
                     fanart = ""
-                
+
+                if show['alternateTitles'] != None:
+                    alternateTitles = str([item['title'] for item in show['alternateTitles']])
+
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['tvdbId'])
                 
@@ -76,34 +79,36 @@ def update_series():
                     series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                              fanart, profile_id_to_language(
                         (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                             show['sortTitle'], show["tvdbId"]))
+                                             show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
                 else:
                     if serie_default_enabled is True:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                               serie_default_hi, show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
+                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                              show['year'], alternateTitles))
                     else:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
                                               show["tvdbId"], show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle']))
+                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                              show['year'], alternateTitles))
             
             # Update or insert series in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
             
             updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ? WHERE tvdbid = ?''',
+                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
                 series_to_update)
             db.commit()
             
             if serie_default_enabled is True:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     series_to_add)
                 db.commit()
             else:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
                     series_to_add)
                 db.commit()
             db.close()

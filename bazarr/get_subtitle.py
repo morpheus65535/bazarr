@@ -13,11 +13,12 @@ import types
 import chardet
 import subliminal
 import subliminal_patch
+from ast import literal_eval
 from datetime import datetime, timedelta
 from subzero.language import Language
-from subzero.video import parse_video, refine_video
+from subzero.video import parse_video
 from subliminal import region, score as subliminal_scores, \
-    list_subtitles
+    list_subtitles, Episode, Movie
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
@@ -63,11 +64,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         video.used_scene_name = dont_use_actual_file
         video.original_name = original_name
         video.original_path = original_path
-        try:
-            refine_video(video)
-        except Exception as e:
-            logging.debug('BAZARR Error trying to refine this file: ' + path)
-            pass
+        refine_from_db(original_path, video)
         return video
     
     except:
@@ -120,7 +117,7 @@ def force_unicode(s):
 def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
-    
+
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
         hi = True
@@ -322,7 +319,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
 
 def manual_search(path, language, hi, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
-    
+
     final_subtitles = []
     
     if hi == "True":
@@ -683,3 +680,32 @@ def search_active(timestamp):
             return False
     else:
         return True
+
+
+def refine_from_db(path, video):
+    if isinstance(video, Episode):
+        db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+        c = db.cursor()
+        data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (path_replace_reverse(path),)).fetchone()
+        db.close()
+        if data != None:
+            video.series = data[0]
+            video.season = int(data[1])
+            video.episode = int(data[2])
+            video.title = data[3]
+            if int(data[4]) > 0:
+                video.year = int(data[4])
+            video.series_tvdb_id = int(data[5])
+            video.alternative_series = ast.literal_eval(data[6])
+    elif isinstance(video, Movie):
+        db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+        c = db.cursor()
+        data = c.execute("SELECT title, year, alternativeTitles FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
+        db.close()
+        if data != None:
+            video.title = data[0]
+            if int(data[1]) > 0:
+                video.year = int(data[1])
+            video.alternative_titles = ast.literal_eval(data[2])
+
+    return video
