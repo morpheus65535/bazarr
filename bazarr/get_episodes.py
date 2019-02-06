@@ -83,12 +83,18 @@ def sync_episodes():
                                     episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
                                                                episode['seasonNumber'], episode['episodeNumber'],
                                                                sceneName, str(bool(episode['monitored'])),
+                                                               episode['episodeFile']['quality']['quality']['resolution'],
+                                                               episode['episodeFile']['mediaInfo']['videoCodec'],
+                                                               episode['episodeFile']['mediaInfo']['audioCodec'],
                                                                episode['id']))
                                 else:
                                     episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
                                                             episode['episodeFile']['path'], episode['seasonNumber'],
                                                             episode['episodeNumber'], sceneName,
-                                                            str(bool(episode['monitored']))))
+                                                            str(bool(episode['monitored'])),
+                                                            episode['episodeFile']['quality']['quality']['resolution'],
+                                                            episode['episodeFile']['mediaInfo']['videoCodec'],
+                                                            episode['episodeFile']['mediaInfo']['audioCodec']))
     
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
     
@@ -97,12 +103,12 @@ def sync_episodes():
     c = db.cursor()
     
     updated_result = c.executemany(
-        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''',
+        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
         episodes_to_update)
     db.commit()
     
     added_result = c.executemany(
-        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         episodes_to_add)
     db.commit()
     

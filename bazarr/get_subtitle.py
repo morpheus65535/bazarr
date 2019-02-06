@@ -687,26 +687,37 @@ def refine_from_db(path, video):
     if isinstance(video, Episode):
         db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
         c = db.cursor()
-        data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (path_replace_reverse(path),)).fetchone()
+        data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles, table_episodes.resolution, table_episodes.video_codec, table_episodes.audio_codec FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (path_replace_reverse(path),)).fetchone()
         db.close()
         if data != None:
             video.series = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             video.season = int(data[1])
             video.episode = int(data[2])
             video.title = data[3]
-            if int(data[4]) > 0:
-                video.year = int(data[4])
+            if int(data[4]) > 0: video.year = int(data[4])
             video.series_tvdb_id = int(data[5])
             video.alternative_series = ast.literal_eval(data[6])
+            if not video.resolution:
+                if data[7] in ('480','720','1080'): video.resolution = str(data[7]) + 'p'
+            if not video.video_codec:
+                if data[8] == 'x264': video.video_codec = 'h264'
+                elif data[8]: video.video_codec = data[8]
+            if not video.audio_codec:
+                if data[9]: video.audio_codec = data[9]
     elif isinstance(video, Movie):
         db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
         c = db.cursor()
-        data = c.execute("SELECT title, year, alternativeTitles FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
+        data = c.execute("SELECT title, year, alternativeTitles, resolution, video_codec, audio_codec FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
         db.close()
         if data != None:
             video.title = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
-            if int(data[1]) > 0:
-                video.year = int(data[1])
+            if int(data[1]) > 0: video.year = int(data[1])
             video.alternative_titles = ast.literal_eval(data[2])
+            if not video.resolution:
+                if data[3]: video.resolution = data[3].lstrip('r').lower()
+            if not video.video_codec:
+                if data[4]: video.video_codec = data[4]
+            if not video.audio_codec:
+                if data[5]: video.audio_codec = data[5]
 
     return video

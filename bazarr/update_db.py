@@ -100,14 +100,22 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         c.execute('alter table table_shows add column "year" "text"')
         c.execute('alter table table_shows add column "alternateTitles" "text"')
 
+        c.execute('alter table table_episodes add column "resolution" "text"')
+        c.execute('alter table table_episodes add column "video_codec" "text"')
+        c.execute('alter table table_episodes add column "audio_codec" "text"')
+
         c.execute('alter table table_movies add column "year" "text"')
         c.execute('alter table table_movies add column "alternativeTitles" "text"')
+        c.execute('alter table table_movies add column "resolution" "text"')
+        c.execute('alter table table_movies add column "video_codec" "text"')
+        c.execute('alter table table_movies add column "audio_codec" "text"')
         db.commit()
     except:
         pass
     else:
         if settings.general.getboolean('use_sonarr'):
             execute_now('update_series')
+            execute_now('sync_episodes')
         if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
     
