@@ -75,7 +75,13 @@ def sync_episodes():
                                     sceneName = episode['episodeFile']['sceneName']
                                 else:
                                     sceneName = None
-                                
+
+                                try:
+                                    format, resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                                except:
+                                    format = episode['episodeFile']['quality']['quality']['name']
+                                    resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
                                 
@@ -83,7 +89,7 @@ def sync_episodes():
                                     episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
                                                                episode['seasonNumber'], episode['episodeNumber'],
                                                                sceneName, str(bool(episode['monitored'])),
-                                                               episode['episodeFile']['quality']['quality']['resolution'],
+                                                               format, resolution,
                                                                episode['episodeFile']['mediaInfo']['videoCodec'],
                                                                episode['episodeFile']['mediaInfo']['audioCodec'],
                                                                episode['id']))
@@ -91,8 +97,7 @@ def sync_episodes():
                                     episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
                                                             episode['episodeFile']['path'], episode['seasonNumber'],
                                                             episode['episodeNumber'], sceneName,
-                                                            str(bool(episode['monitored'])),
-                                                            episode['episodeFile']['quality']['quality']['resolution'],
+                                                            str(bool(episode['monitored'])), format, resolution,
                                                             episode['episodeFile']['mediaInfo']['videoCodec'],
                                                             episode['episodeFile']['mediaInfo']['audioCodec']))
     
@@ -103,12 +108,12 @@ def sync_episodes():
     c = db.cursor()
     
     updated_result = c.executemany(
-        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
+        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
         episodes_to_update)
     db.commit()
     
     added_result = c.executemany(
-        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, format, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         episodes_to_add)
     db.commit()
     

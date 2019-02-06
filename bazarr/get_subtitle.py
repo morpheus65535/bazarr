@@ -697,13 +697,15 @@ def refine_from_db(path, video):
             if int(data[4]) > 0: video.year = int(data[4])
             video.series_tvdb_id = int(data[5])
             video.alternative_series = ast.literal_eval(data[6])
+            if not video.format:
+                video.format = str(data[7])
             if not video.resolution:
-                if data[7] in ('480','720','1080'): video.resolution = str(data[7]) + 'p'
+                video.resolution = str(data[8])
             if not video.video_codec:
-                if data[8] == 'x264': video.video_codec = 'h264'
-                elif data[8]: video.video_codec = data[8]
+                if data[9] == 'x264': video.video_codec = 'h264'
+                elif data[9]: video.video_codec = data[9]
             if not video.audio_codec:
-                if data[9]: video.audio_codec = data[9]
+                if data[10]: video.audio_codec = data[10]
     elif isinstance(video, Movie):
         db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
         c = db.cursor()
@@ -713,11 +715,13 @@ def refine_from_db(path, video):
             video.title = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             if int(data[1]) > 0: video.year = int(data[1])
             video.alternative_titles = ast.literal_eval(data[2])
+            if not video.format:
+                if data[3]: video.format = data[3]
             if not video.resolution:
-                if data[3]: video.resolution = data[3].lstrip('r').lower()
+                if data[4]: video.resolution = data[4]
             if not video.video_codec:
-                if data[4]: video.video_codec = data[4]
+                if data[5]: video.video_codec = data[5]
             if not video.audio_codec:
-                if data[5]: video.audio_codec = data[5]
+                if data[6]: video.audio_codec = data[6]
 
     return video
