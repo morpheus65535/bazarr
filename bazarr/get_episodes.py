@@ -3,6 +3,7 @@ import os
 import sqlite3
 import requests
 import logging
+import re
 from queueconfig import q4ws
 
 from get_args import args
@@ -82,6 +83,22 @@ def sync_episodes():
                                     format = episode['episodeFile']['quality']['quality']['name']
                                     resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
 
+                                videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                                if videoCodec.startswith('x264'): videoCodec = 'h264'
+                                elif videoCodec.startswith('XviD'): videoCodec = 'XviD'
+                                elif videoCodec.startswith('DivX'): videoCodec = 'DivX'
+                                elif videoCodec.startswith('MPEG-1 Video'): videoCodec = 'Mpeg'
+                                elif videoCodec.startswith('MPEG-2 Video'): videoCodec = 'Mpeg2'
+                                elif videoCodec.startswith('MPEG-4 Video'): videoCodec = 'Mpeg4'
+                                elif videoCodec.endswith('VP6'): videoCodec = 'VP6'
+                                elif videoCodec.endswith('VP7'): videoCodec = 'VP7'
+                                elif videoCodec.endswith('VP8'): videoCodec = 'VP8'
+                                elif videoCodec.endswith('VP9'): videoCodec = 'VP9'
+
+                                audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                                if audioCodec == 'AC-3': audioCodec = 'AC3'
+                                elif audioCodec == 'MPEG Audio': audioCodec = 'MP3'
+
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
                                 
@@ -90,16 +107,13 @@ def sync_episodes():
                                                                episode['seasonNumber'], episode['episodeNumber'],
                                                                sceneName, str(bool(episode['monitored'])),
                                                                format, resolution,
-                                                               episode['episodeFile']['mediaInfo']['videoCodec'],
-                                                               episode['episodeFile']['mediaInfo']['audioCodec'],
-                                                               episode['id']))
+                                                               videoCodec, audioCodec, episode['id']))
                                 else:
                                     episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
                                                             episode['episodeFile']['path'], episode['seasonNumber'],
                                                             episode['episodeNumber'], sceneName,
                                                             str(bool(episode['monitored'])), format, resolution,
-                                                            episode['episodeFile']['mediaInfo']['videoCodec'],
-                                                            episode['episodeFile']['mediaInfo']['audioCodec']))
+                                                            videoCodec, audioCodec))
     
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
     

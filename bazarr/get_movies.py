@@ -83,6 +83,18 @@ def update_movies():
                                 format = movie['movieFile']['quality']['quality']['name']
                                 resolution = movie['movieFile']['quality']['quality']['resolution'].lstrip('r').lower()
 
+                            videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
+                            videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
+                            videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
+                            videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
+                            videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
+
+                            audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
+                            audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
+                            audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
+                            audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+                            audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures)
+
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(unicode(movie['tmdbId']))
                             
@@ -99,9 +111,7 @@ def update_movies():
                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                          movie['year'], alternativeTitles, format, resolution,
-                                                         movie['movieFile']['mediaInfo']['videoCodecLibrary'],
-                                                         movie['movieFile']['mediaInfo']['audioFormat'],
-                                                         movie["tmdbId"]))
+                                                         videoCodec, audioCodec, movie["tmdbId"]))
                             else:
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
@@ -111,8 +121,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          movie['movieFile']['mediaInfo']['videoCodecLibrary'],
-                                                          movie['movieFile']['mediaInfo']['audioFormat']))
+                                                          videoCodec, audioCodec))
                                 else:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile'][
@@ -121,8 +130,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          movie['moviefile']['mediaInfo']['videoCodecLibrary'],
-                                                          movie['moviefile']['mediaInfo']['audioFormat']))
+                                                          videoCodec, audioCodec))
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -199,6 +207,52 @@ def profile_id_to_language(id):
     for profile in profiles_list:
         if id == profile[0]:
             return profile[1]
+
+
+def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):
+    if audioFormat == "AC-3": return "AC3"
+    if audioFormat == "E-AC-3": return "EAC3"
+    if audioFormat == "AAC":
+        if audioCodecID == "A_AAC/MPEG4/LC/SBR":
+            return "HE-AAC"
+        else:
+            return "AAC"
+    if audioFormat.strip() == "mp3": return "MP3"
+    if audioFormat == "MPEG Audio":
+        if audioCodecID == "55" or audioCodecID == "A_MPEG/L3" or audioProfile == "Layer 3": return "MP3"
+        if audioCodecID == "A_MPEG/L2" or audioProfile == "Layer 2": return "MP2"
+    if audioFormat == "MLP FBA":
+        if audioAdditionalFeatures == "16-ch":
+            return "TrueHD Atmos"
+        else:
+            return "TrueHD"
+
+    return audioFormat
+
+
+def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary):
+    if videoFormat == "x264": return "h264"
+    if videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC": return "h264"
+    if videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC":
+        if videoCodecLibrary.startswith("x265"): return "h265"
+    if videoFormat == "MPEG Video":
+        if videoCodecID == "2" or videoCodecID == "V_MPEG2":
+            return "Mpeg2"
+        else:
+            return "Mpeg"
+    if videoFormat == "MPEG-1 Video": return "Mpeg"
+    if videoFormat == "MPEG-2 Video": return "Mpeg2"
+    if videoFormat == "MPEG-4 Visual":
+        if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"): return "XviD"
+        if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
+            "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
+    if videoFormat == "VC-1": return "VC1"
+    if videoFormat == "WMV2":
+        return "WMV"
+    if videoFormat == "DivX" or videoFormat == "div3":
+        return "DivX"
+
+    return videoFormat
 
 
 if __name__ == '__main__':

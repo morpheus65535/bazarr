@@ -689,7 +689,7 @@ def refine_from_db(path, video):
         c = db.cursor()
         data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, table_episodes.video_codec, table_episodes.audio_codec FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (path_replace_reverse(path),)).fetchone()
         db.close()
-        if data != None:
+        if data:
             video.series = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             video.season = int(data[1])
             video.episode = int(data[2])
@@ -702,8 +702,7 @@ def refine_from_db(path, video):
             if not video.resolution:
                 video.resolution = str(data[8])
             if not video.video_codec:
-                if data[9] == 'x264': video.video_codec = 'h264'
-                elif data[9]: video.video_codec = data[9]
+                if data[9]: video.video_codec = data[9]
             if not video.audio_codec:
                 if data[10]: video.audio_codec = data[10]
     elif isinstance(video, Movie):
@@ -711,7 +710,7 @@ def refine_from_db(path, video):
         c = db.cursor()
         data = c.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
         db.close()
-        if data != None:
+        if data:
             video.title = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             if int(data[1]) > 0: video.year = int(data[1])
             video.alternative_titles = ast.literal_eval(data[2])
