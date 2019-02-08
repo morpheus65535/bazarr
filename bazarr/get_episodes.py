@@ -84,20 +84,10 @@ def sync_episodes():
                                     resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
 
                                 videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
-                                if videoCodec.startswith('x264'): videoCodec = 'h264'
-                                elif videoCodec.startswith('XviD'): videoCodec = 'XviD'
-                                elif videoCodec.startswith('DivX'): videoCodec = 'DivX'
-                                elif videoCodec.startswith('MPEG-1 Video'): videoCodec = 'Mpeg'
-                                elif videoCodec.startswith('MPEG-2 Video'): videoCodec = 'Mpeg2'
-                                elif videoCodec.startswith('MPEG-4 Video'): videoCodec = 'Mpeg4'
-                                elif videoCodec.endswith('VP6'): videoCodec = 'VP6'
-                                elif videoCodec.endswith('VP7'): videoCodec = 'VP7'
-                                elif videoCodec.endswith('VP8'): videoCodec = 'VP8'
-                                elif videoCodec.endswith('VP9'): videoCodec = 'VP9'
+                                videoCodec = SonarrFormatVideoCodec(videoCodec)
 
                                 audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
-                                if audioCodec == 'AC-3': audioCodec = 'AC3'
-                                elif audioCodec == 'MPEG Audio': audioCodec = 'MP3'
+                                audioCodec = SonarrFormatAudioCodec(audioCodec)
 
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
@@ -152,3 +142,28 @@ def sync_episodes():
     logging.debug('BAZARR All missing subtitles updated in database.')
     
     q4ws.append('Episodes sync from Sonarr ended.')
+
+
+def SonarrFormatAudioCodec(audioCodec):
+    if audioCodec == 'AC-3': return 'AC3'
+    if audioCodec == 'E-AC-3': return 'EAC3'
+    if audioCodec == 'MPEG Audio': return 'MP3'
+
+    return audioCodec
+
+
+def SonarrFormatVideoCodec(videoCodec):
+    if videoCodec == 'x264' or videoCodec == 'AVC': return 'h264'
+    if videoCodec == 'x265' or videoCodec == 'HEVC': return 'h265'
+    if videoCodec.startswith('XviD'): return 'XviD'
+    if videoCodec.startswith('DivX'): return 'DivX'
+    if videoCodec == 'MPEG-1 Video': return 'Mpeg'
+    if videoCodec == 'MPEG-2 Video': return 'Mpeg2'
+    if videoCodec == 'MPEG-4 Video': return 'Mpeg4'
+    if videoCodec == 'VC-1': return 'VC1'
+    if videoCodec.endswith('VP6'): return 'VP6'
+    if videoCodec.endswith('VP7'): return 'VP7'
+    if videoCodec.endswith('VP8'): return 'VP8'
+    if videoCodec.endswith('VP9'): return 'VP9'
+
+    return videoCodec
