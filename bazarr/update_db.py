@@ -111,6 +111,7 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         c.execute('alter table table_movies add column "resolution" "text"')
         c.execute('alter table table_movies add column "video_codec" "text"')
         c.execute('alter table table_movies add column "audio_codec" "text"')
+        c.execute('alter table table_movies add column "imdbId" "text"')
         db.commit()
     except:
         pass

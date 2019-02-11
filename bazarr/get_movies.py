@@ -77,6 +77,9 @@ def update_movies():
                             if movie['alternativeTitles'] != None:
                                 alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
 
+                            if 'imdbId' in movie: imdbId = movie['imdbId']
+                            else: imdbId = None
+
                             try:
                                 format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
                             except:
@@ -111,7 +114,7 @@ def update_movies():
                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                          movie['year'], alternativeTitles, format, resolution,
-                                                         videoCodec, audioCodec, movie["tmdbId"]))
+                                                         videoCodec, audioCodec, imdbId, movie["tmdbId"]))
                             else:
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
@@ -121,7 +124,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec))
+                                                          videoCodec, audioCodec, imdbId))
                                 else:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile'][
@@ -130,7 +133,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec))
+                                                          videoCodec, audioCodec, imdbId))
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -141,18 +144,18 @@ def update_movies():
             c = db.cursor()
             
             updated_result = c.executemany(
-                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle = ?, year = ?, alternativeTitles = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE tmdbid = ?''',
+                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle = ?, year = ?, alternativeTitles = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ?, imdbId = ? WHERE tmdbid = ?''',
                 movies_to_update)
             db.commit()
             
             if movie_default_enabled is True:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     movies_to_add)
                 db.commit()
             else:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     movies_to_add)
                 db.commit()
 

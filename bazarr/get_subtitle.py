@@ -708,11 +708,12 @@ def refine_from_db(path, video):
     elif isinstance(video, Movie):
         db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
         c = db.cursor()
-        data = c.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
+        data = c.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId FROM table_movies WHERE path = ?", (path_replace_reverse_movie(path),)).fetchone()
         db.close()
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
             if int(data[1]) > 0: video.year = int(data[1])
+            if data[7]: video.imdb_id = data[7]
             video.alternative_titles = ast.literal_eval(data[2])
             if not video.format:
                 if data[3]: video.format = data[3]
