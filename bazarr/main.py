@@ -1,6 +1,9 @@
 # coding=utf-8
 
-bazarr_version = '0.7.1'
+bazarr_version = '0.7.2'
+
+from gevent import monkey
+monkey.patch_all()
 
 import gc
 import sys
