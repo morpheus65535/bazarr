@@ -3,6 +3,7 @@ import os
 import sqlite3
 import requests
 import logging
+import re
 from queueconfig import q4ws
 
 from get_args import args
@@ -75,7 +76,19 @@ def sync_episodes():
                                     sceneName = episode['episodeFile']['sceneName']
                                 else:
                                     sceneName = None
-                                
+
+                                try:
+                                    format, resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                                except:
+                                    format = episode['episodeFile']['quality']['quality']['name']
+                                    resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+
+                                videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                                videoCodec = SonarrFormatVideoCodec(videoCodec)
+
+                                audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                                audioCodec = SonarrFormatAudioCodec(audioCodec)
+
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
                                 
@@ -83,12 +96,14 @@ def sync_episodes():
                                     episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
                                                                episode['seasonNumber'], episode['episodeNumber'],
                                                                sceneName, str(bool(episode['monitored'])),
-                                                               episode['id']))
+                                                               format, resolution,
+                                                               videoCodec, audioCodec, episode['id']))
                                 else:
                                     episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
                                                             episode['episodeFile']['path'], episode['seasonNumber'],
                                                             episode['episodeNumber'], sceneName,
-                                                            str(bool(episode['monitored']))))
+                                                            str(bool(episode['monitored'])), format, resolution,
+                                                            videoCodec, audioCodec))
     
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
     
@@ -97,12 +112,12 @@ def sync_episodes():
     c = db.cursor()
     
     updated_result = c.executemany(
-        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''',
+        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
         episodes_to_update)
     db.commit()
     
     added_result = c.executemany(
-        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, format, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         episodes_to_add)
     db.commit()
     
@@ -127,3 +142,28 @@ def sync_episodes():
     logging.debug('BAZARR All missing subtitles updated in database.')
     
     q4ws.append('Episodes sync from Sonarr ended.')
+
+
+def SonarrFormatAudioCodec(audioCodec):
+    if audioCodec == 'AC-3': return 'AC3'
+    if audioCodec == 'E-AC-3': return 'EAC3'
+    if audioCodec == 'MPEG Audio': return 'MP3'
+
+    return audioCodec
+
+
+def SonarrFormatVideoCodec(videoCodec):
+    if videoCodec == 'x264' or videoCodec == 'AVC': return 'h264'
+    if videoCodec == 'x265' or videoCodec == 'HEVC': return 'h265'
+    if videoCodec.startswith('XviD'): return 'XviD'
+    if videoCodec.startswith('DivX'): return 'DivX'
+    if videoCodec == 'MPEG-1 Video': return 'Mpeg'
+    if videoCodec == 'MPEG-2 Video': return 'Mpeg2'
+    if videoCodec == 'MPEG-4 Video': return 'Mpeg4'
+    if videoCodec == 'VC-1': return 'VC1'
+    if videoCodec.endswith('VP6'): return 'VP6'
+    if videoCodec.endswith('VP7'): return 'VP7'
+    if videoCodec.endswith('VP8'): return 'VP8'
+    if videoCodec.endswith('VP9'): return 'VP9'
+
+    return videoCodec
