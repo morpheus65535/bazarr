@@ -1073,6 +1073,7 @@
                                     <option value="subs">subs</option>
                                     <option value="subtitle">subtitle</option>
                                     <option value="subtitles">subtitles</option>
+                                    <option value="custom">Custom folder</option>
                                 </select>
                             </div>
 
@@ -1085,7 +1086,7 @@
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="middle aligned row subfolder">
                             <div class="right aligned four wide column">
                                 <label>Custom Subtitle folder</label>
                             </div>
@@ -2004,6 +2005,19 @@
         },
         onUnchecked: function() {
             $("#radarr_tab").addClass('disabled');
+        }
+    });
+
+    if ($('#settings_subfolder').val() !== "custom") {
+        $('.subfolder').hide();
+    }
+
+    $('#settings_subfolder').dropdown('setting', 'onChange', function(){
+        if ($('#settings_subfolder').val() !== "custom") {
+            $('.subfolder').hide();
+        }
+        else {
+            $('.subfolder').show();
         }
     });
 
