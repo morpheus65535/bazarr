@@ -101,5 +101,6 @@ provider_manager = RegistrableExtensionManager('subliminal.providers', [
 refiner_manager = RegistrableExtensionManager('subliminal.refiners', [
     'metadata = subliminal.refiners.metadata:refine',
     'omdb = subliminal.refiners.omdb:refine',
-    'tvdb = subliminal.refiners.tvdb:refine'
+    'tvdb = subliminal.refiners.tvdb:refine',
+    'release = subliminal.refiners.release:refine'
 ])
