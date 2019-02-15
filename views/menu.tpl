@@ -135,7 +135,44 @@
 			% elif restart_required[0] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% end
-		</div>
+            % from check_update import Updater
+            % if Updater().UPDATE_AVAILABLE is None:
+            <div id="updatebar" class='ui center aligned grid'>
+                <div class='fifteen wide column'>
+                    <div class="ui red message">
+                        You are running an unknown version of Bazarr.
+                        <a href="update">Update</a>
+                    </div>
+                </div>
+            </div>
+            % elif Updater().UPDATE_AVAILABLE == 'release':
+            <div id="updatebar" class='ui center aligned grid'>
+                <div class='fifteen wide column'>
+                    <div class="ui red message">
+                        A <a
+                            href="{{ 'https://github.com/morpheus65535/bazarr/releases/tag/%s' % Updater().LATEST_RELEASE }}"
+                            target="_blank">
+                        new release ({{ Updater().LATEST_RELEASE }})</a> of Bazarr is available!
+                        <a href="update">Update</a>
+                    </div>
+                </div>
+            </div>
+            % elif Updater().UPDATE_AVAILABLE == 'commit':
+            <div id="updatebar" class='ui center aligned grid'>
+                <div class='fifteen wide column'>
+                    <div class="ui red message">
+                        A <a
+                            href="{{ 'https://github.com/morpheus65535/bazarr/compare/%s...%s' % (Updater().CURRENT_VERSION, Updater().LATEST_VERSION) }}"
+                            target="_blank">
+                        newer version</a> of Bazarr is available!<br/>
+                        You are {{ Updater().COMMITS_BEHIND }} commit{{ 's' if Updater().COMMITS_BEHIND > 1 else '' }}
+                        behind.
+                        <a href="update">Update</a>
+                    </div>
+                </div>
+            </div>
+            % end
+        </div>
     </body>
 </html>
 

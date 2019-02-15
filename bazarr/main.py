@@ -58,7 +58,7 @@ from get_series import *
 from get_episodes import *
 
 if not args.no_update:
-    from check_update import check_updates
+    from check_update import Updater
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \

@@ -17,6 +17,8 @@ def get_args():
                         help="Disable update functionality (default: False)")
     parser.add_argument('--debug', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                         help="Enable console debugging (default: False)")
+    parser.add_argument('--release-update', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Enable file based updater (default: False)")
 
     return parser.parse_args()
 
