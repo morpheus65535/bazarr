@@ -94,7 +94,7 @@ def update_movies():
                                 if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
                                 videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
 
-                                audioFormat = audioCodec = audioProfile = audioAdditionalFeatures = None
+                                audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
                                 if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
                                 if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
                                 if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
