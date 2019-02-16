@@ -8,7 +8,7 @@ from get_subtitle import wanted_search_missing_subtitles, upgrade_subtitles
 from get_args import args
 
 if not args.no_update:
-    from check_update import Updater, check_releases
+    from check_update import check_updates, check_releases
 else:
     from check_update import check_releases
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -84,10 +84,10 @@ scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
 
 if not args.no_update:
     if settings.general.getboolean('auto_update'):
-        scheduler.add_job(Updater().check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+        scheduler.add_job(check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                           misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github')
     else:
-        scheduler.add_job(Updater().check_updates, CronTrigger(year='2100'), hour=4, id='update_bazarr',
+        scheduler.add_job(check_updates, CronTrigger(year='2100'), hour=4, id='update_bazarr',
                           name='Update bazarr from source on Github')
         scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                           misfire_grace_time=15, id='update_release', name='Update release info')
