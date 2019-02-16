@@ -57,8 +57,8 @@ from get_providers import get_providers, get_providers_auth
 from get_series import *
 from get_episodes import *
 
-if not args.no_update:
-    from check_update import Updater
+# if not args.no_update:
+#     from check_update import check_updates
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
@@ -76,6 +76,7 @@ gc.enable()
 update_notifier()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+os.environ["BAZARR_VERSION"] = bazarr_version
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 

@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import os
 import platform
 import re
@@ -10,31 +12,6 @@ import json
 
 from get_args import args
 from config import settings
-
-
-# from main import bazarr_version
-
-
-
-class FakeLock(object):
-    """
-    If no locking or request throttling is needed, use this
-    """
-    
-    def __enter__(self):
-        """
-        Do nothing on enter
-        """
-        pass
-    
-    def __exit__(self, type, value, traceback):
-        """
-        Do nothing on exit
-        """
-        pass
-
-
-fake_lock = FakeLock()
 
 
 def check_releases():
@@ -58,249 +35,209 @@ def check_releases():
             json.dump(releases, f)
 
 
-class Updater(object):
-    def __init__(self):
-        self.bazarr_version = '7.2.0'
-        
-        self.LATEST_VERSION = ''
-        self.INSTALL_TYPE = ''
-        self.UPDATE_AVAILABLE = ''
-        self.COMMITS_BEHIND = ''
-        self.LATEST_RELEASE = ''
-        self.CURRENT_VERSION = ''
-        self.PREV_RELEASE = self.bazarr_version
-        self.CURRENT_VERSION, self.GIT_REMOTE, self.GIT_BRANCH = self.getVersion()
+def run_git(args):
+    git_locations = ['git']
     
-    def runGit(self, args):
-        git_locations = ['git']
-        
-        if platform.system().lower() == 'darwin':
-            git_locations.append('/usr/local/git/bin/git')
-        
-        output = err = None
-        
-        for cur_git in git_locations:
-            cmd = cur_git + ' ' + args
-            
-            try:
-                logging.debug('Trying to execute: "' + cmd + '"')
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-                output, err = p.communicate()
-                output = output.strip()
-                
-                logging.debug('Git output: ' + output)
-            except OSError:
-                logging.debug('Command failed: %s', cmd)
-                continue
-            
-            if 'not found' in output or "not recognized as an internal or external command" in output:
-                logging.debug('Unable to find git with command ' + cmd)
-                output = None
-            elif 'fatal:' in output or err:
-                logging.error('Git returned bad info. Are you sure this is a git installation?')
-                output = None
-            elif output:
-                break
-        
-        return (output, err)
+    if platform.system().lower() == 'darwin':
+        git_locations.append('/usr/local/git/bin/git')
     
-    def getVersion(self):
-        if os.path.isdir(os.path.join(os.path.dirname(__file__), '..', '.git')) and not args.release_update:
-            
-            self.INSTALL_TYPE = 'git'
-            output, err = self.runGit('rev-parse HEAD')
-            
-            if not output:
-                logging.error('Could not find latest installed version.')
-                cur_commit_hash = None
-            
-            cur_commit_hash = str(output)
-            
-            if not re.match('^[a-z0-9]+$', cur_commit_hash):
-                logging.error('Output does not look like a hash, not using it.')
-                cur_commit_hash = None
-            
-            if settings.general.branch:
-                branch_name = settings.general.branch
-            
-            else:
-                remote_branch, err = self.runGit('rev-parse --abbrev-ref --symbolic-full-name @{u}')
-                remote_branch = remote_branch.rsplit('/', 1) if remote_branch else []
-                if len(remote_branch) == 2:
-                    remote_name, branch_name = remote_branch
-                else:
-                    remote_name = branch_name = None
-                
-                if not remote_name and settings.general.branch:
-                    logging.error('Could not retrieve remote name from git. Defaulting to origin.')
-                    branch_name = settings.general.branch
-                
-                if not branch_name:
-                    logging.error('Could not retrieve branch name from git. Defaulting to master.')
-                    branch_name = 'master'
-            
-            return cur_commit_hash, 'origin', branch_name
-        
-        else:
-            self.INSTALL_TYPE = 'source'
-            
-            if self.CURRENT_VERSION:
-                return self.CURRENT_VERSION, 'origin', settings.general.branch
-            else:
-                return None, 'origin', settings.general.branch
+    output = err = None
     
-    def check_updates(self):
-        self.check_github()
-        if not self.CURRENT_VERSION:
-            self.UPDATE_AVAILABLE = None
-        elif self.COMMITS_BEHIND > 0 and settings.general.branch in ('master') and \
-                ('v' + self.bazarr_version) != self.LATEST_RELEASE:
-            self.UPDATE_AVAILABLE = 'release'
-        elif self.COMMITS_BEHIND > 0 and self.CURRENT_VERSION != self.LATEST_VERSION:
-            self.UPDATE_AVAILABLE = 'commit'
-        else:
-            self.UPDATE_AVAILABLE = False
-        print self.UPDATE_AVAILABLE
-    
-    def check_github(self):
-        self.COMMITS_BEHIND = 0
-        
-        # Get the latest version available from github
-        logging.info('Retrieving latest version information from GitHub')
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
-        version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
-        
-        if version is None:
-            logging.warn('Could not get the latest version from GitHub. Are you running a local development version?')
-            return self.CURRENT_VERSION
-        
-        self.LATEST_VERSION = version['sha']
-        logging.debug("Latest version is %s", self.LATEST_VERSION)
-        
-        # See how many commits behind we are
-        if not self.CURRENT_VERSION:
-            logging.info('You are running an unknown version of Bazarr. Run the updater to identify your version')
-            return self.LATEST_VERSION
-        
-        if self.LATEST_VERSION == self.CURRENT_VERSION:
-            logging.info('Bazarr is up to date')
-            return self.LATEST_VERSION
-        
-        logging.info('Comparing currently installed version with latest GitHub version')
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (self.LATEST_VERSION,
-                                                                                     self.CURRENT_VERSION)
-        commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
-        
-        if commits is None:
-            logging.warn('Could not get commits behind from GitHub.')
-            return self.LATEST_VERSION
+    for cur_git in git_locations:
+        cmd = cur_git + ' ' + args
         
         try:
-            self.COMMITS_BEHIND = int(commits['behind_by'])
-            logging.debug("In total, %d commits behind", self.COMMITS_BEHIND)
-        except KeyError:
-            logging.info('Cannot compare versions. Are you running a local development version?')
-            self.COMMITS_BEHIND = 0
-        
-        if self.COMMITS_BEHIND > 0:
-            logging.info('New version is available. You are %s commits behind' % self.COMMITS_BEHIND)
+            logging.debug('Trying to execute: "' + cmd + '"')
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            output, err = p.communicate()
+            output = output.strip()
             
-            url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
-            releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
-            
-            if releases is None:
-                logging.warn('Could not get releases from GitHub.')
-                return self.LATEST_VERSION
-            
-            if settings.general.branch == 'master':
-                release = next((r for r in releases if not r['prerelease']), releases[0])
-            else:
-                release = releases[0]
-            self.LATEST_RELEASE = release['tag_name']
+            logging.debug('Git output: ' + output)
+        except OSError:
+            logging.debug('Command failed: %s', cmd)
+            continue
         
-        elif self.COMMITS_BEHIND == 0:
-            logging.info('Bazarr is up to date')
-        
-        return self.LATEST_VERSION
+        if 'not found' in output or "not recognized as an internal or external command" in output:
+            logging.debug('Unable to find git with command ' + cmd)
+            output = None
+        elif 'fatal:' in output or err:
+            logging.error('Git returned bad info. Are you sure this is a git installation?')
+            output = None
+        elif output:
+            break
     
-    def update(self):
-        if self.INSTALL_TYPE == 'git' and not args.release_update:
-            output, err = self.runGit('pull ' + 'origin' + ' ' + settings.general.branch)
-            
-            if not output:
-                logging.error('Unable to download latest version')
-                return
-            
-            for line in output.split('\n'):
-                
-                if 'Already up-to-date.' in line:
-                    logging.info('No update available, not updating')
-                    logging.info('Output: ' + str(output))
-                elif line.endswith(('Aborting', 'Aborting.')):
-                    logging.error('Unable to update from git: ' + line)
-                    logging.info('Output: ' + str(output))
+    return output, err
+
+
+def check_updates():
+    commits_behind = 0
+    current_version = get_version()
+    
+    # Get the latest version available from github
+    logging.info('Retrieving latest version information from GitHub')
+    url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
+    version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
+    
+    if version is None:
+        logging.warn('Could not get the latest version from GitHub. Are you running a local development version?')
+        return current_version
+    
+    latest_version = version['sha']
+    logging.debug("Latest version is %s", latest_version)
+    
+    # See how many commits behind we are
+    if not current_version:
+        logging.info('You are running an unknown version of Bazarr. Run the updater to identify your version')
+        return latest_version
+    
+    if latest_version == current_version:
+        logging.info('Bazarr is up to date')
+        return latest_version
+    
+    logging.info('Comparing currently installed version with latest GitHub version')
+    url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (latest_version,
+                                                                                 current_version)
+    commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
+    
+    if commits is None:
+        logging.warn('Could not get commits behind from GitHub.')
+        return latest_version
+    
+    try:
+        commits_behind = int(commits['behind_by'])
+        logging.debug("In total, %d commits behind", commits_behind)
+    except KeyError:
+        logging.info('Cannot compare versions. Are you running a local development version?')
+        commits_behind = 0
+    
+    if commits_behind > 0:
+        logging.info('New version is available. You are %s commits behind' % commits_behind)
+        update()
+    
+    url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
+    releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
+    
+    if releases is None:
+        logging.warn('Could not get releases from GitHub.')
+        return latest_version
+    else:
+        release = releases[0]
+    latest_release = release['tag_name']
+    
+    if ('v' + current_version) != latest_release and args.release_update:
+        update()
+    
+    elif commits_behind == 0:
+        logging.info('Bazarr is up to date')
+    
+    return latest_version
+
+
+def get_version():
+    if os.path.isdir(os.path.join(os.path.dirname(__file__), '..', '.git')):
         
+        output, err = run_git('rev-parse HEAD')
+        
+        if not output:
+            logging.error('Could not find latest installed version.')
+            cur_commit_hash = None
         else:
-            tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
-            update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
-            
-            logging.info('Downloading update from: ' + tar_download_url)
-            data = request_content(tar_download_url)
-            
-            if not data:
-                logging.error("Unable to retrieve new version from '%s', can't update", tar_download_url)
-                return
-            
-            download_name = settings.general.branch + '-github'
-            tar_download_path = os.path.join(os.path.dirname(__file__), '..', download_name)
-            
-            # Save tar to disk
-            with open(tar_download_path, 'wb') as f:
-                f.write(data)
-            
-            # Extract the tar to update folder
-            logging.info('Extracting file: ' + tar_download_path)
-            tar = tarfile.open(tar_download_path)
-            tar.extractall(update_dir)
-            tar.close()
-            
-            # Delete the tar.gz
-            logging.info('Deleting file: ' + tar_download_path)
-            os.remove(tar_download_path)
-            
-            # Find update dir name
-            update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
-            if len(update_dir_contents) != 1:
-                logging.error("Invalid update data, update failed: " + str(update_dir_contents))
-                return
-            content_dir = os.path.join(update_dir, update_dir_contents[0])
-            
-            # walk temp folder and move files to main folder
-            for dirname, dirnames, filenames in os.walk(content_dir):
-                dirname = dirname[len(content_dir) + 1:]
-                for curfile in filenames:
-                    old_path = os.path.join(content_dir, dirname, curfile)
-                    new_path = os.path.join(os.path.dirname(__file__), '..', dirname, curfile)
-                    
-                    if os.path.isfile(new_path):
-                        os.remove(new_path)
-                    os.renames(old_path, new_path)
+            cur_commit_hash = str(output)
+        
+        if not re.match('^[a-z0-9]+$', cur_commit_hash):
+            logging.error('Output does not look like a hash, not using it.')
+            cur_commit_hash = None
+        
+        return cur_commit_hash
     
-    def checkout_git_branch(self):
-        if self.INSTALL_TYPE == 'git' and not args.release_update:
-            output, err = self.runGit('fetch origin')
-            output, err = self.runGit('checkout %s' % settings.general.branch)
+    else:
+        return os.environ["BAZARR_VERSION"]
+
+
+def update():
+    if not args.release_update:
+        output, err = run_git('pull ' + 'origin' + ' ' + settings.general.branch)
+        
+        if not output:
+            logging.error('Unable to download latest version')
+            return
+        
+        for line in output.split('\n'):
             
-            if not output:
-                logging.error('Unable to change git branch.')
-                return
-            
-            for line in output.split('\n'):
-                if line.endswith(('Aborting', 'Aborting.')):
-                    logging.error('Unable to checkout from git: ' + line)
-                    logging.info('Output: ' + str(output))
-            
-            output, err = self.runGit('pull origin %s' % settings.general.branch)
+            if 'Already up-to-date.' in line:
+                logging.info('No update available, not updating')
+                logging.info('Output: ' + str(output))
+            elif line.endswith(('Aborting', 'Aborting.')):
+                logging.error('Unable to update from git: ' + line)
+                logging.info('Output: ' + str(output))
+        updated()
+    else:
+        tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
+        update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
+        
+        logging.info('Downloading update from: ' + tar_download_url)
+        data = request_content(tar_download_url)
+        
+        if not data:
+            logging.error("Unable to retrieve new version from '%s', can't update", tar_download_url)
+            return
+        
+        download_name = settings.general.branch + '-github'
+        tar_download_path = os.path.join(os.path.dirname(__file__), '..', download_name)
+        
+        # Save tar to disk
+        with open(tar_download_path, 'wb') as f:
+            f.write(data)
+        
+        # Extract the tar to update folder
+        logging.info('Extracting file: ' + tar_download_path)
+        tar = tarfile.open(tar_download_path)
+        tar.extractall(update_dir)
+        tar.close()
+        
+        # Delete the tar.gz
+        logging.info('Deleting file: ' + tar_download_path)
+        os.remove(tar_download_path)
+        
+        # Find update dir name
+        update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
+        if len(update_dir_contents) != 1:
+            logging.error("Invalid update data, update failed: " + str(update_dir_contents))
+            return
+        content_dir = os.path.join(update_dir, update_dir_contents[0])
+        
+        # walk temp folder and move files to main folder
+        for dirname, dirnames, filenames in os.walk(content_dir):
+            dirname = dirname[len(content_dir) + 1:]
+            for curfile in filenames:
+                old_path = os.path.join(content_dir, dirname, curfile)
+                new_path = os.path.join(os.path.dirname(__file__), '..', dirname, curfile)
+                
+                if os.path.isfile(new_path):
+                    os.remove(new_path)
+                os.renames(old_path, new_path)
+        updated()
+
+
+class FakeLock(object):
+    """
+    If no locking or request throttling is needed, use this
+    """
+    
+    def __enter__(self):
+        """
+        Do nothing on enter
+        """
+        pass
+    
+    def __exit__(self, type, value, traceback):
+        """
+        Do nothing on exit
+        """
+        pass
+
+
+fake_lock = FakeLock()
 
 
 def request_content(url, **kwargs):
