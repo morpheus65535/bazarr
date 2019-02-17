@@ -11,7 +11,7 @@ import sqlite3
 import json
 
 from get_args import args
-from config import settings
+from config import settings, bazarr_url
 
 
 def check_releases():
@@ -375,3 +375,7 @@ def updated():
     c.execute("UPDATE system SET updated = 1")
     conn.commit()
     c.close()
+    try:
+        requests.get(bazarr_url + 'restart')
+    except requests.ConnectionError:
+        logging.info('BAZARR: Restart failed, please restart Bazarr manualy')
