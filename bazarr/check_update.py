@@ -12,6 +12,7 @@ import json
 
 from get_args import args
 from config import settings, bazarr_url
+from queueconfig import q4ws
 
 
 def check_releases():
@@ -51,17 +52,17 @@ def run_git(args):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             output, err = p.communicate()
             output = output.strip()
-            
-            logging.debug('Git output: ' + output)
+
+            logging.debug('BAZZAR Git output: ' + output)
         except OSError:
-            logging.debug('Command failed: %s', cmd)
+            logging.debug('BAZZAR Command failed: %s', cmd)
             continue
         
         if 'not found' in output or "not recognized as an internal or external command" in output:
-            logging.debug('Unable to find git with command ' + cmd)
+            logging.debug('BAZZAR Unable to find git with command ' + cmd)
             output = None
         elif 'fatal:' in output or err:
-            logging.error('Git returned bad info. Are you sure this is a git installation?')
+            logging.error('BAZZAR Git returned bad info. Are you sure this is a git installation?')
             output = None
         elif output:
             break
@@ -74,24 +75,28 @@ def check_updates():
     current_version = get_version()
     
     # Get the latest version available from github
-    logging.info('Retrieving latest version information from GitHub')
+    logging.info('BAZZAR Retrieving latest version information from GitHub')
     url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
     version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
     
     if version is None:
-        logging.warn('Could not get the latest version from GitHub. Are you running a local development version?')
+        q4ws.append('BAZZAR Could not get the latest version from GitHub. Are you running a local development version?')
+        logging.warn(
+            'BAZZAR Could not get the latest version from GitHub. Are you running a local development version?')
         return current_version
     
     latest_version = version['sha']
-    logging.debug("Latest version is %s", latest_version)
+    logging.debug("BAZZAR Latest version is %s", latest_version)
     
     # See how many commits behind we are
     if not current_version:
-        logging.info('You are running an unknown version of Bazarr. Run the updater to identify your version')
+        q4ws.append('BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
+        logging.info('BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
         return latest_version
     
     if latest_version == current_version:
-        logging.info('Bazarr is up to date')
+        q4ws.append('BAZZAR is up to date')
+        logging.info('BAZARR is up to date')
         return latest_version
     
     logging.info('Comparing currently installed version with latest GitHub version')
@@ -100,35 +105,40 @@ def check_updates():
     commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
     
     if commits is None:
-        logging.warn('Could not get commits behind from GitHub.')
+        logging.warn('BAZARR Could not get commits behind from GitHub.')
         return latest_version
     
     try:
         commits_behind = int(commits['behind_by'])
         logging.debug("In total, %d commits behind", commits_behind)
     except KeyError:
-        logging.info('Cannot compare versions. Are you running a local development version?')
+        logging.info('BAZARR Cannot compare versions. Are you running a local development version?')
         commits_behind = 0
     
     if commits_behind > 0:
-        logging.info('New version is available. You are %s commits behind' % commits_behind)
-        update()
+        q4ws.append('BAZARR New version is available. You are %s commits behind' % commits_behind)
+        logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
+        if settings.general.auto_update:
+            update()
+        else:
+            updated(restart=False)
     
     url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
     releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
     
     if releases is None:
-        logging.warn('Could not get releases from GitHub.')
+        logging.warn('BAZARR Could not get releases from GitHub.')
         return latest_version
     else:
         release = releases[0]
     latest_release = release['tag_name']
-    
-    if ('v' + current_version) != latest_release and args.release_update:
+
+    if ('v' + current_version) != latest_release and args.release_update and settings.general.branch == 'master':
         update()
     
     elif commits_behind == 0:
-        logging.info('Bazarr is up to date')
+        q4ws.append('BAZZAR is up to date')
+        logging.info('BAZZAR is up to date')
     
     return latest_version
 
@@ -139,13 +149,13 @@ def get_version():
         output, err = run_git('rev-parse HEAD')
         
         if not output:
-            logging.error('Could not find latest installed version.')
+            logging.error('BAZZAR Could not find latest installed version.')
             cur_commit_hash = None
         else:
             cur_commit_hash = str(output)
         
         if not re.match('^[a-z0-9]+$', cur_commit_hash):
-            logging.error('Output does not look like a hash, not using it.')
+            logging.error('BAZZAR Output does not look like a hash, not using it.')
             cur_commit_hash = None
         
         return cur_commit_hash
@@ -159,27 +169,27 @@ def update():
         output, err = run_git('pull ' + 'origin' + ' ' + settings.general.branch)
         
         if not output:
-            logging.error('Unable to download latest version')
+            logging.error('BAZZAR Unable to download latest version')
             return
         
         for line in output.split('\n'):
             
             if 'Already up-to-date.' in line:
-                logging.info('No update available, not updating')
-                logging.info('Output: ' + str(output))
+                logging.info('BAZZAR No update available, not updating')
+                logging.info('BAZZAR Output: ' + str(output))
             elif line.endswith(('Aborting', 'Aborting.')):
-                logging.error('Unable to update from git: ' + line)
-                logging.info('Output: ' + str(output))
-        updated()
+                logging.error('BAZZAR Unable to update from git: ' + line)
+                logging.info('BAZZAR Output: ' + str(output))
+        updated(restart=True)
     else:
         tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
         update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
-        
-        logging.info('Downloading update from: ' + tar_download_url)
+
+        logging.info('BAZZAR Downloading update from: ' + tar_download_url)
         data = request_content(tar_download_url)
         
         if not data:
-            logging.error("Unable to retrieve new version from '%s', can't update", tar_download_url)
+            logging.error("BAZZAR Unable to retrieve new version from '%s', can't update", tar_download_url)
             return
         
         download_name = settings.general.branch + '-github'
@@ -190,19 +200,19 @@ def update():
             f.write(data)
         
         # Extract the tar to update folder
-        logging.info('Extracting file: ' + tar_download_path)
+        logging.info('BAZZAR Extracting file: ' + tar_download_path)
         tar = tarfile.open(tar_download_path)
         tar.extractall(update_dir)
         tar.close()
         
         # Delete the tar.gz
-        logging.info('Deleting file: ' + tar_download_path)
+        logging.info('BAZZAR Deleting file: ' + tar_download_path)
         os.remove(tar_download_path)
         
         # Find update dir name
         update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
         if len(update_dir_contents) != 1:
-            logging.error("Invalid update data, update failed: " + str(update_dir_contents))
+            logging.error("BAZZAR Invalid update data, update failed: " + str(update_dir_contents))
             return
         content_dir = os.path.join(update_dir, update_dir_contents[0])
         
@@ -216,7 +226,7 @@ def update():
                 if os.path.isfile(new_path):
                     os.remove(new_path)
                 os.renames(old_path, new_path)
-        updated()
+        updated(restart=True)
 
 
 class FakeLock(object):
@@ -281,7 +291,7 @@ def request_response(url, method="get", auto_raise=True,
         # Request URL and wait for response
         with lock:
             logging.debug(
-                "Requesting URL via %s method: %s", method.upper(), url)
+                "BAZZAR Requesting URL via %s method: %s", method.upper(), url)
             response = request_method(url, **kwargs)
         
         # If status code != OK, then raise exception, except if the status code
@@ -292,7 +302,7 @@ def request_response(url, method="get", auto_raise=True,
                     response.raise_for_status()
                 except:
                     logging.debug(
-                        "Response status code %d is not white "
+                        "BAZZAR Response status code %d is not white "
                         "listed, raised exception", response.status_code)
                     raise
         elif auto_raise:
@@ -302,22 +312,22 @@ def request_response(url, method="get", auto_raise=True,
     except requests.exceptions.SSLError as e:
         if kwargs["verify"]:
             logging.error(
-                "Unable to connect to remote host because of a SSL error. "
+                "BAZZAR Unable to connect to remote host because of a SSL error. "
                 "It is likely that your system cannot verify the validity"
                 "of the certificate. The remote certificate is either "
                 "self-signed, or the remote server uses SNI. See the wiki for "
                 "more information on this topic.")
         else:
             logging.error(
-                "SSL error raised during connection, with certificate "
+                "BAZZAR SSL error raised during connection, with certificate "
                 "verification turned off: %s", e)
     except requests.ConnectionError:
         logging.error(
-            "Unable to connect to remote host. Check if the remote "
+            "BAZZAR Unable to connect to remote host. Check if the remote "
             "host is up and running.")
     except requests.Timeout:
         logging.error(
-            "Request timed out. The remote host did not respond timely.")
+            "BAZZAR Request timed out. The remote host did not respond timely.")
     except requests.HTTPError as e:
         if e.response is not None:
             if e.response.status_code >= 500:
@@ -329,16 +339,12 @@ def request_response(url, method="get", auto_raise=True,
                 cause = "unknown"
             
             logging.error(
-                "Request raise HTTP error with status code %d (%s).",
+                "BAZZAR Request raise HTTP error with status code %d (%s).",
                 e.response.status_code, cause)
-            
-            # Debug response
-            # if bazarr.DEBUG:
-            #     server_message(e.response)
         else:
-            logging.error("Request raised HTTP error.")
+            logging.error("BAZZAR Request raised HTTP error.")
     except requests.RequestException as e:
-        logging.error("Request raised exception: %s", e)
+        logging.error("BAZZAR Request raised exception: %s", e)
 
 
 def request_json(url, **kwargs):
@@ -358,24 +364,23 @@ def request_json(url, **kwargs):
             result = response.json()
             
             if validator and not validator(result):
-                logging.error("JSON validation result failed")
+                logging.error("BAZZAR JSON validation result failed")
             else:
                 return result
         except ValueError:
-            logging.error("Response returned invalid JSON data")
-            
-            # Debug response
-            # if bazarr.DEBUG:
-            #     server_message(response)
+            logging.error("BAZZAR Response returned invalid JSON data")
 
 
-def updated():
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE system SET updated = 1")
-    conn.commit()
-    c.close()
-    try:
-        requests.get(bazarr_url + 'restart')
-    except requests.ConnectionError:
-        logging.info('BAZARR: Restart failed, please restart Bazarr manualy')
+def updated(restart=False):
+    if restart:
+        try:
+            requests.get(bazarr_url + 'restart')
+        except requests.ConnectionError:
+            logging.info('BAZARR Restart failed, please restart Bazarr manualy')
+            updated(restart=False)
+    else:
+        conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+        c = conn.cursor()
+        c.execute("UPDATE system SET updated = 1")
+        conn.commit()
+        c.close()

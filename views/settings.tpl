@@ -2037,7 +2037,11 @@
     });
 
     % from get_args import args
-    % if args.no_update:
+
+    %
+    if args.no_update or
+    args.release_update
+    :
     $("#div_update").hide();
     % end
     % import sys
