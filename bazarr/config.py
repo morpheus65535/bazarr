@@ -104,7 +104,7 @@ settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
-bazarr_url = 'http://localhost:' + (args.port if args.port else settings.general.port) + base_url
+bazarr_url = 'http://localhost:' + (str(args.port) if args.port else settings.general.port) + base_url
 
 # sonarr url
 if settings.sonarr.getboolean('ssl'):
