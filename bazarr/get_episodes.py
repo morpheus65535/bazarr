@@ -84,11 +84,15 @@ def sync_episodes():
                                     resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
 
                                 if 'mediaInfo' in episode['episodeFile']:
-                                    videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
-                                    videoCodec = SonarrFormatVideoCodec(videoCodec)
+                                    if 'videoCodec' in episode['episodeFile']['mediaInfo']:
+                                        videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                                        videoCodec = SonarrFormatVideoCodec(videoCodec)
+                                    else: videoCodec = None
 
-                                    audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
-                                    audioCodec = SonarrFormatAudioCodec(audioCodec)
+                                    if 'audioCodec' in episode['episodeFile']['mediaInfo']:
+                                        audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                                        audioCodec = SonarrFormatAudioCodec(audioCodec)
+                                    else: audioCodec = None
                                 else:
                                     videoCodec = None
                                     audioCodec = None

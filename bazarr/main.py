@@ -1888,12 +1888,10 @@ def handle_websocket():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-
-server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
+server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(
-        settings.general.port) + str(base_url))
-    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+        args.port) if args.port else str(settings.general.port)) + str(base_url))
     server.serve_forever()
 except KeyboardInterrupt:
     shutdown()
