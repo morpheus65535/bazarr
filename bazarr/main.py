@@ -368,6 +368,8 @@ def save_wizard():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1343,6 +1345,8 @@ def save_settings():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
