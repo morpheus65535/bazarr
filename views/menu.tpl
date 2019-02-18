@@ -225,14 +225,32 @@
 	if (location.protocol != 'https:')
 	{
 		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
+        var wsupdater = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket_updater");
 	} else {
 		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
+        var wsupdater = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket_updater");
 	}
 
     ws.onmessage = function (evt) {
         new Noty({
-			text: evt.data,
-			timeout: 3000,
+            text: evt.data,
+            timeout: 3000,
+            progressBar: false,
+            animation: {
+                open: null,
+                close: null
+            },
+            killer: true,
+            type: 'info',
+            layout: 'bottomRight',
+            theme: 'semanticui'
+        }).show();
+    };
+
+    wsupdater.onmessage = function (evt) {
+        new Noty({
+            text: evt.data,
+            timeout: false,
 			progressBar: false,
 			animation: {
 				open: null,
@@ -240,8 +258,9 @@
 			},
 			killer: true,
     		type: 'info',
-			layout: 'bottomRight',
-			theme: 'semanticui'
+            layout: 'bottomLeft',
+            theme: 'semanticui',
+            visibilityControl: true
 		}).show();
     };
 </script>

@@ -12,7 +12,7 @@ import json
 
 from get_args import args
 from config import settings, bazarr_url
-from queueconfig import q4ws
+from queueconfig import q4ws, q4ws_updater
 
 
 def check_releases():
@@ -137,7 +137,7 @@ def check_updates():
         update()
     
     elif commits_behind == 0:
-        q4ws.append('BAZZAR is up to date')
+        q4ws_updater.append('BAZZAR is up to date')
         logging.info('BAZZAR is up to date')
     
     return latest_version

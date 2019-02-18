@@ -1886,6 +1886,26 @@ def handle_websocket():
             break
 
 
+@route(base_url + 'websocket_updater')
+@custom_auth_basic(check_credentials)
+def handle_websocket():
+    wsock = request.environ.get('wsgi.websocket')
+    if not wsock:
+        abort(400, 'Expected WebSocket request.')
+    
+    queueconfig.q4ws_updater.clear()
+    
+    while True:
+        try:
+            if queueconfig.q4ws_updater:
+                wsock.send(queueconfig.q4ws_updater.popleft())
+                gevent.sleep(0.1)
+            else:
+                gevent.sleep(0.5)
+        except WebSocketError:
+            break
+
+
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)
