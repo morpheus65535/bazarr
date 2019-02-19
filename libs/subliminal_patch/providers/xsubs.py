@@ -16,9 +16,7 @@ from subliminal.utils import sanitize, sanitize_release_group
 from subliminal.video import Episode
 
 logger = logging.getLogger(__name__)
-
 article_re = re.compile(r'^([A-Za-z]{1,3}) (.*)$')
-alpha2_to_alpha3 = {'el': ('ell',), 'en': ('eng',)}
 
 
 class XSubsSubtitle(Subtitle):
@@ -34,7 +32,7 @@ class XSubsSubtitle(Subtitle):
         self.title = title
         self.version = version
         self.download_link = download_link
-        self.hearing_impaired = False
+        self.hearing_impaired = None
         self.encoding = 'windows-1253'
 
     @property
@@ -66,12 +64,6 @@ class XSubsSubtitle(Subtitle):
                     any(r in sanitize_release_group(self.version)
                         for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
                 matches.add('release_group')
-            # resolution
-            if video.resolution and self.version and video.resolution in self.version.lower():
-                matches.add('resolution')
-            # format
-            if video.format and self.version and sanitize(video.format) in sanitize(self.version):
-                matches.add('format')
             # other properties
             matches |= guess_matches(video, guessit(self.version, {'type': 'episode'}), partial=True)
 
@@ -86,10 +78,10 @@ class XSubsProvider(Provider):
     sign_in_url = '/xforum/account/signin/'
     sign_out_url = '/xforum/account/signout/'
     all_series_url = '/series/all.xml'
-    series_url = '/series/%d/main.xml'
-    season_url = '/series/%d/%d.xml'
-    page_link = '/ice/xsw.xml?srsid=%d#%d;%d'
-    download_link = '/xthru/getsub/%d'
+    series_url = '/series/{:d}/main.xml'
+    season_url = '/series/{show_id:d}/{season:d}.xml'
+    page_link = '/ice/xsw.xml?srsid={show_id:d}#{season_id:d};{season:d}'
+    download_link = '/xthru/getsub/{:d}'
     subtitle_class = XSubsSubtitle
 
     def __init__(self, username=None, password=None):
@@ -103,7 +95,7 @@ class XSubsProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
+        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
 
         # login
         if self.username and self.password:
@@ -131,7 +123,7 @@ class XSubsProvider(Provider):
 
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
     def _get_show_ids(self):
         # get the shows page
         logger.info('Getting show ids')
@@ -171,17 +163,18 @@ class XSubsProvider(Provider):
             # attempt with country
             if not show_id and country_code:
                 logger.debug('Getting show id with country')
-                show_id = show_ids.get('%s %s' % (series_sanitized, country_code.lower()))
+                show_id = show_ids.get('{series} {country}'.format(series=series_sanitized,
+                                                                   country=country_code.lower()))
 
             # attempt with year
             if not show_id and year:
                 logger.debug('Getting show id with year')
-                show_id = show_ids.get('%s %d' % (series_sanitized, year))
+                show_id = show_ids.get('{series} {year:d}'.format(series=series_sanitized, year=year))
 
             # attempt with article at the end
             if not show_id and year:
                 logger.debug('Getting show id with year in brackets')
-                show_id = show_ids.get('%s [%d]' % (series_sanitized, year))
+                show_id = show_ids.get('{series} [{year:d}]'.format(series=series_sanitized, year=year))
 
             # attempt clean
             if not show_id:
@@ -196,7 +189,7 @@ class XSubsProvider(Provider):
     def query(self, show_id, series, season, year=None, country=None):
         # get the season list of the show
         logger.info('Getting the season list of show id %d', show_id)
-        r = self.session.get(self.server_url + self.series_url % show_id, timeout=10)
+        r = self.session.get(self.server_url + self.series_url.format(show_id), timeout=10)
         r.raise_for_status()
 
         if not r.content:
@@ -210,10 +203,15 @@ class XSubsProvider(Provider):
         # loop over season rows
         seasons = soup.findAll('series_group')
         season_id = None
+
         for season_row in seasons:
-            if int(season_row['ssnnum']) == season:
-                season_id = int(season_row['ssnid'])
-                break
+            try:
+                parsed_season = int(season_row['ssnnum'])
+                if parsed_season == season:
+                    season_id = int(season_row['ssnid'])
+                    break
+            except (ValueError, TypeError):
+                continue
 
         if season_id is None:
             logger.debug('Season not found in provider')
@@ -221,7 +219,7 @@ class XSubsProvider(Provider):
 
         # get the subtitle list of the season
         logger.info('Getting the subtitle list of season %d', season)
-        r = self.session.get(self.server_url + self.season_url % (show_id, season_id), timeout=10)
+        r = self.session.get(self.server_url + self.season_url.format(show_id=show_id, season=season_id), timeout=10)
         r.raise_for_status()
 
         if not r.content:
@@ -251,10 +249,11 @@ class XSubsProvider(Provider):
                 if subtitle['published_on'] == '':
                     continue
 
-                page_link = self.server_url + self.page_link % (show_id, season_id, season_num)
+                page_link = self.server_url + self.page_link.format(show_id=show_id, season_id=season_id,
+                                                                    season=season_num)
                 episode_title = etitle['title']
                 version = subtitle.fmt.text + ' ' + subtitle.team.text
-                download_link = self.server_url + self.download_link % int(subtitle['rlsid'])
+                download_link = self.server_url + self.download_link.format(int(subtitle['rlsid']))
 
                 subtitle = self.subtitle_class(Language.fromalpha2('el'), page_link, series_title, season_num,
                                                episode_num, year, episode_title, version, download_link)
@@ -298,6 +297,6 @@ class XSubsProvider(Provider):
 def _get_alternative_name(series):
     article_match = article_re.match(series)
     if article_match:
-        return '%s %s' % (article_match.group(2), article_match.group(1))
+        return '{series} {article}'.format(series=article_match.group(2), article=article_match.group(1))
 
     return None

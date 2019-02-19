@@ -25,7 +25,6 @@ from subliminal.video import Movie
 logger = logging.getLogger(__name__)
 
 year_re = re.compile(r'^\((\d{4})\)$')
-alpha2_to_alpha3 = {'el': ('ell',), 'en': ('eng',)}
 
 
 class Subs4FreeSubtitle(Subtitle):
@@ -38,7 +37,7 @@ class Subs4FreeSubtitle(Subtitle):
         self.year = year
         self.version = version
         self.download_link = download_link
-        self.hearing_impaired = False
+        self.hearing_impaired = None
         self.encoding = 'utf8'
 
     @property
@@ -63,12 +62,6 @@ class Subs4FreeSubtitle(Subtitle):
                 any(r in sanitize_release_group(self.version)
                     for r in get_equivalent_release_groups(sanitize_release_group(video.release_group)))):
             matches.add('release_group')
-        # resolution
-        if video.resolution and self.version and video.resolution in self.version.lower():
-            matches.add('resolution')
-        # format
-        if video.format and self.version and sanitize(video.format) in sanitize(self.version):
-            matches.add('format')
         # other properties
         matches |= guess_matches(video, guessit(self.version, {'type': 'movie'}), partial=True)
 
@@ -78,9 +71,10 @@ class Subs4FreeSubtitle(Subtitle):
 class Subs4FreeProvider(Provider):
     """Subs4Free Provider."""
     languages = {Language(l) for l in ['ell', 'eng']}
+    video_types = (Movie,)
     server_url = 'https://www.sf4-industry.com'
     download_url = '/getSub.html'
-    search_url = '/search_report.php?search=%s&searchType=1'
+    search_url = '/search_report.php?search={}&searchType=1'
     subtitle_class = Subs4FreeSubtitle
 
     def __init__(self):
@@ -88,7 +82,7 @@ class Subs4FreeProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
+        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
 
     def terminate(self):
         self.session.close()
@@ -115,8 +109,8 @@ class Subs4FreeProvider(Provider):
             # attempt with year
             if not show_id and year:
                 logger.debug('Getting show id with year')
-                show_id = show['link'].split('?p=')[-1] if show_title == '%s %d' % (
-                    title_sanitized, year) else None
+                show_id = show['link'].split('?p=')[-1] if show_title == '{title} {year:d}'.format(
+                    title=title_sanitized, year=year) else None
 
             # attempt clean
             if not show_id:
@@ -128,7 +122,8 @@ class Subs4FreeProvider(Provider):
 
         return matched_show_ids
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, to_str=text_type)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, to_str=text_type,
+                               should_cache_fn=lambda value: value)
     def _get_suggestions(self, title):
         """Search the show or movie id from the `title` and `year`.
 
@@ -139,8 +134,8 @@ class Subs4FreeProvider(Provider):
         """
         # make the search
         logger.info('Searching show ids with %r', title)
-        r = self.session.get(self.server_url + self.search_url % title, headers={'Referer': self.server_url},
-                             timeout=10)
+        r = self.session.get(self.server_url + text_type(self.search_url).format(title),
+                             headers={'Referer': self.server_url}, timeout=10)
         r.raise_for_status()
 
         if not r.content:
@@ -160,7 +155,7 @@ class Subs4FreeProvider(Provider):
         if movie_id:
             page_link = self.server_url + '/' + movie_id
         else:
-            page_link = self.server_url + self.search_url % ' '.join([title, str(year)])
+            page_link = self.server_url + text_type(self.search_url).format(' '.join([title, str(year)]))
 
         r = self.session.get(page_link, timeout=10)
         r.raise_for_status()
@@ -192,7 +187,7 @@ class Subs4FreeProvider(Provider):
 
             subtitle = self.subtitle_class(language, page_link, show_title, year_num, version, download_link)
 
-            logger.debug('Found subtitle %r', subtitle)
+            logger.debug('Found subtitle {!r}'.format(subtitle))
             subtitles.append(subtitle)
 
         return subtitles
@@ -204,7 +199,7 @@ class Subs4FreeProvider(Provider):
         show_ids = None
         for title in titles:
             show_ids = self.get_show_ids(title, video.year)
-            if show_ids is not None:
+            if show_ids and len(show_ids) > 0:
                 break
 
         subtitles = []
