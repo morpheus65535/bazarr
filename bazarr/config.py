@@ -35,7 +35,6 @@ defaults = {
         'enabled_providers': '',
         'throtteled_providers': '',
         'multithreading': 'True',
-        'chmod': '0640',
         'subfolder': 'current',
         'subfolder_custom': ''
     },
