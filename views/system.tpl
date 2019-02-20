@@ -385,8 +385,9 @@
 	});
 
     % from config import settings
+    % from get_args import args
 	% ip = settings.general.ip
-	% port = settings.general.port
+	% port = args.port if args.port else settings.general.port
 	% base_url = settings.general.base_url
 
 	if ("{{ip}}" === "0.0.0.0") {

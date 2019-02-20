@@ -83,11 +83,19 @@ def sync_episodes():
                                     format = episode['episodeFile']['quality']['quality']['name']
                                     resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
 
-                                videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
-                                videoCodec = SonarrFormatVideoCodec(videoCodec)
+                                if 'mediaInfo' in episode['episodeFile']:
+                                    if 'videoCodec' in episode['episodeFile']['mediaInfo']:
+                                        videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                                        videoCodec = SonarrFormatVideoCodec(videoCodec)
+                                    else: videoCodec = None
 
-                                audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
-                                audioCodec = SonarrFormatAudioCodec(audioCodec)
+                                    if 'audioCodec' in episode['episodeFile']['mediaInfo']:
+                                        audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                                        audioCodec = SonarrFormatAudioCodec(audioCodec)
+                                    else: audioCodec = None
+                                else:
+                                    videoCodec = None
+                                    audioCodec = None
 
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])

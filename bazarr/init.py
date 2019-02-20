@@ -98,7 +98,7 @@ if cfg.has_section('general'):
 
 # Move providers settings from DB to config file
 try:
-    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     settings_providers = c.execute("SELECT * FROM table_settings_providers").fetchall()
@@ -125,7 +125,7 @@ try:
                 settings.legendastv.password = provider[3]
 
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
-    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
 except:

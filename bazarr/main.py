@@ -2,7 +2,23 @@
 
 bazarr_version = '0.7.2'
 
-from gevent import monkey
+# Try to import gevent and exit if it's not available. This one is required to use websocket.
+try:
+    from gevent import monkey
+except ImportError:
+    import logging
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        import os
+        from get_args import args
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
 monkey.patch_all()
 
 import gc
@@ -26,10 +42,10 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
+import gevent
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-# from cherrypy.wsgiserver import CherryPyWSGIServer
 from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
@@ -79,20 +95,6 @@ if "PYCHARM_HOSTED" in os.environ:
     bottle.TEMPLATES.clear()
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
-
-# Install gevent under user directory if it'S not already available. This one is required to use websocket.
-try:
-    import gevent
-except ImportError as e:
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -1911,12 +1913,10 @@ def handle_websocket():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-
-server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
+server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(
-        settings.general.port) + str(base_url))
-    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+        args.port) if args.port else str(settings.general.port)) + str(base_url))
     server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

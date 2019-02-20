@@ -86,17 +86,23 @@ def update_movies():
                                 format = movie['movieFile']['quality']['quality']['name']
                                 resolution = movie['movieFile']['quality']['quality']['resolution'].lstrip('r').lower()
 
-                            videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
-                            videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
-                            videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
-                            videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
-                            videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
+                            if 'mediaInfo' in movie['movieFile']:
+                                videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
+                                if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
+                                if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
+                                if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
+                                if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
+                                videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
 
-                            audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
-                            audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
-                            audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
-                            audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
-                            audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures)
+                                audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
+                                if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
+                                if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
+                                if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
+                                if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
+                                audioCodec = RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures)
+                            else:
+                                videoCodec = None
+                                audioCodec = None
 
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(unicode(movie['tmdbId']))

@@ -297,8 +297,8 @@ def manual_search(path, language, hi, providers, providers_auth, sceneName, titl
                 score = compute_score(matches, s, video, hearing_impaired=hi)
                 not_matched = scores - matches
                 s.score = score
-                if score < min_score:
-                    continue
+                # if score < min_score:
+                #     continue
                 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
