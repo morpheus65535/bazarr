@@ -19,8 +19,6 @@ except ImportError:
         stop_file.close()
         os._exit(0)
 
-monkey.patch_all()
-
 import gc
 import sys
 import libs
@@ -880,7 +878,7 @@ def search_missing_subtitles(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    series_download_subtitles(no)
+    scheduler.add_job(series_download_subtitles, args=[no])
 
     redirect(ref)
 
@@ -891,7 +889,7 @@ def search_missing_subtitles_movie(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    movies_download_subtitles(no)
+    scheduler.add_job(movies_download_subtitles, args=[no])
 
     redirect(ref)
 
@@ -1068,7 +1066,7 @@ def wanted_search_missing_subtitles_list():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    wanted_search_missing_subtitles()
+    scheduler.add_job(wanted_search_missing_subtitles)
 
     redirect(ref)
 
@@ -1865,24 +1863,13 @@ def test_notification(protocol, provider):
     )
 
 
-@route(base_url + 'websocket')
+@route(base_url + 'notifications')
 @custom_auth_basic(check_credentials)
-def handle_websocket():
-    wsock = request.environ.get('wsgi.websocket')
-    if not wsock:
-        abort(400, 'Expected WebSocket request.')
-
-    queueconfig.q4ws.clear()
-
-    while True:
-        try:
-            if queueconfig.q4ws:
-                wsock.send(queueconfig.q4ws.popleft())
-                gevent.sleep(0.1)
-            else:
-                gevent.sleep(0.5)
-        except WebSocketError:
-            break
+def notifications():
+    if queueconfig.notifications:
+        return queueconfig.notifications.read()
+    else:
+        return None
 
 
 # Mute DeprecationWarning
@@ -1892,7 +1879,6 @@ server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app,
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(
         settings.general.port) + str(base_url))
-    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
     server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

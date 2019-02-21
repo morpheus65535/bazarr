@@ -32,7 +32,7 @@ from utils import history_log, history_log_movie
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth
 from get_args import args
-from queueconfig import q4ws
+from queueconfig import notifications
 
 # configure the cache
 
@@ -413,7 +413,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             return None
         else:
             if not subtitle.is_valid():
-                q4ws.append('No valid subtitles file found for this file: ' + path)
+                notifications.write('No valid subtitles file found for this file: ' + path)
                 logging.exception('BAZARR No valid subtitles file found for this file: ' + path)
                 return
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
@@ -498,6 +498,7 @@ def series_download_subtitles(no):
     for episode in episodes_details:
         for language in ast.literal_eval(episode[1]):
             if language is not None:
+                notifications.write('Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]))
                 message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                             series_details[0], providers_list, providers_auth, str(episode[3]),
                                             series_details[1], 'series')
@@ -506,6 +507,8 @@ def series_download_subtitles(no):
                     history_log(1, no, episode[2], message)
                     send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
+
+    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh')
 
 
 def movies_download_subtitles(no):
@@ -521,6 +524,7 @@ def movies_download_subtitles(no):
     
     for language in ast.literal_eval(movie[1]):
         if language is not None:
+            notifications.write('Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path_replace_movie(movie[0]))
             message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
                                         providers_list, providers_auth, str(movie[3]), movie[5], 'movie')
             if message is not None:
@@ -528,6 +532,8 @@ def movies_download_subtitles(no):
                 history_log_movie(1, no, message)
                 send_notifications_movie(no, message)
     list_missing_subtitles_movies(no)
+
+    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh')
 
 
 def wanted_download_subtitles(path):
@@ -564,8 +570,8 @@ def wanted_download_subtitles(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        q4ws.append(
-                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
+                        notifications.write(
+                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path)
                         message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                                     episode[4], providers_list, providers_auth, str(episode[5]),
                                                     episode[7], 'series')
@@ -612,8 +618,8 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        q4ws.append(
-                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this file: ' + path)
+                        notifications.write(
+                            'Searching ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path)
                         message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
                                                     movie[4], providers_list, providers_auth, str(movie[5]), movie[7],
                                                     'movie')
@@ -662,6 +668,8 @@ def wanted_search_missing_subtitles():
             wanted_download_subtitles_movie(movie[0])
     
     logging.info('BAZARR Finished searching for missing subtitles. Check histories for more information.')
+
+    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh')
 
 
 def search_active(timestamp):
