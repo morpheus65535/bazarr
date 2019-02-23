@@ -878,7 +878,7 @@ def search_missing_subtitles(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    scheduler.add_job(series_download_subtitles, args=[no])
+    scheduler.add_job(series_download_subtitles, args=[no], next_run_time=datetime.now())
 
     redirect(ref)
 
@@ -889,7 +889,7 @@ def search_missing_subtitles_movie(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    scheduler.add_job(movies_download_subtitles, args=[no])
+    scheduler.add_job(movies_download_subtitles, args=[no], next_run_time=datetime.now())
 
     redirect(ref)
 
@@ -1066,7 +1066,7 @@ def wanted_search_missing_subtitles_list():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    scheduler.add_job(wanted_search_missing_subtitles)
+    scheduler.add_job(wanted_search_missing_subtitles, next_run_time=datetime.now())
 
     redirect(ref)
 
