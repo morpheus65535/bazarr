@@ -608,7 +608,7 @@ def edit_series(no):
         lang = 'None'
 
     single_language = settings.general.getboolean('single_language')
-    if single_language is True:
+    if single_language:
         if str(lang) == "['None']":
             lang = 'None'
         else:
@@ -805,8 +805,15 @@ def edit_movie(no):
     else:
         lang = 'None'
 
-    if str(lang) == "['']":
-        lang = '[]'
+    single_language = settings.general.getboolean('single_language')
+    if single_language:
+        if str(lang) == "['None']":
+            lang = 'None'
+        else:
+            lang = str(lang)
+    else:
+        if str(lang) == "['']":
+            lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
 
