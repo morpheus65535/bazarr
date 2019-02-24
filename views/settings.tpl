@@ -1494,6 +1494,100 @@
                         </div>
 
                         <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>GreekSubtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="greeksubtitles" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="greeksubtitles_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Free</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4free" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4free_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Series</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4series" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4series_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>SubZ</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subz_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>XSubs</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="xsubs" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="xsubs_option" class="ui grid container">
+                        	<div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_username" type="text" value="{{settings.xsubs.username if settings.xsubs.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_password" type="password" value="{{settings.xsubs.password if settings.xsubs.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
                             <div class="eleven wide column">
                                 <div class='field' hidden>
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
