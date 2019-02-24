@@ -1745,14 +1745,14 @@ $(function() {
 
     $('.radarr_config').on('keyup', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
 
     $('#settings_radarr_ssl').on('change', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
