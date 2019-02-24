@@ -10,7 +10,7 @@ class Notify:
     def __init__(self):
         self.queue = deque(maxlen=10)
 
-    def write(self, msg, type='info', duration='temporary', button='null'):
+    def write(self, msg, type='info', duration='temporary', button='null',  queue='main'):
         """
             :param msg: The message to display.
             :type msg: str
@@ -20,9 +20,11 @@ class Notify:
             :type duration: str
             :param button: The kind of button desired that can be: null, refresh, restart
             :type duration: str
+            :param queue: The name of the notification queue to use. Default is 'main'
+            :type duration: str
         """
 
-        self.queue.append(json.dumps([msg, type, duration, button]))
+        self.queue.append(json.dumps([msg, type, duration, button, queue]))
 
     def read(self):
         """

@@ -13,7 +13,7 @@ from list_subtitles import list_missing_subtitles
 
 
 def update_series():
-    notifications.write("Update series list from Sonarr is running...")
+    notifications.write(msg="Update series list from Sonarr is running...", queue='get_series')
     apikey_sonarr = settings.sonarr.apikey
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
@@ -54,7 +54,7 @@ def update_series():
             series_to_add = []
             
             for show in r.json():
-                notifications.write("Getting series data for this show: " + show['title'])
+                notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -127,7 +127,7 @@ def update_series():
             db.commit()
             db.close()
     
-    notifications.write("Update series list from Sonarr is ended.")
+    notifications.write(msg="Update series list from Sonarr is ended.", queue='get_series')
 
 
 def get_profile_list():

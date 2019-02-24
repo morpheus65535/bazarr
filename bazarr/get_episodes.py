@@ -28,7 +28,7 @@ def update_all_movies():
 
 
 def sync_episodes():
-    notifications.write('Episodes sync from Sonarr started...')
+    notifications.write(msg='Episodes sync from Sonarr started...', queue='get_episodes')
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
@@ -51,7 +51,7 @@ def sync_episodes():
     c.close()
     
     for seriesId in seriesIdList:
-        notifications.write('Getting episodes data for this show: ' + seriesId[1])
+        notifications.write(msg='Getting episodes data for this show: ' + seriesId[1], queue='get_episodes')
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
@@ -149,7 +149,7 @@ def sync_episodes():
     list_missing_subtitles()
     logging.debug('BAZARR All missing subtitles updated in database.')
     
-    notifications.write('Episodes sync from Sonarr ended.')
+    notifications.write(msg='Episodes sync from Sonarr ended.', queue='get_episodes')
 
 
 def SonarrFormatAudioCodec(audioCodec):

@@ -236,10 +236,11 @@
 					var type = data[1];
 					var duration = data[2];
 					var button = data[3];
+					var queue = data[4];
 
 					if (duration === 'temporary') {
 						timeout = 3000;
-						killer = duration;
+						killer = queue;
 					} else {
 						timeout = false;
 						killer = false;
@@ -264,7 +265,7 @@
 						type: type,
 						layout: 'bottomRight',
 						theme: 'semanticui',
-						queue: duration,
+						queue: queue,
 						timeout: timeout,
 							killer: killer,
 						buttons: button,
