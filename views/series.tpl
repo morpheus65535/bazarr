@@ -94,7 +94,7 @@
 								%end
 							%end
 						</td>
-						<td>{{!"" if row[4] == None else row[4]}}</td>
+						<td>{{!"" if row[4] is None else row[4]}}</td>
 						<td>
 							%total_subs = 0
 							%missing_subs = 0
@@ -199,7 +199,7 @@
 									<div class="nine wide column">
 										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language is False else ''}}class="ui fluid selection dropdown">
 											<option value="">Languages</option>
-											%if single_language is True:
+											%if single_language:
                                         	<option value="None">None</option>
                                         	%end
 											%for language in languages:

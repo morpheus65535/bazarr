@@ -14,6 +14,8 @@ else:
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED
 from datetime import datetime
 import pytz
 from tzlocal import get_localzone
@@ -66,6 +68,20 @@ if str(get_localzone()) == "local":
 else:
     scheduler = BackgroundScheduler()
 
+
+global running_tasks
+running_tasks = []
+
+
+def task_listener(event):
+    if event.job_id in running_tasks:
+        running_tasks.remove(event.job_id)
+    else:
+        running_tasks.append(event.job_id)
+
+
+scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
+
 if not args.no_update:
     if settings.general.getboolean('auto_update'):
         scheduler.add_job(check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
@@ -96,6 +112,12 @@ if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use
 sonarr_full_update()
 radarr_full_update()
 scheduler.start()
+
+
+def add_job(job, name=None, max_instances=1, coalesce=True, args=None):
+    
+    scheduler.add_job(job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
+                      coalesce=coalesce, args=args)
 
 
 def shutdown_scheduler():

@@ -135,7 +135,7 @@
 			% elif restart_required[0] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% end
-        </div>
+		</div>
     </body>
 </html>
 
@@ -222,45 +222,70 @@
 </script>
 
 <script type="text/javascript">
-	if (location.protocol != 'https:')
-	{
-		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
-        var wsupdater = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket_updater");
-	} else {
-		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
-        var wsupdater = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket_updater");
-	}
+	var url = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
+	var notification;
+	var timeout;
+	var killer;
+	function doAjax() {
+        $.ajax({
+            url: url,
+            success: function (data) {
+            	if (data !== "") {
+					data = JSON.parse(data);
+					var msg = data[0];
+					var type = data[1];
+					var duration = data[2];
+					var button = data[3];
+					var queue = data[4];
 
-    ws.onmessage = function (evt) {
-        new Noty({
-            text: evt.data,
-            timeout: 3000,
-            progressBar: false,
-            animation: {
-                open: null,
-                close: null
+					if (duration === 'temporary') {
+						timeout = 3000;
+						killer = queue;
+					} else {
+						timeout = false;
+						killer = false;
+					}
+
+					if (button === 'refresh') {
+						button = [ Noty.button('Refresh', 'ui tiny primary button', function () { window.location.reload() }) ];
+					} else if (button === 'restart') {
+						// to be completed
+						button = [ Noty.button('Restart', 'ui tiny primary button', function () { alert('Restart not implemented yet!') }) ];
+					} else {
+						button = [];
+					}
+
+					new Noty({
+						text: msg,
+						progressBar: false,
+						animation: {
+							open: null,
+							close: null
+						},
+						type: type,
+						layout: 'bottomRight',
+						theme: 'semanticui',
+						queue: queue,
+						timeout: timeout,
+							killer: killer,
+						buttons: button,
+						force: true
+					}).show();
+				}
             },
-            killer: true,
-            type: 'info',
-            layout: 'bottomRight',
-            theme: 'semanticui'
-        }).show();
-    };
+            complete: function (data) {
+                // Schedule the next
+                if (data != "") {
+                	notification = setTimeout(doAjax, 100);
+				} else {
+                	notification = setTimeout(doAjax, 1000);
+				}
+            }
+        });
+    }
+    notification = setTimeout(doAjax, 1000);
 
-    wsupdater.onmessage = function (evt) {
-        new Noty({
-            text: evt.data,
-            timeout: false,
-			progressBar: false,
-			animation: {
-				open: null,
-				close: null
-			},
-			killer: true,
-    		type: 'info',
-            layout: 'bottomLeft',
-            theme: 'semanticui',
-            visibilityControl: true
-		}).show();
-    };
+	$(window).bind('beforeunload', function(){
+		clearTimeout(notification);
+	});
 </script>
