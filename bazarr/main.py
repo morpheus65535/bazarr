@@ -2,25 +2,6 @@
 
 bazarr_version = '0.7.2'
 
-# Try to import gevent and exit if it's not available. This one is required to use websocket.
-try:
-    from gevent import monkey
-except ImportError:
-    import logging
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        import os
-        from get_args import args
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
-
-monkey.patch_all()
-
 import gc
 import sys
 import libs
@@ -42,10 +23,29 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
-import gevent
+
+
+# Try to import gevent and exit if it's not available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError:
+    import logging
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        import os
+        from get_args import args
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
+
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
+
 from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
@@ -378,6 +378,8 @@ def save_wizard():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -620,7 +622,7 @@ def edit_series(no):
         lang = 'None'
 
     single_language = settings.general.getboolean('single_language')
-    if single_language is True:
+    if single_language:
         if str(lang) == "['None']":
             lang = 'None'
         else:
@@ -817,8 +819,15 @@ def edit_movie(no):
     else:
         lang = 'None'
 
-    if str(lang) == "['']":
-        lang = '[]'
+    single_language = settings.general.getboolean('single_language')
+    if single_language:
+        if str(lang) == "['None']":
+            lang = 'None'
+        else:
+            lang = str(lang)
+    else:
+        if str(lang) == "['']":
+            lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
 
@@ -889,8 +898,8 @@ def scan_disk_movie(no):
 def search_missing_subtitles(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
-
-    series_download_subtitles(no)
+    
+    add_job(series_download_subtitles, args=[no], name=('search_missing_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -901,7 +910,7 @@ def search_missing_subtitles_movie(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    movies_download_subtitles(no)
+    add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -1078,7 +1087,7 @@ def wanted_search_missing_subtitles_list():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    wanted_search_missing_subtitles()
+    add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
     
     redirect(ref)
 
@@ -1095,7 +1104,7 @@ def _settings():
     c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     settings_notifier = c.fetchall()
     c.close()
-    
+
     return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages,
                     settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url,
                     current_port=settings.general.port)
@@ -1106,10 +1115,10 @@ def _settings():
 def save_settings():
     authorize()
     ref = request.environ['HTTP_REFERER']
-    
+
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
-    
+
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
@@ -1189,7 +1198,7 @@ def save_settings():
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
              unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
              unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
-    
+
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
     settings.general.base_url = text_type(settings_general_baseurl)
@@ -1216,7 +1225,7 @@ def save_settings():
     
     if after != before:
         configured()
-    
+
     settings_proxy_type = request.forms.get('settings_proxy_type')
     settings_proxy_url = request.forms.get('settings_proxy_url')
     settings_proxy_port = request.forms.get('settings_proxy_port')
@@ -1365,6 +1374,8 @@ def save_settings():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1891,24 +1902,19 @@ def test_notification(protocol, provider):
     )
 
 
-@route(base_url + 'websocket')
+@route(base_url + 'notifications')
 @custom_auth_basic(check_credentials)
-def handle_websocket():
-    wsock = request.environ.get('wsgi.websocket')
-    if not wsock:
-        abort(400, 'Expected WebSocket request.')
+def notifications():
+    if queueconfig.notifications:
+        return queueconfig.notifications.read()
+    else:
+        return None
 
-    queueconfig.q4ws.clear()
 
-    while True:
-        try:
-            if queueconfig.q4ws:
-                wsock.send(queueconfig.q4ws.popleft())
-                gevent.sleep(0.1)
-            else:
-                gevent.sleep(0.5)
-        except WebSocketError:
-            break
+@route(base_url + 'running_tasks')
+@custom_auth_basic(check_credentials)
+def running_tasks_list():
+    return dict(tasks=running_tasks)
 
 
 # Mute DeprecationWarning

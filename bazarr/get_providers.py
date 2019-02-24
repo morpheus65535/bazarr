@@ -105,6 +105,9 @@ def get_providers_auth():
         'legendastv': {'username': settings.legendastv.username,
                        'password': settings.legendastv.password,
                        },
+        'xsubs': {'username': settings.xsubs.username,
+                  'password': settings.xsubs.password,
+                       },
         'assrt': {'token': settings.assrt.token, }
     }
     

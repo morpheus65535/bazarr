@@ -87,6 +87,10 @@ defaults = {
         'username': '',
         'password': ''
     },
+    'xsubs': {
+        'username': '',
+        'password': ''
+    },
     'assrt': {
         'token': ''
     }}

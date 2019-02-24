@@ -222,26 +222,70 @@
 </script>
 
 <script type="text/javascript">
-	if (location.protocol != 'https:')
-	{
-		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
-	} else {
-		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
-	}
+	var url = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
+	var notification;
+	var timeout;
+	var killer;
+	function doAjax() {
+        $.ajax({
+            url: url,
+            success: function (data) {
+            	if (data !== "") {
+					data = JSON.parse(data);
+					var msg = data[0];
+					var type = data[1];
+					var duration = data[2];
+					var button = data[3];
+					var queue = data[4];
 
-    ws.onmessage = function (evt) {
-        new Noty({
-			text: evt.data,
-			timeout: 3000,
-			progressBar: false,
-			animation: {
-				open: null,
-				close: null
-			},
-			killer: true,
-    		type: 'info',
-			layout: 'bottomRight',
-			theme: 'semanticui'
-		}).show();
-    };
+					if (duration === 'temporary') {
+						timeout = 3000;
+						killer = queue;
+					} else {
+						timeout = false;
+						killer = false;
+					}
+
+					if (button === 'refresh') {
+						button = [ Noty.button('Refresh', 'ui tiny primary button', function () { window.location.reload() }) ];
+					} else if (button === 'restart') {
+						// to be completed
+						button = [ Noty.button('Restart', 'ui tiny primary button', function () { alert('Restart not implemented yet!') }) ];
+					} else {
+						button = [];
+					}
+
+					new Noty({
+						text: msg,
+						progressBar: false,
+						animation: {
+							open: null,
+							close: null
+						},
+						type: type,
+						layout: 'bottomRight',
+						theme: 'semanticui',
+						queue: queue,
+						timeout: timeout,
+							killer: killer,
+						buttons: button,
+						force: true
+					}).show();
+				}
+            },
+            complete: function (data) {
+                // Schedule the next
+                if (data != "") {
+                	notification = setTimeout(doAjax, 100);
+				} else {
+                	notification = setTimeout(doAjax, 1000);
+				}
+            }
+        });
+    }
+    notification = setTimeout(doAjax, 1000);
+
+	$(window).bind('beforeunload', function(){
+		clearTimeout(notification);
+	});
 </script>
