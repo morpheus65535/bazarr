@@ -1881,6 +1881,12 @@ def notifications():
         return None
 
 
+@route(base_url + 'running_tasks')
+@custom_auth_basic(check_credentials)
+def running_tasks_list():
+    return dict(tasks=running_tasks)
+
+
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
 server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)

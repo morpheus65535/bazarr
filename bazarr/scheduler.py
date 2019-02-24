@@ -15,6 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
+from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED
 from datetime import datetime
 import pytz
 from tzlocal import get_localzone
@@ -66,6 +67,20 @@ if str(get_localzone()) == "local":
     scheduler = BackgroundScheduler(timezone=pytz.timezone('UTC'))
 else:
     scheduler = BackgroundScheduler()
+
+
+global running_tasks
+running_tasks = []
+
+
+def task_listener(event):
+    if event.job_id in running_tasks:
+        running_tasks.remove(event.job_id)
+    else:
+        running_tasks.append(event.job_id)
+
+
+scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
 
 if not args.no_update:
     if settings.general.getboolean('auto_update'):
