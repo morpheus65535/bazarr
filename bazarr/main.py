@@ -2,23 +2,6 @@
 
 bazarr_version = '0.7.2'
 
-# Try to import gevent and exit if it's not available. This one is required to use websocket.
-try:
-    from gevent import monkey
-except ImportError:
-    import logging
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        import os
-        from get_args import args
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
-
 import gc
 import sys
 import libs
@@ -40,10 +23,29 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
-import gevent
+
+
+# Try to import gevent and exit if it's not available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError:
+    import logging
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        import os
+        from get_args import args
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
+
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
+
 from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
