@@ -12,7 +12,7 @@ import json
 
 from get_args import args
 from config import settings, bazarr_url
-from queueconfig import q4ws, q4ws_updater
+from queueconfig import notifications
 
 
 def check_releases():
@@ -80,7 +80,6 @@ def check_updates():
     version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
     
     if version is None:
-        q4ws.append('BAZZAR Could not get the latest version from GitHub. Are you running a local development version?')
         logging.warn(
             'BAZZAR Could not get the latest version from GitHub. Are you running a local development version?')
         return current_version
@@ -90,12 +89,10 @@ def check_updates():
     
     # See how many commits behind we are
     if not current_version:
-        q4ws.append('BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
         logging.info('BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
         return latest_version
     
     if latest_version == current_version:
-        q4ws.append('BAZZAR is up to date')
         logging.info('BAZARR is up to date')
         return latest_version
     
@@ -116,7 +113,6 @@ def check_updates():
         commits_behind = 0
     
     if commits_behind > 0:
-        q4ws.append('BAZARR New version is available. You are %s commits behind' % commits_behind)
         logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
         if settings.general.auto_update:
             update()
@@ -137,7 +133,6 @@ def check_updates():
         update()
     
     elif commits_behind == 0:
-        q4ws_updater.append('BAZZAR is up to date')
         logging.info('BAZZAR is up to date')
     
     return latest_version
