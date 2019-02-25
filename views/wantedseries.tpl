@@ -146,7 +146,7 @@
 
 
 <script>
-	$('a, button').on('click', function(){
+	$('a, button:not(#wanted_search_missing_subtitles)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -164,8 +164,10 @@
 	});
 
 	$('#wanted_search_missing_subtitles').on('click', function(){
-		$('#loader_text').text("Searching for missing subtitles...");
-		window.location = '{{base_url}}wanted_search_missing_subtitles';
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}wanted_search_missing_subtitles'
+        })
 	});
 
 	$('.get_subtitle').on('click', function(){
