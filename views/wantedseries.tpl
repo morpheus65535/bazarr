@@ -164,6 +164,7 @@
 	});
 
 	$('#wanted_search_missing_subtitles').on('click', function(){
+		$(this).addClass('disabled');
 		$(this).find('i:first').addClass('loading');
 	    $.ajax({
             url: '{{base_url}}wanted_search_missing_subtitles'

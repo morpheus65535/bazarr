@@ -346,6 +346,7 @@
 	});
 
 	$('.execute').on('click', function(){
+	    $(this).addClass('disabled');
 		$(this).find('i:first').addClass('loading');
 	    $.ajax({
             url: '{{base_url}}execute/' + $(this).data("taskid")

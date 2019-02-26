@@ -157,6 +157,7 @@
 	});
 
 	$('#wanted_search_missing_subtitles_movies').on('click', function(){
+		$(this).addClass('disabled');
 		$(this).find('i:first').addClass('loading');
 	    $.ajax({
             url: '{{base_url}}wanted_search_missing_subtitles'
