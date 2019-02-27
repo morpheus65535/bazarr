@@ -56,7 +56,7 @@ def store_subtitles(file):
         try:
             # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
             #   subtitles outside the media file folder
-            subtitles = search_external_subtitles(file)
+            subtitles = search_external_subtitles(file, only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -137,10 +137,9 @@ def store_subtitles_movie(file):
         
         # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
         #   subtitles outside the media file folder
-        subtitles = search_external_subtitles(file)
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
-            subtitles = core.search_external_subtitles(file)
+            subtitles = search_external_subtitles(file, only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
