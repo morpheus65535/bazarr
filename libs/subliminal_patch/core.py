@@ -600,7 +600,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
                 logger.error('Cannot parse language code %r', language_code)
                 language = None
 
-        if not language and only_one:
+        elif not language_code and only_one:
             language = Language.rebuild(list(languages)[0], forced=forced)
 
         subtitles[p] = language
