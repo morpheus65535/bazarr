@@ -166,7 +166,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                 
                 try:
                     fld = get_target_folder(path)
-                    chmod = int(settings.general.chmod, 8) if sys.platform.startswith('linux') else None
+                    chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') else None
                     saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
                                                      tags=None,  # fixme
                                                      directory=fld,

@@ -152,9 +152,7 @@
                                 </div>
                             </div>
                         </div>
-                        % import sys
-                        % if sys.platform.startswith('linux'):
-                        <div class="middle aligned row">
+                        <div id="chmod" class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Set subtitle file permissions to</label>
                             </div>
@@ -168,12 +166,11 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Must be integer, e.g.: 0775" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Must be 4 digit octal, e.g.: 0775" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
                         </div>
-                        %end
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -1978,6 +1975,10 @@
     % if args.no_update:
     $("#div_update").hide();
     % end
+    % import sys
+    % if sys.platform.startswith('win'):
+    $("#chmod").hide();
+    % end
 
     $('.menu .item')
         .tab()
@@ -2370,12 +2371,12 @@
                         }
                     ]
                 },
-                % if sys.platform.startswith('linux'):
+                % if not sys.platform.startswith('win'):
                 settings_general_chmod: {
                     rules: [
                         {
-                            type: 'regExp[^(0[0-7]{3})$]',
-                            prompt: 'Please use only 4-digit integers with leading 0 (e.g.: 775)'
+                            type: 'regExp[^([0-7]{4})$]',
+                            prompt: 'Please use only 4-digit octal (e.g.: 0775)'
                         }
                     ]
                 },
