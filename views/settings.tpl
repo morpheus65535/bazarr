@@ -152,6 +152,28 @@
                                 </div>
                             </div>
                         </div>
+                        % import sys
+                        % if sys.platform.startswith('linux'):
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Set subtitle file permissions to</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div id="settings_chmod" class="ui fluid input">
+                                        <input name="settings_general_chmod" type="text"
+                                               value={{ settings.general.chmod }}>
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Must be integer, e.g.: 0775" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        %end
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -2345,6 +2367,15 @@
                         },
                         {
                             type : 'empty'
+                        }
+                    ]
+                },
+                % if sys.platform.startswith('linux'):
+                settings_general_chmod: {
+                    rules: [
+                        {
+                            type: 'regExp[^(0[0-7]{3})$]',
+                            prompt: 'Please use only 4-digit integers with leading 0 (e.g.: 775)'
                         }
                     ]
                 },
