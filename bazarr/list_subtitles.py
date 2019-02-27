@@ -16,7 +16,7 @@ from bs4 import UnicodeDammit
 from itertools import islice
 
 from get_args import args
-from get_languages import alpha2_from_alpha3, get_languages
+from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie
@@ -56,7 +56,7 @@ def store_subtitles(file):
         try:
             # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
             #   subtitles outside the media file folder
-            subtitles = search_external_subtitles(file, languages=get_languages(kind="code3"),
+            subtitles = search_external_subtitles(file, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
@@ -140,7 +140,7 @@ def store_subtitles_movie(file):
         #   subtitles outside the media file folder
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
-            subtitles = search_external_subtitles(file, languages=get_languages(kind="code3"),
+            subtitles = search_external_subtitles(file, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
