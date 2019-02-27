@@ -108,5 +108,12 @@ def alpha3_from_language(lang):
     return result
 
 
+def get_languages(kind="code2"):
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    c.execute('''SELECT ?, name FROM table_settings_languages WHERE enabled = 1''', (kind,))
+    return c.fetchall()
+
+
 if __name__ == '__main__':
     load_language_in_db()
