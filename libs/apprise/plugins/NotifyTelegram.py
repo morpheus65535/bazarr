@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
 #
-# Telegram Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 # To use this plugin, you need to first access https://api.telegram.org
 # You need to create a bot and acquire it's Token Identifier (bot_token)
@@ -55,6 +62,7 @@ from .NotifyBase import HTTP_ERROR_MAP
 from ..common import NotifyImageSize
 from ..utils import compat_is_basestring
 from ..utils import parse_bool
+from ..common import NotifyFormat
 
 TELEGRAM_IMAGE_XY = NotifyImageSize.XY_256
 
@@ -255,7 +263,7 @@ class NotifyTelegram(NotifyBase):
                     # Try to get the error message if we can:
                     error_msg = loads(r.content)['description']
 
-                except:
+                except Exception:
                     error_msg = None
 
                 try:
@@ -349,24 +357,50 @@ class NotifyTelegram(NotifyBase):
 
         payload = {}
 
-        # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
-        # See https://core.telegram.org/bots/api#html-style
-        title = re.sub('&nbsp;?', ' ', title, re.I)
-        body = re.sub('&nbsp;?', ' ', body, re.I)
-        # Tabs become 3 spaces
-        title = re.sub('&emsp;?', '   ', title, re.I)
-        body = re.sub('&emsp;?', '   ', body, re.I)
+        # Prepare Email Message
+        if self.notify_format == NotifyFormat.MARKDOWN:
+            payload['parse_mode'] = 'MARKDOWN'
 
-        # HTML
-        title = NotifyBase.escape_html(title, whitespace=False)
-        body = NotifyBase.escape_html(body, whitespace=False)
+        else:
+            # Either TEXT or HTML; if TEXT we'll make it HTML
+            payload['parse_mode'] = 'HTML'
 
-        payload['parse_mode'] = 'HTML'
+            # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
+            # See https://core.telegram.org/bots/api#html-style
+            body = re.sub('&nbsp;?', ' ', body, re.I)
 
-        payload['text'] = '<b>%s</b>\r\n%s' % (
-            title,
-            body,
-        )
+            # Tabs become 3 spaces
+            body = re.sub('&emsp;?', '   ', body, re.I)
+
+            if title:
+                # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
+                # See https://core.telegram.org/bots/api#html-style
+                title = re.sub('&nbsp;?', ' ', title, re.I)
+
+                # Tabs become 3 spaces
+                title = re.sub('&emsp;?', '   ', title, re.I)
+
+            # HTML
+            title = NotifyBase.escape_html(title, whitespace=False)
+            body = NotifyBase.escape_html(body, whitespace=False)
+
+        # Assign the body
+        payload['text'] = body
+
+        if title and self.notify_format == NotifyFormat.TEXT:
+            # Text HTML Formatting
+            payload['text'] = '<b>%s</b>\r\n%s' % (
+                title,
+                body,
+            )
+
+        elif title:
+            # Already HTML; trust developer has wrapped
+            # the title appropriately
+            payload['text'] = '%s\r\n%s' % (
+                title,
+                body,
+            )
 
         # Create a copy of the chat_ids list
         chat_ids = list(self.chat_ids)
@@ -419,7 +453,7 @@ class NotifyTelegram(NotifyBase):
                         # Try to get the error message if we can:
                         error_msg = loads(r.content)['description']
 
-                    except:
+                    except Exception:
                         error_msg = None
 
                     try:

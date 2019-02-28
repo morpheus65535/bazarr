@@ -1,23 +1,27 @@
 # -*- coding: utf-8 -*-
 #
-# Apprise Core
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with apprise.  If not, see <http://www.gnu.org/licenses/>.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import re
 import logging
@@ -27,6 +31,7 @@ from .common import NotifyType
 from .common import NotifyFormat
 from .utils import parse_list
 from .utils import compat_is_basestring
+from .utils import GET_SCHEMA_RE
 
 from .AppriseAsset import AppriseAsset
 
@@ -38,9 +43,6 @@ logger = logging.getLogger(__name__)
 
 # Build a list of supported plugins
 SCHEMA_MAP = {}
-
-# Used for attempting to acquire the schema if the URL can't be parsed.
-GET_SCHEMA_RE = re.compile(r'\s*(?P<schema>[a-z0-9]{3,9})://.*$', re.I)
 
 
 # Load our Lookup Matrix
@@ -55,7 +57,7 @@ def __load_matrix():
 
         # Get our plugin
         plugin = getattr(plugins, entry)
-        if not hasattr(plugin, 'app_id'): # pragma: no branch
+        if not hasattr(plugin, 'app_id'):  # pragma: no branch
             # Filter out non-notification modules
             continue
 
@@ -119,7 +121,7 @@ class Apprise(object):
             self.add(servers)
 
     @staticmethod
-    def instantiate(url, asset=None, suppress_exceptions=True):
+    def instantiate(url, asset=None, tag=None, suppress_exceptions=True):
         """
         Returns the instance of a instantiated plugin based on the provided
         Server URL.  If the url fails to be parsed, then None is returned.
@@ -160,6 +162,9 @@ class Apprise(object):
             logger.error('Could not parse URL: %s' % url)
             return None
 
+        # Build a list of tags to associate with the newly added notifications
+        results['tag'] = set(parse_list(tag))
+
         if suppress_exceptions:
             try:
                 # Attempt to create an instance of our plugin using the parsed
@@ -182,10 +187,16 @@ class Apprise(object):
 
         return plugin
 
-    def add(self, servers, asset=None):
+    def add(self, servers, asset=None, tag=None):
         """
         Adds one or more server URLs into our list.
 
+        You can override the global asset if you wish by including it with the
+        server(s) that you add.
+
+        The tag allows you to associate 1 or more tag values to the server(s)
+        being added. tagging a service allows you to exclusively access them
+        when calling the notify() function.
         """
 
         # Initialize our return status
@@ -200,12 +211,13 @@ class Apprise(object):
             self.servers.append(servers)
             return True
 
+        # build our server listings
         servers = parse_list(servers)
         for _server in servers:
 
             # Instantiate ourselves an object, this function throws or
             # returns None if it fails
-            instance = Apprise.instantiate(_server, asset=asset)
+            instance = Apprise.instantiate(_server, asset=asset, tag=tag)
             if not instance:
                 return_status = False
                 logging.error(
@@ -227,12 +239,17 @@ class Apprise(object):
         self.servers[:] = []
 
     def notify(self, title, body, notify_type=NotifyType.INFO,
-               body_format=None):
+               body_format=None, tag=None):
         """
         Send a notification to all of the plugins previously loaded.
 
         If the body_format specified is NotifyFormat.MARKDOWN, it will
         be converted to HTML if the Notification type expects this.
+
+        if the tag is specified (either a string or a set/list/tuple
+        of strings), then only the notifications flagged with that
+        tagged value are notified.  By default all added services
+        are notified (tag=None)
 
         """
 
@@ -245,14 +262,102 @@ class Apprise(object):
         # Tracks conversions
         conversion_map = dict()
 
+        # Build our tag setup
+        #   - top level entries are treated as an 'or'
+        #   - second level (or more) entries are treated as 'and'
+        #
+        #   examples:
+        #     tag="tagA, tagB"                = tagA or tagB
+        #     tag=['tagA', 'tagB']            = tagA or tagB
+        #     tag=[('tagA', 'tagC'), 'tagB']  = (tagA and tagC) or tagB
+        #     tag=[('tagB', 'tagC')]          = tagB and tagC
+
         # Iterate over our loaded plugins
         for server in self.servers:
+
+            if tag is not None:
+
+                if isinstance(tag, (list, tuple, set)):
+                    # using the tags detected; determine if we'll allow the
+                    # notification to be sent or not
+                    matched = False
+
+                    # Every entry here will be or'ed with the next
+                    for entry in tag:
+                        if isinstance(entry, (list, tuple, set)):
+
+                            # treat these entries as though all elements found
+                            # must exist in the notification service
+                            tags = set(parse_list(entry))
+
+                            if len(tags.intersection(
+                                   server.tags)) == len(tags):
+                                # our set contains all of the entries found
+                                # in our notification server object
+                                matched = True
+                                break
+
+                        elif entry in server:
+                            # our entr(ies) match what was found in our server
+                            # object.
+                            matched = True
+                            break
+
+                        # else: keep looking
+
+                    if not matched:
+                        # We did not meet any of our and'ed criteria
+                        continue
+
+                elif tag not in server:
+                    # one or more tags were defined and they didn't match the
+                    # entry in the current service; move along...
+                    continue
+
+                # else: our content was found inside the server, so we're good
+
+            # If our code reaches here, we either did not define a tag (it was
+            # set to None), or we did define a tag and the logic above
+            # determined we need to notify the service it's associated with
             if server.notify_format not in conversion_map:
                 if body_format == NotifyFormat.MARKDOWN and \
                         server.notify_format == NotifyFormat.HTML:
 
                     # Apply Markdown
                     conversion_map[server.notify_format] = markdown(body)
+
+                elif body_format == NotifyFormat.TEXT and \
+                        server.notify_format == NotifyFormat.HTML:
+
+                    # Basic TEXT to HTML format map; supports keys only
+                    re_map = {
+                        # Support Ampersand
+                        r'&': '&amp;',
+
+                        # Spaces to &nbsp; for formatting purposes since
+                        # multiple spaces are treated as one an this may not
+                        # be the callers intention
+                        r' ': '&nbsp;',
+
+                        # Tab support
+                        r'\t': '&nbsp;&nbsp;&nbsp;',
+
+                        # Greater than and Less than Characters
+                        r'>': '&gt;',
+                        r'<': '&lt;',
+                    }
+
+                    # Compile our map
+                    re_table = re.compile(
+                        r'(' + '|'.join(map(re.escape, re_map.keys())) + r')',
+                        re.IGNORECASE,
+                    )
+
+                    # Execute our map against our body in addition to swapping
+                    # out new lines and replacing them with <br/>
+                    conversion_map[server.notify_format] = \
+                        re.sub(r'\r*\n', '<br/>\r\n',
+                               re_table.sub(lambda x: re_map[x.group()], body))
 
                 else:
                     # Store entry directly
@@ -302,7 +407,7 @@ class Apprise(object):
 
             # Get our plugin
             plugin = getattr(plugins, entry)
-            if not hasattr(plugin, 'app_id'): # pragma: no branch
+            if not hasattr(plugin, 'app_id'):  # pragma: no branch
                 # Filter out non-notification modules
                 continue
 
