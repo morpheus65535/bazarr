@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.7.1'
+bazarr_version = '0.7.2'
 
 import gc
 import sys
@@ -23,10 +23,29 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
+
+
+# Try to import gevent and exit if it's not available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError:
+    import logging
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        import os
+        from get_args import args
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
+
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-# from cherrypy.wsgiserver import CherryPyWSGIServer
+
 from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
@@ -76,20 +95,6 @@ if "PYCHARM_HOSTED" in os.environ:
     bottle.TEMPLATES.clear()
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
-
-# Install gevent under user directory if it'S not already available. This one is required to use websocket.
-try:
-    import gevent
-except ImportError as e:
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
 
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -363,6 +368,8 @@ def save_wizard():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -605,7 +612,7 @@ def edit_series(no):
         lang = 'None'
 
     single_language = settings.general.getboolean('single_language')
-    if single_language is True:
+    if single_language:
         if str(lang) == "['None']":
             lang = 'None'
         else:
@@ -802,8 +809,15 @@ def edit_movie(no):
     else:
         lang = 'None'
 
-    if str(lang) == "['']":
-        lang = '[]'
+    single_language = settings.general.getboolean('single_language')
+    if single_language:
+        if str(lang) == "['None']":
+            lang = 'None'
+        else:
+            lang = str(lang)
+    else:
+        if str(lang) == "['']":
+            lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
 
@@ -874,8 +888,8 @@ def scan_disk_movie(no):
 def search_missing_subtitles(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
-
-    series_download_subtitles(no)
+    
+    add_job(series_download_subtitles, args=[no], name=('search_missing_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -886,7 +900,7 @@ def search_missing_subtitles_movie(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    movies_download_subtitles(no)
+    add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -1063,7 +1077,7 @@ def wanted_search_missing_subtitles_list():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    wanted_search_missing_subtitles()
+    add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
 
     redirect(ref)
 
@@ -1338,6 +1352,8 @@ def save_settings():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1860,34 +1876,27 @@ def test_notification(protocol, provider):
     )
 
 
-@route(base_url + 'websocket')
+@route(base_url + 'notifications')
 @custom_auth_basic(check_credentials)
-def handle_websocket():
-    wsock = request.environ.get('wsgi.websocket')
-    if not wsock:
-        abort(400, 'Expected WebSocket request.')
+def notifications():
+    if queueconfig.notifications:
+        return queueconfig.notifications.read()
+    else:
+        return None
 
-    queueconfig.q4ws.clear()
 
-    while True:
-        try:
-            if queueconfig.q4ws:
-                wsock.send(queueconfig.q4ws.popleft())
-                gevent.sleep(0.1)
-            else:
-                gevent.sleep(0.5)
-        except WebSocketError:
-            break
+@route(base_url + 'running_tasks')
+@custom_auth_basic(check_credentials)
+def running_tasks_list():
+    return dict(tasks=running_tasks)
 
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-
-server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
+server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(
-        settings.general.port) + str(base_url))
-    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+        args.port) if args.port else str(settings.general.port)) + str(base_url))
     server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

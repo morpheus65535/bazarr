@@ -1006,7 +1006,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score}}">
+                                        <input name="settings_general_minimum_score" type="number" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.minimum_score}}">
                                     </div>
                                 </div>
                             </div>
@@ -1026,7 +1026,7 @@
                             <div class="two wide column">
                                 <div class='field'>
                                     <div class="ui input">
-                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="5" onkeydown="return false" value="{{settings.general.minimum_score_movie}}">
+                                        <input name="settings_general_minimum_score_movies" type="number" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.minimum_score_movie}}">
                                     </div>
                                 </div>
                             </div>
@@ -1184,6 +1184,28 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>GreekSubtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="greeksubtitles" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="greeksubtitles_option" class="ui grid container">
+
                         </div>
 
                         <div class="middle aligned row">
@@ -1376,6 +1398,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Subs.sab.bz</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subssabbz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subssabbz_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Subscene</label>
                             </div>
                             <div class="one wide column">
@@ -1401,6 +1445,94 @@
                             </div>
                         </div>
                         <div id="subscenter_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subsunacs.net</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subsunacs" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subsunacs_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Free</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4free" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4free_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Series</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4series" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4series_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>SubZ</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subz_option" class="ui grid container">
 
                         </div>
 
@@ -1447,6 +1579,47 @@
                         </div>
                         <div id="tvsubtitles_option" class="ui grid container">
 
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>XSubs</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="xsubs" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="xsubs_option" class="ui grid container">
+                        	<div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_username" type="text" value="{{settings.xsubs.username if settings.xsubs.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_password" type="password" value="{{settings.xsubs.password if settings.xsubs.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="middle aligned row">
@@ -2051,10 +2224,10 @@
     $('#settings_languages').dropdown();
     $('#settings_serie_default_languages').dropdown();
     $('#settings_movie_default_languages').dropdown();
-    %if settings.general.serie_default_language is not None:
+    %if settings.general.serie_default_language != 'None':
     $('#settings_serie_default_languages').dropdown('set selected',{{!settings.general.serie_default_language}});
     %end
-    %if settings.general.movie_default_language is not None:
+    %if settings.general.movie_default_language != 'None':
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
     %end
     $('#settings_branch').dropdown();

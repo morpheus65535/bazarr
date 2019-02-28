@@ -9,6 +9,7 @@ import rarfile
 
 from cork import Cork
 from ConfigParser2 import ConfigParser
+from whichcraft import which
 from config import settings
 from check_update import check_releases
 from get_args import args
@@ -97,7 +98,7 @@ if cfg.has_section('general'):
 
 # Move providers settings from DB to config file
 try:
-    db = sqlite3.connect(os.path.join(config_dir, 'db', 'bazarr.db'), timeout=30)
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     enabled_providers = c.execute("SELECT * FROM table_settings_providers WHERE enabled = 1").fetchall()
     settings_providers = c.execute("SELECT * FROM table_settings_providers").fetchall()
@@ -124,7 +125,7 @@ try:
                 settings.legendastv.password = provider[3]
 
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
-    with open(os.path.join(config_dir, 'config', 'config.ini'), 'w+') as handle:
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
 except:
@@ -153,17 +154,19 @@ def init_binaries():
 
     unrar_exe = None
     exe = None
-    if platform.system() == "Windows": # Windows
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
+    installed_unrar = which('unrar')
 
-    elif platform.system() == "Darwin": # MacOSX
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
-
-    elif platform.system() == "Linux": # Linux
-        unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
-
+    if installed_unrar and os.path.isfile(installed_unrar):
+        unrar_exe = installed_unrar
     else:
-        unrar_exe = "unrar"
+        if platform.system() == "Windows": # Windows
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
+
+        elif platform.system() == "Darwin": # MacOSX
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
+
+        elif platform.system() == "Linux": # Linux
+            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
 
     if unrar_exe and os.path.isfile(unrar_exe):
         exe = unrar_exe

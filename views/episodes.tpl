@@ -361,8 +361,11 @@
 	});
 
 	$('#search_missing_subtitles').on('click', function(){
-		$('#loader_text').text("Searching for missing subtitles...");
-		window.location = '{{base_url}}search_missing_subtitles/{{no}}';
+		$(this).addClass('disabled');
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}search_missing_subtitles/{{no}}'
+        })
 	});
 
 	$('.remove_subtitles').on('click', function(){
@@ -399,7 +402,7 @@
 			hi: $(this).attr("data-hi"),
 			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
 			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId'),
-			title: '{{!details[0].replace("'", "\\'")}}'
+			title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -418,7 +421,7 @@
 		});
 	});
 
-	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').on('click', function(){
+	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -472,7 +475,7 @@
 			hi: hi,
 			sonarrSeriesId: sonarrSeriesId,
 			sonarrEpisodeId: sonarrEpisodeId,
-			title: '{{!details[0].replace("'", "\\'")}}'
+			title: "{{!details[0].replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -482,12 +485,13 @@
 				zeroRecords: 'No subtitles found for this episode'
 		    },
 		    paging: true,
+    		lengthChange: false,
+			pageLength: 5,
     		searching: false,
     		ordering: false,
     		processing: false,
         	serverSide: false,
-        	lengthMenu: [ [ 5, 10, 25, 50, 100 , -1 ] , [ 5, 10, 25, 50, 100, "All" ] ],
-    		ajax: {
+        	ajax: {
 				url: '{{base_url}}manual_search',
 				type: 'POST',
                 data: values
@@ -555,7 +559,7 @@
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId,
-				title: '{{!details[0].replace("'", "\\'")}}'
+				title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

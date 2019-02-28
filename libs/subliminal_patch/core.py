@@ -565,7 +565,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         p = entry.name
 
         # keep only valid subtitle filenames
-        if not p.startswith(fileroot) or not p.endswith(SUBTITLE_EXTENSIONS):
+        if not p.lower().startswith(fileroot.lower()) or not p.endswith(SUBTITLE_EXTENSIONS):
             continue
 
         p_root, p_ext = os.path.splitext(p)
