@@ -109,18 +109,18 @@ def alpha3_from_language(lang):
     return result
 
 
-def get_language_set(kind="code3"):
+def get_language_set():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-    c.execute('''SELECT ?, name FROM table_settings_languages WHERE enabled = 1''', (kind,))
+    languages = c.execute('''SELECT code3 FROM table_settings_languages WHERE enabled = 1''').fetchall()
+    db.close()
     language_set = set()
 
-    for lang in c.fetchall():
-        # fixme: currently only works with kind=code3
-        if lang == 'pob':
+    for lang in languages:
+        if lang[0] == 'pob':
             language_set.add(Language('por', 'BR'))
         else:
-            language_set.add(Language(lang))
+            language_set.add(Language(lang[0]))
 
     return language_set
 
