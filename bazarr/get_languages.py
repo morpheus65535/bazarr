@@ -5,6 +5,7 @@ import sqlite3
 import pycountry
 
 from get_args import args
+from subzero.language import Language
 
 
 def load_language_in_db():
@@ -106,6 +107,22 @@ def alpha3_from_language(lang):
         result = None
     db.close()
     return result
+
+
+def get_language_set():
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    languages = c.execute('''SELECT code3 FROM table_settings_languages WHERE enabled = 1''').fetchall()
+    db.close()
+    language_set = set()
+
+    for lang in languages:
+        if lang[0] == 'pob':
+            language_set.add(Language('por', 'BR'))
+        else:
+            language_set.add(Language(lang[0]))
+
+    return language_set
 
 
 if __name__ == '__main__':

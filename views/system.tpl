@@ -62,7 +62,7 @@
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
 				<div class="content">
-					<table class="ui very basic selectable table">
+					<table class="ui very basic selectable table" id="tasks">
 						<thead>
 							<tr>
 								<th>Name</th>
@@ -73,7 +73,7 @@
 						</thead>
 						<tbody>
 						%for task in task_list:
-							<tr>
+							<tr id="{{task[3]}}">
 								<td>{{task[0]}}</td>
 								<td>{{task[1]}}</td>
 								<td>{{task[2]}}</td>
@@ -346,7 +346,11 @@
 	});
 
 	$('.execute').on('click', function(){
-		window.location = '{{base_url}}execute/' + $(this).data("taskid");
+	    $(this).addClass('disabled');
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}execute/' + $(this).data("taskid")
+        })
 	});
 
 	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').on('click', function(){

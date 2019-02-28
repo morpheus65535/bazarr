@@ -19,6 +19,8 @@
 			.searchicon {
 				color: white !important;
 			}
+            div.disabled { pointer-events: none; }
+            button.disabled { pointer-events: none; }
         </style>
     </head>
     <body>
@@ -222,13 +224,13 @@
 </script>
 
 <script type="text/javascript">
-	var url = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
-	var notification;
+	var url_notifications = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
+	var notificationTimeout;
 	var timeout;
 	var killer;
-	function doAjax() {
+	function doNotificationsAjax() {
         $.ajax({
-            url: url,
+            url: url_notifications,
             success: function (data) {
             	if (data !== "") {
 					data = JSON.parse(data);
@@ -275,17 +277,79 @@
             },
             complete: function (data) {
                 // Schedule the next
-                if (data != "") {
-                	notification = setTimeout(doAjax, 100);
+                if (data !== "") {
+                	notificationTimeout = setTimeout(doNotificationsAjax, 100);
 				} else {
-                	notification = setTimeout(doAjax, 1000);
+                	notificationTimeout = setTimeout(doNotificationsAjax, 1000);
 				}
             }
         });
     }
-    notification = setTimeout(doAjax, 1000);
+    notificationTimeout = setTimeout(doNotificationsAjax, 1000);
 
 	$(window).bind('beforeunload', function(){
-		clearTimeout(notification);
+		clearTimeout(notificationTimeout);
+	});
+</script>
+
+
+<script type="text/javascript">
+	var url_tasks = location.protocol +"//" + window.location.host + "{{base_url}}running_tasks";
+	var tasksTimeout;
+	function doTasksAjax() {
+        $.ajax({
+            url: url_tasks,
+            dataType: 'json',
+            success: function (data) {
+            	$('#tasks > tbody  > tr').each(function() {
+					if ($.inArray($(this).attr('id'), data['tasks']) > -1) {
+					    $(this).find('td:last').find('div:first').addClass('disabled');
+						$(this).find('td:last').find('div:first').find('i:first').addClass('loading');
+					} else {
+						$(this).find('td:last').find('div:first').removeClass('disabled');
+						$(this).find('td:last').find('div:first').find('i:first').removeClass('loading');
+					}
+				});
+
+            	if ($.inArray('wanted_search_missing_subtitles', data['tasks']) > -1) {
+                    $('#wanted_search_missing_subtitles').addClass('disabled');
+                    $('#wanted_search_missing_subtitles_movies').addClass('disabled');
+                    $('#wanted_search_missing_subtitles').find('i:first').addClass('loading');
+                    $('#wanted_search_missing_subtitles_movies').find('i:first').addClass('loading');
+                } else {
+                    $('#wanted_search_missing_subtitles').removeClass('disabled');
+                    $('#wanted_search_missing_subtitles_movies').removeClass('disabled');
+                    $('#wanted_search_missing_subtitles').find('i:first').removeClass('loading');
+                    $('#wanted_search_missing_subtitles_movies').find('i:first').removeClass('loading');
+                }
+
+                %if 'no' in locals():
+            	if ($.inArray('search_missing_subtitles_{{no}}', data['tasks']) > -1) {
+                    $('#search_missing_subtitles').addClass('disabled');
+                    $('#search_missing_subtitles').find('i:first').addClass('loading');
+                } else {
+                    $('#search_missing_subtitles').removeClass('disabled');
+                    $('#search_missing_subtitles').find('i:first').removeClass('loading');
+                }
+
+            	if ($.inArray('search_missing_subtitles_movie_{{no}}', data['tasks']) > -1) {
+                    $('#search_missing_subtitles_movie').addClass('disabled');
+                    $('#search_missing_subtitles_movie').find('i:first').addClass('loading');
+                } else {
+                    $('#search_missing_subtitles_movie').removeClass('disabled');
+                    $('#search_missing_subtitles_movie').find('i:first').removeClass('loading');
+                }
+            	%end
+            },
+            complete: function (data) {
+                // Schedule the next
+                tasksTimeout = setTimeout(doTasksAjax, 5000);
+            }
+        });
+    }
+    tasksTimeout = setTimeout(doTasksAjax, 500);
+
+	$(window).bind('beforeunload', function(){
+		clearTimeout(tasksTimeout);
 	});
 </script>
