@@ -1,55 +1,45 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Our service wrappers
 #
-# This code is licensed under the MIT License.
+# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# This file is part of apprise.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
 
 # Used for Testing; specifically test_email_plugin.py needs access
 # to the modules WEBBASE_LOOKUP_TABLE and WebBaseLogin objects
 from . import NotifyEmail as NotifyEmailBase
 
 from .NotifyBoxcar import NotifyBoxcar
-from .NotifyDBus import NotifyDBus
 from .NotifyDiscord import NotifyDiscord
 from .NotifyEmail import NotifyEmail
 from .NotifyEmby import NotifyEmby
 from .NotifyFaast import NotifyFaast
 from .NotifyGrowl.NotifyGrowl import NotifyGrowl
-from .NotifyGnome import NotifyGnome
 from .NotifyIFTTT import NotifyIFTTT
 from .NotifyJoin import NotifyJoin
 from .NotifyJSON import NotifyJSON
-from .NotifyMatrix import NotifyMatrix
 from .NotifyMatterMost import NotifyMatterMost
 from .NotifyProwl import NotifyProwl
-from .NotifyPushed import NotifyPushed
+from .NotifyPushalot import NotifyPushalot
 from .NotifyPushBullet import NotifyPushBullet
 from .NotifyPushjet.NotifyPushjet import NotifyPushjet
 from .NotifyPushover import NotifyPushover
 from .NotifyRocketChat import NotifyRocketChat
-from .NotifyRyver import NotifyRyver
 from .NotifySlack import NotifySlack
-from .NotifySNS import NotifySNS
+from .NotifyStride import NotifyStride
 from .NotifyTelegram import NotifyTelegram
+from .NotifyToasty import NotifyToasty
 from .NotifyTwitter.NotifyTwitter import NotifyTwitter
 from .NotifyXBMC import NotifyXBMC
 from .NotifyXML import NotifyXML
@@ -66,13 +56,12 @@ from ..common import NOTIFY_TYPES
 
 __all__ = [
     # Notification Services
-    'NotifyBoxcar', 'NotifyDBus', 'NotifyEmail', 'NotifyEmby', 'NotifyDiscord',
-    'NotifyFaast', 'NotifyGnome', 'NotifyGrowl', 'NotifyIFTTT', 'NotifyJoin',
-    'NotifyJSON', 'NotifyMatrix', 'NotifyMatterMost', 'NotifyProwl',
-    'NotifyPushed', 'NotifyPushBullet', 'NotifyPushjet',
-    'NotifyPushover', 'NotifyRocketChat', 'NotifyRyver', 'NotifySlack',
-    'NotifySNS', 'NotifyTwitter', 'NotifyTelegram', 'NotifyXBMC',
-    'NotifyXML', 'NotifyWindows',
+    'NotifyBoxcar', 'NotifyEmail', 'NotifyEmby', 'NotifyDiscord',
+    'NotifyFaast', 'NotifyGrowl', 'NotifyIFTTT', 'NotifyJoin', 'NotifyJSON',
+    'NotifyMatterMost', 'NotifyProwl', 'NotifyPushalot',
+    'NotifyPushBullet', 'NotifyPushjet', 'NotifyPushover', 'NotifyRocketChat',
+    'NotifySlack', 'NotifyStride', 'NotifyToasty', 'NotifyTwitter',
+    'NotifyTelegram', 'NotifyXBMC', 'NotifyXML', 'NotifyWindows',
 
     # Reference
     'NotifyImageSize', 'NOTIFY_IMAGE_SIZES', 'NotifyType', 'NOTIFY_TYPES',

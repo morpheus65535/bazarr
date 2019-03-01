@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Discord Notify Wrapper
 #
-# This code is licensed under the MIT License.
+# Copyright (C) 2018 Chris Caron <lead2gold@gmail.com>
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# This file is part of apprise.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
 
 # For this to work correctly you need to create a webhook. To do this just
 # click on the little gear icon next to the channel you're part of. From
@@ -66,7 +59,7 @@ class NotifyDiscord(NotifyBase):
     secure_protocol = 'discord'
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_discord'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_discored'
 
     # Discord Webhook
     notify_url = 'https://discordapp.com/api/webhooks'
@@ -76,6 +69,9 @@ class NotifyDiscord(NotifyBase):
 
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 2000
+
+    # Default Notify Format
+    notify_format = NotifyFormat.MARKDOWN
 
     def __init__(self, webhook_id, webhook_token, tts=False, avatar=True,
                  footer=False, thumbnail=True, **kwargs):
@@ -133,15 +129,9 @@ class NotifyDiscord(NotifyBase):
             'wait': self.tts is False,
 
             # Our color associated with our notification
-            'color': self.color(notify_type, int)
-        }
+            'color': self.color(notify_type, int),
 
-        # Acquire image_url
-        image_url = self.image_url(notify_type)
-
-        if self.notify_format == NotifyFormat.MARKDOWN:
-            # Use embeds for payload
-            payload['embeds'] = [{
+            'embeds': [{
                 'provider': {
                     'name': self.app_id,
                     'url': self.app_url,
@@ -150,8 +140,9 @@ class NotifyDiscord(NotifyBase):
                 'type': 'rich',
                 'description': body,
             }]
+        }
 
-            # Break titles out so that we can sort them in embeds
+        if self.notify_format == NotifyFormat.MARKDOWN:
             fields = self.extract_markdown_sections(body)
 
             if len(fields) > 0:
@@ -162,29 +153,25 @@ class NotifyDiscord(NotifyBase):
                     fields[0].get('name') + fields[0].get('value')
                 payload['embeds'][0]['fields'] = fields[1:]
 
-            if self.footer:
-                logo_url = self.image_url(notify_type, logo=True)
-                payload['embeds'][0]['footer'] = {
-                    'text': self.app_desc,
-                }
+        if self.footer:
+            logo_url = self.image_url(notify_type, logo=True)
+            payload['embeds'][0]['footer'] = {
+                'text': self.app_desc,
+            }
+            if logo_url:
+                payload['embeds'][0]['footer']['icon_url'] = logo_url
 
-                if logo_url:
-                    payload['embeds'][0]['footer']['icon_url'] = logo_url
-
-            if self.thumbnail and image_url:
+        image_url = self.image_url(notify_type)
+        if image_url:
+            if self.thumbnail:
                 payload['embeds'][0]['thumbnail'] = {
                     'url': image_url,
                     'height': 256,
                     'width': 256,
                 }
 
-        else:
-            # not markdown
-            payload['content'] = body if not title \
-                else "{}\r\n{}".format(title, body)
-
-        if self.avatar and image_url:
-            payload['avatar_url'] = image_url
+            if self.avatar:
+                payload['avatar_url'] = image_url
 
         if self.user:
             # Optionally override the default username of the webhook
@@ -284,7 +271,7 @@ class NotifyDiscord(NotifyBase):
 
         # Use Thumbnail
         results['thumbnail'] = \
-            parse_bool(results['qsd'].get('thumbnail', False))
+            parse_bool(results['qsd'].get('thumbnail', True))
 
         return results
 
@@ -297,8 +284,8 @@ class NotifyDiscord(NotifyBase):
 
         """
         regex = re.compile(
-            r'^\s*#+\s*(?P<name>[^#\n]+)([ \r\t\v#])?'
-            r'(?P<value>([^ \r\t\v#].+?)(\n(?!\s#))|\s*$)', flags=re.S | re.M)
+            r'\s*#+\s*(?P<name>[^#\n]+)([ \r\t\v#]*)'
+            r'(?P<value>(.+?)(\n(?!\s#))|\s*$)', flags=re.S)
 
         common = regex.finditer(markdown)
         fields = list()

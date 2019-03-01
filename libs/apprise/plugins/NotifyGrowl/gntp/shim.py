@@ -27,16 +27,16 @@ if PY3:
 	from configparser import RawConfigParser
 else:
 	def b(s):
-		if isinstance(s, unicode):  # noqa
+		if isinstance(s, unicode):
 			return s.encode('utf8', 'replace')
 		return s
 
 	def u(s):
-		if isinstance(s, unicode):  # noqa
+		if isinstance(s, unicode):
 			return s
 		if isinstance(s, int):
 			s = str(s)
-		return unicode(s, "utf8", "replace")  # noqa
+		return unicode(s, "utf8", "replace")
 
 	from StringIO import StringIO
 	from ConfigParser import RawConfigParser

@@ -1,28 +1,20 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Pushjet Notify Wrapper
 #
-# This code is licensed under the MIT License.
+# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# This file is part of apprise.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
 import re
 from .pushjet import errors
 from .pushjet import pushjet
@@ -42,6 +34,9 @@ class NotifyPushjet(NotifyBase):
 
     # The default descriptive name associated with the Notification
     service_name = 'Pushjet'
+
+    # The services URL
+    service_url = 'https://pushjet.io/'
 
     # The default protocol
     protocol = 'pjet'
@@ -63,16 +58,21 @@ class NotifyPushjet(NotifyBase):
         Perform Pushjet Notification
         """
         try:
-            server = "http://"
-            if self.secure:
-                server = "https://"
+            if self.user and self.host:
+                server = "http://"
+                if self.secure:
+                    server = "https://"
 
-            server += self.host
-            if self.port:
-                server += ":" + str(self.port)
+                server += self.host
+                if self.port:
+                    server += ":" + str(self.port)
 
-            api = pushjet.Api(server)
-            service = api.Service(secret_key=self.user)
+                api = pushjet.Api(server)
+                service = api.Service(secret_key=self.user)
+
+            else:
+                api = pushjet.Api(pushjet.DEFAULT_API_URL)
+                service = api.Service(secret_key=self.host)
 
             service.send(body, title)
             self.logger.info('Sent Pushjet notification.')
@@ -83,28 +83,3 @@ class NotifyPushjet(NotifyBase):
             return False
 
         return True
-
-    @staticmethod
-    def parse_url(url):
-        """
-        Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
-
-        Syntax:
-           pjet://secret@hostname
-           pjet://secret@hostname:port
-           pjets://secret@hostname
-           pjets://secret@hostname:port
-
-        """
-        results = NotifyBase.parse_url(url)
-
-        if not results:
-            # We're done early as we couldn't load the results
-            return results
-
-        if not results.get('user'):
-            # a username is required
-            return None
-
-        return results

@@ -1,27 +1,20 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
-# All rights reserved.
+# Base Notify Wrapper
 #
-# This code is licensed under the MIT License.
+# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files(the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions :
+# This file is part of apprise.
 #
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
 
 import re
 import logging
@@ -40,7 +33,6 @@ except ImportError:
 
 from ..utils import parse_url
 from ..utils import parse_bool
-from ..utils import parse_list
 from ..utils import is_hostname
 from ..common import NOTIFY_TYPES
 from ..common import NotifyFormat
@@ -128,9 +120,6 @@ class NotifyBase(object):
     # Default Notify Format
     notify_format = NotifyFormat.TEXT
 
-    # Maintain a set of tags to associate with this specific notification
-    tags = set()
-
     # Logging
     logger = logging.getLogger(__name__)
 
@@ -162,11 +151,10 @@ class NotifyBase(object):
 
         self.user = kwargs.get('user')
         self.password = kwargs.get('password')
-        self.headers = kwargs.get('headers')
 
-        if 'format' in kwargs:
-            # Store the specified format if specified
-            notify_format = kwargs.get('format', '')
+        if 'notify_format' in kwargs:
+            # Store the specified notify_format if specified
+            notify_format = kwargs.get('notify_format')
             if notify_format.lower() not in NOTIFY_FORMATS:
                 self.logger.error(
                     'Invalid notification format %s' % notify_format,
@@ -176,12 +164,6 @@ class NotifyBase(object):
                 )
             # Provide override
             self.notify_format = notify_format
-
-        if 'tag' in kwargs:
-            # We want to associate some tags with our notification service.
-            # the code below gets the 'tag' argument if defined, otherwise
-            # it just falls back to whatever was already defined globally
-            self.tags = set(parse_list(kwargs.get('tag', self.tags)))
 
     def throttle(self, throttle_time=None):
         """
@@ -260,19 +242,6 @@ class NotifyBase(object):
             color_type=color_type,
         )
 
-    def __contains__(self, tags):
-        """
-        Returns true if the tag specified is associated with this notification.
-
-        tag can also be a tuple, set, and/or list
-
-        """
-        if isinstance(tags, (tuple, set, list)):
-            return bool(set(tags) & self.tags)
-
-        # return any match
-        return tags in self.tags
-
     @property
     def app_id(self):
         return self.asset.app_id
@@ -291,10 +260,6 @@ class NotifyBase(object):
         Takes html text as input and escapes it so that it won't
         conflict with any xml/html wrapping characters.
         """
-        if not html:
-            # nothing more to do; return object as is
-            return html
-
         escaped = _escape(html)
 
         if whitespace:
@@ -425,6 +390,4 @@ class NotifyBase(object):
         if 'user' in results['qsd']:
             results['user'] = results['qsd']['user']
 
-        results['headers'] = {k[1:]: v for k, v in results['qsd'].items()
-                              if re.match(r'^-.', k)}
         return results
