@@ -10,7 +10,6 @@ import zipfile
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
-from six import text_type
 
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal import __short_version__
@@ -73,6 +72,8 @@ class Subs4SeriesProvider(Provider):
     server_url = 'https://www.subs4series.com'
     search_url = '/search_report.php?search={}&searchType=1'
     episode_link = '/tv-series/{show_id}/season-{season:d}/episode-{episode:d}'
+    anti_block_1 = '/includes/anti-block-layover.php?launch=1'
+    anti_block_2 = '/includes/anti-block.php'
     subtitle_class = Subs4SeriesSubtitle
 
     def __init__(self):
@@ -85,62 +86,51 @@ class Subs4SeriesProvider(Provider):
     def terminate(self):
         self.session.close()
 
-    def get_show_ids(self, title, year=None):
-        """Get the best matching show id for `series` and `year`.
+    def get_show_links(self, title, year=None):
+        """Get the matching show links for `title` and `year`.
 
         First search in the result of :meth:`_get_show_suggestions`.
 
         :param title: show title.
         :param year: year of the show, if any.
         :type year: int
-        :return: the show id, if found.
-        :rtype: str
+        :return: the show links, if found.
+        :rtype: list of str
 
         """
-        title_sanitized = sanitize(title).lower()
-        show_ids = self._get_suggestions(title)
+        title = sanitize(title)
+        suggestions = self._get_suggestions(title)
 
-        matched_show_ids = []
-        for show in show_ids:
-            show_id = None
-            show_title = sanitize(show['title'])
-            # attempt with year
-            if not show_id and year:
-                logger.debug('Getting show id with year')
-                show_id = '/'.join(show['link'].rsplit('/', 2)[1:]) if show_title == '{title} {year:d}'.format(
-                    title=title_sanitized, year=year) else None
+        show_links = []
+        for suggestion in suggestions:
+            show_title = sanitize(suggestion['title'])
 
-            # attempt clean
-            if not show_id:
-                logger.debug('Getting show id')
-                show_id = '/'.join(show['link'].rsplit('/', 2)[1:]) if show_title == title_sanitized else None
+            if show_title == title or (year and show_title == '{title} {year:d}'.format(title=title, year=year)):
+                logger.debug('Getting show link')
+                show_links.append('/'.join(suggestion['link'].rsplit('/', 2)[1:]))
 
-            if show_id:
-                matched_show_ids.append(show_id)
+        return show_links
 
-        return matched_show_ids
-
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, to_str=text_type,
-                               should_cache_fn=lambda value: value)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
     def _get_suggestions(self, title):
         """Search the show or movie id from the `title` and `year`.
 
         :param str title: title of the show.
         :return: the show suggestions found.
-        :rtype: dict
+        :rtype: list of dict
 
         """
         # make the search
         logger.info('Searching show ids with %r', title)
-        r = self.session.get(self.server_url + text_type(self.search_url).format(title),
+        r = self.session.get(self.server_url + self.search_url.format(title),
                              headers={'Referer': self.server_url}, timeout=10)
         r.raise_for_status()
 
         if not r.content:
             logger.debug('No data returned from provider')
-            return {}
+            return []
 
-        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
+        soup = ParserBeautifulSoup(r.content, ['html.parser'])
         series = [{'link': l.attrs['value'], 'title': l.text}
                   for l in soup.select('select[name="Mov_sel"] > option[value]')]
         logger.debug('Found suggestions: %r', series)
@@ -164,21 +154,21 @@ class Subs4SeriesProvider(Provider):
 
         soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
 
-        year_num = None
+        year = None
         matches = year_re.match(str(soup.select_one('#dates_header_br > table div').contents[2]).strip())
         if matches:
-            year_num = int(matches.group(1))
-        show_title = str(soup.select_one('#dates_header_br > table u').contents[0]).strip()
+            year = int(matches.group(1))
+        show_title = str(soup.select_one('#dates_header_br > table div u').string).strip()
 
         subtitles = []
         # loop over episode rows
-        for subtitle in soup.select('table.table_border div[align="center"] > div'):
+        for subs_tag in soup.select('table .seeDark,.seeMedium'):
             # read common info
-            version = subtitle.find('b').text
-            download_link = self.server_url + subtitle.find('a')['href']
-            language = Language.fromalpha2(subtitle.find('img')['src'].split('/')[-1].split('.')[0])
+            version = subs_tag.find('b').text
+            download_link = self.server_url + subs_tag.find('a')['href']
+            language = Language.fromalpha2(subs_tag.find('img')['src'].split('/')[-1].split('.')[0])
 
-            subtitle = self.subtitle_class(language, page_link, show_title, year_num, version, download_link)
+            subtitle = self.subtitle_class(language, page_link, show_title, year, version, download_link)
 
             logger.debug('Found subtitle %r', subtitle)
             subtitles.append(subtitle)
@@ -189,16 +179,16 @@ class Subs4SeriesProvider(Provider):
         # lookup show_id
         titles = [video.series] + video.alternative_series if isinstance(video, Episode) else []
 
-        show_ids = None
+        show_links = None
         for title in titles:
-            show_ids = self.get_show_ids(title, video.year)
-            if show_ids and len(show_ids) > 0:
+            show_links = self.get_show_links(title, video.year)
+            if show_links:
                 break
 
         subtitles = []
         # query for subtitles with the show_id
-        for show_id in show_ids:
-            subtitles += [s for s in self.query(show_id, video.series, video.season, video.episode, video.title)
+        for show_link in show_links:
+            subtitles += [s for s in self.query(show_link, video.series, video.season, video.episode, video.title)
                           if s.language in languages]
 
         return subtitles
@@ -226,6 +216,8 @@ class Subs4SeriesProvider(Provider):
                 logger.debug('Unable to download subtitle. No download link found')
                 return
 
+            self.apply_anti_block(subtitle)
+
             download_url = self.server_url + target
             r = self.session.get(download_url, headers={'Referer': subtitle.download_link}, timeout=10)
             r.raise_for_status()
@@ -241,6 +233,10 @@ class Subs4SeriesProvider(Provider):
                 subtitle.content = fix_line_ending(subtitle_content)
             else:
                 logger.debug('Could not extract subtitle from %r', archive)
+
+    def apply_anti_block(self, subtitle):
+        self.session.get(self.server_url + self.anti_block_1, headers={'Referer': subtitle.download_link}, timeout=10)
+        self.session.get(self.server_url + self.anti_block_2, headers={'Referer': subtitle.download_link}, timeout=10)
 
 
 def _get_archive(content):
