@@ -344,7 +344,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
+                fld = get_target_folder(path)
+                chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') else None
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
+                                                 tags=None,  # fixme
+                                                 directory=fld,
+                                                 chmod=chmod,
+                                                 # formats=("srt", "vtt")
                                                  path_decoder=force_unicode)
             
             except Exception as e:

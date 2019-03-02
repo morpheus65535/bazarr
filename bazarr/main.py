@@ -1634,11 +1634,9 @@ def remove_subtitles():
     subtitlesPath = request.forms.get('subtitlesPath')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    subfolder = ('/' + get_subtitle_destination_folder() + '/') if get_subtitle_destination_folder() else '/'
-    subtitlesPath = os.path.split(subtitlesPath)
     
     try:
-        os.remove(subtitlesPath[0] + subfolder + subtitlesPath[1])
+        os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
     except OSError:

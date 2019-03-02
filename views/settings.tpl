@@ -1065,12 +1065,9 @@
                             <div class="five wide column">
                                 <select name="settings_subfolder" id="settings_subfolder"
                                         class="ui fluid selection dropdown">
-                                    <option value="current">Current</option>
-                                    <option value="sub">sub</option>
-                                    <option value="subs">subs</option>
-                                    <option value="subtitle">subtitle</option>
-                                    <option value="subtitles">subtitles</option>
-                                    <option value="custom">Custom folder</option>
+                                    <option value="current">Alongside media file</option>
+                                    <option value="relative">Relative path to media file</option>
+                                    <option value="absolute">Absolute path</option>
                                 </select>
                             </div>
 
@@ -2138,12 +2135,12 @@
         }
     });
 
-    if ($('#settings_subfolder').val() !== "custom") {
+    if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
         $('.subfolder').hide();
     }
 
     $('#settings_subfolder').dropdown('setting', 'onChange', function(){
-        if ($('#settings_subfolder').val() !== "custom") {
+        if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
             $('.subfolder').hide();
         }
         else {
@@ -2381,16 +2378,6 @@
                     ]
                 },
                 % end
-                settings_subfolder_custom : {
-                    rules : [
-                        {
-                            type: 'doesntContain[\\]',
-                        },
-                        {
-                            type: 'doesntContain[/]',
-                        }
-                    ]
-                },
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [

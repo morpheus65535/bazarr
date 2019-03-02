@@ -3,6 +3,7 @@ import ast
 import os
 import re
 import types
+import logging
 
 from config import settings
 
@@ -73,24 +74,33 @@ def get_subtitle_destination_folder():
 
 
 def get_target_folder(file_path):
-    fld = None
+    subfolder = settings.general.subfolder
     fld_custom = str(settings.general.subfolder_custom).strip() \
         if settings.general.subfolder_custom else None
     
-    if fld_custom or settings.general.subfolder != "current":
+    if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
         fld_base = os.path.split(file_path)[0]
-        if fld_custom:
-            if fld_custom.startswith("/"):
-                # absolute folder
-                fld = fld_custom
-            else:
-                fld = os.path.join(fld_base, fld_custom)
+
+        if subfolder == "absolute":
+            # absolute folder
+            fld = fld_custom
+        elif subfolder == "relative":
+            fld = os.path.join(fld_base, fld_custom)
         else:
-            fld = os.path.join(fld_base, settings.general.subfolder)
+            fld = None
+
         fld = force_unicode(fld)
-        if not os.path.exists(fld):
-            os.makedirs(fld)
+
+        if not os.path.isdir(fld):
+            try:
+                os.makedirs(fld)
+            except Exception as e:
+                logging.error('BAZARR is unable to create directory to save subtitles: ' + fld)
+                fld = None
+    else:
+        fld = None
+
     return fld
 
 

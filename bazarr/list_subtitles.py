@@ -63,14 +63,15 @@ def store_subtitles(file):
             pass
         else:
             for subtitle, language in subtitles.iteritems():
+                subtitle_path = get_external_subtitles_path(file, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                        [str("pb"), path_replace_reverse(subtitle_path)])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                        [str(language), path_replace_reverse(subtitle_path)])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
@@ -337,3 +338,30 @@ def movies_scan_subtitles(no):
         store_subtitles_movie(path_replace_movie(movie[0]))
     
     list_missing_subtitles_movies(no)
+
+
+def get_external_subtitles_path(file, subtitle):
+    fld = os.path.dirname(file)
+
+    if settings.general.subfolder == "current":
+        path = os.path.join(fld, subtitle)
+    elif settings.general.subfolder == "absolute":
+        custom_fld = settings.general.subfolder_custom
+        if os.path.exists(os.path.join(fld, subtitle)):
+            path = os.path.join(fld, subtitle)
+        elif os.path.exists(os.path.join(custom_fld, subtitle)):
+            path = os.path.join(custom_fld, subtitle)
+        else:
+            path = None
+    elif settings.general.subfolder == "relative":
+        custom_fld = os.path.join(fld, settings.general.subfolder_custom)
+        if os.path.exists(os.path.join(fld, subtitle)):
+            path = os.path.join(fld, subtitle)
+        elif os.path.exists(os.path.join(custom_fld, subtitle)):
+            path = os.path.join(custom_fld, subtitle)
+        else:
+            path = None
+    else:
+        path = None
+
+    return path
