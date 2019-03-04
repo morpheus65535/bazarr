@@ -559,13 +559,16 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
     subtitles = {}
     _scandir = _scandir_generic if scandir_generic else scandir
     for entry in _scandir(dirpath):
+        if not entry.name and not scandir_generic:
+            logger.debug('Could not determine the name of the file, retrying with scandir_generic')
+            return _search_external_subtitles(path, languages, only_one, True)
         if not entry.is_file(follow_symlinks=False):
             continue
 
         p = entry.name
 
         # keep only valid subtitle filenames
-        if not p.lower().startswith(fileroot.lower()) or not p.endswith(SUBTITLE_EXTENSIONS):
+        if not p.lower().startswith(fileroot.lower()) or not p.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
         p_root, p_ext = os.path.splitext(p)
@@ -600,7 +603,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
                 logger.error('Cannot parse language code %r', language_code)
                 language = None
 
-        if not language and only_one:
+        elif not language_code and only_one:
             language = Language.rebuild(list(languages)[0], forced=forced)
 
         subtitles[p] = language

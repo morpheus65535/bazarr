@@ -152,6 +152,25 @@
                                 </div>
                             </div>
                         </div>
+                        <div id="chmod" class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Set subtitle file permissions to</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div id="settings_chmod" class="ui fluid input">
+                                        <input name="settings_general_chmod" type="text"
+                                               value={{ settings.general.chmod }}>
+                                        <label></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon" data-tooltip="Must be 4 digit octal, e.g.: 0775" data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -1041,6 +1060,49 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_subfolder" id="settings_subfolder"
+                                        class="ui fluid selection dropdown">
+                                    <option value="current">Alongside media file</option>
+                                    <option value="relative">Relative path to media file</option>
+                                    <option value="absolute">Absolute path</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Choose folder where you want to store/read the subtitles'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row subfolder">
+                            <div class="right aligned four wide column">
+                                <label>Custom Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_subfolder_custom" name="settings_subfolder_custom"
+                                               type="text" value="{{ settings.general.subfolder_custom }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Use embedded subtitles</label>
                             </div>
                             <div class="one wide column">
@@ -1071,6 +1133,26 @@
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon" data-tooltip="When searching for subtitles, Bazarr will search less frequently after sometime to limit call to providers." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Search enabled providers simultaneously</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_multithreading" class="ui toggle checkbox"
+                                     data-multithreading={{ settings.general.getboolean('multithreading') }}>
+                                    <input name="settings_general_multithreading" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Search multi providers at once (Don't choose this on low powered devices)" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1894,6 +1976,10 @@
     :
     $("#div_update").hide();
     % end
+    % import sys
+    % if sys.platform.startswith('win'):
+    $("#chmod").hide();
+    % end
 
     $('.menu .item')
         .tab()
@@ -1966,6 +2052,12 @@
             } else {
                 $("#settings_adaptive_searching").checkbox('uncheck');
             }
+
+    if ($('#settings_multithreading').data("multithreading") === "True") {
+        $("#settings_multithreading").checkbox('check');
+    } else {
+        $("#settings_multithreading").checkbox('uncheck');
+    }
 
     if ($('#settings_addic7ed_random_agents').data("randomagents") === "True") {
                 $("#settings_addic7ed_random_agents").checkbox('check');
@@ -2044,6 +2136,19 @@
         },
         onUnchecked: function() {
             $("#radarr_tab").addClass('disabled');
+        }
+    });
+
+    if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+        $('.subfolder').hide();
+    }
+
+    $('#settings_subfolder').dropdown('setting', 'onChange', function(){
+        if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+            $('.subfolder').hide();
+        }
+        else {
+            $('.subfolder').show();
         }
     });
 
@@ -2210,6 +2315,8 @@
     $('#settings_loglevel').dropdown('set selected','{{!settings.general.getboolean('debug')}}');
     $('#settings_page_size').dropdown('clear');
     $('#settings_page_size').dropdown('set selected','{{!settings.general.page_size}}');
+    $('#settings_subfolder').dropdown('clear');
+    $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
     $('#settings_proxy_type').dropdown('clear');
     $('#settings_proxy_type').dropdown('set selected','{{!settings.proxy.type}}');
     $('#settings_providers').dropdown('clear');
@@ -2243,6 +2350,7 @@
     // form validation
     $('#settings_form')
         .form({
+            on: 'blur',
             fields: {
                 settings_general_ip	: {
                     rules : [
@@ -2264,6 +2372,16 @@
                         }
                     ]
                 },
+                % if not sys.platform.startswith('win'):
+                settings_general_chmod: {
+                    rules: [
+                        {
+                            type: 'regExp[^([0-7]{4})$]',
+                            prompt: 'Please use only 4-digit octal (e.g.: 0775)'
+                        }
+                    ]
+                },
+                % end
                 settings_auth_password : {
                     depends: 'settings_auth_username',
                     rules : [

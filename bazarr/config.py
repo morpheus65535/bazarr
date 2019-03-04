@@ -32,7 +32,12 @@ defaults = {
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
         'adaptive_searching': 'False',
-        'enabled_providers': ''
+        'enabled_providers': '',
+        'throtteled_providers': '',
+        'multithreading': 'True',
+        'chmod': '0640',
+        'subfolder': 'current',
+        'subfolder_custom': ''
     },
     'auth': {
         'type': 'None',
@@ -77,8 +82,8 @@ defaults = {
     'addic7ed': {
         'username': '',
         'password': '',
-        'random_agents': 'False'
-},
+        'random_agents': 'True'
+    },
     'legendastv': {
         'username': '',
         'password': ''
