@@ -37,7 +37,8 @@ defaults = {
         'multithreading': 'True',
         'chmod': '0640',
         'subfolder': 'current',
-        'subfolder_custom': ''
+        'subfolder_custom': '',
+        'update_restart': 'True'
     },
     'auth': {
         'type': 'None',
