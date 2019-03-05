@@ -703,6 +703,28 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Restart after update</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_update_restart" class="ui toggle checkbox"
+                                     data-restart_update={{settings.general.getboolean('update_restart')}}>
+                                    <input name="settings_general_update_restart" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon"
+                                         data-tooltip="Automatically restart after download and install updates. You will still be able to restart manualy"
+                                         data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 </div>
@@ -2079,6 +2101,12 @@
             } else {
                 $("#settings_automatic_div").checkbox('uncheck');
             }
+
+    if ($('#settings_restart_update').data("restart_update") === "True") {
+        $("#settings_restart_update").checkbox('check');
+    } else {
+        $("#settings_restart_update").checkbox('uncheck');
+    }
 
     if ($('#settings_debug').data("debug") === "True") {
                 $("#settings_debug").checkbox('check');

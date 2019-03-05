@@ -48,7 +48,7 @@ def run_git(args):
         cmd = cur_git + ' ' + args
         
         try:
-            logging.debug('Trying to execute: "' + cmd + '"')
+            logging.debug('BAZZAR Trying to execute: "' + cmd + '"')
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             output, err = p.communicate()
             output = output.strip()
@@ -72,74 +72,78 @@ def run_git(args):
 
 def check_updates():
     commits_behind = 0
-    current_version = get_version()
-    
-    # Get the latest version available from github
-    logging.info('BAZZAR Retrieving latest version information from GitHub')
-    url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
-    version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
-    
-    if version is None:
-        logging.warn(
-            'BAZZAR Could not get the latest version from GitHub. Are you running a local development version?')
-        return current_version
-    
-    latest_version = version['sha']
-    logging.debug("BAZZAR Latest version is %s", latest_version)
-    
-    # See how many commits behind we are
-    if not current_version:
-        logging.info('BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
-        return latest_version
-    
-    if latest_version == current_version:
-        logging.info('BAZARR is up to date')
-        return latest_version
-    
-    logging.info('Comparing currently installed version with latest GitHub version')
-    url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (latest_version,
-                                                                                 current_version)
-    commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
-    
-    if commits is None:
-        logging.warn('BAZARR Could not get commits behind from GitHub.')
-        return latest_version
-    
-    try:
-        commits_behind = int(commits['behind_by'])
-        logging.debug("In total, %d commits behind", commits_behind)
-    except KeyError:
-        logging.info('BAZARR Cannot compare versions. Are you running a local development version?')
-        commits_behind = 0
-    
-    if commits_behind > 0:
-        logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
-        if settings.general.auto_update:
-            update()
-        else:
-            updated(restart=False)
-    
-    url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
-    releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
-    
-    if releases is None:
-        logging.warn('BAZARR Could not get releases from GitHub.')
-        return latest_version
-    else:
-        release = releases[0]
-    latest_release = release['tag_name']
+    current_version, source = get_version()
 
-    if ('v' + current_version) != latest_release and args.release_update and settings.general.branch == 'master':
-        update()
+    if source == 'git':
+        # Get the latest version available from github
+        logging.info('BAZZAR Retrieving latest version information from GitHub')
+        url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
+        version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
     
-    elif commits_behind == 0:
-        logging.info('BAZZAR is up to date')
+        if version is None:
+            logging.warn(
+                'BAZZAR Could not get the latest version from GitHub.')
+            return
     
-    return latest_version
+        latest_version = version['sha']
+        logging.debug("BAZZAR Latest version is %s", latest_version)
+    
+        # See how many commits behind we are
+        if not current_version:
+            logging.info(
+                'BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
+            return
+    
+        if latest_version == current_version:
+            notifications.write(msg='BAZARR is up to date', queue='check_update')
+            logging.info('BAZARR is up to date')
+            return
+    
+        logging.info('Comparing currently installed version with latest GitHub version')
+        url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (latest_version,
+                                                                                     current_version)
+        commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
+    
+        if commits is None:
+            logging.warn('BAZARR Could not get commits behind from GitHub.')
+            return
+    
+        try:
+            commits_behind = int(commits['behind_by'])
+            logging.debug("BAZARR In total, %d commits behind", commits_behind)
+        except KeyError:
+            logging.info('BAZARR Cannot compare versions. Are you running a local development version?')
+            commits_behind = 0
+    
+        if commits_behind > 0:
+            logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
+            notifications.write(msg='BAZARR New version is available. You are %s commits behind' % commits_behind,
+                                queue='check_update')
+            update(source, restart=True if settings.general.getboolean('update_restart') else False)
+
+    else:
+        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
+        releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
+    
+        if releases is None:
+            logging.warn('BAZARR Could not get releases from GitHub.')
+            return
+        else:
+            release = releases[0]
+        latest_release = release['tag_name']
+    
+        if ('v' + current_version) != latest_release and settings.general.branch == 'master':
+            update(source, restart=True if settings.general.getboolean('update_restart') else False)
+        elif settings.general.branch != 'master':
+            notifications.write(msg="BAZZAR Can't update development branch from source", queue='check_update')  # fixme
+            logging.info("BAZZAR Can't update development branch from source")  # fixme
+        else:
+            notifications.write(msg='BAZZAR is up to date', queue='check_update')
+            logging.info('BAZZAR is up to date')
 
 
 def get_version():
-    if os.path.isdir(os.path.join(os.path.dirname(__file__), '..', '.git')):
+    if os.path.isdir(os.path.join(os.path.dirname(__file__), '..', '.git')) and not args.release_update:
         
         output, err = run_git('rev-parse HEAD')
         
@@ -152,15 +156,15 @@ def get_version():
         if not re.match('^[a-z0-9]+$', cur_commit_hash):
             logging.error('BAZZAR Output does not look like a hash, not using it.')
             cur_commit_hash = None
-        
-        return cur_commit_hash
+
+        return cur_commit_hash, 'git'
     
     else:
-        return os.environ["BAZARR_VERSION"]
+        return os.environ["BAZARR_VERSION"], 'source'
 
 
-def update():
-    if not args.release_update:
+def update(source, restart=True):
+    if source == 'git':
         output, err = run_git('pull ' + 'origin' + ' ' + settings.general.branch)
         
         if not output:
@@ -175,16 +179,19 @@ def update():
             elif line.endswith(('Aborting', 'Aborting.')):
                 logging.error('BAZZAR Unable to update from git: ' + line)
                 logging.info('BAZZAR Output: ' + str(output))
-        updated(restart=True)
+        updated(restart)
     else:
         tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
         update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
 
         logging.info('BAZZAR Downloading update from: ' + tar_download_url)
+        notifications.write(msg='BAZZAR Downloading update from: ' + tar_download_url)
         data = request_content(tar_download_url)
         
         if not data:
             logging.error("BAZZAR Unable to retrieve new version from '%s', can't update", tar_download_url)
+            notifications.write(msg=("BAZZAR Unable to retrieve new version from '%s', can't update", tar_download_url),
+                                type='error')
             return
         
         download_name = settings.general.branch + '-github'
@@ -196,19 +203,24 @@ def update():
         
         # Extract the tar to update folder
         logging.info('BAZZAR Extracting file: ' + tar_download_path)
+        notifications.write(msg='BAZZAR Extracting file: ' + tar_download_path)
         tar = tarfile.open(tar_download_path)
         tar.extractall(update_dir)
         tar.close()
         
         # Delete the tar.gz
         logging.info('BAZZAR Deleting file: ' + tar_download_path)
+        notifications.write(msg='BAZZAR Deleting file: ' + tar_download_path)
         os.remove(tar_download_path)
         
         # Find update dir name
         update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
         if len(update_dir_contents) != 1:
             logging.error("BAZZAR Invalid update data, update failed: " + str(update_dir_contents))
+            notifications.write(msg="BAZZAR Invalid update data, update failed: " + str(update_dir_contents),
+                                type='error')
             return
+
         content_dir = os.path.join(update_dir, update_dir_contents[0])
         
         # walk temp folder and move files to main folder
@@ -221,7 +233,7 @@ def update():
                 if os.path.isfile(new_path):
                     os.remove(new_path)
                 os.renames(old_path, new_path)
-        updated(restart=True)
+        updated(restart)
 
 
 class FakeLock(object):
