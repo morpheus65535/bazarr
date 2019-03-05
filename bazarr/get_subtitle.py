@@ -596,7 +596,7 @@ def wanted_search_missing_subtitles():
             for episode in episodes:
                 wanted_download_subtitles(episode[0])
         else:
-            q4ws.append('BAZARR All providers are throttled')
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle')
             logging.info("BAZARR All providers are throttled")
     
     if settings.general.getboolean('use_radarr'):
@@ -604,7 +604,7 @@ def wanted_search_missing_subtitles():
             for movie in movies:
                 wanted_download_subtitles_movie(movie[0])
         else:
-            q4ws.append('BAZARR All providers are throttled')
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle')
             logging.info("BAZARR All providers are throttled")
     
     logging.info('BAZARR Finished searching for missing subtitles. Check histories for more information.')
