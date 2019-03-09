@@ -73,6 +73,7 @@ def run_git(args):
 def check_updates():
     commits_behind = 0
     current_version, source = get_version()
+    check_releases()
 
     if source == 'git':
         # Get the latest version available from github

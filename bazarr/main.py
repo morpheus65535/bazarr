@@ -57,8 +57,6 @@ from get_providers import get_providers, get_providers_auth, list_throttled_prov
 from get_series import *
 from get_episodes import *
 
-# if not args.no_update:
-#     from check_update import check_updates
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
@@ -2008,27 +2006,6 @@ def notifications():
 @custom_auth_basic(check_credentials)
 def running_tasks_list():
     return dict(tasks=running_tasks)
-
-
-@route(base_url + 'websocket_updater')
-@custom_auth_basic(check_credentials)
-def handle_websocket():
-    wsock = request.environ.get('wsgi.websocket')
-    if not wsock:
-        abort(400, 'Expected WebSocket request.')
-    
-    queueconfig.q4ws_updater.clear()
-    
-    while True:
-        try:
-            if queueconfig.q4ws_updater:
-                wsock.send(queueconfig.q4ws_updater.popleft())
-                gevent.sleep(0.1)
-            else:
-                gevent.sleep(0.5)
-        except WebSocketError:
-            break
-
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
