@@ -104,11 +104,6 @@ c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
 
-logging.debug('Bazarr version: %s', bazarr_version)
-logging.debug('Bazarr branch: %s', settings.general.branch)
-logging.debug('Operating system: %s', platform.platform())
-logging.debug('Python version: %s', platform.python_version())
-
 # Load languages in database
 load_language_in_db()
 
