@@ -7,10 +7,8 @@ from config import settings
 from get_subtitle import wanted_search_missing_subtitles
 from get_args import args
 
-if not args.no_update:
-    from check_update import check_updates, check_releases
-else:
-    from check_update import check_releases
+
+from check_update import check_updates, check_releases
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
