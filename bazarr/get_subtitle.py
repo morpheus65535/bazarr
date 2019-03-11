@@ -226,7 +226,12 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
                         
                         # fixme: support multiple languages at once
-                        return message
+                        if media_type == 'series':
+                            reversed_path = path_replace_reverse(path)
+                        else:
+                            reversed_path = path_replace_reverse_movie(path)
+
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
         
         if not saved_any:
             logging.debug('BAZARR No subtitles were found for this file: ' + path)
@@ -431,12 +436,17 @@ def series_download_subtitles(no):
         for language in ast.literal_eval(episode[1]):
             if language is not None:
                 notifications.write(msg='Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]), queue='get_subtitle')
-                message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
+                result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                             series_details[0], providers_list, providers_auth, str(episode[3]),
                                             series_details[1], 'series')
-                if message is not None:
+                if result is not None:
+                    message = result[0]
+                    path = result[1]
+                    language_code = result[2]
+                    provider = result[3]
+                    score = result[4]
                     store_subtitles(path_replace(episode[0]))
-                    history_log(1, no, episode[2], message)
+                    history_log(1, no, episode[2], message, path, language_code, provider, score)
                     send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
 
@@ -457,11 +467,16 @@ def movies_download_subtitles(no):
     for language in ast.literal_eval(movie[1]):
         if language is not None:
             notifications.write(msg='Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path_replace_movie(movie[0]), queue='get_subtitle')
-            message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
+            result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
                                         providers_list, providers_auth, str(movie[3]), movie[5], 'movie')
-            if message is not None:
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = result[2]
+                provider = result[3]
+                score = result[4]
                 store_subtitles_movie(path_replace_movie(movie[0]))
-                history_log_movie(1, no, message)
+                history_log_movie(1, no, message, path, language_code, provider, score)
                 send_notifications_movie(no, message)
     list_missing_subtitles_movies(no)
 
@@ -504,13 +519,18 @@ def wanted_download_subtitles(path):
                     if search_active(attempt[i][1]):
                         notifications.write(
                             msg='Searching ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path, queue='get_subtitle')
-                        message = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
+                        result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                                     episode[4], providers_list, providers_auth, str(episode[5]),
                                                     episode[7], 'series')
-                        if message is not None:
+                        if result is not None:
+                            message = result[0]
+                            path = result[1]
+                            language_code = result[2]
+                            provider = result[3]
+                            score = result[4]
                             store_subtitles(path_replace(episode[0]))
                             list_missing_subtitles(episode[3])
-                            history_log(1, episode[3], episode[2], message)
+                            history_log(1, episode[3], episode[2], message, path, language_code, provider, score)
                             send_notifications(episode[3], episode[2], message)
                     else:
                         logging.debug(
@@ -552,13 +572,18 @@ def wanted_download_subtitles_movie(path):
                     if search_active(attempt[i][1]) is True:
                         notifications.write(
                             msg='Searching ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path, queue='get_subtitle')
-                        message = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
+                        result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
                                                     movie[4], providers_list, providers_auth, str(movie[5]), movie[7],
                                                     'movie')
-                        if message is not None:
+                        if result is not None:
+                            message = result[0]
+                            path = result[1]
+                            language_code = result[2]
+                            provider = result[3]
+                            score = result[4]
                             store_subtitles_movie(path_replace_movie(movie[0]))
                             list_missing_subtitles_movies(movie[3])
-                            history_log_movie(1, movie[3], message)
+                            history_log_movie(1, movie[3], message, path, language_code, provider, score)
                             send_notifications_movie(movie[3], message)
                     else:
                         logging.info(
