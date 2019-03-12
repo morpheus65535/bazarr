@@ -136,13 +136,14 @@ def upgrade_history():
     for row in data:
         if row[1] is None:
             path = c.execute('SELECT path FROM table_episodes WHERE sonarrEpisodeId = ?', (row[0],)).fetchone()
-            c.execute('UPDATE table_history SET video_path = ? WHERE sonarrEpisodeId = ?', (path[0], row[0]))
+            if path is not None:
+                c.execute('UPDATE table_history SET video_path = ? WHERE sonarrEpisodeId = ?', (path[0], row[0]))
 
-            values = re.split(r' subtitles downloaded from | with a score of | using', row[2])[:-1]
-            language = alpha2_from_language(values[0])
-            provider = values[1]
-            score = int(round((float(values[2][:-1])/100 * 360) - 0.5))
-            c.execute('UPDATE table_history SET language = ?, provider = ?, score = ? WHERE ROWID = ?', (language, provider, score, row[3]))
+                values = re.split(r' subtitles downloaded from | with a score of | using', row[2])[:-1]
+                language = alpha2_from_language(values[0])
+                provider = values[1]
+                score = int(round((float(values[2][:-1])/100 * 360) - 0.5))
+                c.execute('UPDATE table_history SET language = ?, provider = ?, score = ? WHERE ROWID = ?', (language, provider, score, row[3]))
     db.commit()
     db.close()
 
@@ -151,18 +152,18 @@ def upgrade_history_movies():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
-    data = c.execute(
-        'SELECT radarrId, video_path, description, ROWID FROM table_history_movie WHERE action = 1').fetchall()
+    data = c.execute('SELECT radarrId, video_path, description, ROWID FROM table_history_movie WHERE action = 1').fetchall()
 
     for row in data:
         if row[1] is None:
             path = c.execute('SELECT path FROM table_movies WHERE radarrId = ?', (row[0],)).fetchone()
-            c.execute('UPDATE table_history_movie SET video_path = ? WHERE radarrId = ?', (path[0], row[0]))
+            if path is not None:
+                c.execute('UPDATE table_history_movie SET video_path = ? WHERE radarrId = ?', (path[0], row[0]))
 
-            values = re.split(r' subtitles downloaded from | with a score of | using', row[2])[:-1]
-            language = alpha2_from_language(values[0])
-            provider = values[1]
-            score = int(round((float(values[2][:-1]) / 100 * 120) - 0.5))
-            c.execute('UPDATE table_history_movie SET language = ?, provider = ?, score = ? WHERE ROWID = ?', (language, provider, score, row[3]))
+                values = re.split(r' subtitles downloaded from | with a score of | using', row[2])[:-1]
+                language = alpha2_from_language(values[0])
+                provider = values[1]
+                score = int(round((float(values[2][:-1]) / 100 * 120) - 0.5))
+                c.execute('UPDATE table_history_movie SET language = ?, provider = ?, score = ? WHERE ROWID = ?', (language, provider, score, row[3]))
     db.commit()
     db.close()
