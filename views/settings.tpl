@@ -665,7 +665,7 @@
                 <div class="ui dividing header">Updates</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
-                        <div class="middle aligned row">
+                        <div class="middle aligned row" id="div_branch">
                             <div class="right aligned four wide column">
                                 <label>Branch</label>
                             </div>
@@ -2059,9 +2059,12 @@
     });
 
     % from get_args import args
+    % from check_update import get_version
 
     % if args.no_update or args.release_update:
     $("#div_update").hide();
+    % elif get_version()[1] != 'git':
+    $("#div_branch").hide();
     % end
     % import sys
     % if sys.platform.startswith('win'):

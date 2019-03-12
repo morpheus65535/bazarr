@@ -77,7 +77,7 @@ def check_updates():
 
     if source == 'git':
         # Get the latest version available from github
-        logging.info('BAZZAR Retrieving latest version information from GitHub')
+        logging.debug('BAZZAR Retrieving latest version information from GitHub')
         url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
         version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
     
@@ -91,7 +91,7 @@ def check_updates():
     
         # See how many commits behind we are
         if not current_version:
-            logging.info(
+            logging.warn(
                 'BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
             return
     
@@ -100,7 +100,7 @@ def check_updates():
             logging.info('BAZARR is up to date')
             return
     
-        logging.info('Comparing currently installed version with latest GitHub version')
+        logging.debug('Comparing currently installed version with latest GitHub version')
         url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (latest_version,
                                                                                      current_version)
         commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
@@ -121,6 +121,9 @@ def check_updates():
             notifications.write(msg='BAZARR New version is available. You are %s commits behind' % commits_behind,
                                 queue='check_update')
             update(source, restart=True if settings.general.getboolean('update_restart') else False)
+        elif commits_behind is 0:
+            notifications.write(msg='BAZZAR is up to date', queue='check_update')
+            logging.info('BAZZAR is up to date')
 
     else:
         url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
@@ -235,6 +238,22 @@ def update(source, restart=True):
                     os.remove(new_path)
                 os.renames(old_path, new_path)
         updated(restart)
+
+
+def checkout_git_branch():
+    output, err = run_git('fetch %s' % 'origin')
+    output, err = run_git('checkout %s' % settings.general.branch)
+    
+    if not output:
+        logging.error('Unable to change git branch.')
+        return
+    
+    for line in output.split('\n'):
+        if line.endswith(('Aborting', 'Aborting.')):
+            logging.error('Unable to checkout from git: ' + line)
+            logging.info('Output: ' + str(output))
+    
+    output, err = run_git('pull %s %s' % ('origin', settings.general.branch))
 
 
 class FakeLock(object):
