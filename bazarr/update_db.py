@@ -137,10 +137,5 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         db.commit()
     except:
         pass
-    else:
-        if settings.general.getboolean('use_sonarr'):
-            upgrade_history()
-        if settings.general.getboolean('use_radarr'):
-            upgrade_history_movies()
     
     db.close()
