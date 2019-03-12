@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.7.2'
+bazarr_version = '0.7.3'
 
 import gc
 import sys
@@ -1633,8 +1633,8 @@ def remove_subtitles():
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
-    except OSError:
-        pass
+    except OSError as e:
+        logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles(unicode(episodePath))
     list_missing_subtitles(sonarrSeriesId)
 
@@ -1647,15 +1647,13 @@ def remove_subtitles_movie():
     language = request.forms.get('language')
     subtitlesPath = request.forms.get('subtitlesPath')
     radarrId = request.forms.get('radarrId')
-    subfolder = ('/' + get_subtitle_destination_folder() + '/') if get_subtitle_destination_folder() else '/'
-    subtitlesPath = os.path.split(subtitlesPath)
 
     try:
-        os.remove(subtitlesPath[0] + subfolder + subtitlesPath[1])
+        os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log_movie(0, radarrId, result)
-    except OSError:
-        pass
+    except OSError as e:
+        logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles_movie(unicode(moviePath))
     list_missing_subtitles_movies(radarrId)
 
@@ -1682,8 +1680,13 @@ def get_subtitle():
         result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, title,
                                    'series')
         if result is not None:
-            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-            send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
@@ -1733,8 +1736,13 @@ def manual_get_subtitle():
         result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'series')
         if result is not None:
-            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-            send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
@@ -1762,8 +1770,13 @@ def get_subtitle_movie():
     try:
         result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
         if result is not None:
-            history_log_movie(1, radarrId, result)
-            send_notifications_movie(radarrId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log_movie(1, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
@@ -1812,8 +1825,13 @@ def manual_get_subtitle_movie():
         result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
         if result is not None:
-            history_log_movie(1, radarrId, result)
-            send_notifications_movie(radarrId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log_movie(1, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)

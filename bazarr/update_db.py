@@ -121,5 +121,20 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
             execute_now('sync_episodes')
         if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
+
+    try:
+        c.execute('alter table table_history add column "video_path" "text"')
+        c.execute('alter table table_history add column "language" "text"')
+        c.execute('alter table table_history add column "provider" "text"')
+        c.execute('alter table table_history add column "score" "text"')
+
+        c.execute('alter table table_history_movie add column "video_path" "text"')
+        c.execute('alter table table_history_movie add column "language" "text"')
+        c.execute('alter table table_history_movie add column "provider" "text"')
+        c.execute('alter table table_history_movie add column "score" "text"')
+
+        db.commit()
+    except:
+        pass
     
     db.close()
