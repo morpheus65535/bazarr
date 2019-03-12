@@ -6,7 +6,6 @@ import sqlite3
 from get_args import args
 from scheduler import execute_now
 from config import settings
-from helper import upgrade_history, upgrade_history_movies
 
 # Check if database exist
 if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
