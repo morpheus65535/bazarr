@@ -1993,9 +1993,9 @@
     % from get_args import args
     % from check_update import get_version
 
-    % if args.no_update or args.release_update:
+    % if args.no_update:
     $("#div_update").hide();
-    % elif get_version()[1] != 'git':
+    % elif get_version()[1] != 'git' or args.release_update:
     $("#div_branch").hide();
     % end
     % import sys
