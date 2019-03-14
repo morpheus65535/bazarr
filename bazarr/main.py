@@ -1216,6 +1216,11 @@ def save_settings():
         settings_general_automatic = 'False'
     else:
         settings_general_automatic = 'True'
+    settings_general_update_restart = request.forms.get('settings_general_update_restart')
+    if settings_general_update_restart is None:
+        settings_general_update_restart = 'False'
+    else:
+        settings_general_update_restart = 'True'
     settings_general_single_language = request.forms.get('settings_general_single_language')
     if settings_general_single_language is None:
         settings_general_single_language = 'False'
@@ -1290,6 +1295,7 @@ def save_settings():
     settings.general.chmod = text_type(settings_general_chmod)
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
+    settings.general.update_restart = text_type(settings_general_update_restart)
     settings.general.single_language = text_type(settings_general_single_language)
     settings.general.minimum_score = text_type(settings_general_minimum_score)
     settings.general.use_scenename = text_type(settings_general_scenename)
