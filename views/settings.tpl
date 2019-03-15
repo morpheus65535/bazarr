@@ -699,7 +699,7 @@
                             </div>
                             <div class="one wide column">
                                 <div id="settings_update_restart" class="ui toggle checkbox"
-                                     data-restart_update={{settings.general.getboolean('update_restart')}}>
+                                     data-update-restart={{settings.general.getboolean('update_restart')}}>
                                     <input name="settings_general_update_restart" type="checkbox">
                                     <label></label>
                                 </div>
@@ -2033,10 +2033,10 @@
                 $("#settings_automatic_div").checkbox('uncheck');
             }
 
-    if ($('#settings_restart_update').data("restart_update") === "True") {
-        $("#settings_restart_update").checkbox('check');
+    if ($('#settings_update_restart').data("update-restart") === "True") {
+        $("#settings_update_restart").checkbox('check');
     } else {
-        $("#settings_restart_update").checkbox('uncheck');
+        $("#settings_update_restart").checkbox('uncheck');
     }
 
     if ($('#settings_debug').data("debug") === "True") {
