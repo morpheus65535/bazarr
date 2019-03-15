@@ -700,3 +700,15 @@ def refine_from_db(path, video):
                 if data[6]: video.audio_codec = data[6]
 
     return video
+
+
+def upgrade_subtitles():
+    days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+    minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) - datetime(1970,1,1)).total_seconds()
+
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    data = c.execute("SELECT * FROM table_history WHERE timestamp > ? AND score is not null", (minimum_timestamp,)).fetchall()
+    db.close()
+
+    return data

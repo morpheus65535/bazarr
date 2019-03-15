@@ -62,7 +62,7 @@ if not args.no_update:
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle
+    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle, upgrade_subtitles
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
@@ -1086,6 +1086,12 @@ def wanted_search_missing_subtitles_list():
     add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
     
     redirect(ref)
+
+
+@route(base_url + 'upgrade_subtitles')
+@custom_auth_basic(check_credentials)
+def upgrade_subtitles_route():
+    return dict(data=upgrade_subtitles())
 
 
 @route(base_url + 'settings')
