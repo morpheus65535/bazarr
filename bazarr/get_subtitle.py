@@ -100,7 +100,7 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     return min_score, max_score, set(scores)
 
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type):
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type, forced_minimum_score=None):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
@@ -143,6 +143,8 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                                   min_score_series_perc=int(minimum_score))
 
         if providers:
+            if forced_minimum_score:
+                min_score = int(forced_minimum_score) + 1
             downloaded_subtitles = download_best_subtitles({video}, language_set, int(min_score), hi,
                                                            providers=providers,
                                                            provider_configs=providers_auth,
@@ -708,7 +710,33 @@ def upgrade_subtitles():
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-    data = c.execute("SELECT * FROM table_history WHERE timestamp > ? AND score is not null", (minimum_timestamp,)).fetchall()
+    data = c.execute('SELECT video_path, language, score FROM table_history WHERE action = 1 AND timestamp > ? AND score is not null AND score < "360"', (minimum_timestamp,)).fetchall()
     db.close()
 
-    return data
+    episodes_to_upgrade = []
+    for episode in data:
+        if os.path.exists(path_replace(episode[0])):
+            episodes_to_upgrade.append(episode)
+
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
+
+    for episode in episodes_to_upgrade:
+        notifications.write(
+            msg='Searching for ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' + path_replace(
+                episode[0]), queue='get_subtitle')
+        result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
+                                   series_details[0], providers_list, providers_auth, str(episode[3]),
+                                   series_details[1], 'series', forced_minimum_score=int(score))
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            store_subtitles(path_replace(episode[0]))
+            history_log(1, no, episode[2], message, path, language_code, provider, score)
+            send_notifications(no, episode[2], message)
+
+
+    return episodes_to_upgrade
