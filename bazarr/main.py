@@ -1088,12 +1088,6 @@ def wanted_search_missing_subtitles_list():
     redirect(ref)
 
 
-@route(base_url + 'upgrade_subtitles')
-@custom_auth_basic(check_credentials)
-def upgrade_subtitles_route():
-    return dict(data=upgrade_subtitles())
-
-
 @route(base_url + 'settings')
 @custom_auth_basic(check_credentials)
 def _settings():

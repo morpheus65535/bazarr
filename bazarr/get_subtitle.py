@@ -407,7 +407,12 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
                         
-                        return message
+                        if media_type == 'series':
+                            reversed_path = path_replace_reverse(path)
+                        else:
+                            reversed_path = path_replace_reverse_movie(path)
+
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -706,15 +711,24 @@ def refine_from_db(path, video):
 
 def upgrade_subtitles():
     days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-    minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) - datetime(1970,1,1)).total_seconds()
+    minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                         datetime(1970, 1, 1)).total_seconds()
 
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
-    data = c.execute('SELECT video_path, language, score FROM table_history WHERE action = 1 AND timestamp > ? AND score is not null AND score < "360"', (minimum_timestamp,)).fetchall()
+    episodes_list = c.execute("""SELECT table_history.video_path, table_history.language, table_history.score,
+                                        table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.title,
+                                        table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,
+                                        MAX(table_history.timestamp)
+                                   FROM table_history
+                             INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
+                             INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
+                                  WHERE action = 1 AND timestamp > ? AND score is not null AND score < "360"
+                               GROUP BY table_history.video_path""", (minimum_timestamp,)).fetchall()
     db.close()
 
     episodes_to_upgrade = []
-    for episode in data:
+    for episode in episodes_list:
         if os.path.exists(path_replace(episode[0])):
             episodes_to_upgrade.append(episode)
 
@@ -723,11 +737,11 @@ def upgrade_subtitles():
 
     for episode in episodes_to_upgrade:
         notifications.write(
-            msg='Searching for ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' + path_replace(
-                episode[0]), queue='get_subtitle')
+            msg='Searching to upgrade ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' +
+                path_replace(episode[0]), queue='get_subtitle')
         result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
-                                   series_details[0], providers_list, providers_auth, str(episode[3]),
-                                   series_details[1], 'series', forced_minimum_score=int(score))
+                                   episode[3], providers_list, providers_auth, str(episode[4]),
+                                   episode[5], 'series', forced_minimum_score=int(episode[2]))
         if result is not None:
             message = result[0]
             path = result[1]
@@ -735,8 +749,5 @@ def upgrade_subtitles():
             provider = result[3]
             score = result[4]
             store_subtitles(path_replace(episode[0]))
-            history_log(1, no, episode[2], message, path, language_code, provider, score)
-            send_notifications(no, episode[2], message)
-
-
-    return episodes_to_upgrade
+            history_log(1, episode[6], episode[7], message, path, language_code, provider, score)
+            send_notifications(episode[6], episode[7], message)
