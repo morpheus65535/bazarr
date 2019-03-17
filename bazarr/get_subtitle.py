@@ -405,8 +405,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                         'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                        
-                        return message
+
+                        if media_type == 'series':
+                            reversed_path = path_replace_reverse(path)
+                        else:
+                            reversed_path = path_replace_reverse_movie(path)
+
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
