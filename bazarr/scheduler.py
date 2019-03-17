@@ -109,8 +109,9 @@ if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use
     scheduler.add_job(wanted_search_missing_subtitles, IntervalTrigger(hours=3), max_instances=1, coalesce=True,
                       misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
 
-scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=12), max_instances=1, coalesce=True,
-                  misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade subtitles')
+if settings.general.getboolean('upgrade_subs'):
+    scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=12), max_instances=1, coalesce=True,
+                      misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade subtitles')
 
 sonarr_full_update()
 radarr_full_update()

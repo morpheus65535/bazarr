@@ -38,6 +38,7 @@ defaults = {
         'chmod': '0640',
         'subfolder': 'current',
         'subfolder_custom': '',
+        'upgrade_subs': 'True',
         'days_to_upgrade_subs': '7'
     },
     'auth': {
