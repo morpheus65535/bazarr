@@ -67,6 +67,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
             video.original_name = original_name
             video.original_path = original_path
             refine_from_db(original_path,video)
+            logging.debug('BAZARR is using those video object properties: %s', vars(video))
             return video
         
         except:
@@ -406,7 +407,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                         'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                        
+
                         if media_type == 'series':
                             reversed_path = path_replace_reverse(path)
                         else:
