@@ -725,13 +725,27 @@ def upgrade_subtitles():
                              INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
                              INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
                                   WHERE action = 1 AND timestamp > ? AND score is not null AND score < "360"
-                               GROUP BY table_history.video_path""", (minimum_timestamp,)).fetchall()
+                               GROUP BY table_history.video_path, table_history.language""",
+                              (minimum_timestamp,)).fetchall()
+    movies_list = c.execute("""SELECT table_history_movie.video_path, table_history_movie.language,
+                                      table_history_movie.score, table_movies.hearing_impaired, table_movies.sceneName,
+                                      table_movies.title, table_movies.radarrId, MAX(table_history_movie.timestamp)
+                                 FROM table_history_movie
+                           INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
+                                WHERE action = 1 AND timestamp > ? AND score is not null AND score < "120"
+                             GROUP BY table_history_movie.video_path, table_history_movie.language""",
+                            (minimum_timestamp,)).fetchall()
     db.close()
 
     episodes_to_upgrade = []
     for episode in episodes_list:
         if os.path.exists(path_replace(episode[0])):
             episodes_to_upgrade.append(episode)
+
+    movies_to_upgrade = []
+    for movie in movies_list:
+        if os.path.exists(path_replace_movie(movie[0])):
+            movies_to_upgrade.append(movie)
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -742,7 +756,7 @@ def upgrade_subtitles():
                 path_replace(episode[0]), queue='get_subtitle')
         result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
                                    episode[3], providers_list, providers_auth, str(episode[4]),
-                                   episode[5], 'series', forced_minimum_score=int(episode[2]))
+                                   episode[5], 'episode', forced_minimum_score=int(episode[2]))
         if result is not None:
             message = result[0]
             path = result[1]
@@ -752,3 +766,20 @@ def upgrade_subtitles():
             store_subtitles(path_replace(episode[0]))
             history_log(1, episode[6], episode[7], message, path, language_code, provider, score)
             send_notifications(episode[6], episode[7], message)
+
+    for movie in movies_to_upgrade:
+        notifications.write(
+            msg='Searching to upgrade ' + str(language_from_alpha2(movie[1])) + ' subtitles for this movie: ' +
+                path_replace_movie(movie[0]), queue='get_subtitle')
+        result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
+                                   movie[3], providers_list, providers_auth, str(movie[4]),
+                                   movie[5], 'movie', forced_minimum_score=int(movie[2]))
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            store_subtitles_movie(path_replace_movie(movie[0]))
+            history_log_movie(1, movie[6], message, path, language_code, provider, score)
+            send_notifications_movie(movie[6], message)
