@@ -278,7 +278,13 @@ def save_wizard():
         settings_general_embedded = 'True'
     settings_subfolder = request.forms.get('settings_subfolder')
     settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
-    
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
+    if settings_upgrade_subs is None:
+        settings_upgrade_subs = 'False'
+    else:
+        settings_upgrade_subs = 'True'
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
     settings.general.base_url = text_type(settings_general_baseurl)
@@ -290,7 +296,9 @@ def save_wizard():
     settings.general.subfolder = text_type(settings_subfolder)
     settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
-    
+    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
+    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
+
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
@@ -1187,7 +1195,13 @@ def save_settings():
     settings_page_size = request.forms.get('settings_page_size')
     settings_subfolder = request.forms.get('settings_subfolder')
     settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
-    
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
+    if settings_upgrade_subs is None:
+        settings_upgrade_subs = 'False'
+    else:
+        settings_upgrade_subs = 'True'
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
               unicode(settings.general.getboolean('use_radarr')), unicode(settings.general.path_mappings_movie))
@@ -1214,6 +1228,8 @@ def save_settings():
     settings.general.page_size = text_type(settings_page_size)
     settings.general.subfolder = text_type(settings_subfolder)
     settings.general.subfolder_custom = text_type(settings_subfolder_custom)
+    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
+    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)

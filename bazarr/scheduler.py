@@ -111,7 +111,7 @@ if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use
 
 if settings.general.getboolean('upgrade_subs'):
     scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=12), max_instances=1, coalesce=True,
-                      misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade subtitles')
+                      misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade previously downloaded subtitles')
 
 sonarr_full_update()
 radarr_full_update()
