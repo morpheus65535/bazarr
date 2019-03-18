@@ -756,7 +756,7 @@ def upgrade_subtitles():
                 path_replace(episode[0]), queue='get_subtitle')
         result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
                                    episode[3], providers_list, providers_auth, str(episode[4]),
-                                   episode[5], 'episode', forced_minimum_score=int(episode[2]))
+                                   episode[5], 'series', forced_minimum_score=int(episode[2]))
         if result is not None:
             message = result[0]
             path = result[1]
