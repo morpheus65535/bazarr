@@ -54,6 +54,7 @@
 					</tr>
 				</thead>
 				<tbody>
+				%import ast
 				%import time
 				%import pretty
 				%for row in rows:
@@ -66,6 +67,14 @@
 						%elif row[0] == 1:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
+							</div>
+						%elif row[0] == 2:
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been manually downloaded." data-inverted="" data-position="top left">
+								<i class="ui user icon"></i>
+							</div>
+						%elif row[0] == 3:
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been upgraded." data-inverted="" data-position="top left">
+								<i class="ui recycle icon"></i>
 							</div>
 						%end
 						</td>
@@ -90,7 +99,20 @@
 								{{pretty.date(int(row[4]))}}
 							</div>
 						</td>
-						<td>{{row[5]}}</td>
+						<td>
+							% upgradable_criteria = (row[7], row[4])
+							% if upgradable_criteria in upgradable_episodes:
+							% if row[9] in ast.literal_eval(str(row[8])):
+							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
+								<i class="ui green recycle icon"></i>{{row[5]}}
+							</div>
+							% else:
+							{{row[5]}}
+							% end
+							% else:
+							{{row[5]}}
+							%end
+						</td>
 					</tr>
 				%end
 				</tbody>

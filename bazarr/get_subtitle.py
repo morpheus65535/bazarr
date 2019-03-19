@@ -111,7 +111,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         hi = False
     language_set = set()
-    
+    original_language = language
     if not isinstance(language, types.ListType):
         language = [language]
     
@@ -184,9 +184,9 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     saved_any = True
                     for subtitle in saved_subtitles:
                         downloaded_provider = subtitle.provider_name
-                        downloaded_language = language_from_alpha3(subtitle.language.alpha3)
-                        downloaded_language_code2 = alpha2_from_alpha3(subtitle.language.alpha3)
-                        downloaded_language_code3 = subtitle.language.alpha3
+                        downloaded_language = language_from_alpha3(original_language)
+                        downloaded_language_code2 = alpha2_from_alpha3(original_language)
+                        downloaded_language_code3 = original_language
                         downloaded_path = subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if video.used_scene_name:
@@ -715,24 +715,32 @@ def upgrade_subtitles():
     minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                          datetime(1970, 1, 1)).total_seconds()
 
+    if settings.general.getboolean('upgrade_manual'):
+        query_actions = [1, 2, 3]
+    else:
+        query_actions = [1, 3]
+
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     episodes_list = c.execute("""SELECT table_history.video_path, table_history.language, table_history.score,
                                         table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.title,
                                         table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,
-                                        MAX(table_history.timestamp)
+                                        MAX(table_history.timestamp), table_shows.languages
                                    FROM table_history
                              INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
                              INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
-                                  WHERE action = 1 AND timestamp > ? AND score is not null AND score < "360"
+                                  WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
+                                        score is not null AND score < "360"
                                GROUP BY table_history.video_path, table_history.language""",
                               (minimum_timestamp,)).fetchall()
     movies_list = c.execute("""SELECT table_history_movie.video_path, table_history_movie.language,
                                       table_history_movie.score, table_movies.hearing_impaired, table_movies.sceneName,
-                                      table_movies.title, table_movies.radarrId, MAX(table_history_movie.timestamp)
+                                      table_movies.title, table_movies.radarrId, MAX(table_history_movie.timestamp), 
+                                      table_movies.languages
                                  FROM table_history_movie
                            INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
-                                WHERE action = 1 AND timestamp > ? AND score is not null AND score < "120"
+                                WHERE action  IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
+                                      score is not null AND score < "120"
                              GROUP BY table_history_movie.video_path, table_history_movie.language""",
                             (minimum_timestamp,)).fetchall()
     db.close()
@@ -751,35 +759,37 @@ def upgrade_subtitles():
     providers_auth = get_providers_auth()
 
     for episode in episodes_to_upgrade:
-        notifications.write(
-            msg='Searching to upgrade ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' +
-                path_replace(episode[0]), queue='get_subtitle')
-        result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
-                                   episode[3], providers_list, providers_auth, str(episode[4]),
-                                   episode[5], 'series', forced_minimum_score=int(episode[2]))
-        if result is not None:
-            message = result[0]
-            path = result[1]
-            language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            store_subtitles(path_replace(episode[0]))
-            history_log(1, episode[6], episode[7], message, path, language_code, provider, score)
-            send_notifications(episode[6], episode[7], message)
+        if episode[1] in ast.literal_eval(str(episode[9])):
+            notifications.write(
+                msg='Searching to upgrade ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' +
+                    path_replace(episode[0]), queue='get_subtitle')
+            result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
+                                       episode[3], providers_list, providers_auth, str(episode[4]),
+                                       episode[5], 'series', forced_minimum_score=int(episode[2]))
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                store_subtitles(path_replace(episode[0]))
+                history_log(3, episode[6], episode[7], message, path, language_code, provider, score)
+                send_notifications(episode[6], episode[7], message)
 
     for movie in movies_to_upgrade:
-        notifications.write(
-            msg='Searching to upgrade ' + str(language_from_alpha2(movie[1])) + ' subtitles for this movie: ' +
-                path_replace_movie(movie[0]), queue='get_subtitle')
-        result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
-                                   movie[3], providers_list, providers_auth, str(movie[4]),
-                                   movie[5], 'movie', forced_minimum_score=int(movie[2]))
-        if result is not None:
-            message = result[0]
-            path = result[1]
-            language_code = result[2]
-            provider = result[3]
-            score = result[4]
-            store_subtitles_movie(path_replace_movie(movie[0]))
-            history_log_movie(1, movie[6], message, path, language_code, provider, score)
-            send_notifications_movie(movie[6], message)
+        if movie[1] in ast.literal_eval(str(movie[8])):
+            notifications.write(
+                msg='Searching to upgrade ' + str(language_from_alpha2(movie[1])) + ' subtitles for this movie: ' +
+                    path_replace_movie(movie[0]), queue='get_subtitle')
+            result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
+                                       movie[3], providers_list, providers_auth, str(movie[4]),
+                                       movie[5], 'movie', forced_minimum_score=int(movie[2]))
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                store_subtitles_movie(path_replace_movie(movie[0]))
+                history_log_movie(3, movie[6], message, path, language_code, provider, score)
+                send_notifications_movie(movie[6], message)

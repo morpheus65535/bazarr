@@ -284,6 +284,11 @@ def save_wizard():
     else:
         settings_upgrade_subs = 'True'
     settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
+    if settings_upgrade_manual is None:
+        settings_upgrade_manual = 'False'
+    else:
+        settings_upgrade_manual = 'True'
 
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -298,6 +303,7 @@ def save_wizard():
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
 
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
@@ -959,14 +965,35 @@ def historyseries():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
+
+    upgradable_episodes = []
+    if settings.general.getboolean('upgrade_subs'):
+        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                             datetime(1970, 1, 1)).total_seconds()
+
+        if settings.general.getboolean('upgrade_manual'):
+            query_actions = [1, 2, 3]
+        else:
+            query_actions = [1, 3]
+
+        upgradable_episodes = c.execute("""SELECT table_history.video_path, MAX(table_history.timestamp)
+                                             FROM table_history
+                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > 
+                                            ? AND score is not null AND score < "360"
+                                         GROUP BY table_history.video_path, table_history.language""",
+                                        (minimum_timestamp,)).fetchall()
+
     c.close()
+
     data = reversed(sorted(data, key=operator.itemgetter(4)))
+
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+                    current_port=settings.general.port, upgradable_episodes=upgradable_episodes)
 
 
 @route(base_url + 'historymovies')
@@ -1002,14 +1029,33 @@ def historymovies():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
+
+    upgradable_movies = []
+    if settings.general.getboolean('upgrade_subs'):
+        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                             datetime(1970, 1, 1)).total_seconds()
+
+        if settings.general.getboolean('upgrade_manual'):
+            query_actions = [1, 2, 3]
+        else:
+            query_actions = [1, 3]
+
+        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp)
+                                           FROM table_history_movie
+                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp 
+                                                > ? AND score is not null AND score < "120"
+                                       GROUP BY video_path, language""",
+                                      (minimum_timestamp,)).fetchall()
+
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+                    current_port=settings.general.port, upgradable_movies=upgradable_movies)
 
 
 @route(base_url + 'wanted')
@@ -1201,6 +1247,11 @@ def save_settings():
     else:
         settings_upgrade_subs = 'True'
     settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
+    if settings_upgrade_manual is None:
+        settings_upgrade_manual = 'False'
+    else:
+        settings_upgrade_manual = 'True'
 
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
@@ -1230,6 +1281,7 @@ def save_settings():
     settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
@@ -1759,7 +1811,7 @@ def manual_get_subtitle():
             language_code = result[2]
             provider = result[3]
             score = result[4]
-            history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
@@ -1848,7 +1900,7 @@ def manual_get_subtitle_movie():
             language_code = result[2]
             provider = result[3]
             score = result[4]
-            history_log_movie(1, radarrId, message, path, language_code, provider, score)
+            history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)

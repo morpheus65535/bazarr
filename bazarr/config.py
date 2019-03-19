@@ -39,7 +39,8 @@ defaults = {
         'subfolder': 'current',
         'subfolder_custom': '',
         'upgrade_subs': 'True',
-        'days_to_upgrade_subs': '7'
+        'days_to_upgrade_subs': '7',
+        'upgrade_manual': 'True'
     },
     'auth': {
         'type': 'None',

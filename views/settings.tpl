@@ -1137,6 +1137,27 @@
                             </div>
                         </div>
 
+                        <div class="middle aligned row upgrade_subs">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Upgrade manually downloaded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_upgrade_manual" class="ui toggle checkbox" data-upgrade-manual={{settings.general.getboolean('upgrade_manual')}}>
+                                    <input name="settings_upgrade_manual" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Enable or disable upgrade of manually searched and downloaded subtitles.'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Use embedded subtitles</label>
@@ -2065,6 +2086,12 @@
                 $("#settings_upgrade_subs").checkbox('check');
             } else {
                 $("#settings_upgrade_subs").checkbox('uncheck');
+            }
+
+    if ($('#settings_upgrade_manual').data("upgrade-manual") === "True") {
+                $("#settings_upgrade_manual").checkbox('check');
+            } else {
+                $("#settings_upgrade_manual").checkbox('uncheck');
             }
 
     if ($('#settings_embedded').data("embedded") === "True") {
