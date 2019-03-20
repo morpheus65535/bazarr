@@ -82,6 +82,9 @@ def check_updates():
         version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
     
         if version is None:
+            notifications.write(
+                msg='BAZARR Could not get the latest version from GitHub.',
+                queue='check_update', type='warning')
             logging.warn(
                 'BAZARR Could not get the latest version from GitHub.')
             return
@@ -91,6 +94,8 @@ def check_updates():
     
         # See how many commits behind we are
         if not current_version:
+            notifications.write(msg='BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version',
+                                queue='check_update', type='warning')
             logging.warn(
                 'BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
             return
@@ -106,6 +111,8 @@ def check_updates():
         commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
     
         if commits is None:
+            notifications.write(msg='BAZARR Could not get commits behind from GitHub.',
+                                queue='check_update', type='warning')
             logging.warn('BAZARR Could not get commits behind from GitHub.')
             return
     
@@ -113,8 +120,9 @@ def check_updates():
             commits_behind = int(commits['behind_by'])
             logging.debug("BAZARR In total, %d commits behind", commits_behind)
         except KeyError:
+            notifications.write(msg='BAZARR Cannot compare versions. Are you running a local development version?', queue='check_update')
             logging.info('BAZARR Cannot compare versions. Are you running a local development version?')
-            commits_behind = 0
+            return
     
         if commits_behind > 0:
             logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
@@ -130,6 +138,8 @@ def check_updates():
         releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
     
         if releases is None:
+            notifications.write(msg='BAZARR Could not get releases from GitHub.',
+                                queue='check_update', type='warning')
             logging.warn('BAZARR Could not get releases from GitHub.')
             return
         else:
@@ -172,6 +182,8 @@ def update(source, restart=True):
         output, err = run_git('pull ' + 'origin' + ' ' + settings.general.branch)
         
         if not output:
+            notifications.write(msg='Unable to download latest version',
+                                queue='check_update', type='error')
             logging.error('BAZARR Unable to download latest version')
             return
         
