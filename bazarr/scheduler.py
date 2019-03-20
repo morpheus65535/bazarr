@@ -80,19 +80,21 @@ def task_listener(event):
 
 scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
 
-if not args.no_update:
-    if settings.general.getboolean('auto_update'):
-        scheduler.add_job(check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                          misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github')
-    else:
-        scheduler.add_job(check_updates, CronTrigger(year='2100'), hour=4, id='update_bazarr',
-                          name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github')
-        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                          misfire_grace_time=15, id='update_release', name='Update release info')
+def schedule_update_job():
+    if not args.no_update:
+        if settings.general.getboolean('auto_update'):
+            scheduler.add_job(check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                              misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
+        else:
+            scheduler.add_job(check_updates, CronTrigger(year='2100'), hour=4, id='update_bazarr',
+                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
+            scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                              misfire_grace_time=15, id='update_release', name='Update release info', replace_existing=True)
 
-else:
-    scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
-                      id='update_release', name='Update release info')
+    else:
+        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+                          id='update_release', name='Update release info', replace_existing=True)
+
 
 if settings.general.getboolean('use_sonarr'):
     scheduler.add_job(update_series, IntervalTrigger(minutes=1), max_instances=1, coalesce=True, misfire_grace_time=15,
@@ -108,6 +110,7 @@ if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use
     scheduler.add_job(wanted_search_missing_subtitles, IntervalTrigger(hours=3), max_instances=1, coalesce=True,
                       misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
 
+schedule_update_job()
 sonarr_full_update()
 radarr_full_update()
 scheduler.start()

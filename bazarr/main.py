@@ -1439,13 +1439,11 @@ def save_settings():
     conn.commit()
     c.close()
 
+    schedule_update_job()
     sonarr_full_update()
     radarr_full_update()
 
     logging.info('BAZARR Settings saved succesfully.')
-
-    # reschedule full update task according to settings
-    sonarr_full_update()
 
     if ref.find('saved=true') > 0:
         redirect(ref)
