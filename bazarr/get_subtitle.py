@@ -23,6 +23,7 @@ from subliminal import region, score as subliminal_scores, \
     list_subtitles, Episode, Movie
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
 from subliminal_patch.score import compute_score
+from subliminal.refiners.tvdb import series_re
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
 from bs4 import UnicodeDammit
 from config import settings
@@ -67,6 +68,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
             video.original_name = original_name
             video.original_path = original_path
             refine_from_db(original_path,video)
+            logging.debug('BAZARR is using those video object properties: %s', vars(video))
             return video
         
         except:
@@ -404,8 +406,13 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                                         'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
                                 else:
                                     logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                        
-                        return message
+
+                        if media_type == 'series':
+                            reversed_path = path_replace_reverse(path)
+                        else:
+                            reversed_path = path_replace_reverse_movie(path)
+
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -663,7 +670,7 @@ def refine_from_db(path, video):
         data = c.execute("SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, table_episodes.video_codec, table_episodes.audio_codec FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),)).fetchone()
         db.close()
         if data:
-            video.series = re.sub(r'(\(\d\d\d\d\))' , '', data[0])
+            video.series, year, country = series_re.match(data[0]).groups()
             video.season = int(data[1])
             video.episode = int(data[2])
             video.title = data[3]
