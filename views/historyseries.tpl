@@ -100,7 +100,7 @@
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = (row[7], row[4])
+							% upgradable_criteria = (row[7], row[4], row[10])
 							% if upgradable_criteria in upgradable_episodes:
 							% if row[9] in ast.literal_eval(str(row[8])):
 							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">

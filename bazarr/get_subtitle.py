@@ -187,7 +187,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                         if subtitle.language == 'pt-BR':
                             downloaded_language_code3 = 'pob'
                         else:
-                            downloaded_language_code3 = subtitle.language
+                            downloaded_language_code3 = subtitle.language.alpha3
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = subtitle.storage_path
@@ -374,7 +374,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                         if saved_subtitle.language == 'pt-BR':
                             downloaded_language_code3 = 'pob'
                         else:
-                            downloaded_language_code3 = subtitle.language
+                            downloaded_language_code3 = subtitle.language.alpha3
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = saved_subtitle.storage_path
@@ -736,7 +736,7 @@ def upgrade_subtitles():
                              INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
                              INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
                                   WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
-                                        score is not null AND score < "360"
+                                        score is not null
                                GROUP BY table_history.video_path, table_history.language""",
                               (minimum_timestamp,)).fetchall()
     movies_list = c.execute("""SELECT table_history_movie.video_path, table_history_movie.language,
@@ -746,19 +746,19 @@ def upgrade_subtitles():
                                  FROM table_history_movie
                            INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
                                 WHERE action  IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
-                                      score is not null AND score < "120"
+                                      score is not null
                              GROUP BY table_history_movie.video_path, table_history_movie.language""",
                             (minimum_timestamp,)).fetchall()
     db.close()
 
     episodes_to_upgrade = []
     for episode in episodes_list:
-        if os.path.exists(path_replace(episode[0])):
+        if os.path.exists(path_replace(episode[0])) and int(episode[2]) < 360:
             episodes_to_upgrade.append(episode)
 
     movies_to_upgrade = []
     for movie in movies_list:
-        if os.path.exists(path_replace_movie(movie[0])):
+        if os.path.exists(path_replace_movie(movie[0])) and int(movie[2]) < 120:
             movies_to_upgrade.append(movie)
 
     providers_list = get_providers()

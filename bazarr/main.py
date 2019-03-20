@@ -953,7 +953,7 @@ def historyseries():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history WHERE action LIKE '1'").fetchall()
+    stats = c.execute("SELECT timestamp FROM table_history WHERE action > 0").fetchall()
     total = len(stats)
     for stat in stats:
         if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
@@ -965,7 +965,7 @@ def historyseries():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language, table_history.score FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
 
@@ -980,12 +980,16 @@ def historyseries():
         else:
             query_actions = [1, 3]
 
-        upgradable_episodes = c.execute("""SELECT table_history.video_path, MAX(table_history.timestamp)
+        upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
                                              FROM table_history
                                             WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > 
-                                            ? AND score is not null AND score < "360"
+                                            ? AND score is not null
                                          GROUP BY table_history.video_path, table_history.language""",
                                         (minimum_timestamp,)).fetchall()
+        upgradable_episodes_not_perfect = []
+        for upgradable_episode in upgradable_episodes:
+            if upgradable_episode[2] < "360":
+                upgradable_episodes_not_perfect.append(upgradable_episode)
 
     c.close()
 
@@ -993,7 +997,7 @@ def historyseries():
 
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port, upgradable_episodes=upgradable_episodes)
+                    current_port=settings.general.port, upgradable_episodes=upgradable_episodes_not_perfect)
 
 
 @route(base_url + 'historymovies')
@@ -1017,7 +1021,7 @@ def historymovies():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action LIKE '1'").fetchall()
+    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action > 0").fetchall()
     total = len(stats)
     for stat in stats:
         if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
@@ -1029,7 +1033,7 @@ def historymovies():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language, table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
 
@@ -1044,18 +1048,22 @@ def historymovies():
         else:
             query_actions = [1, 3]
 
-        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp)
+        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
                                            FROM table_history_movie
                                           WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp 
-                                                > ? AND score is not null AND score < "120"
+                                                > ? AND score is not null
                                        GROUP BY video_path, language""",
                                       (minimum_timestamp,)).fetchall()
+        upgradable_movies_not_perfect = []
+        for upgradable_movie in upgradable_movies:
+            if upgradable_movie[2] < "120":
+                upgradable_movies_not_perfect.append(upgradable_movie)
 
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port, upgradable_movies=upgradable_movies)
+                    current_port=settings.general.port, upgradable_movies=upgradable_movies_not_perfect)
 
 
 @route(base_url + 'wanted')
