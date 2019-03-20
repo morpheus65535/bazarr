@@ -982,13 +982,13 @@ def historyseries():
 
         upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
                                              FROM table_history
-                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > 
-                                            ? AND score is not null
+                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
+                                                  timestamp > ? AND score is not null
                                          GROUP BY table_history.video_path, table_history.language""",
                                         (minimum_timestamp,)).fetchall()
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
-            if upgradable_episode[2] < "360":
+            if int(upgradable_episode[2]) < 360:
                 upgradable_episodes_not_perfect.append(upgradable_episode)
 
     c.close()
@@ -1050,13 +1050,13 @@ def historymovies():
 
         upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
                                            FROM table_history_movie
-                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp 
-                                                > ? AND score is not null
+                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
+                                                timestamp > ? AND score is not null
                                        GROUP BY video_path, language""",
                                       (minimum_timestamp,)).fetchall()
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
-            if upgradable_movie[2] < "120":
+            if int(upgradable_movie[2]) < 120:
                 upgradable_movies_not_perfect.append(upgradable_movie)
 
     c.close()
