@@ -101,7 +101,7 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     return min_score, max_score, set(scores)
 
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type, forced_minimum_score=None):
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type, forced_minimum_score=None, is_upgrade=False):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
@@ -192,11 +192,15 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
+                        if is_upgrade:
+                            action = "upgraded"
+                        else:
+                            action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
@@ -771,7 +775,7 @@ def upgrade_subtitles():
                     path_replace(episode[0]), queue='get_subtitle')
             result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
                                        episode[3], providers_list, providers_auth, str(episode[4]),
-                                       episode[5], 'series', forced_minimum_score=int(episode[2]))
+                                       episode[5], 'series', forced_minimum_score=int(episode[2]), is_upgrade=True)
             if result is not None:
                 message = result[0]
                 path = result[1]
@@ -789,7 +793,7 @@ def upgrade_subtitles():
                     path_replace_movie(movie[0]), queue='get_subtitle')
             result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
                                        movie[3], providers_list, providers_auth, str(movie[4]),
-                                       movie[5], 'movie', forced_minimum_score=int(movie[2]))
+                                       movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)
             if result is not None:
                 message = result[0]
                 path = result[1]
