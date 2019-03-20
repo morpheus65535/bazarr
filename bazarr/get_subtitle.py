@@ -111,7 +111,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         hi = False
     language_set = set()
-    original_language = language
+
     if not isinstance(language, types.ListType):
         language = [language]
     
@@ -184,9 +184,12 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     saved_any = True
                     for subtitle in saved_subtitles:
                         downloaded_provider = subtitle.provider_name
-                        downloaded_language = language_from_alpha3(original_language)
-                        downloaded_language_code2 = alpha2_from_alpha3(original_language)
-                        downloaded_language_code3 = original_language
+                        if subtitle.language == 'pt-BR':
+                            downloaded_language_code3 = 'pob'
+                        else:
+                            downloaded_language_code3 = subtitle.language
+                        downloaded_language = language_from_alpha3(downloaded_language_code3)
+                        downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if video.used_scene_name:
@@ -368,9 +371,12 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 if saved_subtitles:
                     for saved_subtitle in saved_subtitles:
                         downloaded_provider = saved_subtitle.provider_name
-                        downloaded_language = language_from_alpha3(saved_subtitle.language.alpha3)
-                        downloaded_language_code2 = alpha2_from_alpha3(saved_subtitle.language.alpha3)
-                        downloaded_language_code3 = saved_subtitle.language.alpha3
+                        if saved_subtitle.language == 'pt-BR':
+                            downloaded_language_code3 = 'pob'
+                        else:
+                            downloaded_language_code3 = subtitle.language
+                        downloaded_language = language_from_alpha3(downloaded_language_code3)
+                        downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(

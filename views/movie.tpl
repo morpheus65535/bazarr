@@ -416,6 +416,9 @@
 		language = $(this).attr("data-language");
 		hi = $(this).attr("data-hi");
 		radarrId = $(this).attr("data-radarrId");
+		var languages = Array.from({{!subs_languages_list}});
+		var is_pb = languages.includes('pb');
+		var is_pt = languages.includes('pt');
 
 		const values = {
 			moviePath: moviePath,
@@ -453,7 +456,15 @@
         			return data +'%';
     				}
 				},
-				{ data: 'language' },
+				{ data: null,
+				render: function ( data, type, row ) {
+		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
+		    			return 'pb'
+					} else {
+		    			return data.language
+					}
+					}
+				},
 				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {
