@@ -988,8 +988,13 @@ def historyseries():
                                         (minimum_timestamp,)).fetchall()
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
-            if int(upgradable_episode[2]) < 360:
-                upgradable_episodes_not_perfect.append(upgradable_episode)
+            try:
+                int(upgradable_episode[2])
+            except ValueError:
+                pass
+            else:
+                if int(upgradable_episode[2]) < 360:
+                    upgradable_episodes_not_perfect.append(upgradable_episode)
 
     c.close()
 
@@ -1056,8 +1061,13 @@ def historymovies():
                                       (minimum_timestamp,)).fetchall()
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
-            if int(upgradable_movie[2]) < 120:
-                upgradable_movies_not_perfect.append(upgradable_movie)
+            try:
+                int(upgradable_movie[2])
+            except ValueError:
+                pass
+            else:
+                if int(upgradable_movie[2]) < 120:
+                    upgradable_movies_not_perfect.append(upgradable_movie)
 
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
