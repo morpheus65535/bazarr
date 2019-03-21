@@ -53,7 +53,7 @@ from cork import Cork
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import datetime, timedelta
 from get_languages import load_language_in_db, language_from_alpha3
-from get_providers import get_providers, get_providers_auth
+from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
 from get_episodes import *
 
@@ -1642,6 +1642,8 @@ def system():
         elif job.trigger.__str__().startswith('cron'):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
+    throttled_providers = list_throttled_providers()
+
     i = 0
     with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as f:
         for i, l in enumerate(f, 1):
@@ -1678,7 +1680,7 @@ def system():
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
                     base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
-                    releases=releases, current_port=settings.general.port)
+                    releases=releases, current_port=settings.general.port, throttled_providers=throttled_providers)
 
 
 @route(base_url + 'logs/<page:int>')

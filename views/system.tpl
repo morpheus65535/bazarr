@@ -54,9 +54,18 @@
                     <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
                 % end
 			</div>
-			<div class="ui top attached tabular menu">
+			% import datetime
+            % throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
+            <div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
+                <a class="tabs item" data-tab="providers">Providers
+                    % if throttled_providers_count:
+                    <div class="ui tiny yellow label">
+                        {{throttled_providers_count}}
+                    </div>
+                    % end
+                </a>
                 <a class="tabs item" data-tab="status">Status</a>
 				<a class="tabs item" data-tab="releases">Releases</a>
 			</div>
@@ -118,6 +127,28 @@
 						</div>
 					</div>
                     %end
+				</div>
+			</div>
+            <div class="ui bottom attached tab segment" data-tab="providers">
+				<div class="content">
+					<table class="ui very basic table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Status</th>
+								<th>Next retry</th>
+							</tr>
+						</thead>
+						<tbody>
+						%for provider in throttled_providers:
+							<tr>
+								<td>{{provider[0]}}</td>
+								<td>{{provider[1] if provider[1] is not None else "Good"}}</td>
+								<td>{{provider[2] if provider[2] is not "now" else "-"}}</td>
+							</tr>
+						%end
+						</tbody>
+					</table>
 				</div>
 			</div>
             <div class="ui bottom attached tab segment" data-tab="status">
