@@ -89,7 +89,7 @@
 							% if upgradable_criteria in upgradable_movies:
 							% if row[7] in ast.literal_eval(str(row[6])):
 							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
-								<i class="ui green recycle icon"></i>{{row[3]}}
+								<i class="ui green recycle icon upgrade"></i>{{row[3]}}
 							</div>
 							% else:
 							{{row[3]}}
@@ -196,7 +196,7 @@
 	    sessionStorage.clear();
 	}
 
-	$('a, i').on('click', function(){
+	$('a').on('click', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#loader').addClass('active');
