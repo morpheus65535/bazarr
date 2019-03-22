@@ -26,7 +26,7 @@ defaults = {
         'serie_default_language': '[]',
         'serie_default_hi': 'False',
         'movie_default_enabled': 'False',
-        'movie_default_language': [],
+        'movie_default_language': '[]',
         'movie_default_hi': 'False',
         'page_size': '25',
         'minimum_score_movie': '70',

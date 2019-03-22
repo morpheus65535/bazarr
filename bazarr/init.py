@@ -127,9 +127,13 @@ try:
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-
 except:
     pass
+
+if settings.general.throtteled_providers == '' or None:
+    settings.general.throtteled_providers = '{}'
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
