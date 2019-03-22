@@ -1683,16 +1683,23 @@ def system():
                     releases=releases, current_port=settings.general.port, throttled_providers=throttled_providers)
 
 
-@route(base_url + 'logs/<page:int>')
+@route(base_url + 'logs/<level>/<page:int>')
 @custom_auth_basic(check_credentials)
-def get_logs(page):
+def get_logs(level, page):
     authorize()
     page_size = int(settings.general.page_size)
     begin = (page * page_size) - page_size
     end = (page * page_size) - 1
     logs_complete = []
     for line in reversed(open(os.path.join(args.config_dir, 'log', 'bazarr.log')).readlines()):
-        logs_complete.append(line.rstrip())
+        lin = []
+        lin = line.split('|')
+        if 'ALL' in level or level is None:
+            logs_complete.append(line.rstrip())
+        else:
+            if level in lin[1]:
+                logs_complete.append(line.rstrip())
+                    
     logs = logs_complete[begin:end]
 
     return template('logs', logs=logs, base_url=base_url, current_port=settings.general.port)

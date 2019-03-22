@@ -105,6 +105,16 @@
 					<button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
 					<button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
 				</div>
+
+                <label>Log level filter:</label>
+                    <select name="level" id="level" class="ui floated selection dropdown">
+                        <option value="ALL">All</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="INFO">INFO</option>
+                        <option value="ERROR">ERROR</option>
+                        <option value="DEBUG">DEBUG</option>
+                    </select>
+
 				
 				<div class="content">
 					<div id="logs"></div>
@@ -324,9 +334,9 @@
 	$('.menu .item')
 		.tab();
 
-	function loadURL(page) {
+	function loadURL(level, page) {
 		$.ajax({
-	        url: "{{base_url}}logs/" + page,
+	        url: "{{base_url}}logs/" + level + "/" + page,
 	        beforeSend: function() { $('#loader').addClass('active'); },
         	complete: function() { $('#loader').removeClass('active'); },
 	        cache: false
@@ -335,6 +345,9 @@
 	    });
 
 	    current_page = page;
+	    $('#level').on('change', function() {
+            current_level = $('#level option:checked').val();
+        });
 
 	    $("#page").text(current_page);
 	    if (current_page == 1) {
@@ -349,23 +362,27 @@
 	    }
 	}
 
-	loadURL(1);
+	loadURL('ALL', 1);
 
 	$('.backward').on('click', function(){
-		loadURL(current_page - 1);
+		loadURL(current_level, current_page - 1);
 	});
 	$('.fast.backward').on('click', function(){
-		loadURL(1);
+		loadURL(current_level, 1);
 	});
 	$('.forward').on('click', function(){
-		loadURL(current_page + 1);
+		loadURL(current_level, current_page + 1);
 	});
 	$('.fast.forward').on('click', function(){
-		loadURL({{int(max_page)}});
+		loadURL(current_level, {{int(max_page)}});
 	});
 
 	$('#refresh_log').on('click', function(){
-		loadURL(current_page);
+		loadURL(current_level, current_page);
+	});
+
+	$('#level').on('change', function(){
+		loadURL(current_level, current_page);
 	});
 
 	$('#download_log').on('click', function(){
