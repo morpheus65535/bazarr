@@ -33,7 +33,6 @@ defaults = {
         'use_embedded_subs': 'True',
         'adaptive_searching': 'False',
         'enabled_providers': '',
-        'throtteled_providers': '{}',
         'multithreading': 'True',
         'chmod': '0640',
         'subfolder': 'current',
