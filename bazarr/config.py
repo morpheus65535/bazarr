@@ -33,11 +33,14 @@ defaults = {
         'use_embedded_subs': 'True',
         'adaptive_searching': 'False',
         'enabled_providers': '',
-        'throtteled_providers': '',
+        'throtteled_providers': '{}',
         'multithreading': 'True',
         'chmod': '0640',
         'subfolder': 'current',
-        'subfolder_custom': ''
+        'subfolder_custom': '',
+        'upgrade_subs': 'True',
+        'days_to_upgrade_subs': '7',
+        'upgrade_manual': 'True'
     },
     'auth': {
         'type': 'None',

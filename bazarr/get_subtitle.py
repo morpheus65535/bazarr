@@ -102,7 +102,7 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     return min_score, max_score, set(scores)
 
 
-def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type):
+def download_subtitle(path, language, hi, providers, providers_auth, sceneName, title, media_type, forced_minimum_score=None, is_upgrade=False):
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
@@ -112,7 +112,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
     else:
         hi = False
     language_set = set()
-    
+
     if not isinstance(language, types.ListType):
         language = [language]
     
@@ -145,6 +145,8 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                                                   min_score_series_perc=int(minimum_score))
 
         if providers:
+            if forced_minimum_score:
+                min_score = int(forced_minimum_score) + 1
             downloaded_subtitles = download_best_subtitles({video}, language_set, int(min_score), hi,
                                                            providers=providers,
                                                            provider_configs=providers_auth,
@@ -183,16 +185,23 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                     saved_any = True
                     for subtitle in saved_subtitles:
                         downloaded_provider = subtitle.provider_name
-                        downloaded_language = language_from_alpha3(subtitle.language.alpha3)
-                        downloaded_language_code2 = alpha2_from_alpha3(subtitle.language.alpha3)
-                        downloaded_language_code3 = subtitle.language.alpha3
+                        if subtitle.language == 'pt-BR':
+                            downloaded_language_code3 = 'pob'
+                        else:
+                            downloaded_language_code3 = subtitle.language.alpha3
+                        downloaded_language = language_from_alpha3(downloaded_language_code3)
+                        downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
+                        if is_upgrade:
+                            action = "upgraded"
+                        else:
+                            action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
@@ -367,9 +376,12 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                 if saved_subtitles:
                     for saved_subtitle in saved_subtitles:
                         downloaded_provider = saved_subtitle.provider_name
-                        downloaded_language = language_from_alpha3(saved_subtitle.language.alpha3)
-                        downloaded_language_code2 = alpha2_from_alpha3(saved_subtitle.language.alpha3)
-                        downloaded_language_code3 = saved_subtitle.language.alpha3
+                        if saved_subtitle.language == 'pt-BR':
+                            downloaded_language_code3 = 'pob'
+                        else:
+                            downloaded_language_code3 = subtitle.language.alpha3
+                        downloaded_language = language_from_alpha3(downloaded_language_code3)
+                        downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
@@ -707,3 +719,88 @@ def refine_from_db(path, video):
                 if data[6]: video.audio_codec = data[6]
 
     return video
+
+
+def upgrade_subtitles():
+    days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+    minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                         datetime(1970, 1, 1)).total_seconds()
+
+    if settings.general.getboolean('upgrade_manual'):
+        query_actions = [1, 2, 3]
+    else:
+        query_actions = [1, 3]
+
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    episodes_list = c.execute("""SELECT table_history.video_path, table_history.language, table_history.score,
+                                        table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.title,
+                                        table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,
+                                        MAX(table_history.timestamp), table_shows.languages
+                                   FROM table_history
+                             INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
+                             INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
+                                  WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
+                                        score is not null
+                               GROUP BY table_history.video_path, table_history.language""",
+                              (minimum_timestamp,)).fetchall()
+    movies_list = c.execute("""SELECT table_history_movie.video_path, table_history_movie.language,
+                                      table_history_movie.score, table_movies.hearing_impaired, table_movies.sceneName,
+                                      table_movies.title, table_movies.radarrId, MAX(table_history_movie.timestamp), 
+                                      table_movies.languages
+                                 FROM table_history_movie
+                           INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
+                                WHERE action  IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
+                                      score is not null
+                             GROUP BY table_history_movie.video_path, table_history_movie.language""",
+                            (minimum_timestamp,)).fetchall()
+    db.close()
+
+    episodes_to_upgrade = []
+    for episode in episodes_list:
+        if os.path.exists(path_replace(episode[0])) and int(episode[2]) < 360:
+            episodes_to_upgrade.append(episode)
+
+    movies_to_upgrade = []
+    for movie in movies_list:
+        if os.path.exists(path_replace_movie(movie[0])) and int(movie[2]) < 120:
+            movies_to_upgrade.append(movie)
+
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
+
+    for episode in episodes_to_upgrade:
+        if episode[1] in ast.literal_eval(str(episode[9])):
+            notifications.write(
+                msg='Searching to upgrade ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' +
+                    path_replace(episode[0]), queue='get_subtitle')
+            result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
+                                       episode[3], providers_list, providers_auth, str(episode[4]),
+                                       episode[5], 'series', forced_minimum_score=int(episode[2]), is_upgrade=True)
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                store_subtitles(path_replace(episode[0]))
+                history_log(3, episode[6], episode[7], message, path, language_code, provider, score)
+                send_notifications(episode[6], episode[7], message)
+
+    for movie in movies_to_upgrade:
+        if movie[1] in ast.literal_eval(str(movie[8])):
+            notifications.write(
+                msg='Searching to upgrade ' + str(language_from_alpha2(movie[1])) + ' subtitles for this movie: ' +
+                    path_replace_movie(movie[0]), queue='get_subtitle')
+            result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
+                                       movie[3], providers_list, providers_auth, str(movie[4]),
+                                       movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                store_subtitles_movie(path_replace_movie(movie[0]))
+                history_log_movie(3, movie[6], message, path, language_code, provider, score)
+                send_notifications_movie(movie[6], message)

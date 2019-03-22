@@ -1081,6 +1081,7 @@
                         </div>
 
                         <div class="middle aligned row subfolder">
+                            <div class="two wide column"></div>
                             <div class="right aligned four wide column">
                                 <label>Custom Subtitle folder</label>
                             </div>
@@ -1096,6 +1097,62 @@
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
                                      data-tooltip='Choose your own folder for the subtitles' data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Upgrade previously downloaded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_upgrade_subs" class="ui toggle checkbox" data-upgrade={{settings.general.getboolean('upgrade_subs')}}>
+                                    <input name="settings_upgrade_subs" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Schedule a task that run every 12 hours to upgrade subtitles previously downloaded by Bazarr.'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row upgrade_subs">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Number of days to go back in history to upgrade subtitles (up to 30)</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_days_to_upgrade_subs" name="settings_days_to_upgrade_subs"
+                                               type="text" pattern= "[0-9]" value="{{ settings.general.days_to_upgrade_subs }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row upgrade_subs">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Upgrade manually downloaded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_upgrade_manual" class="ui toggle checkbox" data-upgrade-manual={{settings.general.getboolean('upgrade_manual')}}>
+                                    <input name="settings_upgrade_manual" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Enable or disable upgrade of manually searched and downloaded subtitles.'
+                                     data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -2025,6 +2082,18 @@
                 $("#settings_scenename").checkbox('uncheck');
             }
 
+    if ($('#settings_upgrade_subs').data("upgrade") === "True") {
+                $("#settings_upgrade_subs").checkbox('check');
+            } else {
+                $("#settings_upgrade_subs").checkbox('uncheck');
+            }
+
+    if ($('#settings_upgrade_manual').data("upgrade-manual") === "True") {
+                $("#settings_upgrade_manual").checkbox('check');
+            } else {
+                $("#settings_upgrade_manual").checkbox('uncheck');
+            }
+
     if ($('#settings_embedded').data("embedded") === "True") {
                 $("#settings_embedded").checkbox('check');
             } else {
@@ -2145,6 +2214,21 @@
         }
         else {
             $('.subfolder').show();
+        }
+    });
+
+    if ($('#settings_upgrade_subs').data("upgrade") === "True") {
+                $('.upgrade_subs').show();
+            } else {
+                $('.upgrade_subs').hide();
+            }
+
+    $('#settings_upgrade_subs').checkbox({
+        onChecked: function() {
+            $('.upgrade_subs').show();
+        },
+        onUnchecked: function() {
+            $('.upgrade_subs').hide();
         }
     });
 
@@ -2477,6 +2561,16 @@
                     rules : [
                         {
                             type : 'minCount[1]'
+                        },
+                        {
+                            type : 'empty'
+                        }
+                    ]
+                },
+                settings_days_to_upgrade_subs : {
+                    rules : [
+                        {
+                            type : 'integer[1..30]'
                         },
                         {
                             type : 'empty'

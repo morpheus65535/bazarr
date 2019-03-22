@@ -25,7 +25,11 @@
     </head>
     <body>
 		% from get_args import args
+		% from get_providers import update_throttled_provider
+		% update_throttled_provider()
 
+		% import ast
+		% import datetime
 		% import os
 		% import sqlite3
         % from config import settings
@@ -46,7 +50,8 @@
     	% c = conn.cursor()
 		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr).fetchone()
 		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr).fetchone()
-
+		% from get_providers import list_throttled_providers
+		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
 			<div class="ui grid">
 				<div class="middle aligned row">
@@ -96,7 +101,13 @@
 												Settings
 											</a>
 											<a class="item" href="{{base_url}}system">
-												<i class="laptop icon"></i>
+												<i class="laptop icon">
+													% if throttled_providers_count:
+													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+														{{throttled_providers_count}}
+													</div>
+													% end
+												</i>
 												System
 											</a>
 											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
