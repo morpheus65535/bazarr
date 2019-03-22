@@ -1131,7 +1131,7 @@
                                 <div class='field'>
                                     <div class="ui fluid input">
                                         <input id="settings_days_to_upgrade_subs" name="settings_days_to_upgrade_subs"
-                                               type="text" pattern= "[0-9]" value="{{ settings.general.days_to_upgrade_subs }}">
+                                               type="text" value="{{ settings.general.days_to_upgrade_subs }}">
                                     </div>
                                 </div>
                             </div>
