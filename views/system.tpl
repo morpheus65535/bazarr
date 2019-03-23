@@ -98,23 +98,35 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
-				<div class="ui left floated basic buttons">
-					<button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
-				</div>
-				<div class="ui right floated basic buttons">
-					<button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
-					<button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
-				</div>
 
-                <label>Log level filter:</label>
-                    <select name="level" id="level" class="ui floated selection dropdown">
-                        <option value="ALL">All</option>
-                        <option value="WARNING">WARNING</option>
-                        <option value="INFO">INFO</option>
-                        <option value="ERROR">ERROR</option>
-                        <option value="DEBUG">DEBUG</option>
-                    </select>
+                <div class="ui two column grid container">
+                    <div class="row">
+                        <div class="left floatedcolumn">
+                            <div class="ui basic buttons">
+                                <button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
+                            </div>
+                        </div>
+                        <div class="right floated right aligned column">
+                            <div class="ui basic buttons">
+                                <button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
+                                <button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="two column row">
+                        <div class="right floated right aligned column">
+                            <label>Log level filter:</label>
+                            <select name="level" id="level" class="ui floated selection dropdown">
+                                <option value="ALL">All</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="INFO">INFO</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="DEBUG">DEBUG</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 				
 				<div class="content">
 					<div id="logs"></div>
