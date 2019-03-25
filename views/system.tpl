@@ -119,6 +119,7 @@
                                 <button class="ui button filter_log" id="info_log" data-level="INFO"><i class="blue info circle icon"></i></button>
                                 <button class="ui button filter_log" id="warning_log" data-level="WARNING"><i class="yellow warning circle icon"></i></button>
                                 <button class="ui button filter_log" id="error_log" data-level="ERROR"><i class="red bug icon"></i></button>
+                                <button class="ui button filter_log" id="debug_log" data-level="DEBUG"><i class="black bug icon"></i></button>
                             </div>
                         </div>
                     </div>
@@ -487,7 +488,7 @@
                             icon = 'red bug icon';
                             break;
                         case 'DEBUG':
-                            icon = 'bug icon';
+                            icon = 'black bug icon';
                     }
 				    return '<i class="' + icon + '"></i>';
     				}
@@ -522,11 +523,13 @@
 	    $('.filter_log').removeClass('active');
 	    $(this).addClass('active');
 	    if ( $(this).data('level') === 'INFO') {
-	        table.column( 0 ).search( 'INFO|WARNING|ERROR', true, false).draw();
+	        table.column( 0 ).search( 'INFO|WARNING|ERROR|DEBUG', true, false).draw();
         } else if ( $(this).data('level') === 'WARNING') {
-	        table.column( 0 ).search( 'WARNING|ERROR', true, false ).draw();
+	        table.column( 0 ).search( 'WARNING|ERROR|DEBUG', true, false ).draw();
         } else if ( $(this).data('level') === 'ERROR') {
-	        table.column( 0 ).search( 'ERROR', true, false ).draw();
+	        table.column( 0 ).search( 'ERROR|DEBUG', true, false ).draw();
+        } else if ( $(this).data('level') === 'DEBUG') {
+	        table.column( 0 ).search( 'DEBUG', true, false ).draw();
         } else if ( $(this).data('level') === 'ALL') {
             table.column(0).search('').draw();
         }
