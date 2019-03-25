@@ -1644,14 +1644,6 @@ def system():
 
     throttled_providers = list_throttled_providers()
 
-    i = 0
-    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as f:
-        for i, l in enumerate(f, 1):
-            pass
-        row_count = i
-        page_size = int(settings.general.page_size)
-        max_page = int(math.ceil(row_count / (page_size + 0.0)))
-
     with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
         releases = ast.literal_eval(f.read())
 
@@ -1675,34 +1667,27 @@ def system():
         except:
             pass
 
+    page_size = int(settings.general.page_size)
+
     return template('system', bazarr_version=bazarr_version,
                     sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
-                    base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
-                    releases=releases, current_port=settings.general.port, throttled_providers=throttled_providers)
+                    base_url=base_url, task_list=task_list, page_size=page_size, releases=releases,
+                    current_port=settings.general.port, throttled_providers=throttled_providers)
 
 
-@route(base_url + 'logs/<level>/<page:int>')
+@route(base_url + 'logs')
 @custom_auth_basic(check_credentials)
-def get_logs(level, page):
+def get_logs():
     authorize()
-    page_size = int(settings.general.page_size)
-    begin = (page * page_size) - page_size
-    end = (page * page_size) - 1
-    logs_complete = []
+    logs = []
     for line in reversed(open(os.path.join(args.config_dir, 'log', 'bazarr.log')).readlines()):
         lin = []
         lin = line.split('|')
-        if 'ALL' in level or level is None:
-            logs_complete.append(line.rstrip())
-        else:
-            if level in lin[1]:
-                logs_complete.append(line.rstrip())
-                    
-    logs = logs_complete[begin:end]
+        logs.append(lin)
 
-    return template('logs', logs=logs, base_url=base_url, current_port=settings.general.port)
+    return dict(data=logs)
 
 
 @route(base_url + 'execute/<taskid>')
