@@ -11,11 +11,9 @@ import time
 import cPickle as pickle
 import codecs
 import types
-import chardet
 import re
 import subliminal
 import subliminal_patch
-from ast import literal_eval
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -25,7 +23,6 @@ from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, 
 from subliminal_patch.score import compute_score
 from subliminal.refiners.tvdb import series_re
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
-from bs4 import UnicodeDammit
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie, pp_replace, get_target_folder, force_unicode

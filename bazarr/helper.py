@@ -5,10 +5,10 @@ import re
 import types
 import logging
 import sqlite3
+import chardet
+from bs4 import UnicodeDammit
 
 from config import settings
-from get_args import args
-from get_languages import alpha2_from_language
 
 
 def path_replace(path):
