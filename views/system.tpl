@@ -115,11 +115,11 @@
                         </div>
                         <div class="right floated right aligned column">
                             <div class="ui basic icon buttons">
-                                <button class="ui active button filter_log" id="all_log" data-level="ALL"><i class="circle outline icon"></i></button>
-                                <button class="ui button filter_log" id="info_log" data-level="INFO"><i class="blue info circle icon"></i></button>
-                                <button class="ui button filter_log" id="warning_log" data-level="WARNING"><i class="yellow warning circle icon"></i></button>
-                                <button class="ui button filter_log" id="error_log" data-level="ERROR"><i class="red bug icon"></i></button>
-                                <button class="ui button filter_log" id="debug_log" data-level="DEBUG"><i class="black bug icon"></i></button>
+                                <button class="ui active button filter_log" id="all_log" data-level="ALL" data-tooltip="All"><i class="circle outline icon"></i></button>
+                                <button class="ui button filter_log" id="info_log" data-level="INFO" data-tooltip="Info"><i class="blue info circle icon"></i></button>
+                                <button class="ui button filter_log" id="warning_log" data-level="WARNING" data-tooltip="Warning"><i class="yellow warning circle icon"></i></button>
+                                <button class="ui button filter_log" id="error_log" data-level="ERROR" data-tooltip="Error"><i class="red bug icon"></i></button>
+                                <button class="ui button filter_log" id="debug_log" data-level="DEBUG" data-tooltip="Debug"><i class="black bug icon"></i></button>
                             </div>
                         </div>
                     </div>
@@ -515,6 +515,11 @@
                     "targets": [ 0 ],
                     "visible": false,
                     "searchable": true
+                },
+                {
+                    "targets": [ 4 ],
+                    "visible": false,
+                    "searchable": false
                 }
 			]
 		} );
