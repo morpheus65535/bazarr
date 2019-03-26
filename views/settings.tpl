@@ -152,6 +152,17 @@
                                 </div>
                             </div>
                         </div>
+                        <div id="chmod_enabled" class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Enable chmod</label>
+                            </div>
+                            <div class="five wide column">
+                                <div id="settings_chmod_enabled" class="ui toggle checkbox" data-chmod={{settings.general.getboolean('chmod_enabled')}}>
+                                    <input name="settings_general_chmod_enabled" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
                         <div id="chmod" class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Set subtitle file permissions to</label>
@@ -599,7 +610,7 @@
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="middle aligned row postprocessing">
                             <div class="right aligned four wide column">
                                 <label>Post-processing command</label>
                             </div>
@@ -610,7 +621,7 @@
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="middle aligned row postprocessing">
                             <div class="right aligned four wide column">
                                 <label>Variables you can use in your command (include the double curly brace):</label>
                             </div>
@@ -2032,6 +2043,7 @@
     % import sys
     % if sys.platform.startswith('win'):
     $("#chmod").hide();
+    $("#chmod_enabled").hide();
     % end
 
     $('.menu .item')
@@ -2068,6 +2080,12 @@
                 $("#settings_debug").checkbox('check');
             } else {
                 $("#settings_debug").checkbox('uncheck');
+            }
+
+    if ($('#settings_chmod_enabled').data("chmod") === "True") {
+                $("#settings_chmod_enabled").checkbox('check');
+            } else {
+                $("#settings_chmod_enabled").checkbox('uncheck');
             }
 
     if ($('#settings_single_language').data("single-language") === "True") {
@@ -2244,6 +2262,21 @@
         },
         onUnchecked: function() {
             $('.upgrade_subs').hide();
+        }
+    });
+
+    if ($('#settings_chmod_enabled').data("chmod") === "True") {
+                $('#chmod').show();
+            } else {
+                $('#chmod').hide();
+            }
+
+    $('#settings_chmod_enabled').checkbox({
+        onChecked: function() {
+            $('#chmod').show();
+        },
+        onUnchecked: function() {
+            $('#chmod').hide();
         }
     });
 
@@ -2467,7 +2500,7 @@
                         }
                     ]
                 },
-                % if not sys.platform.startswith('win'):
+                % if not sys.platform.startswith('win') and settings.general.getboolean('chmod_enabled'):
                 settings_general_chmod: {
                     rules: [
                         {

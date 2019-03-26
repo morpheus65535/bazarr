@@ -170,7 +170,7 @@ def download_subtitle(path, language, hi, providers, providers_auth, sceneName, 
                 
                 try:
                     fld = get_target_folder(path)
-                    chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') else None
+                    chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') and settings.general.getboolean('chmod_enabled') else None
                     saved_subtitles = save_subtitles(video.original_path, subtitles, single=single,
                                                      tags=None,  # fixme
                                                      directory=fld,
@@ -361,7 +361,7 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 fld = get_target_folder(path)
-                chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') else None
+                chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') and settings.general.getboolean('chmod_enabled') else None
                 saved_subtitles = save_subtitles(video.original_path, [subtitle], single=single,
                                                  tags=None,  # fixme
                                                  directory=fld,

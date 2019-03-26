@@ -1197,6 +1197,11 @@ def save_settings():
         settings_general_debug = 'False'
     else:
         settings_general_debug = 'True'
+    settings_general_chmod_enabled = request.forms.get('settings_general_chmod_enabled')
+    if settings_general_chmod_enabled is None:
+        settings_general_chmod_enabled = 'False'
+    else:
+        settings_general_chmod_enabled = 'True'
     settings_general_chmod = request.forms.get('settings_general_chmod')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
@@ -1283,6 +1288,7 @@ def save_settings():
     settings.general.base_url = text_type(settings_general_baseurl)
     settings.general.path_mappings = text_type(settings_general_pathmapping)
     settings.general.debug = text_type(settings_general_debug)
+    settings.general.chmod_enabled = text_type(settings_general_chmod_enabled)
     settings.general.chmod = text_type(settings_general_chmod)
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
