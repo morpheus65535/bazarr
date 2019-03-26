@@ -3,6 +3,7 @@ import os
 import datetime
 import logging
 import subliminal_patch
+import pretty
 
 from get_args import args
 from config import settings
@@ -139,3 +140,33 @@ def provider_throttle(name, exception):
     
     logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name, throttle_description,
                  throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.message)
+
+def update_throttled_provider():
+    changed = False
+    if settings.general.enabled_providers:
+        for provider in settings.general.enabled_providers.lower().split(','):
+            reason, until, throttle_desc = tp.get(provider, (None, None, None))
+
+            if reason:
+                now = datetime.datetime.now()
+                if now < until:
+                    pass
+                else:
+                    logging.info("Using %s again after %s, (disabled because: %s)", provider, throttle_desc, reason)
+                    del tp[provider]
+                    settings.general.throtteled_providers = str(tp)
+                    changed = True
+
+        if changed:
+            with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+                settings.write(handle)
+
+
+def list_throttled_providers():
+    update_throttled_provider()
+    throttled_providers = []
+    if settings.general.enabled_providers:
+        for provider in settings.general.enabled_providers.lower().split(','):
+            reason, until, throttle_desc = tp.get(provider, (None, None, None))
+            throttled_providers.append([provider, reason, pretty.date(until)])
+    return throttled_providers
