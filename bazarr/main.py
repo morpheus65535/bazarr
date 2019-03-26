@@ -1601,14 +1601,20 @@ def system():
 
     def get_time_from_cron(cron):
         text = "at "
+        sun = str(cron[4])
         hour = str(cron[5])
         minute = str(cron[6])
         second = str(cron[7])
+        
+        if sun != "*":
+            text = "Sunday " + text
 
         if hour != "0" and hour != "*":
             text = text + hour
             if hour == "0" or hour == "1":
                 text = text + " hour"
+            elif sun != "*" or hour == "4" or hour == "5":
+                text = text + "am"
             else:
                 text = text + " hours"
 
