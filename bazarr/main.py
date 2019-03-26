@@ -1652,8 +1652,12 @@ def system():
         page_size = int(settings.general.page_size)
         max_page = int(math.ceil(row_count / (page_size + 0.0)))
 
-    with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
-        releases = ast.literal_eval(f.read())
+    try:
+        with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
+            releases = ast.literal_eval(f.read())
+    except Exception as e:
+        releases = []
+        logging.exception('BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
 
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey
