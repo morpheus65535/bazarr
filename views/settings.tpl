@@ -2217,6 +2217,21 @@
         }
     });
 
+    if ($('#settings_use_postprocessing').data("postprocessing") === "True") {
+                $('.postprocessing').show();
+            } else {
+                $('.postprocessing').hide();
+            }
+
+    $('#settings_use_postprocessing').checkbox({
+        onChecked: function() {
+            $('.postprocessing').show();
+        },
+        onUnchecked: function() {
+            $('.postprocessing').hide();
+        }
+    });
+
     if ($('#settings_upgrade_subs').data("upgrade") === "True") {
                 $('.upgrade_subs').show();
             } else {
