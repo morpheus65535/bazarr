@@ -1558,56 +1558,35 @@ def check_update():
 def system():
     authorize()
     
-    def get_time_from_interval(interval):
-        interval_clean = interval.split('[')
-        interval_clean = interval_clean[1][:-1]
-        interval_split = interval_clean.split(':')
+    def get_time_from_interval(td_object):
+        seconds = int(td_object.total_seconds())
+        periods = [
+            ('year', 60 * 60 * 24 * 365),
+            ('month', 60 * 60 * 24 * 30),
+            ('day', 60 * 60 * 24),
+            ('hour', 60 * 60),
+            ('minute', 60),
+            ('second', 1)
+        ]
 
-        hour = interval_split[0]
-        minute = interval_split[1].lstrip("0")
-        second = interval_split[2].lstrip("0")
+        strings = []
+        for period_name, period_seconds in periods:
+            if seconds > period_seconds:
+                period_value, seconds = divmod(seconds, period_seconds)
+                has_s = 's' if period_value > 1 else ''
+                strings.append("%s %s%s" % (period_value, period_name, has_s))
 
-        text = "every "
-        if hour != "0":
-            text = text + hour
-            if hour == "1":
-                text = text + " hour"
-            else:
-                text = text + " hours"
-
-            if minute != "" and second != "":
-                text = text + ", "
-            elif minute == "" and second != "":
-                text = text + " and "
-            elif minute != "" and second == "":
-                text = text + " and "
-        if minute != "":
-            text = text + minute
-            if minute == "1":
-                text = text + " minute"
-            else:
-                text = text + " minutes"
-
-            if second != "":
-                text = text + " and "
-        if second != "":
-            text = text + second
-            if second == "1":
-                text = text + " second"
-            else:
-                text = text + " seconds"
-
-        return text
+        return ", ".join(strings)
 
     def get_time_from_cron(cron):
-        text = "at "
+        text = ""
         sun = str(cron[4])
         hour = str(cron[5])
         minute = str(cron[6])
         second = str(cron[7])
         
         if sun != "*":
-            text = "Sunday " + text
+            text = "Sunday at "
 
         if hour != "0" and hour != "*":
             text = text + hour
@@ -1639,19 +1618,25 @@ def system():
                 text = text + " second"
             else:
                 text = text + " seconds"
+        if text != "" and sun == "*":
+            text = "everyday at " + text
+        elif text == "":
+            text = "Never"
 
         return text
 
     task_list = []
     for job in scheduler.get_jobs():
-        if job.next_run_time is not None:
-            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+        if isinstance(job.trigger, CronTrigger):
+            if str(job.trigger.__getstate__()['fields'][0]) == "2100":
+                next_run = 'Never'
         else:
-            next_run = "Never"
+            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
-        if job.trigger.__str__().startswith('interval'):
-            task_list.append([job.name, get_time_from_interval(str(job.trigger)), next_run, job.id])
-        elif job.trigger.__str__().startswith('cron'):
+        if isinstance(job.trigger, IntervalTrigger):
+            interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
+            task_list.append([job.name, interval, next_run, job.id])
+        elif isinstance(job.trigger, CronTrigger):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
     throttled_providers = list_throttled_providers()
