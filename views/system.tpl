@@ -132,7 +132,7 @@
                                 <th></th>
                                 <th class="collapsing"></th>
                                 <th style="text-align: left;">Message:</th>
-                                <th style="text-align: left;">Time:</th>
+                                <th class="collapsing" style="text-align: left;">Time:</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -500,9 +500,8 @@
                 },
                 { data: 0,
 				render: function ( data, type, row ) {
-        			//return $.trim(data);
-                    return moment($.trim(data), "DD/MM/YYYY hh:mm:ss").fromNow();
-    				}
+        			return '<div class="description" data-tooltip="' + $.trim(data) + '" data-inverted="" data-position="top left">' + moment($.trim(data), "DD/MM/YYYY hh:mm:ss").fromNow() + '</div>'
+                    }
                 },
                 { data: 4,
 				render: function ( data, type, row ) {
