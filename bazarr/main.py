@@ -1197,6 +1197,11 @@ def save_settings():
         settings_general_debug = 'False'
     else:
         settings_general_debug = 'True'
+    settings_general_chmod_enabled = request.forms.get('settings_general_chmod_enabled')
+    if settings_general_chmod_enabled is None:
+        settings_general_chmod_enabled = 'False'
+    else:
+        settings_general_chmod_enabled = 'True'
     settings_general_chmod = request.forms.get('settings_general_chmod')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
@@ -1283,6 +1288,7 @@ def save_settings():
     settings.general.base_url = text_type(settings_general_baseurl)
     settings.general.path_mappings = text_type(settings_general_pathmapping)
     settings.general.debug = text_type(settings_general_debug)
+    settings.general.chmod_enabled = text_type(settings_general_chmod_enabled)
     settings.general.chmod = text_type(settings_general_chmod)
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
@@ -1552,57 +1558,42 @@ def check_update():
 def system():
     authorize()
     
-    def get_time_from_interval(interval):
-        interval_clean = interval.split('[')
-        interval_clean = interval_clean[1][:-1]
-        interval_split = interval_clean.split(':')
+    def get_time_from_interval(td_object):
+        seconds = int(td_object.total_seconds())
+        periods = [
+            ('year', 60 * 60 * 24 * 365),
+            ('month', 60 * 60 * 24 * 30),
+            ('day', 60 * 60 * 24),
+            ('hour', 60 * 60),
+            ('minute', 60),
+            ('second', 1)
+        ]
 
-        hour = interval_split[0]
-        minute = interval_split[1].lstrip("0")
-        second = interval_split[2].lstrip("0")
+        strings = []
+        for period_name, period_seconds in periods:
+            if seconds > period_seconds:
+                period_value, seconds = divmod(seconds, period_seconds)
+                has_s = 's' if period_value > 1 else ''
+                strings.append("%s %s%s" % (period_value, period_name, has_s))
 
-        text = "every "
-        if hour != "0":
-            text = text + hour
-            if hour == "1":
-                text = text + " hour"
-            else:
-                text = text + " hours"
-
-            if minute != "" and second != "":
-                text = text + ", "
-            elif minute == "" and second != "":
-                text = text + " and "
-            elif minute != "" and second == "":
-                text = text + " and "
-        if minute != "":
-            text = text + minute
-            if minute == "1":
-                text = text + " minute"
-            else:
-                text = text + " minutes"
-
-            if second != "":
-                text = text + " and "
-        if second != "":
-            text = text + second
-            if second == "1":
-                text = text + " second"
-            else:
-                text = text + " seconds"
-
-        return text
+        return ", ".join(strings)
 
     def get_time_from_cron(cron):
-        text = "at "
+        text = ""
+        sun = str(cron[4])
         hour = str(cron[5])
         minute = str(cron[6])
         second = str(cron[7])
+
+        if sun != "*":
+            text = "Sunday at "
 
         if hour != "0" and hour != "*":
             text = text + hour
             if hour == "0" or hour == "1":
                 text = text + " hour"
+            elif sun != "*" or hour == "4" or hour == "5":
+                text = text + "am"
             else:
                 text = text + " hours"
 
@@ -1627,25 +1618,43 @@ def system():
                 text = text + " second"
             else:
                 text = text + " seconds"
+        if text != "" and sun == "*":
+            text = "everyday at " + text
+        elif text == "":
+            text = "Never"
 
         return text
 
     task_list = []
     for job in scheduler.get_jobs():
-        if job.next_run_time is not None:
-            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+        if isinstance(job.trigger, CronTrigger):
+            if str(job.trigger.__getstate__()['fields'][0]) == "2100":
+                next_run = 'Never'
         else:
-            next_run = "Never"
+            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
-        if job.trigger.__str__().startswith('interval'):
-            task_list.append([job.name, get_time_from_interval(str(job.trigger)), next_run, job.id])
-        elif job.trigger.__str__().startswith('cron'):
+        if isinstance(job.trigger, IntervalTrigger):
+            interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
+            task_list.append([job.name, interval, next_run, job.id])
+        elif isinstance(job.trigger, CronTrigger):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
     throttled_providers = list_throttled_providers()
 
-    with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
-        releases = ast.literal_eval(f.read())
+    i = 0
+    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as f:
+        for i, l in enumerate(f, 1):
+            pass
+        row_count = i
+        page_size = int(settings.general.page_size)
+        max_page = int(math.ceil(row_count / (page_size + 0.0)))
+
+    try:
+        with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
+            releases = ast.literal_eval(f.read())
+    except Exception as e:
+        releases = []
+        logging.exception('BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
 
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey

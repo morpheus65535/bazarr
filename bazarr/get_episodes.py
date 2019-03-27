@@ -81,7 +81,10 @@ def sync_episodes():
                                     format, resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
                                 except:
                                     format = episode['episodeFile']['quality']['quality']['name']
-                                    resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                                    try:
+                                        resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                                    except:
+                                        resolution = None
 
                                 if 'mediaInfo' in episode['episodeFile']:
                                     if 'videoCodec' in episode['episodeFile']['mediaInfo']:
