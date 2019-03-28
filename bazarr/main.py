@@ -1641,14 +1641,6 @@ def system():
 
     throttled_providers = list_throttled_providers()
 
-    i = 0
-    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as f:
-        for i, l in enumerate(f, 1):
-            pass
-        row_count = i
-        page_size = int(settings.general.page_size)
-        max_page = int(math.ceil(row_count / (page_size + 0.0)))
-
     try:
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
             releases = ast.literal_eval(f.read())
