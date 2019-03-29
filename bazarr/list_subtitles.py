@@ -42,7 +42,7 @@ def store_subtitles(file):
                         if alpha2_from_alpha3(subtitle_track.language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_track.language))
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
+                            actual_subtitles.append([lang, None, subtitle_track.forced])
                     except:
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
                         pass
@@ -53,6 +53,7 @@ def store_subtitles(file):
             logging.debug("BAZARR This file isn't an .mkv file.")
         
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
+        brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
             dest_folder = get_subtitle_destination_folder()
             subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
@@ -67,11 +68,16 @@ def store_subtitles(file):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse(subtitle_path)])
+                        [str("pb"), path_replace_reverse(subtitle_path), False])
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
+                    logging.debug("BAZARR external subtitles detected: " + "pb:forced")
+                    actual_subtitles.append(
+                        [str("pb"), path_replace_reverse(subtitle_path), True])
+
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse(subtitle_path)])
+                        [str(language).split(':')[0], path_replace_reverse(subtitle_path), language.forced])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
@@ -127,7 +133,7 @@ def store_subtitles_movie(file):
                         if alpha2_from_alpha3(subtitle_track.language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_track.language))
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
+                            actual_subtitles.append([lang, None, subtitle_track.forced])
                     except:
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
                         pass
@@ -140,6 +146,7 @@ def store_subtitles_movie(file):
         dest_folder = get_subtitle_destination_folder()
         subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
+        brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
             subtitles = search_external_subtitles(file, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
@@ -151,11 +158,15 @@ def store_subtitles_movie(file):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle)), False])
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)) is True:
+                    logging.debug("BAZARR external subtitles detected: " + "pb:forced")
+                    actual_subtitles.append(
+                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle)), True])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+                        [str(language).split(':')[0], path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle)), language.forced])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")

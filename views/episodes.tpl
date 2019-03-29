@@ -197,9 +197,14 @@
 										%end
 										%try:
 											%for language in actual_languages:
+												%if len(language) > 2:
+												%	forced = language[2]
+												%else:
+												%	forced = False
+												%end
 												%if language[1] is not None:
 												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{alpha3_from_alpha2(str(language[0]))}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
-													{{language[0]}}
+                                                    {{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language[0]}}
 													<i class="delete icon"></i>
 												</a>
 												%else:
