@@ -67,6 +67,7 @@ from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 from helper import path_replace_movie, get_subtitle_destination_folder
 from subliminal_patch.extensions import provider_registry as provider_manager
+from check_update import checkout_git_branch
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -1285,6 +1286,7 @@ def save_settings():
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
              unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
              unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    updater_before = settings.general.branch
 
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -1536,6 +1538,9 @@ def save_settings():
     radarr_full_update()
 
     logging.info('BAZARR Settings saved succesfully.')
+    
+    if updater_before != settings_general_branch:
+        checkout_git_branch()
 
     if ref.find('saved=true') > 0:
         redirect(ref)
