@@ -136,5 +136,22 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         db.commit()
     except:
         pass
-    
+
+    try:
+        c.execute('alter table table_shows add column "forced" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_shows SET forced="False"')
+        db.commit()
+
+    try:
+        c.execute('alter table table_movies add column "forced" "text"')
+        db.commit()
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_movies SET forced="False"')
+        db.commit()
+
     db.close()

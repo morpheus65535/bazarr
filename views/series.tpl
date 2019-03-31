@@ -67,6 +67,7 @@
 						<th>Audio language</th>
 						<th>Subtitles languages</th>
 						<th>Hearing-impaired</th>
+						<th>Forced</th>
 						<th class="two wide">Subtitles</th>
 						<th></th>
 					</tr>
@@ -95,6 +96,7 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] is None else row[4]}}</td>
+						<td>{{row[8]}}</td>
 						<td>
 							%total_subs = 0
 							%missing_subs = 0

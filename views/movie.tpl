@@ -105,7 +105,7 @@
 					end
 					%>
 					%if subs_languages is not None:
-					<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
+					<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
 					%end
 					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
 				</div>
@@ -198,12 +198,12 @@
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
 					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
-                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -213,7 +213,7 @@
                                 end
                             else:
                     %>
-                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language))}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -358,6 +358,7 @@
 			sceneName: $(this).attr("data-sceneName"),
 			language: $(this).attr("data-language"),
 			hi: $(this).attr("data-hi"),
+			forced: $(this).attr("data-forced"),
 			radarrId: $(this).attr("data-radarrId"),
 			tmdbid: {{tmdbid}},
 			title: "{{!details[0].replace("'", "\\'")}}"
@@ -420,6 +421,7 @@
 		sceneName = $(this).attr("data-sceneName");
 		language = $(this).attr("data-language");
 		hi = $(this).attr("data-hi");
+		forced = $(this).attr("data-forced");
 		radarrId = $(this).attr("data-radarrId");
 		var languages = Array.from({{!subs_languages_list}});
 		var is_pb = languages.includes('pb');
@@ -430,6 +432,7 @@
 			sceneName: sceneName,
 			language: language,
 			hi: hi,
+			forced: forced,
 			radarrId: radarrId,
 			title: "{{!details[0].replace("'", "\'")}}"
 		};

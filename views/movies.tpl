@@ -62,6 +62,7 @@
 						<th>Audio<br>language</th>
 						<th>Subtitles<br>languages</th>
 						<th>Hearing-<br>impaired</th>
+						<th>Forced</th>
 						<th class="no-sort"></th>
 					</tr>
 				</thead>
@@ -101,6 +102,7 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] is None else row[4]}}</td>
+						<td>{{row[10]}}</td>
 						<td {{!"style='background-color: #e8e8e8;'" if row[4] is None else ""}}>
 							<%
 							subs_languages_list = []

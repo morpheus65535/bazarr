@@ -548,7 +548,7 @@ def series():
         monitored_only_query_string = ""
     
     c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
+        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
@@ -705,7 +705,7 @@ def episodes(no):
 
     series_details = []
     series_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path) FROM table_shows WHERE sonarrSeriesId LIKE ?",
+        "SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path), forced FROM table_shows WHERE sonarrSeriesId LIKE ?",
         (str(no),)).fetchone()
     tvdbid = series_details[5]
 
@@ -746,7 +746,7 @@ def movies():
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
 
     c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
+        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName, forced FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
@@ -869,7 +869,7 @@ def movie(no):
 
     movies_details = []
     movies_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts FROM table_movies WHERE radarrId LIKE ?",
+        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts, forced FROM table_movies WHERE radarrId LIKE ?",
         (str(no),)).fetchone()
     tmdbid = movies_details[5]
 
@@ -1751,6 +1751,7 @@ def get_subtitle():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.get('title')
@@ -1760,7 +1761,7 @@ def get_subtitle():
     providers_auth = get_providers_auth()
 
     try:
-        result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, title,
+        result = download_subtitle(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
                                    'series')
         if result is not None:
             message = result[0]
@@ -1787,12 +1788,13 @@ def manual_search_json():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
-    data = manual_search(episodePath, language, hi, providers_list, providers_auth, sceneName, title, 'series')
+    data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'series')
     return dict(data=data)
 
 
@@ -1806,6 +1808,7 @@ def manual_get_subtitle():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     selected_provider = request.forms.get('provider')
     subtitle = request.forms.get('subtitle')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
@@ -1816,7 +1819,7 @@ def manual_get_subtitle():
     providers_auth = get_providers_auth()
 
     try:
-        result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth,
+        result = manual_download_subtitle(episodePath, language, hi, forced, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'series')
         if result is not None:
             message = result[0]
@@ -1843,6 +1846,7 @@ def get_subtitle_movie():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     radarrId = request.forms.get('radarrId')
     # tmdbid = request.forms.get('tmdbid')
     title = request.forms.get('title')
@@ -1851,7 +1855,7 @@ def get_subtitle_movie():
     providers_auth = get_providers_auth()
 
     try:
-        result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
+        result = download_subtitle(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'movie')
         if result is not None:
             message = result[0]
             path = result[1]
@@ -1877,12 +1881,13 @@ def manual_search_movie_json():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     title = request.forms.get('title')
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
-    data = manual_search(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
+    data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'movie')
     return dict(data=data)
 
 
@@ -1896,6 +1901,7 @@ def manual_get_subtitle_movie():
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
     selected_provider = request.forms.get('provider')
     subtitle = request.forms.get('subtitle')
     radarrId = request.forms.get('radarrId')
@@ -1905,7 +1911,7 @@ def manual_get_subtitle_movie():
     providers_auth = get_providers_auth()
 
     try:
-        result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth,
+        result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
         if result is not None:
             message = result[0]
