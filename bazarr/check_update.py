@@ -132,7 +132,6 @@ def check_updates():
         elif commits_behind is 0:
             notifications.write(msg='BAZARR is up to date', queue='check_update')
             logging.info('BAZARR is up to date')
-
     else:
         url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
         releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
@@ -253,7 +252,7 @@ def update(source, restart=True):
 
 
 def checkout_git_branch():
-    output, err = run_git('fetch %s' % 'origin')
+    output, err = run_git('fetch origin')
     output, err = run_git('checkout %s' % settings.general.branch)
     
     if not output:
