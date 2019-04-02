@@ -119,14 +119,26 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
             lang_obj = Language('por', 'BR')
             if forced == "True":
                 lang_obj.forced = True
+                providers_auth['podnapisi']['only_foreign'] = True
+                providers_auth['subscene']['only_foreign'] = True
+                providers_auth['opensubtitles']['only_foreign'] = True
             else:
                 lang_obj.forced = False
+                providers_auth['podnapisi']['only_foreign'] = False
+                providers_auth['subscene']['only_foreign'] = False
+                providers_auth['opensubtitles']['only_foreign'] = False
         else:
             lang_obj = Language(l)
             if forced == "True":
                 lang_obj.forced = True
+                providers_auth['podnapisi']['only_foreign'] = True
+                providers_auth['subscene']['only_foreign'] = True
+                providers_auth['opensubtitles']['only_foreign'] = True
             else:
                 lang_obj.forced = False
+                providers_auth['podnapisi']['only_foreign'] = False
+                providers_auth['subscene']['only_foreign'] = False
+                providers_auth['opensubtitles']['only_foreign'] = False
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
@@ -273,14 +285,26 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
             lang_obj = Language('por', 'BR')
             if forced == "True":
                 lang_obj.forced = True
+                providers_auth['podnapisi']['only_foreign'] = True
+                providers_auth['subscene']['only_foreign'] = True
+                providers_auth['opensubtitles']['only_foreign'] = True
             else:
                 lang_obj.forced = False
+                providers_auth['podnapisi']['only_foreign'] = False
+                providers_auth['subscene']['only_foreign'] = False
+                providers_auth['opensubtitles']['only_foreign'] = False
         else:
             lang_obj = Language(lang)
             if forced == "True":
                 lang_obj.forced = True
+                providers_auth['podnapisi']['only_foreign'] = True
+                providers_auth['subscene']['only_foreign'] = True
+                providers_auth['opensubtitles']['only_foreign'] = True
             else:
                 lang_obj.forced = False
+                providers_auth['podnapisi']['only_foreign'] = False
+                providers_auth['subscene']['only_foreign'] = False
+                providers_auth['opensubtitles']['only_foreign'] = False
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
@@ -301,7 +325,6 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                provider_configs=providers_auth,
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
-                print subtitles
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")

@@ -215,7 +215,7 @@ def list_missing_subtitles(*no):
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_subtitles = c_db.execute(
-        "SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
+        "SELECT table_episodes.sonarrEpisodeId, table_episodes.subtitles, table_shows.languages, table_shows.forced FROM table_episodes INNER JOIN table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" + query_string).fetchall()
     c_db.close()
     
     missing_subtitles_global = []
@@ -235,6 +235,9 @@ def list_missing_subtitles(*no):
                         actual_subtitles.append(subtitle)
         if episode_subtitles[2] is not None:
             desired_subtitles = ast.literal_eval(episode_subtitles[2])
+            if episode_subtitles[3] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in enumerate(desired_subtitles):
+                    desired_subtitles[i] = desired_subtitle + ":forced"
         actual_subtitles_list = []
         if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
@@ -263,7 +266,7 @@ def list_missing_subtitles_movies(*no):
         pass
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    movies_subtitles = c_db.execute("SELECT radarrId, subtitles, languages FROM table_movies" + query_string).fetchall()
+    movies_subtitles = c_db.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" + query_string).fetchall()
     c_db.close()
     
     missing_subtitles_global = []
@@ -283,6 +286,9 @@ def list_missing_subtitles_movies(*no):
                         actual_subtitles.append(subtitle)
         if movie_subtitles[2] is not None:
             desired_subtitles = ast.literal_eval(movie_subtitles[2])
+            if movie_subtitles[3] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in enumerate(desired_subtitles):
+                    desired_subtitles[i] = desired_subtitle + ":forced"
         actual_subtitles_list = []
         if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', movie_subtitles[0]]))
