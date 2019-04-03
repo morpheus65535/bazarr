@@ -113,32 +113,21 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
 
     if not isinstance(language, types.ListType):
         language = [language]
-    
+
+    if forced == "True":
+        providers_auth['podnapisi']['only_foreign'] = True
+        providers_auth['subscene']['only_foreign'] = True
+        providers_auth['opensubtitles']['only_foreign'] = True
+    else:
+        providers_auth['podnapisi']['only_foreign'] = False
+        providers_auth['subscene']['only_foreign'] = False
+        providers_auth['opensubtitles']['only_foreign'] = False
+
     for l in language:
         if l == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
-                lang_obj.forced = True
-                providers_auth['podnapisi']['only_foreign'] = True
-                providers_auth['subscene']['only_foreign'] = True
-                providers_auth['opensubtitles']['only_foreign'] = True
-            else:
-                lang_obj.forced = False
-                providers_auth['podnapisi']['only_foreign'] = False
-                providers_auth['subscene']['only_foreign'] = False
-                providers_auth['opensubtitles']['only_foreign'] = False
         else:
             lang_obj = Language(l)
-            if forced == "True":
-                lang_obj.forced = True
-                providers_auth['podnapisi']['only_foreign'] = True
-                providers_auth['subscene']['only_foreign'] = True
-                providers_auth['opensubtitles']['only_foreign'] = True
-            else:
-                lang_obj.forced = False
-                providers_auth['podnapisi']['only_foreign'] = False
-                providers_auth['subscene']['only_foreign'] = False
-                providers_auth['opensubtitles']['only_foreign'] = False
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
@@ -279,32 +268,22 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
     else:
         hi = False
     language_set = set()
+
+    if forced == "True":
+        providers_auth['podnapisi']['only_foreign'] = True
+        providers_auth['subscene']['only_foreign'] = True
+        providers_auth['opensubtitles']['only_foreign'] = True
+    else:
+        providers_auth['podnapisi']['only_foreign'] = False
+        providers_auth['subscene']['only_foreign'] = False
+        providers_auth['opensubtitles']['only_foreign'] = False
+
     for lang in ast.literal_eval(language):
         lang = alpha3_from_alpha2(lang)
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
-                lang_obj.forced = True
-                providers_auth['podnapisi']['only_foreign'] = True
-                providers_auth['subscene']['only_foreign'] = True
-                providers_auth['opensubtitles']['only_foreign'] = True
-            else:
-                lang_obj.forced = False
-                providers_auth['podnapisi']['only_foreign'] = False
-                providers_auth['subscene']['only_foreign'] = False
-                providers_auth['opensubtitles']['only_foreign'] = False
         else:
             lang_obj = Language(lang)
-            if forced == "True":
-                lang_obj.forced = True
-                providers_auth['podnapisi']['only_foreign'] = True
-                providers_auth['subscene']['only_foreign'] = True
-                providers_auth['opensubtitles']['only_foreign'] = True
-            else:
-                lang_obj.forced = False
-                providers_auth['podnapisi']['only_foreign'] = False
-                providers_auth['subscene']['only_foreign'] = False
-                providers_auth['opensubtitles']['only_foreign'] = False
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
