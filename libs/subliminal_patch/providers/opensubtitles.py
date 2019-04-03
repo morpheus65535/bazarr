@@ -121,7 +121,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
     def get_server_proxy(self, url, timeout=None):
         return ServerProxy(url, SubZeroRequestsTransport(use_https=self.use_ssl, timeout=timeout or self.timeout,
-                                                         user_agent="Bazarr/1"))
+                                                         user_agent=os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")))
 
     def log_in(self, server_url=None):
         if server_url:
@@ -132,7 +132,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         response = self.retry(
             lambda: checked(
                 lambda: self.server.LogIn(self.username, self.password, 'eng',
-                                          "Bazarr/1")
+                                          os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"))
             )
         )
 
@@ -296,8 +296,8 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             elif not only_foreign and not also_foreign and foreign_parts_only:
                 continue
 
-            # foreign/forced *also* wanted
-            elif also_foreign and foreign_parts_only:
+            # set subtitle language to forced if it's foreign_parts_only
+            elif (also_foreign or only_foreign) and foreign_parts_only:
                 language = Language.rebuild(language, forced=True)
 
             if language not in languages:

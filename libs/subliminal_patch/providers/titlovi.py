@@ -4,7 +4,6 @@ import io
 import logging
 import math
 import re
-from random import randint
 
 import rarfile
 
@@ -12,7 +11,7 @@ from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from babelfish import language_converters, Script
-from requests import Session
+from requests import Session, RequestException
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
@@ -25,6 +24,8 @@ from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 from subzero.language import Language
+
+from random import randint
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 # parsing regex definitions
@@ -136,6 +137,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
+        logger.debug("Using random user agents")
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         logger.debug('User-Agent set to %s', self.session.headers['User-Agent'])
         self.session.headers['Referer'] = self.server_url
@@ -179,7 +181,11 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
             try:
                 r = self.session.get(self.search_url, params=params, timeout=10)
                 r.raise_for_status()
+            except RequestException as e:
+                logger.exception('RequestException %s', e)
+                break
 
+            try:
                 soup = BeautifulSoup(r.content, 'lxml')
 
                 # number of results
@@ -224,7 +230,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                     if match:
                         try:
                             # decode language
-                            lang = Language.fromtitlovi(match.group('lang') + match.group('script'))
+                            lang = Language.fromtitlovi(match.group('lang')+match.group('script'))
                         except ValueError:
                             continue
 
