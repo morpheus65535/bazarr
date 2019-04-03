@@ -6,9 +6,10 @@ from get_series import update_series
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles, upgrade_subtitles
 from get_args import args
-
-
-from check_update import check_updates, check_releases
+if not args.no_update:
+    from check_update import check_and_apply_update, check_releases
+else:
+    from check_update import check_releases
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -83,10 +84,10 @@ scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
 def schedule_update_job():
     if not args.no_update:
         if settings.general.getboolean('auto_update'):
-            scheduler.add_job(check_updates, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+            scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
         else:
-            scheduler.add_job(check_updates, CronTrigger(year='2100'), hour=4, id='update_bazarr',
+            scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr',
                               name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
             scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_release', name='Update release info', replace_existing=True)

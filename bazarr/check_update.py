@@ -1,18 +1,134 @@
 # coding=utf-8
-
 import os
-import platform
-import re
-import subprocess
-import tarfile
 import logging
-import requests
 import sqlite3
 import json
+import requests
+import tarfile
 
 from get_args import args
 from config import settings, bazarr_url
 from queueconfig import notifications
+
+if not args.no_update:
+    import git
+
+current_working_directory = os.path.dirname(os.path.dirname(__file__))
+
+
+def gitconfig():
+    g = git.Repo.init(current_working_directory)
+    config_read = g.config_reader()
+    config_write = g.config_writer()
+    
+    try:
+        username = config_read.get_value("user", "name")
+    except:
+        logging.debug('BAZARR Settings git username')
+        config_write.set_value("user", "name", "Bazarr")
+    
+    try:
+        email = config_read.get_value("user", "email")
+    except:
+        logging.debug('BAZARR Settings git email')
+        config_write.set_value("user", "email", "bazarr@fake.email")
+
+
+def check_and_apply_update():
+    check_releases()
+    if not args.release_update:
+        gitconfig()
+        branch = settings.general.branch
+        g = git.cmd.Git(current_working_directory)
+        g.fetch('origin')
+        result = g.diff('--shortstat', 'origin/' + branch)
+        if len(result) == 0:
+            notifications.write(msg='BAZARR No new version of Bazarr available.', queue='check_update')
+            logging.info('BAZARR No new version of Bazarr available.')
+        else:
+            g.reset('--hard', 'HEAD')
+            g.checkout(branch)
+            g.reset('--hard', 'origin/' + branch)
+            g.pull()
+            logging.info('BAZARR Updated to latest version. Restart required. ' + result)
+            updated()
+    else:
+        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
+        releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
+        
+        if releases is None:
+            notifications.write(msg='BAZARR Could not get releases from GitHub.',
+                                queue='check_update', type='warning')
+            logging.warn('BAZARR Could not get releases from GitHub.')
+            return
+        else:
+            release = releases[0]
+        latest_release = release['tag_name']
+        
+        if ('v' + os.environ["BAZARR_VERSION"]) != latest_release and settings.general.branch == 'master':
+            update_from_source()
+        elif settings.general.branch != 'master':
+            notifications.write(msg="BAZARR Can't update development branch from source", queue='check_update')  # fixme
+            logging.info("BAZARR Can't update development branch from source")  # fixme
+        else:
+            notifications.write(msg='BAZARR is up to date', queue='check_update')
+            logging.info('BAZARR is up to date')
+
+
+def update_from_source():
+    tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
+    update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
+    
+    logging.info('BAZARR Downloading update from: ' + tar_download_url)
+    notifications.write(msg='BAZARR Downloading update from: ' + tar_download_url, queue='check_update')
+    data = request_content(tar_download_url)
+    
+    if not data:
+        logging.error("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url)
+        notifications.write(msg=("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url),
+                            type='error', queue='check_update')
+        return
+    
+    download_name = settings.general.branch + '-github'
+    tar_download_path = os.path.join(os.path.dirname(__file__), '..', download_name)
+    
+    # Save tar to disk
+    with open(tar_download_path, 'wb') as f:
+        f.write(data)
+    
+    # Extract the tar to update folder
+    logging.info('BAZARR Extracting file: ' + tar_download_path)
+    notifications.write(msg='BAZARR Extracting file: ' + tar_download_path, queue='check_update')
+    tar = tarfile.open(tar_download_path)
+    tar.extractall(update_dir)
+    tar.close()
+    
+    # Delete the tar.gz
+    logging.info('BAZARR Deleting file: ' + tar_download_path)
+    notifications.write(msg='BAZARR Deleting file: ' + tar_download_path, queue='check_update')
+    os.remove(tar_download_path)
+    
+    # Find update dir name
+    update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
+    if len(update_dir_contents) != 1:
+        logging.error("BAZARR Invalid update data, update failed: " + str(update_dir_contents))
+        notifications.write(msg="BAZARR Invalid update data, update failed: " + str(update_dir_contents),
+                            type='error', queue='check_update')
+        return
+    
+    content_dir = os.path.join(update_dir, update_dir_contents[0])
+    
+    # walk temp folder and move files to main folder
+    for dirname, dirnames, filenames in os.walk(content_dir):
+        dirname = dirname[len(content_dir) + 1:]
+        for curfile in filenames:
+            old_path = os.path.join(content_dir, dirname, curfile)
+            new_path = os.path.join(os.path.dirname(__file__), '..', dirname, curfile)
+            
+            if os.path.isfile(new_path):
+                os.remove(new_path)
+            os.renames(old_path, new_path)
+    updated()
 
 
 def check_releases():
@@ -34,237 +150,6 @@ def check_releases():
             releases.append([release['name'], release['body']])
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'w') as f:
             json.dump(releases, f)
-
-
-def run_git(args):
-    git_locations = ['git']
-    
-    if platform.system().lower() == 'darwin':
-        git_locations.append('/usr/local/git/bin/git')
-    
-    output = err = None
-    
-    for cur_git in git_locations:
-        cmd = cur_git + ' ' + args
-        
-        try:
-            logging.debug('BAZARR Trying to execute: "' + cmd + '"')
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            output, err = p.communicate()
-            output = output.strip()
-
-            logging.debug('BAZARR Git output: ' + output)
-        except OSError:
-            logging.debug('BAZARR Command failed: %s', cmd)
-            continue
-        
-        if 'not found' in output or "not recognized as an internal or external command" in output:
-            logging.debug('BAZARR Unable to find git with command ' + cmd)
-            output = None
-        elif 'fatal:' in output or err:
-            logging.error('BAZARR Git returned bad info. Are you sure this is a git installation?')
-            output = None
-        elif output:
-            break
-    
-    return output, err
-
-
-def check_updates():
-    commits_behind = 0
-    current_version, source = get_version()
-    check_releases()
-
-    if source == 'git':
-        # Get the latest version available from github
-        logging.debug('BAZARR Retrieving latest version information from GitHub')
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/commits/%s' % settings.general.branch
-        version = request_json(url, timeout=20, validator=lambda x: type(x) == dict)
-    
-        if version is None:
-            notifications.write(
-                msg='BAZARR Could not get the latest version from GitHub.',
-                queue='check_update', type='warning')
-            logging.warn(
-                'BAZARR Could not get the latest version from GitHub.')
-            return
-    
-        latest_version = version['sha']
-        logging.debug("BAZARR Latest version is %s", latest_version)
-    
-        # See how many commits behind we are
-        if not current_version:
-            notifications.write(msg='BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version',
-                                queue='check_update', type='warning')
-            logging.warn(
-                'BAZARR You are running an unknown version of Bazarr. Run the updater to identify your version')
-            return
-    
-        if latest_version == current_version:
-            notifications.write(msg='BAZARR is up to date', queue='check_update')
-            logging.info('BAZARR is up to date')
-            return
-    
-        logging.debug('Comparing currently installed version with latest GitHub version')
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/compare/%s...%s' % (latest_version,
-                                                                                     current_version)
-        commits = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == dict)
-    
-        if commits is None:
-            notifications.write(msg='BAZARR Could not get commits behind from GitHub.',
-                                queue='check_update', type='warning')
-            logging.warn('BAZARR Could not get commits behind from GitHub.')
-            return
-    
-        try:
-            commits_behind = int(commits['behind_by'])
-            logging.debug("BAZARR In total, %d commits behind", commits_behind)
-        except KeyError:
-            notifications.write(msg='BAZARR Cannot compare versions. Are you running a local development version?', queue='check_update')
-            logging.info('BAZARR Cannot compare versions. Are you running a local development version?')
-            return
-    
-        if commits_behind > 0:
-            logging.info('BAZARR New version is available. You are %s commits behind' % commits_behind)
-            notifications.write(msg='BAZARR New version is available. You are %s commits behind' % commits_behind,
-                                queue='check_update')
-            update(source, restart=True if settings.general.getboolean('update_restart') else False)
-        elif commits_behind is 0:
-            notifications.write(msg='BAZARR is up to date', queue='check_update')
-            logging.info('BAZARR is up to date')
-    else:
-        url = 'https://api.github.com/repos/morpheus65535/bazarr/releases'
-        releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
-    
-        if releases is None:
-            notifications.write(msg='BAZARR Could not get releases from GitHub.',
-                                queue='check_update', type='warning')
-            logging.warn('BAZARR Could not get releases from GitHub.')
-            return
-        else:
-            release = releases[0]
-        latest_release = release['tag_name']
-    
-        if ('v' + current_version) != latest_release and settings.general.branch == 'master':
-            update(source, restart=True if settings.general.getboolean('update_restart') else False)
-        elif settings.general.branch != 'master':
-            notifications.write(msg="BAZARR Can't update development branch from source", queue='check_update')  # fixme
-            logging.info("BAZARR Can't update development branch from source")  # fixme
-        else:
-            notifications.write(msg='BAZARR is up to date', queue='check_update')
-            logging.info('BAZARR is up to date')
-
-
-def get_version():
-    if os.path.isdir(os.path.join(os.path.dirname(__file__), '..', '.git')) and not args.release_update:
-        
-        output, err = run_git('rev-parse HEAD')
-        
-        if not output:
-            logging.error('BAZARR Could not find latest installed version.')
-            cur_commit_hash = None
-        else:
-            cur_commit_hash = str(output)
-        
-        if not re.match('^[a-z0-9]+$', cur_commit_hash):
-            logging.error('BAZARR Output does not look like a hash, not using it.')
-            cur_commit_hash = None
-
-        return cur_commit_hash, 'git'
-    
-    else:
-        return os.environ["BAZARR_VERSION"], 'source'
-
-
-def update(source, restart=True):
-    if source == 'git':
-        output, err = run_git('pull ' + 'origin' + ' ' + settings.general.branch)
-        
-        if not output:
-            notifications.write(msg='Unable to download latest version',
-                                queue='check_update', type='error')
-            logging.error('BAZARR Unable to download latest version')
-            return
-        
-        for line in output.split('\n'):
-            
-            if 'Already up-to-date.' in line:
-                logging.info('BAZARR No update available, not updating')
-                logging.info('BAZARR Output: ' + str(output))
-            elif line.endswith(('Aborting', 'Aborting.')):
-                logging.error('BAZARR Unable to update from git: ' + line)
-                logging.info('BAZARR Output: ' + str(output))
-        updated(restart)
-    else:
-        tar_download_url = 'https://github.com/morpheus65535/bazarr/tarball/{}'.format(settings.general.branch)
-        update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
-
-        logging.info('BAZARR Downloading update from: ' + tar_download_url)
-        notifications.write(msg='BAZARR Downloading update from: ' + tar_download_url)
-        data = request_content(tar_download_url)
-        
-        if not data:
-            logging.error("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url)
-            notifications.write(msg=("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url),
-                                type='error')
-            return
-        
-        download_name = settings.general.branch + '-github'
-        tar_download_path = os.path.join(os.path.dirname(__file__), '..', download_name)
-        
-        # Save tar to disk
-        with open(tar_download_path, 'wb') as f:
-            f.write(data)
-        
-        # Extract the tar to update folder
-        logging.info('BAZARR Extracting file: ' + tar_download_path)
-        notifications.write(msg='BAZARR Extracting file: ' + tar_download_path)
-        tar = tarfile.open(tar_download_path)
-        tar.extractall(update_dir)
-        tar.close()
-        
-        # Delete the tar.gz
-        logging.info('BAZARR Deleting file: ' + tar_download_path)
-        notifications.write(msg='BAZARR Deleting file: ' + tar_download_path)
-        os.remove(tar_download_path)
-        
-        # Find update dir name
-        update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
-        if len(update_dir_contents) != 1:
-            logging.error("BAZARR Invalid update data, update failed: " + str(update_dir_contents))
-            notifications.write(msg="BAZARR Invalid update data, update failed: " + str(update_dir_contents),
-                                type='error')
-            return
-
-        content_dir = os.path.join(update_dir, update_dir_contents[0])
-        
-        # walk temp folder and move files to main folder
-        for dirname, dirnames, filenames in os.walk(content_dir):
-            dirname = dirname[len(content_dir) + 1:]
-            for curfile in filenames:
-                old_path = os.path.join(content_dir, dirname, curfile)
-                new_path = os.path.join(os.path.dirname(__file__), '..', dirname, curfile)
-                
-                if os.path.isfile(new_path):
-                    os.remove(new_path)
-                os.renames(old_path, new_path)
-        updated(restart)
-
-
-def checkout_git_branch():
-    output, err = run_git('fetch origin')
-    output, err = run_git('checkout %s' % settings.general.branch)
-    
-    if not output:
-        logging.error('Unable to change git branch.')
-        return
-    
-    for line in output.split('\n'):
-        if line.endswith(('Aborting', 'Aborting.')):
-            logging.error('Unable to checkout from git: ' + line)
-            logging.info('Output: ' + str(output))
-    
-    output, err = run_git('pull %s %s' % ('origin', settings.general.branch))
 
 
 class FakeLock(object):
@@ -409,8 +294,8 @@ def request_json(url, **kwargs):
             logging.error("BAZARR Response returned invalid JSON data")
 
 
-def updated(restart=False):
-    if restart:
+def updated(restart=True):
+    if settings.general.getboolean('update_restart') and restart:
         try:
             requests.get(bazarr_url + 'restart')
         except requests.ConnectionError:
