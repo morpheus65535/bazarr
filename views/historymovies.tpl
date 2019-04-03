@@ -87,7 +87,7 @@
 						<td>
 							% upgradable_criteria = (row[5], row[2], row[8])
 							% if upgradable_criteria in upgradable_movies:
-							% if row[7] and row[7] in ast.literal_eval(str(row[6])):
+							% if row[6] and row[7] and row[7] in ast.literal_eval(str(row[6])):
 							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
 								<i class="ui green recycle icon upgrade"></i>{{row[3]}}
 							</div>

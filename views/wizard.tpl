@@ -347,11 +347,9 @@
                             <div class="five wide column">
                                 <select name="settings_subfolder" id="settings_subfolder"
                                         class="ui fluid selection dropdown">
-                                    <option value="current">Current</option>
-                                    <option value="sub">sub</option>
-                                    <option value="subs">subs</option>
-                                    <option value="subtitle">subtitle</option>
-                                    <option value="subtitles">subtitles</option>
+                                    <option value="current">Alongside media file</option>
+                                    <option value="relative">Relative path to media file</option>
+                                    <option value="absolute">Absolute path</option>
                                 </select>
                             </div>
 
@@ -364,7 +362,8 @@
                             </div>
                         </div>
 
-                        <div class="middle aligned row">
+                        <div class="middle aligned row subfolder">
+                            <div class="two wide column"></div>
                             <div class="right aligned four wide column">
                                 <label>Custom Subtitle folder</label>
                             </div>
@@ -379,8 +378,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose your own folder for the subtitles'
-                                     data-inverted="">
+                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -1934,6 +1932,19 @@ $(function() {
     $('#wizard_form').on('focusout', function() {
         $('.form').form('validate form');
         $('#loader').removeClass('active');
+    });
+
+    if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+        $('.subfolder').hide();
+    }
+
+    $('#settings_subfolder').dropdown('setting', 'onChange', function(){
+        if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+            $('.subfolder').hide();
+        }
+        else {
+            $('.subfolder').show();
+        }
     });
 
 
