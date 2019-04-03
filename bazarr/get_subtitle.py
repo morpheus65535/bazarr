@@ -131,7 +131,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         else:
             lang_obj = Language(l)
             if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=False)
+                lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
@@ -291,7 +291,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
         else:
             lang_obj = Language(lang)
             if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=False)
+                lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
