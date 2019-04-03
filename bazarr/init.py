@@ -14,6 +14,9 @@ from config import settings
 from check_update import check_releases
 from get_args import args
 
+# set subliminal_patch user agent
+os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
     # Create config_dir directory tree
