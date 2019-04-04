@@ -147,18 +147,18 @@
 							subtitles_files.sort()
 							if subtitles_files is not None:
 								for subtitles_file in subtitles_files:
-									if len(subtitles_file) > 2:
-										forced = subtitles_file[2]
+									if subtitles_file[0].endswith(':forced'):
+										forced = True
 									else:
 										forced = False
 									end
 							%>
 							<tr>
 								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
-								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(subtitles_file[0])}}</div></td>
+								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(subtitles_file[0].split(':')[0])}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0])}}" data-radarrId={{details[10]}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-position="top right" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details[10]}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
@@ -474,6 +474,8 @@
 				render: function ( data, type, row ) {
 		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
 		    			return 'pb'
+					} else if ( data.language === "pt:forced" && is_pb === true && is_pt === false) {
+		    			return 'pb:forced'
 					} else {
 		    			return data.language
 					}

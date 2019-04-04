@@ -339,12 +339,10 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 score = compute_score(matches, s, video, hearing_impaired=hi)
                 not_matched = scores - matches
                 s.score = score
-                # if score < min_score:
-                #     continue
                 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
-                         language=alpha2_from_alpha3(s.language.alpha3), hearing_impaired=str(s.hearing_impaired),
+                         language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched)))
