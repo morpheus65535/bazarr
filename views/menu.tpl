@@ -259,10 +259,13 @@
 						var message = msg + '<p><div class="ui disabled progress notification_progress" style="margin-bottom: -0.25em"><div class="bar"><div class="progress"></div></div></div>'
 					}
 
-					if (duration === 'temporary') {
-						timeout = 3000;
-						killer = queue;
-					} else {
+                    if (duration === 'temporary') {
+                        timeout = 3000;
+                        killer = queue;
+                    } else if (duration === 'long') {
+                        timeout = 15000;
+                        killer = queue;
+                    }  else {
 						timeout = false;
 						killer = false;
 					}
