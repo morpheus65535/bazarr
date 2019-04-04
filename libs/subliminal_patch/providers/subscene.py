@@ -201,23 +201,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         vfn = get_video_filename(video)
         subtitles = []
         logger.debug(u"Searching for: %s", vfn)
-
-        cf_data = region.get("cf_data")
-        if cf_data is not NO_VALUE:
-            cf_cookies, user_agent = cf_data
-            logger.debug("Trying to use old cf cookies")
-            self.session.cookies.update(cf_cookies)
-            self.session.headers['User-Agent'] = user_agent
-
         film = search(vfn, session=self.session)
-
-        try:
-            cf_data = self.session.get_live_tokens("subscene.com")
-        except:
-            pass
-        else:
-            logger.debug("Storing cf cookies")
-            region.set("cf_data", cf_data)
 
         if film and film.subtitles:
             logger.debug('Release results found: %s', len(film.subtitles))
