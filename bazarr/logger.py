@@ -67,6 +67,8 @@ def configure_logging(debug=False):
     fh.setFormatter(f)
     fh.addFilter(BlacklistFilter())
     fh.addFilter(PublicIPFilter())
+    fh.setLevel(log_level)
+    logger.addHandler(fh)
     
     if debug:
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
@@ -90,8 +92,7 @@ def configure_logging(debug=False):
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
-    fh.setLevel(log_level)
-    logger.addHandler(fh)
+    
 
 
 class MyFilter(logging.Filter):
