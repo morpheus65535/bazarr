@@ -118,7 +118,7 @@ class SubsSabBzProvider(Provider):
         for row in rows[:10]:
             a_element_wrapper = row.find('td', { 'class': 'c2field' })
             if a_element_wrapper:
-                element = row.find('a')
+                element = a_element_wrapper.find('a')
                 if element:
                     link = element.get('href')
                     logger.info('Found subtitle link %r', link)
