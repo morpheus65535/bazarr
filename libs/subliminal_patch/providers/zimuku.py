@@ -193,22 +193,6 @@ class ZimukuProvider(Provider):
                 logger.debug('Could not extract subtitle from %r', archive)
 
 
-def _get_archive(content):
-    # open the archive
-    archive_stream = io.BytesIO(content)
-    archive = None
-    if rarfile.is_rarfile(archive_stream):
-        logger.debug('Identified rar archive')
-        archive = rarfile.RarFile(archive_stream)
-    elif zipfile.is_zipfile(archive_stream):
-        logger.debug('Identified zip archive')
-        archive = zipfile.ZipFile(archive_stream)
-    else:
-        archive = content
-
-    return archive
-
-
 def _get_subtitle_from_archive(archive):
     for name in archive.namelist():
         # discard hidden files
