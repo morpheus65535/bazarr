@@ -17,9 +17,6 @@ from get_args import args
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 
-# set anticaptcha account key
-os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.general.anticaptcha_key
-
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
     # Create config_dir directory tree
