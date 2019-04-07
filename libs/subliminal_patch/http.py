@@ -61,8 +61,7 @@ class CertifiSession(CloudflareScraper):
 
         cache_key = "cf_data_%s" % domain
 
-        if not self.cookies.get("__cfduid", "", domain=domain) or not self.cookies.get("cf_clearance", "",
-                                                                                       domain=domain):
+        if not self.cookies.get("__cfduid", "", domain=domain):
             cf_data = region.get(cache_key)
             if cf_data is not NO_VALUE:
                 cf_cookies, user_agent = cf_data
@@ -78,7 +77,8 @@ class CertifiSession(CloudflareScraper):
         except:
             pass
         else:
-            if cf_data != region.get(cache_key):
+            if cf_data != region.get(cache_key) and self.cookies.get("__cfduid", "", domain=domain)\
+                    and self.cookies.get("cf_clearance", "", domain=domain):
                 logger.debug("Storing cf data for %s: %s", domain, cf_data)
                 region.set(cache_key, cf_data)
 

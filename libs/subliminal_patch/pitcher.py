@@ -1,9 +1,11 @@
 # coding=utf-8
 
+import os
 import time
 import logging
 import json
-import requests
+from subliminal.cache import region
+from dogpile.cache.api import NO_VALUE
 from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException,\
     Proxy
 from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
@@ -13,14 +15,29 @@ logger = logging.getLogger(__name__)
 
 
 class PitcherRegistry(object):
-    pitchers = {}
+    pitchers = []
+    pitchers_by_key = {}
 
     def register(self, cls):
-        self.pitchers[cls.name] = cls
+        idx = len(self.pitchers)
+        self.pitchers.append(cls)
+        key = "%s_%s" % (cls.name, cls.needs_proxy)
+        key_by_source = "%s_%s" % (cls.source, cls.needs_proxy)
+        self.pitchers_by_key[key] = idx
+        self.pitchers_by_key[key_by_source] = idx
         return cls
 
-    def get_pitcher(self, name):
-        return self.pitchers[name]
+    def get_pitcher(self, name_or_site=None, with_proxy=False):
+        name_or_site = name_or_site or os.environ.get("ANTICAPTCHA_CLASS")
+        if not name_or_site:
+            raise Exception("AntiCaptcha class not given, exiting")
+
+        key = "%s_%s" % (name_or_site, with_proxy)
+
+        if key not in self.pitchers_by_key:
+            raise Exception("Pitcher %s not found (proxy: %s)" % (name_or_site, with_proxy))
+
+        return self.pitchers[self.pitchers_by_key.get(key)]
 
 
 registry = pitchers = PitcherRegistry()
@@ -28,17 +45,24 @@ registry = pitchers = PitcherRegistry()
 
 class Pitcher(object):
     name = None
+    source = None
+    needs_proxy = False
     tries = 3
     job = None
     client = None
+    client_key = None
     website_url = None
     website_key = None
     website_name = None
     solve_time = None
     success = False
 
-    def __init__(self, website_name, website_url, website_key, tries=3, *args, **kwargs):
+    def __init__(self, website_name, website_url, website_key, tries=3, client_key=None, *args, **kwargs):
         self.tries = tries
+        self.client_key = client_key or os.environ.get("ANTICAPTCHA_ACCOUNT_KEY")
+        if not self.client_key:
+            raise Exception("AntiCaptcha key not given, exiting")
+
         self.website_name = website_name
         self.website_key = website_key
         self.website_url = website_url
@@ -67,17 +91,17 @@ class Pitcher(object):
 @registry.register
 class AntiCaptchaProxyLessPitcher(Pitcher):
     name = "AntiCaptchaProxyLess"
+    source = "anti-captcha.com"
     host = "api.anti-captcha.com"
     language_pool = "en"
-    client_key = None
+    tries = 5
     use_ssl = True
     is_invisible = False
 
-    def __init__(self, website_name, client_key, website_url, website_key, tries=3, host=None, language_pool=None,
+    def __init__(self, website_name, website_url, website_key, tries=3, host=None, language_pool=None,
                  use_ssl=True, is_invisible=False, *args, **kwargs):
         super(AntiCaptchaProxyLessPitcher, self).__init__(website_name, website_url, website_key, tries=tries, *args,
                                                           **kwargs)
-        self.client_key = client_key
         self.host = host or self.host
         self.language_pool = language_pool or self.language_pool
         self.use_ssl = use_ssl
@@ -134,12 +158,12 @@ class AntiCaptchaProxyLessPitcher(Pitcher):
 class AntiCaptchaPitcher(AntiCaptchaProxyLessPitcher):
     name = "AntiCaptcha"
     proxy = None
+    needs_proxy = True
     user_agent = None
     cookies = None
 
     def __init__(self, *args, **kwargs):
         self.proxy = Proxy.parse_url(kwargs.pop("proxy"))
-        print self.proxy.__dict__
         self.user_agent = kwargs.pop("user_agent")
         cookies = kwargs.pop("cookies", {})
         if isinstance(cookies, dict):
@@ -156,14 +180,15 @@ class AntiCaptchaPitcher(AntiCaptchaProxyLessPitcher):
 @registry.register
 class DBCProxyLessPitcher(Pitcher):
     name = "DeathByCaptchaProxyLess"
+    source = "deathbycaptcha.com"
     username = None
     password = None
 
-    def __init__(self, website_name, client_key, website_url, website_key,
+    def __init__(self, website_name, website_url, website_key,
                  timeout=DEFAULT_TOKEN_TIMEOUT, tries=3, *args, **kwargs):
         super(DBCProxyLessPitcher, self).__init__(website_name, website_url, website_key, tries=tries)
 
-        self.username, self.password = client_key.split(":", 1)
+        self.username, self.password = self.client_key.split(":", 1)
         self.timeout = timeout
 
     def get_client(self):
@@ -182,19 +207,22 @@ class DBCProxyLessPitcher(Pitcher):
     def _throw(self):
         super(DBCProxyLessPitcher, self)._throw()
         payload = json.dumps(self.payload_dict)
-        try:
-            #balance = self.client.get_balance()
-            data = self.client.decode(timeout=self.timeout, type=4, token_params=payload)
-            if data and data["is_correct"]:
-                self.success = True
-                return data["text"]
-        except:
-            raise
+        for i in range(self.tries):
+            try:
+                #balance = self.client.get_balance()
+                data = self.client.decode(timeout=self.timeout, type=4, token_params=payload)
+                if data and data["is_correct"] and data["text"]:
+                    self.success = True
+                    return data["text"]
+            except:
+                raise
 
 
 @registry.register
 class DBCPitcher(DBCProxyLessPitcher):
+    name = "DeathByCaptcha"
     proxy = None
+    needs_proxy = True
     proxy_type = "HTTP"
 
     def __init__(self, *args, **kwargs):
@@ -210,3 +238,20 @@ class DBCPitcher(DBCProxyLessPitcher):
         })
         return payload
 
+
+def load_verification(site_name, session, callback=lambda x: None):
+    ccks = region.get("%s_data" % site_name, expiration_time=15552000)  # 6m
+    if ccks != NO_VALUE:
+        cookies, user_agent = ccks
+        logger.debug("%s: Re-using previous user agent: %s", site_name.capitalize(), user_agent)
+        session.headers["User-Agent"] = user_agent
+        try:
+            session.cookies._cookies.update(cookies)
+            return callback(region)
+        except:
+            return False
+    return False
+
+
+def store_verification(site_name, session):
+    region.set("%s_data" % site_name, (session.cookies._cookies, session.headers["User-Agent"]))

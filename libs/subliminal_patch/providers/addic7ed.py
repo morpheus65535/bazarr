@@ -1,24 +1,20 @@
 # coding=utf-8
 import logging
 import re
-import os
 import datetime
 import subliminal
 import time
-import requests
 
 from random import randint
-from dogpile.cache.api import NO_VALUE
 from requests import Session
-from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded, AuthenticationError
+from subliminal.cache import region
+from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup, show_cells_re
-from subliminal.cache import region
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.utils import sanitize
 from subliminal_patch.exceptions import TooManyRequests
-from subliminal_patch.pitcher import pitchers
+from subliminal_patch.pitcher import pitchers, load_verification, store_verification
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -86,24 +82,19 @@ class Addic7edProvider(_Addic7edProvider):
 
         # login
         if self.username and self.password:
-            ccks = region.get("addic7ed_data", expiration_time=15552000)  # 6m
-            if ccks != NO_VALUE:
-                cookies, user_agent = ccks
-                logger.debug("Addic7ed: Re-using previous user agent")
-                self.session.headers["User-Agent"] = user_agent
-                try:
-                    self.session.cookies._cookies.update(cookies)
-                    r = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
-                                         headers={"Referer": self.server_url})
-                    if r.status_code == 302:
-                        logger.info('Addic7ed: Login expired')
-                        region.delete("addic7ed_data")
-                    else:
-                        logger.info('Addic7ed: Re-using old login')
-                        self.logged_in = True
-                        return
-                except:
-                    pass
+            def check_verification(cache_region):
+                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
+                                      headers={"Referer": self.server_url})
+                if rr.status_code == 302:
+                    logger.info('Addic7ed: Login expired')
+                    cache_region.delete("addic7ed_data")
+                else:
+                    logger.info('Addic7ed: Re-using old login')
+                    self.logged_in = True
+                    return True
+
+            if load_verification("addic7ed", self.session, callback=check_verification):
+                return
 
             logger.info('Addic7ed: Logging in')
             data = {'username': self.username, 'password': self.password, 'Submit': 'Log in', 'url': '',
@@ -115,25 +106,16 @@ class Addic7edProvider(_Addic7edProvider):
                 if "grecaptcha" in r.content:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
                                 'happen once every so often')
-                    anticaptcha_key = os.environ.get("ANTICAPTCHA_ACCOUNT_KEY")
-                    if not anticaptcha_key:
-                        logger.error("AntiCaptcha key not given, exiting")
-                        return
-
-                    anticaptcha_proxy = os.environ.get("ANTICAPTCHA_PROXY")
 
                     site_key = re.search(r'grecaptcha.execute\(\'(.+?)\',', r.content).group(1)
                     if not site_key:
                         logger.error("Addic7ed: Captcha site-key not found!")
                         return
 
-                    #pitcher_cls = pitchers.get_pitcher("AntiCaptchaProxyLess")
-                    #pitcher = pitcher_cls("Addic7ed", anticaptcha_key, self.server_url + 'login.php', site_key)
-                    pitcher_cls = pitchers.get_pitcher("AntiCaptchaProxyLess")
-                    pitcher = pitcher_cls("Addic7ed", anticaptcha_key, self.server_url + 'login.php', site_key,
-                                          user_agent=self.session.headers["User-Agent"],
-                                          cookies=self.session.cookies.get_dict(),
-                                          is_invisible=True)
+                    pitcher = pitchers.get_pitcher()("Addic7ed", self.server_url + 'login.php', site_key,
+                                                     user_agent=self.session.headers["User-Agent"],
+                                                     cookies=self.session.cookies.get_dict(),
+                                                     is_invisible=True)
 
                     result = pitcher.throw()
                     if not result:
@@ -156,13 +138,13 @@ class Addic7edProvider(_Addic7edProvider):
                     raise AuthenticationError(self.username)
                 break
 
-            region.set("addic7ed_data", (self.session.cookies._cookies, self.session.headers["User-Agent"]))
+            store_verification("addic7ed", self.session)
 
             logger.debug('Addic7ed: Logged in')
             self.logged_in = True
 
     def terminate(self):
-        pass
+        self.session.close()
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def _get_show_ids(self):
