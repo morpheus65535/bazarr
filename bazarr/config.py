@@ -42,7 +42,7 @@ defaults = {
         'upgrade_subs': 'True',
         'days_to_upgrade_subs': '7',
         'upgrade_manual': 'True',
-        'anti_captcha_provider': 'anti-captcha'
+        'anti_captcha_provider': 'None'
     },
     'auth': {
         'type': 'None',
