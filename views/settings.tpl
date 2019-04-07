@@ -1305,7 +1305,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Addic7ed</label>
+                                <label>Addic7ed (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="addic7ed" class="ui toggle checkbox provider">
@@ -1775,7 +1775,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titlovi</label>
+                                <label>Titlovi (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="titlovi" class="ui toggle checkbox provider">

@@ -1275,6 +1275,10 @@ def save_settings():
         settings_upgrade_manual = 'False'
     else:
         settings_upgrade_manual = 'True'
+    settings_anti_captcha_provider = request.forms.get('settings_anti_captcha_provider')
+    settings_anti_captcha_key = request.forms.get('settings_anti_captcha_key')
+    settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
+    settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
 
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
@@ -1306,6 +1310,10 @@ def save_settings():
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
+    settings.general.anti_captcha_provider = text_type(settings_anti_captcha_provider)
+    settings.anticaptcha.anti_captcha_key = text_type(settings_anti_captcha_key)
+    settings.deathbycaptcha.username = text_type(settings_death_by_captcha_username)
+    settings.deathbycaptcha.password = text_type(settings_death_by_captcha_password)
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
