@@ -2714,6 +2714,7 @@
                     ]
                 },
                 settings_days_to_upgrade_subs : {
+                    depends: 'settings_upgrade_subs',
                     rules : [
                         {
                             type : 'integer[1..30]'
