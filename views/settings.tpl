@@ -1266,7 +1266,7 @@
                         <div class="middle aligned row anticaptcha">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Account Key</label>
+                                <label>Account addKey</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
