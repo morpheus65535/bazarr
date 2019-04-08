@@ -1865,6 +1865,28 @@
                         </div>
 
                         <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Zimuku</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="zimuku" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="zimuku_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
                             <div class="eleven wide column">
                                 <div class='field' hidden>
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
