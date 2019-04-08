@@ -1314,6 +1314,18 @@ def save_settings():
     settings.anticaptcha.anti_captcha_key = text_type(settings_anti_captcha_key)
     settings.deathbycaptcha.username = text_type(settings_death_by_captcha_username)
     settings.deathbycaptcha.password = text_type(settings_death_by_captcha_password)
+
+    # set anti-captcha provider and key
+    if settings.general.anti_captcha_provider == 'anti-captcha':
+        os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
+    elif settings.general.anti_captcha_provider == 'AntiCaptchaProxyLessPitcher':
+        os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join(
+            {settings.deathbycaptcha.username, settings.deathbycaptcha.password})
+    else:
+        os.environ["ANTICAPTCHA_CLASS"] = ''
+
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
