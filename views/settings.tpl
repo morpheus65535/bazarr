@@ -1256,7 +1256,17 @@
                         <div class="middle aligned row anticaptcha">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Key</label>
+                                <label>Provider website</label>
+                            </div>
+                            <div class="five wide column">
+                                <a href="http://getcaptchasolution.com/eixxo1rsnw" target="_blank">Anti-Captcha.com</a>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row anticaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Account Key</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -1265,6 +1275,16 @@
                                                type="text" value="{{ settings.anticaptcha.anti_captcha_key }}">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row deathbycaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Provider website</label>
+                            </div>
+                            <div class="five wide column">
+                                <a href="https://www.deathbycaptcha.com" target="_blank">DeathByCaptcha.com</a>
                             </div>
                         </div>
 
