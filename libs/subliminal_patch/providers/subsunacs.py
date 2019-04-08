@@ -26,19 +26,25 @@ class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
     provider_name = 'subsunacs'
 
-    def __init__(self, langauge, filename, type):
+    def __init__(self, langauge, filename, type, video, link):
         super(SubsUnacsSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
+        self.page_link = link
         self.type = type
+        self.video = video
 
     @property
     def id(self):
         return self.filename
 
+    def make_picklable(self):
+        self.content = None
+        return self
+
     def get_matches(self, video):
         matches = set()
-        
+
         video_filename = video.name
         video_filename = os.path.basename(video_filename)
         video_filename, _ = os.path.splitext(video_filename)
@@ -77,11 +83,11 @@ class SubsUnacsProvider(Provider):
 
     def terminate(self):
         self.session.close()
-    
+
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
-        
+
         params = {
             'm': '',
             'l': 0,
@@ -117,7 +123,7 @@ class SubsUnacsProvider(Provider):
 
         soup = BeautifulSoup(response.content, 'html.parser')
         rows = soup.findAll('td', {'class': 'tdMovie'})
-        
+
         # Search on first 10 rows only
         for row in rows[:10]:
             element = row.find('a', {'class': 'tooltip'})
@@ -125,37 +131,44 @@ class SubsUnacsProvider(Provider):
                 link = element.get('href')
                 logger.info('Found subtitle link %r', link)
                 subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
-        
+
         return subtitles
 
     def list_subtitles(self, video, languages):
         return [s for l in languages for s in self.query(l, video)]
 
     def download_subtitle(self, subtitle):
-        pass
-  
-    def process_archive_subtitle_files(self, archiveStream, language, video):
+        if subtitle.content:
+            pass
+        else:
+            seeking_subtitle_file = subtitle.filename
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            for s in arch:
+                if s.filename == seeking_subtitle_file:
+                    subtitle.content = s.content
+
+    def process_archive_subtitle_files(self, archiveStream, language, video, link):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsUnacsSubtitle(language, file_name, type)
+                subtitle = SubsUnacsSubtitle(language, file_name, type, video, link)
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
-        
+
     def download_archive_and_add_subtitle_files(self, link, language, video ):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
-            'Referer': 'https://subsunacs.net/search.php' 
+            'Referer': 'https://subsunacs.net/search.php'
             })
         request.raise_for_status()
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video )
+            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
         elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video )
+            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
         else:
             raise ValueError('Not a valid archive')
