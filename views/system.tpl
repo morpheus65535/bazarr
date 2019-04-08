@@ -4,7 +4,12 @@
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
+		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
+		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
+		<script src="{{base_url}}static/moment/moment.js"></script>
 		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
+		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
 		
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
 		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
@@ -29,14 +34,14 @@
 				margin-bottom: 3em;
 				padding: 1em;
 			}
-			#logs {
-				margin-top: 4em;
-			}
 			.fast.backward, .backward, .forward, .fast.forward {
     			cursor: pointer;
 			}
 			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
 			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
+            .dataTables_filter{
+               display:none;
+            }
 		</style>
 	</head>
 	<body>
@@ -54,15 +59,24 @@
                     <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
                 % end
 			</div>
-			<div class="ui top attached tabular menu">
+			% import datetime
+            % throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
+            <div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
+                <a class="tabs item" data-tab="providers">Providers
+                    % if throttled_providers_count:
+                    <div class="ui tiny yellow label">
+                        {{throttled_providers_count}}
+                    </div>
+                    % end
+                </a>
                 <a class="tabs item" data-tab="status">Status</a>
 				<a class="tabs item" data-tab="releases">Releases</a>
 			</div>
 			<div class="ui bottom attached tab segment active" data-tab="tasks">
 				<div class="content">
-					<table class="ui very basic selectable table">
+					<table class="ui very basic selectable table" id="tasks">
 						<thead>
 							<tr>
 								<th>Name</th>
@@ -73,7 +87,7 @@
 						</thead>
 						<tbody>
 						%for task in task_list:
-							<tr>
+							<tr id="{{task[3]}}">
 								<td>{{task[0]}}</td>
 								<td>{{task[1]}}</td>
 								<td>{{task[2]}}</td>
@@ -89,35 +103,62 @@
 				</div>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="logs">
-				<div class="ui left floated basic buttons">
-					<button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
-				</div>
-				<div class="ui right floated basic buttons">
-					<button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
-					<button id="empty_log" class="ui button"><i class="download icon"></i>Empty log file</button>
-				</div>
+
+                <div class="ui two column grid container">
+                    <div class="row">
+                        <div class="left floatedcolumn">
+                            <div class="ui basic buttons">
+                                <button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
+                                <button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
+                                <button id="empty_log" class="ui button"><i class="trash icon"></i>Empty log file</button>
+                            </div>
+                        </div>
+                        <div class="right floated right aligned column">
+                            <div class="ui basic icon buttons">
+                                <button class="ui active button filter_log" id="all_log" data-level="ALL" data-tooltip="All"><i class="circle outline icon"></i></button>
+                                <button class="ui button filter_log" id="info_log" data-level="INFO" data-tooltip="Info"><i class="blue info circle icon"></i></button>
+                                <button class="ui button filter_log" id="warning_log" data-level="WARNING" data-tooltip="Warning"><i class="yellow warning circle icon"></i></button>
+                                <button class="ui button filter_log" id="error_log" data-level="ERROR" data-tooltip="Error"><i class="red bug icon"></i></button>
+                                <button class="ui button filter_log" id="debug_log" data-level="DEBUG" data-tooltip="Debug"><i class="black bug icon"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 				
 				<div class="content">
-					<div id="logs"></div>
-
-					%try: page_size
-					%except NameError: page_size = "25"
-					%end
-					%if page_size != -1:
-                    <div class="ui grid">
-						<div class="three column row">
-					    	<div class="column"></div>
-					    	<div class="center aligned column">
-					    		<i class="fast backward icon"></i>
-					    		<i class="backward icon"></i>
-					    		<span id="page"></span> / {{max_page}}
-					    		<i class="forward icon"></i>
-					    		<i class="fast forward icon"></i>
-					    	</div>
-					    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
-						</div>
-					</div>
-                    %end
+					<table id="logs" class="display" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="collapsing"></th>
+                                <th style="text-align: left;">Message:</th>
+                                <th class="collapsing" style="text-align: left;">Time:</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                    </table>
+				</div>
+			</div>
+            <div class="ui bottom attached tab segment" data-tab="providers">
+				<div class="content">
+					<table class="ui very basic table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Status</th>
+								<th>Next retry</th>
+							</tr>
+						</thead>
+						<tbody>
+						%for provider in throttled_providers:
+							<tr>
+								<td>{{provider[0]}}</td>
+								<td>{{provider[1] if provider[1] is not None else "Good"}}</td>
+								<td>{{provider[2] if provider[2] is not "now" else "-"}}</td>
+							</tr>
+						%end
+						</tbody>
+					</table>
 				</div>
 			</div>
             <div class="ui bottom attached tab segment" data-tab="status">
@@ -284,57 +325,43 @@
 				%end
 			</div>
 		</div>
+
+        <div id="modal" class="ui small modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<div>Details</div>
+			</div>
+			<div class="content">
+				Message
+				<div id='message' class="ui segment">
+					<p></p>
+				</div>
+				Exception
+				<div id='exception' class="ui segment">
+					<p></p>
+				</div>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Close</button>
+			</div>
+		</div>
+
 		% include('footer.tpl')
 	</body>
 </html>
 
 
 <script>
-	$('.menu .item')
+	$('.modal')
+		.modal({
+	    	autofocus: false
+		});
+
+    $('.menu .item')
 		.tab();
 
-	function loadURL(page) {
-		$.ajax({
-	        url: "{{base_url}}logs/" + page,
-	        beforeSend: function() { $('#loader').addClass('active'); },
-        	complete: function() { $('#loader').removeClass('active'); },
-	        cache: false
-	    }).done(function(data) {
-	    	$("#logs").html(data);
-	    });
-
-	    current_page = page;
-
-	    $("#page").text(current_page);
-	    if (current_page == 1) {
-	    	$(".backward, .fast.backward").addClass("disabled");
-	    }
-	    if (current_page == {{int(max_page)}}) {
-	    	$(".forward, .fast.forward").addClass("disabled");
-	    }
-	    if (current_page > 1 && current_page < {{int(max_page)}}) {
-	    	$(".backward, .fast.backward").removeClass("disabled");
-	    	$(".forward, .fast.forward").removeClass("disabled");
-	    }
-	}
-
-	loadURL(1);
-
-	$('.backward').on('click', function(){
-		loadURL(current_page - 1);
-	});
-	$('.fast.backward').on('click', function(){
-		loadURL(1);
-	});
-	$('.forward').on('click', function(){
-		loadURL(current_page + 1);
-	});
-	$('.fast.forward').on('click', function(){
-		loadURL({{int(max_page)}});
-	});
-
 	$('#refresh_log').on('click', function(){
-		loadURL(current_page);
+		table.ajax.reload();
 	});
 
 	$('#download_log').on('click', function(){
@@ -346,10 +373,14 @@
 	});
 
 	$('.execute').on('click', function(){
-		window.location = '{{base_url}}execute/' + $(this).data("taskid");
+	    $(this).addClass('disabled');
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}execute/' + $(this).data("taskid")
+        })
 	});
 
-	$('a:not(.tabs), button:not(.cancel, #download_log), #restart').on('click', function(){
+	$('a:not(.tabs), button:not(.cancel, #download_log, .filter_log, #refresh_log), #restart').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -385,8 +416,9 @@
 	});
 
     % from config import settings
+    % from get_args import args
 	% ip = settings.general.ip
-	% port = settings.general.port
+	% port = args.port if args.port else settings.general.port
 	% base_url = settings.general.base_url
 
 	if ("{{ip}}" === "0.0.0.0") {
@@ -411,4 +443,112 @@
 			}
 		});
 	}
+
+	var table = $('#logs').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No entries found in logs matching this log level.'
+		    },
+		    paging: true,
+			lengthChange: false,
+			pageLength: {{page_size}},
+    		searching: true,
+            search: {
+                regex: true
+            },
+    		ordering: false,
+    		processing: false,
+        	serverSide: false,
+        	ajax: {
+				url: '{{base_url}}logs',
+				dataSrc: 'data'
+			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+			},
+			columns: [
+                {
+                    data: 1,
+                    render: function (data, type, row) {
+                        return $.trim(data);
+                    }
+                },
+			    { data: 1,
+				render: function ( data, type, row ) {
+        			var icon;
+        			switch ($.trim(data)) {
+                        case 'INFO':
+                            icon = 'blue info circle icon';
+                            break;
+                        case 'WARNING':
+                            icon = 'yellow warning circle icon';
+                            break;
+                        case 'ERROR':
+                            icon = 'red bug icon';
+                            break;
+                        case 'DEBUG':
+                            icon = 'black bug icon';
+                    }
+				    return '<i class="' + icon + '"></i>';
+    				}
+                },
+                { data: 3,
+				render: function ( data, type, row ) {
+        			return $.trim(data);
+    				}
+                },
+                { data: 0,
+				render: function ( data, type, row ) {
+        			return '<div class="description" data-tooltip="' + $.trim(data) + '" data-inverted="" data-position="top left">' + moment($.trim(data), "DD/MM/YYYY hh:mm:ss").fromNow() + '</div>'
+                    }
+                },
+                { data: 4,
+				render: function ( data, type, row ) {
+        			return $.trim(data);
+    				}
+                }
+            ],
+            columnDefs: [
+                {
+                    "targets": [ 0 ],
+                    "visible": false,
+                    "searchable": true
+                },
+                {
+                    "targets": [ 4 ],
+                    "visible": false,
+                    "searchable": false
+                }
+			]
+		} );
+
+	$('.filter_log').on( 'click', function () {
+	    $('.filter_log').removeClass('active');
+	    $(this).addClass('active');
+	    if ( $(this).data('level') === 'INFO') {
+	        table.column( 0 ).search( 'INFO|WARNING|ERROR|DEBUG', true, false).draw();
+        } else if ( $(this).data('level') === 'WARNING') {
+	        table.column( 0 ).search( 'WARNING|ERROR|DEBUG', true, false ).draw();
+        } else if ( $(this).data('level') === 'ERROR') {
+	        table.column( 0 ).search( 'ERROR|DEBUG', true, false ).draw();
+        } else if ( $(this).data('level') === 'DEBUG') {
+	        table.column( 0 ).search( 'DEBUG', true, false ).draw();
+        } else if ( $(this).data('level') === 'ALL') {
+            table.column(0).search('').draw();
+        }
+    } );
+
+	$('#logs').on('click', 'tr', function(event) {
+        var data = table.row( this ).data();
+
+        $("#message").html(data[3]);
+        let exception = data[4];
+		exception = exception.replace(/'/g,"");
+        exception = exception.replace(/\\n\s\s\s\s/g, "\\n&emsp;&emsp;");
+		exception = exception.replace(/\\n\s\s/g, "\\n&emsp;");
+		exception = exception.replace(/\\n/g, "<br />");
+		$("#exception").html(exception);
+		$('#modal').modal('show');
+    });
 </script>

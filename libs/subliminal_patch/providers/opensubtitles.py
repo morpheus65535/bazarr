@@ -11,8 +11,8 @@ from babelfish import language_converters
 from dogpile.cache.api import NO_VALUE
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
-    OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, ServerProxy, Unauthorized, NoSession, \
-    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
+    OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
+    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError, sanitize
 from mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
@@ -44,6 +44,19 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
 
     def get_matches(self, video, hearing_impaired=False):
         matches = super(OpenSubtitlesSubtitle, self).get_matches(video)
+
+        # episode
+        if isinstance(video, Episode) and self.movie_kind == 'episode':
+            # series
+            if video.series and (sanitize(self.series_name) in (
+                    sanitize(name) for name in [video.series] + video.alternative_series)):
+                matches.add('series')
+        # movie
+        elif isinstance(video, Movie) and self.movie_kind == 'movie':
+            # title
+            if video.title and (sanitize(self.movie_name) in (
+                    sanitize(name) for name in [video.title] + video.alternative_titles)):
+                matches.add('title')
 
         sub_fps = None
         try:
@@ -121,7 +134,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
     def get_server_proxy(self, url, timeout=None):
         return ServerProxy(url, SubZeroRequestsTransport(use_https=self.use_ssl, timeout=timeout or self.timeout,
-                                                         user_agent="Bazarr/1"))
+                                                         user_agent=os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")))
 
     def log_in(self, server_url=None):
         if server_url:
@@ -132,7 +145,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         response = self.retry(
             lambda: checked(
                 lambda: self.server.LogIn(self.username, self.password, 'eng',
-                                          "Bazarr/1")
+                                          os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"))
             )
         )
 
@@ -205,19 +218,19 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
         season = episode = None
         if isinstance(video, Episode):
-            query = video.series
+            query = [video.series] + video.alternative_series
             season = video.season
             episode = episode = min(video.episode) if isinstance(video.episode, list) else video.episode
 
             if video.is_special:
                 season = None
                 episode = None
-                query = u"%s %s" % (video.series, video.title)
+                query = [u"%s %s" % (series, video.title) for series in [video.series] + video.alternative_series]
                 logger.info("%s: Searching for special: %r", self.__class__, query)
         # elif ('opensubtitles' not in video.hashes or not video.size) and not video.imdb_id:
         #    query = video.name.split(os.sep)[-1]
         else:
-            query = video.title
+            query = [video.title] + video.alternative_titles
 
         return self.query(languages, hash=video.hashes.get('opensubtitles'), size=video.size, imdb_id=video.imdb_id,
                           query=query, season=season, episode=episode, tag=video.original_name,
@@ -238,9 +251,11 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             else:
                 criteria.append({'imdbid': imdb_id[2:]})
         if query and season and episode:
-            criteria.append({'query': query.replace('\'', ''), 'season': season, 'episode': episode})
+            for q in query:
+                criteria.append({'query': q.replace('\'', ''), 'season': season, 'episode': episode})
         elif query:
-            criteria.append({'query': query.replace('\'', '')})
+            for q in query:
+                criteria.append({'query': q.replace('\'', '')})
         if not criteria:
             raise ValueError('Not enough information')
 
@@ -296,8 +311,8 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             elif not only_foreign and not also_foreign and foreign_parts_only:
                 continue
 
-            # foreign/forced *also* wanted
-            elif also_foreign and foreign_parts_only:
+            # set subtitle language to forced if it's foreign_parts_only
+            elif (also_foreign or only_foreign) and foreign_parts_only:
                 language = Language.rebuild(language, forced=True)
 
             if language not in languages:

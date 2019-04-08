@@ -19,11 +19,17 @@
 			.searchicon {
 				color: white !important;
 			}
+            div.disabled { pointer-events: none; }
+            button.disabled { pointer-events: none; }
         </style>
     </head>
     <body>
 		% from get_args import args
+		% from get_providers import update_throttled_provider
+		% update_throttled_provider()
 
+		% import ast
+		% import datetime
 		% import os
 		% import sqlite3
         % from config import settings
@@ -44,7 +50,8 @@
     	% c = conn.cursor()
 		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr).fetchone()
 		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr).fetchone()
-
+		% from get_providers import list_throttled_providers
+		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
 			<div class="ui grid">
 				<div class="middle aligned row">
@@ -94,7 +101,13 @@
 												Settings
 											</a>
 											<a class="item" href="{{base_url}}system">
-												<i class="laptop icon"></i>
+												<i class="laptop icon">
+													% if throttled_providers_count:
+													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+														{{throttled_providers_count}}
+													</div>
+													% end
+												</i>
 												System
 											</a>
 											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
@@ -192,8 +205,9 @@
 	});
 
 	% from config import settings
+    % from get_args import args
 	% ip = settings.general.ip
-	% port = settings.general.port
+	% port = args.port if args.port else settings.general.port
 	% base_url = settings.general.base_url
 
 	if ("{{ip}}" === "0.0.0.0") {
@@ -221,26 +235,135 @@
 </script>
 
 <script type="text/javascript">
-	if (location.protocol != 'https:')
-	{
-		var ws = new WebSocket("ws://" + window.location.host + "{{base_url}}websocket");
-	} else {
-		var ws = new WebSocket("wss://" + window.location.host + "{{base_url}}websocket");
-	}
+	var url_notifications = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
+	var notificationTimeout;
+	var timeout;
+	var killer;
+	function doNotificationsAjax() {
+        $.ajax({
+            url: url_notifications,
+            success: function (data) {
+            	if (data !== "") {
+                    data = JSON.parse(data);
+                    var msg = data[0];
+                    var type = data[1];
+                    var duration = data[2];
+                    var button = data[3];
+                    var queue = data[4];
 
-    ws.onmessage = function (evt) {
-        new Noty({
-			text: evt.data,
-			timeout: 3000,
-			progressBar: false,
-			animation: {
-				open: null,
-				close: null
-			},
-			killer: true,
-    		type: 'info',
-			layout: 'bottomRight',
-			theme: 'semanticui'
-		}).show();
-    };
+                    if (duration === 'temporary') {
+                        timeout = 3000;
+                        killer = queue;
+                    } else if (duration === 'long') {
+                        timeout = 15000;
+                        killer = queue;
+                    }  else {
+						timeout = false;
+						killer = false;
+					}
+
+					if (button === 'refresh') {
+						button = [ Noty.button('Refresh', 'ui tiny primary button', function () { window.location.reload() }) ];
+					} else if (button === 'restart') {
+						// to be completed
+						button = [ Noty.button('Restart', 'ui tiny primary button', function () { alert('Restart not implemented yet!') }) ];
+					} else {
+						button = [];
+					}
+
+					new Noty({
+						text: msg,
+						progressBar: false,
+						animation: {
+							open: null,
+							close: null
+						},
+						type: type,
+						layout: 'bottomRight',
+						theme: 'semanticui',
+						queue: queue,
+						timeout: timeout,
+							killer: killer,
+						buttons: button,
+						force: true
+					}).show();
+				}
+            },
+            complete: function (data) {
+                // Schedule the next
+                if (data !== "") {
+                	notificationTimeout = setTimeout(doNotificationsAjax, 100);
+				} else {
+                	notificationTimeout = setTimeout(doNotificationsAjax, 1000);
+				}
+            }
+        });
+    }
+    notificationTimeout = setTimeout(doNotificationsAjax, 1000);
+
+	$(window).bind('beforeunload', function(){
+		clearTimeout(notificationTimeout);
+	});
+</script>
+
+
+<script type="text/javascript">
+	var url_tasks = location.protocol +"//" + window.location.host + "{{base_url}}running_tasks";
+	var tasksTimeout;
+	function doTasksAjax() {
+        $.ajax({
+            url: url_tasks,
+            dataType: 'json',
+            success: function (data) {
+            	$('#tasks > tbody  > tr').each(function() {
+					if ($.inArray($(this).attr('id'), data['tasks']) > -1) {
+					    $(this).find('td:last').find('div:first').addClass('disabled');
+						$(this).find('td:last').find('div:first').find('i:first').addClass('loading');
+					} else {
+						$(this).find('td:last').find('div:first').removeClass('disabled');
+						$(this).find('td:last').find('div:first').find('i:first').removeClass('loading');
+					}
+				});
+
+            	if ($.inArray('wanted_search_missing_subtitles', data['tasks']) > -1) {
+                    $('#wanted_search_missing_subtitles').addClass('disabled');
+                    $('#wanted_search_missing_subtitles_movies').addClass('disabled');
+                    $('#wanted_search_missing_subtitles').find('i:first').addClass('loading');
+                    $('#wanted_search_missing_subtitles_movies').find('i:first').addClass('loading');
+                } else {
+                    $('#wanted_search_missing_subtitles').removeClass('disabled');
+                    $('#wanted_search_missing_subtitles_movies').removeClass('disabled');
+                    $('#wanted_search_missing_subtitles').find('i:first').removeClass('loading');
+                    $('#wanted_search_missing_subtitles_movies').find('i:first').removeClass('loading');
+                }
+
+                %if 'no' in locals():
+            	if ($.inArray('search_missing_subtitles_{{no}}', data['tasks']) > -1) {
+                    $('#search_missing_subtitles').addClass('disabled');
+                    $('#search_missing_subtitles').find('i:first').addClass('loading');
+                } else {
+                    $('#search_missing_subtitles').removeClass('disabled');
+                    $('#search_missing_subtitles').find('i:first').removeClass('loading');
+                }
+
+            	if ($.inArray('search_missing_subtitles_movie_{{no}}', data['tasks']) > -1) {
+                    $('#search_missing_subtitles_movie').addClass('disabled');
+                    $('#search_missing_subtitles_movie').find('i:first').addClass('loading');
+                } else {
+                    $('#search_missing_subtitles_movie').removeClass('disabled');
+                    $('#search_missing_subtitles_movie').find('i:first').removeClass('loading');
+                }
+            	%end
+            },
+            complete: function (data) {
+                // Schedule the next
+                tasksTimeout = setTimeout(doTasksAjax, 5000);
+            }
+        });
+    }
+    tasksTimeout = setTimeout(doTasksAjax, 500);
+
+	$(window).bind('beforeunload', function(){
+		clearTimeout(tasksTimeout);
+	});
 </script>

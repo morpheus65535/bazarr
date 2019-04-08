@@ -335,12 +335,86 @@
                     Prev
                 </button>
                     </div>
+
+                <div class="ui dividing header">Subtitles options</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_subfolder" id="settings_subfolder"
+                                        class="ui fluid selection dropdown">
+                                    <option value="current">Alongside media file</option>
+                                    <option value="relative">Relative path to media file</option>
+                                    <option value="absolute">Absolute path</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Choose folder where you want to store/read the subtitles'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row subfolder">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Custom Subtitle folder</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_subfolder_custom" name="settings_subfolder_custom"
+                                               type="text" value="{{ settings.general.subfolder_custom }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Use embedded subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_embedded" class="ui toggle checkbox"
+                                     data-embedded={{ settings.general.getboolean('use_embedded_subs') }}>
+                                    <input name="settings_general_embedded" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon"
+                                         data-tooltip="Use embedded subtitles in media files when determining missing ones."
+                                         data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Addic7ed</label>
+                                <label>Addic7ed (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="addic7ed" class="ui toggle checkbox provider">
@@ -441,6 +515,28 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>GreekSubtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="greeksubtitles" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="greeksubtitles_option" class="ui grid container">
+
                         </div>
 
                         <div class="middle aligned row">
@@ -633,6 +729,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Subs.sab.bz</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subssabbz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subssabbz_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Subscene</label>
                             </div>
                             <div class="one wide column">
@@ -663,6 +781,94 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Subsunacs.net</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subsunacs" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subsunacs_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Free</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4free" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4free_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Subs4Series</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subs4series" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subs4series_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>SubZ</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subz_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Supersubtitles</label>
                             </div>
                             <div class="one wide column">
@@ -678,7 +884,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titlovi</label>
+                                <label>Titlovi (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="titlovi" class="ui toggle checkbox provider">
@@ -704,6 +910,47 @@
                         </div>
                         <div id="tvsubtitles_option" class="ui grid container">
 
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>XSubs</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="xsubs" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="xsubs_option" class="ui grid container">
+                        	<div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_username" type="text" value="{{settings.xsubs.username if settings.xsubs.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_xsubs_password" type="password" value="{{settings.xsubs.password if settings.xsubs.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="middle aligned row">
@@ -1329,6 +1576,11 @@ $(function() {
             } else {
                 $("#radarr_ssl_div").checkbox('uncheck');
             }
+    if ($('#settings_embedded').data("embedded") === "True") {
+        $("#settings_embedded").checkbox('check');
+    } else {
+        $("#settings_embedded").checkbox('uncheck');
+    }
 
     if ($('#settings_addic7ed_random_agents').data("randomagents") === "True") {
                 $("#settings_addic7ed_random_agents").checkbox('check');
@@ -1489,15 +1741,17 @@ $(function() {
     $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
     $('#settings_languages').dropdown('clear');
     $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
+    $('#settings_subfolder').dropdown('clear');
+    $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
 
     $('#settings_providers').dropdown();
     $('#settings_languages').dropdown();
     $('#settings_serie_default_languages').dropdown();
     $('#settings_movie_default_languages').dropdown();
-    %if settings.general.serie_default_language is not None:
+    %if settings.general.serie_default_language != 'None':
     $('#settings_serie_default_languages').dropdown('set selected',{{!settings.general.serie_default_language}});
     %end
-    %if settings.general.movie_default_language is not None:
+    %if settings.general.movie_default_language != 'None':
     $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
     %end
 
@@ -1680,6 +1934,19 @@ $(function() {
         $('#loader').removeClass('active');
     });
 
+    if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+        $('.subfolder').hide();
+    }
+
+    $('#settings_subfolder').dropdown('setting', 'onChange', function(){
+        if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {
+            $('.subfolder').hide();
+        }
+        else {
+            $('.subfolder').show();
+        }
+    });
+
 
     $('#sonarr_validate').on('click', function() {
         if ($('#sonarr_ssl_div').checkbox('is checked')) {
@@ -1745,14 +2012,14 @@ $(function() {
 
     $('.radarr_config').on('keyup', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });
 
     $('#settings_radarr_ssl').on('change', function() {
         $('#radarr_validated').checkbox('uncheck');
-        $('#radarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
         $('.form').form('validate form');
         $('#loader').removeClass('active');
     });

@@ -26,13 +26,23 @@ defaults = {
         'serie_default_language': '[]',
         'serie_default_hi': 'False',
         'movie_default_enabled': 'False',
-        'movie_default_language': [],
+        'movie_default_language': '[]',
         'movie_default_hi': 'False',
         'page_size': '25',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
         'adaptive_searching': 'False',
-        'enabled_providers': ''
+        'enabled_providers': '',
+        'throtteled_providers': '{}',
+        'multithreading': 'True',
+        'chmod_enabled': 'False',
+        'chmod': '0640',
+        'subfolder': 'current',
+        'subfolder_custom': '',
+        'upgrade_subs': 'True',
+        'days_to_upgrade_subs': '7',
+        'upgrade_manual': 'True',
+        'anti_captcha_provider': 'None'
     },
     'auth': {
         'type': 'None',
@@ -77,15 +87,27 @@ defaults = {
     'addic7ed': {
         'username': '',
         'password': '',
-        'random_agents': 'False'
-},
+        'random_agents': 'True'
+    },
     'legendastv': {
+        'username': '',
+        'password': ''
+    },
+    'xsubs': {
         'username': '',
         'password': ''
     },
     'assrt': {
         'token': ''
-    }}
+    },
+    'anticaptcha': {
+        'anti_captcha_key': ''
+    },
+    'deathbycaptcha': {
+        'username': '',
+        'password': ''
+    }
+}
 
 settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))

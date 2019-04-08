@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.7.1'
+bazarr_version = '0.7.3'
 
 import gc
 import sys
@@ -23,10 +23,29 @@ from init import *
 from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
+
+
+# Try to import gevent and exit if it's not available. This one is required to use websocket.
+try:
+    import gevent
+except ImportError:
+    import logging
+    logging.exception('BAZARR require gevent Python module to be installed using pip.')
+    try:
+        import os
+        from get_args import args
+        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.stop file.')
+    else:
+        stop_file.write('')
+        stop_file.close()
+        os._exit(0)
+
+
 from gevent.pywsgi import WSGIServer
-from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-# from cherrypy.wsgiserver import CherryPyWSGIServer
+
 from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
@@ -34,7 +53,7 @@ from cork import Cork
 from bottle import route, run, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import datetime, timedelta
 from get_languages import load_language_in_db, language_from_alpha3
-from get_providers import get_providers, get_providers_auth
+from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
 from get_episodes import *
 
@@ -43,12 +62,12 @@ if not args.no_update:
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle
+    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle, upgrade_subtitles
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
-from helper import path_replace_movie
+from helper import path_replace_movie, get_subtitle_destination_folder
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
@@ -57,6 +76,7 @@ gc.enable()
 update_notifier()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+os.environ["BAZARR_VERSION"] = bazarr_version
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 
@@ -77,31 +97,12 @@ if "PYCHARM_HOSTED" in os.environ:
 else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
-# Install gevent under user directory if it'S not already available. This one is required to use websocket.
-try:
-    import gevent
-except ImportError as e:
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
-
 # Reset restart required warning on start
 conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
 c = conn.cursor()
 c.execute("UPDATE system SET configured = 0, updated = 0")
 conn.commit()
 c.close()
-
-logging.debug('Bazarr version: %s', bazarr_version)
-logging.debug('Bazarr branch: %s', settings.general.branch)
-logging.debug('Operating system: %s', platform.platform())
-logging.debug('Python version: %s', platform.python_version())
 
 # Load languages in database
 load_language_in_db()
@@ -270,7 +271,25 @@ def save_wizard():
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
-    
+    settings_general_embedded = request.forms.get('settings_general_embedded')
+    if settings_general_embedded is None:
+        settings_general_embedded = 'False'
+    else:
+        settings_general_embedded = 'True'
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
+    if settings_upgrade_subs is None:
+        settings_upgrade_subs = 'False'
+    else:
+        settings_upgrade_subs = 'True'
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
+    if settings_upgrade_manual is None:
+        settings_upgrade_manual = 'False'
+    else:
+        settings_upgrade_manual = 'True'
+
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
     settings.general.base_url = text_type(settings_general_baseurl)
@@ -279,7 +298,13 @@ def save_wizard():
     settings.general.use_sonarr = text_type(settings_general_use_sonarr)
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
-    
+    settings.general.subfolder = text_type(settings_subfolder)
+    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
+    settings.general.use_embedded_subs = text_type(settings_general_embedded)
+    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
+    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
+
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
@@ -363,6 +388,8 @@ def save_wizard():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -605,7 +632,7 @@ def edit_series(no):
         lang = 'None'
 
     single_language = settings.general.getboolean('single_language')
-    if single_language is True:
+    if single_language:
         if str(lang) == "['None']":
             lang = 'None'
         else:
@@ -802,8 +829,15 @@ def edit_movie(no):
     else:
         lang = 'None'
 
-    if str(lang) == "['']":
-        lang = '[]'
+    single_language = settings.general.getboolean('single_language')
+    if single_language:
+        if str(lang) == "['None']":
+            lang = 'None'
+        else:
+            lang = str(lang)
+    else:
+        if str(lang) == "['']":
+            lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
 
@@ -874,8 +908,8 @@ def scan_disk_movie(no):
 def search_missing_subtitles(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
-
-    series_download_subtitles(no)
+    
+    add_job(series_download_subtitles, args=[no], name=('search_missing_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -886,7 +920,7 @@ def search_missing_subtitles_movie(no):
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    movies_download_subtitles(no)
+    add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
 
     redirect(ref)
 
@@ -919,7 +953,7 @@ def historyseries():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history WHERE action LIKE '1'").fetchall()
+    stats = c.execute("SELECT timestamp FROM table_history WHERE action > 0").fetchall()
     total = len(stats)
     for stat in stats:
         if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
@@ -931,14 +965,44 @@ def historyseries():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language, table_history.score FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
+
+    upgradable_episodes = []
+    if settings.general.getboolean('upgrade_subs'):
+        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                             datetime(1970, 1, 1)).total_seconds()
+
+        if settings.general.getboolean('upgrade_manual'):
+            query_actions = [1, 2, 3]
+        else:
+            query_actions = [1, 3]
+
+        upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
+                                             FROM table_history
+                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
+                                                  timestamp > ? AND score is not null
+                                         GROUP BY table_history.video_path, table_history.language""",
+                                        (minimum_timestamp,)).fetchall()
+        upgradable_episodes_not_perfect = []
+        for upgradable_episode in upgradable_episodes:
+            try:
+                int(upgradable_episode[2])
+            except ValueError:
+                pass
+            else:
+                if int(upgradable_episode[2]) < 360:
+                    upgradable_episodes_not_perfect.append(upgradable_episode)
+
     c.close()
+
     data = reversed(sorted(data, key=operator.itemgetter(4)))
+
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+                    current_port=settings.general.port, upgradable_episodes=upgradable_episodes_not_perfect)
 
 
 @route(base_url + 'historymovies')
@@ -962,7 +1026,7 @@ def historymovies():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action LIKE '1'").fetchall()
+    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action > 0").fetchall()
     total = len(stats)
     for stat in stats:
         if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
@@ -974,14 +1038,42 @@ def historymovies():
     stats = [len(today), len(thisweek), len(thisyear), total]
 
     c.execute(
-        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
+        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language, table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
         (page_size, offset,))
     data = c.fetchall()
+
+    upgradable_movies = []
+    if settings.general.getboolean('upgrade_subs'):
+        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
+        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
+                             datetime(1970, 1, 1)).total_seconds()
+
+        if settings.general.getboolean('upgrade_manual'):
+            query_actions = [1, 2, 3]
+        else:
+            query_actions = [1, 3]
+
+        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
+                                           FROM table_history_movie
+                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
+                                                timestamp > ? AND score is not null
+                                       GROUP BY video_path, language""",
+                                      (minimum_timestamp,)).fetchall()
+        upgradable_movies_not_perfect = []
+        for upgradable_movie in upgradable_movies:
+            try:
+                int(upgradable_movie[2])
+            except ValueError:
+                pass
+            else:
+                if int(upgradable_movie[2]) < 120:
+                    upgradable_movies_not_perfect.append(upgradable_movie)
+
     c.close()
     data = reversed(sorted(data, key=operator.itemgetter(2)))
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+                    current_port=settings.general.port, upgradable_movies=upgradable_movies_not_perfect)
 
 
 @route(base_url + 'wanted')
@@ -1062,9 +1154,9 @@ def wantedmovies():
 def wanted_search_missing_subtitles_list():
     authorize()
     ref = request.environ['HTTP_REFERER']
-
-    wanted_search_missing_subtitles()
-
+    
+    add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
+    
     redirect(ref)
 
 
@@ -1105,6 +1197,12 @@ def save_settings():
         settings_general_debug = 'False'
     else:
         settings_general_debug = 'True'
+    settings_general_chmod_enabled = request.forms.get('settings_general_chmod_enabled')
+    if settings_general_chmod_enabled is None:
+        settings_general_chmod_enabled = 'False'
+    else:
+        settings_general_chmod_enabled = 'True'
+    settings_general_chmod = request.forms.get('settings_general_chmod')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1140,6 +1238,11 @@ def save_settings():
         settings_general_adaptive_searching = 'False'
     else:
         settings_general_adaptive_searching = 'True'
+    settings_general_multithreading = request.forms.get('settings_general_multithreading')
+    if settings_general_multithreading is None:
+        settings_general_multithreading = 'False'
+    else:
+        settings_general_multithreading = 'True'
     settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
     settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
     settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
@@ -1159,6 +1262,23 @@ def save_settings():
     else:
         settings_general_use_radarr = 'True'
     settings_page_size = request.forms.get('settings_page_size')
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
+    if settings_upgrade_subs is None:
+        settings_upgrade_subs = 'False'
+    else:
+        settings_upgrade_subs = 'True'
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
+    if settings_upgrade_manual is None:
+        settings_upgrade_manual = 'False'
+    else:
+        settings_upgrade_manual = 'True'
+    settings_anti_captcha_provider = request.forms.get('settings_anti_captcha_provider')
+    settings_anti_captcha_key = request.forms.get('settings_anti_captcha_key')
+    settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
+    settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
 
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
@@ -1172,6 +1292,8 @@ def save_settings():
     settings.general.base_url = text_type(settings_general_baseurl)
     settings.general.path_mappings = text_type(settings_general_pathmapping)
     settings.general.debug = text_type(settings_general_debug)
+    settings.general.chmod_enabled = text_type(settings_general_chmod_enabled)
+    settings.general.chmod = text_type(settings_general_chmod)
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
     settings.general.single_language = text_type(settings_general_single_language)
@@ -1183,10 +1305,32 @@ def save_settings():
     settings.general.use_radarr = text_type(settings_general_use_radarr)
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
     settings.general.page_size = text_type(settings_page_size)
+    settings.general.subfolder = text_type(settings_subfolder)
+    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
+    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
+    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
+    settings.general.anti_captcha_provider = text_type(settings_anti_captcha_provider)
+    settings.anticaptcha.anti_captcha_key = text_type(settings_anti_captcha_key)
+    settings.deathbycaptcha.username = text_type(settings_death_by_captcha_username)
+    settings.deathbycaptcha.password = text_type(settings_death_by_captcha_password)
+
+    # set anti-captcha provider and key
+    if settings.general.anti_captcha_provider == 'anti-captcha':
+        os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
+    elif settings.general.anti_captcha_provider == 'AntiCaptchaProxyLessPitcher':
+        os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join(
+            {settings.deathbycaptcha.username, settings.deathbycaptcha.password})
+    else:
+        os.environ["ANTICAPTCHA_CLASS"] = ''
+
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
-
+    settings.general.multithreading = text_type(settings_general_multithreading)
+    
     if after != before:
         configured()
 
@@ -1338,6 +1482,8 @@ def save_settings():
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1385,7 +1531,7 @@ def save_settings():
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
-    configure_logging(settings.general.getboolean('debug'))
+    configure_logging(settings.general.getboolean('debug') or args.debug)
 
     notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
     for notifier in notifiers:
@@ -1432,57 +1578,42 @@ def check_update():
 def system():
     authorize()
     
-    def get_time_from_interval(interval):
-        interval_clean = interval.split('[')
-        interval_clean = interval_clean[1][:-1]
-        interval_split = interval_clean.split(':')
+    def get_time_from_interval(td_object):
+        seconds = int(td_object.total_seconds())
+        periods = [
+            ('year', 60 * 60 * 24 * 365),
+            ('month', 60 * 60 * 24 * 30),
+            ('day', 60 * 60 * 24),
+            ('hour', 60 * 60),
+            ('minute', 60),
+            ('second', 1)
+        ]
 
-        hour = interval_split[0]
-        minute = interval_split[1].lstrip("0")
-        second = interval_split[2].lstrip("0")
+        strings = []
+        for period_name, period_seconds in periods:
+            if seconds > period_seconds:
+                period_value, seconds = divmod(seconds, period_seconds)
+                has_s = 's' if period_value > 1 else ''
+                strings.append("%s %s%s" % (period_value, period_name, has_s))
 
-        text = "every "
-        if hour != "0":
-            text = text + hour
-            if hour == "1":
-                text = text + " hour"
-            else:
-                text = text + " hours"
-
-            if minute != "" and second != "":
-                text = text + ", "
-            elif minute == "" and second != "":
-                text = text + " and "
-            elif minute != "" and second == "":
-                text = text + " and "
-        if minute != "":
-            text = text + minute
-            if minute == "1":
-                text = text + " minute"
-            else:
-                text = text + " minutes"
-
-            if second != "":
-                text = text + " and "
-        if second != "":
-            text = text + second
-            if second == "1":
-                text = text + " second"
-            else:
-                text = text + " seconds"
-
-        return text
+        return ", ".join(strings)
 
     def get_time_from_cron(cron):
-        text = "at "
+        text = ""
+        sun = str(cron[4])
         hour = str(cron[5])
         minute = str(cron[6])
         second = str(cron[7])
+
+        if sun != "*":
+            text = "Sunday at "
 
         if hour != "0" and hour != "*":
             text = text + hour
             if hour == "0" or hour == "1":
                 text = text + " hour"
+            elif sun != "*" or hour == "4" or hour == "5":
+                text = text + "am"
             else:
                 text = text + " hours"
 
@@ -1507,31 +1638,35 @@ def system():
                 text = text + " second"
             else:
                 text = text + " seconds"
+        if text != "" and sun == "*":
+            text = "everyday at " + text
+        elif text == "":
+            text = "Never"
 
         return text
 
     task_list = []
     for job in scheduler.get_jobs():
-        if job.next_run_time is not None:
-            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+        if isinstance(job.trigger, CronTrigger):
+            if str(job.trigger.__getstate__()['fields'][0]) == "2100":
+                next_run = 'Never'
         else:
-            next_run = "Never"
+            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
-        if job.trigger.__str__().startswith('interval'):
-            task_list.append([job.name, get_time_from_interval(str(job.trigger)), next_run, job.id])
-        elif job.trigger.__str__().startswith('cron'):
+        if isinstance(job.trigger, IntervalTrigger):
+            interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
+            task_list.append([job.name, interval, next_run, job.id])
+        elif isinstance(job.trigger, CronTrigger):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
 
-    i = 0
-    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as f:
-        for i, l in enumerate(f, 1):
-            pass
-        row_count = i
-        page_size = int(settings.general.page_size)
-        max_page = int(math.ceil(row_count / (page_size + 0.0)))
+    throttled_providers = list_throttled_providers()
 
-    with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
-        releases = ast.literal_eval(f.read())
+    try:
+        with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
+            releases = ast.literal_eval(f.read())
+    except Exception as e:
+        releases = []
+        logging.exception('BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
 
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey
@@ -1553,27 +1688,27 @@ def system():
         except:
             pass
 
+    page_size = int(settings.general.page_size)
+
     return template('system', bazarr_version=bazarr_version,
                     sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
                     config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
-                    base_url=base_url, task_list=task_list, row_count=row_count, max_page=max_page, page_size=page_size,
-                    releases=releases, current_port=settings.general.port)
+                    base_url=base_url, task_list=task_list, page_size=page_size, releases=releases,
+                    current_port=settings.general.port, throttled_providers=throttled_providers)
 
 
-@route(base_url + 'logs/<page:int>')
+@route(base_url + 'logs')
 @custom_auth_basic(check_credentials)
-def get_logs(page):
+def get_logs():
     authorize()
-    page_size = int(settings.general.page_size)
-    begin = (page * page_size) - page_size
-    end = (page * page_size) - 1
-    logs_complete = []
+    logs = []
     for line in reversed(open(os.path.join(args.config_dir, 'log', 'bazarr.log')).readlines()):
-        logs_complete.append(line.rstrip())
-    logs = logs_complete[begin:end]
+        lin = []
+        lin = line.split('|')
+        logs.append(lin)
 
-    return template('logs', logs=logs, base_url=base_url, current_port=settings.general.port)
+    return dict(data=logs)
 
 
 @route(base_url + 'execute/<taskid>')
@@ -1596,13 +1731,13 @@ def remove_subtitles():
     subtitlesPath = request.forms.get('subtitlesPath')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-
+    
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
-    except OSError:
-        pass
+    except OSError as e:
+        logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles(unicode(episodePath))
     list_missing_subtitles(sonarrSeriesId)
 
@@ -1620,8 +1755,8 @@ def remove_subtitles_movie():
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log_movie(0, radarrId, result)
-    except OSError:
-        pass
+    except OSError as e:
+        logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles_movie(unicode(moviePath))
     list_missing_subtitles_movies(radarrId)
 
@@ -1648,8 +1783,13 @@ def get_subtitle():
         result = download_subtitle(episodePath, language, hi, providers_list, providers_auth, sceneName, title,
                                    'series')
         if result is not None:
-            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-            send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
@@ -1699,8 +1839,13 @@ def manual_get_subtitle():
         result = manual_download_subtitle(episodePath, language, hi, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'series')
         if result is not None:
-            history_log(1, sonarrSeriesId, sonarrEpisodeId, result)
-            send_notifications(sonarrSeriesId, sonarrEpisodeId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
@@ -1728,8 +1873,13 @@ def get_subtitle_movie():
     try:
         result = download_subtitle(moviePath, language, hi, providers_list, providers_auth, sceneName, title, 'movie')
         if result is not None:
-            history_log_movie(1, radarrId, result)
-            send_notifications_movie(radarrId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log_movie(1, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
@@ -1778,8 +1928,13 @@ def manual_get_subtitle_movie():
         result = manual_download_subtitle(moviePath, language, hi, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
         if result is not None:
-            history_log_movie(1, radarrId, result)
-            send_notifications_movie(radarrId, result)
+            message = result[0]
+            path = result[1]
+            language_code = result[2]
+            provider = result[3]
+            score = result[4]
+            history_log_movie(2, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
@@ -1800,7 +1955,7 @@ def api_wanted():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC").fetchall()
+        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10").fetchall()
     c.close()
     return dict(subtitles=data)
 
@@ -1810,7 +1965,7 @@ def api_history():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC").fetchall()
+        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action = '1' ORDER BY id DESC LIMIT 10").fetchall()
     c.close()
     return dict(subtitles=data)
 
@@ -1820,7 +1975,7 @@ def api_wanted():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute(
-        "SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC").fetchall()
+        "SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC LIMIT 10").fetchall()
     c.close()
     return dict(subtitles=data)
 
@@ -1830,7 +1985,7 @@ def api_history():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute(
-        "SELECT table_movies.title, strftime('%Y-%m-%d', datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description FROM table_history_movie INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId WHERE table_history_movie.action = '1' ORDER BY id DESC").fetchall()
+        "SELECT table_movies.title, strftime('%Y-%m-%d', datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description FROM table_history_movie INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId WHERE table_history_movie.action = '1' ORDER BY id DESC LIMIT 10").fetchall()
     c.close()
     return dict(subtitles=data)
 
@@ -1860,34 +2015,27 @@ def test_notification(protocol, provider):
     )
 
 
-@route(base_url + 'websocket')
+@route(base_url + 'notifications')
 @custom_auth_basic(check_credentials)
-def handle_websocket():
-    wsock = request.environ.get('wsgi.websocket')
-    if not wsock:
-        abort(400, 'Expected WebSocket request.')
+def notifications():
+    if queueconfig.notifications:
+        return queueconfig.notifications.read()
+    else:
+        return None
 
-    queueconfig.q4ws.clear()
 
-    while True:
-        try:
-            if queueconfig.q4ws:
-                wsock.send(queueconfig.q4ws.popleft())
-                gevent.sleep(0.1)
-            else:
-                gevent.sleep(0.5)
-        except WebSocketError:
-            break
+@route(base_url + 'running_tasks')
+@custom_auth_basic(check_credentials)
+def running_tasks_list():
+    return dict(tasks=running_tasks)
 
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-
-server = WSGIServer((str(settings.general.ip), int(settings.general.port)), app, handler_class=WebSocketHandler)
+server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app, handler_class=WebSocketHandler)
 try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + str(
-        settings.general.port) + str(base_url))
-    # print 'Bazarr is started and waiting for request on http://' + str(ip) + ':' + str(port) + str(base_url)
+    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+        args.port) if args.port else str(settings.general.port)) + str(base_url))
     server.serve_forever()
 except KeyboardInterrupt:
     shutdown()

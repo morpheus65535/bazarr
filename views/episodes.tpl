@@ -361,8 +361,11 @@
 	});
 
 	$('#search_missing_subtitles').on('click', function(){
-		$('#loader_text').text("Searching for missing subtitles...");
-		window.location = '{{base_url}}search_missing_subtitles/{{no}}';
+		$(this).addClass('disabled');
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}search_missing_subtitles/{{no}}'
+        })
 	});
 
 	$('.remove_subtitles').on('click', function(){
@@ -399,7 +402,7 @@
 			hi: $(this).attr("data-hi"),
 			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
 			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId'),
-			title: '{{!details[0].replace("'", "\\'")}}'
+			title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -418,7 +421,7 @@
 		});
 	});
 
-	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel)').on('click', function(){
+	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -464,6 +467,9 @@
         hi = $(this).attr("data-hi");
 		sonarrSeriesId = $(this).attr("data-sonarrSeriesId");
 		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+		var languages = Array.from({{!subs_languages_list}});
+		var is_pb = languages.includes('pb');
+		var is_pt = languages.includes('pt');
 
 		const values = {
 			episodePath: episodePath,
@@ -472,7 +478,7 @@
 			hi: hi,
 			sonarrSeriesId: sonarrSeriesId,
 			sonarrEpisodeId: sonarrEpisodeId,
-			title: '{{!details[0].replace("'", "\'")}}'
+			title: "{{!details[0].replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -502,7 +508,15 @@
         			return data +'%';
     				}
 				},
-				{ data: 'language' },
+				{ data: null,
+				render: function ( data, type, row ) {
+		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
+		    			return 'pb'
+					} else {
+		    			return data.language
+					}
+					}
+				},
 				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {
@@ -556,7 +570,7 @@
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId,
-				title: '{{!details[0].replace("'", "\\'")}}'
+				title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

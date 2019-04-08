@@ -94,7 +94,7 @@
 				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
 				<div class="ui right floated basic icon buttons">
 					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-					<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+					<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
 					<%
 					subs_languages = ast.literal_eval(str(details[7]))
 					subs_languages_list = []
@@ -249,6 +249,9 @@
 									<div class="nine wide column">
 										<select name="languages" id="movie_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
 											<option value="">Languages</option>
+											%if single_language:
+                                        	<option value="None">None</option>
+                                        	%end
 											%for language in languages:
 											<option value="{{language[0]}}">{{language[1]}}</option>
 											%end
@@ -311,9 +314,12 @@
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
 	});
 
-	$('#search_missing_subtitles').on('click', function(){
-		$('#loader_text').text("Searching for missing subtitles...");
-		window.location = '{{base_url}}search_missing_subtitles_movie/{{no}}';
+	$('#search_missing_subtitles_movie').on('click', function(){
+		$(this).addClass('disabled');
+		$(this).find('i:first').addClass('loading');
+	    $.ajax({
+            url: '{{base_url}}search_missing_subtitles_movie/{{no}}'
+        })
 	});
 
 	$('.remove_subtitles').on('click', function(){
@@ -349,7 +355,7 @@
 			hi: $(this).attr("data-hi"),
 			radarrId: $(this).attr("data-radarrId"),
 			tmdbid: {{tmdbid}},
-			title: '{{!details[0].replace("'", "\\'")}}'
+			title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -368,7 +374,7 @@
 		});
 	});
 
-	$('a, .menu .item, button:not(#config, .cancel, .manual_search)').on('click', function(){
+	$('a, .menu .item, button:not(#config, .cancel, .manual_search, #search_missing_subtitles_movie)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -410,6 +416,9 @@
 		language = $(this).attr("data-language");
 		hi = $(this).attr("data-hi");
 		radarrId = $(this).attr("data-radarrId");
+		var languages = Array.from({{!subs_languages_list}});
+		var is_pb = languages.includes('pb');
+		var is_pt = languages.includes('pt');
 
 		const values = {
 			moviePath: moviePath,
@@ -417,7 +426,7 @@
 			language: language,
 			hi: hi,
 			radarrId: radarrId,
-			title: '{{!details[0].replace("'", "\'")}}'
+			title: "{{!details[0].replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -447,7 +456,15 @@
         			return data +'%';
     				}
 				},
-				{ data: 'language' },
+				{ data: null,
+				render: function ( data, type, row ) {
+		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
+		    			return 'pb'
+					} else {
+		    			return data.language
+					}
+					}
+				},
 				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {
@@ -501,7 +518,7 @@
 				language: $(button).attr("data-language"),
 				hi: hi,
 				radarrId: radarrId,
-				title: '{{!details[0].replace("'", "\\'")}}'
+				title: "{{!details[0].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

@@ -16,12 +16,12 @@ from bs4 import UnicodeDammit
 from itertools import islice
 
 from get_args import args
-from get_languages import alpha2_from_alpha3
+from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
-    path_replace_reverse_movie
+    path_replace_reverse_movie, get_subtitle_destination_folder
 
-from queueconfig import q4ws
+from queueconfig import notifications
 
 gc.enable()
 
@@ -30,46 +30,49 @@ def store_subtitles(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
-        q4ws.append('Analyzing this file for subtitles: ' + file)
-        if os.path.splitext(file)[1] == '.mkv':
-            logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                with open(file, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                
-                for subtitle_track in mkv.subtitle_tracks:
-                    try:
-                        if alpha2_from_alpha3(subtitle_track.language) is not None:
-                            lang = str(alpha2_from_alpha3(subtitle_track.language))
-                            logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
-                    except:
-                        logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
-                        pass
-            except Exception as e:
-                logging.exception("BAZARR error when trying to analyze this mkv file: " + file)
-                pass
-        else:
-            logging.debug("BAZARR This file isn't an .mkv file.")
+        notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
+        if settings.general.getboolean('use_embedded_subs'):
+            if os.path.splitext(file)[1] == '.mkv':
+                logging.debug("BAZARR is trying to index embedded subtitles.")
+                try:
+                    with open(file, 'rb') as f:
+                        mkv = enzyme.MKV(f)
+
+                    for subtitle_track in mkv.subtitle_tracks:
+                        try:
+                            if alpha2_from_alpha3(subtitle_track.language) is not None:
+                                lang = str(alpha2_from_alpha3(subtitle_track.language))
+                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                actual_subtitles.append([lang, None])
+                        except:
+                            logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
+                            pass
+                except Exception as e:
+                    logging.exception("BAZARR error when trying to analyze this mkv file: " + file)
+                    pass
+            else:
+                logging.debug("BAZARR This file isn't an .mkv file.")
         
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
-            # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
-            #   subtitles outside the media file folder
-            subtitles = search_external_subtitles(file)
+            dest_folder = get_subtitle_destination_folder()
+            subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+            subtitles = search_external_subtitles(file, languages=get_language_set(),
+                                                  only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
             for subtitle, language in subtitles.iteritems():
+                subtitle_path = get_external_subtitles_path(file, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                        [str("pb"), path_replace_reverse(subtitle_path)])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse(os.path.join(os.path.dirname(file), subtitle))])
+                        [str(language), path_replace_reverse(subtitle_path)])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
@@ -113,34 +116,35 @@ def store_subtitles_movie(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
-        q4ws.append('Analyzing this file for subtitles: ' + file)
-        if os.path.splitext(file)[1] == '.mkv':
-            logging.debug("BAZARR is trying to index embedded subtitles.")
-            try:
-                with open(file, 'rb') as f:
-                    mkv = enzyme.MKV(f)
-                
-                for subtitle_track in mkv.subtitle_tracks:
-                    try:
-                        if alpha2_from_alpha3(subtitle_track.language) is not None:
-                            lang = str(alpha2_from_alpha3(subtitle_track.language))
-                            logging.debug("BAZARR embedded subtitles detected: " + lang)
-                            actual_subtitles.append([lang, None])
-                    except:
-                        logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
-                        pass
-            except Exception as e:
-                logging.exception("BAZARR error when trying to analyze this mkv file: " + file)
-                pass
-        else:
-            logging.debug("BAZARR This file isn't an .mkv file.")
-        
-        # fixme: set subliminal_patch.core.CUSTOM_PATHS to a list of absolute folders or subfolders to support
-        #   subtitles outside the media file folder
-        subtitles = search_external_subtitles(file)
+        notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
+        if settings.general.getboolean('use_embedded_subs'):
+            if os.path.splitext(file)[1] == '.mkv':
+                logging.debug("BAZARR is trying to index embedded subtitles.")
+                try:
+                    with open(file, 'rb') as f:
+                        mkv = enzyme.MKV(f)
+
+                    for subtitle_track in mkv.subtitle_tracks:
+                        try:
+                            if alpha2_from_alpha3(subtitle_track.language) is not None:
+                                lang = str(alpha2_from_alpha3(subtitle_track.language))
+                                logging.debug("BAZARR embedded subtitles detected: " + lang)
+                                actual_subtitles.append([lang, None])
+                        except:
+                            logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_track.language)
+                            pass
+                except Exception as e:
+                    logging.exception("BAZARR error when trying to analyze this mkv file: " + file)
+                    pass
+            else:
+                logging.debug("BAZARR This file isn't an .mkv file.")
+
+        dest_folder = get_subtitle_destination_folder()
+        subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
-            subtitles = core.search_external_subtitles(file)
+            subtitles = search_external_subtitles(file, languages=get_language_set(),
+                                                  only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -335,3 +339,30 @@ def movies_scan_subtitles(no):
         store_subtitles_movie(path_replace_movie(movie[0]))
     
     list_missing_subtitles_movies(no)
+
+
+def get_external_subtitles_path(file, subtitle):
+    fld = os.path.dirname(file)
+
+    if settings.general.subfolder == "current":
+        path = os.path.join(fld, subtitle)
+    elif settings.general.subfolder == "absolute":
+        custom_fld = settings.general.subfolder_custom
+        if os.path.exists(os.path.join(fld, subtitle)):
+            path = os.path.join(fld, subtitle)
+        elif os.path.exists(os.path.join(custom_fld, subtitle)):
+            path = os.path.join(custom_fld, subtitle)
+        else:
+            path = None
+    elif settings.general.subfolder == "relative":
+        custom_fld = os.path.join(fld, settings.general.subfolder_custom)
+        if os.path.exists(os.path.join(fld, subtitle)):
+            path = os.path.join(fld, subtitle)
+        elif os.path.exists(os.path.join(custom_fld, subtitle)):
+            path = os.path.join(custom_fld, subtitle)
+        else:
+            path = None
+    else:
+        path = None
+
+    return path

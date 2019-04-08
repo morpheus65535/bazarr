@@ -4,9 +4,12 @@ import os
 import logging
 import re
 import types
+import platform
 
 from logging.handlers import TimedRotatingFileHandler
 from get_args import args
+from config import settings
+
 
 logger = logging.getLogger()
 
@@ -64,6 +67,8 @@ def configure_logging(debug=False):
     fh.setFormatter(f)
     fh.addFilter(BlacklistFilter())
     fh.addFilter(PublicIPFilter())
+    fh.setLevel(log_level)
+    logger.addHandler(fh)
     
     if debug:
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
@@ -72,6 +77,10 @@ def configure_logging(debug=False):
         logging.getLogger("subzero").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
         logging.getLogger("apprise").setLevel(logging.DEBUG)
+        logging.debug('Bazarr version: %s', os.environ["BAZARR_VERSION"])
+        logging.debug('Bazarr branch: %s', settings.general.branch)
+        logging.debug('Operating system: %s', platform.platform())
+        logging.debug('Python version: %s', platform.python_version())
     else:
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
@@ -83,8 +92,7 @@ def configure_logging(debug=False):
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
-    fh.setLevel(log_level)
-    logger.addHandler(fh)
+    
 
 
 class MyFilter(logging.Filter):

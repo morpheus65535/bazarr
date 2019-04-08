@@ -3,7 +3,8 @@ import os
 import sqlite3
 import requests
 import logging
-from queueconfig import q4ws
+import re
+from queueconfig import notifications
 
 from get_args import args
 from config import settings, url_sonarr
@@ -27,7 +28,7 @@ def update_all_movies():
 
 
 def sync_episodes():
-    q4ws.append('Episodes sync from Sonarr started...')
+    notifications.write(msg='Episodes sync from Sonarr started...', queue='get_episodes')
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
@@ -50,7 +51,7 @@ def sync_episodes():
     c.close()
     
     for seriesId in seriesIdList:
-        q4ws.append('Getting episodes data for this show: ' + seriesId[1])
+        notifications.write(msg='Getting episodes data for this show: ' + seriesId[1], queue='get_episodes')
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
@@ -75,7 +76,30 @@ def sync_episodes():
                                     sceneName = episode['episodeFile']['sceneName']
                                 else:
                                     sceneName = None
-                                
+
+                                try:
+                                    format, resolution = episode['episodeFile']['quality']['quality']['name'].split('-')
+                                except:
+                                    format = episode['episodeFile']['quality']['quality']['name']
+                                    try:
+                                        resolution = str(episode['episodeFile']['quality']['quality']['resolution']) + 'p'
+                                    except:
+                                        resolution = None
+
+                                if 'mediaInfo' in episode['episodeFile']:
+                                    if 'videoCodec' in episode['episodeFile']['mediaInfo']:
+                                        videoCodec = episode['episodeFile']['mediaInfo']['videoCodec']
+                                        videoCodec = SonarrFormatVideoCodec(videoCodec)
+                                    else: videoCodec = None
+
+                                    if 'audioCodec' in episode['episodeFile']['mediaInfo']:
+                                        audioCodec = episode['episodeFile']['mediaInfo']['audioCodec']
+                                        audioCodec = SonarrFormatAudioCodec(audioCodec)
+                                    else: audioCodec = None
+                                else:
+                                    videoCodec = None
+                                    audioCodec = None
+
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])
                                 
@@ -83,12 +107,14 @@ def sync_episodes():
                                     episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
                                                                episode['seasonNumber'], episode['episodeNumber'],
                                                                sceneName, str(bool(episode['monitored'])),
-                                                               episode['id']))
+                                                               format, resolution,
+                                                               videoCodec, audioCodec, episode['id']))
                                 else:
                                     episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
                                                             episode['episodeFile']['path'], episode['seasonNumber'],
                                                             episode['episodeNumber'], sceneName,
-                                                            str(bool(episode['monitored']))))
+                                                            str(bool(episode['monitored'])), format, resolution,
+                                                            videoCodec, audioCodec))
     
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
     
@@ -97,12 +123,12 @@ def sync_episodes():
     c = db.cursor()
     
     updated_result = c.executemany(
-        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ? WHERE sonarrEpisodeId = ?''',
+        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
         episodes_to_update)
     db.commit()
     
     added_result = c.executemany(
-        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, format, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         episodes_to_add)
     db.commit()
     
@@ -126,4 +152,29 @@ def sync_episodes():
     list_missing_subtitles()
     logging.debug('BAZARR All missing subtitles updated in database.')
     
-    q4ws.append('Episodes sync from Sonarr ended.')
+    notifications.write(msg='Episodes sync from Sonarr ended.', queue='get_episodes')
+
+
+def SonarrFormatAudioCodec(audioCodec):
+    if audioCodec == 'AC-3': return 'AC3'
+    if audioCodec == 'E-AC-3': return 'EAC3'
+    if audioCodec == 'MPEG Audio': return 'MP3'
+
+    return audioCodec
+
+
+def SonarrFormatVideoCodec(videoCodec):
+    if videoCodec == 'x264' or videoCodec == 'AVC': return 'h264'
+    if videoCodec == 'x265' or videoCodec == 'HEVC': return 'h265'
+    if videoCodec.startswith('XviD'): return 'XviD'
+    if videoCodec.startswith('DivX'): return 'DivX'
+    if videoCodec == 'MPEG-1 Video': return 'Mpeg'
+    if videoCodec == 'MPEG-2 Video': return 'Mpeg2'
+    if videoCodec == 'MPEG-4 Video': return 'Mpeg4'
+    if videoCodec == 'VC-1': return 'VC1'
+    if videoCodec.endswith('VP6'): return 'VP6'
+    if videoCodec.endswith('VP7'): return 'VP7'
+    if videoCodec.endswith('VP8'): return 'VP8'
+    if videoCodec.endswith('VP9'): return 'VP9'
+
+    return videoCodec
