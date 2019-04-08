@@ -8,10 +8,18 @@ import requests
 import xmlrpclib
 import dns.resolver
 
-from requests import Session, exceptions
+from requests import exceptions
 from urllib3.util import connection
 from retry.api import retry_call
 from exceptions import APIThrottled
+from dogpile.cache.api import NO_VALUE
+from subliminal.cache import region
+from cfscrape import CloudflareScraper
+
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from subzero.lib.io import get_viable_encoding
 
@@ -30,24 +38,58 @@ custom_resolver = dns.resolver.Resolver(configure=False)
 custom_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
 
-class CertifiSession(Session):
+class CertifiSession(CloudflareScraper):
     timeout = 10
 
     def __init__(self):
         super(CertifiSession, self).__init__()
         self.verify = pem_file
+        self.headers.update({
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'DNT': '1'
+        })
 
-    def request(self, *args, **kwargs):
+    def request(self, method, url, *args, **kwargs):
         if kwargs.get('timeout') is None:
             kwargs['timeout'] = self.timeout
-        return super(CertifiSession, self).request(*args, **kwargs)
+
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+
+        cache_key = "cf_data_%s" % domain
+
+        if not self.cookies.get("__cfduid", "", domain=domain):
+            cf_data = region.get(cache_key)
+            if cf_data is not NO_VALUE:
+                cf_cookies, user_agent = cf_data
+                logger.debug("Trying to use old cf data for %s: %s", domain, cf_data)
+                for cookie, value in cf_cookies.iteritems():
+                    self.cookies.set(cookie, value, domain=domain)
+
+                self.headers['User-Agent'] = user_agent
+
+        ret = super(CertifiSession, self).request(method, url, *args, **kwargs)
+        try:
+            cf_data = self.get_live_tokens(domain)
+        except:
+            pass
+        else:
+            if cf_data != region.get(cache_key) and self.cookies.get("__cfduid", "", domain=domain)\
+                    and self.cookies.get("cf_clearance", "", domain=domain):
+                logger.debug("Storing cf data for %s: %s", domain, cf_data)
+                region.set(cache_key, cf_data)
+
+        return ret
 
 
 class RetryingSession(CertifiSession):
     proxied_functions = ("get", "post")
 
     def __init__(self):
-        super(CertifiSession, self).__init__()
+        super(RetryingSession, self).__init__()
         self.verify = pem_file
 
         proxy = os.environ.get('SZ_HTTP_PROXY')
@@ -62,7 +104,7 @@ class RetryingSession(CertifiSession):
             # fixme: may be a little loud
             logger.debug("Using proxy %s for: %s", self.proxies["http"], args[0])
 
-        return retry_call(getattr(super(CertifiSession, self), method), fargs=args, fkwargs=kwargs, tries=3, delay=5,
+        return retry_call(getattr(super(RetryingSession, self), method), fargs=args, fkwargs=kwargs, tries=3, delay=5,
                           exceptions=(exceptions.ConnectionError,
                                       exceptions.ProxyError,
                                       exceptions.SSLError,

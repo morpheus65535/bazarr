@@ -41,7 +41,8 @@ defaults = {
         'subfolder_custom': '',
         'upgrade_subs': 'True',
         'days_to_upgrade_subs': '7',
-        'upgrade_manual': 'True'
+        'upgrade_manual': 'True',
+        'anti_captcha_provider': 'None'
     },
     'auth': {
         'type': 'None',
@@ -98,7 +99,15 @@ defaults = {
     },
     'assrt': {
         'token': ''
-    }}
+    },
+    'anticaptcha': {
+        'anti_captcha_key': ''
+    },
+    'deathbycaptcha': {
+        'username': '',
+        'password': ''
+    }
+}
 
 settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))

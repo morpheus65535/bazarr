@@ -518,9 +518,19 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
         hints["expected_title"] = [hints["title"]]
 
     guessed_result = guessit(guess_from, options=hints)
+
     logger.debug('GuessIt found: %s', json.dumps(guessed_result, cls=GuessitEncoder, indent=4, ensure_ascii=False))
     video = Video.fromguess(path, guessed_result)
     video.hints = hints
+
+    # get possibly alternative title from the filename itself
+    alt_guess = guessit(filename, options=hints)
+    if "title" in alt_guess and alt_guess["title"] != guessed_result["title"]:
+        if video_type == "episode":
+            video.alternative_series.append(alt_guess["title"])
+        else:
+            video.alternative_titles.append(alt_guess["title"])
+        logger.debug("Adding alternative title: %s", alt_guess["title"])
 
     if dont_use_actual_file:
         return video

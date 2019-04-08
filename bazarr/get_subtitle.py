@@ -791,12 +791,14 @@ def upgrade_subtitles():
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
+    
+    count_episode_to_upgrade = len(episodes_to_upgrade)
+    count_movie_to_upgrade = len(movies_to_upgrade)
 
-    for episode in episodes_to_upgrade:
+    for i, episode in enumerate(episodes_to_upgrade, 1):
         if episode[1] in ast.literal_eval(str(episode[9])):
-            notifications.write(
-                msg='Searching to upgrade ' + str(language_from_alpha2(episode[1])) + ' subtitles for this episode: ' +
-                    path_replace(episode[0]), queue='get_subtitle')
+            notifications.write(msg='Upgrading series subtitles : ' + str(i) + '/' + str(count_episode_to_upgrade),
+                                queue='get_subtitle', duration='long')
             result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
                                        episode[3], episode[10], providers_list, providers_auth, str(episode[4]),
                                        episode[5], 'series', forced_minimum_score=int(episode[2]), is_upgrade=True)
@@ -810,11 +812,10 @@ def upgrade_subtitles():
                 history_log(3, episode[6], episode[7], message, path, language_code, provider, score)
                 send_notifications(episode[6], episode[7], message)
 
-    for movie in movies_to_upgrade:
+    for i, movie in enumerate(movies_to_upgrade, 1):
         if movie[1] in ast.literal_eval(str(movie[8])):
-            notifications.write(
-                msg='Searching to upgrade ' + str(language_from_alpha2(movie[1])) + ' subtitles for this movie: ' +
-                    path_replace_movie(movie[0]), queue='get_subtitle')
+            notifications.write(msg='Upgrading movie subtitles : ' + str(i) + '/' + str(count_movie_to_upgrade),
+                                    queue='get_subtitle', duration='long')
             result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
                                        movie[3], movie[9], providers_list, providers_auth, str(movie[4]),
                                        movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)

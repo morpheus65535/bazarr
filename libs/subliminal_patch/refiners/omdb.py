@@ -4,7 +4,7 @@ import subliminal
 import base64
 import zlib
 from subliminal import __short_version__
-from subliminal.refiners.omdb import OMDBClient, refine
+from subliminal.refiners.omdb import OMDBClient, refine as refine_orig, Episode, Movie
 
 
 class SZOMDBClient(OMDBClient):
@@ -61,6 +61,14 @@ class SZOMDBClient(OMDBClient):
             return None
 
         return j
+
+
+def refine(video, **kwargs):
+    refine_orig(video, **kwargs)
+    if isinstance(video, Episode) and video.series_imdb_id:
+        video.series_imdb_id = video.series_imdb_id.strip()
+    elif isinstance(video, Movie) and video.imdb_id:
+        video.imdb_id = video.imdb_id.strip()
 
 
 omdb_client = SZOMDBClient(headers={'User-Agent': 'Subliminal/%s' % __short_version__})
