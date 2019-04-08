@@ -25,7 +25,7 @@ elif settings.general.anti_captcha_provider == 'AntiCaptchaProxyLessPitcher':
     os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
     os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join(settings.deathbycaptcha.username, settings.deathbycaptcha.password)
 else:
-    os.environ["ANTICAPTCHA_CLASS"] = None
+    os.environ["ANTICAPTCHA_CLASS"] = ''
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
