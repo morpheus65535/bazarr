@@ -1228,12 +1228,104 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="ui dividing header">Anti-captcha options</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Provider</label>
+                            </div>
+                            <div class="five wide column">
+                                <select name="settings_anti_captcha_provider" id="settings_anti_captcha_provider" class="ui fluid selection dropdown">
+                                    <option value="None">None</option>
+                                    <option value="anti-captcha">Anti-Captcha</option>
+                                    <option value="death-by-captcha">Death by Captcha</option>
+                                </select>
+                            </div>
+
+                            <div class="collapsed center aligned column">
+                                <div class="ui basic icon"
+                                     data-tooltip='Choose the anti-captcha provider you want to use.'
+                                     data-inverted="">
+                                    <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row anticaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Provider website</label>
+                            </div>
+                            <div class="five wide column">
+                                <a href="http://getcaptchasolution.com/eixxo1rsnw" target="_blank">Anti-Captcha.com</a>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row anticaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Account Key</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_anti_captcha_key" name="settings_anti_captcha_key"
+                                               type="text" value="{{ settings.anticaptcha.anti_captcha_key }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row deathbycaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Provider website</label>
+                            </div>
+                            <div class="five wide column">
+                                <a href="https://www.deathbycaptcha.com" target="_blank">DeathByCaptcha.com</a>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row deathbycaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Username</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_death_by_captcha_username" name="settings_death_by_captcha_username"
+                                               type="text" value="{{ settings.deathbycaptcha.username }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row deathbycaptcha">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Password</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <input id="settings_death_by_captcha_password" name="settings_death_by_captcha_password"
+                                               type="text" value="{{ settings.deathbycaptcha.password }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="ui dividing header">Subtitles providers</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Addic7ed</label>
+                                <label>Addic7ed (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="addic7ed" class="ui toggle checkbox provider">
@@ -1703,7 +1795,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titlovi</label>
+                                <label>Titlovi (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="titlovi" class="ui toggle checkbox provider">
@@ -1770,6 +1862,28 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Zimuku</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="zimuku" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="zimuku_option" class="ui grid container">
+
                         </div>
 
                         <div class="middle aligned row">
@@ -2235,6 +2349,30 @@
         }
     });
 
+    if ($('#settings_anti_captcha_provider').val() === "None") {
+        $('.anticaptcha').hide();
+        $('.deathbycaptcha').hide();
+    } else if ($('#settings_anti_captcha_provider').val() === "anti-captcha") {
+        $('.anticaptcha').show();
+        $('.deathbycaptcha').hide();
+    } else if ($('#settings_anti_captcha_provider').val() === "death-by-cCaptcha") {
+        $('.deathbycaptcha').show();
+        $('.anticaptcha').hide();
+    }
+
+    $('#settings_anti_captcha_provider').dropdown('setting', 'onChange', function(){
+        if ($('#settings_anti_captcha_provider').val() === "None") {
+            $('.anticaptcha').hide();
+            $('.deathbycaptcha').hide();
+        } else if ($('#settings_anti_captcha_provider').val() === "anti-captcha") {
+            $('.anticaptcha').show();
+            $('.deathbycaptcha').hide();
+        } else if ($('#settings_anti_captcha_provider').val() === "death-by-captcha") {
+            $('.deathbycaptcha').show();
+            $('.anticaptcha').hide();
+        }
+    });
+
     if ($('#settings_use_postprocessing').data("postprocessing") === "True") {
                 $('.postprocessing').show();
             } else {
@@ -2445,6 +2583,8 @@
     $('#settings_page_size').dropdown('set selected','{{!settings.general.page_size}}');
     $('#settings_subfolder').dropdown('clear');
     $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
+    $('#settings_anti_captcha_provider').dropdown('clear');
+    $('#settings_anti_captcha_provider').dropdown('set selected', '{{!settings.general.anti_captcha_provider}}');
     $('#settings_proxy_type').dropdown('clear');
     $('#settings_proxy_type').dropdown('set selected','{{!settings.proxy.type}}');
     $('#settings_providers').dropdown('clear');
@@ -2616,6 +2756,7 @@
                     ]
                 },
                 settings_days_to_upgrade_subs : {
+                    depends: 'settings_upgrade_subs',
                     rules : [
                         {
                             type : 'integer[1..30]'
