@@ -793,7 +793,7 @@ def upgrade_subtitles():
     for i, movie in enumerate(movies_to_upgrade, 1):
         if movie[1] in ast.literal_eval(str(movie[8])):
             notifications.write(msg='Upgrading movie subtitles : ' + str(i) + '/' + str(count_movie_to_upgrade),
-                                    queue='get_subtitle', duration='long', item=i, length=count_movie_to_upgrad)
+                                    queue='get_subtitle', duration='long', item=i, length=count_movie_to_upgrade)
             result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
                                        movie[3], providers_list, providers_auth, str(movie[4]),
                                        movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)

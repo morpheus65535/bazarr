@@ -30,7 +30,7 @@ def store_subtitles(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
-        notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
+        # notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
         if settings.general.getboolean('use_embedded_subs'):
             if os.path.splitext(file)[1] == '.mkv':
                 logging.debug("BAZARR is trying to index embedded subtitles.")
@@ -116,7 +116,7 @@ def store_subtitles_movie(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
-        notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
+        # notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
         if settings.general.getboolean('use_embedded_subs'):
             if os.path.splitext(file)[1] == '.mkv':
                 logging.debug("BAZARR is trying to index embedded subtitles.")
@@ -298,8 +298,11 @@ def series_full_scan_subtitles():
     c_db = conn_db.cursor()
     episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
+    count_episodes = len(episodes)
     
-    for episode in episodes:
+    for i, episode in enumerate(episodes, 1):
+        notifications.write(msg='Updating all episodes subtitles from disk : ' + str(i) + '/' + str(count_episodes),
+                            queue='list_subtitles_episodes', duration='long', item=i, length=count_episodes)
         store_subtitles(path_replace(episode[0]))
     
     gc.collect()
@@ -310,8 +313,11 @@ def movies_full_scan_subtitles():
     c_db = conn_db.cursor()
     movies = c_db.execute("SELECT path FROM table_movies").fetchall()
     c_db.close()
+    count_movies = len(movies)
     
-    for movie in movies:
+    for i, movie in enumerate(movies, 1):
+        notifications.write(msg='Updating all movies subtitles from disk : ' + str(i) + '/' + str(count_movies),
+                            queue='list_subtitles_movies', duration='long', item=i, length=count_movies)
         store_subtitles_movie(path_replace_movie(movie[0]))
     
     gc.collect()
