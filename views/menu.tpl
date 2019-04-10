@@ -244,17 +244,20 @@
             url: url_notifications,
             success: function (data) {
             	if (data !== "") {
-					data = JSON.parse(data);
-					var msg = data[0];
-					var type = data[1];
-					var duration = data[2];
-					var button = data[3];
-					var queue = data[4];
+                    data = JSON.parse(data);
+                    var msg = data[0];
+                    var type = data[1];
+                    var duration = data[2];
+                    var button = data[3];
+                    var queue = data[4];
 
-					if (duration === 'temporary') {
-						timeout = 3000;
-						killer = queue;
-					} else {
+                    if (duration === 'temporary') {
+                        timeout = 3000;
+                        killer = queue;
+                    } else if (duration === 'long') {
+                        timeout = 15000;
+                        killer = queue;
+                    }  else {
 						timeout = false;
 						killer = false;
 					}

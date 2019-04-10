@@ -600,17 +600,17 @@ def search_json(query):
     
     search_list = []
     if settings.general.getboolean('use_sonarr'):
-        c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
+        c.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? ORDER BY title",
                   ('%' + query + '%',))
         series = c.fetchall()
         for serie in series:
-            search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
+            search_list.append(dict([('name', serie[0] + ' (' + serie[2] + ')'), ('url', base_url + 'episodes/' + str(serie[1]))]))
     
     if settings.general.getboolean('use_radarr'):
-        c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
+        c.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
         movies = c.fetchall()
         for movie in movies:
-            search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
+            search_list.append(dict([('name', movie[0] + ' (' + movie[2] + ')'), ('url', base_url + 'movie/' + str(movie[1]))]))
     c.close()
     
     response.content_type = 'application/json'
@@ -1278,6 +1278,10 @@ def save_settings():
         settings_upgrade_manual = 'False'
     else:
         settings_upgrade_manual = 'True'
+    settings_anti_captcha_provider = request.forms.get('settings_anti_captcha_provider')
+    settings_anti_captcha_key = request.forms.get('settings_anti_captcha_key')
+    settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
+    settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
 
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
               unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
@@ -1310,6 +1314,22 @@ def save_settings():
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
+    settings.general.anti_captcha_provider = text_type(settings_anti_captcha_provider)
+    settings.anticaptcha.anti_captcha_key = text_type(settings_anti_captcha_key)
+    settings.deathbycaptcha.username = text_type(settings_death_by_captcha_username)
+    settings.deathbycaptcha.password = text_type(settings_death_by_captcha_password)
+
+    # set anti-captcha provider and key
+    if settings.general.anti_captcha_provider == 'anti-captcha':
+        os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
+    elif settings.general.anti_captcha_provider == 'AntiCaptchaProxyLessPitcher':
+        os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join(
+            {settings.deathbycaptcha.username, settings.deathbycaptcha.password})
+    else:
+        os.environ["ANTICAPTCHA_CLASS"] = ''
+
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
