@@ -602,17 +602,17 @@ def search_json(query):
     
     search_list = []
     if settings.general.getboolean('use_sonarr'):
-        c.execute("SELECT title, sonarrSeriesId FROM table_shows WHERE title LIKE ? ORDER BY title",
+        c.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? ORDER BY title",
                   ('%' + query + '%',))
         series = c.fetchall()
         for serie in series:
-            search_list.append(dict([('name', serie[0]), ('url', base_url + 'episodes/' + str(serie[1]))]))
+            search_list.append(dict([('name', serie[0] + ' (' + serie[2] + ')'), ('url', base_url + 'episodes/' + str(serie[1]))]))
     
     if settings.general.getboolean('use_radarr'):
-        c.execute("SELECT title, radarrId FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
+        c.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY title", ('%' + query + '%',))
         movies = c.fetchall()
         for movie in movies:
-            search_list.append(dict([('name', movie[0]), ('url', base_url + 'movie/' + str(movie[1]))]))
+            search_list.append(dict([('name', movie[0] + ' (' + movie[2] + ')'), ('url', base_url + 'movie/' + str(movie[1]))]))
     c.close()
     
     response.content_type = 'application/json'
