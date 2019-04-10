@@ -56,7 +56,7 @@ def get_providers():
             if reason:
                 now = datetime.datetime.now()
                 if now < until:
-                    logging.info("Not using %s until %s, because of: %s", provider,
+                    logging.debug("Not using %s until %s, because of: %s", provider,
                                  until.strftime("%y/%m/%d %H:%M"), reason)
                     providers_list.remove(provider)
                 else:
