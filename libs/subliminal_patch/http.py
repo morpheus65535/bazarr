@@ -86,6 +86,7 @@ class CFSession(CloudflareScraper, CertifiSession, TimeoutSession):
                 self.headers['User-Agent'] = user_agent
 
         ret = super(CFSession, self).request(method, url, *args, **kwargs)
+
         try:
             cf_data = self.get_live_tokens(domain)
         except:
