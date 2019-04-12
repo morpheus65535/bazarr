@@ -22,7 +22,7 @@ if settings.general.anti_captcha_provider == 'anti-captcha':
     os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
     os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
 elif settings.general.anti_captcha_provider == 'death-by-captcha':
-    os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
+    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
     os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join({settings.deathbycaptcha.username, settings.deathbycaptcha.password})
 else:
     os.environ["ANTICAPTCHA_CLASS"] = ''
