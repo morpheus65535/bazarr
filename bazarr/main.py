@@ -1307,7 +1307,10 @@ def save_settings():
     settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
     settings.general.page_size = text_type(settings_page_size)
     settings.general.subfolder = text_type(settings_subfolder)
-    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
+    if settings.general.subfolder == 'current':
+        settings.general.subfolder_custom = ''
+    else:
+        settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
