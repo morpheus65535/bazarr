@@ -1762,7 +1762,7 @@ def remove_subtitles_movie():
     list_missing_subtitles_movies(radarrId)
 
 
-@route(base_url + 'get_subtitle', method='POST')
+@route(base_url + 'INNtle', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle():
     authorize()
@@ -1956,7 +1956,7 @@ def api_wanted():
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
     data = c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10").fetchall()
+        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes prin WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10").fetchall()
     c.close()
     return dict(subtitles=data)
 
