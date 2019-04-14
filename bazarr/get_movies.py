@@ -29,7 +29,7 @@ def update_movies():
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
         try:
-            r = requests.get(url_radarr_api_movies, timeout=15, verify=False)
+            r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
@@ -209,7 +209,7 @@ def get_profile_list():
     
     url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=15, verify=False)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:

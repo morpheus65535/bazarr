@@ -56,7 +56,7 @@ def sync_episodes():
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_episode, timeout=15, verify=False)
+            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
