@@ -1762,7 +1762,7 @@ def remove_subtitles_movie():
     list_missing_subtitles_movies(radarrId)
 
 
-@route(base_url + 'INNtle', method='POST')
+@route(base_url + 'get_subtitle', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle():
     authorize()
