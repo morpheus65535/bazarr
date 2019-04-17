@@ -5,11 +5,13 @@
 		<script src="{{base_url}}static/noty/noty.min.js" type="text/javascript"></script>
 		<style>
             #divmenu {
-				background-color: #000000;
-				padding-top: 2em;
-				padding-bottom: 1em;
-				padding-left: 1em;
-				padding-right: 128px;
+				padding-top: 1em;
+			}
+			.menu_segment {
+				padding: 0em !important;
+				border: none !important;
+				margin: 0em !important;
+				background: none !important;
 			}
 			.prompt {
 				background-color: #333333 !important;
@@ -21,6 +23,13 @@
 			}
             div.disabled { pointer-events: none; }
             button.disabled { pointer-events: none; }
+
+			@media only screen and (max-width: 1024px) {
+			    .logo {
+					width: 50%;
+				    height: auto;
+			    }
+			}
         </style>
     </head>
     <body>
@@ -53,90 +62,139 @@
 		% from get_providers import list_throttled_providers
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
-			<div class="ui grid">
-				<div class="middle aligned row">
-					<div class="three wide column">
+			<div class="ui stackable grid">
+				<div class="three wide column">
+					<div class="ui segment menu_segment">
 						<a href="{{base_url}}"><img class="logo" src="{{base_url}}static/logo128.png"></a>
 					</div>
-
-					<div class="twelve wide column">
+				</div>
+				<div class="ten wide right aligned compact column">
+					<div id="button_menu" class="ui center aligned segment menu_segment" hidden="hidden">
+						<div class="ui inverted compact borderless labeled icon massive menu menu_segment">
+							% if settings.general.getboolean('use_sonarr'):
+							<a class="item" href="{{base_url}}series">
+								<i class="play icon"></i>
+								Series
+							</a>
+							% end
+							% if settings.general.getboolean('use_radarr'):
+							<a class="item" href="{{base_url}}movies">
+								<i class="film icon"></i>
+								Movies
+							</a>
+							% end
+							<a class="item" href="{{base_url}}history">
+								<i class="wait icon"></i>
+								History
+							</a>
+							<a class="item" href="{{base_url}}wanted">
+								<i class="warning sign icon">
+									% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+										{{wanted_series[0]}}
+									</div>
+									% end
+									% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+									<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
+										{{wanted_movies[0]}}
+									</div>
+									% end
+								</i>
+								Wanted
+							</a>
+							<a class="item" href="{{base_url}}settings">
+								<i class="settings icon"></i>
+								Settings
+							</a>
+							<a class="item" href="{{base_url}}system">
+								<i class="laptop icon">
+									% if throttled_providers_count:
+									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+										{{throttled_providers_count}}
+									</div>
+									% end
+								</i>
+								System
+							</a>
+							<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+								<i class="red heart icon"></i>
+								Donate
+							</a>
+						</div>
+					</div>
+					<div class="ui center aligned segment menu_segment">
 						<div class="ui grid">
-								<div class="row">
-								<div class="sixteen wide column">
-									<div class="ui inverted borderless labeled icon massive menu seven item">
-										<div class="ui container">
-											% if settings.general.getboolean('use_sonarr'):
-											<a class="item" href="{{base_url}}series">
-												<i class="play icon"></i>
-												Series
-											</a>
-                                            % end
-											% if settings.general.getboolean('use_radarr'):
-											<a class="item" href="{{base_url}}movies">
-												<i class="film icon"></i>
-												Movies
-											</a>
-                                            % end
-											<a class="item" href="{{base_url}}history">
-												<i class="wait icon"></i>
-												History
-											</a>
-											<a class="item" href="{{base_url}}wanted">
-												<i class="warning sign icon">
-													% if settings.general.getboolean('use_sonarr'):
-													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
-														{{wanted_series[0]}}
-													</div>
-													% end
-													% if settings.general.getboolean('use_radarr'):
-													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
-														{{wanted_movies[0]}}
-													</div>
-													% end
-												</i>
-												Wanted
-											</a>
-											<a class="item" href="{{base_url}}settings">
-												<i class="settings icon"></i>
-												Settings
-											</a>
-											<a class="item" href="{{base_url}}system">
-												<i class="laptop icon">
-													% if throttled_providers_count:
-													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
-														{{throttled_providers_count}}
-													</div>
-													% end
-												</i>
-												System
-											</a>
-											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
-												<i class="red heart icon"></i>
-												Donate
-											</a>
-										</div>
+							<div class="ten wide centered column">
+								<div class="ui fluid search">
+									<div class="ui left icon fluid input">
+										<input class="prompt" type="text" placeholder="Search in your library">
+										<i class="searchicon search icon"></i>
 									</div>
 								</div>
-							</div>
-
-							<div style='padding-top:0;' class="row">
-								<div class="three wide column"></div>
-
-								<div class="ten wide column">
-									<div class="ui search">
-										<div class="ui left icon fluid input">
-											<input class="prompt" type="text" placeholder="Search in your library">
-											<i class="searchicon search icon"></i>
-										</div>
-									</div>
-								</div>
-
-								<div class="three wide column"></div>
 							</div>
 						</div>
-                    </div>
-                </div>
-            </div>
+					</div>
+				</div>
+				<div class="three wide right aligned column">
+					<div id="dropdown_menu" class="ui segment menu_segment" hidden="hidden">
+						<div class="ui compact icon menu">
+							<div id="dropdown_menu_button" class="ui floating right dropdown item">
+								<i class="bars icon"></i>
+								<div class="ui menu">
+									% if settings.general.getboolean('use_sonarr'):
+									<a class="item" href="{{base_url}}series">
+										<i class="play icon"></i>
+										Series
+									</a>
+									% end
+									% if settings.general.getboolean('use_radarr'):
+									<a class="item" href="{{base_url}}movies">
+										<i class="film icon"></i>
+										Movies
+									</a>
+									% end
+									<a class="item" href="{{base_url}}history">
+										<i class="wait icon"></i>
+										History
+									</a>
+									<a class="item" href="{{base_url}}wanted">
+										<i class="warning sign icon"></i>
+										<span  style="margin-right: 1em;">Wanted</span>
+										% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+										<div class="ui tiny yellow label">
+											{{wanted_series[0]}}
+										</div>
+										% end
+										% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+										<div class="ui tiny green label">
+											{{wanted_movies[0]}}
+										</div>
+										% end
+									</a>
+									<a class="item" href="{{base_url}}settings">
+										<i class="settings icon"></i>
+										Settings
+									</a>
+									<a class="item" href="{{base_url}}system">
+										<i class="laptop icon">
+											% if throttled_providers_count:
+											<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+												{{throttled_providers_count}}
+											</div>
+											% end
+										</i>
+										System
+									</a>
+									<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+										<i class="red heart icon"></i>
+										Donate
+									</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			% restart_required = c.execute("SELECT configured, updated FROM system").fetchone()
 			% c.close()
@@ -153,6 +211,8 @@
 </html>
 
 <script>
+	$('.ui.dropdown').dropdown();
+
     $('.ui.search')
         .search({
             apiSettings: {
@@ -175,21 +235,24 @@
     ;
 
     if (window.location.href.indexOf("episodes") > -1) {
-    	$('.menu').css('background', '#000000');
-    	$('.menu').css('opacity', '0.8');
+    	$('.menu_segment').css('background', '#000000');
+    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');
     	$('#divmenu').css('box-shadow', '0 0 5px 5px #000000');
     }
     else if (window.location.href.indexOf("movie/") > -1) {
-    	$('.menu').css('background', '#000000');
-    	$('.menu').css('opacity', '0.8');
+    	$('.menu_segment').css('background', '#000000');
+    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');
     	$('#divmenu').css('box-shadow', '0 0 5px 5px #000000');
     }
     else {
-    	$('.menu').css('background', '#272727');
+    	$('.menu_segment').css('background', '#272727');
+    	$('.menu_segment').css('border-color', '#272727');
     	$('#divmenu').css('background', '#272727');
     }
 
@@ -232,6 +295,16 @@
 			}
 		});
 	}
+
+	$( window ).on('resize', function () {
+	    if($(window).width() < 1024){
+	    	$('#button_menu').hide();
+	    	$('#dropdown_menu').show();
+		} else {
+	    	$('#dropdown_menu').hide();
+	    	$('#button_menu').show();
+		}
+	  }).resize();
 </script>
 
 <script type="text/javascript">
