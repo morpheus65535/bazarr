@@ -971,6 +971,7 @@ def historyseries():
     data = c.fetchall()
 
     upgradable_episodes = []
+    upgradable_episodes_not_perfect = []
     if settings.general.getboolean('upgrade_subs'):
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
@@ -987,7 +988,6 @@ def historyseries():
                                                   timestamp > ? AND score is not null
                                          GROUP BY table_history.video_path, table_history.language""",
                                         (minimum_timestamp,)).fetchall()
-        upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
             try:
                 int(upgradable_episode[2])
@@ -1044,6 +1044,7 @@ def historymovies():
     data = c.fetchall()
 
     upgradable_movies = []
+    upgradable_movies_not_perfect = []
     if settings.general.getboolean('upgrade_subs'):
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
@@ -1060,7 +1061,6 @@ def historymovies():
                                                 timestamp > ? AND score is not null
                                        GROUP BY video_path, language""",
                                       (minimum_timestamp,)).fetchall()
-        upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
             try:
                 int(upgradable_movie[2])
