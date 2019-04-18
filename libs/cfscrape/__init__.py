@@ -77,18 +77,18 @@ class CloudflareScraper(Session):
             pass
 
     def request(self, method, url, *args, **kwargs):
-        self.headers = (
-            OrderedDict(
-                [
-                    ('User-Agent', self.headers['User-Agent']),
-                    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
-                    ('Accept-Language', 'en-US,en;q=0.5'),
-                    ('Accept-Encoding', 'gzip, deflate'),
-                    ('Connection',  'close'),
-                    ('Upgrade-Insecure-Requests', '1')
-                ]
-            )
-        )
+        if not isinstance(self.headers, OrderedDict):
+            self.headers = \
+                OrderedDict(
+                    [
+                        ('User-Agent', self.headers['User-Agent']),
+                        ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
+                        ('Accept-Language', 'en-US,en;q=0.5'),
+                        ('Accept-Encoding', 'gzip, deflate'),
+                        ('Connection',  'close'),
+                        ('Upgrade-Insecure-Requests', '1')
+                    ]
+                )
 
         resp = super(CloudflareScraper, self).request(method, url, *args, **kwargs)
 
@@ -127,7 +127,7 @@ class CloudflareScraper(Session):
         submit_url = '{}://{}/cdn-cgi/l/chk_jschl'.format(parsed_url.scheme, domain)
 
         cloudflare_kwargs = deepcopy(original_kwargs)
-        headers = cloudflare_kwargs.setdefault('headers', {'Referer': resp.url})
+        headers = cloudflare_kwargs.setdefault('headers', OrderedDict({'Referer': resp.url}))
 
         try:
             params = cloudflare_kwargs.setdefault(
