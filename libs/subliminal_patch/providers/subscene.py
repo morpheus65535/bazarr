@@ -128,7 +128,6 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         self.session = Session()
         from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
-        self.session.headers['Referer'] = "https://subscene.com"
 
     def terminate(self):
         logger.info("Closing session")
@@ -200,23 +199,23 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     def query(self, video):
         vfn = get_video_filename(video)
         subtitles = []
-        logger.debug(u"Searching for: %s", vfn)
-        film = search(vfn, session=self.session)
+        #logger.debug(u"Searching for: %s", vfn)
+        # film = search(vfn, session=self.session)
+        #
+        # if film and film.subtitles:
+        #     logger.debug('Release results found: %s', len(film.subtitles))
+        #     subtitles = self.parse_results(video, film)
+        # else:
+        #     logger.debug('No release results found')
 
-        if film and film.subtitles:
-            logger.debug('Release results found: %s', len(film.subtitles))
-            subtitles = self.parse_results(video, film)
-        else:
-            logger.debug('No release results found')
-
-        time.sleep(self.search_throttle)
+        #time.sleep(self.search_throttle)
 
         # re-search for episodes without explicit release name
         if isinstance(video, Episode):
             #term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
+            more_than_one = len([video.series] + video.alternative_series) > 1
             for series in [video.series] + video.alternative_series:
                 term = u"%s - %s Season" % (series, p.number_to_words("%sth" % video.season).capitalize())
-                time.sleep(self.search_throttle)
                 logger.debug('Searching for alternative results: %s', term)
                 film = search(term, session=self.session, release=False)
                 if film and film.subtitles:
@@ -238,12 +237,17 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                         logger.debug('No pack results found')
                 else:
                     logger.debug("Not searching for packs, because the season hasn't fully aired")
+                if more_than_one:
+                    time.sleep(self.search_throttle)
         else:
+            more_than_one = len([video.title] + video.alternative_titles) > 1
             for title in [video.title] + video.alternative_titles:
                 logger.debug('Searching for movie results: %s', title)
                 film = search(title, year=video.year, session=self.session, limit_to=None, release=False)
                 if film and film.subtitles:
                     subtitles += self.parse_results(video, film)
+                if more_than_one:
+                    time.sleep(self.search_throttle)
 
         logger.info("%s subtitles found" % len(subtitles))
         return subtitles

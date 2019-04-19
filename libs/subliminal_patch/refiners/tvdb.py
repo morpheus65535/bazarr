@@ -5,8 +5,11 @@ import datetime
 from subliminal.refiners.tvdb import Episode, logger, search_series, series_re, sanitize, get_series, \
     get_series_episode, region, tvdb_client
 
+from util import fix_session_bases
 
 TVDB_SEASON_EXPIRATION_TIME = datetime.timedelta(days=1).total_seconds()
+
+fix_session_bases(tvdb_client.session)
 
 
 @region.cache_on_arguments(expiration_time=TVDB_SEASON_EXPIRATION_TIME)

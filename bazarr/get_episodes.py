@@ -11,6 +11,7 @@ from config import settings, url_sonarr
 from helper import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, \
     movies_full_scan_subtitles
+from get_subtitle import episode_download_subtitles
 
 
 def update_all_episodes():
@@ -37,7 +38,7 @@ def sync_episodes():
     c = db.cursor()
     
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrEpisodeId, path FROM table_episodes').fetchall()
+    current_episodes_db = c.execute('SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes').fetchall()
 
     current_episodes_db_list = [x[0] for x in current_episodes_db]
     current_episodes_sonarr = []
@@ -56,7 +57,7 @@ def sync_episodes():
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_episode, timeout=15, verify=False)
+            r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
@@ -138,7 +139,7 @@ def sync_episodes():
         db.commit()
 
     # Get episodes list after INSERT and UPDATE
-    episodes_now_in_db = c.execute('SELECT sonarrEpisodeId, path FROM table_episodes').fetchall()
+    episodes_now_in_db = c.execute('SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes').fetchall()
 
     # Close database connection
     c.close()
@@ -147,11 +148,19 @@ def sync_episodes():
     altered_episodes = set(episodes_now_in_db).difference(set(current_episodes_db))
     for altered_episode in altered_episodes:
         store_subtitles(path_replace(altered_episode[1]))
+        list_missing_subtitles(altered_episode[2])
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
-    
-    list_missing_subtitles()
-    logging.debug('BAZARR All missing subtitles updated in database.')
+
+    # Search for desired subtitles if no more than 5 episodes have been added.
+    if len(altered_episodes) <= 5:
+        logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
+        for altered_episode in altered_episodes:
+            episode_download_subtitles(altered_episode[0])
+    else:
+        logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles.")
+
+    notifications.write(msg='Episodes sync from Sonarr ended.', queue='get_episodes')
 
 
 def SonarrFormatAudioCodec(audioCodec):

@@ -10,6 +10,7 @@ from get_args import args
 from config import settings, url_radarr
 from helper import path_replace_movie
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
+from get_subtitle import movies_download_subtitles
 
 
 def update_movies():
@@ -28,7 +29,7 @@ def update_movies():
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
         try:
-            r = requests.get(url_radarr_api_movies, timeout=15, verify=False)
+            r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
@@ -42,7 +43,7 @@ def update_movies():
             # Get current movies in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
-            current_movies_db = c.execute('SELECT tmdbId, path FROM table_movies').fetchall()
+            current_movies_db = c.execute('SELECT tmdbId, path, radarrId FROM table_movies').fetchall()
             db.close()
             
             current_movies_db_list = [x[0] for x in current_movies_db]
@@ -177,7 +178,7 @@ def update_movies():
                 db.commit()
 
             # Get movies list after INSERT and UPDATE
-            movies_now_in_db = c.execute('SELECT tmdbId, path FROM table_movies').fetchall()
+            movies_now_in_db = c.execute('SELECT tmdbId, path, radarrId FROM table_movies').fetchall()
 
             # Close database connection
             db.close()
@@ -186,11 +187,17 @@ def update_movies():
             altered_movies = set(movies_now_in_db).difference(set(current_movies_db))
             for altered_movie in altered_movies:
                 store_subtitles_movie(path_replace_movie(altered_movie[1]))
+                list_missing_subtitles_movies(altered_movie[2])
+
+            # Search for desired subtitles if no more than 5 movies have been added.
+            if len(altered_movies) <= 5:
+                logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
+                for altered_movie in altered_movies:
+                    movies_download_subtitles(altered_movie[2])
+            else:
+                logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
-    
-    list_missing_subtitles_movies()
-    logging.debug('BAZARR All movie missing subtitles updated in database.')
     
     notifications.write(msg="Update movies list from Radarr is ended.", queue='get_movies')
 
@@ -204,7 +211,7 @@ def get_profile_list():
     
     url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
     try:
-        profiles_json = requests.get(url_radarr_api_movies, timeout=15, verify=False)
+        profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         logging.exception("BAZARR Error trying to get profiles from Radarr. Connection Error.")
     except requests.exceptions.Timeout as errt:

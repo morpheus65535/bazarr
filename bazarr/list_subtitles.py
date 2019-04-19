@@ -139,7 +139,7 @@ def store_subtitles_movie(file):
             else:
                 logging.debug("BAZARR This file isn't an .mkv file.")
 
-        dest_folder = get_subtitle_destination_folder()
+        dest_folder = get_subtitle_destination_folder() or ''
         subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         try:
@@ -153,15 +153,15 @@ def store_subtitles_movie(file):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), subtitle))])
+                        [str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(path_replace_movie(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                        with open(path_replace_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle)), 'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -179,7 +179,7 @@ def store_subtitles_movie(file):
                                         "BAZARR external subtitles detected and analysis guessed this language: " + str(
                                             detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
-                                        os.path.join(os.path.dirname(file), subtitle))])
+                                        os.path.join(os.path.dirname(file), dest_folder, subtitle))])
         
         conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
         c_db = conn_db.cursor()

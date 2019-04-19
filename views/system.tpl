@@ -260,6 +260,18 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Home page</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <i class="paper plane icon"></i><a href="https://www.bazarr.media" target="_blank">Bazarr website</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Source</label>
                             </div>
                             <div class="five wide column">

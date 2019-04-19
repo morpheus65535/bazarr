@@ -471,6 +471,43 @@ def series_download_subtitles(no):
     notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh', queue='get_subtitle')
 
 
+def episode_download_subtitles(no):
+    if settings.sonarr.getboolean('only_monitored'):
+        monitored_only_query_string = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string = ""
+
+    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c_db = conn_db.cursor()
+    episodes_details = c_db.execute(
+        'SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.sonarrEpisodeId = ?' + monitored_only_query_string, (no,)).fetchall()
+    c_db.close()
+
+    providers_list = get_providers()
+    providers_auth = get_providers_auth()
+
+    for episode in episodes_details:
+        for language in ast.literal_eval(episode[1]):
+            if language is not None:
+                notifications.write(msg='Searching for ' + str(
+                    language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
+                                    queue='get_subtitle')
+                result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
+                                           episode[4], providers_list, providers_auth, str(episode[3]),
+                                           episode[5], 'series')
+                if result is not None:
+                    message = result[0]
+                    path = result[1]
+                    language_code = result[2]
+                    provider = result[3]
+                    score = result[4]
+                    store_subtitles(path_replace(episode[0]))
+                    history_log(1, episode[6], episode[2], message, path, language_code, provider, score)
+                    send_notifications(episode[6], episode[2], message)
+
+        list_missing_subtitles(episode[6])
+
+
 def movies_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
@@ -478,7 +515,7 @@ def movies_download_subtitles(no):
         "SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title FROM table_movies WHERE radarrId = ?",
         (no,)).fetchone()
     c_db.close()
-    
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     

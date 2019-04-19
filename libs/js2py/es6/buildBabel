@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+
+# install all the dependencies and pack everything into one file babel_bundle.js (converted to es2015).
+npm install babel-core babel-cli babel-preset-es2015 browserify
+browserify babel.js -o babel_bundle.js -t [ babelify --presets [ es2015 ] ]
+
+# translate babel_bundle.js using js2py -> generates babel.py
+echo "Generating babel.py..."
+python -c "import js2py;js2py.translate_file('babel_bundle.js', 'babel.py');"
+rm babel_bundle.js
+

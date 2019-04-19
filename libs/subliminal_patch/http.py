@@ -1,4 +1,5 @@
 # coding=utf-8
+
 import certifi
 import ssl
 import os
@@ -8,7 +9,9 @@ import requests
 import xmlrpclib
 import dns.resolver
 
+from collections import OrderedDict
 from requests import exceptions
+from requests.utils import default_user_agent
 from urllib3.util import connection
 from retry.api import retry_call
 from exceptions import APIThrottled
@@ -38,24 +41,43 @@ custom_resolver = dns.resolver.Resolver(configure=False)
 custom_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
 
-class CertifiSession(CloudflareScraper):
+class TimeoutSession(requests.Session):
     timeout = 10
 
-    def __init__(self):
-        super(CertifiSession, self).__init__()
-        self.verify = pem_file
-        self.headers.update({
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'DNT': '1'
-        })
+    def __init__(self, timeout=None):
+        super(TimeoutSession, self).__init__()
+        self.timeout = timeout or self.timeout
 
     def request(self, method, url, *args, **kwargs):
         if kwargs.get('timeout') is None:
             kwargs['timeout'] = self.timeout
 
+        return super(TimeoutSession, self).request(method, url, *args, **kwargs)
+
+
+class CertifiSession(TimeoutSession):
+    def __init__(self):
+        super(CertifiSession, self).__init__()
+        self.verify = pem_file
+
+
+class CFSession(CloudflareScraper, CertifiSession, TimeoutSession):
+    def __init__(self):
+        super(CFSession, self).__init__()
+        self.headers = OrderedDict([
+            ('User-Agent', default_user_agent()),
+            ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
+            ('Accept-Language', 'en-US,en;q=0.5'),
+            ('Accept-Encoding', 'gzip, deflate'),
+            ('Connection', 'keep-alive'),
+            ('Pragma', 'no-cache'),
+            ('Cache-Control', 'no-cache'),
+            ('Upgrade-Insecure-Requests', '1'),
+            ('DNT', '1'),
+        ])
+        self.debug = os.environ.get("CF_DEBUG", False)
+
+    def request(self, method, url, *args, **kwargs):
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
 
@@ -71,7 +93,8 @@ class CertifiSession(CloudflareScraper):
 
                 self.headers['User-Agent'] = user_agent
 
-        ret = super(CertifiSession, self).request(method, url, *args, **kwargs)
+        ret = super(CFSession, self).request(method, url, *args, **kwargs)
+
         try:
             cf_data = self.get_live_tokens(domain)
         except:
@@ -85,12 +108,11 @@ class CertifiSession(CloudflareScraper):
         return ret
 
 
-class RetryingSession(CertifiSession):
+class RetryingSession(CFSession):
     proxied_functions = ("get", "post")
 
     def __init__(self):
         super(RetryingSession, self).__init__()
-        self.verify = pem_file
 
         proxy = os.environ.get('SZ_HTTP_PROXY')
         if proxy:

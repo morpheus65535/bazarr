@@ -146,6 +146,47 @@ class Addic7edProvider(_Addic7edProvider):
     def terminate(self):
         self.session.close()
 
+    def get_show_id(self, series, year=None, country_code=None):
+        """Get the best matching show id for `series`, `year` and `country_code`.
+
+        First search in the result of :meth:`_get_show_ids` and fallback on a search with :meth:`_search_show_id`.
+
+        :param str series: series of the episode.
+        :param year: year of the series, if any.
+        :type year: int
+        :param country_code: country code of the series, if any.
+        :type country_code: str
+        :return: the show id, if found.
+        :rtype: int
+
+        """
+        series_sanitized = sanitize(series).lower()
+        show_ids = self._get_show_ids()
+        show_id = None
+
+        # attempt with country
+        if not show_id and country_code:
+            logger.debug('Getting show id with country')
+            show_id = show_ids.get('%s %s' % (series_sanitized, country_code.lower()))
+
+        # attempt with year
+        if not show_id and year:
+            logger.debug('Getting show id with year')
+            show_id = show_ids.get('%s %d' % (series_sanitized, year))
+
+        # attempt clean
+        if not show_id:
+            logger.debug('Getting show id')
+            show_id = show_ids.get(series_sanitized)
+
+        # search as last resort
+        # broken right now
+        # if not show_id:
+        #     logger.warning('Series %s not found in show ids', series)
+        #     show_id = self._search_show_id(series)
+
+        return show_id
+
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def _get_show_ids(self):
         """Get the ``dict`` of show ids per series by querying the `shows.php` page.
