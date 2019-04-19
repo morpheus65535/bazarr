@@ -301,8 +301,8 @@ def series_full_scan_subtitles():
     count_episodes = len(episodes)
     
     for i, episode in enumerate(episodes, 1):
-        notifications.write(msg='Updating all episodes subtitles from disk : ' + str(i) + '/' + str(count_episodes),
-                            queue='list_subtitles_episodes', duration='long', item=i, length=count_episodes)
+        notifications.write(msg='Updating all episodes subtitles from disk...',
+                            queue='list_subtitles_series', duration='long', item=i, length=count_episodes)
         store_subtitles(path_replace(episode[0]))
     
     gc.collect()
@@ -316,7 +316,7 @@ def movies_full_scan_subtitles():
     count_movies = len(movies)
     
     for i, movie in enumerate(movies, 1):
-        notifications.write(msg='Updating all movies subtitles from disk : ' + str(i) + '/' + str(count_movies),
+        notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', duration='long', item=i, length=count_movies)
         store_subtitles_movie(path_replace_movie(movie[0]))
     

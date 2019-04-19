@@ -19,6 +19,14 @@
 			.searchicon {
 				color: white !important;
 			}
+            .ui.progress .bar>.progress {
+                right: auto;
+                left: .5em;
+                color: black !important;
+            }
+            .ui.disabled.progress.notification_progress {
+                opacity: unset !important;
+            }
             div.disabled { pointer-events: none; }
             button.disabled { pointer-events: none; }
         </style>
@@ -300,7 +308,11 @@
 						duration : 0,
 						autoSuccess: false,
 						value : item,
-						total : length
+						total : length,
+                        label: 'ratio',
+                        text: {
+                            ratio: '{value} / {total}'
+                        }
 					});
 				}
             },

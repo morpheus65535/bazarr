@@ -49,9 +49,11 @@ def update_movies():
             current_movies_radarr = []
             movies_to_update = []
             movies_to_add = []
-            
-            for movie in r.json():
-                notifications.write(msg="Getting data for this movie: " + movie['title'], queue='get_movies')
+
+            moviesIdListLength = len(r.json())
+            for i, movie in enumerate(r.json(), 1):
+                notifications.write(msg="Getting data for this movie...", queue='get_movies', item=i,
+                                    length=moviesIdListLength, duration='long')
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if movie["path"] != None and movie['movieFile']['relativePath'] != None:

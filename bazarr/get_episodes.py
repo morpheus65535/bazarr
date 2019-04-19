@@ -52,7 +52,7 @@ def sync_episodes():
 
     seriesIdListLength = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
-        notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
+        notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength, duration='long')
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
