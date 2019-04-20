@@ -1,6 +1,10 @@
+<!DOCTYPE html>
 <html lang="en">
     <head>
-        <!DOCTYPE html>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<meta name="mobile-web-app-capable" content="yes"/>
+		<meta name="apple-mobile-web-app-capable" content="yes"/>
+
 		<link href="{{base_url}}static/noty/noty.css" rel="stylesheet">
 		<script src="{{base_url}}static/noty/noty.min.js" type="text/javascript"></script>
 		<style>
@@ -12,6 +16,12 @@
 				border: none !important;
 				margin: 0em !important;
 				background: none !important;
+			}
+			#icon_menu {
+				background: transparent !important;
+				border: solid;
+				border-width: 1px;
+				border-color: white;
 			}
 			.prompt {
 				background-color: #333333 !important;
@@ -26,7 +36,7 @@
 
 			@media only screen and (max-width: 1024px) {
 			    .logo {
-					width: 50%;
+					width: 36px;
 				    height: auto;
 			    }
 			}
@@ -62,9 +72,9 @@
 		% from get_providers import list_throttled_providers
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
-			<div class="ui stackable grid">
+			<div class="ui grid">
 				<div class="three wide column">
-					<div class="ui segment menu_segment">
+					<div class="ui compact segment menu_segment">
 						<a href="{{base_url}}"><img class="logo" src="{{base_url}}static/logo128.png"></a>
 					</div>
 				</div>
@@ -124,7 +134,7 @@
 					</div>
 					<div class="ui center aligned segment menu_segment">
 						<div class="ui grid">
-							<div class="ten wide centered column">
+							<div id="search_column" class="centered column">
 								<div class="ui fluid search">
 									<div class="ui left icon fluid input">
 										<input class="prompt" type="text" placeholder="Search in your library">
@@ -137,9 +147,9 @@
 				</div>
 				<div class="three wide right aligned column">
 					<div id="dropdown_menu" class="ui segment menu_segment" hidden="hidden">
-						<div class="ui compact icon menu">
+						<div id="icon_menu" class="ui compact tiny icon menu">
 							<div id="dropdown_menu_button" class="ui floating right dropdown item">
-								<i class="bars icon"></i>
+								<i class="inverted bars icon"></i>
 								<div class="ui menu">
 									% if settings.general.getboolean('use_sonarr'):
 									<a class="item" href="{{base_url}}series">
@@ -300,9 +310,11 @@
 	    if($(window).width() < 1024){
 	    	$('#button_menu').hide();
 	    	$('#dropdown_menu').show();
+	    	$('#search_column').removeClass('ten wide');
 		} else {
 	    	$('#dropdown_menu').hide();
 	    	$('#button_menu').show();
+	    	$('#search_column').addClass('ten wide');
 		}
 	  }).resize();
 </script>

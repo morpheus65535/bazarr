@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
