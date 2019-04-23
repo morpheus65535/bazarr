@@ -1654,6 +1654,8 @@ def system():
         if isinstance(job.trigger, CronTrigger):
             if str(job.trigger.__getstate__()['fields'][0]) == "2100":
                 next_run = 'Never'
+            else:
+                next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
         else:
             next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
