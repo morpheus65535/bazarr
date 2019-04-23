@@ -14,7 +14,6 @@ from get_subtitle import movies_download_subtitles
 
 
 def update_movies():
-    notifications.write(msg="Update movies list from Radarr is running...", queue='get_movies')
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
@@ -53,8 +52,8 @@ def update_movies():
 
             moviesIdListLength = len(r.json())
             for i, movie in enumerate(r.json(), 1):
-                notifications.write(msg="Getting data for this movie...", queue='get_movies', item=i,
-                                    length=moviesIdListLength, duration='long')
+                notifications.write(msg="Getting movies data from Radarr...", queue='get_movies', item=i,
+                                    length=moviesIdListLength)
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         if movie["path"] != None and movie['movieFile']['relativePath'] != None:
@@ -198,8 +197,6 @@ def update_movies():
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
     logging.debug('BAZARR All movies synced from Radarr into database.')
-    
-    notifications.write(msg="Update movies list from Radarr is ended.", queue='get_movies')
 
 
 def get_profile_list():

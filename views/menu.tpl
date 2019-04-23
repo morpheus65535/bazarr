@@ -320,6 +320,8 @@
 	var notificationTimeout;
 	var timeout;
 	var killer;
+	var item = {};
+	var length = {};
 	function doNotificationsAjax() {
         $.ajax({
             url: url_notifications,
@@ -337,7 +339,7 @@
 					if (length === 0) {
 						var message = msg;
 					} else {
-						var message = msg + '<p><div class="ui disabled progress notification_progress" style="margin-bottom: -0.25em"><div class="bar"><div class="progress"></div></div></div>'
+						var message = msg + '<p><div class="ui disabled progress notification_progress" data-value=' + item + ' data-total=' + length + ' style="margin-bottom: -0.25em"><div class="bar"><div class="progress"></div></div></div>'
 					}
 
                     if (duration === 'temporary') {
@@ -374,14 +376,12 @@
 						timeout: timeout,
 							killer: killer,
 						buttons: button,
-						force: true
+						force: false
 					}).show();
 
 					$('.notification_progress').progress({
 						duration : 0,
 						autoSuccess: false,
-						value : item,
-						total : length,
                         label: 'ratio',
                         text: {
                             ratio: '{value} / {total}'
