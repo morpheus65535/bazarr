@@ -1,5 +1,5 @@
 # bazarr
-Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements. You define your preferences by TV show or movie and Bazarr takes care of everything for you.
+Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements. You define your preferences by TV show or movies and Bazarr takes care of everything for you.
 
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
@@ -19,9 +19,9 @@ You can also make a wish but keep in mind that we do not commit to make it happe
 # Support
 For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
 
-You can reach us for support on [Discord](https://discord.gg/MH2e2eb).
-
 If you find a bug, please open an issue on [Github](https://github.com/morpheus65535/bazarr/issues).
+
+You can also reach me on [Discord](https://discord.gg/MH2e2eb).
 
 # Feature Requests
 If you need something that is not already part of Bazarr, feel free to create a feature request on [Github](https://github.com/morpheus65535/bazarr/issues).
@@ -30,38 +30,23 @@ If you need something that is not already part of Bazarr, feel free to create a 
 
 * Support for major platforms: Windows, Linux, macOS, Raspberry Pi, etc.
 * Automatically add new series and episodes from Sonarr
-* Automatically add new movies from Radarr
+* Automatically add new movies and episodes from Radarr
 * Series or movies based configuration for subtitles languages
 * Scan your existing library for internal and external subtitles and download any missing
 * Keep history of what was downloaded from where and when
 * Manual search so you can download subtitles on demand
-* Upgrade subtitles previously downloaded when a better one is found
 * Ability to delete external subtitles from disk
 * Currently support 184 subtitles languages
 * And a beautiful UI based on Sonarr
 
 ## Supported subtitles providers:
-* Addic7ed
-* Argenteam
-* Assrt
-* GreekSubtitles
-* Hosszupuska
-* LegendasTV
-* Napiprojekt
-* OpenSubtitles
-* Podnapisi
-* Subs.sab.bz
-* Subscene
-* Subscenter
-* Subsunacs.net
-* Subs4Free
-* Subs4Series
-* SubZ
-* Supersubtitles
-* Titlovi
-* TVSubtitles
-* XSubs
-* Zimuku
+* addic7ed
+* legendastv
+* opensubtitles
+* podnapisi
+* shooter
+* thesubdb
+* tvsubtitles
 
 ## Screenshot
 
@@ -72,4 +57,4 @@ You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tre
 ### License
 
 * [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
-* Copyright 2010-2019
+* Copyright 2010-2017
