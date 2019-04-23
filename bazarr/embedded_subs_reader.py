@@ -5,7 +5,7 @@ import subprocess
 
 from utils import get_binary
 
-class MKVAndNoFFprobe(Exception):
+class NotMKVAndNoFFprobe(Exception):
     pass
 
 class FFprobeError(Exception):
@@ -22,7 +22,7 @@ class EmbeddedSubsReader:
             except subprocess.CalledProcessError as e:
                 raise FFprobeError(e.output)
         if os.path.splitext(file)[1] != '.mkv':
-            raise MKVAndNoFFprobe()
+            raise NotMKVAndNoFFprobe()
         with open(file, 'rb') as f:
             mkv = enzyme.MKV(f)
         return [subtitle_track.language for subtitle_track in mkv.subtitle_tracks]
