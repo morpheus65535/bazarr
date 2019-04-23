@@ -50,9 +50,10 @@ def sync_episodes():
     
     # Close database connection
     c.close()
-    
-    for seriesId in seriesIdList:
-        notifications.write(msg='Getting episodes data for this show: ' + seriesId[1], queue='get_episodes')
+
+    seriesIdListLength = len(seriesIdList)
+    for i, seriesId in enumerate(seriesIdList, 1):
+        notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
         try:
@@ -158,8 +159,6 @@ def sync_episodes():
             episode_download_subtitles(altered_episode[0])
     else:
         logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles.")
-
-    notifications.write(msg='Episodes sync from Sonarr ended.', queue='get_episodes')
 
 
 def SonarrFormatAudioCodec(audioCodec):

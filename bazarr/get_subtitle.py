@@ -351,7 +351,6 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
             return None
         else:
             if not subtitle.is_valid():
-                notifications.write(msg='No valid subtitles file found for this file: ' + path, queue='get_subtitle')
                 logging.exception('BAZARR No valid subtitles file found for this file: ' + path)
                 return
             logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
@@ -448,10 +447,12 @@ def series_download_subtitles(no):
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
-    for episode in episodes_details:
+    count_episodes_details = len(episodes_details)
+
+    for i, episode in enumerate(episodes_details, 1):
         for language in ast.literal_eval(episode[1]):
             if language is not None:
-                notifications.write(msg='Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]), queue='get_subtitle')
+                notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=i, length=count_episodes_details)
                 result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                             series_details[0], providers_list, providers_auth, str(episode[3]),
                                             series_details[1], 'series')
@@ -466,7 +467,8 @@ def series_download_subtitles(no):
                     send_notifications(no, episode[2], message)
     list_missing_subtitles(no)
 
-    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh', queue='get_subtitle')
+    if count_episodes_details:
+        notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh', queue='get_subtitle')
 
 
 def episode_download_subtitles(no):
@@ -517,9 +519,11 @@ def movies_download_subtitles(no):
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
-    for language in ast.literal_eval(movie[1]):
+    count_movie = len(ast.literal_eval(movie[1]))
+
+    for i, language in enumerate(ast.literal_eval(movie[1]), 1):
         if language is not None:
-            notifications.write(msg='Searching for ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path_replace_movie(movie[0]), queue='get_subtitle')
+            notifications.write(msg='Searching for movies subtitles', queue='get_subtitle', item=i, length=count_movie)
             result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
                                         providers_list, providers_auth, str(movie[3]), movie[5], 'movie')
             if result is not None:
@@ -533,10 +537,11 @@ def movies_download_subtitles(no):
                 send_notifications_movie(no, message)
     list_missing_subtitles_movies(no)
 
-    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh', queue='get_subtitle')
+    if count_movie:
+        notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent', button='refresh', queue='get_subtitle')
 
 
-def wanted_download_subtitles(path):
+def wanted_download_subtitles(path, l, count_episodes):
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute(
@@ -570,8 +575,7 @@ def wanted_download_subtitles(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]):
-                        notifications.write(
-                            msg='Searching ' + str(language_from_alpha2(language)) + ' subtitles for this episode: ' + path, queue='get_subtitle')
+                        notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l, length=count_episodes)
                         result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
                                                     episode[4], providers_list, providers_auth, str(episode[5]),
                                                     episode[7], 'series')
@@ -590,7 +594,7 @@ def wanted_download_subtitles(path):
                             'BAZARR Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
 
 
-def wanted_download_subtitles_movie(path):
+def wanted_download_subtitles_movie(path, l, count_movies):
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     movies_details = c_db.execute(
@@ -623,8 +627,7 @@ def wanted_download_subtitles_movie(path):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
-                        notifications.write(
-                            msg='Searching ' + str(language_from_alpha2(language)) + ' subtitles for this movie: ' + path, queue='get_subtitle')
+                        notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l, length=count_movies)
                         result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
                                                     movie[4], providers_list, providers_auth, str(movie[5]), movie[7],
                                                     'movie')
@@ -671,18 +674,20 @@ def wanted_search_missing_subtitles():
     providers = get_providers()
     if settings.general.getboolean('use_sonarr'):
         if providers:
-            for episode in episodes:
-                wanted_download_subtitles(episode[0])
+            count_episodes= len(episodes)
+            for i, episode in enumerate(episodes, 1):
+                wanted_download_subtitles(episode[0], i, count_episodes)
         else:
-            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle')
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
     
     if settings.general.getboolean('use_radarr'):
         if providers:
-            for movie in movies:
-                wanted_download_subtitles_movie(movie[0])
+            count_movies = len(movies)
+            for i, movie in enumerate(movies, 1):
+                wanted_download_subtitles_movie(movie[0], i, count_movies)
         else:
-            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle')
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
     
     logging.info('BAZARR Finished searching for missing subtitles. Check histories for more information.')
@@ -793,13 +798,13 @@ def upgrade_subtitles():
     episodes_to_upgrade = []
     if settings.general.getboolean('use_sonarr'):
         for episode in episodes_list:
-            if os.path.exists(path_replace(episode[0])) and int(episode[2]) < 360:
+            if os.path.exists(path_replace(episode[0])) and int(episode[2]) < 357:
                 episodes_to_upgrade.append(episode)
 
     movies_to_upgrade = []
     if settings.general.getboolean('use_radarr'):
         for movie in movies_list:
-            if os.path.exists(path_replace_movie(movie[0])) and int(movie[2]) < 120:
+            if os.path.exists(path_replace_movie(movie[0])) and int(movie[2]) < 117:
                 movies_to_upgrade.append(movie)
 
     providers_list = get_providers()
@@ -811,8 +816,8 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
             if episode[1] in ast.literal_eval(str(episode[9])):
-                notifications.write(msg='Upgrading series subtitles : ' + str(i) + '/' + str(count_episode_to_upgrade),
-                                    queue='get_subtitle', duration='long')
+                notifications.write(msg='Upgrading series subtitles...',
+                                    queue='upgrade_subtitle', item=i, length=count_episode_to_upgrade)
                 result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
                                            episode[3], providers_list, providers_auth, str(episode[4]),
                                            episode[5], 'series', forced_minimum_score=int(episode[2]), is_upgrade=True)
@@ -829,8 +834,8 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
             if movie[1] in ast.literal_eval(str(movie[8])):
-                notifications.write(msg='Upgrading movie subtitles : ' + str(i) + '/' + str(count_movie_to_upgrade),
-                                        queue='get_subtitle', duration='long')
+                notifications.write(msg='Upgrading movie subtitles...',
+                                        queue='upgrade_subtitle', item=i, length=count_movie_to_upgrade)
                 result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
                                            movie[3], providers_list, providers_auth, str(movie[4]),
                                            movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)

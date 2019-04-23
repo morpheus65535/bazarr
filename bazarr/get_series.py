@@ -52,9 +52,10 @@ def update_series():
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
-            
-            for show in r.json():
-                notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
+
+            seriesListLength = len(r.json())
+            for i, show in enumerate(r.json(), 1):
+                notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i, length=seriesListLength)
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -126,8 +127,6 @@ def update_series():
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
             db.commit()
             db.close()
-    
-    notifications.write(msg="Update series list from Sonarr is ended.", queue='get_series')
 
 
 def get_profile_list():
