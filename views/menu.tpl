@@ -1,15 +1,27 @@
+<!DOCTYPE html>
 <html lang="en">
     <head>
-        <!DOCTYPE html>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<meta name="mobile-web-app-capable" content="yes"/>
+		<meta name="apple-mobile-web-app-capable" content="yes"/>
+
 		<link href="{{base_url}}static/noty/noty.css" rel="stylesheet">
 		<script src="{{base_url}}static/noty/noty.min.js" type="text/javascript"></script>
 		<style>
             #divmenu {
-				background-color: #000000;
-				padding-top: 2em;
-				padding-bottom: 1em;
-				padding-left: 1em;
-				padding-right: 128px;
+				padding-top: 1em;
+			}
+			.menu_segment {
+				padding: 0em !important;
+				border: none !important;
+				margin: 0em !important;
+				background: none !important;
+			}
+			#icon_menu {
+				background: transparent !important;
+				border: solid;
+				border-width: 1px;
+				border-color: white;
 			}
 			.prompt {
 				background-color: #333333 !important;
@@ -19,8 +31,23 @@
 			.searchicon {
 				color: white !important;
 			}
+            .ui.progress .bar>.progress {
+                right: auto;
+                left: .5em;
+                color: black !important;
+            }
+            .ui.disabled.progress.notification_progress {
+                opacity: unset !important;
+            }
             div.disabled { pointer-events: none; }
             button.disabled { pointer-events: none; }
+
+			@media only screen and (max-width: 1024px) {
+			    .logo {
+					width: 36px;
+				    height: auto;
+			    }
+			}
         </style>
     </head>
     <body>
@@ -54,89 +81,138 @@
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
 			<div class="ui grid">
-				<div class="middle aligned row">
-					<div class="three wide column">
+				<div class="three wide column">
+					<div class="ui compact segment menu_segment">
 						<a href="{{base_url}}"><img class="logo" src="{{base_url}}static/logo128.png"></a>
 					</div>
-
-					<div class="twelve wide column">
+				</div>
+				<div class="ten wide right aligned compact column">
+					<div id="button_menu" class="ui center aligned segment menu_segment" hidden="hidden">
+						<div class="ui inverted compact borderless labeled icon massive menu menu_segment">
+							% if settings.general.getboolean('use_sonarr'):
+							<a class="item" href="{{base_url}}series">
+								<i class="play icon"></i>
+								Series
+							</a>
+							% end
+							% if settings.general.getboolean('use_radarr'):
+							<a class="item" href="{{base_url}}movies">
+								<i class="film icon"></i>
+								Movies
+							</a>
+							% end
+							<a class="item" href="{{base_url}}history">
+								<i class="wait icon"></i>
+								History
+							</a>
+							<a class="item" href="{{base_url}}wanted">
+								<i class="warning sign icon">
+									% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+										{{wanted_series[0]}}
+									</div>
+									% end
+									% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+									<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
+										{{wanted_movies[0]}}
+									</div>
+									% end
+								</i>
+								Wanted
+							</a>
+							<a class="item" href="{{base_url}}settings">
+								<i class="settings icon"></i>
+								Settings
+							</a>
+							<a class="item" href="{{base_url}}system">
+								<i class="laptop icon">
+									% if throttled_providers_count:
+									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+										{{throttled_providers_count}}
+									</div>
+									% end
+								</i>
+								System
+							</a>
+							<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+								<i class="red heart icon"></i>
+								Donate
+							</a>
+						</div>
+					</div>
+					<div class="ui center aligned segment menu_segment">
 						<div class="ui grid">
-								<div class="row">
-								<div class="sixteen wide column">
-									<div class="ui inverted borderless labeled icon massive menu seven item">
-										<div class="ui container">
-											% if settings.general.getboolean('use_sonarr'):
-											<a class="item" href="{{base_url}}series">
-												<i class="play icon"></i>
-												Series
-											</a>
-                                            % end
-											% if settings.general.getboolean('use_radarr'):
-											<a class="item" href="{{base_url}}movies">
-												<i class="film icon"></i>
-												Movies
-											</a>
-                                            % end
-											<a class="item" href="{{base_url}}history">
-												<i class="wait icon"></i>
-												History
-											</a>
-											<a class="item" href="{{base_url}}wanted">
-												<i class="warning sign icon">
-													% if settings.general.getboolean('use_sonarr'):
-													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
-														{{wanted_series[0]}}
-													</div>
-													% end
-													% if settings.general.getboolean('use_radarr'):
-													<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
-														{{wanted_movies[0]}}
-													</div>
-													% end
-												</i>
-												Wanted
-											</a>
-											<a class="item" href="{{base_url}}settings">
-												<i class="settings icon"></i>
-												Settings
-											</a>
-											<a class="item" href="{{base_url}}system">
-												<i class="laptop icon">
-													% if throttled_providers_count:
-													<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
-														{{throttled_providers_count}}
-													</div>
-													% end
-												</i>
-												System
-											</a>
-											<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
-												<i class="red heart icon"></i>
-												Donate
-											</a>
-										</div>
+							<div id="search_column" class="centered column">
+								<div class="ui fluid search">
+									<div class="ui left icon fluid input">
+										<input class="prompt" type="text" placeholder="Search in your library">
+										<i class="searchicon search icon"></i>
 									</div>
 								</div>
-							</div>
-
-							<div style='padding-top:0;' class="row">
-								<div class="three wide column"></div>
-
-								<div class="ten wide column">
-									<div class="ui search">
-										<div class="ui left icon fluid input">
-											<input class="prompt" type="text" placeholder="Search in your library">
-											<i class="searchicon search icon"></i>
-										</div>
-									</div>
-								</div>
-
-								<div class="three wide column"></div>
 							</div>
 						</div>
-                    </div>
-                </div>
-            </div>
+					</div>
+				</div>
+				<div class="three wide right aligned column">
+					<div id="dropdown_menu" class="ui segment menu_segment" hidden="hidden">
+						<div id="icon_menu" class="ui compact tiny icon menu">
+							<div id="dropdown_menu_button" class="ui floating right dropdown item">
+								<i class="inverted bars icon"></i>
+								<div class="ui menu">
+									% if settings.general.getboolean('use_sonarr'):
+									<a class="item" href="{{base_url}}series">
+										<i class="play icon"></i>
+										Series
+									</a>
+									% end
+									% if settings.general.getboolean('use_radarr'):
+									<a class="item" href="{{base_url}}movies">
+										<i class="film icon"></i>
+										Movies
+									</a>
+									% end
+									<a class="item" href="{{base_url}}history">
+										<i class="wait icon"></i>
+										History
+									</a>
+									<a class="item" href="{{base_url}}wanted">
+										<i class="warning sign icon"></i>
+										<span  style="margin-right: 1em;">Wanted</span>
+										% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+										<div class="ui tiny yellow label">
+											{{wanted_series[0]}}
+										</div>
+										% end
+										% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+										<div class="ui tiny green label">
+											{{wanted_movies[0]}}
+										</div>
+										% end
+									</a>
+									<a class="item" href="{{base_url}}settings">
+										<i class="settings icon"></i>
+										Settings
+									</a>
+									<a class="item" href="{{base_url}}system">
+										<i class="laptop icon">
+											% if throttled_providers_count:
+											<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+												{{throttled_providers_count}}
+											</div>
+											% end
+										</i>
+										System
+									</a>
+									<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+										<i class="red heart icon"></i>
+										Donate
+									</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			% restart_required = c.execute("SELECT configured, updated FROM system").fetchone()
 			% c.close()
@@ -153,6 +229,8 @@
 </html>
 
 <script>
+	$('.ui.dropdown').dropdown();
+
     $('.ui.search')
         .search({
             apiSettings: {
@@ -175,21 +253,24 @@
     ;
 
     if (window.location.href.indexOf("episodes") > -1) {
-    	$('.menu').css('background', '#000000');
-    	$('.menu').css('opacity', '0.8');
+    	$('.menu_segment').css('background', '#000000');
+    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');
     	$('#divmenu').css('box-shadow', '0 0 5px 5px #000000');
     }
     else if (window.location.href.indexOf("movie/") > -1) {
-    	$('.menu').css('background', '#000000');
-    	$('.menu').css('opacity', '0.8');
+    	$('.menu_segment').css('background', '#000000');
+    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');
     	$('#divmenu').css('box-shadow', '0 0 5px 5px #000000');
     }
     else {
-    	$('.menu').css('background', '#272727');
+    	$('.menu_segment').css('background', '#272727');
+    	$('.menu_segment').css('border-color', '#272727');
     	$('#divmenu').css('background', '#272727');
     }
 
@@ -232,6 +313,18 @@
 			}
 		});
 	}
+
+	$( window ).on('resize', function () {
+	    if($(window).width() < 1024){
+	    	$('#button_menu').hide();
+	    	$('#dropdown_menu').show();
+	    	$('#search_column').removeClass('ten wide');
+		} else {
+	    	$('#dropdown_menu').hide();
+	    	$('#button_menu').show();
+	    	$('#search_column').addClass('ten wide');
+		}
+	  }).resize();
 </script>
 
 <script type="text/javascript">
@@ -239,17 +332,27 @@
 	var notificationTimeout;
 	var timeout;
 	var killer;
+	var item = {};
+	var length = {};
 	function doNotificationsAjax() {
         $.ajax({
             url: url_notifications,
             success: function (data) {
             	if (data !== "") {
-                    data = JSON.parse(data);
-                    var msg = data[0];
-                    var type = data[1];
-                    var duration = data[2];
-                    var button = data[3];
-                    var queue = data[4];
+					data = JSON.parse(data);
+					var msg = data[0];
+					var type = data[1];
+					var duration = data[2];
+					var button = data[3];
+					var queue = data[4];
+					var item = data[5];
+					var length = data[6];
+
+					if (length === 0) {
+						var message = msg;
+					} else {
+						var message = msg + '<p><div class="ui disabled progress notification_progress" data-value=' + item + ' data-total=' + length + ' style="margin-bottom: -0.25em"><div class="bar"><div class="progress"></div></div></div>'
+					}
 
                     if (duration === 'temporary') {
                         timeout = 3000;
@@ -272,7 +375,7 @@
 					}
 
 					new Noty({
-						text: msg,
+						text: message,
 						progressBar: false,
 						animation: {
 							open: null,
@@ -285,8 +388,17 @@
 						timeout: timeout,
 							killer: killer,
 						buttons: button,
-						force: true
+						force: false
 					}).show();
+
+					$('.notification_progress').progress({
+						duration : 0,
+						autoSuccess: false,
+                        label: 'ratio',
+                        text: {
+                            ratio: '{value} / {total}'
+                        }
+					});
 				}
             },
             complete: function (data) {

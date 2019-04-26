@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -258,6 +258,18 @@
                 <div class="ui dividing header">More info</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Home page</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <div class="ui fluid input">
+                                        <i class="paper plane icon"></i><a href="https://www.bazarr.media" target="_blank">Bazarr website</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Source</label>

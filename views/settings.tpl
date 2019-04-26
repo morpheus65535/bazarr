@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
     <head>
-        <!DOCTYPE html>
         <script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
         <script src="{{base_url}}static/semantic/semantic.min.js"></script>
         <script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -1266,7 +1266,7 @@
                         <div class="middle aligned row anticaptcha">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Account addKey</label>
+                                <label>Account Key</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -1862,6 +1862,28 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Zimuku</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="zimuku" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="zimuku_option" class="ui grid container">
+
                         </div>
 
                         <div class="middle aligned row">

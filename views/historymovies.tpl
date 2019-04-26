@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -87,12 +87,14 @@
 						<td>
 							% upgradable_criteria = (row[5], row[2], row[8])
 							% if upgradable_criteria in upgradable_movies:
+							% if row[6] != "None":
 							% if row[6] and row[7] and row[7] in ast.literal_eval(str(row[6])):
 							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
 								<i class="ui green recycle icon upgrade"></i>{{row[3]}}
 							</div>
 							% else:
 							{{row[3]}}
+							% end
 							% end
 							% else:
 							{{row[3]}}

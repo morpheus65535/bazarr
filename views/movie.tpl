@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -91,46 +91,66 @@
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
-				<div class="ui right floated basic icon buttons">
-					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-					<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
-					<%
-					subs_languages = ast.literal_eval(str(details[7]))
-					subs_languages_list = []
-					if subs_languages is not None:
-						for subs_language in subs_languages:
-							subs_languages_list.append(subs_language)
-						end
-					end
-					%>
-					%if subs_languages is not None:
-					<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
-					%end
-					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+				<div class="ui stackable grid">
+					<div class="three wide column">
+						<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
+					</div>
+
+					<div class="thirteen wide column">
+						<div class="ui stackable grid">
+							<div class="ui row">
+								<div class="twelve wide left aligned column">
+									<h2>
+					                    %if details[13] == 'True':
+					                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+					                    %else:
+					                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+					                    %end
+										{{details[0]}}
+					                </h2>
+								</div>
+
+								<div class="four wide right aligned column">
+									<div class="ui right floated basic icon buttons">
+										<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
+										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+										<%
+										subs_languages = ast.literal_eval(str(details[7]))
+										subs_languages_list = []
+										if subs_languages is not None:
+											for subs_language in subs_languages:
+												subs_languages_list.append(subs_language)
+											end
+										end
+										%>
+										%if subs_languages is not None:
+										<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
+										%end
+										<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+									</div>
+								</div>
+							</div>
+
+							<div class="ui row">
+								{{details[1]}}
+							</div>
+
+							<div class="ui row">
+								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+								% if details[12] is not None:
+								<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
+								% end
+							</div>
+
+							<div class="ui row">
+								%for language in subs_languages_list:
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
+								%end
+							</div>
+						</div>
+					</div>
 				</div>
-				<h2>
-                    %if details[13] == 'True':
-                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
-                    %else:
-                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
-                    %end
-					{{details[0]}}
-                </h2>
-				<p>{{details[1]}}</p>
-				<p style='margin-top: 3em;'>
-					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
-					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
-					% if details[12] is not None:
-					<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
-					% end
-				</p>
-				<p style='margin-top: 2em;'>
-					%for language in subs_languages_list:
-					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
-					%end
-				</p>
-				<div style='clear:both;'></div>
 
 				<div id="fondblanc" class="ui container">
 					<table class="ui very basic single line selectable table">

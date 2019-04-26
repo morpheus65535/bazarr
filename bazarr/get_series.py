@@ -27,7 +27,7 @@ def update_series():
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_series, timeout=15, verify=False)
+            r = requests.get(url_sonarr_api_series, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
@@ -52,9 +52,10 @@ def update_series():
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
-            
-            for show in r.json():
-                notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
+
+            seriesListLength = len(r.json())
+            for i, show in enumerate(r.json(), 1):
+                notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i, length=seriesListLength)
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -126,8 +127,6 @@ def update_series():
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
             db.commit()
             db.close()
-    
-    notifications.write(msg="Update series list from Sonarr is ended.", queue='get_series')
 
 
 def get_profile_list():
@@ -138,7 +137,7 @@ def get_profile_list():
     
     url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=15, verify=False)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
@@ -151,7 +150,7 @@ def get_profile_list():
     
     url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
     try:
-        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=15, verify=False)
+        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")

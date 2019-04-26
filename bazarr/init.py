@@ -4,15 +4,14 @@ import os
 import sqlite3
 import logging
 import time
-import platform
 import rarfile
 
 from cork import Cork
 from ConfigParser2 import ConfigParser
-from whichcraft import which
 from config import settings
 from check_update import check_releases
 from get_args import args
+from utils import get_binary
 
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -21,8 +20,8 @@ os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 if settings.general.anti_captcha_provider == 'anti-captcha':
     os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
     os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
-elif settings.general.anti_captcha_provider == 'AntiCaptchaProxyLessPitcher':
-    os.environ["ANTICAPTCHA_CLASS"] = 'DBCProxyLess'
+elif settings.general.anti_captcha_provider == 'death-by-captcha':
+    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
     os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join({settings.deathbycaptcha.username, settings.deathbycaptcha.password})
 else:
     os.environ["ANTICAPTCHA_CLASS"] = ''
@@ -167,26 +166,7 @@ if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', '
 
 
 def init_binaries():
-    binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
-
-    unrar_exe = None
-    exe = None
-    installed_unrar = which('unrar')
-
-    if installed_unrar and os.path.isfile(installed_unrar):
-        unrar_exe = installed_unrar
-    else:
-        if platform.system() == "Windows": # Windows
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
-
-        elif platform.system() == "Darwin": # MacOSX
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
-
-        elif platform.system() == "Linux": # Linux
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
-
-    if unrar_exe and os.path.isfile(unrar_exe):
-        exe = unrar_exe
+    exe = get_binary("unrar")
 
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
