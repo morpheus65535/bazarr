@@ -1320,6 +1320,22 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Autoremove</label>
+                                </div>
+                                <div class="one wide column">
+                                    <div id="settings_sonarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('tag_autoremove')}}>
+                                        <input name="settings_sonarr_tag_autoremove" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the TV Show in Sonarr will result in it being deleted within Bazarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1508,6 +1524,22 @@
                                 </div>
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Radarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Autoremove</label>
+                                </div>
+                                <div class="one wide column">
+                                    <div id="settings_radarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('tag_autoremove')}}>
+                                        <input name="settings_radarr_tag_autoremove" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the Movie in Radarr will result in it being deleted within Bazarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
