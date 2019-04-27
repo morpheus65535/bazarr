@@ -103,13 +103,16 @@ def update_series():
                     tags = str([item for item in show['tags']])
 					
                 # Add shows in Sonarr to current shows list
-                current_shows_sonarr.append(show['tvdbId'])
+                if sonarr_tag_enabled is False:
+                    current_shows_sonarr.append(show['tvdbId'])
                 
                 if show['tvdbId'] in current_shows_db_list:
                     series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                              fanart, profile_id_to_language(
                         (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
                                              show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
+                    if str(sonarr_tag_id) in tags:
+					    current_shows_sonarr.append(show['tvdbId'])
                 elif sonarr_tag_enabled is False:
                     if serie_default_enabled is True:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,

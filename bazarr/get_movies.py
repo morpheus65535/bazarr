@@ -137,7 +137,8 @@ def update_movies():
                                 tags = str([item for item in movie['tags']])
 
                             # Add movies in radarr to current movies list
-                            current_movies_radarr.append(unicode(movie['tmdbId']))
+                            if radarr_tag_enabled is False:
+                                current_movies_radarr.append(unicode(movie['tmdbId']))
                             
                             # Detect file separator
                             if movie['path'][0] == "/":
@@ -153,6 +154,8 @@ def update_movies():
                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                          movie['year'], alternativeTitles, format, resolution,
                                                          videoCodec, audioCodec, imdbId, movie["tmdbId"]))
+                                if str(radarr_tag_id) in tags:
+					                current_movies_db_list.append(show['tmdbId'])
                             elif radarr_tag_enabled is False:
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
