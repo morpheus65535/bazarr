@@ -16,15 +16,26 @@ class EmbeddedSubsReader:
         self.ffprobe = get_binary("ffprobe")
     
     def list_languages(self, file):
-        if self.ffprobe:
-            try:
-                return subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
-            except subprocess.CalledProcessError as e:
-                raise FFprobeError(e.output)
-        if os.path.splitext(file)[1] != '.mkv':
-            raise NotMKVAndNoFFprobe()
-        with open(file, 'rb') as f:
-            mkv = enzyme.MKV(f)
-        return [subtitle_track.language for subtitle_track in mkv.subtitle_tracks]
+        subtitles_list = []
+
+        if os.path.splitext(file)[1] == '.mkv':
+            with open(file, 'rb') as f:
+                mkv = enzyme.MKV(f)
+            for subtitle_track in mkv.subtitle_tracks:
+                subtitles_list.append([subtitle_track.language, subtitle_track.forced])
+        else:
+            if self.ffprobe:
+                detected_languages = []
+                try:
+                    detected_languages = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
+                except subprocess.CalledProcessError as e:
+                    raise FFprobeError(e.output)
+                else:
+                    for detected_language in detected_languages:
+                        subtitles_list.append([detected_language, False])
+                        # I can't get the forced flag from ffprobe so I always assume it as not forced
+
+        return subtitles_list
+
 
 embedded_subs_reader = EmbeddedSubsReader()

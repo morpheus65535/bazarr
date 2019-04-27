@@ -175,7 +175,7 @@
 							%>
 							<tr>
 								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
-								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(subtitles_file[0].split(':')[0])}}</div></td>
+								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
 									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-position="top right" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details[10]}}>
@@ -225,12 +225,12 @@
                                         if search_active(lang[1]):
 					%>
 							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
-								{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
                             <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
-								{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
 					<%
@@ -240,7 +240,7 @@
                             else:
                     %>
                             <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
-								{{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                     <%

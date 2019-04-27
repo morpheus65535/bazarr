@@ -35,10 +35,12 @@ def store_subtitles(file):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(file)
-                for subtitle_language in subtitle_languages:
+                for subtitle_language, subtitle_forced in subtitle_languages:
                     try:
                         if alpha2_from_alpha3(subtitle_language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_language))
+                            if subtitle_forced:
+                                lang = lang + ":forced"
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
                     except:
@@ -122,11 +124,11 @@ def store_subtitles_movie(file):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(file)
-                for subtitle_language in subtitle_languages:
+                for subtitle_language, subtitle_forced in subtitle_languages:
                     try:
                         if alpha2_from_alpha3(subtitle_language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_language))
-                            if subtitle_track.forced:
+                            if subtitle_forced:
                                 lang = lang + ':forced'
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
