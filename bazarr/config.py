@@ -58,6 +58,7 @@ defaults = {
         'full_update': 'Daily',
         'only_monitored': 'False',
 		'tag_enabled': 'False',
+		'tag_autoremove': 'False',
 		'tag': '',
 },
     'radarr': {
@@ -69,6 +70,7 @@ defaults = {
         'full_update': 'Daily',
         'only_monitored': 'False',
 		'tag_enabled': 'False',
+		'tag_autoremove': 'False',
 		'tag': '',
 },
     'proxy': {

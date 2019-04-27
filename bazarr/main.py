@@ -328,6 +328,12 @@ def save_wizard():
     else:
         settings_sonarr_tag_enabled = 'True'
 		
+    settings_sonarr_tag_autoremove = request.forms.get('settings_sonarr_tag_autoremove')
+    if settings_sonarr_tag_autoremove is None:
+        settings_sonarr_tag_autoremove = 'False'
+    else:
+        settings_sonarr_tag_autoremove = 'True'
+		
     settings.sonarr.ip = text_type(settings_sonarr_ip)
     settings.sonarr.port = text_type(settings_sonarr_port)
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
@@ -335,6 +341,7 @@ def save_wizard():
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
     settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
     settings.sonarr.tag_enabled = text_type(settings_sonarr_tag_enabled)
+    settings.sonarr.tag_autoremove = text_type(settings_sonarr_tag_autoremove)
     settings.sonarr.tag = text_type(settings_sonarr_tag)
     
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
@@ -358,6 +365,12 @@ def save_wizard():
         settings_radarr_tag_enabled = 'False'
     else:
         settings_radarr_tag_enabled = 'True'
+		
+    settings_radarr_tag_autoremove = request.forms.get('settings_radarr_tag_autoremove')
+    if settings_radarr_tag_autoremove is None:
+        settings_radarr_tag_autoremove = 'False'
+    else:
+        settings_radarr_tag_autoremove = 'True'
     
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
@@ -366,6 +379,7 @@ def save_wizard():
     settings.radarr.apikey = text_type(settings_radarr_apikey)
     settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.tag_enabled = text_type(settings_radarr_tag_enabled)
+    settings.radarr.tag_autoremove = text_type(settings_radarr_tag_autoremove)
     settings.radarr.tag = text_type(settings_radarr_tag)
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
@@ -1436,12 +1450,19 @@ def save_settings():
     else:
         settings_sonarr_tag_enabled = 'True'
 		
+    settings_sonarr_tag_autoremove = request.forms.get('settings_sonarr_tag_autoremove')
+    if settings_sonarr_tag_autoremove is None:
+        settings_sonarr_tag_autoremove = 'False'
+    else:
+        settings_sonarr_tag_autoremove = 'True'
+		
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
 
     settings.sonarr.ip = text_type(settings_sonarr_ip)
     settings.sonarr.port = text_type(settings_sonarr_port)
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
     settings.sonarr.tag_enabled = text_type(settings_sonarr_tag_enabled)
+    settings.sonarr.tag_autoremove = text_type(settings_sonarr_tag_autoremove)
     settings.sonarr.tag = text_type(settings_sonarr_tag)
     settings.sonarr.ssl = text_type(settings_sonarr_ssl)
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
@@ -1470,6 +1491,12 @@ def save_settings():
         settings_radarr_tag_enabled = 'False'
     else:
         settings_radarr_tag_enabled = 'True'
+		
+    settings_radarr_tag_autoremove = request.forms.get('settings_radarr_tag_autoremove')
+    if settings_radarr_tag_autoremove is None:
+        settings_radarr_tag_autoremove = 'False'
+    else:
+        settings_radarr_tag_autoremove = 'True'
 	
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
@@ -1479,6 +1506,7 @@ def save_settings():
     settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.full_update = text_type(settings_radarr_sync)
     settings.radarr.tag_enabled = text_type(settings_radarr_tag_enabled)
+    settings.radarr.tag_autoremove = text_type(settings_radarr_tag_autoremove)
     settings.radarr.tag = text_type(settings_radarr_tag)
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')

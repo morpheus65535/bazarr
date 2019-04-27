@@ -19,6 +19,7 @@ def update_series():
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
     sonarr_tag_enabled = settings.sonarr.getboolean('tag_enabled')
+    sonarr_tag_autoremove = settings.sonarr.getboolean('tag_autoremove')
     sonarr_tag = settings.sonarr.tag.lower()
     sonarr_tag_id = 0
     
@@ -48,7 +49,7 @@ def update_series():
                         sonarr_tag_id = sonarrtags['id']
 						
             if str(sonarr_tag_id) == "0":
-			    logging.exception("Could not find matching tag in Sonarr")
+			    logging.exception("Could not find matching tag to" + sonarr_tag + " in Sonarr")
 		
 		
         # Get shows data from Sonarr
@@ -103,7 +104,7 @@ def update_series():
                     tags = str([item for item in show['tags']])
 					
                 # Add shows in Sonarr to current shows list
-                if sonarr_tag_enabled is False:
+                if sonarr_tag_enabled is False or sonarr_tag_autoremove is False:
                     current_shows_sonarr.append(show['tvdbId'])
                 
                 if show['tvdbId'] in current_shows_db_list:

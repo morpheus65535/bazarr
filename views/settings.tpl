@@ -829,41 +829,6 @@
                         </div>
                     </div>
                 </div>
-				
-                <div class="middle aligned row">
-                    <div class="right aligned four wide column">
-                        <label>Enable Sonarr Tag</label>
-                    </div>
-                    <div class="one wide column">
-                        <div id="settings_sonarr_tag_enabled" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('tag_enabled')}}>
-                            <input name="settings_sonarr_tag_enabled" type="checkbox">
-                            <label></label>
-                        </div>
-                    </div>
-                    <div class="collapsed column">
-                        <div class="collapsed center aligned column">
-                            <div class="ui basic icon" data-tooltip="Only import TV Shows with the specified Sonarr Tag" data-inverted="">
-                                <i class="help circle large icon"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-						
-                <div class="middle aligned row">
-                    <div class="right aligned four wide column">
-                        <label>Sonarr Tag</label>
-                    </div>
-                    <div class="three wide column">
-                        <div class="ui fluid input">
-                            <input id="settings_sonarr_tag" name="settings_sonarr_tag" type="text" class="sonarr_config" value="{{settings.sonarr.tag}}">
-                        </div>
-                    </div>
-                    <div class="collapsed center aligned column">
-                        <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Sonarr." data-inverted="">
-                            <i class="help circle large icon"></i>
-                        </div>
-                    </div>
-                </div>
                     </div>
                 </div>
                 <div class="ui dividing header">Synchronization</div>
@@ -880,6 +845,67 @@
                                         <option value="Daily">Daily (at 4am)</option>
                                         <option value="Weekly">Weekly (sunday at 4am)</option>
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ui dividing header">Import Settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Enable Sonarr Tag</label>
+                                    </div>
+                            <div class="one wide column">
+                                <div id="settings_sonarr_tag_enabled" class="ui toggle checkbox provider" data-monitored={{settings.sonarr.getboolean('tag_enabled')}}>
+                                    <input name="settings_sonarr_tag_enabled" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Only import TV Shows with the specified Sonarr Tag" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="settings_sonarr_tag_enabled_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Sonarr Tag</label>
+                                </div>
+                                <div class="three wide column">
+                                    <div class="ui fluid input">
+                                        <input id="settings_sonarr_tag" name="settings_sonarr_tag" type="text" class="sonarr_config" value="{{settings.sonarr.tag}}">
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Sonarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Autoremove</label>
+                                </div>
+                                <div class="one wide column">
+                                    <div id="settings_sonarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('tag_autoremove')}}>
+                                        <input name="settings_sonarr_tag_autoremove" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enabling this option will remove any TV Shows from Bazarr which do not contain the specified tag." data-inverted="">
+                                         <i class="yellow warning sign icon"></i>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the TV Show in Sonarr will result in it being deleted within Bazarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1008,41 +1034,6 @@
                         </div>
                     </div>
                 </div>
-				
-                <div class="middle aligned row">
-                    <div class="right aligned four wide column">
-                        <label>Enable Radarr Tag</label>
-                    </div>
-                    <div class="one wide column">
-                        <div id="settings_radarr_tag_enabled" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('tag_enabled')}}>
-                            <input name="settings_radarr_tag_enabled" type="checkbox">
-                            <label></label>
-                        </div>
-                    </div>
-                    <div class="collapsed column">
-                        <div class="collapsed center aligned column">
-                            <div class="ui basic icon" data-tooltip="Only import Movies with the specified Radarr Tag" data-inverted="">
-                                <i class="help circle large icon"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-						
-                <div class="middle aligned row">
-                    <div class="right aligned four wide column">
-                        <label>Radarr Tag</label>
-                    </div>
-                    <div class="three wide column">
-                        <div class="ui fluid input">
-                            <input id="settings_radarr_tag" name="settings_radarr_tag" type="text" class="radarr_config" value="{{settings.radarr.tag}}">
-                        </div>
-                    </div>
-                    <div class="collapsed center aligned column">
-                        <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Radarr." data-inverted="">
-                            <i class="help circle large icon"></i>
-                        </div>
-                    </div>
-                </div>
                     </div>
                 </div>
                 <div class="ui dividing header">Synchronization</div>
@@ -1063,6 +1054,67 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="ui dividing header">Import Settings</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Enable Radarr Tag</label>
+                                    </div>
+                            <div class="one wide column">
+                                <div id="settings_radarr_tag_enabled" class="ui toggle checkbox provider" data-monitored={{settings.radarr.getboolean('tag_enabled')}}>
+                                    <input name="settings_radarr_tag_enabled" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Only import Movies with the specified Radarr Tag" data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="settings_radarr_tag_enabled_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Radarr Tag</label>
+                                </div>
+                                <div class="three wide column">
+                                    <div class="ui fluid input">
+                                        <input id="settings_radarr_tag" name="settings_radarr_tag" type="text" class="radarr_config" value="{{settings.radarr.tag}}">
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Radarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned four wide column">
+                                    <label>Autoremove</label>
+                                </div>
+                                <div class="one wide column">
+                                    <div id="settings_radarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('tag_autoremove')}}>
+                                        <input name="settings_radarr_tag_autoremove" type="checkbox">
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Enabling this option will remove any Movies from Bazarr which do not contain the specified tag." data-inverted="">
+                                        <i class="yellow warning sign icon"></i>
+                                    </div>
+                                </div>
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the Movie in Radarr will result in it being deleted within Bazarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
                 </div>
             </div>
             <div class="ui bottom attached tab segment" data-tab="subliminal">
@@ -2320,6 +2372,18 @@
                 $("#settings_radarr_tag_enabled").checkbox('check');
             } else {
                 $("#settings_radarr_tag_enabled").checkbox('uncheck');
+            }
+			
+    if ($('#settings_sonarr_tag_autoremove').data("monitored") === "True") {
+                $("#settings_sonarr_tag_autoremove").checkbox('check');
+            } else {
+                $("#settings_sonarr_tag_autoremove").checkbox('uncheck');
+            }
+			
+    if ($('#settings_radarr_tag_autoremove').data("monitored") === "True") {
+                $("#settings_radarr_tag_autoremove").checkbox('check');
+            } else {
+                $("#settings_radarr_tag_autoremove").checkbox('uncheck');
             }
 			
     if ($('#settings_adaptive_searching').data("adaptive") === "True") {

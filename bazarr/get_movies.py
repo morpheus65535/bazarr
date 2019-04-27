@@ -20,6 +20,7 @@ def update_movies():
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
     radarr_tag_enabled = settings.radarr.getboolean('tag_enabled')
+    radarr_tag_autoremove = settings.radarr.getboolean('tag_autoremove')
     radarr_tag = settings.radarr.tag.lower()
     radarr_tag_id = 0
 	
@@ -49,7 +50,7 @@ def update_movies():
                         radarr_tag_id = radarrtags['id']
 
             if str(radarr_tag_id) == "0":
-			    logging.exception("Could not find matching tag in Radarr")
+			    logging.exception("Could not find matching tag to " + radarr_tag + " in Radarr")
         
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
@@ -137,7 +138,7 @@ def update_movies():
                                 tags = str([item for item in movie['tags']])
 
                             # Add movies in radarr to current movies list
-                            if radarr_tag_enabled is False:
+                            if radarr_tag_enabled is False or radarr_tag_autoremove is False:
                                 current_movies_radarr.append(unicode(movie['tmdbId']))
                             
                             # Detect file separator
