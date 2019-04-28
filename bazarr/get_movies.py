@@ -30,7 +30,7 @@ def update_movies():
         get_profile_list()
         
         # Get tags data from Radarr
-        if radarr_tag_enabled is True:
+        if radarr_tag_enabled:
             url_radarr_api_tag = url_radarr + "/api/tag?apikey=" + apikey_radarr
             try:
                 tag = requests.get(url_radarr_api_tag, timeout=15, verify=False)
@@ -157,7 +157,7 @@ def update_movies():
                                                          videoCodec, audioCodec, imdbId, movie["tmdbId"]))
                                 if str(radarr_tag_id) in tags:
 					                current_movies_db_list.append(show['tmdbId'])
-                            elif radarr_tag_enabled is False:
+                            elif not radarr_tag_enabled:
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile']['relativePath'],
@@ -176,7 +176,7 @@ def update_movies():
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
                                                           videoCodec, audioCodec, imdbId))
-                            elif radarr_tag_enabled is True:
+                            elif radarr_tag_enabled:
                                 if str(radarr_tag_id) in tags:
                                     logging.info("Detected Radarr tag \"" + radarr_tag + "\" on " + movie["title"])
                                     if movie_default_enabled is True:

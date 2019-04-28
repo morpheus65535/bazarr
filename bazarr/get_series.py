@@ -29,7 +29,7 @@ def update_series():
         get_profile_list()
 
         # Get tags data from Sonarr
-        if sonarr_tag_enabled is True:
+        if sonarr_tag_enabled:
             url_sonarr_api_tag = url_sonarr + "/api/tag?apikey=" + apikey_sonarr
             try:
                 tag = requests.get(url_sonarr_api_tag, timeout=15, verify=False)
@@ -49,7 +49,7 @@ def update_series():
                         sonarr_tag_id = sonarrtags['id']
 						
             if str(sonarr_tag_id) == "0":
-			    logging.exception("Could not find matching tag to" + sonarr_tag + " in Sonarr")
+                logging.exception("Could not find matching tag " + sonarr_tag + " in Sonarr")
 		
 		
         # Get shows data from Sonarr
@@ -69,7 +69,7 @@ def update_series():
             # Open database connection
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
-            
+
             # Get current shows in DB
             current_shows_db = c.execute('SELECT tvdbId FROM table_shows').fetchall()
             
@@ -79,9 +79,11 @@ def update_series():
             current_shows_db_list = [x[0] for x in current_shows_db]
             current_shows_sonarr = []
             series_to_update = []
+            series_to_update_nolang = []
             series_to_add = []
             
             for show in r.json():
+                tag_lang = "None"
                 notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
                 try:
                     overview = unicode(show['overview'])
@@ -103,62 +105,88 @@ def update_series():
                 if show['tags'] != None:
                     tags = str([item for item in show['tags']])
 					
+                bazarrtags = [['name', 'bazarr'],['id', '26'],['lang', 'en']], [['name', 'anime'],['id', '16'],['lang', 'it']]
+				
                 # Add shows in Sonarr to current shows list
-                if sonarr_tag_enabled is False or sonarr_tag_autoremove is False:
-                    current_shows_sonarr.append(show['tvdbId'])
+                current_shows_sonarr.append(show['tvdbId'])
                 
+				# If show exists in database
                 if show['tvdbId'] in current_shows_db_list:
-                    series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
-                                             fanart, profile_id_to_language(
-                        (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                             show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
-                    if str(sonarr_tag_id) in tags:
-					    current_shows_sonarr.append(show['tvdbId'])
-                elif sonarr_tag_enabled is False:
-                    if serie_default_enabled is True:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
-                                              serie_default_hi, show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
+                    # If tag is enabled
+                    if sonarr_tag_enabled:
+                        for bazarrtag in bazarrtags:
+                            if bazarrtag[1][1] in tags:
+                                tag_lang = "['"+bazarrtag[2][1]+"']"
+                        # If tag is present in TV Show
+                        if tag_lang != "None":
+                            # Update with language setting
+                            series_to_update.append((show["title"], show["path"], show["tvdbId"], tag_lang, show["id"], overview, poster,
+                                                     fanart, profile_id_to_language(
+                                (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
+                                                     show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                        # If tag is not present in TV Show
+                        else:
+                            # Update TV Show but do not update language
+                            series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
+                                                     fanart, profile_id_to_language(
+                                (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
+                                                     show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                    # If tag is not enabled
                     else:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
-                                              show["tvdbId"], show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
-                elif sonarr_tag_enabled is True:
+                        # Update TV Show but do not update language
+                        series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
+                                                 fanart, profile_id_to_language(
+                            (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
+                                                 show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                elif sonarr_tag_enabled:
                     if str(sonarr_tag_id) in tags:
                         logging.info("Detected Sonarr tag \"" + sonarr_tag + "\" on " + show["title"])
+                        series_to_add.append((show["title"], show["path"], show["tvdbId"], tag_lang,
+                                              serie_default_hi, show["id"], overview, poster, fanart,
+                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                              show['year'], alternateTitles, tags))
+                    else:
                         if serie_default_enabled is True:
                             series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                                   serie_default_hi, show["id"], overview, poster, fanart,
                                                   profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                                  show['year'], alternateTitles))
+                                                  show['year'], alternateTitles, tags))
                         else:
-                            series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
-                                                  show["tvdbId"], show["id"], overview, poster, fanart,
+                            series_to_add.append((show["title"], show["path"], show["tvdbId"], "None",
+                                                  serie_default_hi, show["id"], overview, poster, fanart,
                                                   profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                                  show['year'], alternateTitles))
+                                                  show['year'], alternateTitles, tags))
+
+                elif not sonarr_tag_enabled:
+                    if serie_default_enabled is True:
+                        series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
+                                              serie_default_hi, show["id"], overview, poster, fanart,
+                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                              show['year'], alternateTitles, tags))
+                    else:
+                        series_to_add.append((show["title"], show["path"], show["tvdbId"], "None", show["tvdbId"],
+                                              show["tvdbId"], show["id"], overview, poster, fanart,
+                                              profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                              show['year'], alternateTitles, tags))
             
             # Update or insert series in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()
-            
+
             updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
+                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, languages = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ?, tags = ? WHERE tvdbid = ?''',
                 series_to_update)
             db.commit()
-            
-            if serie_default_enabled is True:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
-            else:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
-            db.close()
+			
+            updated_result = c.executemany(
+                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ?, tags = ? WHERE tvdbid = ?''',
+                series_to_update_nolang)
+            db.commit()
+
+            added_result = c.executemany(
+                '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                series_to_add)
+            db.commit()
             
             for show in series_to_add:
                 list_missing_subtitles(show[5])

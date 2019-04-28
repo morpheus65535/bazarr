@@ -99,6 +99,7 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
     try:
         c.execute('alter table table_shows add column "year" "text"')
         c.execute('alter table table_shows add column "alternateTitles" "text"')
+        c.execute('alter table table_shows add column "tags" "text"')
 
         c.execute('alter table table_episodes add column "format" "text"')
         c.execute('alter table table_episodes add column "resolution" "text"')
@@ -107,6 +108,7 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
 
         c.execute('alter table table_movies add column "year" "text"')
         c.execute('alter table table_movies add column "alternativeTitles" "text"')
+        c.execute('alter table table_movies add column "tags" "text"')
         c.execute('alter table table_movies add column "format" "text"')
         c.execute('alter table table_movies add column "resolution" "text"')
         c.execute('alter table table_movies add column "video_codec" "text"')
