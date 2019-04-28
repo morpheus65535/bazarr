@@ -396,7 +396,12 @@ class SZProviderPool(ProviderPool):
                 if not subtitle.hash_verifiable and "hash" in matches:
                     can_verify_series = False
 
-                if can_verify_series and not {"series", "season", "episode"}.issubset(orig_matches):
+                matches_series = False
+                if {"season", "episode"}.issubset(orig_matches) and \
+                                ("series" in orig_matches or "imdb_id" in orig_matches):
+                    matches_series = True
+
+                if can_verify_series and not matches_series:
                     logger.debug("%r: Skipping subtitle with score %d, because it doesn't match our series/episode",
                                  subtitle, score)
                     continue

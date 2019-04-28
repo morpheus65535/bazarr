@@ -263,6 +263,8 @@ def create_urllib3_context(ssl_version=None, cert_reqs=None,
     """
     context = SSLContext(ssl_version or ssl.PROTOCOL_SSLv23)
 
+    context.set_ciphers(ciphers or DEFAULT_CIPHERS)
+
     # Setting the default here, as we may have no ssl module on import
     cert_reqs = ssl.CERT_REQUIRED if cert_reqs is None else cert_reqs
 
@@ -325,7 +327,10 @@ def ssl_wrap_socket(sock, keyfile=None, certfile=None, cert_reqs=None,
             if e.errno == errno.ENOENT:
                 raise SSLError(e)
             raise
-    elif getattr(context, 'load_default_certs', None) is not None:
+
+    # Don't load system certs unless there were no CA certs or
+    # SSLContext object specified manually.
+    elif ssl_context is None and hasattr(context, 'load_default_certs'):
         # try to load OS default certs; works well on Windows (require Python3.4+)
         context.load_default_certs()
 

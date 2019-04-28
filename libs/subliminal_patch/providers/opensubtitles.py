@@ -12,10 +12,11 @@ from dogpile.cache.api import NO_VALUE
 from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
-    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError, sanitize
+    DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
 from mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
+from subliminal_patch.utils import sanitize
 from subliminal.cache import region
 from subliminal_patch.score import framerate_equal
 from subzero.language import Language
@@ -173,7 +174,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
         logger.info('Logging in')
 
-        token = region.get("os_token", expiration_time=3600)
+        token = region.get("os_token")
         if token is not NO_VALUE:
             try:
                 logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))
@@ -181,7 +182,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                 self.token = token
                 logger.debug("Using previous login token: %r", token[:10]+"X"*(len(token)-10))
                 return
-            except:
+            except (NoSession, Unauthorized):
                 logger.debug('Token not valid.')
                 pass
 

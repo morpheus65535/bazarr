@@ -16,7 +16,8 @@ from pysubs2.subrip import parse_tags, MAX_REPRESENTABLE_TIME
 from pysubs2.time import ms_to_times
 from subzero.modification import SubtitleModifications
 from subliminal import Subtitle as Subtitle_
-from subliminal.subtitle import Episode, Movie, sanitize_release_group, sanitize, get_equivalent_release_groups
+from subliminal.subtitle import Episode, Movie, sanitize_release_group, get_equivalent_release_groups
+from subliminal_patch.utils import sanitize
 from ftfy import fix_text
 
 logger = logging.getLogger(__name__)
@@ -358,9 +359,14 @@ def guess_matches(video, guess, partial=False):
     matches = set()
     if isinstance(video, Episode):
         # series
-        if video.series and 'title' in guess and sanitize(guess['title']) in (
-                sanitize(name) for name in [video.series] + video.alternative_series):
-            matches.add('series')
+        if video.series and 'title' in guess:
+            titles = guess["title"]
+            if not isinstance(titles, types.ListType):
+                titles = [titles]
+
+            for title in titles:
+                if sanitize(title) in (sanitize(name) for name in [video.series] + video.alternative_series):
+                    matches.add('series')
         # title
         if video.title and 'episode_title' in guess and sanitize(guess['episode_title']) == sanitize(video.title):
             matches.add('title')
