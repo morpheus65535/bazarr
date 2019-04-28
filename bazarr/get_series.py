@@ -22,6 +22,7 @@ def update_series():
     sonarr_tag_autoremove = settings.sonarr.getboolean('tag_autoremove')
     sonarr_tag = settings.sonarr.tag.lower()
     sonarr_tag_id = 0
+    bazarrtags = []
     
     if apikey_sonarr is None:
         pass
@@ -43,10 +44,15 @@ def update_series():
             except requests.exceptions.RequestException as err:
                 logging.exception("BAZARR Error trying to get tags from Sonarr.")
             else:
-		
+
+                bazarrtaglist = [['name', 'bazarr'],['lang', 'en']], [['name', 'anime'],['lang', 'it']]
                 for sonarrtags in tag.json():
-                    if sonarrtags['label'] == sonarr_tag:
-                        sonarr_tag_id = sonarrtags['id']
+                    for bazarrtagitem in bazarrtaglist:
+                        if sonarrtags['label'] == bazarrtagitem[0][1]:
+                            sontarrtag = sonarrtags['id']
+                            bazarrtagitem.append(['id', sontarrtag])
+                            bazarrtags.append(bazarrtagitem)
+                print(bazarrtags)
 						
             if str(sonarr_tag_id) == "0":
                 logging.exception("Could not find matching tag " + sonarr_tag + " in Sonarr")
@@ -105,8 +111,6 @@ def update_series():
                 if show['tags'] != None:
                     tags = str([item for item in show['tags']])
 					
-                bazarrtags = [['name', 'bazarr'],['id', '26'],['lang', 'en']], [['name', 'anime'],['id', '16'],['lang', 'it']]
-				
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['tvdbId'])
                 
@@ -117,21 +121,18 @@ def update_series():
                         for bazarrtag in bazarrtags:
                             if bazarrtag[1][1] in tags:
                                 tag_lang = "['"+bazarrtag[2][1]+"']"
-                        # If tag is present in TV Show
                         if tag_lang != "None":
                             # Update with language setting
                             series_to_update.append((show["title"], show["path"], show["tvdbId"], tag_lang, show["id"], overview, poster,
                                                      fanart, profile_id_to_language(
                                 (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
                                                      show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
-                        # If tag is not present in TV Show
                         else:
                             # Update TV Show but do not update language
                             series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                                      fanart, profile_id_to_language(
                                 (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
                                                      show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
-                    # If tag is not enabled
                     else:
                         # Update TV Show but do not update language
                         series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
