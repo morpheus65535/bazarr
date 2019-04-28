@@ -19,11 +19,38 @@ def update_movies():
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
-    
+    radarr_tag_enabled = settings.radarr.getboolean('tag_enabled')
+    radarr_tag_autoremove = settings.radarr.getboolean('tag_autoremove')
+    radarr_tag = settings.radarr.tag.lower()
+    radarr_tag_id = 0
+	
     if apikey_radarr is None:
         pass
     else:
         get_profile_list()
+        
+        # Get tags data from Radarr
+        if radarr_tag_enabled is True:
+            url_radarr_api_tag = url_radarr + "/api/tag?apikey=" + apikey_radarr
+            try:
+                tag = requests.get(url_radarr_api_tag, timeout=15, verify=False)
+                tag.raise_for_status()
+            except requests.exceptions.HTTPError as errh:
+                logging.exception("BAZARR Error trying to get tags from Radarr. HTTP error.")
+            except requests.exceptions.ConnectionError as errc:
+                logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
+            except requests.exceptions.Timeout as errt:
+                logging.exception("BAZARR Error trying to get tags from Radarr. Timeout Error.")
+            except requests.exceptions.RequestException as err:
+                logging.exception("BAZARR Error trying to get tags from Radarr.")
+            else:
+        
+                for radarrtags in tag.json():
+                    if radarrtags['label'] == radarr_tag:
+                        radarr_tag_id = radarrtags['id']
+
+            if str(radarr_tag_id) == "0":
+			    logging.exception("Could not find matching tag to " + radarr_tag + " in Radarr")
         
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
@@ -107,8 +134,12 @@ def update_movies():
                                 videoCodec = None
                                 audioCodec = None
 
+                            if movie['tags'] != None:
+                                tags = str([item for item in movie['tags']])
+
                             # Add movies in radarr to current movies list
-                            current_movies_radarr.append(unicode(movie['tmdbId']))
+                            if radarr_tag_enabled is False or radarr_tag_autoremove is False:
+                                current_movies_radarr.append(unicode(movie['tmdbId']))
                             
                             # Detect file separator
                             if movie['path'][0] == "/":
@@ -124,7 +155,9 @@ def update_movies():
                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                          movie['year'], alternativeTitles, format, resolution,
                                                          videoCodec, audioCodec, imdbId, movie["tmdbId"]))
-                            else:
+                                if str(radarr_tag_id) in tags:
+					                current_movies_db_list.append(show['tmdbId'])
+                            elif radarr_tag_enabled is False:
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile']['relativePath'],
@@ -143,11 +176,32 @@ def update_movies():
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
                                                           videoCodec, audioCodec, imdbId))
+                            elif radarr_tag_enabled is True:
+                                if str(radarr_tag_id) in tags:
+                                    logging.info("Detected Radarr tag \"" + radarr_tag + "\" on " + movie["title"])
+                                    if movie_default_enabled is True:
+                                        movies_to_add.append((movie["title"],
+                                                              movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                              movie["tmdbId"], movie_default_language, '[]', movie_default_hi,
+                                                              movie["id"], overview, poster, fanart,
+                                                              profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                              unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                              movie['year'], alternativeTitles, format, resolution,
+                                                              videoCodec, audioCodec, imdbId))
+                                    else:
+                                        movies_to_add.append((movie["title"],
+                                                              movie["path"] + separator + movie['movieFile'][
+                                                                  'relativePath'], movie["tmdbId"], movie["tmdbId"],
+                                                              movie["tmdbId"], movie["id"], overview, poster, fanart,
+                                                              profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                              unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                              movie['year'], alternativeTitles, format, resolution,
+                                                              videoCodec, audioCodec, imdbId))
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
                                 movie['movieFile']['relativePath'])
-            
+                
             # Update or insert movies in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
             c = db.cursor()

@@ -57,6 +57,9 @@ defaults = {
         'apikey': '',
         'full_update': 'Daily',
         'only_monitored': 'False',
+		'tag_enabled': 'False',
+		'tag_autoremove': 'False',
+		'tag': '',
 },
     'radarr': {
         'ip': '127.0.0.1',
@@ -66,6 +69,9 @@ defaults = {
         'apikey': '',
         'full_update': 'Daily',
         'only_monitored': 'False',
+		'tag_enabled': 'False',
+		'tag_autoremove': 'False',
+		'tag': '',
 },
     'proxy': {
         'type': 'None',

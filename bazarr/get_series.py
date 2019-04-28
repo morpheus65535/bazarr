@@ -18,12 +18,40 @@ def update_series():
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
+    sonarr_tag_enabled = settings.sonarr.getboolean('tag_enabled')
+    sonarr_tag_autoremove = settings.sonarr.getboolean('tag_autoremove')
+    sonarr_tag = settings.sonarr.tag.lower()
+    sonarr_tag_id = 0
     
     if apikey_sonarr is None:
         pass
     else:
         get_profile_list()
-        
+
+        # Get tags data from Sonarr
+        if sonarr_tag_enabled is True:
+            url_sonarr_api_tag = url_sonarr + "/api/tag?apikey=" + apikey_sonarr
+            try:
+                tag = requests.get(url_sonarr_api_tag, timeout=15, verify=False)
+                tag.raise_for_status()
+            except requests.exceptions.HTTPError as errh:
+                logging.exception("BAZARR Error trying to get tags from Sonarr. HTTP error.")
+            except requests.exceptions.ConnectionError as errc:
+                logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
+            except requests.exceptions.Timeout as errt:
+                logging.exception("BAZARR Error trying to get tags from Sonarr. Timeout Error.")
+            except requests.exceptions.RequestException as err:
+                logging.exception("BAZARR Error trying to get tags from Sonarr.")
+            else:
+		
+                for sonarrtags in tag.json():
+                    if sonarrtags['label'] == sonarr_tag:
+                        sonarr_tag_id = sonarrtags['id']
+						
+            if str(sonarr_tag_id) == "0":
+			    logging.exception("Could not find matching tag to" + sonarr_tag + " in Sonarr")
+		
+		
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         try:
@@ -71,16 +99,22 @@ def update_series():
 
                 if show['alternateTitles'] != None:
                     alternateTitles = str([item['title'] for item in show['alternateTitles']])
-
+					
+                if show['tags'] != None:
+                    tags = str([item for item in show['tags']])
+					
                 # Add shows in Sonarr to current shows list
-                current_shows_sonarr.append(show['tvdbId'])
+                if sonarr_tag_enabled is False or sonarr_tag_autoremove is False:
+                    current_shows_sonarr.append(show['tvdbId'])
                 
                 if show['tvdbId'] in current_shows_db_list:
                     series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                              fanart, profile_id_to_language(
                         (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
                                              show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
-                else:
+                    if str(sonarr_tag_id) in tags:
+					    current_shows_sonarr.append(show['tvdbId'])
+                elif sonarr_tag_enabled is False:
                     if serie_default_enabled is True:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                               serie_default_hi, show["id"], overview, poster, fanart,
@@ -91,6 +125,19 @@ def update_series():
                                               show["tvdbId"], show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
                                               show['year'], alternateTitles))
+                elif sonarr_tag_enabled is True:
+                    if str(sonarr_tag_id) in tags:
+                        logging.info("Detected Sonarr tag \"" + sonarr_tag + "\" on " + show["title"])
+                        if serie_default_enabled is True:
+                            series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
+                                                  serie_default_hi, show["id"], overview, poster, fanart,
+                                                  profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                                  show['year'], alternateTitles))
+                        else:
+                            series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
+                                                  show["tvdbId"], show["id"], overview, poster, fanart,
+                                                  profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
+                                                  show['year'], alternateTitles))
             
             # Update or insert series in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
