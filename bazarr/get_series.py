@@ -19,9 +19,8 @@ def update_series():
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
     sonarr_tag_enabled = settings.sonarr.getboolean('tag_enabled')
-    sonarr_tag_autoremove = settings.sonarr.getboolean('tag_autoremove')
-    sonarr_tag = settings.sonarr.tag.lower()
-    sonarr_tag_id = 0
+    bazarrtaglist = [['name', 'bazarr_eng'],['lang', 'en']], [['name', 'bazarr_it'],['lang', 'it']]
+	#bazarrtaglist = settings.sonarr.tag
     bazarrtags = []
     
     if apikey_sonarr is None:
@@ -45,7 +44,6 @@ def update_series():
                 logging.exception("BAZARR Error trying to get tags from Sonarr.")
             else:
 
-                bazarrtaglist = [['name', 'bazarr'],['lang', 'en']], [['name', 'anime'],['lang', 'it']]
                 for sonarrtags in tag.json():
                     for bazarrtagitem in bazarrtaglist:
                         if sonarrtags['label'] == bazarrtagitem[0][1]:
@@ -53,9 +51,6 @@ def update_series():
                             bazarrtagitem.append(['id', sontarrtag])
                             bazarrtags.append(bazarrtagitem)
                 print(bazarrtags)
-						
-            if str(sonarr_tag_id) == "0":
-                logging.exception("Could not find matching tag " + sonarr_tag + " in Sonarr")
 		
 		
         # Get shows data from Sonarr
@@ -119,8 +114,8 @@ def update_series():
                     # If tag is enabled
                     if sonarr_tag_enabled:
                         for bazarrtag in bazarrtags:
-                            if bazarrtag[1][1] in tags:
-                                tag_lang = "['"+bazarrtag[2][1]+"']"
+                            if str(bazarrtag[2][1]) in tags:
+                                tag_lang = "['"+bazarrtag[1][1]+"']"
                         if tag_lang != "None":
                             # Update with language setting
                             series_to_update.append((show["title"], show["path"], show["tvdbId"], tag_lang, show["id"], overview, poster,
@@ -140,8 +135,10 @@ def update_series():
                             (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
                                                  show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
                 elif sonarr_tag_enabled:
-                    if str(sonarr_tag_id) in tags:
-                        logging.info("Detected Sonarr tag \"" + sonarr_tag + "\" on " + show["title"])
+                    for bazarrtag in bazarrtags:
+                        if str(bazarrtag[2][1]) in tags:
+                            tag_lang = "['"+bazarrtag[1][1]+"']"
+                    if tag_lang != "None":
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], tag_lang,
                                               serie_default_hi, show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],

@@ -20,9 +20,9 @@ def update_movies():
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
     radarr_tag_enabled = settings.radarr.getboolean('tag_enabled')
-    radarr_tag_autoremove = settings.radarr.getboolean('tag_autoremove')
-    radarr_tag = settings.radarr.tag.lower()
-    radarr_tag_id = 0
+    bazarrtaglist = [['name', 'bazarr_eng'],['lang', 'en']], [['name', 'bazarr_it'],['lang', 'it']]
+    #bazarrtaglist = settings.sonarr.tag
+    bazarrtags = []
 	
     if apikey_radarr is None:
         pass
@@ -44,13 +44,13 @@ def update_movies():
             except requests.exceptions.RequestException as err:
                 logging.exception("BAZARR Error trying to get tags from Radarr.")
             else:
-        
                 for radarrtags in tag.json():
-                    if radarrtags['label'] == radarr_tag:
-                        radarr_tag_id = radarrtags['id']
-
-            if str(radarr_tag_id) == "0":
-			    logging.exception("Could not find matching tag to " + radarr_tag + " in Radarr")
+                    for bazarrtagitem in bazarrtaglist:
+                        if radarrtags['label'] == bazarrtagitem[0][1]:
+                            radarrtag = radarrtags['id']
+                            bazarrtagitem.append(['id', radarrtag])
+                            bazarrtags.append(bazarrtagitem)
+                print(bazarrtags)
         
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
@@ -75,9 +75,11 @@ def update_movies():
             current_movies_db_list = [x[0] for x in current_movies_db]
             current_movies_radarr = []
             movies_to_update = []
+            movies_to_update_nolang = []
             movies_to_add = []
             
             for movie in r.json():
+                tag_lang = "None"
                 notifications.write(msg="Getting data for this movie: " + movie['title'], queue='get_movies')
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
@@ -138,8 +140,7 @@ def update_movies():
                                 tags = str([item for item in movie['tags']])
 
                             # Add movies in radarr to current movies list
-                            if radarr_tag_enabled is False or radarr_tag_autoremove is False:
-                                current_movies_radarr.append(unicode(movie['tmdbId']))
+                            current_movies_radarr.append(unicode(movie['tmdbId']))
                             
                             # Detect file separator
                             if movie['path'][0] == "/":
@@ -148,16 +149,26 @@ def update_movies():
                                 separator = "\\"
                             
                             if unicode(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append((movie["title"],
-                                                         movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                         movie["tmdbId"], movie["id"], overview, poster, fanart,
-                                                         profile_id_to_language(movie['qualityProfileId']), sceneName,
-                                                         unicode(bool(movie['monitored'])), movie['sortTitle'],
-                                                         movie['year'], alternativeTitles, format, resolution,
-                                                         videoCodec, audioCodec, imdbId, movie["tmdbId"]))
-                                if str(radarr_tag_id) in tags:
-					                current_movies_db_list.append(show['tmdbId'])
-                            elif not radarr_tag_enabled:
+                                if radarr_tag_enabled:
+                                    for bazarrtag in bazarrtags:
+                                        if str(bazarrtag[2][1]) in tags:
+                                            tag_lang = "['"+bazarrtag[1][1]+"']"
+                                    if tag_lang != "None":
+                                        movies_to_update.append((movie["title"],
+                                                                 movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                                 movie["tmdbId"], tag_lang, movie["id"], overview, poster, fanart,
+                                                                 profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                                 unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                                 movie['year'], alternativeTitles, format, resolution,
+                                                                 videoCodec, audioCodec, imdbId, movie["tmdbId"]))
+                                    else:
+                                        movies_to_update_nolang.append((movie["title"],
+                                                                 movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                                 movie["tmdbId"], movie["id"], overview, poster, fanart,
+                                                                 profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                                 unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                                 movie['year'], alternativeTitles, format, resolution,
+                                                                 videoCodec, audioCodec, imdbId, movie["tmdbId"]))
                                 if movie_default_enabled is True:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile']['relativePath'],
@@ -177,12 +188,23 @@ def update_movies():
                                                           movie['year'], alternativeTitles, format, resolution,
                                                           videoCodec, audioCodec, imdbId))
                             elif radarr_tag_enabled:
-                                if str(radarr_tag_id) in tags:
-                                    logging.info("Detected Radarr tag \"" + radarr_tag + "\" on " + movie["title"])
+                                for bazarrtag in bazarrtags:
+                                    if str(bazarrtag[2][1]) in tags:
+                                        tag_lang = "['"+bazarrtag[1][1]+"']"
+                                if tag_lang != "None":
+                                    movies_to_add.append((movie["title"],
+                                                          movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                          movie["tmdbId"], tag_lang, '[]', movie_default_hi,
+                                                          movie["id"], overview, poster, fanart,
+                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                          movie['year'], alternativeTitles, format, resolution,
+                                                          videoCodec, audioCodec, imdbId))
+                                else:
                                     if movie_default_enabled is True:
                                         movies_to_add.append((movie["title"],
                                                               movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                              movie["tmdbId"], movie_default_language, '[]', movie_default_hi,
+                                                              movie["tmdbId"], tag_lang, '[]', movie_default_hi,
                                                               movie["id"], overview, poster, fanart,
                                                               profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                               unicode(bool(movie['monitored'])), movie['sortTitle'],
@@ -197,6 +219,25 @@ def update_movies():
                                                               unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                               movie['year'], alternativeTitles, format, resolution,
                                                               videoCodec, audioCodec, imdbId))
+                            elif not radarr_tag_enabled:
+                                if movie_default_enabled is True:
+                                    movies_to_add.append((movie["title"],
+                                                          movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                          movie["tmdbId"], tag_lang, '[]', movie_default_hi,
+                                                          movie["id"], overview, poster, fanart,
+                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                          movie['year'], alternativeTitles, format, resolution,
+                                                          videoCodec, audioCodec, imdbId))
+                                else:
+                                    movies_to_add.append((movie["title"],
+                                                          movie["path"] + separator + movie['movieFile'][
+                                                              'relativePath'], movie["tmdbId"], movie["tmdbId"],
+                                                          movie["tmdbId"], movie["id"], overview, poster, fanart,
+                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
+                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
+                                                          movie['year'], alternativeTitles, format, resolution,
+                                                          videoCodec, audioCodec, imdbId))
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -207,8 +248,13 @@ def update_movies():
             c = db.cursor()
             
             updated_result = c.executemany(
-                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle = ?, year = ?, alternativeTitles = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ?, imdbId = ? WHERE tmdbid = ?''',
+                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, languages = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle = ?, year = ?, alternativeTitles = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ?, imdbId = ? WHERE tmdbid = ?''',
                 movies_to_update)
+            db.commit()
+			
+            updated_result = c.executemany(
+                '''UPDATE table_movies SET title = ?, path = ?, tmdbId = ?, radarrId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ?, sceneName = ?, monitored = ?, sortTitle = ?, year = ?, alternativeTitles = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ?, imdbId = ? WHERE tmdbid = ?''',
+                movies_to_update_nolang)
             db.commit()
             
             if movie_default_enabled is True:
