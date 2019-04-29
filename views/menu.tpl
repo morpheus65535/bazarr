@@ -254,7 +254,7 @@
 
     if (window.location.href.indexOf("episodes") > -1) {
     	$('.menu_segment').css('background', '#000000');
-    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('opacity', '0.9');
     	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');
@@ -262,7 +262,7 @@
     }
     else if (window.location.href.indexOf("movie/") > -1) {
     	$('.menu_segment').css('background', '#000000');
-    	$('.menu_segment').css('opacity', '0.8');
+    	$('.menu_segment').css('opacity', '0.9');
     	$('.menu_segment').css('border-color', '#000000');
     	$('#divmenu').css('background', '#000000');
     	$('#divmenu').css('opacity', '0.8');

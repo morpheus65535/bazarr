@@ -218,6 +218,7 @@ def list_missing_subtitles(*no):
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
     for episode_subtitles in episodes_subtitles:
         actual_subtitles_temp = []
+        desired_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
@@ -234,6 +235,11 @@ def list_missing_subtitles(*no):
             if episode_subtitles[3] == "True" and desired_subtitles is not None:
                 for i, desired_subtitle in enumerate(desired_subtitles):
                     desired_subtitles[i] = desired_subtitle + ":forced"
+            elif episode_subtitles[3] == "Both" and desired_subtitles is not None:
+                for desired_subtitle in desired_subtitles:
+                    desired_subtitles_temp.append(desired_subtitle)
+                    desired_subtitles_temp.append(desired_subtitle + ":forced")
+                desired_subtitles = desired_subtitles_temp
         actual_subtitles_list = []
         if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', episode_subtitles[0]]))
@@ -241,6 +247,8 @@ def list_missing_subtitles(*no):
             for item in actual_subtitles:
                 if item[0] == "pt-BR":
                     actual_subtitles_list.append("pb")
+                elif item[0] == "pt-BR:forced":
+                    actual_subtitles_list.append("pb:forced")
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
@@ -269,6 +277,7 @@ def list_missing_subtitles_movies(*no):
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
     for movie_subtitles in movies_subtitles:
         actual_subtitles_temp = []
+        desired_subtitles_temp = []
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
@@ -285,6 +294,11 @@ def list_missing_subtitles_movies(*no):
             if movie_subtitles[3] == "True" and desired_subtitles is not None:
                 for i, desired_subtitle in enumerate(desired_subtitles):
                     desired_subtitles[i] = desired_subtitle + ":forced"
+            elif movie_subtitles[3] == "Both" and desired_subtitles is not None:
+                for desired_subtitle in desired_subtitles:
+                    desired_subtitles_temp.append(desired_subtitle)
+                    desired_subtitles_temp.append(desired_subtitle + ":forced")
+                desired_subtitles = desired_subtitles_temp
         actual_subtitles_list = []
         if desired_subtitles is None:
             missing_subtitles_global.append(tuple(['[]', movie_subtitles[0]]))
@@ -292,6 +306,8 @@ def list_missing_subtitles_movies(*no):
             for item in actual_subtitles:
                 if item[0] == "pt-BR":
                     actual_subtitles_list.append("pb")
+                elif item[0] == "pt-BR:forced":
+                    actual_subtitles_list.append("pb:forced")
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
