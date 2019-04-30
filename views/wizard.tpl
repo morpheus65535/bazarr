@@ -1283,7 +1283,7 @@
                     </div>
                 </div>
 
-                <div class="sonarr_hide ui dividing header">Import Settings</div>
+                <div class="sonarr_hide ui dividing header">Tag Settings</div>
                 <div class="sonarr_hide twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -1298,7 +1298,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Only import TV Shows with the specified Sonarr Tag" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Associate Sonarr tags with Bazarr language profiles" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1306,42 +1306,80 @@
                         </div>
                         <div id="settings_sonarr_tag_enabled_option" class="ui grid container">
                             <div class="middle aligned row">
-                                <div class="right aligned four wide column">
-                                    <label>Sonarr Tag</label>
-                                </div>
-                                <div class="three wide column">
-                                    <div class="ui fluid input">
-                                        <input id="settings_sonarr_tag" name="settings_sonarr_tag" type="text" class="sonarr_config" value="{{settings.sonarr.tag}}">
+                                <div class="ui grid">
+                                    %import ast
+                                    %if settings.sonarr.tag is not None:
+                                    %	tag_substitutions = ast.literal_eval(settings.sonarr.tag)
+                                    %else:
+                                    %	tag_substitutions = []
+                                    %end
+                                    <div class="middle aligned row">
+                                        <div class="right aligned four wide column">
+            
+                                        </div>
+                                        <div class="two wide column">
+                                            <div class="ui fluid input">
+                                                <h4 class="ui header">
+                                                    Sonarr Tag:
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <div class="collapsed column">
+                                            <div class="collapsed center aligned column">
+                                                <div class="ui basic icon" data-tooltip="The tag which is configured in Sonarr" data-inverted="">
+                                                    <i class="help circle large icon"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="two wide column">
+                                            <div class="ui fluid input">
+                                                <h4 class="ui header">
+                                                    Language Code:
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <div class="collapsed column">
+                                            <div class="collapsed center aligned column">
+                                                <div class="ui basic icon" data-tooltip="The Bazarr Language Code (E.g: 'en' for English)" data-inverted="">
+                                                    <i class="help circle large icon"></i>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Sonarr." data-inverted="">
-                                        <i class="help circle large icon"></i>
+                                    %for x in range(0, 5):
+                                    %	tag = '[]'
+                                    %	try:
+                                    %		tag = tag_substitutions[x]
+                                    %	except IndexError:
+                                    %		tag = [["name", ""], ["lang", ""]]
+                                    %	end
+                                    <div class="middle aligned row">
+                                        <div class="right aligned four wide column">
+            
+                                        </div>
+                                        <div class="four wide column">
+                                            <div class="ui fluid input">
+                                                <input name="settings_sonarr_tagname" type="text" value="{{tag[0][1]}}">
+                                            </div>
+                                        </div>
+                                        <div class="center aligned column">
+                                            <i class="arrow circle right icon"></i>
+                                        </div>
+                                        <div class="four wide column">
+                                            <div class="ui fluid input">
+                                                <input name="settings_sonarr_taglang" type="text" value="{{tag[1][1]}}">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="middle aligned row">
-                                <div class="right aligned four wide column">
-                                    <label>Autoremove</label>
-                                </div>
-                                <div class="one wide column">
-                                    <div id="settings_sonarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('tag_autoremove')}}>
-                                        <input name="settings_sonarr_tag_autoremove" type="checkbox">
-                                        <label></label>
-                                    </div>
-                                </div>
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the TV Show in Sonarr will result in it being deleted within Bazarr." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
+                                    %end
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-				
-
             </div>
+        </div>
             <div class="ui bottom attached tab segment" data-tab="radarr" id="radarr">
 
                 <div class="ui container"><button class="submit ui blue right floated lright labeled icon button" id="submit" type="submit" value="Submit" form="wizard_form"><i class="save icon"></i>Save</button>
@@ -1491,8 +1529,8 @@
                     </div>
                     </div>
                 </div>
-                <div class="radarr_hide ui dividing header">Import Settings</div>
-                <div class="radarr_hide twelve wide column">
+                <div class="ui dividing header">Tag Settings</div>
+                <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
@@ -1506,7 +1544,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Only import Movies with the specified Radarr Tag" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Associate Radarr tags with Bazarr language profiles" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -1514,40 +1552,80 @@
                         </div>
                         <div id="settings_radarr_tag_enabled_option" class="ui grid container">
                             <div class="middle aligned row">
-                                <div class="right aligned four wide column">
-                                    <label>Radarr Tag</label>
-                                </div>
-                                <div class="three wide column">
-                                    <div class="ui fluid input">
-                                        <input id="settings_radarr_tag" name="settings_radarr_tag" type="text" class="radarr_config" value="{{settings.radarr.tag}}">
+                                <div class="ui grid">
+                                    %import ast
+                                    %if settings.radarr.tag is not None:
+                                    %	tag_substitutions = ast.literal_eval(settings.radarr.tag)
+                                    %else:
+                                    %	tag_substitutions = []
+                                    %end
+                                    <div class="middle aligned row">
+                                        <div class="right aligned four wide column">
+            
+                                        </div>
+                                        <div class="two wide column">
+                                            <div class="ui fluid input">
+                                                <h4 class="ui header">
+                                                    Radarr Tag:
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <div class="collapsed column">
+                                            <div class="collapsed center aligned column">
+                                                <div class="ui basic icon" data-tooltip="The tag which is configured in Radarr" data-inverted="">
+                                                    <i class="help circle large icon"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="two wide center aligned column">
+            
+                                        </div>
+                                        <div class="two wide column">
+                                            <div class="ui fluid input">
+                                                <h4 class="ui header">
+                                                    Language Code:
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <div class="collapsed column">
+                                            <div class="collapsed center aligned column">
+                                                <div class="ui basic icon" data-tooltip="The Bazarr Language Code (E.g: 'en' for English)" data-inverted="">
+                                                    <i class="help circle large icon"></i>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enter the name of the tag you have created within Radarr." data-inverted="">
-                                        <i class="help circle large icon"></i>
+                                    %for x in range(0, 5):
+                                    %	tag = []
+                                    %	try:
+                                    %		tag = tag_substitutions[x]
+                                    %	except IndexError:
+                                    %		tag = [["", ""], ["", ""]]
+                                    %	end
+                                    <div class="middle aligned row">
+                                        <div class="right aligned four wide column">
+            
+                                        </div>
+                                        <div class="four wide column">
+                                            <div class="ui fluid input">
+                                                <input name="settings_radarr_tagname" type="text" value="{{tag[0][1]}}">
+                                            </div>
+                                        </div>
+                                        <div class="center aligned column">
+                                            <i class="arrow circle right icon"></i>
+                                        </div>
+                                        <div class="four wide column">
+                                            <div class="ui fluid input">
+                                                <input name="settings_radarr_taglang" type="text" value="{{tag[1][1]}}">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="middle aligned row">
-                                <div class="right aligned four wide column">
-                                    <label>Autoremove</label>
-                                </div>
-                                <div class="one wide column">
-                                    <div id="settings_radarr_tag_autoremove" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('tag_autoremove')}}>
-                                        <input name="settings_radarr_tag_autoremove" type="checkbox">
-                                        <label></label>
-                                    </div>
-                                </div>
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="When enabled, removing the specified tag from the Movie in Radarr will result in it being deleted within Bazarr." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
+                                    %end
                                 </div>
                             </div>
                         </div>
-                    </div>
+                      </div>
                 </div>
-
             </div>
             </form>
         </div>

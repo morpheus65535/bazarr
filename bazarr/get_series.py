@@ -6,6 +6,7 @@ import requests
 import logging
 from queueconfig import notifications
 import datetime
+import ast
 
 from get_args import args
 from config import settings, url_sonarr
@@ -19,8 +20,7 @@ def update_series():
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
     sonarr_tag_enabled = settings.sonarr.getboolean('tag_enabled')
-    bazarrtaglist = [['name', 'bazarr_eng'],['lang', 'en']], [['name', 'bazarr_it'],['lang', 'it']]
-	#bazarrtaglist = settings.sonarr.tag
+    bazarrtaglist = ast.literal_eval(settings.sonarr.tag)
     bazarrtags = []
     
     if apikey_sonarr is None:
@@ -50,9 +50,7 @@ def update_series():
                             sontarrtag = sonarrtags['id']
                             bazarrtagitem.append(['id', sontarrtag])
                             bazarrtags.append(bazarrtagitem)
-                print(bazarrtags)
-		
-		
+
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         try:

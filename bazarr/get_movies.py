@@ -4,6 +4,7 @@ import os
 import sqlite3
 import requests
 import logging
+import ast
 from queueconfig import notifications
 
 from get_args import args
@@ -20,8 +21,7 @@ def update_movies():
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
     radarr_tag_enabled = settings.radarr.getboolean('tag_enabled')
-    bazarrtaglist = [['name', 'bazarr_eng'],['lang', 'en']], [['name', 'bazarr_it'],['lang', 'it']]
-    #bazarrtaglist = settings.sonarr.tag
+    bazarrtaglist = ast.literal_eval(settings.sonarr.tag)
     bazarrtags = []
 	
     if apikey_radarr is None:
@@ -50,8 +50,7 @@ def update_movies():
                             radarrtag = radarrtags['id']
                             bazarrtagitem.append(['id', radarrtag])
                             bazarrtags.append(bazarrtagitem)
-                print(bazarrtags)
-        
+
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
         try:
@@ -169,15 +168,6 @@ def update_movies():
                                                                  unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                                  movie['year'], alternativeTitles, format, resolution,
                                                                  videoCodec, audioCodec, imdbId, movie["tmdbId"]))
-                                if movie_default_enabled is True:
-                                    movies_to_add.append((movie["title"],
-                                                          movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          movie["tmdbId"], movie_default_language, '[]', movie_default_hi,
-                                                          movie["id"], overview, poster, fanart,
-                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
-                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
-                                                          movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec, imdbId))
                                 else:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile'][

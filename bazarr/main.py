@@ -248,6 +248,34 @@ def save_wizard():
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if not settings_general_baseurl.endswith('/'):
         settings_general_baseurl += '/'
+
+    settings_sonarr_tag = []
+    settings_sonarr_tagnames = []
+    settings_sonarr_taglangs = []
+    settings_sonarr_tagname = request.forms.getall('settings_sonarr_tagname')
+    settings_sonarr_taglang = request.forms.getall('settings_sonarr_taglang')
+
+    for a in settings_sonarr_tagname:
+        settings_sonarr_tagnames.append(["name", a])
+    for b in settings_sonarr_taglang:
+        settings_sonarr_taglangs.append(["lang", b])
+    settings_sonarr_tag.extend([list(c) for c in zip(settings_sonarr_tagnames, settings_sonarr_taglangs)])
+    print(settings_sonarr_tag)
+	
+    settings_radarr_tag = []
+    settings_radarr_tagnames = []
+    settings_radarr_taglangs = []
+    settings_radarr_tagname = request.forms.getall('settings_radarr_tagname')
+    settings_radarr_taglang = request.forms.getall('settings_radarr_taglang')
+	
+    for a in settings_radarr_tagname:
+        settings_radarr_tagnames.append(["name", a])
+    for b in settings_radarr_taglang:
+        settings_radarr_taglangs.append(["lang", b])
+    settings_radarr_tag.extend([list(c) for c in zip(settings_radarr_tagnames, settings_radarr_taglangs)])
+    print(settings_radarr_tag)
+	
+	
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -310,7 +338,6 @@ def save_wizard():
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
     settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
-    settings_sonarr_tag = request.forms.get('settings_sonarr_tag')
     if settings_sonarr_ssl is None:
         settings_sonarr_ssl = 'False'
     else:
@@ -341,7 +368,6 @@ def save_wizard():
     settings_radarr_port = request.forms.get('settings_radarr_port')
     settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
     settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
-    settings_radarr_tag = request.forms.get('settings_radarr_tag')
     if settings_radarr_ssl is None:
         settings_radarr_ssl = 'False'
     else:
@@ -359,12 +385,6 @@ def save_wizard():
     else:
         settings_radarr_tag_enabled = 'True'
 		
-    settings_radarr_tag_autoremove = request.forms.get('settings_radarr_tag_autoremove')
-    if settings_radarr_tag_autoremove is None:
-        settings_radarr_tag_autoremove = 'False'
-    else:
-        settings_radarr_tag_autoremove = 'True'
-    
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
@@ -372,7 +392,6 @@ def save_wizard():
     settings.radarr.apikey = text_type(settings_radarr_apikey)
     settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.tag_enabled = text_type(settings_radarr_tag_enabled)
-    settings.radarr.tag_autoremove = text_type(settings_radarr_tag_autoremove)
     settings.radarr.tag = text_type(settings_radarr_tag)
     
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
@@ -1229,6 +1248,31 @@ def save_settings():
     else:
         settings_general_chmod_enabled = 'True'
     settings_general_chmod = request.forms.get('settings_general_chmod')
+
+    settings_sonarr_tag = []
+    settings_sonarr_tagnames = []
+    settings_sonarr_taglangs = []
+    settings_sonarr_tagname = request.forms.getall('settings_sonarr_tagname')
+    settings_sonarr_taglang = request.forms.getall('settings_sonarr_taglang')
+
+    for tagname in settings_sonarr_tagname:
+        settings_sonarr_tagnames.append(["name", tagname.lower()])
+    for langname in settings_sonarr_taglang:
+        settings_sonarr_taglangs.append(["lang", langname.lower()])
+    settings_sonarr_tag.extend([list(a) for a in zip(settings_sonarr_tagnames, settings_sonarr_taglangs)])
+	
+    settings_radarr_tag = []
+    settings_radarr_tagnames = []
+    settings_radarr_taglangs = []
+    settings_radarr_tagname = request.forms.getall('settings_radarr_tagname')
+    settings_radarr_taglang = request.forms.getall('settings_radarr_taglang')
+	
+    for tagname in settings_radarr_tagname:
+        settings_radarr_tagnames.append(["name", tagname.lower()])
+    for langname in settings_radarr_taglang:
+        settings_radarr_taglangs.append(["lang", langname.lower()])
+    settings_radarr_tag.extend([list(a) for a in zip(settings_radarr_tagnames, settings_radarr_taglangs)])
+
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1307,11 +1351,12 @@ def save_settings():
     settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
 
     before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
-              unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
-              unicode(settings.general.getboolean('use_radarr')), unicode(settings.general.path_mappings_movie))
+              unicode(settings.general.path_mappings), unicode(settings.sonarr.tag), unicode(settings.radarr.tag),
+              unicode(settings.general.getboolean('use_sonarr')), unicode(settings.general.getboolean('use_radarr')),
+               unicode(settings.general.path_mappings_movie))
     after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
-             unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
-             unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+             unicode(settings_general_pathmapping), unicode(settings_sonarr_tag), unicode(settings_radarr_tag), 
+             unicode(settings_general_use_sonarr), unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
 
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -1425,7 +1470,6 @@ def save_settings():
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
     settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
-    settings_sonarr_tag = request.forms.get('settings_sonarr_tag')
     if settings_sonarr_ssl is None:
         settings_sonarr_ssl = 'False'
     else:
@@ -1459,7 +1503,6 @@ def save_settings():
     settings_radarr_port = request.forms.get('settings_radarr_port')
     settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
     settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
-    settings_radarr_tag = request.forms.get('settings_radarr_tag')
     if settings_radarr_ssl is None:
         settings_radarr_ssl = 'False'
     else:
@@ -1478,12 +1521,6 @@ def save_settings():
     else:
         settings_radarr_tag_enabled = 'True'
 		
-    settings_radarr_tag_autoremove = request.forms.get('settings_radarr_tag_autoremove')
-    if settings_radarr_tag_autoremove is None:
-        settings_radarr_tag_autoremove = 'False'
-    else:
-        settings_radarr_tag_autoremove = 'True'
-	
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
@@ -1492,7 +1529,6 @@ def save_settings():
     settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.full_update = text_type(settings_radarr_sync)
     settings.radarr.tag_enabled = text_type(settings_radarr_tag_enabled)
-    settings.radarr.tag_autoremove = text_type(settings_radarr_tag_autoremove)
     settings.radarr.tag = text_type(settings_radarr_tag)
 
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
