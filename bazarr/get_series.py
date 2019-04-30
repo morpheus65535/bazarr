@@ -148,8 +148,8 @@ def update_series():
                                                   profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
                                                   show['year'], alternateTitles))
                         else:
-                            series_to_add.append((show["title"], show["path"], show["tvdbId"], "None",
-                                                  serie_default_hi, show["id"], overview, poster, fanart,
+                            series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
+                                                  show["tvdbId"], show["id"], overview, poster, fanart,
                                                   profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
                                                   show['year'], alternateTitles))
 
