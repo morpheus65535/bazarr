@@ -1379,7 +1379,6 @@
                     </div>
                 </div>
             </div>
-        </div>
             <div class="ui bottom attached tab segment" data-tab="radarr" id="radarr">
 
                 <div class="ui container"><button class="submit ui blue right floated lright labeled icon button" id="submit" type="submit" value="Submit" form="wizard_form"><i class="save icon"></i>Save</button>
