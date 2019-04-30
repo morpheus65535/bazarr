@@ -21,7 +21,7 @@ def update_movies():
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
     radarr_tag_enabled = settings.radarr.getboolean('tag_enabled')
-    bazarrtaglist = ast.literal_eval(settings.sonarr.tag)
+    bazarrtaglist = ast.literal_eval(settings.radarr.tag)
     bazarrtags = []
 	
     if apikey_radarr is None:
