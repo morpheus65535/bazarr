@@ -78,7 +78,6 @@ def update_movies():
             movies_to_add = []
             
             for movie in r.json():
-                tag_lang = "None"
                 notifications.write(msg="Getting data for this movie: " + movie['title'], queue='get_movies')
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
@@ -137,6 +136,9 @@ def update_movies():
 
                             if movie['tags'] != None:
                                 tags = str([item for item in movie['tags']])
+								
+                            tag_lang = "None"
+                            tag_langs = []
 
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(unicode(movie['tmdbId']))
@@ -151,7 +153,8 @@ def update_movies():
                                 if radarr_tag_enabled:
                                     for bazarrtag in bazarrtags:
                                         if str(bazarrtag[2][1]) in tags:
-                                            tag_lang = "['"+bazarrtag[1][1]+"']"
+                                            tag_langs.append(bazarrtag[1][1])
+                                            tag_lang = str(tag_langs)
                                     if tag_lang != "None":
                                         movies_to_update.append((movie["title"],
                                                                  movie["path"] + separator + movie['movieFile']['relativePath'],

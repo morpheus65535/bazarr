@@ -82,7 +82,6 @@ def update_series():
             series_to_add = []
             
             for show in r.json():
-                tag_lang = "None"
                 notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
                 try:
                     overview = unicode(show['overview'])
@@ -104,6 +103,9 @@ def update_series():
                 if show['tags'] != None:
                     tags = str([item for item in show['tags']])
 					
+                tag_lang = "None"
+                tag_langs = []
+					
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['tvdbId'])
                 
@@ -113,7 +115,9 @@ def update_series():
                     if sonarr_tag_enabled:
                         for bazarrtag in bazarrtags:
                             if str(bazarrtag[2][1]) in tags:
-                                tag_lang = "['"+bazarrtag[1][1]+"']"
+                                tag_langs.append(bazarrtag[1][1])
+                                tag_lang = str(tag_langs)
+								
                         if tag_lang != "None":
                             # Update with language setting
                             series_to_update.append((show["title"], show["path"], show["tvdbId"], tag_lang, show["id"], overview, poster,
