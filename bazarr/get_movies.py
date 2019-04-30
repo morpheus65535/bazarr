@@ -182,7 +182,8 @@ def update_movies():
                             elif radarr_tag_enabled:
                                 for bazarrtag in bazarrtags:
                                     if str(bazarrtag[2][1]) in tags:
-                                        tag_lang = "['"+bazarrtag[1][1]+"']"
+                                        tag_langs.append(bazarrtag[1][1])
+                                        tag_lang = str(tag_langs)
                                 if tag_lang != "None":
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile']['relativePath'],

@@ -139,7 +139,8 @@ def update_series():
                 elif sonarr_tag_enabled:
                     for bazarrtag in bazarrtags:
                         if str(bazarrtag[2][1]) in tags:
-                            tag_lang = "['"+bazarrtag[1][1]+"']"
+                            tag_langs.append(bazarrtag[1][1])
+                            tag_lang = str(tag_langs)
                     if tag_lang != "None":
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], tag_lang,
                                               serie_default_hi, show["id"], overview, poster, fanart,
