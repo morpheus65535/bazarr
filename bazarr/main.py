@@ -255,12 +255,11 @@ def save_wizard():
     settings_sonarr_tagname = request.forms.getall('settings_sonarr_tagname')
     settings_sonarr_taglang = request.forms.getall('settings_sonarr_taglang')
 
-    for a in settings_sonarr_tagname:
-        settings_sonarr_tagnames.append(["name", a])
-    for b in settings_sonarr_taglang:
-        settings_sonarr_taglangs.append(["lang", b])
-    settings_sonarr_tag.extend([list(c) for c in zip(settings_sonarr_tagnames, settings_sonarr_taglangs)])
-    print(settings_sonarr_tag)
+    for tagname in settings_sonarr_tagname:
+        settings_sonarr_tagnames.append(["name", tagname.lower()])
+    for langname in settings_sonarr_taglang:
+        settings_sonarr_taglangs.append(["lang", langname.lower()])
+    settings_sonarr_tag.extend([list(a) for a in zip(settings_sonarr_tagnames, settings_sonarr_taglangs)])
 	
     settings_radarr_tag = []
     settings_radarr_tagnames = []
@@ -268,12 +267,11 @@ def save_wizard():
     settings_radarr_tagname = request.forms.getall('settings_radarr_tagname')
     settings_radarr_taglang = request.forms.getall('settings_radarr_taglang')
 	
-    for a in settings_radarr_tagname:
-        settings_radarr_tagnames.append(["name", a])
-    for b in settings_radarr_taglang:
-        settings_radarr_taglangs.append(["lang", b])
-    settings_radarr_tag.extend([list(c) for c in zip(settings_radarr_tagnames, settings_radarr_taglangs)])
-    print(settings_radarr_tag)
+    for tagname in settings_radarr_tagname:
+        settings_radarr_tagnames.append(["name", tagname.lower()])
+    for langname in settings_radarr_taglang:
+        settings_radarr_taglangs.append(["lang", langname.lower()])
+    settings_radarr_tag.extend([list(a) for a in zip(settings_radarr_tagnames, settings_radarr_taglangs)])
 	
 	
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')

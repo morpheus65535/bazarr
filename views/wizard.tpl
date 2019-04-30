@@ -1528,8 +1528,8 @@
                     </div>
                     </div>
                 </div>
-                <div class="ui dividing header">Tag Settings</div>
-                <div class="twelve wide column">
+                <div class="radarr_hide ui dividing header">Tag Settings</div>
+                <div class="radarr_hide twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
