@@ -123,19 +123,19 @@ def update_series():
                             series_to_update.append((show["title"], show["path"], show["tvdbId"], tag_lang, show["id"], overview, poster,
                                                      fanart, profile_id_to_language(
                                 (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                                     show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                                                     show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
                         else:
                             # Update TV Show but do not update language
                             series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                                      fanart, profile_id_to_language(
                                 (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                                     show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                                                     show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
                     else:
                         # Update TV Show but do not update language
                         series_to_update_nolang.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
                                                  fanart, profile_id_to_language(
                             (show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                                 show['sortTitle'], show['year'], alternateTitles, tags, show["tvdbId"]))
+                                                 show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
                 elif sonarr_tag_enabled:
                     for bazarrtag in bazarrtags:
                         if str(bazarrtag[2][1]) in tags:
@@ -175,12 +175,12 @@ def update_series():
             c = db.cursor()
 
             updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, languages = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ?, tags = ? WHERE tvdbid = ?''',
+                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, languages = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
                 series_to_update)
             db.commit()
 			
             updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ?, tags = ? WHERE tvdbid = ?''',
+                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
                 series_to_update_nolang)
             db.commit()
 
