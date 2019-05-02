@@ -1792,7 +1792,8 @@ def get_subtitle():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = result[2]
+            forced = result[5]
+            language_code = result[2] + ":forced" if forced else ""
             provider = result[3]
             score = result[4]
             history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
@@ -1850,7 +1851,8 @@ def manual_get_subtitle():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = result[2]
+            forced = result[5]
+            language_code = result[2] + ":forced" if forced else ""
             provider = result[3]
             score = result[4]
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
@@ -1885,7 +1887,8 @@ def get_subtitle_movie():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = result[2]
+            forced = result[5]
+            language_code = result[2] + ":forced" if forced else ""
             provider = result[3]
             score = result[4]
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
@@ -1942,7 +1945,8 @@ def manual_get_subtitle_movie():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = result[2]
+            forced = result[5]
+            language_code = result[2] + ":forced" if forced else ""
             provider = result[3]
             score = result[4]
             history_log_movie(2, radarrId, message, path, language_code, provider, score)

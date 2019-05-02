@@ -2,6 +2,7 @@ import enzyme
 import logging
 import os
 import subprocess
+import locale
 
 from utils import get_binary
 
@@ -27,7 +28,7 @@ class EmbeddedSubsReader:
             if self.ffprobe:
                 detected_languages = []
                 try:
-                    detected_languages = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
+                    detected_languages = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file.encode(locale.getpreferredencoding())], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
                 except subprocess.CalledProcessError as e:
                     raise FFprobeError(e.output)
                 else:

@@ -204,21 +204,22 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = subtitle.storage_path
+                        is_forced_string = " forced" if subtitle.language.forced else ""
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if is_upgrade:
                             action = "upgraded"
                         else:
                             action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
-                                                 downloaded_language_code2, downloaded_language_code3)
+                                                 downloaded_language_code2, downloaded_language_code3, subtitle.language.forced)
                             try:
                                 if os.name == 'nt':
                                     codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
@@ -254,7 +255,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                         else:
                             reversed_path = path_replace_reverse_movie(path)
 
-                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
         
         if not saved_any:
             logging.debug('BAZARR No subtitles were found for this file: ' + path)
@@ -406,12 +407,13 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         downloaded_language_code2 = alpha2_from_alpha3(downloaded_language_code3)
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
-                        message = downloaded_language + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                        is_forced_string = " forced" if subtitle.language.forced else ""
+                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
-                                                 downloaded_language_code2, downloaded_language_code3)
+                                                 downloaded_language_code2, downloaded_language_code3, subtitle.language.forced)
                             try:
                                 if os.name == 'nt':
                                     codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
@@ -446,7 +448,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         else:
                             reversed_path = path_replace_reverse_movie(path)
 
-                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -485,7 +487,8 @@ def series_download_subtitles(no):
                 if result is not None:
                     message = result[0]
                     path = result[1]
-                    language_code = result[2]
+                    forced = result[5]
+                    language_code = result[2] + ":forced" if forced else ""
                     provider = result[3]
                     score = result[4]
                     store_subtitles(path_replace(episode[0]))
@@ -524,7 +527,8 @@ def episode_download_subtitles(no):
                 if result is not None:
                     message = result[0]
                     path = result[1]
-                    language_code = result[2]
+                    forced = result[5]
+                    language_code = result[2] + ":forced" if forced else ""
                     provider = result[3]
                     score = result[4]
                     store_subtitles(path_replace(episode[0]))
@@ -555,7 +559,8 @@ def movies_download_subtitles(no):
             if result is not None:
                 message = result[0]
                 path = result[1]
-                language_code = result[2]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else ""
                 provider = result[3]
                 score = result[4]
                 store_subtitles_movie(path_replace_movie(movie[0]))
@@ -608,7 +613,8 @@ def wanted_download_subtitles(path, l, count_episodes):
                         if result is not None:
                             message = result[0]
                             path = result[1]
-                            language_code = result[2]
+                            forced = result[5]
+                            language_code = result[2] + ":forced" if forced else ""
                             provider = result[3]
                             score = result[4]
                             store_subtitles(path_replace(episode[0]))
@@ -660,7 +666,8 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                         if result is not None:
                             message = result[0]
                             path = result[1]
-                            language_code = result[2]
+                            forced = result[5]
+                            language_code = result[2] + ":forced" if forced else ""
                             provider = result[3]
                             score = result[4]
                             store_subtitles_movie(path_replace_movie(movie[0]))
@@ -851,7 +858,8 @@ def upgrade_subtitles():
                     if result is not None:
                         message = result[0]
                         path = result[1]
-                        language_code = result[2]
+                        forced = result[5]
+                        language_code = result[2] + ":forced" if forced else ""
                         provider = result[3]
                         score = result[4]
                         store_subtitles(path_replace(episode[0]))
@@ -870,7 +878,8 @@ def upgrade_subtitles():
                     if result is not None:
                         message = result[0]
                         path = result[1]
-                        language_code = result[2]
+                        forced = result[5]
+                        language_code = result[2] + ":forced" if forced else ""
                         provider = result[3]
                         score = result[4]
                         store_subtitles_movie(path_replace_movie(movie[0]))
