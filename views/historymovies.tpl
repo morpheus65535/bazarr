@@ -205,15 +205,15 @@
 	});
 
 	$('.fast.backward').on('click', function(){
-		loadURLseries(1);
+		loadURLmovies(1);
 	});
 	$('.backward:not(.fast)').on('click', function(){
-		loadURLseries({{int(page)-1}});
+		loadURLmovies({{int(page)-1}});
 	});
 	$('.forward:not(.fast)').on('click', function(){
-		loadURLseries({{int(page)+1}});
+		loadURLmovies({{int(page)+1}});
 	});
 	$('.fast.forward').on('click', function(){
-		loadURLseries({{int(max_page)}});
+		loadURLmovies({{int(max_page)}});
 	});
 </script>

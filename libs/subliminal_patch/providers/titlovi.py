@@ -12,8 +12,9 @@ from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from babelfish import language_converters, Script
-from requests import Session, RequestException
+from requests import RequestException
 from guessit import guessit
+from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle
@@ -138,13 +139,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
     download_url = server_url + '/download/?type=1&mediaid='
 
     def initialize(self):
-        self.session = Session()
-        logger.debug("Using random user agents")
-        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
-        logger.debug('User-Agent set to %s', self.session.headers['User-Agent'])
-        self.session.headers['Referer'] = self.server_url
-        logger.debug('Referer set to %s', self.session.headers['Referer'])
-        load_verification("titlovi", self.session)
+        self.session = RetryingCFSession()
+        #load_verification("titlovi", self.session)
 
     def terminate(self):
         self.session.close()
@@ -185,42 +181,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                 r = self.session.get(self.search_url, params=params, timeout=10)
                 r.raise_for_status()
             except RequestException as e:
-                captcha_passed = False
-                if e.response.status_code == 403 and "data-sitekey" in e.response.content:
-                    logger.info('titlovi: Solving captcha. This might take a couple of minutes, but should only '
-                                'happen once every so often')
-
-                    site_key = re.search(r'data-sitekey="(.+?)"', e.response.content).group(1)
-                    challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', e.response.content).group(1)
-                    challenge_ray = re.search(r'data-ray="(.+?)"', e.response.content).group(1)
-                    if not all([site_key, challenge_s, challenge_ray]):
-                        raise Exception("titlovi: Captcha site-key not found!")
-
-                    pitcher = pitchers.get_pitcher()("titlovi", e.request.url, site_key,
-                                                     user_agent=self.session.headers["User-Agent"],
-                                                     cookies=self.session.cookies.get_dict(),
-                                                     is_invisible=True)
-
-                    result = pitcher.throw()
-                    if not result:
-                        raise Exception("titlovi: Couldn't solve captcha!")
-
-                    s_params = {
-                        "s": challenge_s,
-                        "id": challenge_ray,
-                        "g-recaptcha-response": result,
-                    }
-                    r = self.session.get(self.server_url + "/cdn-cgi/l/chk_captcha", params=s_params, timeout=10,
-                                         allow_redirects=False)
-                    r.raise_for_status()
-                    r = self.session.get(self.search_url, params=params, timeout=10)
-                    r.raise_for_status()
-                    store_verification("titlovi", self.session)
-                    captcha_passed = True
-
-                if not captcha_passed:
-                    logger.exception('RequestException %s', e)
-                    break
+                logger.exception('RequestException %s', e)
+                break
             else:
                 try:
                     soup = BeautifulSoup(r.content, 'lxml')

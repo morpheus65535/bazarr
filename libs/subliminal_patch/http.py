@@ -1,4 +1,6 @@
 # coding=utf-8
+import json
+from collections import OrderedDict
 
 import certifi
 import ssl
@@ -9,9 +11,7 @@ import requests
 import xmlrpclib
 import dns.resolver
 
-from collections import OrderedDict
 from requests import exceptions
-from requests.utils import default_user_agent
 from urllib3.util import connection
 from retry.api import retry_call
 from exceptions import APIThrottled
@@ -35,12 +35,6 @@ except AttributeError:
     default_ssl_context = None
 
 
-custom_resolver = dns.resolver.Resolver(configure=False)
-
-# 8.8.8.8 is Google's public DNS server
-custom_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
-
-
 class TimeoutSession(requests.Session):
     timeout = 10
 
@@ -61,54 +55,65 @@ class CertifiSession(TimeoutSession):
         self.verify = pem_file
 
 
-class CFSession(CloudflareScraper, CertifiSession, TimeoutSession):
+class CFSession(CloudflareScraper):
     def __init__(self):
         super(CFSession, self).__init__()
-        self.headers = OrderedDict([
-            ('User-Agent', default_user_agent()),
-            ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
-            ('Accept-Language', 'en-US,en;q=0.5'),
-            ('Accept-Encoding', 'gzip, deflate'),
-            ('Connection', 'keep-alive'),
-            ('Pragma', 'no-cache'),
-            ('Cache-Control', 'no-cache'),
-            ('Upgrade-Insecure-Requests', '1'),
-            ('DNT', '1'),
-        ])
         self.debug = os.environ.get("CF_DEBUG", False)
 
     def request(self, method, url, *args, **kwargs):
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
 
-        cache_key = "cf_data_%s" % domain
+        cache_key = "cf_data2_%s" % domain
 
-        if not self.cookies.get("__cfduid", "", domain=domain):
+        if not self.cookies.get("cf_clearance", "", domain=domain):
             cf_data = region.get(cache_key)
             if cf_data is not NO_VALUE:
-                cf_cookies, user_agent = cf_data
+                cf_cookies, user_agent, hdrs = cf_data
                 logger.debug("Trying to use old cf data for %s: %s", domain, cf_data)
                 for cookie, value in cf_cookies.iteritems():
                     self.cookies.set(cookie, value, domain=domain)
 
-                self.headers['User-Agent'] = user_agent
+                self._hdrs = hdrs
+                self._ua = user_agent
+                self.headers['User-Agent'] = self._ua
 
         ret = super(CFSession, self).request(method, url, *args, **kwargs)
 
-        try:
-            cf_data = self.get_live_tokens(domain)
-        except:
-            pass
-        else:
-            if cf_data != region.get(cache_key) and self.cookies.get("__cfduid", "", domain=domain)\
-                    and self.cookies.get("cf_clearance", "", domain=domain):
-                logger.debug("Storing cf data for %s: %s", domain, cf_data)
-                region.set(cache_key, cf_data)
+        if self._was_cf:
+            self._was_cf = False
+            logger.debug("We've hit CF, trying to store previous data")
+            try:
+                cf_data = self.get_cf_live_tokens(domain)
+            except:
+                logger.debug("Couldn't get CF live tokens for re-use. Cookies: %r", self.cookies)
+                pass
+            else:
+                if cf_data != region.get(cache_key) and cf_data[0]["cf_clearance"]:
+                    logger.debug("Storing cf data for %s: %s", domain, cf_data)
+                    region.set(cache_key, cf_data)
 
         return ret
 
+    def get_cf_live_tokens(self, domain):
+        for d in self.cookies.list_domains():
+            if d.startswith(".") and d in ("." + domain):
+                cookie_domain = d
+                break
+        else:
+            raise ValueError(
+                "Unable to find Cloudflare cookies. Does the site actually have "
+                "Cloudflare IUAM (\"I'm Under Attack Mode\") enabled?")
 
-class RetryingSession(CFSession):
+        return (OrderedDict(filter(lambda x: x[1], [
+                    ("__cfduid", self.cookies.get("__cfduid", "", domain=cookie_domain)),
+                    ("cf_clearance", self.cookies.get("cf_clearance", "", domain=cookie_domain))
+                ])),
+                self._ua, self._hdrs
+        )
+
+
+class RetryingSession(CertifiSession):
     proxied_functions = ("get", "post")
 
     def __init__(self):
@@ -144,6 +149,10 @@ class RetryingSession(CFSession):
         if self.proxies and "timeout" in kwargs and kwargs["timeout"]:
             kwargs["timeout"] = kwargs["timeout"] * 3
         return self.retry_method("post", *args, **kwargs)
+
+
+class RetryingCFSession(RetryingSession, CFSession):
+    pass
 
 
 class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
@@ -216,25 +225,62 @@ _orig_create_connection = connection.create_connection
 dns_cache = {}
 
 
-def set_custom_resolver():
+_custom_resolver = None
+_custom_resolver_ips = None
+
+
+def patch_create_connection():
+    if hasattr(connection.create_connection, "_sz_patched"):
+        return
+
     def patched_create_connection(address, *args, **kwargs):
         """Wrap urllib3's create_connection to resolve the name elsewhere"""
         # resolve hostname to an ip address; use your own
         # resolver here, as otherwise the system resolver will be used.
+        global _custom_resolver, _custom_resolver_ips, dns_cache
         host, port = address
-        if host in dns_cache:
-            ip = dns_cache[host]
-            logger.debug("Using %s=%s from cache", host, ip)
-        else:
-            try:
-                ip = custom_resolver.query(host)[0].address
-                dns_cache[host] = ip
-            except dns.exception.DNSException:
-                logger.warning("Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
-                return _orig_create_connection((host, port), *args, **kwargs)
 
-            logger.debug("Resolved %s to %s using %s", host, ip, custom_resolver.nameservers)
+        __custom_resolver_ips = os.environ.get("dns_resolvers", None)
 
-        return _orig_create_connection((ip, port), *args, **kwargs)
+        # resolver ips changed in the meantime?
+        if __custom_resolver_ips != _custom_resolver_ips:
+            _custom_resolver = None
+            _custom_resolver_ips = __custom_resolver_ips
+            dns_cache = {}
 
+        custom_resolver = _custom_resolver
+
+        if not custom_resolver:
+            if _custom_resolver_ips:
+                logger.debug("DNS: Trying to use custom DNS resolvers: %s", _custom_resolver_ips)
+                custom_resolver = dns.resolver.Resolver(configure=False)
+                custom_resolver.lifetime = 8.0
+                try:
+                    custom_resolver.nameservers = json.loads(_custom_resolver_ips)
+                except:
+                    logger.debug("DNS: Couldn't load custom DNS resolvers: %s", _custom_resolver_ips)
+                else:
+                    _custom_resolver = custom_resolver
+
+        if custom_resolver:
+            if host in dns_cache:
+                ip = dns_cache[host]
+                logger.debug("DNS: Using %s=%s from cache", host, ip)
+                return _orig_create_connection((ip, port), *args, **kwargs)
+            else:
+                try:
+                    ip = custom_resolver.query(host)[0].address
+                    logger.debug("DNS: Resolved %s to %s using %s", host, ip, custom_resolver.nameservers)
+                    dns_cache[host] = ip
+                except dns.exception.DNSException:
+                    logger.warning("DNS: Couldn't resolve %s with DNS: %s", host, custom_resolver.nameservers)
+                    raise
+
+        return _orig_create_connection((host, port), *args, **kwargs)
+
+    patch_create_connection._sz_patched = True
     connection.create_connection = patched_create_connection
+
+
+patch_create_connection()
+

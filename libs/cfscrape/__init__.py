@@ -1,7 +1,10 @@
+# coding=utf-8
+
 import logging
 import random
 import re
-
+import os
+import json
 import base64
 
 from copy import deepcopy
@@ -11,6 +14,7 @@ from .jsfuck import jsunfuck
 
 import js2py
 from requests.sessions import Session
+from subliminal_patch.pitcher import pitchers
 
 try:
     from requests_toolbelt.utils import dump
@@ -23,6 +27,15 @@ try:
 except ImportError:
     from urllib.parse import urlparse
     from urllib.parse import urlunparse
+
+brotli_available = True
+
+try:
+    from brotli import decompress as brdec
+except:
+    brotli_available = False
+
+logger = logging.getLogger(__name__)
 
 __version__ = "2.0.3"
 
@@ -43,16 +56,47 @@ BUG_REPORT = """\
 Cloudflare may have changed their technique, or there may be a bug in the script.
 """
 
+
+cur_path = os.path.abspath(os.path.dirname(__file__))
+
+if brotli_available:
+    brwsrs = os.path.join(cur_path, "browsers_br.json")
+    with open(brwsrs, "r") as f:
+        UA_COMBO = json.load(f, object_pairs_hook=OrderedDict)["chrome"]
+
+else:
+    brwsrs = os.path.join(cur_path, "browsers.json")
+    UA_COMBO = []
+    with open(brwsrs, "r") as f:
+        _brwsrs = json.load(f, object_pairs_hook=OrderedDict)
+        for entry in _brwsrs:
+            _entry = OrderedDict(("-".join(a.capitalize() for a in key.split("-")), value)
+                                 for key, value in entry.iteritems())
+            _entry["User-Agent"] = None
+            UA_COMBO.append({"User-Agent": [entry["user-agent"]], "headers": _entry})
+
+
+class NeedsCaptchaException(Exception):
+    pass
+
+
 class CloudflareScraper(Session):
     def __init__(self, *args, **kwargs):
         self.delay = kwargs.pop('delay', 8)
         self.debug = False
+        self._was_cf = False
+        self._ua = None
+        self._hdrs = None
 
         super(CloudflareScraper, self).__init__(*args, **kwargs)
 
-        if 'requests' in self.headers['User-Agent']:
+        if not self._ua:
             # Set a random User-Agent if no custom User-Agent has been set
-            self.headers['User-Agent'] = random.choice(DEFAULT_USER_AGENTS)
+            ua_combo = random.choice(UA_COMBO)
+            self._ua = random.choice(ua_combo["User-Agent"])
+            self._hdrs = ua_combo["headers"].copy()
+            self._hdrs["User-Agent"] = self._ua
+            self.headers['User-Agent'] = self._ua
 
     def set_cloudflare_challenge_delay(self, delay):
         if isinstance(delay, (int, float)) and delay > 0:
@@ -61,7 +105,7 @@ class CloudflareScraper(Session):
     def is_cloudflare_challenge(self, resp):
         if resp.headers.get('Server', '').startswith('cloudflare'):
             if b'why_captcha' in resp.content or b'/cdn-cgi/l/chk_captcha' in resp.content:
-                raise ValueError('Captcha')
+                raise NeedsCaptchaException
 
             return (
                 resp.status_code in [429, 503]
@@ -77,34 +121,75 @@ class CloudflareScraper(Session):
             pass
 
     def request(self, method, url, *args, **kwargs):
-        if not isinstance(self.headers, OrderedDict):
-            self.headers = \
-                OrderedDict(
-                    [
-                        ('User-Agent', self.headers['User-Agent']),
-                        ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
-                        ('Accept-Language', 'en-US,en;q=0.5'),
-                        ('Accept-Encoding', 'gzip, deflate'),
-                        ('Connection',  'close'),
-                        ('Upgrade-Insecure-Requests', '1')
-                    ]
-                )
+        # self.headers = (
+        #     OrderedDict(
+        #         [
+        #             ('User-Agent', self.headers['User-Agent']),
+        #             ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
+        #             ('Accept-Language', 'en-US,en;q=0.5'),
+        #             ('Accept-Encoding', 'gzip, deflate'),
+        #             ('Connection',  'close'),
+        #             ('Upgrade-Insecure-Requests', '1')
+        #         ]
+        #     )
+        # )
+        self.headers = self._hdrs.copy()
 
         resp = super(CloudflareScraper, self).request(method, url, *args, **kwargs)
+        if resp.headers.get('content-encoding') == 'br' and brotli_available:
+            resp._content = brdec(resp._content)
 
         # Debug request
         if self.debug:
             self.debugRequest(resp)
 
         # Check if Cloudflare anti-bot is on
-        if self.is_cloudflare_challenge(resp):
-            # Work around if the initial request is not a GET,
-            # Superseed with a GET then re-request the orignal METHOD.
-            if resp.request.method != 'GET':
-                self.request('GET', resp.url)
-                resp = self.request(method, url, *args, **kwargs)
-            else:
-                resp = self.solve_cf_challenge(resp, **kwargs)
+        try:
+            if self.is_cloudflare_challenge(resp):
+                self._was_cf = True
+                # Work around if the initial request is not a GET,
+                # Superseed with a GET then re-request the orignal METHOD.
+                if resp.request.method != 'GET':
+                    self.request('GET', resp.url)
+                    resp = self.request(method, url, *args, **kwargs)
+                else:
+                    resp = self.solve_cf_challenge(resp, **kwargs)
+        except NeedsCaptchaException:
+            # solve the captcha
+            self._was_cf = True
+            site_key = re.search(r'data-sitekey="(.+?)"', resp.content).group(1)
+            challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.content).group(1)
+            challenge_ray = re.search(r'data-ray="(.+?)"', resp.content).group(1)
+            if not all([site_key, challenge_s, challenge_ray]):
+                raise Exception("cf: Captcha site-key not found!")
+
+            pitcher = pitchers.get_pitcher()("cf", resp.request.url, site_key,
+                                             user_agent=self.headers["User-Agent"],
+                                             cookies=self.cookies.get_dict(),
+                                             is_invisible=True)
+
+            parsed_url = urlparse(resp.url)
+            domain = parsed_url.netloc
+            logger.info("cf: %s: Solving captcha", domain)
+            result = pitcher.throw()
+            if not result:
+                raise Exception("cf: Couldn't solve captcha!")
+
+            submit_url = '{}://{}/cdn-cgi/l/chk_captcha'.format(parsed_url.scheme, domain)
+            method = resp.request.method
+
+            cloudflare_kwargs = {
+                'allow_redirects': False,
+                'headers': {'Referer': resp.url},
+                'params': OrderedDict(
+                    [
+                        ('s', challenge_s),
+                        ('g-recaptcha-response', result)
+                    ]
+                )
+            }
+
+            return self.request(method, submit_url, **cloudflare_kwargs)
 
         return resp
 
@@ -127,7 +212,7 @@ class CloudflareScraper(Session):
         submit_url = '{}://{}/cdn-cgi/l/chk_jschl'.format(parsed_url.scheme, domain)
 
         cloudflare_kwargs = deepcopy(original_kwargs)
-        headers = cloudflare_kwargs.setdefault('headers', OrderedDict({'Referer': resp.url}))
+        headers = cloudflare_kwargs.setdefault('headers', {'Referer': resp.url})
 
         try:
             params = cloudflare_kwargs.setdefault(
@@ -295,22 +380,6 @@ class CloudflareScraper(Session):
                 'cf_clearance': scraper.cookies.get('cf_clearance', '', domain=cookie_domain)
             },
             scraper.headers['User-Agent']
-        )
-
-    def get_live_tokens(self, domain):
-        for d in self.cookies.list_domains():
-            if d.startswith(".") and d in ("." + domain):
-                cookie_domain = d
-                break
-        else:
-            raise ValueError(
-                "Unable to find Cloudflare cookies. Does the site actually have Cloudflare IUAM (\"I'm Under Attack Mode\") enabled?")
-
-        return ({
-                    "__cfduid": self.cookies.get("__cfduid", "", domain=cookie_domain),
-                    "cf_clearance": self.cookies.get("cf_clearance", "", domain=cookie_domain)
-                },
-                self.headers["User-Agent"]
         )
 
     @classmethod

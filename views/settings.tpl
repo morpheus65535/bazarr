@@ -1312,7 +1312,7 @@
                                 <div class='field'>
                                     <div class="ui fluid input">
                                         <input id="settings_death_by_captcha_password" name="settings_death_by_captcha_password"
-                                               type="text" value="{{ settings.deathbycaptcha.password }}">
+                                               type="password" value="{{ settings.deathbycaptcha.password }}">
                                     </div>
                                 </div>
                             </div>
