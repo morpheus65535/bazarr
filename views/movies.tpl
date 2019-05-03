@@ -3,7 +3,6 @@
 	<head>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
 
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
@@ -53,16 +52,16 @@
 			<div class="ui basic buttons">
 				<button id="movieseditor" class="ui button"><i class="configure icon"></i>Movies Editor</button>
 			</div>
-			<table id="tablemovies" class="ui very basic selectable table">
+			<table id="tablemovies" class="ui very basic selectable stackable table">
 				<thead>
 					<tr>
 						<th></th>
-						<th class="sorted ascending">Name</th>
+						<th>Name</th>
 						<th>Path</th>
 						<th>Audio<br>language</th>
 						<th>Subtitles<br>languages</th>
 						<th>Hearing-<br>impaired</th>
-						<th class="no-sort"></th>
+						<th></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -223,8 +222,6 @@
 		$(window).scrollTop(sessionStorage.scrolly);
 		sessionStorage.clear();
 	}
-
-	$('table').tablesort();
 
 	$('a, button:not(.cancel)').on('click', function(){
 		$('#loader').addClass('active');
