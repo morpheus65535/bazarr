@@ -102,8 +102,6 @@ class SubtitriIdProvider(Provider, ProviderSubtitleArchiveMixin):
             movie_titles_string = soup.select_one('.main-header').text.strip()
             movie_titles_list = movie_titles_string.split(' / ')
             title = movie_titles_list[-1]
-            # # TODO alternate titles(?)
-            # alternate_titles = movie_title_list.remove(title)
 
             # year
             year = soup.select_one('#film-page-year').text.strip()
