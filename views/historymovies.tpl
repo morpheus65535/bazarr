@@ -59,19 +59,19 @@
 					<tr class="selectable">
 						<td class="collapsing">
 						%if row[0] == 0:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been erased." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
 						%elif row[0] == 1:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
 						%elif row[0] == 2:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been manually downloaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually downloaded." data-inverted="" data-position="top left">
 								<i class="ui user icon"></i>
 							</div>
 						%elif row[0] == 3:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been upgraded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
 						%end
