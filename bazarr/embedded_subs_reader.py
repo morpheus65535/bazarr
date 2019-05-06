@@ -21,8 +21,14 @@ class EmbeddedSubsReader:
         if self.ffprobe:
             try:
                 if not settings.general.getboolean('ignore_pgs_subs'):
-                    return subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file.encode(locale.getpreferredencoding())], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
-                subtitle_tracks = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream=codec_name:stream_tags=language", "-of", "csv=p=0", file.encode(locale.getpreferredencoding())], universal_newlines=True, stderr=subprocess.STDOUT).strip().split("\n")
+                    subtitle_languages = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream_tags=language", "-of", "csv=p=0", file.encode(locale.getpreferredencoding())], universal_newlines=True, stderr=subprocess.STDOUT).strip()
+                    if not subtitle_languages:
+                        return []
+                    return subtitle_languages.split('\n')
+                subtitle_tracks = subprocess.check_output([self.ffprobe, "-loglevel", "error", "-select_streams", "s", "-show_entries", "stream=codec_name:stream_tags=language", "-of", "csv=p=0", file.encode(locale.getpreferredencoding())], universal_newlines=True, stderr=subprocess.STDOUT).strip()
+                if not subtitle_tracks:
+                    return []
+                subtitle_tracks = subtitle_tracks.split('\n')
                 return [lang for (sub_type, lang) in map(lambda subtitle_track: subtitle_track.split(','), subtitle_tracks) if sub_type != 'hdmv_pgs_subtitle']
             except subprocess.CalledProcessError as e:
                 raise FFprobeError(e.output)
