@@ -1190,6 +1190,25 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Ignore embedded PGS subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_ignore_pgs" class="ui toggle checkbox" data-ignorepgs={{settings.general.getboolean('ignore_pgs_subs')}}>
+                                    <input name="settings_general_ignore_pgs" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Ignores pgs subtitles in embedded subtitles detection. Only relevant if 'Use embedded subtitles' is enabled." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Adaptive searching</label>
                             </div>
                             <div class="one wide column">
@@ -2230,6 +2249,12 @@
                 $("#settings_embedded").checkbox('check');
             } else {
                 $("#settings_embedded").checkbox('uncheck');
+            }
+
+    if ($('#settings_ignore_pgs').data("ignorepgs") === "True") {
+                $("#settings_ignore_pgs").checkbox('check');
+            } else {
+                $("#settings_ignore_pgs").checkbox('uncheck');
             }
 
     if ($('#settings_only_monitored_sonarr').data("monitored") === "True") {
