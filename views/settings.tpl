@@ -2251,7 +2251,7 @@
                 $("#settings_embedded").checkbox('uncheck');
             }
 
-    if ($('#settings_ignore_pgs').data("ignore") === "True") {
+    if ($('#settings_ignore_pgs').data("ignorepgs") === "True") {
                 $("#settings_ignore_pgs").checkbox('check');
             } else {
                 $("#settings_ignore_pgs").checkbox('uncheck');
