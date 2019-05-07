@@ -1193,7 +1193,7 @@
                                 <label>Ignore embedded PGS subtitles</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_ignore_pgs" class="ui toggle checkbox" data-ignore={{settings.general.getboolean('ignore_pgs_subs')}}>
+                                <div id="settings_ignore_pgs" class="ui toggle checkbox" data-ignorepgs={{settings.general.getboolean('ignore_pgs_subs')}}>
                                     <input name="settings_general_ignore_pgs" type="checkbox">
                                     <label></label>
                                 </div>
