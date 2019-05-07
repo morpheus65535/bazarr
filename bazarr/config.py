@@ -31,7 +31,7 @@ defaults = {
         'page_size': '25',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
-        'ignore_pgs_subs': 'True',
+        'ignore_pgs_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '',
         'throtteled_providers': '{}',
