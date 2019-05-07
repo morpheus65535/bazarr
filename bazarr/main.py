@@ -277,11 +277,6 @@ def save_wizard():
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
-    settings_general_ignore_pgs = request.forms.get('settings_general_ignore_pgs')
-    if settings_general_ignore_pgs is None:
-        settings_general_ignore_pgs = 'False'
-    else:
-        settings_general_ignore_pgs = 'True'
     settings_subfolder = request.forms.get('settings_subfolder')
     settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
     settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
@@ -307,7 +302,6 @@ def save_wizard():
     settings.general.subfolder = text_type(settings_subfolder)
     settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
-    settings.general.ignore_pgs_subs = text_type(settings_general_ignore_pgs)
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
