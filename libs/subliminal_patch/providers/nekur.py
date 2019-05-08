@@ -8,8 +8,8 @@ from rarfile import RarFile, is_rarfile
 
 from guessit import guessit
 from requests import Session
-from bs4 import NavigableString
-from ftfy import fix_text
+import chardet
+from bs4 import NavigableString, UnicodeDammit
 from subzero.language import Language
 
 from subliminal_patch.providers import Provider
@@ -38,7 +38,6 @@ class NekurSubtitle(Subtitle):
         self.fps = fps
         self.notes = notes
         self.matches = None
-        # self.encoding = 'utf-16'
 
     @property
     def id(self):
@@ -65,6 +64,39 @@ class NekurSubtitle(Subtitle):
 
         self.matches = matches
         return matches
+
+    def guess_encoding(self):
+        # override default subtitle guess_encoding method to not include language-specific encodings guessing
+        # chardet encoding detection seem to yield better results
+        """Guess encoding using chardet.
+
+        :return: the guessed encoding.
+        :rtype: str
+
+        """
+        if self._guessed_encoding:
+            return self._guessed_encoding
+
+        logger.info('Guessing encoding for language %s', self.language)
+
+        # guess/detect encoding using chardet
+        encoding = chardet.detect(self.content)['encoding']
+        logger.info('Chardet found encoding %s', encoding)
+
+        if not encoding:
+            # fallback on bs4
+            logger.info('Falling back to bs4 detection')
+            a = UnicodeDammit(self.content)
+
+            logger.info("bs4 detected encoding: %s", a.original_encoding)
+
+            if a.original_encoding:
+                self._guessed_encoding = a.original_encoding
+                return a.original_encoding
+            raise ValueError(u"Couldn't guess the proper encoding for %s", self)
+
+        self._guessed_encoding = encoding
+        return encoding
 
 
 class NekurProvider(Provider, ProviderSubtitleArchiveMixin):
@@ -172,7 +204,4 @@ class NekurProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 raise ProviderError('Unidentified archive type')
 
-            subtitle_content = self.get_subtitle_from_archive(subtitle, archive)
-            # fix content encoding (utf-16 encoded by default)
-            fixed_subtitle_content = fix_text(subtitle_content.decode('utf-16'), {'uncurl_quotes': False, 'fix_character_width': False}).encode(encoding='utf-8')
-            subtitle.content = fixed_subtitle_content
+            subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
