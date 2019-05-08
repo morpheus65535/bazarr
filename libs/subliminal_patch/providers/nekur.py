@@ -160,8 +160,8 @@ class NekurProvider(Provider, ProviderSubtitleArchiveMixin):
             # additional notes
             notes = row.select_one('.notes').text.strip()
 
-            # page link = archive link (there is no seperate subtitle page link)
-            page_link = 'http://subtitri.nekur.net/filmu-subtitri/'
+            # page link = download link (there is no seperate subtitle page link)
+            page_link = download_link
             
             # create/add the subitle
             subtitle = self.subtitle_class(Language.fromalpha2('lv'), page_link, download_link, title, year, imdb_id, fps, notes)
