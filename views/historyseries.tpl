@@ -102,18 +102,26 @@
 						<td>
 							% upgradable_criteria = (row[7], row[4], row[10])
 							% if upgradable_criteria in upgradable_episodes:
-							% if row[8] != "None":
-							% if row[9] in ast.literal_eval(str(row[8])):
-							<div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
-								<i class="ui green recycle icon upgrade"></i>{{row[5]}}
-							</div>
+							%     if row[8] != "None":
+							%         desired_languages = ast.literal_eval(str(row[8]))
+							%         if row[11] == "True":
+							%             forced_languages = [l + ":forced" for l in desired_languages]
+							%         elif row[11] == "Both":
+							%             forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
+							%         else:
+							%             forced_languages = desired_languages
+							%         end
+                            %         if row[9] in forced_languages:
+										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
+										      <i class="ui green recycle icon upgrade"></i>{{row[5]}}
+										  </div>
+							%         else:
+							              {{row[5]}}
+							%         end
+							%     end
 							% else:
-							{{row[5]}}
+							      {{row[5]}}
 							% end
-							% end
-							% else:
-							{{row[5]}}
-							%end
 						</td>
 					</tr>
 				%end

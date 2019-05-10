@@ -849,12 +849,29 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
             if episode[9] != "None":
-                if episode[1] in ast.literal_eval(str(episode[9])):
+                desired_languages = ast.literal_eval(str(episode[9]))
+                if episode[10] == "True":
+                    forced_languages = [l + ":forced" for l in desired_languages]
+                elif episode[10] == "Both":
+                    forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
+                else:
+                    forced_languages = desired_languages
+
+                if episode[1] in forced_languages:
                     notifications.write(msg='Upgrading series subtitles...',
                                         queue='upgrade_subtitle', item=i, length=count_episode_to_upgrade)
-                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(episode[1])),
-                                               episode[3], providers_list, providers_auth, str(episode[4]),
-                                               episode[5], 'series', forced_minimum_score=int(episode[2]), is_upgrade=True)
+
+                    if episode[1].endswith('forced'):
+                        language = episode[1].split(':')[0]
+                        is_forced = "True"
+                    else:
+                        language = episode[1]
+                        is_forced = "False"
+
+                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
+                                               episode[3], is_forced, providers_list, providers_auth, str(episode[4]),
+                                               episode[5], 'series', forced_minimum_score=int(episode[2]),
+                                               is_upgrade=True)
                     if result is not None:
                         message = result[0]
                         path = result[1]
@@ -869,11 +886,27 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
             if movie[8] != "None":
-                if movie[1] in ast.literal_eval(str(movie[8])):
+                desired_languages = ast.literal_eval(str(movie[8]))
+                if movie[9] == "True":
+                    forced_languages = [l + ":forced" for l in desired_languages]
+                elif movie[9] == "Both":
+                    forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
+                else:
+                    forced_languages = desired_languages
+
+                if movie[1] in forced_languages:
                     notifications.write(msg='Upgrading movie subtitles...',
                                             queue='upgrade_subtitle', item=i, length=count_movie_to_upgrade)
-                    result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(movie[1])),
-                                               movie[3], providers_list, providers_auth, str(movie[4]),
+
+                    if movie[1].endswith('forced'):
+                        language = movie[1].split(':')[0]
+                        is_forced = "True"
+                    else:
+                        language = movie[1]
+                        is_forced = "False"
+
+                    result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
+                                               movie[3], is_forced, providers_list, providers_auth, str(movie[4]),
                                                movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)
                     if result is not None:
                         message = result[0]
