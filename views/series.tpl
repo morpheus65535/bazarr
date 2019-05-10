@@ -76,7 +76,7 @@
 				%import ast
 				%import os
 				%for row in rows:
-					<tr>
+					<tr class="selectable">
 						<td><a href="{{base_url}}episodes/{{row[5]}}">{{row[1]}}</a></td>
 						<td>
 							%if os.path.isdir(row[2]):

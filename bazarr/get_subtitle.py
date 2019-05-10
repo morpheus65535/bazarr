@@ -106,9 +106,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
 
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
-        hi = True
+        hi = "force HI"
     else:
-        hi = False
+        hi = "force non-HI"
     language_set = set()
 
     if not isinstance(language, types.ListType):
@@ -269,9 +269,9 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
     final_subtitles = []
     
     if hi == "True":
-        hi = True
+        hi = "force HI"
     else:
-        hi = False
+        hi = "force non-HI"
     language_set = set()
 
     if forced == "True":

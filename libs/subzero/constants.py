@@ -2,7 +2,7 @@
 
 OS_PLEX_USERAGENT = 'plexapp.com v9.0'
 
-DEPENDENCY_MODULE_NAMES = ['subliminal', 'subliminal_patch', 'enzyme', 'guessit', 'subzero', 'libfilebot']
+DEPENDENCY_MODULE_NAMES = ['subliminal', 'subliminal_patch', 'enzyme', 'guessit', 'subzero', 'libfilebot', 'cfscrape']
 PERSONAL_MEDIA_IDENTIFIER = "com.plexapp.agents.none"
 PLUGIN_IDENTIFIER_SHORT = "subzero"
 PLUGIN_IDENTIFIER = "com.plexapp.agents.%s" % PLUGIN_IDENTIFIER_SHORT

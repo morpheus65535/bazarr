@@ -184,6 +184,9 @@ def _dnsname_to_stdlib(name):
         except idna.core.IDNAError:
             return None
 
+    if ':' in name:
+        return name
+
     name = idna_encode(name)
     if name is None:
         return None

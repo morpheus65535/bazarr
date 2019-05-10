@@ -4,6 +4,7 @@ import os
 import subprocess
 import locale
 
+from config import settings
 from utils import get_binary
 
 class NotMKVAndNoFFprobe(Exception):

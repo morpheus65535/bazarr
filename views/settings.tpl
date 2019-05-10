@@ -1190,6 +1190,25 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Ignore embedded PGS subtitles</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_ignore_pgs" class="ui toggle checkbox" data-ignorepgs={{settings.general.getboolean('ignore_pgs_subs')}}>
+                                    <input name="settings_general_ignore_pgs" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Ignores pgs subtitles in embedded subtitles detection. Only relevant if 'Use embedded subtitles' is enabled." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Adaptive searching</label>
                             </div>
                             <div class="one wide column">
@@ -1312,7 +1331,7 @@
                                 <div class='field'>
                                     <div class="ui fluid input">
                                         <input id="settings_death_by_captcha_password" name="settings_death_by_captcha_password"
-                                               type="text" value="{{ settings.deathbycaptcha.password }}">
+                                               type="password" value="{{ settings.deathbycaptcha.password }}">
                                     </div>
                                 </div>
                             </div>
@@ -1469,6 +1488,28 @@
                             </div>
                         </div>
                         <div id="hosszupuska_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Nekur</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="nekur" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Latvian subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="nekur_option" class="ui grid container">
 
                         </div>
 
@@ -1753,6 +1794,28 @@
                             </div>
                         </div>
                         <div id="subs4series_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>subtitri.id.lv</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subtitriid" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Latvian subtitles provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subtitriid_option" class="ui grid container">
 
                         </div>
 
@@ -2230,6 +2293,12 @@
                 $("#settings_embedded").checkbox('check');
             } else {
                 $("#settings_embedded").checkbox('uncheck');
+            }
+
+    if ($('#settings_ignore_pgs').data("ignorepgs") === "True") {
+                $("#settings_ignore_pgs").checkbox('check');
+            } else {
+                $("#settings_ignore_pgs").checkbox('uncheck');
             }
 
     if ($('#settings_only_monitored_sonarr').data("monitored") === "True") {
