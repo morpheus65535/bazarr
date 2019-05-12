@@ -5,16 +5,11 @@ import logging
 import os
 import time
 import inflect
-import cfscrape
 
-from random import randint
 from zipfile import ZipFile
-
 from babelfish import language_converters
 from guessit import guessit
-from dogpile.cache.api import NO_VALUE
 from subliminal import Episode, ProviderError
-from subliminal.cache import region
 from subliminal.utils import sanitize_release_group
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider

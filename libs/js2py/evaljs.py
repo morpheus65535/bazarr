@@ -116,10 +116,12 @@ def eval_js(js):
 
 
 def eval_js6(js):
+    """Just like eval_js but with experimental support for js6 via babel."""
     return eval_js(js6_to_js5(js))
 
 
 def translate_js6(js):
+    """Just like translate_js but with experimental support for js6 via babel."""
     return translate_js(js6_to_js5(js))
 
 

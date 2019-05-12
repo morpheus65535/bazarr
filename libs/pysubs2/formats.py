@@ -3,7 +3,7 @@ from .microdvd import MicroDVDFormat
 from .subrip import SubripFormat
 from .jsonformat import JSONFormat
 from .substation import SubstationFormat
-from .txt_generic import TXTGenericFormat, MPL2Format
+from .mpl2 import MPL2Format
 from .exceptions import *
 
 #: Dict mapping file extensions to format identifiers.
@@ -13,7 +13,6 @@ FILE_EXTENSION_TO_FORMAT_IDENTIFIER = {
     ".ssa": "ssa",
     ".sub": "microdvd",
     ".json": "json",
-    ".txt": "txt_generic",
 }
 
 #: Dict mapping format identifiers to implementations (FormatBase subclasses).
@@ -23,7 +22,6 @@ FORMAT_IDENTIFIER_TO_FORMAT_CLASS = {
     "ssa": SubstationFormat,
     "microdvd": MicroDVDFormat,
     "json": JSONFormat,
-    "txt_generic": TXTGenericFormat,
     "mpl2": MPL2Format,
 }
 

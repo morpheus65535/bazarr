@@ -1,5 +1,5 @@
-from base import *
-from simplex import *
+from .base import *
+from .simplex import *
 
 
 class Space(object):

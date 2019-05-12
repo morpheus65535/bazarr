@@ -1,6 +1,10 @@
 from __future__ import unicode_literals
 import six
-
+if six.PY3:
+    basestring = str
+    long = int
+    xrange = range
+    unicode = str
 
 #Undefined
 class PyJsUndefined(object):
@@ -75,7 +79,7 @@ def is_callable(self):
 
 
 def is_infinity(self):
-    return self == float('inf') or self == -float('inf')
+    return self == Infinity or self == -Infinity
 
 
 def is_nan(self):
@@ -114,7 +118,7 @@ class JsException(Exception):
                 return self.mes.to_string().value
         else:
             if self.throw is not None:
-                from conversions import to_string
+                from .conversions import to_string
                 return to_string(self.throw)
             else:
                 return self.typ + ': ' + self.message
@@ -131,3 +135,26 @@ def value_from_js_exception(js_exception, space):
         return js_exception.throw
     else:
         return space.NewError(js_exception.typ, js_exception.message)
+
+
+def js_dtoa(number):
+    if is_nan(number):
+        return u'NaN'
+    elif is_infinity(number):
+        if number > 0:
+            return u'Infinity'
+        return u'-Infinity'
+    elif number == 0.:
+        return u'0'
+    elif abs(number) < 1e-6 or abs(number) >= 1e21:
+        frac, exponent = unicode(repr(float(number))).split('e')
+        # Remove leading zeros from the exponent.
+        exponent = int(exponent)
+        return frac + ('e' if exponent < 0 else 'e+') + unicode(exponent)
+    elif abs(number) < 1e-4:  # python starts to return exp notation while we still want the prec
+        frac, exponent = unicode(repr(float(number))).split('e-')
+        base = u'0.' + u'0' * (int(exponent) - 1) + frac.lstrip('-').replace('.', '')
+        return base if number > 0. else u'-' + base
+    elif isinstance(number, long) or number.is_integer():  # dont print .0
+        return unicode(int(number))
+    return unicode(repr(number))  # python representation should be equivalent.

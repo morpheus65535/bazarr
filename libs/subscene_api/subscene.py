@@ -244,7 +244,7 @@ def get_first_film(soup, section, year=None, session=None):
 
 
 def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact):
-    soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, "release" if release else "title", term), session=session)
+    soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, "release" if release else "search", term), session=session)
 
     if "Subtitle search by" in str(soup):
         rows = soup.find("table").tbody.find_all("tr")

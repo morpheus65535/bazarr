@@ -258,4 +258,4 @@ def fix_line_ending(content):
     :rtype: bytes
 
     """
-    return content.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+    return content.replace(b'\r\n', b'\n')

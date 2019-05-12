@@ -75,7 +75,7 @@ class SubsCenterSubtitle(Subtitle):
 class SubsCenterProvider(Provider):
     """SubsCenter Provider."""
     languages = {Language.fromalpha2(l) for l in ['he']}
-    server_url = 'http://www.subscenter.biz/he/'
+    server_url = 'http://www.subscenter.org/he/'
     subtitle_class = SubsCenterSubtitle
 
     def __init__(self, username=None, password=None):

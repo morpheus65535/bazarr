@@ -225,7 +225,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                         # page link
                         page_link = self.server_url + sub.a.attrs['href']
                         # subtitle language
-                        match = lang_re.search(sub.select_one('.lang').attrs['src'])
+                        _lang = sub.select_one('.lang')
+                        match = lang_re.search(_lang.attrs.get('src', _lang.attrs.get('cfsrc', '')))
                         if match:
                             try:
                                 # decode language
