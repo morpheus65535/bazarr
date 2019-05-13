@@ -28,6 +28,8 @@ import re
 
 import enum
 import sys
+import requests
+import time
 
 is_PY2 = sys.version_info[0] < 3
 if is_PY2:
@@ -55,7 +57,9 @@ def soup_for(url, session=None, user_agent=DEFAULT_USER_AGENT):
         r = Request(url, data=None, headers=dict(HEADERS, **{"User-Agent": user_agent}))
         html = urlopen(r).read().decode("utf-8")
     else:
-        html = session.get(url).text
+        ret = session.get(url)
+        ret.raise_for_status()
+        html = ret.text
     return BeautifulSoup(html, "html.parser")
 
 
@@ -243,17 +247,34 @@ def get_first_film(soup, section, year=None, session=None):
     return Film.from_url(url, session=session)
 
 
-def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact):
-    soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, "release" if release else "search", term), session=session)
+def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact, throttle=0):
+    # note to subscene: if you actually start to randomize the endpoint, we'll have to query your server even more
+    endpoints = ["searching", "search", "srch", "find"]
+    if release:
+        endpoints = ["release"]
 
-    if "Subtitle search by" in str(soup):
-        rows = soup.find("table").tbody.find_all("tr")
-        subtitles = Subtitle.from_rows(rows)
-        return Film(term, subtitles=subtitles)
+    soup = None
+    for endpoint in endpoints:
+        try:
+            soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, endpoint, term),
+                            session=session)
+        except requests.HTTPError, e:
+            if e.response.status_code == 404:
+                time.sleep(throttle)
+                # fixme: detect endpoint from html
+                continue
+            raise
+        break
 
-    for junk, search_type in SearchTypes.__members__.items():
-        if section_exists(soup, search_type):
-            return get_first_film(soup, search_type, year=year, session=session)
+    if soup:
+        if "Subtitle search by" in str(soup):
+            rows = soup.find("table").tbody.find_all("tr")
+            subtitles = Subtitle.from_rows(rows)
+            return Film(term, subtitles=subtitles)
 
-        if limit_to == search_type:
-            return
+        for junk, search_type in SearchTypes.__members__.items():
+            if section_exists(soup, search_type):
+                return get_first_film(soup, search_type, year=year, session=session)
+
+            if limit_to == search_type:
+                return

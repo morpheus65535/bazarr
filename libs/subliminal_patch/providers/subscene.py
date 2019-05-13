@@ -210,7 +210,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             for series in [video.series] + video.alternative_series:
                 term = u"%s - %s Season" % (series, p.number_to_words("%sth" % video.season).capitalize())
                 logger.debug('Searching for alternative results: %s', term)
-                film = search(term, session=self.session, release=False)
+                film = search(term, session=self.session, release=False, throttle=self.search_throttle)
                 if film and film.subtitles:
                     logger.debug('Alternative results found: %s', len(film.subtitles))
                     subtitles += self.parse_results(video, film)
@@ -222,7 +222,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                     term = u"%s S%02i" % (series, video.season)
                     logger.debug('Searching for packs: %s', term)
                     time.sleep(self.search_throttle)
-                    film = search(term, session=self.session)
+                    film = search(term, session=self.session, throttle=self.search_throttle)
                     if film and film.subtitles:
                         logger.debug('Pack results found: %s', len(film.subtitles))
                         subtitles += self.parse_results(video, film)
@@ -236,7 +236,8 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             more_than_one = len([video.title] + video.alternative_titles) > 1
             for title in [video.title] + video.alternative_titles:
                 logger.debug('Searching for movie results: %s', title)
-                film = search(title, year=video.year, session=self.session, limit_to=None, release=False)
+                film = search(title, year=video.year, session=self.session, limit_to=None, release=False,
+                              throttle=self.search_throttle)
                 if film and film.subtitles:
                     subtitles += self.parse_results(video, film)
                 if more_than_one:
