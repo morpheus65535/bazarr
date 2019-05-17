@@ -117,14 +117,14 @@ class Subtitle(Subtitle_):
 
         logger.info('Guessing encoding for language %s', self.language)
 
-        encodings = ['utf-8']
+        encodings = ['utf-8', 'utf-16']
 
         # add language-specific encodings
         # http://scratchpad.wikia.com/wiki/Character_Encoding_Recommendation_for_Languages
 
         if self.language.alpha3 == 'zho':
             encodings.extend(['cp936', 'gb2312', 'gbk', 'gb18030', 'hz', 'iso2022_jp_2', 'cp950', 'gb18030', 'big5',
-                              'big5hkscs', 'utf-16'])
+                              'big5hkscs'])
         elif self.language.alpha3 == 'jpn':
             encodings.extend(['shift-jis', 'cp932', 'euc_jp', 'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2',
                               'iso2022_jp_2004', 'iso2022_jp_3', 'iso2022_jp_ext', ])
