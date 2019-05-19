@@ -6,10 +6,11 @@ from zipfile import ZipFile
 from babelfish import Language
 from requests import Session
 
-from subliminal.providers import Provider
+from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.providers import Provider
 from subliminal import __short_version__
 from subliminal.exceptions import AuthenticationError, ConfigurationError
-from subliminal.subtitle import Subtitle, fix_line_ending
+from subliminal.subtitle import fix_line_ending
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +45,18 @@ class Napisy24Subtitle(Subtitle):
 
 class Napisy24Provider(Provider):
     '''Napisy24 Provider.'''
-    languages = {Language.fromalpha2(l) for l in ['pl']}
+    languages = {Language(l) for l in ['pol']}
     required_hash = 'opensubtitles'
     api_url = 'http://napisy24.pl/run/CheckSubAgent.php'
 
-    def __init__(self):
-        self.username = 'subliminal'
-        self.password = 'lanimilbus'
+    def __init__(self, username=None, password=None):
+        if all((username, password)):
+            self.username = username
+            self.password = password
+        else:
+            self.username = 'subliminal'
+            self.password = 'lanimilbus'
+
         self.session = None
 
     def initialize(self):

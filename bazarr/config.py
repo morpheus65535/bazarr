@@ -107,6 +107,10 @@ defaults = {
     'deathbycaptcha': {
         'username': '',
         'password': ''
+    },
+    'napisy24': {
+        'username': '',
+        'password': ''
     }
 }
 

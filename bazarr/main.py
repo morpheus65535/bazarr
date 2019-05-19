@@ -391,6 +391,8 @@ def save_wizard():
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
     settings.xsubs.username = request.forms.get('settings_xsubs_username')
     settings.xsubs.password = request.forms.get('settings_xsubs_password')
+    settings.napisy24.username = request.forms.get('settings_napisy24_username')
+    settings.napisy24.password = request.forms.get('settings_napisy24_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1494,6 +1496,8 @@ def save_settings():
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
     settings.xsubs.username = request.forms.get('settings_xsubs_username')
     settings.xsubs.password = request.forms.get('settings_xsubs_password')
+    settings.napisy24.username = request.forms.get('settings_napisy24_username')
+    settings.napisy24.password = request.forms.get('settings_napisy24_password')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")

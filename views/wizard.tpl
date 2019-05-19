@@ -664,6 +664,35 @@
                                 </div>
                             </div>
                         </div>
+                        <div id="napisy24_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_napisy24_username" type="text" value="{{settings.napisy24.username if settings.napisy24.username != None else ''}}">
+                                    </div>
+                                </div>
+                                <div class="collapsed column">
+                                    <div class="collapsed center aligned column">
+                                        <div data-tooltip="The provided credentials must have api access. Leave empty to use the defaults." data-inverted="" class="ui basic icon">
+                                            <i class="yellow warning circle large icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_napisy24_password" type="password" value="{{settings.napisy24.password if settings.napisy24.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
