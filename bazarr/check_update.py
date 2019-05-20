@@ -43,7 +43,7 @@ def check_and_apply_update():
         g.fetch('origin')
         result = g.diff('--shortstat', 'origin/' + branch)
         if len(result) == 0:
-            notifications.write(msg='BAZARR No new version of Bazarr available.', queue='check_update')
+            notifications.write(msg='No new version of Bazarr available.', queue='check_update')
             logging.info('BAZARR No new version of Bazarr available.')
         else:
             g.reset('--hard', 'HEAD')
@@ -57,7 +57,7 @@ def check_and_apply_update():
         releases = request_json(url, timeout=20, whitelist_status_code=404, validator=lambda x: type(x) == list)
         
         if releases is None:
-            notifications.write(msg='BAZARR Could not get releases from GitHub.',
+            notifications.write(msg='Could not get releases from GitHub.',
                                 queue='check_update', type='warning')
             logging.warn('BAZARR Could not get releases from GitHub.')
             return
@@ -68,10 +68,10 @@ def check_and_apply_update():
         if ('v' + os.environ["BAZARR_VERSION"]) != latest_release and settings.general.branch == 'master':
             update_from_source()
         elif settings.general.branch != 'master':
-            notifications.write(msg="BAZARR Can't update development branch from source", queue='check_update')  # fixme
+            notifications.write(msg="Can't update development branch from source", queue='check_update')  # fixme
             logging.info("BAZARR Can't update development branch from source")  # fixme
         else:
-            notifications.write(msg='BAZARR is up to date', queue='check_update')
+            notifications.write(msg='Bazarr is up to date', queue='check_update')
             logging.info('BAZARR is up to date')
 
 
@@ -80,12 +80,12 @@ def update_from_source():
     update_dir = os.path.join(os.path.dirname(__file__), '..', 'update')
     
     logging.info('BAZARR Downloading update from: ' + tar_download_url)
-    notifications.write(msg='BAZARR Downloading update from: ' + tar_download_url, queue='check_update')
+    notifications.write(msg='Downloading update from: ' + tar_download_url, queue='check_update')
     data = request_content(tar_download_url)
     
     if not data:
         logging.error("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url)
-        notifications.write(msg=("BAZARR Unable to retrieve new version from '%s', can't update", tar_download_url),
+        notifications.write(msg=("Unable to retrieve new version from '%s', can't update", tar_download_url),
                             type='error', queue='check_update')
         return
     
@@ -98,14 +98,14 @@ def update_from_source():
     
     # Extract the tar to update folder
     logging.info('BAZARR Extracting file: ' + tar_download_path)
-    notifications.write(msg='BAZARR Extracting file: ' + tar_download_path, queue='check_update')
+    notifications.write(msg='Extracting file: ' + tar_download_path, queue='check_update')
     tar = tarfile.open(tar_download_path)
     tar.extractall(update_dir)
     tar.close()
     
     # Delete the tar.gz
     logging.info('BAZARR Deleting file: ' + tar_download_path)
-    notifications.write(msg='BAZARR Deleting file: ' + tar_download_path, queue='check_update')
+    notifications.write(msg='Deleting file: ' + tar_download_path, queue='check_update')
     os.remove(tar_download_path)
     
     # Find update dir name
