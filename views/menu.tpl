@@ -224,7 +224,7 @@
 			% elif restart_required[0] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% end
-		</div>
+        </div>
     </body>
 </html>
 
