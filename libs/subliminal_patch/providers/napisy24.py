@@ -3,7 +3,6 @@ import os
 from io import BytesIO
 from zipfile import ZipFile
 
-from babelfish import Language
 from requests import Session
 
 from subliminal_patch.subtitle import Subtitle
@@ -11,6 +10,7 @@ from subliminal_patch.providers import Provider
 from subliminal import __short_version__
 from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal.subtitle import fix_line_ending
+from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
