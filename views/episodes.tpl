@@ -140,10 +140,15 @@
 								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{number}} files</div>
 							</div>
 
-							<div class="ui row">
+							<div class="ui row" style="padding-bottom: 0.5em;">
 								%for language in subs_languages_list:
 								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
 								%end
+							</div>
+
+							<div class="ui row" style="padding-top: 0em;">
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details[4]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details[9]}}</div>
 							</div>
 						</div>
 					</div>
