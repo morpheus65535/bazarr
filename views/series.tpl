@@ -129,7 +129,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit series" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-forced="{{row[8]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -221,6 +221,18 @@
 										</div>
 									</div>
 								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Forced</label>
+									</div>
+									<div class="nine wide column">
+										<select name="forced" id="series_forced" class="ui fluid selection dropdown">
+											<option value="False">False</option>
+											<option value="True">True</option>
+											<option value="Both">Both</option>
+										</select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -283,6 +295,9 @@
 		const languages_array = eval($(this).data("languages"));
 		$('#series_languages').dropdown('set selected',languages_array);
 
+		$('#series_forced').dropdown('clear');
+		$('#series_forced').dropdown('set selected',$(this).data("forced"));
+
 		if ($(this).data("hearing-impaired") === "True") {
 			$("#series_hearing-impaired_div").checkbox('check');
 		} else {
@@ -291,8 +306,6 @@
 
 		$('.small.modal').modal('show');
 	});
-
-	$('#series_languages').dropdown();
 
 	$('.progress').progress({
 		label: 'ratio',

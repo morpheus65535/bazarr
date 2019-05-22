@@ -125,7 +125,7 @@
 											end
 										end
 										%>
-										<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+										<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}" data-forced="{{details[9]}}"><i class="ui inverted large compact configure icon"></i></button>
 									</div>
 								</div>
 							</div>
@@ -345,6 +345,18 @@
 										</div>
 									</div>
 								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Forced</label>
+									</div>
+									<div class="nine wide column">
+										<select name="forced" id="series_forced" class="ui fluid selection dropdown">
+											<option value="False">False</option>
+											<option value="True">True</option>
+											<option value="Both">Both</option>
+										</select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -473,17 +485,16 @@
 		const languages_array = eval($(this).data("languages"));
 		$('#series_languages').dropdown('set selected',languages_array);
 
+		$('#series_forced').dropdown('clear');
+		$('#series_forced').dropdown('set selected',$(this).data("forced"));
+
 		if ($(this).data("hearing-impaired") === "True") {
 			$("#series_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#series_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.config_dialog')
-			.modal({
-				centered: true
-			})
-			.modal('show');
+		$('.config_dialog').modal('show');
 	});
 
 	$('.manual_search').on('click', function(){

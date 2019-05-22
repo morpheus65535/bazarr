@@ -35,7 +35,7 @@ class EmbeddedSubsReader:
                 else:
                     for detected_language in detected_languages:
                         subtitles_list.append([detected_language, False])
-                        # I can't get the forced flag from ffprobe so I always assume it as not forced
+                        # I can't get the forced flag from ffprobe so I always assume it isn't forced
 
         return subtitles_list
 

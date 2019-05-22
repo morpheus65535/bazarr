@@ -67,18 +67,23 @@
                             from get_subtitle import search_active
                             from config import settings
 							for language in missing_languages:
+                                if language.endswith(':forced'):
+									forced = True
+								else:
+									forced = False
+								end
                                 if row[6] is not None and settings.general.getboolean('adaptive_searching') and language in row[6]:
                                         for lang in ast.literal_eval(row[6]):
                                             if language in lang:
                                                 active = search_active(lang[1])
                                                 if active:
                         %>
-                                                    <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[4]}}" data-forced="{{forced}}" data-radarrId={{row[2]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								                        {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							                        </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId={{row[2]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[4]}}" data-forced="{{forced}}" data-radarrId={{row[2]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								                        {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
 							                        </a>
@@ -86,7 +91,7 @@
                                             %end
                                         %end
                                 %else:
-                                        <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[4]}}" data-radarrId="{{row[2]}}" data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                        <a data-moviePath="{{row[3]}}" data-sceneName="{{row[5]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[4]}}" data-forced="{{forced}}" data-radarrId="{{row[2]}}" data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								            {{language}}
                                             <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							            </a>
@@ -170,6 +175,7 @@
 		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
+		            forced: $(this).attr("data-forced"),
 		            radarrId: $(this).attr("data-radarrId"),
                     title: $(this).attr("data-title")
 		    };

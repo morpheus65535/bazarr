@@ -126,7 +126,7 @@
 										%if subs_languages is not None:
 										<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
 										%end
-										<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+										<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}" data-forced="{{details[15]}}"><i class="ui inverted large compact configure icon"></i></button>
 									</div>
 								</div>
 							</div>
@@ -305,6 +305,18 @@
 										</div>
 									</div>
 								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Forced</label>
+									</div>
+									<div class="nine wide column">
+										<select name="forced" id="movie_forced" class="ui fluid selection dropdown">
+											<option value="False">False</option>
+											<option value="True">True</option>
+											<option value="Both">Both</option>
+										</select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -432,17 +444,16 @@
 		const languages_array = eval($(this).data("languages"));
 		$('#movie_languages').dropdown('set selected',languages_array);
 
+		$('#movie_forced').dropdown('clear');
+		$('#movie_forced').dropdown('set selected',$(this).data("forced"));
+
 		if ($(this).data("hearing-impaired") === "True") {
 			$("#movie_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#movie_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.config_dialog')
-			.modal({
-				centered: true
-			})
-			.modal('show');
+		$('.config_dialog').modal('show');
 	});
 
 	$('.manual_search').on('click', function(){

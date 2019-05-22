@@ -643,6 +643,7 @@ def edit_series(no):
             lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     if hi == "on":
         hi = "True"
@@ -651,8 +652,8 @@ def edit_series(no):
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
-    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ? WHERE sonarrSeriesId LIKE ?",
-              (str(lang), hi, no))
+    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ?, forced = ? WHERE sonarrSeriesId LIKE ?",
+              (str(lang), hi, forced, no))
     conn.commit()
     c.close()
 
@@ -671,6 +672,7 @@ def edit_serieseditor():
     series = ast.literal_eval(str('[' + series + ']'))
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
@@ -684,6 +686,8 @@ def edit_serieseditor():
             c.execute("UPDATE table_shows SET languages = ? WHERE sonarrSeriesId LIKE ?", (lang, serie))
         if hi != '':
             c.execute("UPDATE table_shows SET hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (hi, serie))
+        if forced != '':
+            c.execute("UPDATE table_shows SET forced = ? WHERE sonarrSeriesId LIKE ?", (forced, serie))
 
     conn.commit()
     c.close()
@@ -795,6 +799,7 @@ def edit_movieseditor():
     movies = ast.literal_eval(str('[' + movies + ']'))
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
@@ -808,6 +813,8 @@ def edit_movieseditor():
             c.execute("UPDATE table_movies SET languages = ? WHERE radarrId LIKE ?", (lang, movie))
         if hi != '':
             c.execute("UPDATE table_movies SET hearing_impaired = ? WHERE radarrId LIKE ?", (hi, movie))
+        if forced != '':
+            c.execute("UPDATE table_movies SET forced = ? WHERE radarrId LIKE ?", (forced, movie))
 
     conn.commit()
     c.close()
@@ -841,6 +848,7 @@ def edit_movie(no):
             lang = '[]'
 
     hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     if hi == "on":
         hi = "True"
@@ -849,7 +857,7 @@ def edit_movie(no):
 
     conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = conn.cursor()
-    c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ? WHERE radarrId LIKE ?", (str(lang), hi, no))
+    c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ?, forced = ? WHERE radarrId LIKE ?", (str(lang), hi, forced, no))
     conn.commit()
     c.close()
 
