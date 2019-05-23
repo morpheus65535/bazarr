@@ -583,7 +583,7 @@ def serieseditor():
     missing_count = missing_count[0]
 
     c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language FROM table_shows ORDER BY title ASC")
+        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY title ASC")
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
@@ -778,7 +778,7 @@ def movieseditor():
     missing_count = missing_count[0]
 
     c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language FROM table_movies ORDER BY title ASC")
+        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, forced FROM table_movies ORDER BY title ASC")
     data = c.fetchall()
     c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
     languages = c.fetchall()
