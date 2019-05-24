@@ -190,7 +190,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         return subtitles
 
     def query(self, video):
-        vfn = get_video_filename(video)
+        #vfn = get_video_filename(video)
         subtitles = []
         #logger.debug(u"Searching for: %s", vfn)
         # film = search(vfn, session=self.session)
@@ -218,18 +218,18 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                     logger.debug('No alternative results found')
 
                 # packs
-                if video.season_fully_aired:
-                    term = u"%s S%02i" % (series, video.season)
-                    logger.debug('Searching for packs: %s', term)
-                    time.sleep(self.search_throttle)
-                    film = search(term, session=self.session, throttle=self.search_throttle)
-                    if film and film.subtitles:
-                        logger.debug('Pack results found: %s', len(film.subtitles))
-                        subtitles += self.parse_results(video, film)
-                    else:
-                        logger.debug('No pack results found')
-                else:
-                    logger.debug("Not searching for packs, because the season hasn't fully aired")
+                # if video.season_fully_aired:
+                #     term = u"%s S%02i" % (series, video.season)
+                #     logger.debug('Searching for packs: %s', term)
+                #     time.sleep(self.search_throttle)
+                #     film = search(term, session=self.session, throttle=self.search_throttle)
+                #     if film and film.subtitles:
+                #         logger.debug('Pack results found: %s', len(film.subtitles))
+                #         subtitles += self.parse_results(video, film)
+                #     else:
+                #         logger.debug('No pack results found')
+                # else:
+                #     logger.debug("Not searching for packs, because the season hasn't fully aired")
                 if more_than_one:
                     time.sleep(self.search_throttle)
         else:

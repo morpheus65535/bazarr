@@ -263,7 +263,7 @@ def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exa
                 time.sleep(throttle)
                 # fixme: detect endpoint from html
                 continue
-            raise
+            return
         break
 
     if soup:

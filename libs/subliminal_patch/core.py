@@ -309,7 +309,8 @@ class SZProviderPool(ProviderPool):
             logger.error('Invalid subtitle')
             return False
 
-        subtitle.normalize()
+        if not os.environ.get("SZ_KEEP_ENCODING", False):
+            subtitle.normalize()
 
         return True
 
