@@ -18,6 +18,7 @@ def update_series():
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
+    serie_default_forced = settings.general.serie_default_forced
     
     if apikey_sonarr is None:
         pass
@@ -86,12 +87,12 @@ def update_series():
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                               serie_default_hi, show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
+                                              show['year'], alternateTitles, serie_default_forced))
                     else:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
                                               show["tvdbId"], show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
+                                              show['year'], alternateTitles, show["id"]))
             
             # Update or insert series in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -104,12 +105,12 @@ def update_series():
             
             if serie_default_enabled is True:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     series_to_add)
                 db.commit()
             else:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, (SELECT `forced` FROM table_shows WHERE tvdbId = ?))''',
                     series_to_add)
                 db.commit()
             db.close()

@@ -19,6 +19,7 @@ def update_movies():
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
+    movie_default_forced = settings.general.movie_default_forced
     
     if apikey_radarr is None:
         pass
@@ -135,7 +136,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec, imdbId))
+                                                          videoCodec, audioCodec, imdbId, movie_default_forced))
                                 else:
                                     movies_to_add.append((movie["title"],
                                                           movie["path"] + separator + movie['movieFile'][
@@ -144,7 +145,7 @@ def update_movies():
                                                           profile_id_to_language(movie['qualityProfileId']), sceneName,
                                                           unicode(bool(movie['monitored'])), movie['sortTitle'],
                                                           movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec, imdbId))
+                                                          videoCodec, audioCodec, imdbId, movie["tmdbId"]))
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -161,12 +162,12 @@ def update_movies():
             
             if movie_default_enabled is True:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId, forced) VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     movies_to_add)
                 db.commit()
             else:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_movies(title, path, tmdbId, languages, subtitles,`hearing_impaired`, radarrId, overview, poster, fanart, `audio_language`, sceneName, monitored, sortTitle, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId, forced) VALUES (?,?,?,(SELECT languages FROM table_movies WHERE tmdbId = ?), '[]',(SELECT `hearing_impaired` FROM table_movies WHERE tmdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT `forced` FROM table_movies WHERE tmdbId = ?))''',
                     movies_to_add)
                 db.commit()
 

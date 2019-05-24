@@ -434,7 +434,10 @@ def save_wizard():
     else:
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
-    
+
+    settings_movie_default_forced = str(request.forms.getall('settings_movie_default_forced'))
+    settings.general.movie_default_forced = text_type(settings_movie_default_forced)
+
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
@@ -1527,6 +1530,9 @@ def save_settings():
         settings_serie_default_hi = 'True'
     settings.general.serie_default_hi = text_type(settings_serie_default_hi)
 
+    settings_serie_default_forced = str(request.forms.get('settings_serie_default_forced'))
+    settings.general.serie_default_forced = text_type(settings_serie_default_forced)
+
     settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
@@ -1545,6 +1551,9 @@ def save_settings():
     else:
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
+
+    settings_movie_default_forced = str(request.forms.get('settings_movie_default_forced'))
+    settings.general.movie_default_forced = text_type(settings_movie_default_forced)
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
