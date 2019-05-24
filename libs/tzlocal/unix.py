@@ -152,7 +152,7 @@ def get_localzone():
     if _cache_tz is None:
         _cache_tz = _get_localzone()
 
-    utils.assert_tz_offset(_cache_tz)
+    #utils.assert_tz_offset(_cache_tz)
     return _cache_tz
 
 
@@ -160,5 +160,5 @@ def reload_localzone():
     """Reload the cached localzone. You need to call this if the timezone has changed."""
     global _cache_tz
     _cache_tz = _get_localzone()
-    utils.assert_tz_offset(_cache_tz)
+    #utils.assert_tz_offset(_cache_tz)
     return _cache_tz
