@@ -560,6 +560,10 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
                 except MemoryError:
                     logger.warning(u"Couldn't compute napiprojekt hash for %s", path)
 
+            if "napisy24" in providers:
+                # Napisy24 uses the same hash as opensubtitles
+                video.hashes['napisy24'] = hash_opensubtitles(path)
+
             logger.debug('Computed hashes %r', video.hashes)
         else:
             logger.warning('Size is lower than 10MB: hashes not computed')
