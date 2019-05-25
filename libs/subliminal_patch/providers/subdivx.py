@@ -128,9 +128,8 @@ class SubdivxSubtitlesProvider(Provider):
                 return []
 
             page_soup = ParserBeautifulSoup(r.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
-            table_soup = page_soup.find("div", {'id': 'contenedor_izq'})
-            title_soups = table_soup.find_all("div", {'id': 'menu_detalle_buscador'})
-            body_soups = table_soup.find_all("div", {'id': 'buscador_detalle'})
+            title_soups = page_soup.find_all("div", {'id': 'menu_detalle_buscador'})
+            body_soups = page_soup.find_all("div", {'id': 'buscador_detalle'})
             if len(title_soups) != len(body_soups):
                 logger.debug('Error in provider data')
                 return []
@@ -139,12 +138,12 @@ class SubdivxSubtitlesProvider(Provider):
 
                 # title
                 title = title_soup.find("a").text.replace("Subtitulo de ", "")
-                page_link = title_soup.find("a")["href"]
+                page_link = title_soup.find("a")["href"].replace('http://', 'https://')
 
                 # body
                 description = body_soup.find("div", {'id': 'buscador_detalle_sub'}).text
-                tmp_div_soup = body_soup.find("div", {'id': 'buscador_detalle_sub_datos'})
-                download_link = tmp_div_soup.find("a", {'target': 'new'})["href"]
+                download_link = body_soup.find("div", {'id': 'buscador_detalle_sub_datos'}
+                    ).find("a", {'target': 'new'})["href"].replace('http://', 'https://')
 
                 subtitle = self.subtitle_class(language, page_link, download_link, description, title)
 
