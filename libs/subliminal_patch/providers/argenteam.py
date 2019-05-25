@@ -23,9 +23,10 @@ class ArgenteamSubtitle(Subtitle):
     hearing_impaired_verifiable = False
     _release_info = None
 
-    def __init__(self, language, download_link, movie_kind, title, season, episode, year, release, version, source,
+    def __init__(self, language, page_link, download_link, movie_kind, title, season, episode, year, release, version, source,
                  video_codec, tvdb_id, imdb_id, asked_for_episode=None, asked_for_release_group=None, *args, **kwargs):
-        super(ArgenteamSubtitle, self).__init__(language, download_link, *args, **kwargs)
+        super(ArgenteamSubtitle, self).__init__(language, page_link=page_link, *args, **kwargs)
+        self.page_link = page_link
         self.download_link = download_link
         self.movie_kind = movie_kind
         self.title = title
@@ -135,7 +136,8 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = 'argenteam'
     languages = {Language.fromalpha2(l) for l in ['es']}
     video_types = (Episode, Movie)
-    API_URL = "http://argenteam.net/api/v1/"
+    BASE_URL = "http://www.argenteam.net/"
+    API_URL = BASE_URL + "api/v1/"
     subtitle_class = ArgenteamSubtitle
     hearing_impaired_verifiable = False
     language_list = list(languages)
@@ -240,12 +242,13 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
             for r in content['releases']:
                 for s in r['subtitles']:
-                    sub = ArgenteamSubtitle(language, s['uri'], "episode" if is_episode else "movie", returned_title,
+                    movie_kind = "episode" if is_episode else "movie"
+                    page_link = self.BASE_URL + movie_kind + "/" + str(aid)
+                    sub = ArgenteamSubtitle(language, page_link, s['uri'], movie_kind, returned_title,
                                             season, episode, year, r.get('team'), r.get('tags'),
                                             r.get('source'), r.get('codec'), content.get("tvdb"), imdb_id,
                                             asked_for_release_group=video.release_group,
-                                            asked_for_episode=episode
-                                            )
+                                            asked_for_episode=episode)
                     subtitles.append(sub)
 
             if has_multiple_ids:
