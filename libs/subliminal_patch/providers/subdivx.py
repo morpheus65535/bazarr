@@ -38,30 +38,13 @@ class SubdivxSubtitle(Subtitle):
 
         # episode
         if isinstance(video, Episode):
-
-            # title / series
-            if video.series:
-                matches.add('title')
-                matches.add('series')
-
-            # season
-            if video.season:
-                matches.add('season')
-
-            # episode
-            if video.episode:
-                matches.add('episode')
+            # already matched in search query
+            matches.update(['title', 'series', 'season', 'episode', 'year'])
 
         # movie
         elif isinstance(video, Movie):
-
-            # title
-            if video.title:
-                matches.add('title')
-
-            # year
-            if video.year:
-                matches.add('year')
+            # already matched in search query
+            matches.update(['title', 'year'])
 
         # release_group
         if video.release_group and video.release_group.lower() in self.description:
