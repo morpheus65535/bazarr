@@ -509,7 +509,7 @@ def episode_download_subtitles(no):
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
     episodes_details = c_db.execute(
-        'SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.sonarrEpisodeId = ?' + monitored_only_query_string, (no,)).fetchall()
+        'SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, table_shows.forced FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.sonarrEpisodeId = ?' + monitored_only_query_string, (no,)).fetchall()
     c_db.close()
 
     providers_list = get_providers()
@@ -522,7 +522,7 @@ def episode_download_subtitles(no):
                     language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
                                     queue='get_subtitle')
                 result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                           episode[4], providers_list, providers_auth, str(episode[3]),
+                                           episode[4], episode[7], providers_list, providers_auth, str(episode[3]),
                                            episode[5], 'series')
                 if result is not None:
                     message = result[0]
