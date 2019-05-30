@@ -171,6 +171,21 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Forced</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class='field'>
+                                    <select name="settings_serie_default_forced" id="settings_serie_default_forced" class="ui fluid selection dropdown">
+                                        <option value="False">False</option>
+                                        <option value="True">True</option>
+                                        <option value="Both">Both</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -228,6 +243,21 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div id="movie_default_forced_label" class="right aligned four wide column">
+                                <label>Forced</label>
+                            </div>
+                            <div class="eleven wide column">
+                                <div class='field'>
+                                    <select name="settings_movie_default_forced" id="settings_movie_default_forced" class="ui fluid selection dropdown">
+                                        <option value="False">False</option>
+                                        <option value="True">True</option>
+                                        <option value="Both">Both</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -270,19 +300,23 @@
                     if ($('#settings_serie_default_enabled_div').data("enabled") === "True") {
                         $("#settings_serie_default_languages").removeClass('disabled');
                         $("#settings_serie_default_hi_div").removeClass('disabled');
+                        $("#settings_serie_default_forced_div").removeClass('disabled');
                     } else {
                         $("#settings_serie_default_languages").addClass('disabled');
                         $("#settings_serie_default_hi_div").addClass('disabled');
+                        $("#settings_serie_default_forced_div").addClass('disabled');
                     }
 
                     $('#settings_serie_default_enabled_div').checkbox({
                         onChecked: function() {
                             $("#settings_serie_default_languages").parent().removeClass('disabled');
                             $("#settings_serie_default_hi_div").removeClass('disabled');
+                            $("#settings_serie_default_forced").parent().removeClass('disabled');
                         },
                         onUnchecked: function() {
                             $("#settings_serie_default_languages").parent().addClass('disabled');
                             $("#settings_serie_default_hi_div").addClass('disabled');
+                            $("#settings_serie_default_forced").parent().addClass('disabled');
                         }
                     });
 
@@ -301,19 +335,23 @@
                     if ($('#settings_movie_default_enabled_div').data("enabled") === "True") {
                         $("#settings_movie_default_languages").removeClass('disabled');
                         $("#settings_movie_default_hi_div").removeClass('disabled');
+                        $("#settings_movie_default_forced_div").removeClass('disabled');
                     } else {
                         $("#settings_movie_default_languages").addClass('disabled');
                         $("#settings_movie_default_hi_div").addClass('disabled');
+                        $("#settings_movie_default_forced_div").addClass('disabled');
                     }
 
                     $('#settings_movie_default_enabled_div').checkbox({
                         onChecked: function() {
                             $("#settings_movie_default_languages").parent().removeClass('disabled');
                             $("#settings_movie_default_hi_div").removeClass('disabled');
+                            $("#settings_movie_default_forced").parent().removeClass('disabled');
                         },
                         onUnchecked: function() {
                             $("#settings_movie_default_languages").parent().addClass('disabled');
                             $("#settings_movie_default_hi_div").addClass('disabled');
+                            $("#settings_movie_default_forced").parent().addClass('disabled');
                         }
                     });
 
