@@ -1,29 +1,22 @@
 from __future__ import unicode_literals
 
-from base import Scope
-from func_utils import *
-from conversions import *
+from .base import Scope
+from .func_utils import *
+from .conversions import *
 import six
-from prototypes.jsboolean import BooleanPrototype
-from prototypes.jserror import ErrorPrototype
-from prototypes.jsfunction import FunctionPrototype
-from prototypes.jsnumber import NumberPrototype
-from prototypes.jsobject import ObjectPrototype
-from prototypes.jsregexp import RegExpPrototype
-from prototypes.jsstring import StringPrototype
-from prototypes.jsarray import ArrayPrototype
-import prototypes.jsjson as jsjson
-import prototypes.jsutils as jsutils
+from .prototypes.jsboolean import BooleanPrototype
+from .prototypes.jserror import ErrorPrototype
+from .prototypes.jsfunction import FunctionPrototype
+from .prototypes.jsnumber import NumberPrototype
+from .prototypes.jsobject import ObjectPrototype
+from .prototypes.jsregexp import RegExpPrototype
+from .prototypes.jsstring import StringPrototype
+from .prototypes.jsarray import ArrayPrototype
+from .prototypes import jsjson
+from .prototypes import jsutils
 
-from constructors import jsnumber
-from constructors import jsstring
-from constructors import jsarray
-from constructors import jsboolean
-from constructors import jsregexp
-from constructors import jsmath
-from constructors import jsobject
-from constructors import jsfunction
-from constructors import jsconsole
+from .constructors import jsnumber, jsstring, jsarray, jsboolean, jsregexp, jsmath, jsobject, jsfunction, jsconsole
+
 
 
 def fill_proto(proto, proto_class, space):
@@ -155,7 +148,10 @@ def fill_space(space, byte_generator):
 
         j = easy_func(creator, space)
         j.name = unicode(typ)
-        j.prototype = space.ERROR_TYPES[typ]
+
+        set_protected(j, 'prototype', space.ERROR_TYPES[typ])
+
+        set_non_enumerable(space.ERROR_TYPES[typ], 'constructor', j)
 
         def new_create(args, space):
             message = get_arg(args, 0)
@@ -178,6 +174,7 @@ def fill_space(space, byte_generator):
         setattr(space, err_type_name + u'Prototype', extra_err)
         error_constructors[err_type_name] = construct_constructor(
             err_type_name)
+
     assert space.TypeErrorPrototype is not None
 
     # RegExp

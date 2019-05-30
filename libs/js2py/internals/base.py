@@ -3,15 +3,19 @@ import re
 
 import datetime
 
-from desc import *
-from simplex import *
-from conversions import *
-import six
-from pyjsparser import PyJsParser
-from itertools import izip
+from .desc import *
+from .simplex import *
+from .conversions import *
 
-from conversions import *
-from simplex import *
+from pyjsparser import PyJsParser
+
+import six
+if six.PY2:
+    from itertools import izip
+else:
+    izip = zip
+
+
 
 
 def Type(obj):

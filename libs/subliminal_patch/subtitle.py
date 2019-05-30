@@ -123,7 +123,8 @@ class Subtitle(Subtitle_):
         # http://scratchpad.wikia.com/wiki/Character_Encoding_Recommendation_for_Languages
 
         if self.language.alpha3 == 'zho':
-            encodings.extend(['cp936', 'gb2312', 'cp950', 'gb18030', 'big5', 'big5hkscs'])
+            encodings.extend(['cp936', 'gb2312', 'gbk', 'gb18030', 'hz', 'iso2022_jp_2', 'cp950', 'gb18030', 'big5',
+                              'big5hkscs', 'utf-16'])
         elif self.language.alpha3 == 'jpn':
             encodings.extend(['shift-jis', 'cp932', 'euc_jp', 'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2',
                               'iso2022_jp_2004', 'iso2022_jp_3', 'iso2022_jp_ext', ])
@@ -132,7 +133,7 @@ class Subtitle(Subtitle_):
 
         # arabian/farsi
         elif self.language.alpha3 in ('ara', 'fas', 'per'):
-            encodings.append('windows-1256')
+            encodings.extend(['windows-1256', 'utf-16'])
         elif self.language.alpha3 == 'heb':
             encodings.extend(['windows-1255', 'iso-8859-8'])
         elif self.language.alpha3 == 'tur':
@@ -250,8 +251,7 @@ class Subtitle(Subtitle_):
                 subs = pysubs2.SSAFile.from_string(text, fps=self.plex_media_fps)
 
             unicontent = self.pysubs2_to_unicode(subs)
-            self.content = unicontent.encode("utf-8")
-            self._guessed_encoding = "utf-8"
+            self.content = unicontent.encode(self._guessed_encoding)
         except:
             logger.exception("Couldn't convert subtitle %s to .srt format: %s", self, traceback.format_exc())
             return False
@@ -319,7 +319,8 @@ class Subtitle(Subtitle_):
         :return: string 
         """
         if not self.mods:
-            return fix_text(self.content.decode("utf-8"), **ftfy_defaults).encode(encoding="utf-8")
+            return fix_text(self.content.decode(encoding=self._guessed_encoding), **ftfy_defaults).encode(
+                encoding=self._guessed_encoding)
 
         submods = SubtitleModifications(debug=debug)
         if submods.load(content=self.text, language=self.language):
@@ -328,7 +329,7 @@ class Subtitle(Subtitle_):
             self.mods = submods.mods_used
 
             content = fix_text(self.pysubs2_to_unicode(submods.f, format=format), **ftfy_defaults)\
-                .encode(encoding="utf-8")
+                .encode(encoding=self._guessed_encoding)
             submods.f = None
             del submods
             return content

@@ -48,8 +48,10 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Hosszupuska
 * LegendasTV
 * Napiprojekt
+* Napisy24
 * OpenSubtitles
 * Podnapisi
+* Subdivx
 * Subs.sab.bz
 * Subscene
 * Subscenter

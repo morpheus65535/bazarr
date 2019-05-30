@@ -163,3 +163,13 @@ class Pysubs2CLI(object):
         elif args.transform_framerate is not None:
             in_fps, out_fps = args.transform_framerate
             subs.transform_framerate(in_fps, out_fps)
+
+
+def __main__():
+    cli = Pysubs2CLI()
+    rv = cli(sys.argv[1:])
+    sys.exit(rv)
+
+
+if __name__ == "__main__":
+    __main__()

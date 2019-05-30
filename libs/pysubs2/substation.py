@@ -4,7 +4,7 @@ from numbers import Number
 from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
-from .common import text_type, Color
+from .common import text_type, Color, PY3, binary_string_type
 from .time import make_time, ms_to_times, timestamp_to_ms, TIMESTAMP
 
 SSA_ALIGNMENT = (1, 2, 3, 9, 10, 11, 5, 6, 7)
@@ -150,14 +150,7 @@ class SubstationFormat(FormatBase):
                 if format_ == "ass":
                     return ass_rgba_to_color(v)
                 else:
-                    try:
-                        return ssa_rgb_to_color(v)
-                    except ValueError:
-                        try:
-                            return ass_rgba_to_color(v)
-                        except:
-                            return Color(255, 255, 255, 0)
-
+                    return ssa_rgb_to_color(v)
             elif f in {"bold", "underline", "italic", "strikeout"}:
                 return v == "-1"
             elif f in {"borderstyle", "encoding", "marginl", "marginr", "marginv", "layer", "alphalevel"}:
@@ -229,7 +222,7 @@ class SubstationFormat(FormatBase):
             for k, v in subs.aegisub_project.items():
                 print(k, v, sep=": ", file=fp)
 
-        def field_to_string(f, v):
+        def field_to_string(f, v, line):
             if f in {"start", "end"}:
                 return ms_to_timestamp(v)
             elif f == "marked":
@@ -240,23 +233,31 @@ class SubstationFormat(FormatBase):
                 return "-1" if v else "0"
             elif isinstance(v, (text_type, Number)):
                 return text_type(v)
+            elif not PY3 and isinstance(v, binary_string_type):
+                # A convenience feature, see issue #12 - accept non-unicode strings
+                # when they are ASCII; this is useful in Python 2, especially for non-text
+                # fields like style names, where requiring Unicode type seems too stringent
+                if all(ord(c) < 128 for c in v):
+                    return text_type(v)
+                else:
+                    raise TypeError("Encountered binary string with non-ASCII codepoint in SubStation field {!r} for line {!r} - please use unicode string instead of str".format(f, line))
             elif isinstance(v, Color):
                 if format_ == "ass":
                     return color_to_ass_rgba(v)
                 else:
                     return color_to_ssa_rgb(v)
             else:
-                raise TypeError("Unexpected type when writing a SubStation field")
+                raise TypeError("Unexpected type when writing a SubStation field {!r} for line {!r}".format(f, line))
 
         print("\n[V4+ Styles]" if format_ == "ass" else "\n[V4 Styles]", file=fp)
         print(STYLE_FORMAT_LINE[format_], file=fp)
         for name, sty in subs.styles.items():
-            fields = [field_to_string(f, getattr(sty, f)) for f in STYLE_FIELDS[format_]]
+            fields = [field_to_string(f, getattr(sty, f), sty) for f in STYLE_FIELDS[format_]]
             print("Style: %s" % name, *fields, sep=",", file=fp)
 
         print("\n[Events]", file=fp)
         print(EVENT_FORMAT_LINE[format_], file=fp)
         for ev in subs.events:
-            fields = [field_to_string(f, getattr(ev, f)) for f in EVENT_FIELDS[format_]]
+            fields = [field_to_string(f, getattr(ev, f), ev) for f in EVENT_FIELDS[format_]]
             print(ev.type, end=": ", file=fp)
             print(*fields, sep=",", file=fp)

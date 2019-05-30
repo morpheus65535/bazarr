@@ -1,5 +1,5 @@
-from operations import *
-from base import get_member, get_member_dot, PyJsFunction, Scope
+from .operations import *
+from .base import get_member, get_member_dot, PyJsFunction, Scope
 
 
 class OP_CODE(object):

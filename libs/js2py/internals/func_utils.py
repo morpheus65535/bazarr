@@ -1,5 +1,5 @@
-from simplex import *
-from conversions import *
+from .simplex import *
+from .conversions import *
 
 import six
 if six.PY3:

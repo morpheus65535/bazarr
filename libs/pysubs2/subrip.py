@@ -46,8 +46,16 @@ class SubripFormat(FormatBase):
                     following_lines[-1].append(line)
 
         def prepare_text(lines):
+            # Handle the "happy" empty subtitle case, which is timestamp line followed by blank line(s)
+            # followed by number line and timestamp line of the next subtitle. Fixes issue #11.
+            if (len(lines) >= 2
+                    and all(re.match("\s*$", line) for line in lines[:-1])
+                    and re.match("\s*\d+\s*$", lines[-1])):
+                return ""
+
+            # Handle the general case.
             s = "".join(lines).strip()
-            s = re.sub(r"\n* *\d+ *$", "", s) # strip number of next subtitle
+            s = re.sub(r"\n+ *\d+ *$", "", s) # strip number of next subtitle
             s = re.sub(r"< *i *>", r"{\i1}", s)
             s = re.sub(r"< */ *i *>", r"{\i0}", s)
             s = re.sub(r"< *s *>", r"{\s1}", s)

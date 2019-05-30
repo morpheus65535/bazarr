@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 # Type Conversions. to_type. All must return PyJs subclass instance
-from simplex import *
+from .simplex import *
 
 
 def to_primitive(self, hint=None):
@@ -73,14 +73,7 @@ def to_string(self):
     elif typ == 'Boolean':
         return 'true' if self else 'false'
     elif typ == 'Number':  # or self.Class=='Number':
-        if is_nan(self):
-            return 'NaN'
-        elif is_infinity(self):
-            sign = '-' if self < 0 else ''
-            return sign + 'Infinity'
-        elif int(self) == self:  # integer value!
-            return unicode(int(self))
-        return unicode(self)  # todo make it print exactly like node.js
+        return js_dtoa(self)
     else:  # object
         return to_string(to_primitive(self, 'String'))
 
