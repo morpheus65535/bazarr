@@ -30,6 +30,7 @@ import enum
 import sys
 import requests
 import time
+import logging
 
 is_PY2 = sys.version_info[0] < 3
 if is_PY2:
@@ -39,7 +40,12 @@ else:
     from contextlib import suppress
     from urllib2.request import Request, urlopen
 
+from dogpile.cache.api import NO_VALUE
+from subliminal.cache import region
 from bs4 import BeautifulSoup, NavigableString
+
+
+logger = logging.getLogger(__name__)
 
 # constants
 HEADERS = {
@@ -50,6 +56,13 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWeb"\
                      "Kit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 
 
+ENDPOINT_RE = re.compile(ur'(?uis)<form action="/subtitles/(.+)">.*?<input type="text"')
+
+
+class NewEndpoint(Exception):
+    pass
+
+
 # utils
 def soup_for(url, session=None, user_agent=DEFAULT_USER_AGENT):
     url = re.sub("\s", "+", url)
@@ -58,7 +71,17 @@ def soup_for(url, session=None, user_agent=DEFAULT_USER_AGENT):
         html = urlopen(r).read().decode("utf-8")
     else:
         ret = session.get(url)
-        ret.raise_for_status()
+        try:
+            ret.raise_for_status()
+        except requests.HTTPError, e:
+            if e.response.status_code == 404:
+                m = ENDPOINT_RE.search(ret.text)
+                if m:
+                    try:
+                        raise NewEndpoint(m.group(1))
+                    except:
+                        pass
+            raise
         html = ret.text
     return BeautifulSoup(html, "html.parser")
 
@@ -250,20 +273,31 @@ def get_first_film(soup, section, year=None, session=None):
 def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact, throttle=0):
     # note to subscene: if you actually start to randomize the endpoint, we'll have to query your server even more
     endpoints = ["searching", "search", "srch", "find"]
+
     if release:
         endpoints = ["release"]
+    else:
+        endpoint = region.get("subscene_endpoint")
+        if endpoint is not NO_VALUE and endpoint not in endpoints:
+            endpoints.insert(0, endpoint)
 
     soup = None
     for endpoint in endpoints:
         try:
             soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, endpoint, term),
                             session=session)
-        except requests.HTTPError, e:
-            if e.response.status_code == 404:
+
+        except NewEndpoint, e:
+            new_endpoint = e.message
+            if new_endpoint not in endpoints:
+                new_endpoint = new_endpoint.strip()
+                logger.debug("Switching main endpoint to %s", new_endpoint)
+                region.set("subscene_endpoint", new_endpoint)
                 time.sleep(throttle)
-                # fixme: detect endpoint from html
-                continue
-            return
+                return search(term, release=release, session=session, year=year, limit_to=limit_to, throttle=throttle)
+            else:
+                region.delete("subscene_endpoint")
+                raise Exception("New endpoint %s didn't work; exiting" % new_endpoint)
         break
 
     if soup:
