@@ -407,6 +407,9 @@
                     $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
                     %end
 
+                    $('#settings_serie_default_forced').dropdown('set selected','{{!settings.general.serie_default_forced}}');
+                    $('#settings_movie_default_forced').dropdown('set selected','{{!settings.general.movie_default_forced}}');
+
                     $('#settings_languages').dropdown('setting', 'onChange', function(){
                         $('.form').form('validate field', 'settings_subliminal_languages');
                     });
