@@ -1820,8 +1820,7 @@ def get_subtitle():
 @custom_auth_basic(check_credentials)
 def manual_search_json():
     authorize()
-    ref = request.environ['HTTP_REFERER']
-
+    
     episodePath = request.forms.get('episodePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
