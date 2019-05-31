@@ -124,6 +124,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         providers_auth['opensubtitles']['only_foreign'] = False
 
     for l in language:
+        l = l.split(':')[0]
         if l == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
