@@ -124,7 +124,6 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         providers_auth['opensubtitles']['only_foreign'] = False
 
     for l in language:
-        l = l.split(':')[0]
         if l == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
@@ -606,6 +605,7 @@ def wanted_download_subtitles(path, l, count_episodes):
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
+                    language = language.split(':')[0]
                     if search_active(attempt[i][1]):
                         notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l, length=count_episodes)
                         result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
