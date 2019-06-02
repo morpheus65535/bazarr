@@ -79,6 +79,10 @@ os.environ["BAZARR_VERSION"] = bazarr_version
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 
+# Check and install update on startup when running on Windows from installer
+if args.release_update:
+    check_and_apply_update()
+
 if settings.proxy.type != 'None':
     if settings.proxy.username != '' and settings.proxy.password != '':
         proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + \
