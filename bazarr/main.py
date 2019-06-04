@@ -1243,6 +1243,11 @@ def save_settings():
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
+    settings_general_utf8_encode = request.forms.get('settings_general_utf8_encode')
+    if settings_general_utf8_encode is None:
+        settings_general_utf8_encode = 'False'
+    else:
+        settings_general_utf8_encode = 'True'
     settings_general_ignore_pgs = request.forms.get('settings_general_ignore_pgs')
     if settings_general_ignore_pgs is None:
         settings_general_ignore_pgs = 'False'
@@ -1347,6 +1352,7 @@ def save_settings():
 
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
+    settings.general.utf8_encode = text_type(settings_general_utf8_encode)
     settings.general.ignore_pgs_subs = text_type(settings_general_ignore_pgs)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
     settings.general.multithreading = text_type(settings_general_multithreading)
