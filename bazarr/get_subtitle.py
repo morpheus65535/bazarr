@@ -659,6 +659,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
+                    language = language.split(':')[0]
                     if search_active(attempt[i][1]) is True:
                         notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l, length=count_movies)
                         result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
