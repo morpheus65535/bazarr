@@ -1,43 +1,44 @@
 # -*- coding: utf-8 -*-
 #
-# PushBullet Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
-import re
 import requests
 from json import dumps
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
-from .NotifyBase import IS_EMAIL_RE
-
-from ..utils import compat_is_basestring
+from ..utils import GET_EMAIL_RE
+from ..common import NotifyType
+from ..utils import parse_list
+from ..AppriseLocale import gettext_lazy as _
 
 # Flag used as a placeholder to sending to all devices
 PUSHBULLET_SEND_TO_ALL = 'ALL_DEVICES'
 
-# Used to break apart list of potential recipients by their delimiter
-# into a usable list.
-RECIPIENTS_LIST_DELIM = re.compile(r'[ \t\r\n,\\/]+')
-
-# Extend HTTP Error Messages
-PUSHBULLET_HTTP_ERROR_MAP = HTTP_ERROR_MAP.copy()
-PUSHBULLET_HTTP_ERROR_MAP.update({
+# Provide some known codes Pushbullet uses and what they translate to:
+PUSHBULLET_HTTP_ERROR_MAP = {
     401: 'Unauthorized - Invalid Token.',
-})
+}
 
 
 class NotifyPushBullet(NotifyBase):
@@ -60,27 +61,62 @@ class NotifyPushBullet(NotifyBase):
     # PushBullet uses the http protocol with JSON requests
     notify_url = 'https://api.pushbullet.com/v2/pushes'
 
-    def __init__(self, accesstoken, recipients=None, **kwargs):
+    # Define object templates
+    templates = (
+        '{schema}://{accesstoken}',
+        '{schema}://{accesstoken}/{targets}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'accesstoken': {
+            'name': _('Access Token'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+        },
+        'target_device': {
+            'name': _('Target Device'),
+            'type': 'string',
+            'map_to': 'targets',
+        },
+        'target_channel': {
+            'name': _('Target Channel'),
+            'type': 'string',
+            'prefix': '#',
+            'map_to': 'targets',
+        },
+        'target_email': {
+            'name': _('Target Email'),
+            'type': 'string',
+            'map_to': 'targets',
+        },
+        'targets': {
+            'name': _('Targets'),
+            'type': 'list:string',
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'to': {
+            'alias_of': 'targets',
+        },
+    })
+
+    def __init__(self, accesstoken, targets=None, **kwargs):
         """
         Initialize PushBullet Object
         """
         super(NotifyPushBullet, self).__init__(**kwargs)
 
         self.accesstoken = accesstoken
-        if compat_is_basestring(recipients):
-            self.recipients = [x for x in filter(
-                bool, RECIPIENTS_LIST_DELIM.split(recipients))]
 
-        elif isinstance(recipients, (set, tuple, list)):
-            self.recipients = recipients
+        self.targets = parse_list(targets)
+        if len(self.targets) == 0:
+            self.targets = (PUSHBULLET_SEND_TO_ALL, )
 
-        else:
-            self.recipients = list()
-
-        if len(self.recipients) == 0:
-            self.recipients = (PUSHBULLET_SEND_TO_ALL, )
-
-    def notify(self, title, body, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform PushBullet Notification
         """
@@ -94,10 +130,10 @@ class NotifyPushBullet(NotifyBase):
         # error tracking (used for function return)
         has_error = False
 
-        # Create a copy of the recipients list
-        recipients = list(self.recipients)
-        while len(recipients):
-            recipient = recipients.pop(0)
+        # Create a copy of the targets list
+        targets = list(self.targets)
+        while len(targets):
+            recipient = targets.pop(0)
 
             # prepare JSON Object
             payload = {
@@ -110,7 +146,7 @@ class NotifyPushBullet(NotifyBase):
                 # Send to all
                 pass
 
-            elif IS_EMAIL_RE.match(recipient):
+            elif GET_EMAIL_RE.match(recipient):
                 payload['email'] = recipient
                 self.logger.debug(
                     "Recipient '%s' is an email address" % recipient)
@@ -128,6 +164,10 @@ class NotifyPushBullet(NotifyBase):
                 self.notify_url, self.verify_certificate,
             ))
             self.logger.debug('PushBullet Payload: %s' % str(payload))
+
+            # Always call throttle before any remote server i/o is made
+            self.throttle()
+
             try:
                 r = requests.post(
                     self.notify_url,
@@ -139,23 +179,24 @@ class NotifyPushBullet(NotifyBase):
 
                 if r.status_code != requests.codes.ok:
                     # We had a problem
-                    try:
-                        self.logger.warning(
-                            'Failed to send PushBullet notification to '
-                            '"%s": %s (error=%s).' % (
-                                recipient,
-                                PUSHBULLET_HTTP_ERROR_MAP[r.status_code],
-                                r.status_code))
+                    status_str = \
+                        NotifyPushBullet.http_response_code_lookup(
+                            r.status_code, PUSHBULLET_HTTP_ERROR_MAP)
 
-                    except KeyError:
-                        self.logger.warning(
-                            'Failed to send PushBullet notification to '
-                            '"%s" (error=%s).' % (recipient, r.status_code))
+                    self.logger.warning(
+                        'Failed to send PushBullet notification to {}:'
+                        '{}{}error={}.'.format(
+                            recipient,
+                            status_str,
+                            ', ' if status_str else '',
+                            r.status_code))
 
-                    # self.logger.debug('Response Details: %s' % r.raw.read())
+                    self.logger.debug(
+                        'Response Details:\r\n{}'.format(r.content))
 
-                    # Return; we're done
+                    # Mark our failure
                     has_error = True
+                    continue
 
                 else:
                     self.logger.info(
@@ -167,13 +208,36 @@ class NotifyPushBullet(NotifyBase):
                     'notification to "%s".' % (recipient),
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
-                has_error = True
 
-            if len(recipients):
-                # Prevent thrashing requests
-                self.throttle()
+                # Mark our failure
+                has_error = True
+                continue
 
         return not has_error
+
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        targets = '/'.join([NotifyPushBullet.quote(x) for x in self.targets])
+        if targets == PUSHBULLET_SEND_TO_ALL:
+            # keyword is reserved for internal usage only; it's safe to remove
+            # it from the recipients list
+            targets = ''
+
+        return '{schema}://{accesstoken}/{targets}/?{args}'.format(
+            schema=self.secure_protocol,
+            accesstoken=NotifyPushBullet.quote(self.accesstoken, safe=''),
+            targets=targets,
+            args=NotifyPushBullet.urlencode(args))
 
     @staticmethod
     def parse_url(url):
@@ -188,10 +252,17 @@ class NotifyPushBullet(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # Apply our settings now
-        recipients = NotifyBase.unquote(results['fullpath'])
+        # Fetch our targets
+        results['targets'] = \
+            NotifyPushBullet.split_path(results['fullpath'])
 
-        results['accesstoken'] = results['host']
-        results['recipients'] = recipients
+        # The 'to' makes it easier to use yaml configuration
+        if 'to' in results['qsd'] and len(results['qsd']['to']):
+            results['targets'] += \
+                NotifyPushBullet.parse_list(results['qsd']['to'])
+
+        # Setup the token; we store it in Access Token for global
+        # plugin consistency with naming conventions
+        results['accesstoken'] = NotifyPushBullet.unquote(results['host'])
 
         return results

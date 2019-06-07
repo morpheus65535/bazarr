@@ -1,28 +1,36 @@
 # -*- coding: utf-8 -*-
 #
-# XML Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import re
+import six
 import requests
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
 from ..common import NotifyImageSize
-from ..utils import compat_is_basestring
+from ..common import NotifyType
+from ..AppriseLocale import gettext_lazy as _
 
 
 class NotifyXML(NotifyBase):
@@ -45,9 +53,62 @@ class NotifyXML(NotifyBase):
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_128
 
-    def __init__(self, **kwargs):
+    # Disable throttle rate for JSON requests since they are normally
+    # local anyway
+    request_rate_per_sec = 0
+
+    # Define object templates
+    # Define object templates
+    templates = (
+        '{schema}://{host}',
+        '{schema}://{host}:{port}',
+        '{schema}://{user}@{host}',
+        '{schema}://{user}@{host}:{port}',
+        '{schema}://{user}:{password}@{host}',
+        '{schema}://{user}:{password}@{host}:{port}',
+    )
+
+    # Define our tokens; these are the minimum tokens required required to
+    # be passed into this function (as arguments). The syntax appends any
+    # previously defined in the base package and builds onto them
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'host': {
+            'name': _('Hostname'),
+            'type': 'string',
+            'required': True,
+        },
+        'port': {
+            'name': _('Port'),
+            'type': 'int',
+            'min': 1,
+            'max': 65535,
+        },
+        'user': {
+            'name': _('Username'),
+            'type': 'string',
+        },
+        'password': {
+            'name': _('Password'),
+            'type': 'string',
+            'private': True,
+        },
+    })
+
+    # Define any kwargs we're using
+    template_kwargs = {
+        'headers': {
+            'name': _('HTTP Header'),
+            'prefix': '+',
+        },
+    }
+
+    def __init__(self, headers=None, **kwargs):
         """
         Initialize XML Object
+
+        headers can be a dictionary of key/value pairs that you want to
+        additionally include as part of the server headers to post with
+
         """
         super(NotifyXML, self).__init__(**kwargs)
 
@@ -66,19 +127,56 @@ class NotifyXML(NotifyBase):
     </soapenv:Body>
 </soapenv:Envelope>"""
 
-        if self.secure:
-            self.schema = 'https'
-
-        else:
-            self.schema = 'http'
-
         self.fullpath = kwargs.get('fullpath')
-        if not compat_is_basestring(self.fullpath):
+        if not isinstance(self.fullpath, six.string_types):
             self.fullpath = '/'
+
+        self.headers = {}
+        if headers:
+            # Store our extra headers
+            self.headers.update(headers)
 
         return
 
-    def notify(self, title, body, notify_type, **kwargs):
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        # Append our headers into our args
+        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+
+        # Determine Authentication
+        auth = ''
+        if self.user and self.password:
+            auth = '{user}:{password}@'.format(
+                user=NotifyXML.quote(self.user, safe=''),
+                password=NotifyXML.quote(self.password, safe=''),
+            )
+        elif self.user:
+            auth = '{user}@'.format(
+                user=NotifyXML.quote(self.user, safe=''),
+            )
+
+        default_port = 443 if self.secure else 80
+
+        return '{schema}://{auth}{hostname}{port}/?{args}'.format(
+            schema=self.secure_protocol if self.secure else self.protocol,
+            auth=auth,
+            hostname=NotifyXML.quote(self.host, safe=''),
+            port='' if self.port is None or self.port == default_port
+                 else ':{}'.format(self.port),
+            args=NotifyXML.urlencode(args),
+        )
+
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform XML Notification
         """
@@ -89,10 +187,14 @@ class NotifyXML(NotifyBase):
             'Content-Type': 'application/xml'
         }
 
+        # Apply any/all header over-rides defined
+        headers.update(self.headers)
+
         re_map = {
-            '{MESSAGE_TYPE}': NotifyBase.quote(notify_type),
-            '{SUBJECT}': NotifyBase.quote(title),
-            '{MESSAGE}': NotifyBase.quote(body),
+            '{MESSAGE_TYPE}': NotifyXML.escape_html(
+                notify_type, whitespace=False),
+            '{SUBJECT}': NotifyXML.escape_html(title, whitespace=False),
+            '{MESSAGE}': NotifyXML.escape_html(body, whitespace=False),
         }
 
         # Iterate over above list and store content accordingly
@@ -105,7 +207,10 @@ class NotifyXML(NotifyBase):
         if self.user:
             auth = (self.user, self.password)
 
-        url = '%s://%s' % (self.schema, self.host)
+        # Set our schema
+        schema = 'https' if self.secure else 'http'
+
+        url = '%s://%s' % (schema, self.host)
         if isinstance(self.port, int):
             url += ':%d' % self.port
 
@@ -116,6 +221,10 @@ class NotifyXML(NotifyBase):
             url, self.verify_certificate,
         ))
         self.logger.debug('XML Payload: %s' % str(payload))
+
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
+
         try:
             r = requests.post(
                 url,
@@ -125,17 +234,18 @@ class NotifyXML(NotifyBase):
                 verify=self.verify_certificate,
             )
             if r.status_code != requests.codes.ok:
-                try:
-                    self.logger.warning(
-                        'Failed to send XML notification: '
-                        '%s (error=%s).' % (
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                # We had a problem
+                status_str = \
+                    NotifyXML.http_response_code_lookup(r.status_code)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to send XML notification '
-                        '(error=%s).' % r.status_code)
+                self.logger.warning(
+                    'Failed to send XML notification: '
+                    '{}{}error={}.'.format(
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
+
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
@@ -153,3 +263,27 @@ class NotifyXML(NotifyBase):
             return False
 
         return True
+
+    @staticmethod
+    def parse_url(url):
+        """
+        Parses the URL and returns enough arguments that can allow
+        us to substantiate this object.
+
+        """
+        results = NotifyBase.parse_url(url)
+
+        if not results:
+            # We're done early as we couldn't load the results
+            return results
+
+        # Add our headers that the user can potentially over-ride if they wish
+        # to to our returned result set
+        results['headers'] = results['qsd-']
+        results['headers'].update(results['qsd+'])
+
+        # Tidy our header entries by unquoting them
+        results['headers'] = {NotifyXML.unquote(x): NotifyXML.unquote(y)
+                              for x, y in results['headers'].items()}
+
+        return results
