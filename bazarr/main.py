@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.7.5'
+bazarr_version = '0.7.5.1'
 
 import gc
 import sys
@@ -78,6 +78,10 @@ os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
+
+# Check and install update on startup when running on Windows from installer
+if args.release_update:
+    check_and_apply_update()
 
 if settings.proxy.type != 'None':
     if settings.proxy.username != '' and settings.proxy.password != '':
@@ -1250,6 +1254,11 @@ def save_settings():
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
+    settings_general_utf8_encode = request.forms.get('settings_general_utf8_encode')
+    if settings_general_utf8_encode is None:
+        settings_general_utf8_encode = 'False'
+    else:
+        settings_general_utf8_encode = 'True'
     settings_general_ignore_pgs = request.forms.get('settings_general_ignore_pgs')
     if settings_general_ignore_pgs is None:
         settings_general_ignore_pgs = 'False'
@@ -1354,6 +1363,7 @@ def save_settings():
 
     settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
     settings.general.use_embedded_subs = text_type(settings_general_embedded)
+    settings.general.utf8_encode = text_type(settings_general_utf8_encode)
     settings.general.ignore_pgs_subs = text_type(settings_general_ignore_pgs)
     settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
     settings.general.multithreading = text_type(settings_general_multithreading)
@@ -1839,8 +1849,7 @@ def get_subtitle():
 @custom_auth_basic(check_credentials)
 def manual_search_json():
     authorize()
-    ref = request.environ['HTTP_REFERER']
-
+    
     episodePath = request.forms.get('episodePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')

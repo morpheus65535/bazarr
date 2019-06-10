@@ -39,7 +39,6 @@ if __name__ == '__main__':
         pass
 
     def daemon():
-        threading.Timer(1.0, daemon).start()
         if os.path.exists(stopfile):
             try:
                 os.remove(stopfile)
@@ -57,12 +56,9 @@ if __name__ == '__main__':
             else:
                 start_bazarr()
 
-
-    daemon()
-
     start_bazarr()
-
 
     # Keep the script running forever.
     while True:
-        time.sleep(0.001)
+        daemon()
+        time.sleep(1)

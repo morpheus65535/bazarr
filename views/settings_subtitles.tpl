@@ -236,6 +236,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Encode subtitles to UTF8</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_utf8_encode" class="ui toggle checkbox" data-utf8encode={{ settings.general.getboolean('utf8_encode') }}>
+                                    <input name="settings_general_utf8_encode" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Re-encode downloaded subtitles to UTF8. Should be left enabled in most case." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -567,6 +586,12 @@
                         $("#settings_multithreading").checkbox('check');
                     } else {
                         $("#settings_multithreading").checkbox('uncheck');
+                    }
+
+                    if ($('#settings_utf8_encode').data("utf8encode") === "True") {
+                        $("#settings_utf8_encode").checkbox('check');
+                    } else {
+                        $("#settings_utf8_encode").checkbox('uncheck');
                     }
 
                     if (($('#settings_subfolder').val() !== "relative") && ($('#settings_subfolder').val() !== "absolute")) {

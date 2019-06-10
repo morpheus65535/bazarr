@@ -140,9 +140,11 @@
     if ($('#settings_proxy_type').val() === "None") {
         $('.proxy_option').hide();
         $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty');
+        $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty');
         $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]');
     } else {
         $('#settings_form').form('add rule', 'settings_proxy_url', {rules: [{type : 'empty', prompt : '"General / Proxy settings / Hostname" must have a value'}]});
+        $('#settings_form').form('add rule', 'settings_proxy_port', {rules: [{type : 'empty', prompt : '"General / Proxy settings / Port" must have a value'}]});
         $('#settings_form').form('add rule', 'settings_proxy_port', {rules: [{type : 'integer[1..65535]', prompt : '"General / Proxy settings / Port" must be an integer between 1 and 65535'}]});
     }
 
@@ -151,12 +153,14 @@
         if ($('#settings_proxy_type').val() === "None") {
             $('.proxy_option').hide();
             $('#settings_form').form('remove rule', 'settings_proxy_url', 'empty');
+            $('#settings_form').form('remove rule', 'settings_proxy_port', 'empty');
             $('#settings_form').form('remove rule', 'settings_proxy_port', 'integer[1..65535]');
             $('.form').form('validate form');
             $('#loader').removeClass('active');
         } else {
             $('.proxy_option').show();
             $('#settings_form').form('add rule', 'settings_proxy_url', {rules: [{type : 'empty', prompt : '"General / Proxy settings / Hostname" must have a value'}]});
+            $('#settings_form').form('add rule', 'settings_proxy_port', {rules: [{type : 'empty', prompt : '"General / Proxy settings / Port" must have a value'}]});
             $('#settings_form').form('add rule', 'settings_proxy_port', {rules: [{type : 'integer[1..65535]', prompt : '"General / Proxy settings / Port" must be an integer between 1 and 65535'}]});
             $('.form').form('validate form');
             $('#loader').removeClass('active');

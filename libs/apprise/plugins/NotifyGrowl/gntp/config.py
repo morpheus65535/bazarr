@@ -18,10 +18,10 @@ __all__ = [
 	'GrowlNotifier'
 ]
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('gntp')
 
 
-class GrowlNotifier(gntp.notifier.GrowlNotifier):
+class GrowlNotifier(notifier.GrowlNotifier):
 	"""
 	ConfigParser enhanced GrowlNotifier object
 
@@ -36,7 +36,7 @@ class GrowlNotifier(gntp.notifier.GrowlNotifier):
 		port = ?
 	"""
 	def __init__(self, *args, **kwargs):
-		config = gntp.shim.RawConfigParser({
+		config = shim.RawConfigParser({
 			'hostname': kwargs.get('hostname', 'localhost'),
 			'password': kwargs.get('password'),
 			'port': kwargs.get('port', 23053),
@@ -67,7 +67,7 @@ def mini(description, **kwargs):
 	:param string description: Notification message
 	"""
 	kwargs['notifierFactory'] = GrowlNotifier
-	gntp.notifier.mini(description, **kwargs)
+	notifier.mini(description, **kwargs)
 
 
 if __name__ == '__main__':

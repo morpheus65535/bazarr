@@ -104,6 +104,11 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     # fixme: supply all missing languages, not only one, to hit providers only once who support multiple languages in
     #  one query
 
+    if settings.general.getboolean('utf8_encode'):
+        os.environ["SZ_KEEP_ENCODING"] = ""
+    else:
+        os.environ["SZ_KEEP_ENCODING"] = True
+
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
         hi = "force HI"
@@ -356,7 +361,12 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
 
 def manual_download_subtitle(path, language, hi, forced, subtitle, provider, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually downloading subtitles for this file: ' + path)
-    
+
+    if settings.general.getboolean('utf8_encode'):
+        os.environ["SZ_KEEP_ENCODING"] = ""
+    else:
+        os.environ["SZ_KEEP_ENCODING"] = True
+
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = settings.general.getboolean('use_scenename')
     use_postprocessing = settings.general.getboolean('use_postprocessing')

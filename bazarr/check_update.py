@@ -10,7 +10,7 @@ from get_args import args
 from config import settings, bazarr_url
 from queueconfig import notifications
 
-if not args.no_update:
+if not args.no_update and not args.release_update:
     import git
 
 current_working_directory = os.path.dirname(os.path.dirname(__file__))

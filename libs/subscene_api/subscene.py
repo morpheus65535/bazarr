@@ -56,7 +56,7 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWeb"\
                      "Kit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 
 
-ENDPOINT_RE = re.compile(ur'(?uis)<form action="/subtitles/(.+)">.*?<input type="text"')
+ENDPOINT_RE = re.compile(ur'(?uis)<form.+?action="/subtitles/(.+)">.*?<input type="text"')
 
 
 class NewEndpoint(Exception):
@@ -64,24 +64,14 @@ class NewEndpoint(Exception):
 
 
 # utils
-def soup_for(url, session=None, user_agent=DEFAULT_USER_AGENT):
+def soup_for(url, data=None, session=None, user_agent=DEFAULT_USER_AGENT):
     url = re.sub("\s", "+", url)
     if not session:
         r = Request(url, data=None, headers=dict(HEADERS, **{"User-Agent": user_agent}))
         html = urlopen(r).read().decode("utf-8")
     else:
-        ret = session.get(url)
-        try:
-            ret.raise_for_status()
-        except requests.HTTPError, e:
-            if e.response.status_code == 404:
-                m = ENDPOINT_RE.search(ret.text)
-                if m:
-                    try:
-                        raise NewEndpoint(m.group(1))
-                    except:
-                        pass
-            raise
+        ret = session.post(url, data=data)
+        ret.raise_for_status()
         html = ret.text
     return BeautifulSoup(html, "html.parser")
 
@@ -272,33 +262,22 @@ def get_first_film(soup, section, year=None, session=None):
 
 def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact, throttle=0):
     # note to subscene: if you actually start to randomize the endpoint, we'll have to query your server even more
-    endpoints = ["searching", "search", "srch", "find"]
 
     if release:
-        endpoints = ["release"]
+        endpoint = "release"
     else:
-        endpoint = region.get("subscene_endpoint")
-        if endpoint is not NO_VALUE and endpoint not in endpoints:
-            endpoints.insert(0, endpoint)
+        endpoint = region.get("subscene_endpoint2")
+        if endpoint is NO_VALUE:
+            ret = session.get(SITE_DOMAIN)
+            time.sleep(throttle)
+            m = ENDPOINT_RE.search(ret.text)
+            if m:
+                endpoint = m.group(1).strip()
+                logger.debug("Switching main endpoint to %s", endpoint)
+                region.set("subscene_endpoint2", endpoint)
 
-    soup = None
-    for endpoint in endpoints:
-        try:
-            soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, endpoint, term),
-                            session=session)
-
-        except NewEndpoint, e:
-            new_endpoint = e.message
-            if new_endpoint not in endpoints:
-                new_endpoint = new_endpoint.strip()
-                logger.debug("Switching main endpoint to %s", new_endpoint)
-                region.set("subscene_endpoint", new_endpoint)
-                time.sleep(throttle)
-                return search(term, release=release, session=session, year=year, limit_to=limit_to, throttle=throttle)
-            else:
-                region.delete("subscene_endpoint")
-                raise Exception("New endpoint %s didn't work; exiting" % new_endpoint)
-        break
+    soup = soup_for("%s/subtitles/%s" % (SITE_DOMAIN, endpoint), data={"query": term},
+                    session=session)
 
     if soup:
         if "Subtitle search by" in str(soup):

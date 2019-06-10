@@ -1,27 +1,36 @@
 # -*- coding: utf-8 -*-
 #
-# Boxcar Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
-from json import dumps
-import requests
 import re
-from time import time
+import six
+import requests
 import hmac
+from json import dumps
+from time import time
 from hashlib import sha1
+from itertools import chain
 try:
     from urlparse import urlparse
 
@@ -29,10 +38,10 @@ except ImportError:
     from urllib.parse import urlparse
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
-
+from ..utils import parse_bool
+from ..common import NotifyType
 from ..common import NotifyImageSize
-from ..utils import compat_is_basestring
+from ..AppriseLocale import gettext_lazy as _
 
 # Default to sending to all devices if nothing is specified
 DEFAULT_TAG = '@all'
@@ -44,8 +53,8 @@ DEFAULT_TAG = '@all'
 IS_TAG = re.compile(r'^[@](?P<name>[A-Z0-9]{1,63})$', re.I)
 
 # Device tokens are only referenced when developing.
-# it's not likely you'll send a message directly to a device, but
-# if you do; this plugin supports it.
+# It's not likely you'll send a message directly to a device, but if you do;
+# this plugin supports it.
 IS_DEVICETOKEN = re.compile(r'^[A-Z0-9]{64}$', re.I)
 
 # Both an access key and seret key are created and assigned to each project
@@ -53,8 +62,8 @@ IS_DEVICETOKEN = re.compile(r'^[A-Z0-9]{64}$', re.I)
 VALIDATE_ACCESS = re.compile(r'[A-Z0-9_-]{64}', re.I)
 VALIDATE_SECRET = re.compile(r'[A-Z0-9_-]{64}', re.I)
 
-# Used to break apart list of potential tags by their delimiter
-# into a usable list.
+# Used to break apart list of potential tags by their delimiter into a useable
+# list.
 TAGS_LIST_DELIM = re.compile(r'[ \t\r\n,\\/]+')
 
 
@@ -84,7 +93,64 @@ class NotifyBoxcar(NotifyBase):
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 10000
 
-    def __init__(self, access, secret, recipients=None, **kwargs):
+    # Define object templates
+    templates = (
+        '{schema}://{access_key}/{secret_key}/',
+        '{schema}://{access_key}/{secret_key}/{targets}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'access_key': {
+            'name': _('Access Key'),
+            'type': 'string',
+            'regex': (r'[A-Z0-9_-]{64}', 'i'),
+            'private': True,
+            'required': True,
+            'map_to': 'access',
+        },
+        'secret_key': {
+            'name': _('Secret Key'),
+            'type': 'string',
+            'regex': (r'[A-Z0-9_-]{64}', 'i'),
+            'private': True,
+            'required': True,
+            'map_to': 'secret',
+        },
+        'target_tag': {
+            'name': _('Target Tag ID'),
+            'type': 'string',
+            'prefix': '@',
+            'regex': (r'[A-Z0-9]{1,63}', 'i'),
+            'map_to': 'targets',
+        },
+        'target_device': {
+            'name': _('Target Device ID'),
+            'type': 'string',
+            'regex': (r'[A-Z0-9]{64}', 'i'),
+            'map_to': 'targets',
+        },
+        'targets': {
+            'name': _('Targets'),
+            'type': 'list:string',
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'image': {
+            'name': _('Include Image'),
+            'type': 'bool',
+            'default': True,
+            'map_to': 'include_image',
+        },
+        'to': {
+            'alias_of': 'targets',
+        },
+    })
+
+    def __init__(self, access, secret, targets=None, include_image=True,
+                 **kwargs):
         """
         Initialize Boxcar Object
         """
@@ -101,67 +167,63 @@ class NotifyBoxcar(NotifyBase):
             self.access = access.strip()
 
         except AttributeError:
-            self.logger.warning(
-                'The specified access key specified is invalid.',
-            )
-            raise TypeError(
-                'The specified access key specified is invalid.',
-            )
+            msg = 'The specified access key is invalid.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         try:
             # Secret Key (associated with project)
             self.secret = secret.strip()
 
         except AttributeError:
-            self.logger.warning(
-                'The specified secret key specified is invalid.',
-            )
-            raise TypeError(
-                'The specified secret key specified is invalid.',
-            )
+            msg = 'The specified secret key is invalid.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         if not VALIDATE_ACCESS.match(self.access):
-            self.logger.warning(
-                'The access key specified (%s) is invalid.' % self.access,
-            )
-            raise TypeError(
-                'The access key specified (%s) is invalid.' % self.access,
-            )
+            msg = 'The access key specified ({}) is invalid.'\
+                .format(self.access)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         if not VALIDATE_SECRET.match(self.secret):
-            self.logger.warning(
-                'The secret key specified (%s) is invalid.' % self.secret,
-            )
-            raise TypeError(
-                'The secret key specified (%s) is invalid.' % self.secret,
-            )
+            msg = 'The secret key specified ({}) is invalid.'\
+                .format(self.secret)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
-        if not recipients:
+        if not targets:
             self.tags.append(DEFAULT_TAG)
-            recipients = []
+            targets = []
 
-        elif compat_is_basestring(recipients):
-            recipients = [x for x in filter(bool, TAGS_LIST_DELIM.split(
-                recipients,
+        elif isinstance(targets, six.string_types):
+            targets = [x for x in filter(bool, TAGS_LIST_DELIM.split(
+                targets,
             ))]
 
-        # Validate recipients and drop bad ones:
-        for recipient in recipients:
-            if IS_TAG.match(recipient):
+        # Validate targets and drop bad ones:
+        for target in targets:
+            if IS_TAG.match(target):
                 # store valid tag/alias
-                self.tags.append(IS_TAG.match(recipient).group('name'))
+                self.tags.append(IS_TAG.match(target).group('name'))
 
-            elif IS_DEVICETOKEN.match(recipient):
+            elif IS_DEVICETOKEN.match(target):
                 # store valid device
-                self.device_tokens.append(recipient)
+                self.device_tokens.append(target)
 
             else:
                 self.logger.warning(
                     'Dropped invalid tag/alias/device_token '
-                    '(%s) specified.' % recipient,
+                    '({}) specified.'.format(target),
                 )
 
-    def notify(self, title, body, notify_type, **kwargs):
+        # Track whether or not we want to send an image with our notification
+        # or not.
+        self.include_image = include_image
+
+        return
+
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Boxcar Notification
         """
@@ -193,7 +255,9 @@ class NotifyBoxcar(NotifyBase):
             payload['device_tokens'] = self.device_tokens
 
         # Source picture should be <= 450 DP wide, ~2:1 aspect.
-        image_url = self.image_url(notify_type)
+        image_url = None if not self.include_image \
+            else self.image_url(notify_type)
+
         if image_url:
             # Set our image
             payload['@img'] = image_url
@@ -211,7 +275,7 @@ class NotifyBoxcar(NotifyBase):
             sha1,
         )
 
-        params = self.urlencode({
+        params = NotifyBoxcar.urlencode({
             "publishkey": self.access,
             "signature": h.hexdigest(),
         })
@@ -221,6 +285,9 @@ class NotifyBoxcar(NotifyBase):
             notify_url, self.verify_certificate,
         ))
         self.logger.debug('Boxcar Payload: %s' % str(payload))
+
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
 
         try:
             r = requests.post(
@@ -232,20 +299,18 @@ class NotifyBoxcar(NotifyBase):
 
             # Boxcar returns 201 (Created) when successful
             if r.status_code != requests.codes.created:
-                try:
-                    self.logger.warning(
-                        'Failed to send Boxcar notification: '
-                        '%s (error=%s).' % (
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                # We had a problem
+                status_str = \
+                    NotifyBoxcar.http_response_code_lookup(r.status_code)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to send Boxcar notification '
-                        '(error=%s).' % (
-                            r.status_code))
+                self.logger.warning(
+                    'Failed to send Boxcar notification: '
+                    '{}{}error={}.'.format(
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
 
-                # self.logger.debug('Response Details: %s' % r.raw.read())
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
@@ -265,6 +330,29 @@ class NotifyBoxcar(NotifyBase):
 
         return True
 
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'image': 'yes' if self.include_image else 'no',
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        return '{schema}://{access}/{secret}/{targets}/?{args}'.format(
+            schema=self.secure_protocol,
+            access=NotifyBoxcar.quote(self.access, safe=''),
+            secret=NotifyBoxcar.quote(self.secret, safe=''),
+            targets='/'.join([
+                NotifyBoxcar.quote(x, safe='') for x in chain(
+                    self.tags, self.device_tokens) if x != DEFAULT_TAG]),
+            args=NotifyBoxcar.urlencode(args),
+        )
+
     @staticmethod
     def parse_url(url):
         """
@@ -278,23 +366,30 @@ class NotifyBoxcar(NotifyBase):
             return None
 
         # The first token is stored in the hostname
-        access = results['host']
+        results['access'] = NotifyBoxcar.unquote(results['host'])
 
-        # Now fetch the remaining tokens
-        secret = NotifyBase.split_path(results['fullpath'])[0]
+        # Get our entries; split_path() looks after unquoting content for us
+        # by default
+        entries = NotifyBoxcar.split_path(results['fullpath'])
 
-        # Our recipients
-        recipients = ','.join(
-            NotifyBase.split_path(results['fullpath'])[1:])
+        try:
+            # Now fetch the remaining tokens
+            results['secret'] = entries.pop(0)
 
-        if not (access and secret):
-            # If we did not recive an access and/or secret code
-            # then we're done
-            return None
+        except IndexError:
+            # secret wasn't specified
+            results['secret'] = None
 
-        # Store our required content
-        results['recipients'] = recipients if recipients else None
-        results['access'] = access
-        results['secret'] = secret
+        # Our recipients make up the remaining entries of our array
+        results['targets'] = entries
+
+        # The 'to' makes it easier to use yaml configuration
+        if 'to' in results['qsd'] and len(results['qsd']['to']):
+            results['targets'] += \
+                NotifyBoxcar.parse_list(results['qsd'].get('to'))
+
+        # Include images with our message
+        results['include_image'] = \
+            parse_bool(results['qsd'].get('image', True))
 
         return results
