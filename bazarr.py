@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import subprocess as sp
-import threading
 import time
 import os
 import sys
@@ -14,7 +13,7 @@ dir_name = os.path.dirname(__file__)
 
 def start_bazarr():
     script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
-
+    
     ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
     print "Bazarr starting..."
     try:
@@ -27,17 +26,18 @@ def start_bazarr():
 if __name__ == '__main__':
     restartfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.restart'))
     stopfile = os.path.normcase(os.path.join(args.config_dir, 'bazarr.stop'))
-
+    
     try:
         os.remove(restartfile)
     except:
         pass
-
+    
     try:
         os.remove(stopfile)
     except:
         pass
-
+    
+    
     def daemon():
         if os.path.exists(stopfile):
             try:
@@ -47,7 +47,7 @@ if __name__ == '__main__':
             else:
                 print 'Bazarr exited.'
                 os._exit(0)
-
+        
         if os.path.exists(restartfile):
             try:
                 os.remove(restartfile)
@@ -55,9 +55,10 @@ if __name__ == '__main__':
                 print 'Unable to delete restart file.'
             else:
                 start_bazarr()
-
+    
+    
     start_bazarr()
-
+    
     # Keep the script running forever.
     while True:
         daemon()

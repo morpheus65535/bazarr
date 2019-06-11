@@ -4,7 +4,6 @@ import os
 import re
 import types
 import logging
-import sqlite3
 import chardet
 from bs4 import UnicodeDammit
 
@@ -85,7 +84,7 @@ def get_target_folder(file_path):
     if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
         fld_base = os.path.split(file_path)[0]
-
+        
         if subfolder == "absolute":
             # absolute folder
             fld = fld_custom
@@ -93,9 +92,9 @@ def get_target_folder(file_path):
             fld = os.path.join(fld_base, fld_custom)
         else:
             fld = None
-
+        
         fld = force_unicode(fld)
-
+        
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
@@ -104,7 +103,7 @@ def get_target_folder(file_path):
                 fld = None
     else:
         fld = None
-
+    
     return fld
 
 

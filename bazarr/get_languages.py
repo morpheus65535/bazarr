@@ -115,13 +115,13 @@ def get_language_set():
     languages = c.execute('''SELECT code3 FROM table_settings_languages WHERE enabled = 1''').fetchall()
     db.close()
     language_set = set()
-
+    
     for lang in languages:
         if lang[0] == 'pob':
             language_set.add(Language('por', 'BR'))
         else:
             language_set.add(Language(lang[0]))
-
+    
     return language_set
 
 

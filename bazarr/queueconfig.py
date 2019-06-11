@@ -6,11 +6,11 @@ class Notify:
     """
     This class is used to read or write items to the notifications deque.
     """
-
+    
     def __init__(self):
         self.queue = deque(maxlen=10)
-
-    def write(self, msg, type='info', duration='temporary', button='null',  queue='main', item=0, length=0):
+    
+    def write(self, msg, type='info', duration='temporary', button='null', queue='main', item=0, length=0):
         """
             :param msg: The message to display.
             :type msg: str
@@ -27,15 +27,15 @@ class Notify:
             :param length: The length of the group of item for progress bar
             :type length: int
         """
-
+        
         self.queue.append(json.dumps([msg, type, duration, button, queue, item, length]))
-
+    
     def read(self):
         """
             :return: Return the oldest notification available.
             :rtype: str
         """
-
+        
         if self.queue:
             return self.queue.popleft()
 

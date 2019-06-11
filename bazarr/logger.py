@@ -86,13 +86,12 @@ def configure_logging(debug=False):
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
         logging.getLogger("subzero").setLevel(logging.ERROR)
-
+    
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
     logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
-    
 
 
 class MyFilter(logging.Filter):

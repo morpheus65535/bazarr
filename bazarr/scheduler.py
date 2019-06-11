@@ -67,7 +67,6 @@ if str(get_localzone()) == "local":
 else:
     scheduler = BackgroundScheduler()
 
-
 global running_tasks
 running_tasks = []
 
@@ -81,19 +80,25 @@ def task_listener(event):
 
 scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
 
+
 def schedule_update_job():
     if not args.no_update:
         if settings.general.getboolean('auto_update'):
             scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                              misfire_grace_time=15, id='update_bazarr', name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
+                              misfire_grace_time=15, id='update_bazarr',
+                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github',
+                              replace_existing=True)
         else:
             scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr',
-                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github', replace_existing=True)
+                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github',
+                              replace_existing=True)
             scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                              misfire_grace_time=15, id='update_release', name='Update release info', replace_existing=True)
-
+                              misfire_grace_time=15, id='update_release', name='Update release info',
+                              replace_existing=True)
+    
     else:
-        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True, misfire_grace_time=15,
+        scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
+                          misfire_grace_time=15,
                           id='update_release', name='Update release info', replace_existing=True)
 
 
@@ -123,7 +128,6 @@ scheduler.start()
 
 
 def add_job(job, name=None, max_instances=1, coalesce=True, args=None):
-    
     scheduler.add_job(job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
                       coalesce=coalesce, args=args)
 

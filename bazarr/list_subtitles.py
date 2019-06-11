@@ -47,7 +47,8 @@ def store_subtitles(file):
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
                         pass
             except Exception as e:
-                logging.exception("BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
+                logging.exception(
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
                 pass
         
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
@@ -71,7 +72,7 @@ def store_subtitles(file):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_replace_reverse(subtitle_path)])
-
+                
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
@@ -136,9 +137,10 @@ def store_subtitles_movie(file):
                         logging.debug("BAZARR unable to index this unrecognized language: " + subtitle_language)
                         pass
             except Exception as e:
-                logging.exception("BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
+                logging.exception(
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
                 pass
-
+        
         dest_folder = get_subtitle_destination_folder() or ''
         subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
@@ -154,19 +156,23 @@ def store_subtitles_movie(file):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                        [str("pb"),
+                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)) is True:
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
-                        [str("pb:forced"), path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                        [str("pb:forced"),
+                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                        [str(language),
+                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(path_replace_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle)), 'r') as f:
+                        with open(path_replace_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle)),
+                                  'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -270,7 +276,8 @@ def list_missing_subtitles_movies(*no):
         pass
     conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c_db = conn_db.cursor()
-    movies_subtitles = c_db.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" + query_string).fetchall()
+    movies_subtitles = c_db.execute(
+        "SELECT radarrId, subtitles, languages, forced FROM table_movies" + query_string).fetchall()
     c_db.close()
     
     missing_subtitles_global = []
@@ -326,7 +333,7 @@ def series_full_scan_subtitles():
     episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
     c_db.close()
     count_episodes = len(episodes)
-
+    
     for i, episode in enumerate(episodes, 1):
         notifications.write(msg='Updating all episodes subtitles from disk...',
                             queue='list_subtitles_series', item=i, length=count_episodes)
@@ -341,7 +348,7 @@ def movies_full_scan_subtitles():
     movies = c_db.execute("SELECT path FROM table_movies").fetchall()
     c_db.close()
     count_movies = len(movies)
-
+    
     for i, movie in enumerate(movies, 1):
         notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', item=i, length=count_movies)
@@ -376,7 +383,7 @@ def movies_scan_subtitles(no):
 
 def get_external_subtitles_path(file, subtitle):
     fld = os.path.dirname(file)
-
+    
     if settings.general.subfolder == "current":
         path = os.path.join(fld, subtitle)
     elif settings.general.subfolder == "absolute":
@@ -397,5 +404,5 @@ def get_external_subtitles_path(file, subtitle):
             path = None
     else:
         path = None
-
+    
     return path
