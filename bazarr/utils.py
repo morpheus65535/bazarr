@@ -32,9 +32,6 @@ def history_log_movie(action, radarrId, description, video_path=None, language=N
     db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
     c = db.cursor()
 
-    if forced:
-        language = language + ":forced"
-
     history = c.execute(
         '''INSERT INTO table_history_movie(action, radarrId, timestamp, description, video_path, language, provider, score) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         (action, radarrId, time.time(), description, video_path, language, provider, score))

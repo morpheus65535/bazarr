@@ -1929,7 +1929,7 @@ def get_subtitle_movie():
             message = result[0]
             path = result[1]
             forced = result[5]
-            language_code = result[2] + ":forced" if forced else ""
+            language_code = result[2] + ":forced" if forced else result[2]
             provider = result[3]
             score = result[4]
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
@@ -1985,7 +1985,7 @@ def manual_get_subtitle_movie():
             message = result[0]
             path = result[1]
             forced = result[5]
-            language_code = result[2] + ":forced" if forced else ""
+            language_code = result[2] + ":forced" if forced else result[2]
             provider = result[3]
             score = result[4]
             history_log_movie(2, radarrId, message, path, language_code, provider, score)

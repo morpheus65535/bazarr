@@ -579,7 +579,7 @@ def movies_download_subtitles(no):
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else ""
+                language_code = result[2] + ":forced" if forced else result[2]
                 provider = result[3]
                 score = result[4]
                 store_subtitles_movie(path_replace_movie(movie[0]))
@@ -691,7 +691,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             message = result[0]
                             path = result[1]
                             forced = result[5]
-                            language_code = result[2] + ":forced" if forced else ""
+                            language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
                             store_subtitles_movie(path_replace_movie(movie[0]))
@@ -941,7 +941,7 @@ def upgrade_subtitles():
                         message = result[0]
                         path = result[1]
                         forced = result[5]
-                        language_code = result[2] + ":forced" if forced else ""
+                        language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
                         store_subtitles_movie(path_replace_movie(movie[0]))
