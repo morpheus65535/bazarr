@@ -505,7 +505,7 @@ def series_download_subtitles(no):
                     message = result[0]
                     path = result[1]
                     forced = result[5]
-                    language_code = result[2] + ":forced" if forced else ""
+                    language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
                     store_subtitles(path_replace(episode[0]))
@@ -547,7 +547,7 @@ def episode_download_subtitles(no):
                     message = result[0]
                     path = result[1]
                     forced = result[5]
-                    language_code = result[2] + ":forced" if forced else ""
+                    language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
                     store_subtitles(path_replace(episode[0]))
@@ -636,7 +636,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             message = result[0]
                             path = result[1]
                             forced = result[5]
-                            language_code = result[2] + ":forced" if forced else ""
+                            language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
                             store_subtitles(path_replace(episode[0]))
@@ -905,7 +905,7 @@ def upgrade_subtitles():
                         message = result[0]
                         path = result[1]
                         forced = result[5]
-                        language_code = result[2] + ":forced" if forced else ""
+                        language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
                         store_subtitles(path_replace(episode[0]))
