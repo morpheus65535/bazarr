@@ -1742,7 +1742,7 @@ def system():
     return template('system', bazarr_version=bazarr_version,
                     sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
-                    config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.getcwd()),
+                    config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.path.dirname(os.path.dirname(__file__))),
                     base_url=base_url, task_list=task_list, page_size=page_size, releases=releases,
                     current_port=settings.general.port, throttled_providers=throttled_providers)
 
