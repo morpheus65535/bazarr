@@ -1252,6 +1252,11 @@ def save_settings():
         settings_general_scenename = 'False'
     else:
         settings_general_scenename = 'True'
+    settings_general_mediainfo = request.forms.get('settings_general_mediainfo')
+    if settings_general_mediainfo is None:
+        settings_general_mediainfo = 'False'
+    else:
+        settings_general_mediainfo = 'True'
     settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
         settings_general_embedded = 'False'
@@ -1334,6 +1339,7 @@ def save_settings():
     settings.general.single_language = text_type(settings_general_single_language)
     settings.general.minimum_score = text_type(settings_general_minimum_score)
     settings.general.use_scenename = text_type(settings_general_scenename)
+    settings.general.use_mediainfo = text_type(settings_general_mediainfo)
     settings.general.use_postprocessing = text_type(settings_general_use_postprocessing)
     settings.general.postprocessing_cmd = text_type(settings_general_postprocessing_cmd)
     settings.general.use_sonarr = text_type(settings_general_use_sonarr)

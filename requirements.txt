@@ -1,2 +1,3 @@
 gevent==1.4.0
 lxml==4.3.0
+pymediainfo==4.0
