@@ -28,7 +28,7 @@ from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
-from utils import history_log, history_log_movie
+from utils import history_log, history_log_movie, get_binary
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from get_args import args
@@ -832,7 +832,12 @@ def refine_from_db(path, video):
 
 
 def refine_from_mediainfo(path, video):
-    media_info = MediaInfo.parse(path);
+    exe = get_binary('mediainfo')
+    if not exe:
+        logging.warn('BAZARR MediaInfo library not found!')
+        return
+
+    media_info = MediaInfo.parse(path, library_file=exe);
 
     video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
     if not video_track:
