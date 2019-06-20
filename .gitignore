@@ -7,3 +7,6 @@ cachefile.dbm
 .idea/*
 bazarr.pid
 /venv
+
+# Allow
+!*.dll
