@@ -255,9 +255,25 @@ def get_first_film(soup, section, year=None, session=None):
                 url = SITE_DOMAIN + t.div.a.get("href")
                 break
         if not url:
-            return
+            # fallback to non-year results
+            logger.info("Falling back to non-year results as year wasn't found (%s)", year)
+            url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
 
     return Film.from_url(url, session=session)
+
+
+def find_endpoint(session, content=None):
+    endpoint = region.get("subscene_endpoint2")
+    if endpoint is NO_VALUE:
+        if not content:
+            content = session.get(SITE_DOMAIN).text
+
+        m = ENDPOINT_RE.search(content)
+        if m:
+            endpoint = m.group(1).strip()
+            logger.debug("Switching main endpoint to %s", endpoint)
+            region.set("subscene_endpoint2", endpoint)
+    return endpoint
 
 
 def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact, throttle=0):
@@ -266,15 +282,12 @@ def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exa
     if release:
         endpoint = "release"
     else:
-        endpoint = region.get("subscene_endpoint2")
-        if endpoint is NO_VALUE:
-            ret = session.get(SITE_DOMAIN)
-            time.sleep(throttle)
-            m = ENDPOINT_RE.search(ret.text)
-            if m:
-                endpoint = m.group(1).strip()
-                logger.debug("Switching main endpoint to %s", endpoint)
-                region.set("subscene_endpoint2", endpoint)
+        endpoint = find_endpoint(session)
+        time.sleep(throttle)
+
+    if not endpoint:
+        logger.error("Couldn't find endpoint, exiting")
+        return
 
     soup = soup_for("%s/subtitles/%s" % (SITE_DOMAIN, endpoint), data={"query": term},
                     session=session)

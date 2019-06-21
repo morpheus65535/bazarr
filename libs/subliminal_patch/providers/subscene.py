@@ -19,7 +19,7 @@ from babelfish import language_converters
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal import Episode, ProviderError
-from subliminal.exceptions import ConfigurationError
+from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.utils import sanitize_release_group
 from subliminal.cache import region
 from subliminal_patch.http import RetryingCFSession
@@ -141,6 +141,10 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def login(self):
         r = self.session.get("https://subscene.com/account/login")
+        if "Server Error" in r.content:
+            logger.error("Login unavailable; Maintenance?")
+            raise ServiceUnavailable("Login unavailable; Maintenance?")
+
         match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.content)
 
         if match:
