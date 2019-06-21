@@ -832,6 +832,9 @@ def refine_from_db(path, video):
 
 
 def refine_from_mediainfo(path, video):
+    if video.fps:
+        return
+
     exe = get_binary('mediainfo')
     if not exe:
         logging.warn('BAZARR MediaInfo library not found!')
