@@ -52,17 +52,20 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
     :return: `Video` instance
     """
     hints = {"title": title, "type": "movie" if media_type == "movie" else "episode"}
-    dont_use_actual_file = False
+    used_scene_name = False
     original_path = path
     original_name = os.path.basename(path)
+    hash_from = None
     if sceneName != "None" and use_scenename:
         # use the sceneName but keep the folder structure for better guessing
         path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
-        dont_use_actual_file = True
+        used_scene_name = True
+        hash_from = original_path
     if providers:
         try:
-            video = parse_video(path, hints=hints, providers=providers, dry_run=dont_use_actual_file)
-            video.used_scene_name = dont_use_actual_file
+            video = parse_video(path, hints=hints, providers=providers, dry_run=used_scene_name,
+                                hash_from=hash_from)
+            video.used_scene_name = used_scene_name
             video.original_name = original_name
             video.original_path = original_path
             refine_from_db(original_path, video)

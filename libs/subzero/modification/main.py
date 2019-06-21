@@ -293,6 +293,9 @@ class SubtitleModifications(object):
                     end_tag = line[-5:]
                     line = line[:-5]
 
+                last_procs_mods = []
+
+                # fixme: this double loop is ugly
                 for order, identifier, args in mods:
                     mod = self.initialized_mods[identifier]
 
@@ -312,6 +315,33 @@ class SubtitleModifications(object):
                         break
 
                     applied_mods.append(identifier)
+                    if mod.last_processors:
+                        last_procs_mods.append([identifier, args])
+
+                if skip_entry:
+                    lines = []
+                    break
+
+                if skip_line:
+                    continue
+
+                for identifier, args in last_procs_mods:
+                    mod = self.initialized_mods[identifier]
+
+                    try:
+                        line = mod.modify(line.strip(), entry=entry.text, debug=self.debug, parent=self, index=index,
+                                          procs=["last_process"], **args)
+                    except EmptyEntryError:
+                        if self.debug:
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, entry.text)
+                        skip_entry = True
+                        break
+
+                    if not line:
+                        if self.debug:
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, old_line)
+                        skip_line = True
+                        break
 
                 if skip_entry:
                     lines = []

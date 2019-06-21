@@ -49,11 +49,11 @@ class HearingImpaired(SubtitleTextModification):
         NReProcessor(re.compile(ur'(?sux)-?%(t)s[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]][\s:]*%(t)s' %
                                 {"t": TAG}), "", name="HI_brackets"),
 
-        NReProcessor(re.compile(ur'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),
-                     "", name="HI_bracket_open_start"),
+        #NReProcessor(re.compile(ur'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),
+        #             "", name="HI_bracket_open_start"),
 
-        NReProcessor(re.compile(ur'(?sux)-?%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]][\s:]*%(t)s' % {"t": TAG}), "",
-                     name="HI_bracket_open_end"),
+        #NReProcessor(re.compile(ur'(?sux)-?%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]][\s:]*%(t)s' % {"t": TAG}), "",
+        #             name="HI_bracket_open_end"),
 
         # text before colon (and possible dash in front), max 11 chars after the first whitespace (if any)
         # NReProcessor(re.compile(r'(?u)(^[A-z\-\'"_]+[\w\s]{0,11}:[^0-9{2}][\s]*)'), "", name="HI_before_colon"),
@@ -73,7 +73,7 @@ class HearingImpaired(SubtitleTextModification):
                      supported=lambda p: not p.only_uppercase),
 
         # remove MAN:
-        NReProcessor(re.compile(ur'(?suxi)(.*MAN:\s*)'), "", name="HI_remove_man"),
+        NReProcessor(re.compile(ur'(?suxi)(\b(?:WO)MAN:\s*)'), "", name="HI_remove_man"),
 
         # dash in front
         # NReProcessor(re.compile(r'(?u)^\s*-\s*'), "", name="HI_starting_dash"),
@@ -81,13 +81,18 @@ class HearingImpaired(SubtitleTextModification):
         # all caps at start before new sentence
         NReProcessor(re.compile(ur'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)'), r"\1",
                      name="HI_starting_upper_then_sentence", supported=lambda p: not p.only_uppercase),
-
-        # remove music symbols
-        NReProcessor(re.compile(ur'(?u)(^%(t)s[*#¶♫♪\s]*%(t)s[*#¶♫♪\s]+%(t)s[*#¶♫♪\s]*%(t)s$)' % {"t": TAG}),
-                     "", name="HI_music_symbols_only"),
     ]
 
     post_processors = empty_line_post_processors
+    last_processors = [
+        # remove music symbols
+        NReProcessor(re.compile(ur'(?u)(^%(t)s[*#¶♫♪\s]*%(t)s[*#¶♫♪\s]+%(t)s[*#¶♫♪\s]*%(t)s$)' % {"t": TAG}),
+                     "", name="HI_music_symbols_only"),
+
+        # remove music entries
+        NReProcessor(re.compile(ur'(?ums)(^[-\s>~]*[♫♪]+\s*.+|.+\s*[♫♪]+\s*$)'),
+                     "", name="HI_music"),
+    ]
 
 
 registry.register(HearingImpaired)
