@@ -115,6 +115,10 @@ defaults = {
     'napisy24': {
         'username': '',
         'password': ''
+    },
+    'subscene': {
+        'username': '',
+        'password': ''
     }
 }
 

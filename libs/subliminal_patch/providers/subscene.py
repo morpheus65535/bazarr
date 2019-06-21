@@ -4,23 +4,33 @@ import io
 import logging
 import os
 import time
+import traceback
+
+import requests
+
 import inflect
+import re
+import json
+import HTMLParser
+import urlparse
 
 from zipfile import ZipFile
 from babelfish import language_converters
 from guessit import guessit
+from dogpile.cache.api import NO_VALUE
 from subliminal import Episode, ProviderError
+from subliminal.exceptions import ConfigurationError
 from subliminal.utils import sanitize_release_group
+from subliminal.cache import region
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.converters.subscene import language_ids, supported_languages
-from subscene_api.subscene import search, Subtitle as APISubtitle
+from subscene_api.subscene import search, Subtitle as APISubtitle, SITE_DOMAIN
 from subzero.language import Language
 
 p = inflect.engine()
-
 
 language_converters.register('subscene = subliminal_patch.converters.subscene:SubsceneConverter')
 logger = logging.getLogger(__name__)
@@ -112,15 +122,66 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     skip_wrong_fps = False
     hearing_impaired_verifiable = True
     only_foreign = False
+    username = None
+    password = None
 
-    search_throttle = 2  # seconds
+    search_throttle = 5  # seconds
 
-    def __init__(self, only_foreign=False):
+    def __init__(self, only_foreign=False, username=None, password=None):
+        if not all((username, password)):
+            raise ConfigurationError('Username and password must be specified')
+
         self.only_foreign = only_foreign
+        self.username = username
+        self.password = password
 
     def initialize(self):
         logger.info("Creating session")
         self.session = RetryingCFSession()
+
+    def login(self):
+        r = self.session.get("https://subscene.com/account/login")
+        match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.content)
+
+        if match:
+            h = HTMLParser.HTMLParser()
+            data = json.loads(h.unescape(match.group(1)))
+            login_url = urlparse.urljoin(data["siteUrl"], data["loginUrl"])
+            time.sleep(1.0)
+
+            r = self.session.post(login_url,
+                                  {
+                                      "username": self.username,
+                                      "password": self.password,
+                                      data["antiForgery"]["name"]: data["antiForgery"]["value"]
+                                  })
+            pep_content = re.search(r"<form method=\"post\" action=\"https://subscene\.com/\">"
+                                    r".+name=\"id_token\".+?value=\"(?P<id_token>.+?)\".*?"
+                                    r"access_token\".+?value=\"(?P<access_token>.+?)\".+?"
+                                    r"token_type.+?value=\"(?P<token_type>.+?)\".+?"
+                                    r"expires_in.+?value=\"(?P<expires_in>.+?)\".+?"
+                                    r"scope.+?value=\"(?P<scope>.+?)\".+?"
+                                    r"state.+?value=\"(?P<state>.+?)\".+?"
+                                    r"session_state.+?value=\"(?P<session_state>.+?)\"",
+                                    r.content, re.MULTILINE | re.DOTALL)
+
+            if pep_content:
+                r = self.session.post(SITE_DOMAIN, pep_content.groupdict())
+                try:
+                    r.raise_for_status()
+                except Exception:
+                    raise ProviderError("Something went wrong when trying to log in: %s", traceback.format_exc())
+                else:
+                    cj = self.session.cookies.copy()
+                    store_cks = ("scene", "idsrv", "idsrv.xsrf", "idsvr.clients", "idsvr.session", "idsvr.username")
+                    for cn in self.session.cookies.iterkeys():
+                        if cn not in store_cks:
+                            del cj[cn]
+
+                    logger.debug("Storing cookies: %r", cj)
+                    region.set("subscene_cookies2", cj)
+                    return
+        raise ProviderError("Something went wrong when trying to log in #1")
 
     def terminate(self):
         logger.info("Closing session")
@@ -176,7 +237,11 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     def parse_results(self, video, film):
         subtitles = []
         for s in film.subtitles:
-            subtitle = SubsceneSubtitle.from_api(s)
+            try:
+                subtitle = SubsceneSubtitle.from_api(s)
+            except NotImplementedError, e:
+                logger.info(e)
+                continue
             subtitle.asked_for_release_group = video.release_group
             if isinstance(video, Episode):
                 subtitle.asked_for_episode = video.episode
@@ -189,10 +254,16 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return subtitles
 
+    def do_search(self, *args, **kwargs):
+        try:
+            return search(*args, **kwargs)
+        except requests.HTTPError:
+            region.delete("subscene_cookies2")
+
     def query(self, video):
-        #vfn = get_video_filename(video)
+        # vfn = get_video_filename(video)
         subtitles = []
-        #logger.debug(u"Searching for: %s", vfn)
+        # logger.debug(u"Searching for: %s", vfn)
         # film = search(vfn, session=self.session)
         #
         # if film and film.subtitles:
@@ -201,16 +272,24 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         # else:
         #     logger.debug('No release results found')
 
-        #time.sleep(self.search_throttle)
+        # time.sleep(self.search_throttle)
+        prev_cookies = region.get("subscene_cookies2")
+        if prev_cookies != NO_VALUE:
+            logger.debug("Re-using old subscene cookies: %r", prev_cookies)
+            self.session.cookies.update(prev_cookies)
+
+        else:
+            logger.debug("Logging in")
+            self.login()
 
         # re-search for episodes without explicit release name
         if isinstance(video, Episode):
-            #term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
+            # term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
             more_than_one = len([video.series] + video.alternative_series) > 1
-            for series in [video.series] + video.alternative_series:
+            for series in set([video.series] + video.alternative_series):
                 term = u"%s - %s Season" % (series, p.number_to_words("%sth" % video.season).capitalize())
                 logger.debug('Searching for alternative results: %s', term)
-                film = search(term, session=self.session, release=False, throttle=self.search_throttle)
+                film = self.do_search(term, session=self.session, release=False, throttle=self.search_throttle)
                 if film and film.subtitles:
                     logger.debug('Alternative results found: %s', len(film.subtitles))
                     subtitles += self.parse_results(video, film)
@@ -234,10 +313,10 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                     time.sleep(self.search_throttle)
         else:
             more_than_one = len([video.title] + video.alternative_titles) > 1
-            for title in [video.title] + video.alternative_titles:
-                logger.debug('Searching for movie results: %s', title)
-                film = search(title, year=video.year, session=self.session, limit_to=None, release=False,
-                              throttle=self.search_throttle)
+            for title in set([video.title] + video.alternative_titles):
+                logger.debug('Searching for movie results: %r', title)
+                film = self.do_search(title, year=video.year, session=self.session, limit_to=None, release=False,
+                                      throttle=self.search_throttle)
                 if film and film.subtitles:
                     subtitles += self.parse_results(video, film)
                 if more_than_one:
