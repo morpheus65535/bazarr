@@ -36,6 +36,7 @@ SZ_FIX_DATA = {
             u" l ": u" I ",
             u"'sjust": u"'s just",
             u"'tjust": u"'t just",
+            u"\";": u"'s",
         },
         "WholeWords": {
             u"I'11": u"I'll",

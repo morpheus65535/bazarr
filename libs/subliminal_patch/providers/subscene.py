@@ -139,6 +139,15 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         logger.info("Creating session")
         self.session = RetryingCFSession()
 
+        prev_cookies = region.get("subscene_cookies2")
+        if prev_cookies != NO_VALUE:
+            logger.debug("Re-using old subscene cookies: %r", prev_cookies)
+            self.session.cookies.update(prev_cookies)
+
+        else:
+            logger.debug("Logging in")
+            self.login()
+
     def login(self):
         r = self.session.get("https://subscene.com/account/login")
         if "Server Error" in r.content:
@@ -277,14 +286,6 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         #     logger.debug('No release results found')
 
         # time.sleep(self.search_throttle)
-        prev_cookies = region.get("subscene_cookies2")
-        if prev_cookies != NO_VALUE:
-            logger.debug("Re-using old subscene cookies: %r", prev_cookies)
-            self.session.cookies.update(prev_cookies)
-
-        else:
-            logger.debug("Logging in")
-            self.login()
 
         # re-search for episodes without explicit release name
         if isinstance(video, Episode):
