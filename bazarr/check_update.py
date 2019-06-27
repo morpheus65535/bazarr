@@ -65,11 +65,8 @@ def check_and_apply_update():
             release = releases[0]
         latest_release = release['tag_name']
         
-        if ('v' + os.environ["BAZARR_VERSION"]) != latest_release and settings.general.branch == 'master':
+        if ('v' + os.environ["BAZARR_VERSION"]) != latest_release:
             update_from_source()
-        elif settings.general.branch != 'master':
-            notifications.write(msg="Can't update development branch from source", queue='check_update')  # fixme
-            logging.info("BAZARR Can't update development branch from source")  # fixme
         else:
             notifications.write(msg='Bazarr is up to date', queue='check_update')
             logging.info('BAZARR is up to date')
