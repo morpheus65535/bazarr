@@ -73,19 +73,19 @@ $('#settings_form')
                     }
                 ]
             },
-            settings_sonarr_apikey : {
-                depends: 'settings_general_use_sonarr',
-                rules : [
-                    {
-                        type : 'exactLength[32]',
-                        prompt : '"Sonarr / Connection settings / API key" must be exactly {ruleValue} characters'
-                    },
-                    {
-                        type : 'empty',
-                        prompt : '"Sonarr / Connection settings / API key" must have a value'
-                    }
-                ]
-            },
+//            settings_sonarr_apikey : {
+//                depends: 'settings_general_use_sonarr',
+//                rules : [
+//                    {
+//                        type : 'exactLength[32]',
+//                        prompt : '"Sonarr / Connection settings / API key" must be exactly {ruleValue} characters'
+//                    },
+//                    {
+//                        type : 'empty',
+//                        prompt : '"Sonarr / Connection settings / API key" must have a value'
+//                    }
+//                ]
+//            },
             radarr_validated_checkbox : {
                 depends: 'settings_general_use_radarr',
                 rules : [
@@ -117,19 +117,19 @@ $('#settings_form')
                     }
                 ]
             },
-            settings_radarr_apikey : {
-                depends: 'settings_general_use_radarr',
-                rules : [
-                    {
-                        type : 'exactLength[32]',
-                        prompt : '"Radarr / Connection settings / API key" must be exactly {ruleValue} characters'
-                    },
-                    {
-                        type : 'empty',
-                        prompt : '"Radarr / Connection settings / API key" must have a value'
-                    }
-                ]
-            },
+//            settings_radarr_apikey : {
+//                depends: 'settings_general_use_radarr',
+//                rules : [
+//                    {
+//                        type : 'exactLength[32]',
+//                        prompt : '"Radarr / Connection settings / API key" must be exactly {ruleValue} characters'
+//                    },
+//                    {
+//                        type : 'empty',
+//                        prompt : '"Radarr / Connection settings / API key" must have a value'
+//                    }
+//                ]
+//            },
             settings_subliminal_providers : {
                 rules : [
                     {
