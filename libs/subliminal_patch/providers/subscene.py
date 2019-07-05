@@ -208,7 +208,13 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
             acc_filters["ForeignOnly"] = self.filters["ForeignOnly"].lower()
             logger.info("Only searching for foreign/forced subtitles")
 
-        acc_filters["SelectedIds"] = [str(language_ids[l.alpha3]) for l in languages if l.alpha3 in language_ids]
+        selected_ids = []
+        for l in languages:
+            lid = language_ids.get(l.basename, language_ids.get(l.alpha3, None))
+            if lid:
+                selected_ids.append(str(lid))
+
+        acc_filters["SelectedIds"] = selected_ids
         self.filters["LanguageFilter"] = ",".join(acc_filters["SelectedIds"])
 
         last_filters = region.get("subscene_filters")

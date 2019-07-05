@@ -125,7 +125,7 @@ class Subtitle(object):
         subtitles = []
 
         for row in rows:
-            if row.td.a is not None:
+            if row.td.a is not None and row.td.get("class", ["lazy"])[0] != "empty":
                 subtitles.append(cls.from_row(row))
 
         return subtitles
