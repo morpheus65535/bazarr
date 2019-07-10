@@ -837,14 +837,14 @@ def refine_from_mediainfo(path, video):
 
     exe = get_binary('mediainfo')
     if not exe:
-        logging.warn('BAZARR MediaInfo library not found!')
+        logging.debug('BAZARR MediaInfo library not found!')
         return
 
     media_info = MediaInfo.parse(path, library_file=exe);
 
     video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
     if not video_track:
-        logging.warn('BAZARR MediaInfo was unable to find video tracks in the file!')
+        logging.debug('BAZARR MediaInfo was unable to find video tracks in the file!')
         return
 
     logging.debug('MediaInfo found: %s', video_track.to_data())
