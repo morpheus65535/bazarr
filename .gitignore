@@ -7,3 +7,4 @@ cachefile.dbm
 .idea/*
 bazarr.pid
 /venv
+/data
