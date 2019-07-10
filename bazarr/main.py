@@ -395,6 +395,8 @@ def save_wizard():
     settings.xsubs.password = request.forms.get('settings_xsubs_password')
     settings.napisy24.username = request.forms.get('settings_napisy24_username')
     settings.napisy24.password = request.forms.get('settings_napisy24_password')
+    settings.subscene.username = request.forms.get('settings_subscene_username')
+    settings.subscene.password = request.forms.get('settings_subscene_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")
@@ -1532,6 +1534,8 @@ def save_settings():
     settings.xsubs.password = request.forms.get('settings_xsubs_password')
     settings.napisy24.username = request.forms.get('settings_napisy24_username')
     settings.napisy24.password = request.forms.get('settings_napisy24_password')
+    settings.subscene.username = request.forms.get('settings_subscene_username')
+    settings.subscene.password = request.forms.get('settings_subscene_password')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     c.execute("UPDATE table_settings_languages SET enabled = 0")

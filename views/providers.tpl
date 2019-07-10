@@ -432,7 +432,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Subscene</label>
+                                <label>Subscene (require anti-captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="subscene" class="ui toggle checkbox provider">
@@ -440,9 +440,29 @@
                                     <label></label>
                                 </div>
                             </div>
-                        </div>
-                        <div id="subscene_option" class="ui grid container">
 
+                            <div id="subscene_option" class="ui grid container">
+                                <div class="middle aligned row">
+                                    <div class="right aligned six wide column">
+                                        <label>Username</label>
+                                    </div>
+                                    <div class="six wide column">
+                                        <div class="ui fluid input">
+                                            <input name="settings_subscene_username" type="text" value="{{settings.subscene.username if settings.subscene.username != None else ''}}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="middle aligned row">
+                                    <div class="right aligned six wide column">
+                                        <label>Password</label>
+                                    </div>
+                                    <div class="six wide column">
+                                        <div class="ui fluid input">
+                                            <input name="settings_subscene_password" type="password" value="{{settings.subscene.password if settings.subscene.password != None else ''}}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="middle aligned row">

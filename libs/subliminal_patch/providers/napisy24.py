@@ -33,7 +33,7 @@ class Napisy24Subtitle(Subtitle):
         matches = set()
 
         # hash
-        if 'opensubtitles' in video.hashes and video.hashes['opensubtitles'] == self.hash:
+        if 'napisy24' in video.hashes and video.hashes['napisy24'] == self.hash:
             matches.add('hash')
 
         # imdb_id
@@ -46,7 +46,7 @@ class Napisy24Subtitle(Subtitle):
 class Napisy24Provider(Provider):
     '''Napisy24 Provider.'''
     languages = {Language(l) for l in ['pol']}
-    required_hash = 'opensubtitles'
+    required_hash = 'napisy24'
     api_url = 'http://napisy24.pl/run/CheckSubAgent.php'
 
     def __init__(self, username=None, password=None):
@@ -116,7 +116,7 @@ class Napisy24Provider(Provider):
         return subtitle
 
     def list_subtitles(self, video, languages):
-        subtitles = [self.query(l, video.size, video.name, video.hashes['opensubtitles']) for l in languages]
+        subtitles = [self.query(l, video.size, video.name, video.hashes['napisy24']) for l in languages]
         return [s for s in subtitles if s is not None]
 
     def download_subtitle(self, subtitle):

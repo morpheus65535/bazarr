@@ -100,9 +100,10 @@ def get_providers_auth():
             'only_foreign': False,  # fixme
             'also_foreign': False,  # fixme
         },
-        'subscene': {
-            'only_foreign': False,  # fixme
-        },
+        'subscene': {'username': settings.subscene.username,
+                     'password': settings.subscene.password,
+                     'only_foreign': False,  # fixme
+                     },
         'legendastv': {'username': settings.legendastv.username,
                        'password': settings.legendastv.password,
                        },
