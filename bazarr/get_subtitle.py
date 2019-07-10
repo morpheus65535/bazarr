@@ -28,11 +28,12 @@ from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
-from utils import history_log, history_log_movie
+from utils import history_log, history_log_movie, get_binary
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from get_args import args
 from queueconfig import notifications
+from pymediainfo import MediaInfo
 
 # configure the cache
 
@@ -40,13 +41,14 @@ from queueconfig import notifications
 region.configure('dogpile.cache.memory')
 
 
-def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
+def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=None, media_type="movie"):
     """
     Construct `Video` instance
     :param path: path to video
     :param title: series/movie title
     :param sceneName: sceneName
     :param use_scenename: use sceneName
+    :param use_mediainfo: use media info to refine the video
     :param providers: provider list for selective hashing
     :param media_type: movie/series
     :return: `Video` instance
@@ -69,6 +71,10 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
             video.original_name = original_name
             video.original_path = original_path
             refine_from_db(original_path, video)
+
+            if use_mediainfo:
+                refine_from_mediainfo(original_path, video)
+
             logging.debug('BAZARR is using those video object properties: %s', vars(video))
             return video
         
@@ -144,6 +150,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
+    use_mediainfo = settings.general.getboolean('use_mediainfo')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
@@ -160,7 +167,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         language_hook=None
     """
     
-    video = get_video(path, title, sceneName, use_scenename, providers=providers, media_type=media_type)
+    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -307,12 +314,13 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
+    use_mediainfo = settings.general.getboolean('use_mediainfo')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     
-    video = get_video(path, title, sceneName, use_scenename, providers=providers, media_type=media_type)
+    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -376,10 +384,11 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = settings.general.getboolean('use_scenename')
+    use_mediainfo = settings.general.getboolean('use_mediainfo')
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(path, title, sceneName, use_scenename, providers={provider}, media_type=media_type)
+    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers={provider}, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
         try:
@@ -823,6 +832,31 @@ def refine_from_db(path, video):
                 if data[6]: video.audio_codec = data[6]
     
     return video
+
+
+def refine_from_mediainfo(path, video):
+    if video.fps:
+        return
+
+    exe = get_binary('mediainfo')
+    if not exe:
+        logging.debug('BAZARR MediaInfo library not found!')
+        return
+
+    media_info = MediaInfo.parse(path, library_file=exe);
+
+    video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
+    if not video_track:
+        logging.debug('BAZARR MediaInfo was unable to find video tracks in the file!')
+        return
+
+    logging.debug('MediaInfo found: %s', video_track.to_data())
+
+    if not video.fps:
+        if video_track.frame_rate:
+            video.fps = float(video_track.frame_rate)
+        elif video_track.framerate_num and video_track.framerate_den:
+            video.fps = round(float(video_track.framerate_num) / float(video_track.framerate_den), 3)
 
 
 def upgrade_subtitles():

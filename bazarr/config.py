@@ -17,6 +17,7 @@ defaults = {
         'single_language': 'False',
         'minimum_score': '90',
         'use_scenename': 'True',
+        'use_mediainfo': 'True',
         'use_postprocessing': 'False',
         'postprocessing_cmd': '',
         'use_sonarr': 'False',
