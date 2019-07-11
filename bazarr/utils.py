@@ -4,6 +4,7 @@ import os
 import sqlite3
 import time
 import platform
+import sys
 
 from whichcraft import which
 from get_args import args
@@ -55,7 +56,10 @@ def get_binary(name):
         if platform.system() == "Windows":  # Windows
             exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.exe" % name))
             if exe and not os.path.isfile(exe):
-                exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.dll" % name))
+                if sys.maxsize > 2**32:  # is 64bits Python
+                    exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "x86_64", name, "%s.dll" % name))
+                else:  # is 32bits Python
+                    exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.dll" % name))
 
         elif platform.system() == "Darwin":  # MacOSX
             exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", name, name))
