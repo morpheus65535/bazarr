@@ -108,6 +108,37 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>BetaSeries</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="betaseries" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="French Trakt equivalent that provides subtitles." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="betaseries_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Token</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_betaseries_token" type="text" value="{{settings.betaseries.token if settings.betaseries.token != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>GreekSubtitles</label>
                             </div>
                             <div class="one wide column">
