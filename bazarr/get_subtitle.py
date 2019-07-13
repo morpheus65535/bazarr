@@ -842,6 +842,8 @@ def refine_from_mediainfo(path, video):
     if not exe:
         logging.debug('BAZARR MediaInfo library not found!')
         return
+    else:
+        logging.debug('BAZARR MediaInfo library used is %s', exe)
 
     media_info = MediaInfo.parse(path, library_file=exe);
 
