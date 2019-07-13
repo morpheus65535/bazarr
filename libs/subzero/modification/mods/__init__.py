@@ -21,6 +21,7 @@ class SubtitleModification(object):
     pre_processors = []
     processors = []
     post_processors = []
+    last_processors = []
     languages = []
 
     def __init__(self, parent):
@@ -67,15 +68,16 @@ class SubtitleModification(object):
     def post_process(self, content, debug=False, parent=None, **kwargs):
         return self._process(content, self.post_processors, debug=debug, parent=parent, **kwargs)
 
-    def modify(self, content, debug=False, parent=None, **kwargs):
+    def modify(self, content, debug=False, parent=None, procs=None, **kwargs):
         if not content:
             return
 
         new_content = content
-        for method in ("pre_process", "process", "post_process"):
+        for method in procs or ("pre_process", "process", "post_process"):
             if not new_content:
                 return
-            new_content = getattr(self, method)(new_content, debug=debug, parent=parent, **kwargs)
+            new_content = self._process(new_content, getattr(self, "%sors" % method),
+                                        debug=debug, parent=parent, **kwargs)
 
         return new_content
 
@@ -106,4 +108,8 @@ empty_line_post_processors = [
 
 
 class EmptyEntryError(Exception):
+    pass
+
+
+class EmptyLineError(Exception):
     pass

@@ -95,16 +95,16 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
     else:
         if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
-
+    
     try:
         c.execute('alter table table_shows add column "year" "text"')
         c.execute('alter table table_shows add column "alternateTitles" "text"')
-
+        
         c.execute('alter table table_episodes add column "format" "text"')
         c.execute('alter table table_episodes add column "resolution" "text"')
         c.execute('alter table table_episodes add column "video_codec" "text"')
         c.execute('alter table table_episodes add column "audio_codec" "text"')
-
+        
         c.execute('alter table table_movies add column "year" "text"')
         c.execute('alter table table_movies add column "alternativeTitles" "text"')
         c.execute('alter table table_movies add column "format" "text"')
@@ -121,5 +121,37 @@ if os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
             execute_now('sync_episodes')
         if settings.general.getboolean('use_radarr'):
             execute_now('update_movies')
+    
+    try:
+        c.execute('alter table table_history add column "video_path" "text"')
+        c.execute('alter table table_history add column "language" "text"')
+        c.execute('alter table table_history add column "provider" "text"')
+        c.execute('alter table table_history add column "score" "text"')
+        
+        c.execute('alter table table_history_movie add column "video_path" "text"')
+        c.execute('alter table table_history_movie add column "language" "text"')
+        c.execute('alter table table_history_movie add column "provider" "text"')
+        c.execute('alter table table_history_movie add column "score" "text"')
+        
+        db.commit()
+    except:
+        pass
+    
+    try:
+        c.execute('alter table table_shows add column "forced" "text"')
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_shows SET forced="False"')
+        db.commit()
+    
+    try:
+        c.execute('alter table table_movies add column "forced" "text"')
+        db.commit()
+    except:
+        pass
+    else:
+        c.execute('UPDATE table_movies SET forced="False"')
+        db.commit()
     
     db.close()

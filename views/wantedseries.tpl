@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -74,18 +74,23 @@
                             from get_subtitle import search_active
                             from config import settings
 							for language in missing_languages:
+								if language.endswith(':forced'):
+									forced = True
+								else:
+									forced = False
+								end
                                 if row[9] is not None and settings.general.getboolean('adaptive_searching') and language in row[9]:
                                         for lang in ast.literal_eval(row[9]):
                                             if language in lang:
                                                 active = search_active(lang[1])
                                                 if active:
                         %>
-                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                     </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                     </a>
@@ -93,7 +98,7 @@
                                             %end
                                         %end
                                 %else:
-                                        <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language))}}" data-hi="{{row[6]}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                        <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                             {{language}}
                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                         </a>
@@ -177,6 +182,7 @@
 		            sceneName: $(this).attr("data-sceneName"),
 		            language: $(this).attr("data-language"),
 		            hi: $(this).attr("data-hi"),
+		            forced: $(this).attr("data-forced"),
 		            sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
                     title: $(this).attr("data-title")

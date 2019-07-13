@@ -309,7 +309,8 @@ class SZProviderPool(ProviderPool):
             logger.error('Invalid subtitle')
             return False
 
-        subtitle.normalize()
+        if not os.environ.get("SZ_KEEP_ENCODING", False):
+            subtitle.normalize()
 
         return True
 
@@ -396,7 +397,12 @@ class SZProviderPool(ProviderPool):
                 if not subtitle.hash_verifiable and "hash" in matches:
                     can_verify_series = False
 
-                if can_verify_series and not {"series", "season", "episode"}.issubset(orig_matches):
+                matches_series = False
+                if {"season", "episode"}.issubset(orig_matches) and \
+                                ("series" in orig_matches or "imdb_id" in orig_matches):
+                    matches_series = True
+
+                if can_verify_series and not matches_series:
                     logger.debug("%r: Skipping subtitle with score %d, because it doesn't match our series/episode",
                                  subtitle, score)
                     continue
@@ -467,7 +473,7 @@ if is_windows_special_path:
     SZAsyncProviderPool = SZProviderPool
 
 
-def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, skip_hashing=False):
+def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, skip_hashing=False, hash_from=None):
     """Scan a video from a `path`.
 
     patch:
@@ -518,32 +524,48 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
         hints["expected_title"] = [hints["title"]]
 
     guessed_result = guessit(guess_from, options=hints)
+
     logger.debug('GuessIt found: %s', json.dumps(guessed_result, cls=GuessitEncoder, indent=4, ensure_ascii=False))
     video = Video.fromguess(path, guessed_result)
     video.hints = hints
 
-    if dont_use_actual_file:
+    # get possibly alternative title from the filename itself
+    alt_guess = guessit(filename, options=hints)
+    if "title" in alt_guess and alt_guess["title"] != guessed_result["title"]:
+        if video_type == "episode":
+            video.alternative_series.append(alt_guess["title"])
+        else:
+            video.alternative_titles.append(alt_guess["title"])
+        logger.debug("Adding alternative title: %s", alt_guess["title"])
+
+    if dont_use_actual_file and not hash_from:
         return video
 
     # size and hashes
     if not skip_hashing:
-        video.size = os.path.getsize(path)
+        hash_path = hash_from or path
+        video.size = os.path.getsize(hash_path)
         if video.size > 10485760:
             logger.debug('Size is %d', video.size)
+            osub_hash = None
             if "opensubtitles" in providers:
-                video.hashes['opensubtitles'] = hash_opensubtitles(path)
+                video.hashes['opensubtitles'] = osub_hash = hash_opensubtitles(hash_path)
 
             if "shooter" in providers:
-                video.hashes['shooter'] = hash_shooter(path)
+                video.hashes['shooter'] = hash_shooter(hash_path)
 
             if "thesubdb" in providers:
-                video.hashes['thesubdb'] = hash_thesubdb(path)
+                video.hashes['thesubdb'] = hash_thesubdb(hash_path)
 
             if "napiprojekt" in providers:
                 try:
-                    video.hashes['napiprojekt'] = hash_napiprojekt(path)
+                    video.hashes['napiprojekt'] = hash_napiprojekt(hash_path)
                 except MemoryError:
-                    logger.warning(u"Couldn't compute napiprojekt hash for %s", path)
+                    logger.warning(u"Couldn't compute napiprojekt hash for %s", hash_path)
+
+            if "napisy24" in providers:
+                # Napisy24 uses the same hash as opensubtitles
+                video.hashes['napisy24'] = osub_hash or hash_opensubtitles(hash_path)
 
             logger.debug('Computed hashes %r', video.hashes)
         else:
@@ -559,7 +581,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
     subtitles = {}
     _scandir = _scandir_generic if scandir_generic else scandir
     for entry in _scandir(dirpath):
-        if not entry.name and not scandir_generic:
+        if (not entry.name or entry.name in ('\x0c', '$', ',', '\x7f')) and not scandir_generic:
             logger.debug('Could not determine the name of the file, retrying with scandir_generic')
             return _search_external_subtitles(path, languages, only_one, True)
         if not entry.is_file(follow_symlinks=False):

@@ -1,9 +1,8 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
 		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
 
 		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
@@ -53,16 +52,17 @@
 			<div class="ui basic buttons">
 				<button id="movieseditor" class="ui button"><i class="configure icon"></i>Movies Editor</button>
 			</div>
-			<table id="tablemovies" class="ui very basic selectable table">
+			<table id="tablemovies" class="ui very basic selectable stackable table">
 				<thead>
 					<tr>
 						<th></th>
-						<th class="sorted ascending">Name</th>
+						<th>Name</th>
 						<th>Path</th>
 						<th>Audio<br>language</th>
 						<th>Subtitles<br>languages</th>
 						<th>Hearing-<br>impaired</th>
-						<th class="no-sort"></th>
+						<th>Forced</th>
+						<th></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -101,6 +101,7 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] is None else row[4]}}</td>
+						<td>{{row[10]}}</td>
 						<td {{!"style='background-color: #e8e8e8;'" if row[4] is None else ""}}>
 							<%
 							subs_languages_list = []
@@ -110,7 +111,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit movies" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit movies" data-inverted="" data-position="top right" data-no="{{row[5]}}" data-title="{{row[1]}}" data-poster="{{row[6]}}" data-languages="{{!subs_languages_list}}" data-forced="{{row[10]}}" data-hearing-impaired="{{row[4]}}" data-audio="{{row[7]}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -202,6 +203,18 @@
 										</div>
 									</div>
 								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Forced</label>
+									</div>
+									<div class="nine wide column">
+										<select name="forced" id="movies_forced" class="ui fluid selection dropdown">
+											<option value="False">False</option>
+											<option value="True">True</option>
+											<option value="Both">Both</option>
+										</select>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -223,8 +236,6 @@
 		$(window).scrollTop(sessionStorage.scrolly);
 		sessionStorage.clear();
 	}
-
-	$('table').tablesort();
 
 	$('a, button:not(.cancel)').on('click', function(){
 		$('#loader').addClass('active');
@@ -266,6 +277,9 @@
 		$('#movies_languages').dropdown('clear');
 		var languages_array = eval($(this).data("languages"));
 		$('#movies_languages').dropdown('set selected',languages_array);
+
+		$('#movies_forced').dropdown('clear');
+		$('#movies_forced').dropdown('set selected',$(this).data("forced"));
 
 		if ($(this).data("hearing-impaired") === "True") {
 			$("#movies_hearing-impaired_div").checkbox('check');

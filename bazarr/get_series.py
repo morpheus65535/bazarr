@@ -18,6 +18,7 @@ def update_series():
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
+    serie_default_forced = settings.general.serie_default_forced
     
     if apikey_sonarr is None:
         pass
@@ -27,7 +28,7 @@ def update_series():
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
         try:
-            r = requests.get(url_sonarr_api_series, timeout=15, verify=False)
+            r = requests.get(url_sonarr_api_series, timeout=60, verify=False)
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
@@ -52,9 +53,10 @@ def update_series():
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
-            
-            for show in r.json():
-                notifications.write(msg="Getting series data for this show: " + show['title'], queue='get_series')
+
+            seriesListLength = len(r.json())
+            for i, show in enumerate(r.json(), 1):
+                notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i, length=seriesListLength)
                 try:
                     overview = unicode(show['overview'])
                 except:
@@ -85,12 +87,12 @@ def update_series():
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                               serie_default_hi, show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
+                                              show['year'], alternateTitles, serie_default_forced))
                     else:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
                                               show["tvdbId"], show["id"], overview, poster, fanart,
                                               profile_id_to_language(show['qualityProfileId']), show['sortTitle'],
-                                              show['year'], alternateTitles))
+                                              show['year'], alternateTitles, show["id"]))
             
             # Update or insert series in DB
             db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
@@ -103,12 +105,12 @@ def update_series():
             
             if serie_default_enabled is True:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     series_to_add)
                 db.commit()
             else:
                 added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, (SELECT `forced` FROM table_shows WHERE tvdbId = ?))''',
                     series_to_add)
                 db.commit()
             db.close()
@@ -126,8 +128,6 @@ def update_series():
             c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
             db.commit()
             db.close()
-    
-    notifications.write(msg="Update series list from Sonarr is ended.", queue='get_series')
 
 
 def get_profile_list():
@@ -138,7 +138,7 @@ def get_profile_list():
     
     url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
     try:
-        profiles_json = requests.get(url_sonarr_api_series, timeout=15, verify=False)
+        profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
@@ -151,7 +151,7 @@ def get_profile_list():
     
     url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
     try:
-        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=15, verify=False)
+        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
         error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")

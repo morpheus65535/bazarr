@@ -9,7 +9,8 @@ class AssrtConverter(LanguageReverseConverter):
                             u'英文': ('eng',),
                             u'chs': ('zho', None, 'Hans'), u'cht': ('zho', None, 'Hant'),
                             u'chn': ('zho', None, 'Hans'), u'twn': ('zho', None, 'Hant')}
-        self.to_assrt = { ('zho', None, 'Hans'): u'chs', ('zho', None, 'Hant'): u'cht', ('eng',) : u'eng' }
+        self.to_assrt = { ('zho', None, 'Hans'): u'chs', ('zho', None, 'Hant'): u'cht', ('eng',) : u'eng',
+                          ('zho',): u'chs'}
         self.codes = set(self.from_assrt.keys())
 
     def convert(self, alpha3, country=None, script=None):

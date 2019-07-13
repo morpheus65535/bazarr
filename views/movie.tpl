@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -91,46 +91,71 @@
 		
 		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>
 			<div id="divdetails" class="ui container">
-				<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
-				<div class="ui right floated basic icon buttons">
-					<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-					<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
-					<%
-					subs_languages = ast.literal_eval(str(details[7]))
-					subs_languages_list = []
-					if subs_languages is not None:
-						for subs_language in subs_languages:
-							subs_languages_list.append(subs_language)
-						end
-					end
-					%>
-					%if subs_languages is not None:
-					<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
-					%end
-					<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}"><i class="ui inverted large compact configure icon"></i></button>
+				<div class="ui stackable grid">
+					<div class="three wide column">
+						<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details[2]}}">
+					</div>
+
+					<div class="thirteen wide column">
+						<div class="ui stackable grid">
+							<div class="ui row">
+								<div class="twelve wide left aligned column">
+									<h2>
+					                    %if details[13] == 'True':
+					                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+					                    %else:
+					                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+					                    %end
+										{{details[0]}}
+					                </h2>
+								</div>
+
+								<div class="four wide right aligned column">
+									<div class="ui right floated basic icon buttons">
+										<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
+										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+										<%
+										subs_languages = ast.literal_eval(str(details[7]))
+										subs_languages_list = []
+										if subs_languages is not None:
+											for subs_language in subs_languages:
+												subs_languages_list.append(subs_language)
+											end
+										end
+										%>
+										%if subs_languages is not None:
+										<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-movie_title="{{details[0]}}" data-radarrId="{{details[10]}}"><i class="ui inverted large compact user icon"></i></button>
+										%end
+										<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}" data-forced="{{details[15]}}"><i class="ui inverted large compact configure icon"></i></button>
+									</div>
+								</div>
+							</div>
+
+							<div class="ui row">
+								{{details[1]}}
+							</div>
+
+							<div class="ui row">
+								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+								% if details[12] is not None:
+								<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
+								% end
+							</div>
+
+							<div class="ui row" style="padding-bottom: 0.5em;">
+								%for language in subs_languages_list:
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
+								%end
+							</div>
+
+							<div class="ui row" style="padding-top: 0em;">
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details[4]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details[15]}}</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<h2>
-                    %if details[13] == 'True':
-                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
-                    %else:
-                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
-                    %end
-					{{details[0]}}
-                </h2>
-				<p>{{details[1]}}</p>
-				<p style='margin-top: 3em;'>
-					<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
-					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
-					% if details[12] is not None:
-					<div class="ui tiny inverted label" style='background-color: orange;'>{{details[12]}}</div>
-					% end
-				</p>
-				<p style='margin-top: 2em;'>
-					%for language in subs_languages_list:
-					<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
-					%end
-				</p>
-				<div style='clear:both;'></div>
 
 				<div id="fondblanc" class="ui container">
 					<table class="ui very basic single line selectable table">
@@ -147,13 +172,18 @@
 							subtitles_files.sort()
 							if subtitles_files is not None:
 								for subtitles_file in subtitles_files:
+									if subtitles_file[0].endswith(':forced'):
+										forced = True
+									else:
+										forced = False
+									end
 							%>
 							<tr>
 								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
-								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0])}}</div></td>
+								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0])}}" data-radarrId={{details[10]}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-position="top right" data-moviePath="{{details[8]}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details[10]}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
@@ -188,18 +218,24 @@
 					</table>
 					<%
 						for missing_subs_language in missing_subs_languages:
+							if len(missing_subs_language) > 2:
+								forced = missing_subs_language[2]
+							else:
+								forced = False
+							end
+
 						    if details[14] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details[14]:
                                 for lang in ast.literal_eval(details[14]):
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
 					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
-								{{language_from_alpha2(str(missing_subs_language))}}
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
-                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
-								{{language_from_alpha2(str(missing_subs_language))}}
+                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
 					<%
@@ -208,8 +244,8 @@
                                 end
                             else:
                     %>
-                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language))}}" data-hi="{{details[4]}}" data-radarrId={{details[10]}}>
-								{{language_from_alpha2(str(missing_subs_language))}}
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                     <%
@@ -267,6 +303,18 @@
 											<input name="hearing_impaired" id="movie_hearing-impaired" type="checkbox">
 											<label></label>
 										</div>
+									</div>
+								</div>
+								<div class="middle aligned row">
+									<div class="right aligned five wide column">
+										<label>Forced</label>
+									</div>
+									<div class="nine wide column">
+										<select name="forced" id="movie_forced" class="ui fluid selection dropdown">
+											<option value="False">False</option>
+											<option value="True">True</option>
+											<option value="Both">Both</option>
+										</select>
 									</div>
 								</div>
 							</div>
@@ -353,6 +401,7 @@
 			sceneName: $(this).attr("data-sceneName"),
 			language: $(this).attr("data-language"),
 			hi: $(this).attr("data-hi"),
+			forced: $(this).attr("data-forced"),
 			radarrId: $(this).attr("data-radarrId"),
 			tmdbid: {{tmdbid}},
 			title: "{{!details[0].replace("'", "\\'")}}"
@@ -395,17 +444,16 @@
 		const languages_array = eval($(this).data("languages"));
 		$('#movie_languages').dropdown('set selected',languages_array);
 
+		$('#movie_forced').dropdown('clear');
+		$('#movie_forced').dropdown('set selected',$(this).data("forced"));
+
 		if ($(this).data("hearing-impaired") === "True") {
 			$("#movie_hearing-impaired_div").checkbox('check');
 		} else {
 			$("#movie_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.config_dialog')
-			.modal({
-				centered: true
-			})
-			.modal('show');
+		$('.config_dialog').modal('show');
 	});
 
 	$('.manual_search').on('click', function(){
@@ -415,13 +463,18 @@
 		sceneName = $(this).attr("data-sceneName");
 		language = $(this).attr("data-language");
 		hi = $(this).attr("data-hi");
+		forced = $(this).attr("data-forced");
 		radarrId = $(this).attr("data-radarrId");
+		var languages = Array.from({{!subs_languages_list}});
+		var is_pb = languages.includes('pb');
+		var is_pt = languages.includes('pt');
 
 		const values = {
 			moviePath: moviePath,
 			sceneName: sceneName,
 			language: language,
 			hi: hi,
+			forced: forced,
 			radarrId: radarrId,
 			title: "{{!details[0].replace("'", "\'")}}"
 		};
@@ -453,7 +506,17 @@
         			return data +'%';
     				}
 				},
-				{ data: 'language' },
+				{ data: null,
+				render: function ( data, type, row ) {
+		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
+		    			return 'pb'
+					} else if ( data.language === "pt:forced" && is_pb === true && is_pt === false) {
+		    			return 'pb:forced'
+					} else {
+		    			return data.language
+					}
+					}
+				},
 				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {

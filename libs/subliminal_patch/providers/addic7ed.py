@@ -4,18 +4,17 @@ import re
 import datetime
 import subliminal
 import time
-from random import randint
-from dogpile.cache.api import NO_VALUE
-from requests import Session
 
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded, AuthenticationError
+from random import randint
+from requests import Session
+from subliminal.cache import region
+from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup, show_cells_re
-from subliminal.cache import region
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.utils import sanitize
 from subliminal_patch.exceptions import TooManyRequests
-
+from subliminal_patch.pitcher import pitchers, load_verification, store_verification
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -64,6 +63,7 @@ class Addic7edProvider(_Addic7edProvider):
     USE_ADDICTED_RANDOM_AGENTS = False
     hearing_impaired_verifiable = True
     subtitle_class = Addic7edSubtitle
+    server_url = 'https://www.addic7ed.com/'
 
     sanitize_characters = {'-', ':', '(', ')', '.', '/'}
 
@@ -75,45 +75,117 @@ class Addic7edProvider(_Addic7edProvider):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/%s' % subliminal.__short_version__
 
-        if self.USE_ADDICTED_RANDOM_AGENTS:
-            from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
-            logger.debug("Addic7ed: using random user agents")
-            self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
-            self.session.headers['Referer'] = self.server_url
+        from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+        logger.debug("Addic7ed: using random user agents")
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        self.session.headers['Referer'] = self.server_url
 
         # login
         if self.username and self.password:
-            ccks = region.get("addic7ed_cookies", expiration_time=86400)
-            if ccks != NO_VALUE:
-                try:
-                    self.session.cookies._cookies.update(ccks)
-                    r = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10)
-                    if r.status_code == 302:
-                        logger.info('Addic7ed: Login expired')
-                        region.delete("addic7ed_cookies")
-                    else:
-                        logger.info('Addic7ed: Reusing old login')
-                        self.logged_in = True
-                        return
-                except:
-                    pass
+            def check_verification(cache_region):
+                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
+                                      headers={"Referer": self.server_url})
+                if rr.status_code == 302:
+                    logger.info('Addic7ed: Login expired')
+                    cache_region.delete("addic7ed_data")
+                else:
+                    logger.info('Addic7ed: Re-using old login')
+                    self.logged_in = True
+                    return True
+
+            if load_verification("addic7ed", self.session, callback=check_verification):
+                return
 
             logger.info('Addic7ed: Logging in')
-            data = {'username': self.username, 'password': self.password, 'Submit': 'Log in'}
-            r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
-                                  headers={"Referer": self.server_url + "login.php"})
+            data = {'username': self.username, 'password': self.password, 'Submit': 'Log in', 'url': '',
+                    'remember': 'true'}
 
-            if "relax, slow down" in r.content:
-                raise TooManyRequests(self.username)
+            tries = 0
+            while tries < 3:
+                r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
+                if "grecaptcha" in r.content:
+                    logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
+                                'happen once every so often')
 
-            if r.status_code != 302:
-                raise AuthenticationError(self.username)
+                    site_key = re.search(r'grecaptcha.execute\(\'(.+?)\',', r.content).group(1)
+                    if not site_key:
+                        logger.error("Addic7ed: Captcha site-key not found!")
+                        return
 
-            region.set("addic7ed_cookies", self.session.cookies._cookies)
+                    pitcher = pitchers.get_pitcher()("Addic7ed", self.server_url + 'login.php', site_key,
+                                                     user_agent=self.session.headers["User-Agent"],
+                                                     cookies=self.session.cookies.get_dict(),
+                                                     is_invisible=True)
+
+                    result = pitcher.throw()
+                    if not result:
+                        raise Exception("Addic7ed: Couldn't solve captcha!")
+
+                    data["recaptcha_response"] = result
+
+                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
+                                      headers={"Referer": self.server_url + "login.php"})
+
+                if "relax, slow down" in r.content:
+                    raise TooManyRequests(self.username)
+
+                if r.status_code != 302:
+                    if "User <b></b> doesn't exist" in r.content and tries <= 2:
+                        logger.info("Addic7ed: Error, trying again. (%s/%s)", tries+1, 3)
+                        tries += 1
+                        continue
+
+                    raise AuthenticationError(self.username)
+                break
+
+            store_verification("addic7ed", self.session)
 
             logger.debug('Addic7ed: Logged in')
             self.logged_in = True
 
+    def terminate(self):
+        self.session.close()
+
+    def get_show_id(self, series, year=None, country_code=None):
+        """Get the best matching show id for `series`, `year` and `country_code`.
+
+        First search in the result of :meth:`_get_show_ids` and fallback on a search with :meth:`_search_show_id`.
+
+        :param str series: series of the episode.
+        :param year: year of the series, if any.
+        :type year: int
+        :param country_code: country code of the series, if any.
+        :type country_code: str
+        :return: the show id, if found.
+        :rtype: int
+
+        """
+        series_sanitized = sanitize(series).lower()
+        show_ids = self._get_show_ids()
+        show_id = None
+
+        # attempt with country
+        if not show_id and country_code:
+            logger.debug('Getting show id with country')
+            show_id = show_ids.get('%s %s' % (series_sanitized, country_code.lower()))
+
+        # attempt with year
+        if not show_id and year:
+            logger.debug('Getting show id with year')
+            show_id = show_ids.get('%s %d' % (series_sanitized, year))
+
+        # attempt clean
+        if not show_id:
+            logger.debug('Getting show id')
+            show_id = show_ids.get(series_sanitized)
+
+        # search as last resort
+        # broken right now
+        # if not show_id:
+        #     logger.warning('Series %s not found in show ids', series)
+        #     show_id = self._search_show_id(series)
+
+        return show_id
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def _get_show_ids(self):
@@ -140,7 +212,7 @@ class Addic7edProvider(_Addic7edProvider):
 
         # populate the show ids
         show_ids = {}
-        for show in soup.select('td.version > h3 > a[href^="/show/"]'):
+        for show in soup.select('td > h3 > a[href^="/show/"]'):
             show_clean = sanitize(show.text, default_characters=self.sanitize_characters)
             try:
                 show_id = int(show['href'][6:])

@@ -1,26 +1,34 @@
 # -*- coding: utf-8 -*-
 #
-# Faast Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CON
 
 import requests
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
 from ..common import NotifyImageSize
+from ..common import NotifyType
+from ..utils import parse_bool
+from ..AppriseLocale import gettext_lazy as _
 
 
 class NotifyFaast(NotifyBase):
@@ -46,15 +54,44 @@ class NotifyFaast(NotifyBase):
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_72
 
-    def __init__(self, authtoken, **kwargs):
+    # Define object templates
+    templates = (
+        '{schema}://{authtoken}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'authtoken': {
+            'name': _('Authorization Token'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'image': {
+            'name': _('Include Image'),
+            'type': 'bool',
+            'default': True,
+            'map_to': 'include_image',
+        },
+    })
+
+    def __init__(self, authtoken, include_image=True, **kwargs):
         """
         Initialize Faast Object
         """
         super(NotifyFaast, self).__init__(**kwargs)
 
+        # Store the Authentication Token
         self.authtoken = authtoken
 
-    def notify(self, title, body, notify_type, **kwargs):
+        # Associate an image with our post
+        self.include_image = include_image
+
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Faast Notification
         """
@@ -71,7 +108,10 @@ class NotifyFaast(NotifyBase):
             'message': body,
         }
 
-        image_url = self.image_url(notify_type)
+        # Acquire our image if we're configured to do so
+        image_url = None if not self.include_image \
+            else self.image_url(notify_type)
+
         if image_url:
             payload['icon_url'] = image_url
 
@@ -79,6 +119,10 @@ class NotifyFaast(NotifyBase):
             self.notify_url, self.verify_certificate,
         ))
         self.logger.debug('Faast Payload: %s' % str(payload))
+
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
+
         try:
             r = requests.post(
                 self.notify_url,
@@ -88,18 +132,17 @@ class NotifyFaast(NotifyBase):
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
-                try:
-                    self.logger.warning(
-                        'Failed to send Faast notification: '
-                        '%s (error=%s).' % (
-                            HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                status_str = \
+                    NotifyFaast.http_response_code_lookup(r.status_code)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to send Faast notification '
-                        '(error=%s).' % (
-                            r.status_code))
+                self.logger.warning(
+                    'Failed to send Faast notification:'
+                    '{}{}error={}.'.format(
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
+
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
@@ -118,6 +161,25 @@ class NotifyFaast(NotifyBase):
 
         return True
 
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'image': 'yes' if self.include_image else 'no',
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        return '{schema}://{authtoken}/?{args}'.format(
+            schema=self.protocol,
+            authtoken=NotifyFaast.quote(self.authtoken, safe=''),
+            args=NotifyFaast.urlencode(args),
+        )
+
     @staticmethod
     def parse_url(url):
         """
@@ -131,9 +193,11 @@ class NotifyFaast(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # Apply our settings now
-
         # Store our authtoken using the host
-        results['authtoken'] = results['host']
+        results['authtoken'] = NotifyFaast.unquote(results['host'])
+
+        # Include image with our post
+        results['include_image'] = \
+            parse_bool(results['qsd'].get('image', True))
 
         return results

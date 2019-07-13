@@ -1,26 +1,34 @@
 # -*- coding: utf-8 -*-
 #
-# Prowl Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import re
 import requests
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
+from ..common import NotifyType
+from ..AppriseLocale import gettext_lazy as _
 
 # Used to validate API Key
 VALIDATE_APIKEY = re.compile(r'[A-Za-z0-9]{40}')
@@ -46,12 +54,11 @@ PROWL_PRIORITIES = (
     ProwlPriority.EMERGENCY,
 )
 
-# Extend HTTP Error Messages
-PROWL_HTTP_ERROR_MAP = HTTP_ERROR_MAP.copy()
-HTTP_ERROR_MAP.update({
+# Provide some known codes Prowl uses and what they translate to:
+PROWL_HTTP_ERROR_MAP = {
     406: 'IP address has exceeded API limit',
     409: 'Request not aproved.',
-})
+}
 
 
 class NotifyProwl(NotifyBase):
@@ -74,11 +81,46 @@ class NotifyProwl(NotifyBase):
     # Prowl uses the http protocol with JSON requests
     notify_url = 'https://api.prowlapp.com/publicapi/add'
 
+    # Disable throttle rate for Prowl requests since they are normally
+    # local anyway
+    request_rate_per_sec = 0
+
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 10000
 
     # Defines the maximum allowable characters in the title
     title_maxlen = 1024
+
+    # Define object templates
+    templates = (
+        '{schema}://{apikey}',
+        '{schema}://{apikey}/{providerkey}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'apikey': {
+            'name': _('API Key'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+        },
+        'providerkey': {
+            'name': _('Provider Key'),
+            'type': 'string',
+            'private': True,
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'priority': {
+            'name': _('Priority'),
+            'type': 'choice:int',
+            'values': PROWL_PRIORITIES,
+            'default': ProwlPriority.NORMAL,
+        },
+    })
 
     def __init__(self, apikey, providerkey=None, priority=None, **kwargs):
         """
@@ -93,12 +135,9 @@ class NotifyProwl(NotifyBase):
             self.priority = priority
 
         if not VALIDATE_APIKEY.match(apikey):
-            self.logger.warning(
-                'The API key specified (%s) is invalid.' % apikey,
-            )
-            raise TypeError(
-                'The API key specified (%s) is invalid.' % apikey,
-            )
+            msg = 'The API key specified ({}) is invalid.'.format(apikey)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # Store the API key
         self.apikey = apikey
@@ -106,18 +145,17 @@ class NotifyProwl(NotifyBase):
         # Store the provider key (if specified)
         if providerkey:
             if not VALIDATE_PROVIDERKEY.match(providerkey):
-                self.logger.warning(
-                    'The Provider key specified (%s) '
-                    'is invalid.' % providerkey)
+                msg = \
+                    'The Provider key specified ({}) is invalid.' \
+                    .format(providerkey)
 
-                raise TypeError(
-                    'The Provider key specified (%s) '
-                    'is invalid.' % providerkey)
+                self.logger.warning(msg)
+                raise TypeError(msg)
 
         # Store the Provider Key
         self.providerkey = providerkey
 
-    def notify(self, title, body, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Prowl Notification
         """
@@ -143,6 +181,10 @@ class NotifyProwl(NotifyBase):
             self.notify_url, self.verify_certificate,
         ))
         self.logger.debug('Prowl Payload: %s' % str(payload))
+
+        # Always call throttle before any remote server i/o is made
+        self.throttle()
+
         try:
             r = requests.post(
                 self.notify_url,
@@ -152,20 +194,18 @@ class NotifyProwl(NotifyBase):
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
-                try:
-                    self.logger.warning(
-                        'Failed to send Prowl notification: '
-                        '%s (error=%s).' % (
-                            PROWL_HTTP_ERROR_MAP[r.status_code],
-                            r.status_code))
+                status_str = \
+                    NotifyBase.http_response_code_lookup(
+                        r.status_code, PROWL_HTTP_ERROR_MAP)
 
-                except KeyError:
-                    self.logger.warning(
-                        'Failed to send Prowl notification '
-                        '(error=%s).' % (
-                            r.status_code))
+                self.logger.warning(
+                    'Failed to send Prowl notification:'
+                    '{}{}error={}.'.format(
+                        status_str,
+                        ', ' if status_str else '',
+                        r.status_code))
 
-                self.logger.debug('Response Details: %s' % r.raw.read())
+                self.logger.debug('Response Details:\r\n{}'.format(r.content))
 
                 # Return; we're done
                 return False
@@ -183,6 +223,36 @@ class NotifyProwl(NotifyBase):
 
         return True
 
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        _map = {
+            ProwlPriority.LOW: 'low',
+            ProwlPriority.MODERATE: 'moderate',
+            ProwlPriority.NORMAL: 'normal',
+            ProwlPriority.HIGH: 'high',
+            ProwlPriority.EMERGENCY: 'emergency',
+        }
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'priority': 'normal' if self.priority not in _map
+                        else _map[self.priority],
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        return '{schema}://{apikey}/{providerkey}/?{args}'.format(
+            schema=self.secure_protocol,
+            apikey=NotifyProwl.quote(self.apikey, safe=''),
+            providerkey='' if not self.providerkey
+                        else NotifyProwl.quote(self.providerkey, safe=''),
+            args=NotifyProwl.urlencode(args),
+        )
+
     @staticmethod
     def parse_url(url):
         """
@@ -196,28 +266,24 @@ class NotifyProwl(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # Apply our settings now
+        # Set the API Key
+        results['apikey'] = NotifyProwl.unquote(results['host'])
 
-        # optionally find the provider key
+        # Optionally try to find the provider key
         try:
-            providerkey = [x for x in filter(
-                bool, NotifyBase.split_path(results['fullpath']))][0]
+            results['providerkey'] = \
+                NotifyProwl.split_path(results['fullpath'])[0]
 
-        except (AttributeError, IndexError):
-            providerkey = None
+        except IndexError:
+            pass
 
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
             _map = {
                 'l': ProwlPriority.LOW,
-                '-2': ProwlPriority.LOW,
                 'm': ProwlPriority.MODERATE,
-                '-1': ProwlPriority.MODERATE,
                 'n': ProwlPriority.NORMAL,
-                '0': ProwlPriority.NORMAL,
                 'h': ProwlPriority.HIGH,
-                '1': ProwlPriority.HIGH,
                 'e': ProwlPriority.EMERGENCY,
-                '2': ProwlPriority.EMERGENCY,
             }
             try:
                 results['priority'] = \
@@ -226,8 +292,5 @@ class NotifyProwl(NotifyBase):
             except KeyError:
                 # No priority was set
                 pass
-
-        results['apikey'] = results['host']
-        results['providerkey'] = providerkey
 
         return results

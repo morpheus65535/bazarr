@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
 #
-# Slack Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 # To use this plugin, you need to first access https://api.slack.com
 # Specifically https://my.slack.com/services/new/incoming-webhook/
@@ -34,9 +41,12 @@ from json import dumps
 from time import time
 
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
 from ..common import NotifyImageSize
-from ..utils import compat_is_basestring
+from ..common import NotifyType
+from ..common import NotifyFormat
+from ..utils import parse_bool
+from ..utils import parse_list
+from ..AppriseLocale import gettext_lazy as _
 
 # Token required as part of the API request
 #  /AAAAAAAAA/........./........................
@@ -54,16 +64,15 @@ VALIDATE_TOKEN_C = re.compile(r'[A-Za-z0-9]{24}')
 SLACK_DEFAULT_USER = 'apprise'
 
 # Extend HTTP Error Messages
-SLACK_HTTP_ERROR_MAP = HTTP_ERROR_MAP.copy()
-SLACK_HTTP_ERROR_MAP.update({
+SLACK_HTTP_ERROR_MAP = {
     401: 'Unauthorized - Invalid Token.',
-})
+}
 
 # Used to break path apart into list of channels
 CHANNEL_LIST_DELIM = re.compile(r'[ \t\r\n,#\\/]+')
 
 # Used to detect a channel
-IS_CHANNEL_RE = re.compile(r'[+#@]?([A-Z0-9_]{1,32})', re.I)
+IS_VALID_TARGET_RE = re.compile(r'[+#@]?([A-Z0-9_]{1,32})', re.I)
 
 
 class NotifySlack(NotifyBase):
@@ -92,41 +101,127 @@ class NotifySlack(NotifyBase):
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 1000
 
-    def __init__(self, token_a, token_b, token_c, channels, **kwargs):
+    # Default Notification Format
+    notify_format = NotifyFormat.MARKDOWN
+
+    # Define object templates
+    templates = (
+        '{schema}://{token_a}/{token_b}{token_c}',
+        '{schema}://{botname}@{token_a}/{token_b}{token_c}',
+        '{schema}://{token_a}/{token_b}{token_c}/{targets}',
+        '{schema}://{botname}@{token_a}/{token_b}{token_c}/{targets}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'botname': {
+            'name': _('Bot Name'),
+            'type': 'string',
+            'map_to': 'user',
+        },
+        'token_a': {
+            'name': _('Token A'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+            'regex': (r'[A-Z0-9]{9}', 'i'),
+        },
+        'token_b': {
+            'name': _('Token B'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+            'regex': (r'[A-Z0-9]{9}', 'i'),
+        },
+        'token_c': {
+            'name': _('Token C'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+            'regex': (r'[A-Za-z0-9]{24}', 'i'),
+        },
+        'target_encoded_id': {
+            'name': _('Target Encoded ID'),
+            'type': 'string',
+            'prefix': '+',
+            'map_to': 'targets',
+        },
+        'target_user': {
+            'name': _('Target User'),
+            'type': 'string',
+            'prefix': '@',
+            'map_to': 'targets',
+        },
+        'target_channels': {
+            'name': _('Target Channel'),
+            'type': 'string',
+            'prefix': '#',
+            'map_to': 'targets',
+        },
+        'targets': {
+            'name': _('Targets'),
+            'type': 'list:string',
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'image': {
+            'name': _('Include Image'),
+            'type': 'bool',
+            'default': True,
+            'map_to': 'include_image',
+        },
+        'to': {
+            'alias_of': 'targets',
+        },
+    })
+
+    def __init__(self, token_a, token_b, token_c, targets,
+                 include_image=True, **kwargs):
         """
         Initialize Slack Object
         """
         super(NotifySlack, self).__init__(**kwargs)
 
+        if not token_a:
+            msg = 'The first API token is not specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        if not token_b:
+            msg = 'The second API token is not specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        if not token_c:
+            msg = 'The third API token is not specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
         if not VALIDATE_TOKEN_A.match(token_a.strip()):
-            self.logger.warning(
-                'The first API Token specified (%s) is invalid.' % token_a,
-            )
-            raise TypeError(
-                'The first API Token specified (%s) is invalid.' % token_a,
-            )
+            msg = 'The first API token specified ({}) is invalid.'\
+                .format(token_a)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # The token associated with the account
         self.token_a = token_a.strip()
 
         if not VALIDATE_TOKEN_B.match(token_b.strip()):
-            self.logger.warning(
-                'The second API Token specified (%s) is invalid.' % token_b,
-            )
-            raise TypeError(
-                'The second API Token specified (%s) is invalid.' % token_b,
-            )
+            msg = 'The second API token specified ({}) is invalid.'\
+                .format(token_b)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # The token associated with the account
         self.token_b = token_b.strip()
 
         if not VALIDATE_TOKEN_C.match(token_c.strip()):
-            self.logger.warning(
-                'The third API Token specified (%s) is invalid.' % token_c,
-            )
-            raise TypeError(
-                'The third API Token specified (%s) is invalid.' % token_c,
-            )
+            msg = 'The third API token specified ({}) is invalid.'\
+                .format(token_c)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # The token associated with the account
         self.token_c = token_c.strip()
@@ -134,22 +229,14 @@ class NotifySlack(NotifyBase):
         if not self.user:
             self.logger.warning(
                 'No user was specified; using %s.' % SLACK_DEFAULT_USER)
-            self.user = SLACK_DEFAULT_USER
 
-        if compat_is_basestring(channels):
-            self.channels = [x for x in filter(bool, CHANNEL_LIST_DELIM.split(
-                channels,
-            ))]
-
-        elif isinstance(channels, (set, tuple, list)):
-            self.channels = channels
-
-        else:
-            self.channels = list()
-
+        # Build list of channels
+        self.channels = parse_list(targets)
         if len(self.channels) == 0:
-            self.logger.warning('No channel(s) were specified.')
-            raise TypeError('No channel(s) were specified.')
+            # No problem; the webhook is smart enough to just notify the
+            # channel it was created for; adding 'None' is just used as
+            # a flag lower to not set the channels
+            self.channels.append(None)
 
         # Formatting requirements are defined here:
         # https://api.slack.com/docs/message-formatting
@@ -168,7 +255,10 @@ class NotifySlack(NotifyBase):
             re.IGNORECASE,
         )
 
-    def notify(self, title, body, notify_type, **kwargs):
+        # Place a thumbnail image inline with the message body
+        self.include_image = include_image
+
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Slack Notification
         """
@@ -179,7 +269,7 @@ class NotifySlack(NotifyBase):
         }
 
         # error tracking (used for function return)
-        notify_okay = True
+        has_error = False
 
         # Perform Formatting
         title = self._re_formatting_rules.sub(  # pragma: no branch
@@ -195,47 +285,52 @@ class NotifySlack(NotifyBase):
             self.token_c,
         )
 
-        image_url = self.image_url(notify_type)
+        # prepare JSON Object
+        payload = {
+            'username': self.user if self.user else SLACK_DEFAULT_USER,
+            # Use Markdown language
+            'mrkdwn': (self.notify_format == NotifyFormat.MARKDOWN),
+            'attachments': [{
+                'title': title,
+                'text': body,
+                'color': self.color(notify_type),
+                # Time
+                'ts': time(),
+                'footer': self.app_id,
+            }],
+        }
 
         # Create a copy of the channel list
         channels = list(self.channels)
         while len(channels):
             channel = channels.pop(0)
-            if not IS_CHANNEL_RE.match(channel):
-                self.logger.warning(
-                    "The specified channel '%s' is invalid; skipping." % (
-                        channel,
-                    )
-                )
-                continue
 
-            if len(channel) > 1 and channel[0] == '+':
-                # Treat as encoded id if prefixed with a +
-                _channel = channel[1:]
+            if channel is not None:
+                # Channel over-ride was specified
+                if not IS_VALID_TARGET_RE.match(channel):
+                    self.logger.warning(
+                        "The specified target {} is invalid;"
+                        "skipping.".format(channel))
 
-            elif len(channel) > 1 and channel[0] == '@':
-                # Treat @ value 'as is'
-                _channel = channel
+                    # Mark our failure
+                    has_error = True
+                    continue
 
-            else:
-                # Prefix with channel hash tag
-                _channel = '#%s' % channel
+                if len(channel) > 1 and channel[0] == '+':
+                    # Treat as encoded id if prefixed with a +
+                    payload['channel'] = channel[1:]
 
-            # prepare JSON Object
-            payload = {
-                'channel': _channel,
-                'username': self.user,
-                # Use Markdown language
-                'mrkdwn': True,
-                'attachments': [{
-                    'title': title,
-                    'text': body,
-                    'color': self.color(notify_type),
-                    # Time
-                    'ts': time(),
-                    'footer': self.app_id,
-                }],
-            }
+                elif len(channel) > 1 and channel[0] == '@':
+                    # Treat @ value 'as is'
+                    payload['channel'] = channel
+
+                else:
+                    # Prefix with channel hash tag
+                    payload['channel'] = '#%s' % channel
+
+            # Acquire our to-be footer icon if configured to do so
+            image_url = None if not self.include_image \
+                else self.image_url(notify_type)
 
             if image_url:
                 payload['attachments'][0]['footer_icon'] = image_url
@@ -244,6 +339,9 @@ class NotifySlack(NotifyBase):
                 url, self.verify_certificate,
             ))
             self.logger.debug('Slack Payload: %s' % str(payload))
+
+            # Always call throttle before any remote server i/o is made
+            self.throttle()
             try:
                 r = requests.post(
                     url,
@@ -253,42 +351,77 @@ class NotifySlack(NotifyBase):
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
-                    try:
-                        self.logger.warning(
-                            'Failed to send Slack:%s '
-                            'notification: %s (error=%s).' % (
-                                channel,
-                                SLACK_HTTP_ERROR_MAP[r.status_code],
-                                r.status_code))
+                    status_str = \
+                        NotifySlack.http_response_code_lookup(
+                            r.status_code, SLACK_HTTP_ERROR_MAP)
 
-                    except KeyError:
-                        self.logger.warning(
-                            'Failed to send Slack:%s '
-                            'notification (error=%s).' % (
-                                channel,
-                                r.status_code))
+                    self.logger.warning(
+                        'Failed to send Slack notification{}: '
+                        '{}{}error={}.'.format(
+                            ' to {}'.format(channel)
+                            if channel is not None else '',
+                            status_str,
+                            ', ' if status_str else '',
+                            r.status_code))
 
-                    # self.logger.debug('Response Details: %s' % r.raw.read())
+                    self.logger.debug(
+                        'Response Details:\r\n{}'.format(r.content))
 
-                    # Return; we're done
-                    notify_okay = False
+                    # Mark our failure
+                    has_error = True
+                    continue
 
                 else:
-                    self.logger.info('Sent Slack notification.')
+                    self.logger.info(
+                        'Sent Slack notification{}.'.format(
+                            ' to {}'.format(channel)
+                            if channel is not None else ''))
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Slack:%s ' % (
-                        channel) + 'notification.'
-                )
+                    'A Connection error occured sending Slack '
+                    'notification{}.'.format(
+                        ' to {}'.format(channel)
+                        if channel is not None else ''))
                 self.logger.debug('Socket Exception: %s' % str(e))
-                notify_okay = False
 
-            if len(channels):
-                # Prevent thrashing requests
-                self.throttle()
+                # Mark our failure
+                has_error = True
+                continue
 
-        return notify_okay
+        return not has_error
+
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'image': 'yes' if self.include_image else 'no',
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        # Determine if there is a botname present
+        botname = ''
+        if self.user:
+            botname = '{botname}@'.format(
+                botname=NotifySlack.quote(self.user, safe=''),
+            )
+
+        return '{schema}://{botname}{token_a}/{token_b}/{token_c}/{targets}/'\
+            '?{args}'.format(
+                schema=self.secure_protocol,
+                botname=botname,
+                token_a=NotifySlack.quote(self.token_a, safe=''),
+                token_b=NotifySlack.quote(self.token_b, safe=''),
+                token_c=NotifySlack.quote(self.token_c, safe=''),
+                targets='/'.join(
+                    [NotifySlack.quote(x, safe='') for x in self.channels]),
+                args=NotifySlack.urlencode(args),
+            )
 
     @staticmethod
     def parse_url(url):
@@ -303,26 +436,64 @@ class NotifySlack(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # Apply our settings now
+        # Get unquoted entries
+        entries = NotifySlack.split_path(results['fullpath'])
 
         # The first token is stored in the hostname
-        token_a = results['host']
+        results['token_a'] = NotifySlack.unquote(results['host'])
 
         # Now fetch the remaining tokens
         try:
-            token_b, token_c = [x for x in filter(
-                bool, NotifyBase.split_path(results['fullpath']))][0:2]
+            results['token_b'] = entries.pop(0)
 
-        except (ValueError, AttributeError, IndexError):
+        except IndexError:
             # We're done
-            return None
+            results['token_b'] = None
 
-        channels = [x for x in filter(
-            bool, NotifyBase.split_path(results['fullpath']))][2:]
+        try:
+            results['token_c'] = entries.pop(0)
 
-        results['token_a'] = token_a
-        results['token_b'] = token_b
-        results['token_c'] = token_c
-        results['channels'] = channels
+        except IndexError:
+            # We're done
+            results['token_c'] = None
+
+        # assign remaining entries to the channels we wish to notify
+        results['targets'] = entries
+
+        # Support the 'to' variable so that we can support rooms this way too
+        # The 'to' makes it easier to use yaml configuration
+        if 'to' in results['qsd'] and len(results['qsd']['to']):
+            results['targets'] += [x for x in filter(
+                bool, CHANNEL_LIST_DELIM.split(
+                    NotifySlack.unquote(results['qsd']['to'])))]
+
+        # Get Image
+        results['include_image'] = \
+            parse_bool(results['qsd'].get('image', True))
 
         return results
+
+    @staticmethod
+    def parse_native_url(url):
+        """
+        Support https://hooks.slack.com/services/TOKEN_A/TOKEN_B/TOKEN_C
+        """
+
+        result = re.match(
+            r'^https?://hooks\.slack\.com/services/'
+            r'(?P<token_a>[A-Z0-9]{9})/'
+            r'(?P<token_b>[A-Z0-9]{9})/'
+            r'(?P<token_c>[A-Z0-9]{24})/?'
+            r'(?P<args>\?[.+])?$', url, re.I)
+
+        if result:
+            return NotifySlack.parse_url(
+                '{schema}://{token_a}/{token_b}/{token_c}/{args}'.format(
+                    schema=NotifySlack.secure_protocol,
+                    token_a=result.group('token_a'),
+                    token_b=result.group('token_b'),
+                    token_c=result.group('token_c'),
+                    args='' if not result.group('args')
+                    else result.group('args')))
+
+        return None

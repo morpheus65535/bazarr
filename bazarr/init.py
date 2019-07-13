@@ -4,15 +4,28 @@ import os
 import sqlite3
 import logging
 import time
-import platform
 import rarfile
 
 from cork import Cork
 from ConfigParser2 import ConfigParser
-from whichcraft import which
 from config import settings
 from check_update import check_releases
 from get_args import args
+from utils import get_binary
+
+# set subliminal_patch user agent
+os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+
+# set anti-captcha provider and key
+if settings.general.anti_captcha_provider == 'anti-captcha' and settings.anticaptcha.anti_captcha_key != "":
+    os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
+    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = settings.anticaptcha.anti_captcha_key
+elif settings.general.anti_captcha_provider == 'death-by-captcha' and settings.deathbycaptcha.username != "" and settings.deathbycaptcha.password != "":
+    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
+    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = ':'.join(
+        {settings.deathbycaptcha.username, settings.deathbycaptcha.password})
+else:
+    os.environ["ANTICAPTCHA_CLASS"] = ''
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -111,7 +124,7 @@ try:
             providers_list.append(provider[0])
     else:
         providers_list = None
-        
+    
     if settings_providers:
         for provider in settings_providers:
             if provider[0] == 'opensubtitles':
@@ -123,13 +136,17 @@ try:
             elif provider[0] == 'legendastv':
                 settings.legendastv.username = provider[2]
                 settings.legendastv.password = provider[3]
-
+    
     settings.general.enabled_providers = u'' if not providers_list else ','.join(providers_list)
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-
 except:
     pass
+
+if settings.general.throtteled_providers == '' or None:
+    settings.general.throtteled_providers = '{}'
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
@@ -150,40 +167,22 @@ if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', '
 
 
 def init_binaries():
-    binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
-
-    unrar_exe = None
-    exe = None
-    installed_unrar = which('unrar')
-
-    if installed_unrar and os.path.isfile(installed_unrar):
-        unrar_exe = installed_unrar
-    else:
-        if platform.system() == "Windows": # Windows
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", "UnRAR", "UnRAR.exe"))
-
-        elif platform.system() == "Darwin": # MacOSX
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", "UnRAR", "unrar"))
-
-        elif platform.system() == "Linux": # Linux
-            unrar_exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), "UnRAR", "unrar"))
-
-    if unrar_exe and os.path.isfile(unrar_exe):
-        exe = unrar_exe
-
+    exe = get_binary("unrar")
+    
     rarfile.UNRAR_TOOL = exe
     rarfile.ORIG_UNRAR_TOOL = exe
     try:
         rarfile.custom_check([rarfile.UNRAR_TOOL], True)
     except:
         logging.debug("custom check failed for: %s", exe)
-
+    
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
     logging.info("Using UnRAR from: %s", exe)
     unrar = exe
-
+    
     return unrar
+
 
 init_binaries()

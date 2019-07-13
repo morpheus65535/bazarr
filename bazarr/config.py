@@ -17,6 +17,7 @@ defaults = {
         'single_language': 'False',
         'minimum_score': '90',
         'use_scenename': 'True',
+        'use_mediainfo': 'True',
         'use_postprocessing': 'False',
         'postprocessing_cmd': '',
         'use_sonarr': 'False',
@@ -25,19 +26,29 @@ defaults = {
         'serie_default_enabled': 'False',
         'serie_default_language': '[]',
         'serie_default_hi': 'False',
+        'serie_default_forced': 'False',
         'movie_default_enabled': 'False',
-        'movie_default_language': [],
+        'movie_default_language': '[]',
         'movie_default_hi': 'False',
+        'movie_default_forced': 'False',
         'page_size': '25',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
+        'utf8_encode': 'True',
+        'ignore_pgs_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '',
-        'throtteled_providers': '',
+        'throtteled_providers': '{}',
         'multithreading': 'True',
+        'chmod_enabled': 'False',
         'chmod': '0640',
         'subfolder': 'current',
-        'subfolder_custom': ''
+        'subfolder_custom': '',
+        'update_restart': 'True',
+        'upgrade_subs': 'True',
+        'days_to_upgrade_subs': '7',
+        'upgrade_manual': 'True',
+        'anti_captcha_provider': 'None'
     },
     'auth': {
         'type': 'None',
@@ -94,12 +105,29 @@ defaults = {
     },
     'assrt': {
         'token': ''
-    }}
+    },
+    'anticaptcha': {
+        'anti_captcha_key': ''
+    },
+    'deathbycaptcha': {
+        'username': '',
+        'password': ''
+    },
+    'napisy24': {
+        'username': '',
+        'password': ''
+    },
+    'subscene': {
+        'username': '',
+        'password': ''
+    }
+}
 
 settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
+bazarr_url = 'http://localhost:' + (str(args.port) if args.port else settings.general.port) + base_url
 
 # sonarr url
 if settings.sonarr.getboolean('ssl'):

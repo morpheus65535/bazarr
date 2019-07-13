@@ -103,7 +103,7 @@ class AssrtProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers = {'User-Agent': "Bazarr/1"}
+        self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
 
     def terminate(self):
         self.session.close()

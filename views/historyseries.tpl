@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -54,18 +54,27 @@
 					</tr>
 				</thead>
 				<tbody>
+				%import ast
 				%import time
 				%import pretty
 				%for row in rows:
 					<tr class="selectable">
 						<td class="collapsing">
 						%if row[0] == 0:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been erased." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
 						%elif row[0] == 1:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file have been downloaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
+							</div>
+						%elif row[0] == 2:
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually downloaded." data-inverted="" data-position="top left">
+								<i class="ui user icon"></i>
+							</div>
+						%elif row[0] == 3:
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
+								<i class="ui recycle icon"></i>
 							</div>
 						%end
 						</td>
@@ -90,7 +99,30 @@
 								{{pretty.date(int(row[4]))}}
 							</div>
 						</td>
-						<td>{{row[5]}}</td>
+						<td>
+							% upgradable_criteria = (row[7], row[4], row[10])
+							% if upgradable_criteria in upgradable_episodes:
+							%     if row[8] != "None":
+							%         desired_languages = ast.literal_eval(str(row[8]))
+							%         if row[11] == "True":
+							%             forced_languages = [l + ":forced" for l in desired_languages]
+							%         elif row[11] == "Both":
+							%             forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
+							%         else:
+							%             forced_languages = desired_languages
+							%         end
+                            %         if row[9] in forced_languages:
+										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
+										      <i class="ui green recycle icon upgrade"></i>{{row[5]}}
+										  </div>
+							%         else:
+							              {{row[5]}}
+							%         end
+							%     end
+							% else:
+							      {{row[5]}}
+							% end
+						</td>
 					</tr>
 				%end
 				</tbody>
@@ -189,7 +221,7 @@
 	    sessionStorage.clear();
 	}
 
-	$('a, i').on('click', function(){
+	$('a').on('click', function(){
 		sessionStorage.scrolly=$(window).scrollTop();
 
 		$('#loader').addClass('active');

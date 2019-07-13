@@ -28,6 +28,9 @@ import re
 
 import enum
 import sys
+import requests
+import time
+import logging
 
 is_PY2 = sys.version_info[0] < 3
 if is_PY2:
@@ -37,7 +40,12 @@ else:
     from contextlib import suppress
     from urllib2.request import Request, urlopen
 
+from dogpile.cache.api import NO_VALUE
+from subliminal.cache import region
 from bs4 import BeautifulSoup, NavigableString
+
+
+logger = logging.getLogger(__name__)
 
 # constants
 HEADERS = {
@@ -48,14 +56,23 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWeb"\
                      "Kit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 
 
+ENDPOINT_RE = re.compile(ur'(?uis)<form.+?action="/subtitles/(.+)">.*?<input type="text"')
+
+
+class NewEndpoint(Exception):
+    pass
+
+
 # utils
-def soup_for(url, session=None, user_agent=DEFAULT_USER_AGENT):
+def soup_for(url, data=None, session=None, user_agent=DEFAULT_USER_AGENT):
     url = re.sub("\s", "+", url)
     if not session:
         r = Request(url, data=None, headers=dict(HEADERS, **{"User-Agent": user_agent}))
         html = urlopen(r).read().decode("utf-8")
     else:
-        html = session.get(url).text
+        ret = session.post(url, data=data)
+        ret.raise_for_status()
+        html = ret.text
     return BeautifulSoup(html, "html.parser")
 
 
@@ -108,7 +125,7 @@ class Subtitle(object):
         subtitles = []
 
         for row in rows:
-            if row.td.a is not None:
+            if row.td.a is not None and row.td.get("class", ["lazy"])[0] != "empty":
                 subtitles.append(cls.from_row(row))
 
         return subtitles
@@ -238,22 +255,52 @@ def get_first_film(soup, section, year=None, session=None):
                 url = SITE_DOMAIN + t.div.a.get("href")
                 break
         if not url:
-            return
+            # fallback to non-year results
+            logger.info("Falling back to non-year results as year wasn't found (%s)", year)
+            url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
 
     return Film.from_url(url, session=session)
 
 
-def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact):
-    soup = soup_for("%s/subtitles/%s?q=%s" % (SITE_DOMAIN, "release" if release else "title", term), session=session)
+def find_endpoint(session, content=None):
+    endpoint = region.get("subscene_endpoint2")
+    if endpoint is NO_VALUE:
+        if not content:
+            content = session.get(SITE_DOMAIN).text
 
-    if "Subtitle search by" in str(soup):
-        rows = soup.find("table").tbody.find_all("tr")
-        subtitles = Subtitle.from_rows(rows)
-        return Film(term, subtitles=subtitles)
+        m = ENDPOINT_RE.search(content)
+        if m:
+            endpoint = m.group(1).strip()
+            logger.debug("Switching main endpoint to %s", endpoint)
+            region.set("subscene_endpoint2", endpoint)
+    return endpoint
 
-    for junk, search_type in SearchTypes.__members__.items():
-        if section_exists(soup, search_type):
-            return get_first_film(soup, search_type, year=year, session=session)
 
-        if limit_to == search_type:
-            return
+def search(term, release=True, session=None, year=None, limit_to=SearchTypes.Exact, throttle=0):
+    # note to subscene: if you actually start to randomize the endpoint, we'll have to query your server even more
+
+    if release:
+        endpoint = "release"
+    else:
+        endpoint = find_endpoint(session)
+        time.sleep(throttle)
+
+    if not endpoint:
+        logger.error("Couldn't find endpoint, exiting")
+        return
+
+    soup = soup_for("%s/subtitles/%s" % (SITE_DOMAIN, endpoint), data={"query": term},
+                    session=session)
+
+    if soup:
+        if "Subtitle search by" in str(soup):
+            rows = soup.find("table").tbody.find_all("tr")
+            subtitles = Subtitle.from_rows(rows)
+            return Film(term, subtitles=subtitles)
+
+        for junk, search_type in SearchTypes.__members__.items():
+            if section_exists(soup, search_type):
+                return get_first_film(soup, search_type, year=year, session=session)
+
+            if limit_to == search_type:
+                return

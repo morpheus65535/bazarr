@@ -4,11 +4,14 @@ import subliminal
 import base64
 import zlib
 from subliminal import __short_version__
-from subliminal.refiners.omdb import OMDBClient, refine
+from subliminal.refiners.omdb import OMDBClient, refine as refine_orig, Episode, Movie
+from subliminal_patch.http import TimeoutSession
 
 
 class SZOMDBClient(OMDBClient):
     def __init__(self, version=1, session=None, headers=None, timeout=10):
+        if not session:
+            session = TimeoutSession(timeout=timeout)
         super(SZOMDBClient, self).__init__(version=version, session=session, headers=headers, timeout=timeout)
 
     def get_params(self, params):
@@ -61,6 +64,14 @@ class SZOMDBClient(OMDBClient):
             return None
 
         return j
+
+
+def refine(video, **kwargs):
+    refine_orig(video, **kwargs)
+    if isinstance(video, Episode) and video.series_imdb_id:
+        video.series_imdb_id = video.series_imdb_id.strip()
+    elif isinstance(video, Movie) and video.imdb_id:
+        video.imdb_id = video.imdb_id.strip()
 
 
 omdb_client = SZOMDBClient(headers={'User-Agent': 'Subliminal/%s' % __short_version__})

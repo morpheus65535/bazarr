@@ -1,27 +1,36 @@
 # -*- coding: utf-8 -*-
 #
-# Pushover Notify Wrapper
+# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# All rights reserved.
 #
-# Copyright (C) 2017-2018 Chris Caron <lead2gold@gmail.com>
+# This code is licensed under the MIT License.
 #
-# This file is part of apprise.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Lesser General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Lesser General Public License for more details.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 import re
+import six
 import requests
 
-from ..utils import compat_is_basestring
 from .NotifyBase import NotifyBase
-from .NotifyBase import HTTP_ERROR_MAP
+from ..common import NotifyType
+from ..utils import parse_list
+from ..AppriseLocale import gettext_lazy as _
 
 # Flag used as a placeholder to sending to all devices
 PUSHOVER_SEND_TO_ALL = 'ALL_DEVICES'
@@ -30,7 +39,7 @@ PUSHOVER_SEND_TO_ALL = 'ALL_DEVICES'
 VALIDATE_TOKEN = re.compile(r'^[a-z0-9]{30}$', re.I)
 
 # Used to detect a User and/or Group
-VALIDATE_USERGROUP = re.compile(r'^[a-z0-9]{30}$', re.I)
+VALIDATE_USER_KEY = re.compile(r'^[a-z0-9]{30}$', re.I)
 
 # Used to detect a User and/or Group
 VALIDATE_DEVICE = re.compile(r'^[a-z0-9_]{1,25}$', re.I)
@@ -45,6 +54,57 @@ class PushoverPriority(object):
     EMERGENCY = 2
 
 
+# Sounds
+class PushoverSound(object):
+    PUSHOVER = 'pushover'
+    BIKE = 'bike'
+    BUGLE = 'bugle'
+    CASHREGISTER = 'cashregister'
+    CLASSICAL = 'classical'
+    COSMIC = 'cosmic'
+    FALLING = 'falling'
+    GAMELAN = 'gamelan'
+    INCOMING = 'incoming'
+    INTERMISSION = 'intermission'
+    MAGIC = 'magic'
+    MECHANICAL = 'mechanical'
+    PIANOBAR = 'pianobar'
+    SIREN = 'siren'
+    SPACEALARM = 'spacealarm'
+    TUGBOAT = 'tugboat'
+    ALIEN = 'alien'
+    CLIMB = 'climb'
+    PERSISTENT = 'persistent'
+    ECHO = 'echo'
+    UPDOWN = 'updown'
+    NONE = 'none'
+
+
+PUSHOVER_SOUNDS = (
+    PushoverSound.PUSHOVER,
+    PushoverSound.BIKE,
+    PushoverSound.BUGLE,
+    PushoverSound.CASHREGISTER,
+    PushoverSound.CLASSICAL,
+    PushoverSound.COSMIC,
+    PushoverSound.FALLING,
+    PushoverSound.GAMELAN,
+    PushoverSound.INCOMING,
+    PushoverSound.INTERMISSION,
+    PushoverSound.MAGIC,
+    PushoverSound.MECHANICAL,
+    PushoverSound.PIANOBAR,
+    PushoverSound.SIREN,
+    PushoverSound.SPACEALARM,
+    PushoverSound.TUGBOAT,
+    PushoverSound.ALIEN,
+    PushoverSound.CLIMB,
+    PushoverSound.PERSISTENT,
+    PushoverSound.ECHO,
+    PushoverSound.UPDOWN,
+    PushoverSound.NONE,
+)
+
 PUSHOVER_PRIORITIES = (
     PushoverPriority.LOW,
     PushoverPriority.MODERATE,
@@ -53,14 +113,10 @@ PUSHOVER_PRIORITIES = (
     PushoverPriority.EMERGENCY,
 )
 
-# Used to break path apart into list of devices
-DEVICE_LIST_DELIM = re.compile(r'[ \t\r\n,\\/]+')
-
 # Extend HTTP Error Messages
-PUSHOVER_HTTP_ERROR_MAP = HTTP_ERROR_MAP.copy()
-PUSHOVER_HTTP_ERROR_MAP.update({
+PUSHOVER_HTTP_ERROR_MAP = {
     401: 'Unauthorized - Invalid Token.',
-})
+}
 
 
 class NotifyPushover(NotifyBase):
@@ -86,7 +142,65 @@ class NotifyPushover(NotifyBase):
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 512
 
-    def __init__(self, token, devices=None, priority=None, **kwargs):
+    # Default Pushover sound
+    default_pushover_sound = PushoverSound.PUSHOVER
+
+    # Define object templates
+    templates = (
+        '{schema}://{user_key}@{token}',
+        '{schema}://{user_key}@{token}/{targets}',
+    )
+
+    # Define our template tokens
+    template_tokens = dict(NotifyBase.template_tokens, **{
+        'user_key': {
+            'name': _('User Key'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+            'regex': (r'[a-z0-9]{30}', 'i'),
+            'map_to': 'user',
+        },
+        'token': {
+            'name': _('Access Token'),
+            'type': 'string',
+            'private': True,
+            'required': True,
+            'regex': (r'[a-z0-9]{30}', 'i'),
+        },
+        'target_device': {
+            'name': _('Target Device'),
+            'type': 'string',
+            'regex': (r'[a-z0-9_]{1,25}', 'i'),
+            'map_to': 'targets',
+        },
+        'targets': {
+            'name': _('Targets'),
+            'type': 'list:string',
+        },
+    })
+
+    # Define our template arguments
+    template_args = dict(NotifyBase.template_args, **{
+        'priority': {
+            'name': _('Priority'),
+            'type': 'choice:int',
+            'values': PUSHOVER_PRIORITIES,
+            'default': PushoverPriority.NORMAL,
+        },
+        'sound': {
+            'name': _('Sound'),
+            'type': 'string',
+            'regex': (r'[a-z]{1,12}', 'i'),
+            'default': PushoverSound.PUSHOVER,
+        },
+        'to': {
+            'alias_of': 'targets',
+        },
+    })
+
+    def __init__(self, token, targets=None, priority=None, sound=None,
+                 **kwargs):
         """
         Initialize Pushover Object
         """
@@ -98,30 +212,26 @@ class NotifyPushover(NotifyBase):
 
         except AttributeError:
             # Token was None
-            self.logger.warning('No API Token was specified.')
-            raise TypeError('No API Token was specified.')
+            msg = 'No API Token was specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         if not VALIDATE_TOKEN.match(self.token):
-            self.logger.warning(
-                'The API Token specified (%s) is invalid.' % token,
-            )
-            raise TypeError(
-                'The API Token specified (%s) is invalid.' % token,
-            )
+            msg = 'The API Token specified (%s) is invalid.'.format(token)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
-        if compat_is_basestring(devices):
-            self.devices = [x for x in filter(bool, DEVICE_LIST_DELIM.split(
-                devices,
-            ))]
+        self.targets = parse_list(targets)
+        if len(self.targets) == 0:
+            self.targets = (PUSHOVER_SEND_TO_ALL, )
 
-        elif isinstance(devices, (set, tuple, list)):
-            self.devices = devices
-
-        else:
-            self.devices = list()
-
-        if len(self.devices) == 0:
-            self.devices = (PUSHOVER_SEND_TO_ALL, )
+        # Setup our sound
+        self.sound = NotifyPushover.default_pushover_sound \
+            if not isinstance(sound, six.string_types) else sound.lower()
+        if self.sound and self.sound not in PUSHOVER_SOUNDS:
+            msg = 'The sound specified ({}) is invalid.'.format(sound)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # The Priority of the message
         if priority not in PUSHOVER_PRIORITIES:
@@ -131,18 +241,16 @@ class NotifyPushover(NotifyBase):
             self.priority = priority
 
         if not self.user:
-            self.logger.warning('No user was specified.')
-            raise TypeError('No user was specified.')
+            msg = 'No user key was specified.'
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
-        if not VALIDATE_USERGROUP.match(self.user):
-            self.logger.warning(
-                'The user/group specified (%s) is invalid.' % self.user,
-            )
-            raise TypeError(
-                'The user/group specified (%s) is invalid.' % self.user,
-            )
+        if not VALIDATE_USER_KEY.match(self.user):
+            msg = 'The user key specified (%s) is invalid.' % self.user
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
-    def notify(self, title, body, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform Pushover Notification
         """
@@ -157,7 +265,7 @@ class NotifyPushover(NotifyBase):
         has_error = False
 
         # Create a copy of the devices list
-        devices = list(self.devices)
+        devices = list(self.targets)
         while len(devices):
             device = devices.pop(0)
 
@@ -165,6 +273,8 @@ class NotifyPushover(NotifyBase):
                 self.logger.warning(
                     'The device specified (%s) is invalid.' % device,
                 )
+
+                # Mark our failure
                 has_error = True
                 continue
 
@@ -176,12 +286,17 @@ class NotifyPushover(NotifyBase):
                 'title': title,
                 'message': body,
                 'device': device,
+                'sound': self.sound,
             }
 
             self.logger.debug('Pushover POST URL: %s (cert_verify=%r)' % (
                 self.notify_url, self.verify_certificate,
             ))
             self.logger.debug('Pushover Payload: %s' % str(payload))
+
+            # Always call throttle before any remote server i/o is made
+            self.throttle()
+
             try:
                 r = requests.post(
                     self.notify_url,
@@ -192,25 +307,24 @@ class NotifyPushover(NotifyBase):
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
-                    try:
-                        self.logger.warning(
-                            'Failed to send Pushover:%s '
-                            'notification: %s (error=%s).' % (
-                                device,
-                                PUSHOVER_HTTP_ERROR_MAP[r.status_code],
-                                r.status_code))
+                    status_str = \
+                        NotifyPushover.http_response_code_lookup(
+                            r.status_code, PUSHOVER_HTTP_ERROR_MAP)
 
-                    except KeyError:
-                        self.logger.warning(
-                            'Failed to send Pushover:%s '
-                            'notification (error=%s).' % (
-                                device,
-                                r.status_code))
+                    self.logger.warning(
+                        'Failed to send Pushover notification to {}: '
+                        '{}{}error={}.'.format(
+                            device,
+                            status_str,
+                            ', ' if status_str else '',
+                            r.status_code))
 
-                    # self.logger.debug('Response Details: %s' % r.raw.read())
+                    self.logger.debug(
+                        'Response Details:\r\n{}'.format(r.content))
 
-                    # Return; we're done
+                    # Mark our failure
                     has_error = True
+                    continue
 
                 else:
                     self.logger.info(
@@ -222,13 +336,53 @@ class NotifyPushover(NotifyBase):
                         device) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
-                has_error = True
 
-            if len(devices):
-                # Prevent thrashing requests
-                self.throttle()
+                # Mark our failure
+                has_error = True
+                continue
 
         return not has_error
+
+    def url(self):
+        """
+        Returns the URL built dynamically based on specified arguments.
+        """
+
+        _map = {
+            PushoverPriority.LOW: 'low',
+            PushoverPriority.MODERATE: 'moderate',
+            PushoverPriority.NORMAL: 'normal',
+            PushoverPriority.HIGH: 'high',
+            PushoverPriority.EMERGENCY: 'emergency',
+        }
+
+        # Define any arguments set
+        args = {
+            'format': self.notify_format,
+            'overflow': self.overflow_mode,
+            'priority':
+                _map[PushoverPriority.NORMAL] if self.priority not in _map
+                else _map[self.priority],
+            'verify': 'yes' if self.verify_certificate else 'no',
+        }
+
+        # Escape our devices
+        devices = '/'.join([NotifyPushover.quote(x, safe='')
+                            for x in self.targets])
+
+        if devices == PUSHOVER_SEND_TO_ALL:
+            # keyword is reserved for internal usage only; it's safe to remove
+            # it from the devices list
+            devices = ''
+
+        return '{schema}://{auth}{token}/{devices}/?{args}'.format(
+            schema=self.secure_protocol,
+            auth='' if not self.user
+                 else '{user}@'.format(
+                     user=NotifyPushover.quote(self.user, safe='')),
+            token=NotifyPushover.quote(self.token, safe=''),
+            devices=devices,
+            args=NotifyPushover.urlencode(args))
 
     @staticmethod
     def parse_url(url):
@@ -243,21 +397,14 @@ class NotifyPushover(NotifyBase):
             # We're done early as we couldn't load the results
             return results
 
-        # Apply our settings now
-        devices = NotifyBase.unquote(results['fullpath'])
-
+        # Set our priority
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
             _map = {
                 'l': PushoverPriority.LOW,
-                '-2': PushoverPriority.LOW,
                 'm': PushoverPriority.MODERATE,
-                '-1': PushoverPriority.MODERATE,
                 'n': PushoverPriority.NORMAL,
-                '0': PushoverPriority.NORMAL,
                 'h': PushoverPriority.HIGH,
-                '1': PushoverPriority.HIGH,
                 'e': PushoverPriority.EMERGENCY,
-                '2': PushoverPriority.EMERGENCY,
             }
             try:
                 results['priority'] = \
@@ -267,7 +414,20 @@ class NotifyPushover(NotifyBase):
                 # No priority was set
                 pass
 
-        results['token'] = results['host']
-        results['devices'] = devices
+        # Retrieve all of our targets
+        results['targets'] = NotifyPushover.split_path(results['fullpath'])
+
+        # Get the sound
+        if 'sound' in results['qsd'] and len(results['qsd']['sound']):
+            results['sound'] = \
+                NotifyPushover.unquote(results['qsd']['sound'])
+
+        # The 'to' makes it easier to use yaml configuration
+        if 'to' in results['qsd'] and len(results['qsd']['to']):
+            results['targets'] += \
+                NotifyPushover.parse_list(results['qsd']['to'])
+
+        # Token
+        results['token'] = NotifyPushover.unquote(results['host'])
 
         return results

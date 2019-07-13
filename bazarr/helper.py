@@ -4,6 +4,8 @@ import os
 import re
 import types
 import logging
+import chardet
+from bs4 import UnicodeDammit
 
 from config import settings
 
@@ -56,21 +58,22 @@ def path_replace_reverse_movie(path):
     return path
 
 
-def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3):
+def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, forced):
+    is_forced = ":forced" if forced else ""
+    is_forced_string = " forced" if forced else ""
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
     pp_command = pp_command.replace('{{episode}}', episode)
     pp_command = pp_command.replace('{{episode_name}}', os.path.splitext(os.path.basename(episode))[0])
     pp_command = pp_command.replace('{{subtitles}}', subtitles)
-    pp_command = pp_command.replace('{{subtitles_language}}', language)
-    pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2)
-    pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3)
+    pp_command = pp_command.replace('{{subtitles_language}}', language + is_forced_string)
+    pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2 + is_forced)
+    pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3 + is_forced)
     return pp_command
 
 
 def get_subtitle_destination_folder():
     fld_custom = str(settings.general.subfolder_custom).strip() if settings.general.subfolder_custom else None
-    return fld_custom or (
-        settings.general.subfolder if settings.general.subfolder != "current" else None)
+    return fld_custom
 
 
 def get_target_folder(file_path):
@@ -81,7 +84,7 @@ def get_target_folder(file_path):
     if subfolder != "current" and fld_custom:
         # specific subFolder requested, create it if it doesn't exist
         fld_base = os.path.split(file_path)[0]
-
+        
         if subfolder == "absolute":
             # absolute folder
             fld = fld_custom
@@ -89,9 +92,9 @@ def get_target_folder(file_path):
             fld = os.path.join(fld_base, fld_custom)
         else:
             fld = None
-
+        
         fld = force_unicode(fld)
-
+        
         if not os.path.isdir(fld):
             try:
                 os.makedirs(fld)
@@ -100,7 +103,7 @@ def get_target_folder(file_path):
                 fld = None
     else:
         fld = None
-
+    
     return fld
 
 

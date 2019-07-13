@@ -78,7 +78,7 @@ class SSAStyle(object):
         s += "%rpx " % self.fontsize
         if self.bold: s += "bold "
         if self.italic: s += "italic "
-        s += "'%s'>" % self.fontname
+        s += "{!r}>".format(self.fontname)
         if not PY3: s = s.encode("utf-8")
         return s
 

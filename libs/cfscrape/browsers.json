@@ -1,0 +1,80 @@
+[
+  {
+    "connection": "close",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "user-agent": "Mozilla/5.0 (Windows NT 5.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.102 Safari/537.36",
+    "accept-encoding": "gzip,deflate",
+    "accept-language": "en-US,en;q=0.8"
+  },
+  {
+    "connection": "close",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "user-agent": "Mozilla/5.0 (Windows NT 5.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36",
+    "accept-encoding": "gzip,deflate",
+    "accept-language": "en-US,en;q=0.8"
+  },
+  {
+    "connection": "close",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "upgrade-insecure-requests": "1",
+    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36",
+    "accept-language": "en-US,en;q=0.8",
+    "accept-encoding": "gzip, deflate, "
+  },
+  {
+    "connection": "close",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "upgrade-insecure-requests": "1",
+    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36",
+    "accept-language": "en-US,en;q=0.8",
+    "accept-encoding": "gzip, deflate, "
+  },
+  {
+    "connection": "close",
+    "accept": "*/*",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:30.0) Gecko/20100101 Firefox/30.0"
+  },
+  {
+    "connection": "close",
+    "accept": "image/jpeg, image/gif, image/pjpeg, application/x-ms-application, application/xaml+xml, application/x-ms-xbap, */*",
+    "accept-language": "en-US",
+    "user-agent": "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; .NET4.0C; .NET4.0E)",
+    "accept-encoding": "gzip, deflate"
+  },
+  {
+    "connection": "close",
+    "accept": "text/html, application/xhtml+xml, */*",
+    "accept-language": "en-US",
+    "user-agent": "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)",
+    "accept-encoding": "gzip, deflate"
+  },
+  {
+    "connection": "close",
+    "accept": "text/html, application/xhtml+xml, */*",
+    "accept-language": "en-US",
+    "user-agent": "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)",
+    "accept-encoding": "gzip, deflate",
+    "dnt": "1"
+  },
+  {
+    "connection": "close",
+    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:41.0) Gecko/20100101 Firefox/41.0",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.5",
+    "accept-encoding": "gzip, deflate"
+  },
+  {
+    "connection": "close",
+    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.5",
+    "accept-encoding": "gzip, deflate"
+  },
+  {
+    "connection": "close",
+    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.5",
+    "accept-encoding": "gzip, deflate"
+  }
+]

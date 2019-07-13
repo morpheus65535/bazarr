@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<!DOCTYPE html>
 		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
 		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
 		<script src="{{base_url}}static/jquery/tablesort.js"></script>
@@ -64,6 +64,7 @@
 						<th>Audio language</th>
 						<th>Subtitles languages</th>
 						<th>Hearing-impaired</th>
+						<th>Forced</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -88,6 +89,7 @@
 							%end
 						</td>
 						<td>{{!"" if row[4] == None else row[4]}}</td>
+						<td>{{!"" if row[8] is None else row[8]}}</td>
 					</tr>
 				%end
 				</tbody>
@@ -113,6 +115,15 @@
 			                <option value="">No change</option>
 			                <option value="True">True</option>
 			                <option value="False">False</option>
+			            </select>
+			    	</div>
+			    	<div class="field">
+			    		<label style='color: white;'>Forced</label>
+			    		<select name="forced" class="select ui disabled selection dropdown">
+			                <option value="">No change</option>
+			                <option value="False">False</option>
+			                <option value="True">True</option>
+			                <option value="Both">Both</option>
 			            </select>
 			    	</div>
 			    	<div class='field'>
