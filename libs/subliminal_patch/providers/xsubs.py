@@ -81,7 +81,7 @@ class XSubsProvider(Provider):
     all_series_url = '/series/all.xml'
     series_url = '/series/{:d}/main.xml'
     season_url = '/series/{show_id:d}/{season:d}.xml'
-    page_link = '/ice/xsw.xml?srsid={show_id:d}#{season_id:d};{season:d}'
+    page_link = '/ice/xsw.xml?srsid={show_id:d}#{season_id:d};{season:d};{episode:d}'
     download_link = '/xthru/getsub/{:d}'
     subtitle_class = XSubsSubtitle
 
@@ -241,6 +241,7 @@ class XSubsProvider(Provider):
                 continue
 
             season = int(subtitle_info['ssnnum'])
+            episode_id = int(subtitle_info['epsid'])
 
             # filter out unreleased subtitles
             for subs_tag in subtitle_group.findAll('sr'):
@@ -248,7 +249,7 @@ class XSubsProvider(Provider):
                     continue
 
                 page_link = self.server_url + self.page_link.format(show_id=show_id, season_id=season_id,
-                                                                    season=season)
+                                                                    season=season, episode=episode_id)
                 title = episode_info['title']
                 version = subs_tag.fmt.text + ' ' + subs_tag.team.text
                 download_link = self.server_url + self.download_link.format(int(subs_tag['rlsid']))
