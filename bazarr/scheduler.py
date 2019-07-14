@@ -5,6 +5,7 @@ from get_movies import update_movies
 from get_series import update_series
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles, upgrade_subtitles
+from utils import cache_maintenance
 from get_args import args
 if not args.no_update:
     from check_update import check_and_apply_update, check_releases
@@ -120,6 +121,9 @@ if settings.general.getboolean('upgrade_subs') and (settings.general.getboolean(
                                                     settings.general.getboolean('use_radarr')):
     scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=12), max_instances=1, coalesce=True,
                       misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade previously downloaded subtitles')
+
+scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
+                  misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
 
 schedule_update_job()
 sonarr_full_update()

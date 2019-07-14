@@ -13,6 +13,10 @@ from check_update import check_releases
 from get_args import args
 from utils import get_binary
 
+from dogpile.cache.region import register_backend as register_cache_backend
+import subliminal
+import datetime
+
 # set subliminal_patch user agent
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 
@@ -47,6 +51,15 @@ if not os.path.exists(os.path.join(args.config_dir, 'db')):
 if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
     logging.debug("BAZARR Created log folder")
+if not os.path.exists(os.path.join(args.config_dir, 'cache')):
+    os.mkdir(os.path.join(args.config_dir, 'cache'))
+    logging.debug("BAZARR Created cache folder")
+
+# Configure dogpile file caching for Subliminal request
+register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
+subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
+                            arguments={'appname': "sz_cache", 'app_cache_dir': args.config_dir})
+subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
     check_releases()

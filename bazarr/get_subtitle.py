@@ -35,11 +35,6 @@ from get_args import args
 from queueconfig import notifications
 from pymediainfo import MediaInfo
 
-# configure the cache
-
-# fixme: do this inside a setup routine
-region.configure('dogpile.cache.memory')
-
 
 def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=None, media_type="movie"):
     """
@@ -278,6 +273,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         if not saved_any:
             logging.debug('BAZARR No subtitles were found for this file: ' + path)
             return None
+
+    subliminal.region.backend.sync()
+
     logging.debug('BAZARR Ended searching subtitles for file: ' + path)
 
 
@@ -370,6 +368,9 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
             final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
+
+    subliminal.region.backend.sync()
+
     return final_subtitles
 
 
@@ -482,6 +483,9 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
                             subtitle.provider_name) + ". Please retry later or select a subtitles from another provider.")
                     return None
+
+    subliminal.region.backend.sync()
+
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
 
@@ -845,7 +849,7 @@ def refine_from_mediainfo(path, video):
     else:
         logging.debug('BAZARR MediaInfo library used is %s', exe)
 
-    media_info = MediaInfo.parse(path, library_file=exe);
+    media_info = MediaInfo.parse(path, library_file=exe)
 
     video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
     if not video_track:
