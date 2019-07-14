@@ -118,7 +118,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="French Trakt equivalent that provides subtitles." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="French Trakt equivalent that provides TV Shows only subtitles." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>

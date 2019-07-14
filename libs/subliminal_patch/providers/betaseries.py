@@ -48,6 +48,7 @@ class BetaSeriesSubtitle(Subtitle):
 class BetaSeriesProvider(Provider):
     """BetaSeries Provider"""
     languages = {Language(l) for l in ['fra', 'eng']}
+    video_types = (Episode,)
 
     def __init__(self, token=None):
         if not token:
@@ -64,34 +65,32 @@ class BetaSeriesProvider(Provider):
 
     def query(self, languages, video):
         # query the server
-        if isinstance(video, Movie):
-            logger.error(
-                'It\'s not possible to search for a movie subtitle on BetaSeries')
+        result = None
+        if video.tvdb_id:
+            params = {'key': self.token,
+                        'thetvdb_id': video.tvdb_id,
+                        'v': 3.0,
+                        'subtitles': 1}
+            logger.debug('Searching subtitles %r', params)
+            res = self.session.get(
+                server_url + 'episodes/display', params=params, timeout=10)
+            res.raise_for_status()
+            result = res.json()
+        elif video.series_tvdb_id:
+            params = {'key': self.token,
+                        'thetvdb_id': video.series_tvdb_id,
+                        'season': video.season,
+                        'episode': video.episode,
+                        'subtitles': 1,
+                        'v': 3.0}
+            logger.debug('Searching subtitles %r', params)
+            res = self.session.get(
+                server_url + 'shows/episodes', params=params, timeout=10)
+            res.raise_for_status()
+            result = res.json()
+        else:
+            logger.debug('The show has no tvdb_id and series_tvdb_id: the search can\'t be done')
             return []
-        elif isinstance(video, Episode):
-            result = None
-            if video.tvdb_id:
-                params = {'key': self.token,
-                          'thetvdb_id': video.tvdb_id,
-                          'v': 3.0,
-                          'subtitles': 1}
-                logger.debug('Searching subtitles %r', params)
-                res = self.session.get(
-                    server_url + 'episodes/display', params=params, timeout=10)
-                res.raise_for_status()
-                result = res.json()
-            elif video.series_tvdb_id:
-                params = {'key': self.token,
-                          'thetvdb_id': video.series_tvdb_id,
-                          'season': video.season,
-                          'episode': video.episode,
-                          'subtitles': 1,
-                          'v': 3.0}
-                logger.debug('Searching subtitles %r', params)
-                res = self.session.get(
-                    server_url + 'shows/episodes', params=params, timeout=10)
-                res.raise_for_status()
-                result = res.json()
 
         if result['errors'] != []:
             logger.debug('Status error: %r', result['errors'])
