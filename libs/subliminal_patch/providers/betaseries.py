@@ -27,11 +27,13 @@ server_url = 'https://api.betaseries.com/'
 class BetaSeriesSubtitle(Subtitle):
     provider_name = 'betaseries'
 
-    def __init__(self, subtitle_id, language, video_name, url):
+    def __init__(self, subtitle_id, language, video_name, url, matches, source):
         super(BetaSeriesSubtitle, self).__init__(language)
         self.subtitle_id = subtitle_id
         self.video_name = video_name
         self.url = url
+        self.matches = matches
+        self.source = source
 
     @property
     def id(self):
@@ -42,7 +44,16 @@ class BetaSeriesSubtitle(Subtitle):
         return self.url
 
     def get_matches(self, video):
-        return guess_matches(video, guessit(self.video_name, {'type': 'episode'}), partial=True)
+        matches = self.matches
+
+        if isinstance(video, Episode):
+            if self.source == 'addic7ed':
+                matches.add('addic7ed_boost')
+
+            matches |= guess_matches(video, guessit(
+                self.video_name, {'type': 'episode'}), partial=True)
+
+        return matches
 
 
 class BetaSeriesProvider(Provider):
@@ -66,30 +77,34 @@ class BetaSeriesProvider(Provider):
     def query(self, languages, video):
         # query the server
         result = None
+        matches = set()
         if video.tvdb_id:
             params = {'key': self.token,
-                        'thetvdb_id': video.tvdb_id,
-                        'v': 3.0,
-                        'subtitles': 1}
+                      'thetvdb_id': video.tvdb_id,
+                      'v': 3.0,
+                      'subtitles': 1}
             logger.debug('Searching subtitles %r', params)
             res = self.session.get(
                 server_url + 'episodes/display', params=params, timeout=10)
             res.raise_for_status()
             result = res.json()
+            matches.add('tvdb_id')
         elif video.series_tvdb_id:
             params = {'key': self.token,
-                        'thetvdb_id': video.series_tvdb_id,
-                        'season': video.season,
-                        'episode': video.episode,
-                        'subtitles': 1,
-                        'v': 3.0}
+                      'thetvdb_id': video.series_tvdb_id,
+                      'season': video.season,
+                      'episode': video.episode,
+                      'subtitles': 1,
+                      'v': 3.0}
             logger.debug('Searching subtitles %r', params)
             res = self.session.get(
                 server_url + 'shows/episodes', params=params, timeout=10)
             res.raise_for_status()
             result = res.json()
+            matches.add('series_tvdb_id')
         else:
-            logger.debug('The show has no tvdb_id and series_tvdb_id: the search can\'t be done')
+            logger.debug(
+                'The show has no tvdb_id and series_tvdb_id: the search can\'t be done')
             return []
 
         if result['errors'] != []:
@@ -109,9 +124,9 @@ class BetaSeriesProvider(Provider):
             language = _translateLanguageCodeToLanguage(sub['language'])
             if language in languages:
                 # Filter seriessub source because it shut down so the links are all 404
-                if sub['source'] != 'seriessub':
+                if str(sub['source']) != 'seriessub':
                     subtitles.append(BetaSeriesSubtitle(
-                        sub['id'], language, sub['file'], sub['url']))
+                        sub['id'], language, sub['file'], sub['url'], matches, str(sub['source'])))
 
         return subtitles
 

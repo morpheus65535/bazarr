@@ -4,6 +4,7 @@ import logging
 
 from subliminal.video import Episode, Movie
 from subliminal.score import get_scores
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def framerate_equal(source, check):
 
 def compute_score(matches, subtitle, video, hearing_impaired=None):
     """Compute the score of the `subtitle` against the `video` with `hearing_impaired` preference.
-    
+
     patch: 
         - remove upper bounds of score
         - re-add matches argument and remove get_matches from here
@@ -52,6 +53,9 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
 
     # get the scores dict
     scores = get_scores(video)
+
+    # let's add the addic7ed boost in the scores dict
+    scores['addic7ed_boost'] = 10
     # logger.debug('Using scores %r', scores)
 
     is_episode = isinstance(video, Episode)
