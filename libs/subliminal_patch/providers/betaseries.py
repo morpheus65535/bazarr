@@ -47,9 +47,6 @@ class BetaSeriesSubtitle(Subtitle):
         matches = self.matches
 
         if isinstance(video, Episode):
-            if self.source == 'addic7ed':
-                matches.add('addic7ed_boost')
-
             matches |= guess_matches(video, guessit(
                 self.video_name, {'type': 'episode'}), partial=True)
 

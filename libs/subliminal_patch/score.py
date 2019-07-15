@@ -53,9 +53,6 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
 
     # get the scores dict
     scores = get_scores(video)
-
-    # let's add the addic7ed boost in the scores dict
-    scores['addic7ed_boost'] = 10
     # logger.debug('Using scores %r', scores)
 
     is_episode = isinstance(video, Episode)
