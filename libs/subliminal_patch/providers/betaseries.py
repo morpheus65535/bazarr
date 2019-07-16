@@ -31,7 +31,7 @@ class BetaSeriesSubtitle(Subtitle):
         super(BetaSeriesSubtitle, self).__init__(language, page_link=url)
         self.subtitle_id = subtitle_id
         self.video_name = video_name
-        self.page_link = url
+        self.download_url = url
         self.matches = matches
         self.source = source
 
@@ -41,7 +41,7 @@ class BetaSeriesSubtitle(Subtitle):
 
     @property
     def download_link(self):
-        return self.page_link
+        return self.download_url
 
     def get_matches(self, video):
         matches = self.matches
