@@ -39,7 +39,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="To use this feature on linux, please install libmediainfo and its dependencies." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="To use this feature on linux, please install mediainfo and its dependencies." data-inverted="">
                                         <i class="yellow warning sign icon"></i>
                                     </div>
                                 </div>
