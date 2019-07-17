@@ -8,7 +8,6 @@ import rarfile
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
-from six import text_type
 
 from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup, Provider
@@ -75,7 +74,7 @@ class GreekSubtitlesProvider(Provider):
 
         logger.debug('Searching subtitles %r', params)
         subtitles = []
-        search_link = self.server_url + text_type(self.search_url).format(params)
+        search_link = self.server_url + self.search_url.format(params)
         while True:
             r = self.session.get(search_link, timeout=30)
             r.raise_for_status()
