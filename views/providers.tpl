@@ -118,8 +118,15 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="French Trakt equivalent that provides TV Shows only subtitles." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="French/English provider for TV Shows only." data-inverted="">
                                         <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="This provider only uses the subtitle filename to find release group matches, subtitles may thus be out of sync." data-inverted="">
+                                        <i class="yellow warning sign icon"></i>
                                     </div>
                                 </div>
                             </div>
