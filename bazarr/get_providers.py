@@ -113,7 +113,8 @@ def get_providers_auth():
         'assrt': {'token': settings.assrt.token, },
         'napisy24': {'username': settings.napisy24.username,
                      'password': settings.napisy24.password,
-                     }
+                     },
+        'betaseries': {'token': settings.betaseries.token}
     }
     
     return providers_auth
