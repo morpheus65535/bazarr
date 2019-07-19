@@ -37,18 +37,20 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Manual search so you can download subtitles on demand
 * Upgrade subtitles previously downloaded when a better one is found
 * Ability to delete external subtitles from disk
-* Currently support 184 subtitles languages
+* Currently support 184 subtitles languages with support for forced/foreign subtitles (depending of providers)
 * And a beautiful UI based on Sonarr
 
 ## Supported subtitles providers:
 * Addic7ed
 * Argenteam
 * Assrt
+* BetaSeries
 * GreekSubtitles
 * Hosszupuska
 * LegendasTV
 * Napiprojekt
 * Napisy24
+* Nekur
 * OpenSubtitles
 * Podnapisi
 * Subdivx
