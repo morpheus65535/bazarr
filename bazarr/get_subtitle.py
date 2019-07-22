@@ -67,8 +67,8 @@ def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=No
             video.original_path = original_path
             refine_from_db(original_path, video)
 
-            #if use_mediainfo:
-            #    refine_from_mediainfo(original_path, video)
+            if use_mediainfo:
+                refine_from_mediainfo(original_path, video)
 
             logging.debug('BAZARR is using those video object properties: %s', vars(video))
             return video

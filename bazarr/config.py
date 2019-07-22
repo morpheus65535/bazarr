@@ -120,6 +120,9 @@ defaults = {
     'subscene': {
         'username': '',
         'password': ''
+    },
+    'betaseries': {
+        'token': ''
     }
 }
 
