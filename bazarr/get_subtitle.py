@@ -162,7 +162,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         language_hook=None
     """
     
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -318,7 +318,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -389,7 +389,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers={provider}, media_type=media_type)
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers={provider}, media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
         try:
