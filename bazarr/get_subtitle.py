@@ -578,10 +578,10 @@ def episode_download_subtitles(no):
                         store_subtitles(path_replace(episode[0]))
                         history_log(1, episode[6], episode[2], message, path, language_code, provider, score)
                         send_notifications(episode[6], episode[2], message)
+                        list_missing_subtitles(episode[6])
         else:
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
-            list_missing_subtitles(episode[6])
             break
 
 
