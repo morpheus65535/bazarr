@@ -24,28 +24,7 @@ from update_db import *
 from notifier import update_notifier
 from logger import configure_logging, empty_log
 
-
-# Try to import gevent and exit if it's not available. This one is required to use websocket.
-try:
-    import gevent
-except ImportError:
-    import logging
-    
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        import os
-        from get_args import args
-        
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
-
-from gevent.pywsgi import WSGIServer
-from geventwebsocket.handler import WebSocketHandler
+from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from io import BytesIO
 from six import text_type
@@ -2099,11 +2078,10 @@ def running_tasks_list():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app,
-                    handler_class=WebSocketHandler)
+server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
         args.port) if args.port else str(settings.general.port)) + str(base_url))
-    server.serve_forever()
+    server.start()
 except KeyboardInterrupt:
     shutdown()
