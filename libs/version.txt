@@ -13,6 +13,7 @@ gevent-websocker=0.10.1
 gitpython=2.1.9
 guessit=2.1.4
 langdetect=1.0.7
+peewee=3.9.6
 py-pretty=1
 pycountry=18.2.23
 pysrt=1.1.1
