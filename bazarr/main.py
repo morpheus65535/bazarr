@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8'
+bazarr_version = '0.8.1'
 
 import gc
 import sys
@@ -17,10 +17,13 @@ import warnings
 import queueconfig
 import platform
 import apprise
+from peewee import *
+import operator
 
 from get_args import args
 from init import *
 from update_db import *
+from database import TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages, path_substitution
 from notifier import update_notifier
 from logger import configure_logging, empty_log
 
@@ -45,7 +48,6 @@ from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
-from helper import path_replace_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
@@ -516,15 +518,8 @@ def redirect_root():
 @custom_auth_basic(check_credentials)
 def series():
     authorize()
-    single_language = settings.general.getboolean('single_language')
-    
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_shows")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+
+    missing_count = TableShows.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -532,29 +527,80 @@ def series():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
+    # Get list of series
+    data = TableShows.select(
+        TableShows.tvdb_id,
+        TableShows.title,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.languages,
+        TableShows.hearing_impaired,
+        TableShows.sonarr_series_id,
+        TableShows.poster,
+        TableShows.audio_language,
+        TableShows.forced
+    ).order_by(
+        TableShows.sort_title.asc()
+    ).paginate(
+        int(page),
+        page_size
+    )
+
+    # Get languages list
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
+    # Build missing subtitles clause depending on only_monitored
+    missing_subtitles_clause = [
+        (TableShows.languages != 'None'),
+        (TableEpisodes.missing_subtitles != '[]')
+    ]
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
-    
-    c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.execute(
-        "SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' AND table_episodes.missing_subtitles IS NOT '[]'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
-    missing_subtitles_list = c.fetchall()
-    c.execute(
-        "SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
-    total_subtitles_list = c.fetchall()
-    c.close()
-    output = template('series', bazarr_version=bazarr_version, rows=data,
+        missing_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
+
+    # Get missing subtitles count by series
+    missing_subtitles_list = TableShows.select(
+        TableShows.sonarr_series_id,
+        fn.COUNT(TableEpisodes.missing_subtitles).alias('missing_subtitles')
+    ).join(
+        TableEpisodes
+    ).where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).group_by(
+        TableShows.sonarr_series_id
+    )
+
+    # Build total subtitles clause depending on only_monitored
+    total_subtitles_clause = [
+        (TableShows.languages != 'None')
+    ]
+    if settings.sonarr.getboolean('only_monitored'):
+        total_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
+
+    # Get total subtitles count by series
+    total_subtitles_list = TableShows.select(
+        TableShows.sonarr_series_id,
+        fn.COUNT(TableEpisodes.missing_subtitles).alias('missing_subtitles')
+    ).join(
+        TableEpisodes
+    ).where(
+        reduce(operator.and_, total_subtitles_clause)
+    ).group_by(
+        TableShows.sonarr_series_id
+    )
+
+    return template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
-    return output
+                      single_language=settings.general.getboolean('single_language'), page_size=page_size,
+                      current_port=settings.general.port)
 
 
 @route(base_url + 'serieseditor')
