@@ -23,7 +23,8 @@ import operator
 from get_args import args
 from init import *
 from update_db import *
-from database import TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages, path_substitution
+from database import TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages, \
+    System, path_substitution
 from notifier import update_notifier
 from logger import configure_logging, empty_log
 
@@ -82,11 +83,10 @@ else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 # Reset restart required warning on start
-conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-c = conn.cursor()
-c.execute("UPDATE system SET configured = 0, updated = 0")
-conn.commit()
-c.close()
+System.update({
+    System.configured: 0,
+    System.updated: 0
+}).execute()
 
 # Load languages in database
 load_language_in_db()
@@ -207,12 +207,12 @@ def restart():
 @custom_auth_basic(check_credentials)
 def wizard():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
+
+    # Get languages list
+    settings_languages = TableSettingsLanguages.select().order_by(TableSettingsLanguages.name)
+    # Get providers list
     settings_providers = sorted(provider_manager.names())
-    c.close()
-    
+
     return template('wizard', bazarr_version=bazarr_version, settings=settings,
                     settings_languages=settings_languages, settings_providers=settings_providers,
                     base_url=base_url)
@@ -222,9 +222,6 @@ def wizard():
 @custom_auth_basic(check_credentials)
 def save_wizard():
     authorize()
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
     
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
@@ -381,9 +378,15 @@ def save_wizard():
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
-    c.execute("UPDATE table_settings_languages SET enabled = 0")
+    # Disable all languages in DB
+    TableSettingsLanguages.update({TableSettingsLanguages.enabled: 0})
     for item in settings_subliminal_languages:
-        c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
+        # Enable each desired language in DB
+        TableSettingsLanguages.update(
+            {TableSettingsLanguages.enabled: 1}
+        ).where(
+            TableSettingsLanguages.code2 == item
+        ).execute()
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -428,9 +431,6 @@ def save_wizard():
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-    
-    conn.commit()
-    c.close()
     
     configured()
     redirect(base_url)
@@ -607,53 +607,76 @@ def series():
 @custom_auth_basic(check_credentials)
 def serieseditor():
     authorize()
-    single_language = settings.general.getboolean('single_language')
     
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
+    # Get missing count
+    missing_count = TableShows().select().count()
     
-    c.execute("SELECT COUNT(*) FROM table_shows")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
-    
-    c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY title ASC")
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
-    output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=settings.general.port)
-    return output
+    # Get movies list
+    data = TableShows.select(
+        TableShows.tvdb_id,
+        TableShows.title,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.languages,
+        TableShows.hearing_impaired,
+        TableShows.sonarr_series_id,
+        TableShows.poster,
+        TableShows.audio_language,
+        TableShows.forced
+    ).order_by(
+        TableShows.sort_title.asc()
+    )
+
+    # Get languages list
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
+    return template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
+                    missing_count=missing_count, base_url=base_url,
+                    single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
 
 
 @route(base_url + 'search_json/<query>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_json(query):
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
+
+    query = '%' + query + '%'
     search_list = []
+
     if settings.general.getboolean('use_sonarr'):
-        c.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? ORDER BY title",
-                  ('%' + query + '%',))
-        series = c.fetchall()
+        # Get matching series
+        series = TableShows.select(
+            TableShows.title,
+            TableShows.sonarr_series_id,
+            TableShows.year
+        ).where(
+            TableShows.title ** query
+        ).order_by(
+            TableShows.title.asc()
+        )
         for serie in series:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', serie[0]) + ' (' + serie[2] + ')'),
-                                     ('url', base_url + 'episodes/' + str(serie[1]))]))
+            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', serie.title) + ' (' + serie.year + ')'),
+                                     ('url', base_url + 'episodes/' + str(serie.sonarr_series_id))]))
     
     if settings.general.getboolean('use_radarr'):
-        c.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY title",
-                  ('%' + query + '%',))
-        movies = c.fetchall()
+        # Get matching movies
+        movies = TableMovies.select(
+            TableMovies.title,
+            TableMovies.radarr_id,
+            TableMovies.year
+        ).where(
+            TableMovies.title ** query
+        ).order_by(
+            TableMovies.title.asc()
+        )
         for movie in movies:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie[0]) + ' (' + movie[2] + ')'),
-                                     ('url', base_url + 'movie/' + str(movie[1]))]))
-    c.close()
-    
+            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie.title) + ' (' + movie.year + ')'),
+                                     ('url', base_url + 'movie/' + str(movie.radarr_id))]))
+
     response.content_type = 'application/json'
     return dict(items=search_list)
 
@@ -687,14 +710,17 @@ def edit_series(no):
         hi = "True"
     else:
         hi = "False"
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ?, forced = ? WHERE sonarrSeriesId LIKE ?",
-              (str(lang), hi, forced, no))
-    conn.commit()
-    c.close()
-    
+
+    result = TableShows.update(
+        {
+            TableShows.languages: lang,
+            TableShows.hearing_impaired: hi,
+            TableShows.forced: forced
+        }
+    ).where(
+        TableShows.sonarr_series_id ** no
+    ).execute()
+
     list_missing_subtitles(no)
     
     redirect(ref)
@@ -712,23 +738,35 @@ def edit_serieseditor():
     hi = request.forms.get('hearing_impaired')
     forced = request.forms.get('forced')
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
     for serie in series:
         if str(lang) != "[]" and str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
                 lang = str(lang)
-            c.execute("UPDATE table_shows SET languages = ? WHERE sonarrSeriesId LIKE ?", (lang, serie))
+            TableShows.update(
+                {
+                    TableShows.languages: lang
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
         if hi != '':
-            c.execute("UPDATE table_shows SET hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (hi, serie))
+            TableShows.update(
+                {
+                    TableShows.hearing_impaired: hi
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
         if forced != '':
-            c.execute("UPDATE table_shows SET forced = ? WHERE sonarrSeriesId LIKE ?", (forced, serie))
-    
-    conn.commit()
-    c.close()
+            TableShows.update(
+                {
+                    TableShows.forced: forced
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
     
     for serie in series:
         list_missing_subtitles(serie)
@@ -740,29 +778,60 @@ def edit_serieseditor():
 @custom_auth_basic(check_credentials)
 def episodes(no):
     authorize()
-    # single_language = settings.general.getboolean('single_language')
+
+    series_details = TableShows.select(
+        TableShows.title,
+        TableShows.overview,
+        TableShows.poster,
+        TableShows.fanart,
+        TableShows.hearing_impaired,
+        TableShows.tvdb_id,
+        TableShows.audio_language,
+        TableShows.languages,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.forced
+    ).where(
+        TableShows.sonarr_series_id ** str(no)
+    ).limit(1)
+    for series in series_details:
+        series_details = series
+        break
+
+    tvdbid = series.tvdb_id
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace)
-    c = conn.cursor()
-    
-    series_details = []
-    series_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path), forced FROM table_shows WHERE sonarrSeriesId LIKE ?",
-        (str(no),)).fetchone()
-    tvdbid = series_details[5]
-    
-    episodes = c.execute(
-        "SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC",
-        (str(no),)).fetchall()
+    episodes = TableEpisodes.select(
+        TableEpisodes.title,
+        fn.path_substitution(TableEpisodes.path).alias('path'),
+        TableEpisodes.season,
+        TableEpisodes.episode,
+        TableEpisodes.subtitles,
+        TableEpisodes.sonarr_series_id,
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.scene_name,
+        TableEpisodes.monitored,
+        TableEpisodes.failed_attempts
+    ).where(
+        TableEpisodes.sonarr_series_id % no
+    ).order_by(
+        TableEpisodes.season.desc(),
+        TableEpisodes.episode.desc()
+    )
+
     number = len(episodes)
-    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
-    c.close()
-    episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
+    #episodes = reversed(sorted(episodes, key=operator.itemgetter(season)))
     seasons_list = []
-    for key, season in itertools.groupby(episodes, operator.itemgetter(2)):
+    for key, season in itertools.groupby(episodes.dicts(), lambda x: x['season']):
         seasons_list.append(list(season))
-    
+
     return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details,
                     languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url,
                     tvdbid=tvdbid, number=number, current_port=settings.general.port)
