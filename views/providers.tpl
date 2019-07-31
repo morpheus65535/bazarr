@@ -134,7 +134,7 @@
                         <div id="betaseries_option" class="ui grid container">
                             <div class="middle aligned row">
                                 <div class="right aligned six wide column">
-                                    <label>Token</label>
+                                    <label>Token/Secret Key</label>
                                 </div>
                                 <div class="six wide column">
                                     <div class="ui fluid input">
