@@ -220,8 +220,10 @@
 						for missing_subs_language in missing_subs_languages:
 							if len(missing_subs_language) > 2:
 								forced = missing_subs_language[2]
+								forced_bool = True
 							else:
 								forced = False
+								forced_bool = False
 							end
 
 						    if details[14] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details[14]:
@@ -229,12 +231,12 @@
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
 					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{forced_bool}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
-                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{forced_bool}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -244,7 +246,7 @@
                                 end
                             else:
                     %>
-                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{details[15]}}" data-radarrId={{details[10]}}>
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details[8]}}" data-scenename="{{details[12]}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{forced_bool}}" data-radarrId={{details[10]}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
