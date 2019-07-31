@@ -827,7 +827,6 @@ def episodes(no):
         TableSettingsLanguages.enabled == 1
     )
 
-    #episodes = reversed(sorted(episodes, key=operator.itemgetter(season)))
     seasons_list = []
     for key, season in itertools.groupby(episodes.dicts(), lambda x: x['season']):
         seasons_list.append(list(season))
