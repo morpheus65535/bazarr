@@ -58,54 +58,54 @@
 				%for row in rows:
 					<tr class="selectable">
 						<td class="collapsing">
-						%if row[0] == 0:
+						%if row.action == 0:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
-						%elif row[0] == 1:
+						%elif row.action == 1:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
-						%elif row[0] == 2:
+						%elif row.action == 2:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually downloaded." data-inverted="" data-position="top left">
 								<i class="ui user icon"></i>
 							</div>
-						%elif row[0] == 3:
+						%elif row.action == 3:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
 						%end
 						</td>
 						<td>
-							<a href="{{base_url}}movie/{{row[4]}}">{{row[1]}}</a>
+							<a href="{{base_url}}movie/{{row.radarr_id.radarr_id}}">{{row.title}}</a>
 						</td>
 						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[2]))}}" data-inverted="" data-position="top left">
-								{{pretty.date(int(row[2]))}}
+							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row.timestamp))}}" data-inverted="" data-position="top left">
+								{{pretty.date(int(row.timestamp))}}
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = (row[5], row[2], row[8])
+							% upgradable_criteria = (row.timestamp, row.video_path, row.score)
 							% if upgradable_criteria in upgradable_movies:
-							%     if row[6] != "None":
-							%         desired_languages = ast.literal_eval(str(row[6]))
-							%         if row[9] == "True":
+							%     if row.languages != "None":
+							%         desired_languages = ast.literal_eval(str(row.languages))
+							%         if row.forced == "True":
 							%             forced_languages = [l + ":forced" for l in desired_languages]
-							%         elif row[9] == "Both":
+							%         elif row.forced == "Both":
 							%             forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
 							%         else:
 							%             forced_languages = desired_languages
 							%         end
-							%         if row[6] and row[7] and row[7] in forced_languages:
+							%         if row.languages and row.language and row.language in forced_languages:
 										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
-										      <i class="ui green recycle icon upgrade"></i>{{row[3]}}
+										      <i class="ui green recycle icon upgrade"></i>{{row.description}}
 										  </div>
 							%         else:
-							              {{row[3]}}
+							              {{row.description}}
 							%         end
 							%     end
 							% else:
-							      {{row[3]}}
+							      {{row.description}}
 							% end
 						</td>
 					</tr>

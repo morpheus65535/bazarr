@@ -20,6 +20,11 @@ def path_substitution(path):
     return path_replace(path)
 
 
+@database.func('path_substitution_movie')
+def path_substitution_movie(path):
+    return path_replace_movie(path)
+
+
 class UnknownField(object):
     def __init__(self, *_, **__): pass
 
@@ -131,6 +136,7 @@ class TableHistory(BaseModel):
 
     class Meta:
         table_name = 'table_history'
+        primary_key = False
 
 
 class TableHistoryMovie(BaseModel):
@@ -145,6 +151,7 @@ class TableHistoryMovie(BaseModel):
 
     class Meta:
         table_name = 'table_history_movie'
+        primary_key = False
 
 
 class TableSettingsLanguages(BaseModel):

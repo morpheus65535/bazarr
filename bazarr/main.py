@@ -797,7 +797,7 @@ def episodes(no):
         series_details = series
         break
 
-    tvdbid = series.tvdb_id
+    tvdbid = series_details.tvdb_id
     
     episodes = TableEpisodes.select(
         TableEpisodes.title,
@@ -840,15 +840,8 @@ def episodes(no):
 @custom_auth_basic(check_credentials)
 def movies():
     authorize()
-    single_language = settings.general.getboolean('single_language')
-    
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace_movie)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_movies")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+
+    missing_count = TableMovies.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -856,16 +849,36 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName, forced FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
+    data = TableMovies.select(
+        TableMovies.tmdb_id,
+        TableMovies.title,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.languages,
+        TableMovies.hearing_impaired,
+        TableMovies.radarr_id,
+        TableMovies.poster,
+        TableMovies.audio_language,
+        TableMovies.monitored,
+        TableMovies.scene_name,
+        TableMovies.forced
+    ).order_by(
+        TableMovies.sort_title.asc()
+    ).paginate(
+        int(page),
+        page_size
+    )
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
+                      single_language=settings.general.getboolean('single_language'), page_size=page_size,
+                      current_port=settings.general.port)
     return output
 
 
@@ -873,25 +886,33 @@ def movies():
 @custom_auth_basic(check_credentials)
 def movieseditor():
     authorize()
-    single_language = settings.general.getboolean('single_language')
     
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace_movie)
-    c = db.cursor()
+    missing_count = TableMovies.select().count()
     
-    c.execute("SELECT COUNT(*) FROM table_movies")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
-    
-    c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, forced FROM table_movies ORDER BY title ASC")
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
+    data = TableMovies.select(
+        TableMovies.tmdb_id,
+        TableMovies.title,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.languages,
+        TableMovies.hearing_impaired,
+        TableMovies.radarr_id,
+        TableMovies.poster,
+        TableMovies.audio_language,
+        TableMovies.forced
+    ).order_by(
+        TableMovies.sort_title.asc()
+    )
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=settings.general.port)
+                      missing_count=missing_count, base_url=base_url,
+                      single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
     return output
 
 
@@ -907,23 +928,35 @@ def edit_movieseditor():
     hi = request.forms.get('hearing_impaired')
     forced = request.forms.get('forced')
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
     for movie in movies:
         if str(lang) != "[]" and str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
                 lang = str(lang)
-            c.execute("UPDATE table_movies SET languages = ? WHERE radarrId LIKE ?", (lang, movie))
+            TableMovies.update(
+                {
+                    TableMovies.languages: lang
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
         if hi != '':
-            c.execute("UPDATE table_movies SET hearing_impaired = ? WHERE radarrId LIKE ?", (hi, movie))
+            TableMovies.update(
+                {
+                    TableMovies.hearing_impaired: hi
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
         if forced != '':
-            c.execute("UPDATE table_movies SET forced = ? WHERE radarrId LIKE ?", (forced, movie))
-    
-    conn.commit()
-    c.close()
+            TableMovies.update(
+                {
+                    TableMovies.forced: forced
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
     
     for movie in movies:
         list_missing_subtitles_movies(movie)
@@ -961,12 +994,15 @@ def edit_movie(no):
     else:
         hi = "False"
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ?, forced = ? WHERE radarrId LIKE ?",
-              (str(lang), hi, forced, no))
-    conn.commit()
-    c.close()
+    TableMovies.update(
+        {
+            TableMovies.languages: str(lang),
+            TableMovies.hearing_impaired: hi,
+            TableMovies.forced: forced
+        }.where(
+            TableMovies.radarr_id % no
+        ).execute()
+    )
     
     list_missing_subtitles_movies(no)
     
@@ -978,19 +1014,40 @@ def edit_movie(no):
 def movie(no):
     authorize()
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace_movie)
-    c = conn.cursor()
-    
-    movies_details = []
-    movies_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts, forced FROM table_movies WHERE radarrId LIKE ?",
-        (str(no),)).fetchone()
-    tmdbid = movies_details[5]
-    
-    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
-    c.close()
-    
+    movies_details = TableMovies.select(
+        TableMovies.title,
+        TableMovies.overview,
+        TableMovies.poster,
+        TableMovies.fanart,
+        TableMovies.hearing_impaired,
+        TableMovies.tmdb_id,
+        TableMovies.audio_language,
+        TableMovies.languages,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.subtitles,
+        TableMovies.radarr_id,
+        TableMovies.missing_subtitles,
+        TableMovies.scene_name,
+        TableMovies.monitored,
+        TableMovies.failed_attempts,
+        TableMovies.forced
+    ).where(
+        TableMovies.radarr_id % str(no)
+    )
+
+    for movie_details in movies_details:
+        movies_details = movie_details
+        break
+
+    tmdbid = movies_details.tmdb_id
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
                     languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
                     current_port=settings.general.port)
@@ -1051,12 +1108,8 @@ def history():
 @custom_auth_basic(check_credentials)
 def historyseries():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_history")
-    row_count = c.fetchone()
-    row_count = row_count[0]
+
+    row_count = TableHistory.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1068,22 +1121,45 @@ def historyseries():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history WHERE action > 0").fetchall()
+    stats = TableHistory.select(
+        TableHistory.timestamp
+    ).where(
+        TableHistory.action | 0
+    )
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
-            today.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisweek.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            today.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
-    
-    c.execute(
-        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language, table_history.score, table_shows.forced FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    
+
+    data = TableHistory.select(
+        TableHistory.action,
+        TableShows.title.alias('seriesTitle'),
+        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode'),
+        TableEpisodes.title.alias('episodeTitle'),
+        TableHistory.timestamp,
+        TableHistory.description,
+        TableHistory.sonarr_series_id,
+        fn.path_substitution(TableEpisodes.path).alias('path'),
+        TableShows.languages,
+        TableHistory.language,
+        TableHistory.score,
+        TableShows.forced
+    ).join(
+        TableShows
+    ).join(
+        TableEpisodes
+    ).order_by(
+        TableHistory.timestamp.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
+
     upgradable_episodes = []
     upgradable_episodes_not_perfect = []
     if settings.general.getboolean('upgrade_subs'):
@@ -1096,24 +1172,26 @@ def historyseries():
         else:
             query_actions = [1, 3]
         
-        upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
-                                             FROM table_history
-                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                  timestamp > ? AND score is not null
-                                         GROUP BY table_history.video_path, table_history.language""",
-                                        (minimum_timestamp,)).fetchall()
-        for upgradable_episode in upgradable_episodes:
-            try:
-                int(upgradable_episode[2])
-            except ValueError:
-                pass
-            else:
-                if int(upgradable_episode[2]) < 360:
-                    upgradable_episodes_not_perfect.append(upgradable_episode)
-    
-    c.close()
-    
-    data = reversed(sorted(data, key=operator.itemgetter(4)))
+        upgradable_episodes = TableHistory.select(
+            fn.path_substitution(TableHistory.video_path).alias('video_path'),
+            fn.MAX(TableHistory.timestamp).alias('timestamp'),
+            TableHistory.score
+        ).where(
+            TableHistory.action.in_(query_actions) & TableHistory.score.is_null(False)
+        ).group_by(
+            TableHistory.video_path,
+            TableHistory.language
+        )
+
+        for upgradable_episode in upgradable_episodes.dicts():
+            if upgradable_episode['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_episode['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_episode['score']) < 360:
+                        upgradable_episodes_not_perfect.append(tuple(upgradable_episode.values()))
     
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
@@ -1124,12 +1202,8 @@ def historyseries():
 @custom_auth_basic(check_credentials)
 def historymovies():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_history_movie")
-    row_count = c.fetchone()
-    row_count = row_count[0]
+
+    row_count = TableHistoryMovie.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1141,21 +1215,40 @@ def historymovies():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action > 0").fetchall()
+    stats = TableHistoryMovie.select(
+        TableHistoryMovie.timestamp
+    ).where(
+        TableHistoryMovie.action > 0
+    )
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
-            today.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisweek.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            today.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
     
-    c.execute(
-        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language, table_history_movie.score, table_movies.forced FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
+    data = TableHistoryMovie.select(
+        TableHistoryMovie.action,
+        TableMovies.title,
+        TableHistoryMovie.timestamp,
+        TableHistoryMovie.description,
+        TableHistoryMovie.radarr_id,
+        TableHistoryMovie.video_path,
+        TableMovies.languages,
+        TableHistoryMovie.language,
+        TableHistoryMovie.score,
+        TableMovies.forced
+    ).join(
+        TableMovies
+    ).order_by(
+        TableHistoryMovie.timestamp.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
     
     upgradable_movies = []
     upgradable_movies_not_perfect = []
@@ -1169,23 +1262,27 @@ def historymovies():
         else:
             query_actions = [1, 3]
         
-        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
-                                           FROM table_history_movie
-                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                timestamp > ? AND score is not null
-                                       GROUP BY video_path, language""",
-                                      (minimum_timestamp,)).fetchall()
-        for upgradable_movie in upgradable_movies:
-            try:
-                int(upgradable_movie[2])
-            except ValueError:
-                pass
-            else:
-                if int(upgradable_movie[2]) < 120:
-                    upgradable_movies_not_perfect.append(upgradable_movie)
+        upgradable_movies = TableHistoryMovie.select(
+            TableHistoryMovie.video_path,
+            fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+            TableHistoryMovie.score
+        ).where(
+            TableHistoryMovie.action.in_(query_actions) & TableHistoryMovie.score.is_null(False)
+        ).group_by(
+            TableHistoryMovie.video_path,
+            TableHistoryMovie.language
+        )
+
+        for upgradable_movie in upgradable_movies.dicts():
+            if upgradable_movie['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_movie['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_movie['score']) < 120:
+                        upgradable_movies_not_perfect.append(tuple(upgradable_movie.values()))
     
-    c.close()
-    data = reversed(sorted(data, key=operator.itemgetter(2)))
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
                     current_port=settings.general.port, upgradable_movies=upgradable_movies_not_perfect)

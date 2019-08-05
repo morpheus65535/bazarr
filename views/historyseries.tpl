@@ -60,67 +60,67 @@
 				%for row in rows:
 					<tr class="selectable">
 						<td class="collapsing">
-						%if row[0] == 0:
+						%if row.action == 0:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
-						%elif row[0] == 1:
+						%elif row.action == 1:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
-						%elif row[0] == 2:
+						%elif row.action == 2:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually downloaded." data-inverted="" data-position="top left">
 								<i class="ui user icon"></i>
 							</div>
-						%elif row[0] == 3:
+						%elif row.action == 3:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
 						%end
 						</td>
 						<td>
-							<a href="{{base_url}}episodes/{{row[6]}}">{{row[1]}}</a>
+							<a href="{{base_url}}episodes/{{row.sonarr_series_id.sonarr_series_id}}">{{row.seriesTitle}}</a>
 						</td>
 						<td class="collapsing">
-							%if row[2] is not None:
-							%	episode = row[2].split('x')
+							%if row.episode is not None:
+							%	episode = row.episode.split('x')
 							{{episode[0] + 'x' + episode[1].zfill(2)}}
 							%end
 						</td>
 						<td>
-							%if row[3] is not None:
-							{{row[3]}}
+							%if row.episodeTitle is not None:
+							{{row.episodeTitle}}
 							%else:
 							<em>Deleted episode</em>
 							%end
 						</td>
 						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row[4]))}}" data-inverted="" data-position="top left">
-								{{pretty.date(int(row[4]))}}
+							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row.timestamp))}}" data-inverted="" data-position="top left">
+								{{pretty.date(int(row.timestamp))}}
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = (row[7], row[4], row[10])
+							% upgradable_criteria = (row.timestamp, row.path, row.score)
 							% if upgradable_criteria in upgradable_episodes:
-							%     if row[8] != "None":
-							%         desired_languages = ast.literal_eval(str(row[8]))
-							%         if row[11] == "True":
+							%     if row.languages != "None":
+							%         desired_languages = ast.literal_eval(str(row.languages))
+							%         if row.forced == "True":
 							%             forced_languages = [l + ":forced" for l in desired_languages]
-							%         elif row[11] == "Both":
+							%         elif row.forced == "Both":
 							%             forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
 							%         else:
 							%             forced_languages = desired_languages
 							%         end
-                            %         if row[9] in forced_languages:
+                            %         if row.language in forced_languages:
 										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
-										      <i class="ui green recycle icon upgrade"></i>{{row[5]}}
+										      <i class="ui green recycle icon upgrade"></i>{{row.description}}
 										  </div>
 							%         else:
-							              {{row[5]}}
+							              {{row.description}}
 							%         end
 							%     end
 							% else:
-							      {{row[5]}}
+							      {{row.description}}
 							% end
 						</td>
 					</tr>
