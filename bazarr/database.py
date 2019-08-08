@@ -124,6 +124,7 @@ class TableMovies(BaseModel):
 
 
 class TableHistory(BaseModel):
+    id = IntegerField(null=False)
     action = IntegerField()
     description = TextField()
     language = TextField(null=True)
@@ -140,6 +141,7 @@ class TableHistory(BaseModel):
 
 
 class TableHistoryMovie(BaseModel):
+    id = IntegerField(null=False)
     action = IntegerField()
     description = TextField()
     language = TextField(null=True)

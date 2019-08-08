@@ -82,8 +82,8 @@
 							<a href="{{base_url}}episodes/{{row.sonarr_series_id.sonarr_series_id}}">{{row.seriesTitle}}</a>
 						</td>
 						<td class="collapsing">
-							%if row.episode is not None:
-							%	episode = row.episode.split('x')
+							%if row.episode_number is not None:
+							%	episode = row.episode_number.split('x')
 							{{episode[0] + 'x' + episode[1].zfill(2)}}
 							%end
 						</td>

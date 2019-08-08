@@ -54,22 +54,22 @@
 				<tbody>
 				%import time
 				%import pretty
-				%if len(rows) == 0:
+				%if rows.count() == 0:
 					<tr>
 						<td colspan="4">No missing episode subtitles.</td>
 					</tr>
 				%end
 				%for row in rows:
 					<tr class="selectable">
-						<td><a href="{{base_url}}episodes/{{row[4]}}">{{row[0]}}</a></td>
+						<td><a href="{{base_url}}episodes/{{row.sonarr_series_id.sonarr_series_id}}">{{row.seriesTitle}}</a></td>
 						<td class="collapsing">
-							<%episode = row[1].split('x')%>
+							<%episode = str(row.episode_number).split('x')%>
 							{{episode[0] + 'x' + episode[1].zfill(2)}}
 						</td>
-						<td>{{row[2]}}</td>
+						<td>{{row.episodeTitle}}</td>
 						<td>
                         <%
-                        missing_languages = ast.literal_eval(row[3])
+                        missing_languages = ast.literal_eval(row.missing_subtitles)
 						if missing_languages is not None:
                             from get_subtitle import search_active
                             from config import settings
@@ -79,18 +79,18 @@
 								else:
 									forced = False
 								end
-                                if row[9] is not None and settings.general.getboolean('adaptive_searching') and language in row[9]:
-                                        for lang in ast.literal_eval(row[9]):
+                                if row.failed_attempts is not None and settings.general.getboolean('adaptive_searching') and language in row.failed_attempts:
+                                        for lang in ast.literal_eval(row.failed_attempts):
                                             if language in lang:
                                                 active = search_active(lang[1])
                                                 if active:
                         %>
-                                                    <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-episodePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-sonarrSeriesId={{row.sonarr_series_id.sonarr_series_id}} data-sonarrEpisodeId={{row.sonarr_episode_id}} data-title="{{row.seriesTitle.replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                     </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-sonarrSeriesId={{row.sonarr_series_id.sonarr_series_id}} data-sonarrEpisodeId={{row.sonarr_episode_id}} data-title="{{row.seriesTitle.replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                     </a>
@@ -98,7 +98,7 @@
                                             %end
                                         %end
                                 %else:
-                                        <a data-episodePath="{{row[5]}}" data-sceneName="{{row[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row[6]}}" data-forced="{{forced}}" data-sonarrSeriesId={{row[4]}} data-sonarrEpisodeId={{row[7]}} data-title="{{row[0].replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                        <a data-episodePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-sonarrSeriesId={{row.sonarr_series_id.sonarr_series_id}} data-sonarrEpisodeId={{row.sonarr_episode_id}} data-title="{{row.seriesTitle.replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                             {{language}}
                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                         </a>

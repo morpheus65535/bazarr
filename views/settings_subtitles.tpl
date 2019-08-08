@@ -409,9 +409,9 @@
                                         <option value="">Languages</option>
                                         %enabled_languages = []
                                         %for language in settings_languages:
-                                        <option value="{{language[1]}}">{{language[2]}}</option>
-                                        %if language[3] == True:
-                                        %	enabled_languages.append(str(language[1]))
+                                        <option value="{{language.code2}}">{{language.name}}</option>
+                                        %if language.enabled == True:
+                                        %	enabled_languages.append(str(language.code2))
                                         %end
                                         %end
                                     </select>

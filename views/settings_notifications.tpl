@@ -10,19 +10,19 @@
                         %for notifier in settings_notifier:
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>{{notifier[0]}}</label>
+                                <label>{{notifier.name}}</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_notifier_{{notifier[0]}}_enabled" class="notifier_enabled ui toggle checkbox" data-notifier-url-div="settings_notifier_{{notifier[0]}}_url_div" data-enabled={{notifier[2]}}>
-                                    <input name="settings_notifier_{{notifier[0]}}_enabled" type="checkbox">
+                                <div id="settings_notifier_{{notifier.name}}_enabled" class="notifier_enabled ui toggle checkbox" data-notifier-url-div="settings_notifier_{{notifier.name}}_url_div" data-enabled={{notifier.enabled}}>
+                                    <input name="settings_notifier_{{notifier.name}}_enabled" type="checkbox">
                                     <label></label>
                                 </div>
                             </div>
                             <div class="eight wide column">
                                 <div class='field'>
-                                    <div id="settings_notifier_{{notifier[0]}}_url_div" class="ui fluid input">
-                                        <input name="settings_notifier_{{notifier[0]}}_url" type="text" value="{{notifier[1] if notifier[1] != None else ''}}">
-                                        <div class="test_notification ui blue button" data-notification="{{notifier[1]}}">Test Notification</div>
+                                    <div id="settings_notifier_{{notifier.name}}_url_div" class="ui fluid input">
+                                        <input name="settings_notifier_{{notifier.name}}_url" type="text" value="{{notifier.url if notifier.url != None else ''}}">
+                                        <div class="test_notification ui blue button" data-notification="{{notifier.url}}">Test Notification</div>
                                     </div>
                                 </div>
                             </div>
