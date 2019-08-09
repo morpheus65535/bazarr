@@ -22,9 +22,12 @@ import operator
 
 from get_args import args
 from init import *
-from update_db import *
-from database import TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages, \
-    TableSettingsNotifier, System
+from database import database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+    TableSettingsLanguages, TableSettingsNotifier, System
+
+# Initiate database
+database_init()
+
 from notifier import update_notifier
 from logger import configure_logging, empty_log
 
@@ -54,7 +57,6 @@ from subliminal_patch.extensions import provider_registry as provider_manager
 reload(sys)
 sys.setdefaultencoding('utf8')
 gc.enable()
-update_notifier()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 os.environ["BAZARR_VERSION"] = bazarr_version
@@ -104,6 +106,9 @@ session_opts = {
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = settings.auth.type
+
+
+update_notifier()
 
 
 def custom_auth_basic(check):
@@ -998,11 +1003,11 @@ def edit_movie(no):
             TableMovies.languages: str(lang),
             TableMovies.hearing_impaired: hi,
             TableMovies.forced: forced
-        }.where(
-            TableMovies.radarr_id % no
-        ).execute()
-    )
-    
+        }
+    ).where(
+        TableMovies.radarr_id % no
+    ).execute()
+        
     list_missing_subtitles_movies(no)
     
     redirect(ref)

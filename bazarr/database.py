@@ -4,13 +4,14 @@ import atexit
 from get_args import args
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
+from playhouse.reflection import generate_models
 
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 
 database = SqliteQueueDatabase(
     os.path.join(args.config_dir, 'db', 'bazarr.db'),
     use_gevent=False,  # Use the standard library "threading" module.
-    autostart=True,  # The worker thread now must be started manually.
+    autostart=False,  # The worker thread now must be started manually.
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
     results_timeout=30.0)  # Max. time to wait for query to be executed.
 
@@ -31,15 +32,6 @@ class UnknownField(object):
 class BaseModel(Model):
     class Meta:
         database = database
-
-
-class SqliteSequence(BaseModel):
-    name = BareField(null=True)
-    seq = BareField(null=True)
-
-    class Meta:
-        table_name = 'sqlite_sequence'
-        primary_key = False
 
 
 class System(BaseModel):
@@ -179,3 +171,22 @@ class TableSettingsNotifier(BaseModel):
 @atexit.register
 def _stop_worker_threads():
     database.stop()
+
+
+def database_init():
+    database.start()
+    database.connect()
+
+    models_list = [TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages,
+                   TableSettingsNotifier, System]
+
+    database.create_tables(models_list, safe=True)
+
+    # Insert default values
+    if System.select().count() == 0:
+        System.insert(
+            {
+                System.updated: 0,
+                System.configured: 0
+            }
+        ).execute()
