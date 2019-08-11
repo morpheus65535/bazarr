@@ -19,7 +19,8 @@ from subzero.language import Language
 from subzero.video import parse_video
 from subliminal import region, score as subliminal_scores, \
     list_subtitles, Episode, Movie
-from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles
+from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
+    list_all_subtitles, get_subtitle_path
 from subliminal_patch.score import compute_score
 from subliminal.refiners.tvdb import series_re
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
@@ -438,6 +439,40 @@ def manual_download_subtitle(path, language, hi, subtitle, provider, providers_a
                     return None
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
+
+def manual_upload_subtitle(path, language, title, scene_name, media_type, subtitle):
+    logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
+    
+    single = settings.general.getboolean('single_language')
+    
+    chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
+        'win') and settings.general.getboolean('chmod_enabled') else None
+
+    _, ext = os.path.splitext(subtitle.filename)
+
+    language = alpha3_from_alpha2(language)
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        lang_obj = Language(language)
+    
+    subtitle_path = get_subtitle_path(video_path=force_unicode(path), 
+                                      language=None if single else lang_obj,
+                                      extension=ext)
+
+    subtitle_path = force_unicode(subtitle_path)
+
+    if os.path.exists(subtitle_path):
+        os.remove(subtitle_path)
+
+    subtitle.save(subtitle_path)
+
+    if chmod:
+        os.chmod(subtitle_path, chmod)
+
+    return language + " subtitles manually uploaded."
+    
 
 def series_download_subtitles(no):
     if settings.sonarr.getboolean('only_monitored'):

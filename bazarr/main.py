@@ -61,7 +61,8 @@ from get_episodes import *
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle, upgrade_subtitles
+    wanted_download_subtitles, wanted_search_missing_subtitles, manual_search, manual_download_subtitle, upgrade_subtitles, \
+    manual_upload_subtitle
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
@@ -123,6 +124,8 @@ session_opts = {
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = settings.auth.type
+
+allowed_subtitle_upload_formats = ('.srt', '.smi', '.ssa', '.ass', '.vtt')
 
 
 def custom_auth_basic(check):
@@ -1881,6 +1884,49 @@ def manual_get_subtitle():
         pass
 
 
+@route(base_url + 'manual_upload_subtitle', method='POST')
+@custom_auth_basic(check_credentials)
+def perform_manual_upload_subtitle():
+    authorize()
+    ref = request.environ['HTTP_REFERER']
+
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    upload = request.files.get('upload')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
+
+    _, ext = os.path.splitext(upload.filename)
+
+    if ext not in allowed_subtitle_upload_formats:
+        raise ValueError('A subtitle of an invalid format was uploaded.')
+    
+    try:
+        result = manual_upload_subtitle(path=episodePath, 
+                                        language=language, 
+                                        title=title, 
+                                        scene_name=sceneName, 
+                                        media_type='series',
+                                        subtitle=upload)
+        
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = language
+            provider = "manual"
+            score = 1000
+            history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+            store_subtitles(unicode(episodePath))
+            list_missing_subtitles(sonarrSeriesId)
+        
+        redirect(ref)
+    except OSError:
+        pass
+
+
 @route(base_url + 'get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle_movie():
@@ -1965,6 +2011,48 @@ def manual_get_subtitle_movie():
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
+        redirect(ref)
+    except OSError:
+        pass
+
+
+@route(base_url + 'manual_upload_subtitle_movie', method='POST')
+@custom_auth_basic(check_credentials)
+def perform_manual_upload_subtitle_movie():
+    authorize()
+    ref = request.environ['HTTP_REFERER']
+
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    upload = request.files.get('upload')
+    radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
+
+    _, ext = os.path.splitext(upload.filename)
+
+    if ext not in allowed_subtitle_upload_formats:
+        raise ValueError('A subtitle of an invalid format was uploaded.')
+    
+    try:
+        result = manual_upload_subtitle(path=moviePath, 
+                                        language=language, 
+                                        title=title, 
+                                        scene_name=sceneName, 
+                                        media_type='series',
+                                        subtitle=upload)
+        
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = language
+            provider = "manual"
+            score = 1000
+            history_log_movie(2, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
+            store_subtitles_movie(unicode(moviePath))
+            list_missing_subtitles(radarrId)
+        
         redirect(ref)
     except OSError:
         pass
