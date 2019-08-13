@@ -513,7 +513,8 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     
     subtitle_path = get_subtitle_path(video_path=force_unicode(path), 
                                       language=None if single else lang_obj,
-                                      extension=ext)
+                                      extension=ext,
+                                      forced_tag=forced)
 
     subtitle_path = force_unicode(subtitle_path)
 
