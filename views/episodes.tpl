@@ -414,6 +414,12 @@
 						</select>
 					</div>
 					<div class="field">
+						<div class="ui toggle checkbox">
+							<input name="forced" type="checkbox" value="1">
+							<label>Forced Subtitles</label>
+						</div>
+					</div>
+					<div class="field">
 						<label>File</label>
 						<input type="file" name="upload">
 					</div>

@@ -1927,6 +1927,7 @@ def perform_manual_upload_subtitle():
     episodePath = request.forms.get('episodePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
@@ -1939,7 +1940,8 @@ def perform_manual_upload_subtitle():
     
     try:
         result = manual_upload_subtitle(path=episodePath, 
-                                        language=language, 
+                                        language=language,
+                                        forced=forced,
                                         title=title, 
                                         scene_name=sceneName, 
                                         media_type='series',
@@ -1948,7 +1950,7 @@ def perform_manual_upload_subtitle():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = language
+            language_code = language + ":forced" if forced else language
             provider = "manual"
             score = 360
             history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
@@ -2062,6 +2064,7 @@ def perform_manual_upload_subtitle_movie():
     moviePath = request.forms.get('moviePath')
     sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
     title = request.forms.get('title')
@@ -2073,7 +2076,8 @@ def perform_manual_upload_subtitle_movie():
     
     try:
         result = manual_upload_subtitle(path=moviePath, 
-                                        language=language, 
+                                        language=language,
+                                        forced=forced,
                                         title=title, 
                                         scene_name=sceneName, 
                                         media_type='series',
@@ -2082,7 +2086,7 @@ def perform_manual_upload_subtitle_movie():
         if result is not None:
             message = result[0]
             path = result[1]
-            language_code = language
+            language_code = language + ":forced" if forced else language
             provider = "manual"
             score = 120
             history_log_movie(4, radarrId, message, path, language_code, provider, score)

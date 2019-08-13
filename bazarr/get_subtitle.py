@@ -491,7 +491,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
 
-def manual_upload_subtitle(path, language, title, scene_name, media_type, subtitle):
+def manual_upload_subtitle(path, language, forced, title, scene_name, media_type, subtitle):
     logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
     
     single = settings.general.getboolean('single_language')
@@ -508,6 +508,9 @@ def manual_upload_subtitle(path, language, title, scene_name, media_type, subtit
     else:
         lang_obj = Language(language)
     
+    if forced:
+        lang_obj = Language.rebuild(lang_obj, forced=True)
+    
     subtitle_path = get_subtitle_path(video_path=force_unicode(path), 
                                       language=None if single else lang_obj,
                                       extension=ext)
@@ -522,7 +525,7 @@ def manual_upload_subtitle(path, language, title, scene_name, media_type, subtit
     if chmod:
         os.chmod(subtitle_path, chmod)
 
-    message = language_from_alpha3(language) + " subtitles manually uploaded."
+    message = language_from_alpha3(language) + " forced" if forced else "" + " subtitles manually uploaded."
 
     if media_type == 'series':
         reversed_path = path_replace_reverse(path)
