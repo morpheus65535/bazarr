@@ -67,6 +67,7 @@ from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 from helper import path_replace_movie
+from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
@@ -123,8 +124,6 @@ session_opts = {
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = settings.auth.type
-
-allowed_subtitle_upload_formats = ('.srt', '.smi', '.ssa', '.ass', '.vtt')
 
 
 def custom_auth_basic(check):
@@ -1935,7 +1934,7 @@ def perform_manual_upload_subtitle():
 
     _, ext = os.path.splitext(upload.filename)
 
-    if ext not in allowed_subtitle_upload_formats:
+    if ext not in SUBTITLE_EXTENSIONS:
         raise ValueError('A subtitle of an invalid format was uploaded.')
     
     try:
@@ -1951,7 +1950,7 @@ def perform_manual_upload_subtitle():
             path = result[1]
             language_code = language
             provider = "manual"
-            score = 1000
+            score = 360
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
@@ -2085,7 +2084,7 @@ def perform_manual_upload_subtitle_movie():
             path = result[1]
             language_code = language
             provider = "manual"
-            score = 1000
+            score = 120
             history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
