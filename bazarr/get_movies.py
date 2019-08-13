@@ -11,6 +11,7 @@ from config import settings, url_radarr
 from helper import path_replace_movie
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
 from get_subtitle import movies_download_subtitles
+from database import TableMovies
 
 
 def update_movies():
@@ -41,12 +42,14 @@ def update_movies():
             logging.exception("BAZARR Error trying to get movies from Radarr.")
         else:
             # Get current movies in DB
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            current_movies_db = c.execute('SELECT tmdbId, path, radarrId FROM table_movies').fetchall()
-            db.close()
+            current_movies_db = TableMovies.select(
+                TableMovies.tmdb_id,
+                TableMovies.path,
+                TableMovies.radarr_id
+            )
             
-            current_movies_db_list = [x[0] for x in current_movies_db]
+            current_movies_db_list = [x.tmdb_id for x in current_movies_db]
+
             current_movies_radarr = []
             movies_to_update = []
             movies_to_add = []
@@ -77,8 +80,10 @@ def update_movies():
                             else:
                                 sceneName = None
 
-                            if movie['alternativeTitles'] != None:
+                            if 'alternativeTitles' in movie:
                                 alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
+                            else:
+                                alternativeTitles = None
 
                             if 'imdbId' in movie: imdbId = movie['imdbId']
                             else: imdbId = None
@@ -120,32 +125,67 @@ def update_movies():
                                 separator = "\\"
                             
                             if unicode(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append((movie["title"],
-                                                         movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                         movie["tmdbId"], movie["id"], overview, poster, fanart,
-                                                         profile_id_to_language(movie['qualityProfileId']), sceneName,
-                                                         unicode(bool(movie['monitored'])), movie['sortTitle'],
-                                                         movie['year'], alternativeTitles, format, resolution,
-                                                         videoCodec, audioCodec, imdbId, movie["tmdbId"]))
+                                movies_to_update.append({'title': movie["title"],
+                                                         'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                         'tmdb_id': movie["tmdbId"],
+                                                         'radarr_id': movie["id"],
+                                                         'overview': overview,
+                                                         'poster': poster,
+                                                         'fanart': fanart,
+                                                         'audio_language': profile_id_to_language(movie['qualityProfileId']),
+                                                         'scene_name': sceneName,
+                                                         'monitored': unicode(bool(movie['monitored'])),
+                                                         'sort_title': movie['sortTitle'],
+                                                         'year': movie['year'],
+                                                         'alternative_titles': alternativeTitles,
+                                                         'format': format,
+                                                         'resolution': resolution,
+                                                         'video_codec': videoCodec,
+                                                         'audio_codec': audioCodec,
+                                                         'imdb_id': imdbId})
                             else:
                                 if movie_default_enabled is True:
-                                    movies_to_add.append((movie["title"],
-                                                          movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          movie["tmdbId"], movie_default_language, '[]', movie_default_hi,
-                                                          movie["id"], overview, poster, fanart,
-                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
-                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
-                                                          movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec, imdbId, movie_default_forced))
+                                    movies_to_add.append({'title': movie["title"],
+                                                          'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                          'tmdb_id': movie["tmdbId"],
+                                                          'languages': movie_default_language,
+                                                          'subtitles': '[]',
+                                                          'hearing_impaired': movie_default_hi,
+                                                          'radarr_id': movie["id"],
+                                                          'overview': overview,
+                                                          'poster': poster,
+                                                          'fanart': fanart,
+                                                          'audio_language': profile_id_to_language(movie['qualityProfileId']),
+                                                          'scen_name': sceneName,
+                                                          'monitored': unicode(bool(movie['monitored'])),
+                                                          'sort_title': movie['sortTitle'],
+                                                          'year': movie['year'],
+                                                          'alternative_titles': alternativeTitles,
+                                                          'format': format,
+                                                          'resolution': resolution,
+                                                          'video_codec': videoCodec,
+                                                          'audio_codec': audioCodec,
+                                                          'imdb_id': imdbId,
+                                                          'forced': movie_default_forced})
                                 else:
-                                    movies_to_add.append((movie["title"],
-                                                          movie["path"] + separator + movie['movieFile'][
-                                                              'relativePath'], movie["tmdbId"], movie["tmdbId"],
-                                                          movie["tmdbId"], movie["id"], overview, poster, fanart,
-                                                          profile_id_to_language(movie['qualityProfileId']), sceneName,
-                                                          unicode(bool(movie['monitored'])), movie['sortTitle'],
-                                                          movie['year'], alternativeTitles, format, resolution,
-                                                          videoCodec, audioCodec, imdbId, movie["tmdbId"]))
+                                    movies_to_add.append({'title': movie["title"],
+                                                          'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                          'tmdb_id': movie["tmdbId"],
+                                                          'radarr_id': movie["id"],
+                                                          'overview': overview,
+                                                          'poster': poster,
+                                                          'fanart': fanart,
+                                                          'audio_language': profile_id_to_language(movie['qualityProfileId']),
+                                                          'scene_name': sceneName,
+                                                          'monitored': unicode(bool(movie['monitored'])),
+                                                          'sort_title': movie['sortTitle'],
+                                                          'year': movie['year'],
+                                                          'alternative_titles': alternativeTitles,
+                                                          'format': format,
+                                                          'resolution': resolution,
+                                                          'video_codec': videoCodec,
+                                                          'audio_codec': audioCodec,
+                                                          'imdb_id': imdbId})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
