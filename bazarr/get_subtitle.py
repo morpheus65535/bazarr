@@ -525,7 +525,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if chmod:
         os.chmod(subtitle_path, chmod)
 
-    message = language_from_alpha3(language) + " forced" if forced else "" + " subtitles manually uploaded."
+    message = language_from_alpha3(language) + (" forced" if forced else "") + " subtitles manually uploaded."
 
     if media_type == 'series':
         reversed_path = path_replace_reverse(path)
