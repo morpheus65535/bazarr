@@ -53,9 +53,10 @@ def get_binary(name):
     binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
     exe = None
-    installed_exe = which(name)
+    if name != 'mediainfo':
+        installed_exe = which(name)
 
-    if installed_exe and os.path.isfile(installed_exe):
+    if name != 'mediainfo' and installed_exe and os.path.isfile(installed_exe):
         return installed_exe
     else:
         if platform.system() == "Windows":  # Windows
