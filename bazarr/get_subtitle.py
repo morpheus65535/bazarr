@@ -522,7 +522,14 @@ def manual_upload_subtitle(path, language, title, scene_name, media_type, subtit
     if chmod:
         os.chmod(subtitle_path, chmod)
 
-    return language + " subtitles manually uploaded."
+    message = language_from_alpha3(language) + " subtitles manually uploaded."
+
+    if media_type == 'series':
+        reversed_path = path_replace_reverse(path)
+    else:
+        reversed_path = path_replace_reverse_movie(path)
+
+    return message, reversed_path
     
 
 def series_download_subtitles(no):

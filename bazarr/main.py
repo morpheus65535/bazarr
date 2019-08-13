@@ -1951,7 +1951,7 @@ def perform_manual_upload_subtitle():
             language_code = language
             provider = "manual"
             score = 360
-            history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
@@ -2068,7 +2068,7 @@ def perform_manual_upload_subtitle_movie():
 
     _, ext = os.path.splitext(upload.filename)
 
-    if ext not in allowed_subtitle_upload_formats:
+    if ext not in SUBTITLE_EXTENSIONS:
         raise ValueError('A subtitle of an invalid format was uploaded.')
     
     try:
@@ -2085,7 +2085,7 @@ def perform_manual_upload_subtitle_movie():
             language_code = language
             provider = "manual"
             score = 120
-            history_log_movie(2, radarrId, message, path, language_code, provider, score)
+            history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles(radarrId)
