@@ -2092,7 +2092,7 @@ def perform_manual_upload_subtitle_movie():
             history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
-            list_missing_subtitles(radarrId)
+            list_missing_subtitles_movies(radarrId)
         
         redirect(ref)
     except OSError:
