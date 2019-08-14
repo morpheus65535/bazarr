@@ -49,6 +49,7 @@ def update_series():
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
+            altered_series = []
 
             seriesListLength = len(r.json())
             for i, show in enumerate(r.json(), 1):
@@ -116,40 +117,48 @@ def update_series():
                                               'year': show['year'],
                                               'alternate_title': alternateTitles})
             
-            # Update or insert series in DB
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            
-            updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
-                series_to_update)
-            db.commit()
-            
-            if serie_default_enabled is True:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
-            else:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, (SELECT `forced` FROM table_shows WHERE tvdbId = ?))''',
-                    series_to_add)
-                db.commit()
-            db.close()
-            
-            for show in series_to_add:
-                list_missing_subtitles(show[5])
-            
-            # Delete shows not in Sonarr anymore
-            deleted_items = []
-            for item in current_shows_db_list:
-                if item not in current_shows_sonarr:
-                    deleted_items.append(tuple([item]))
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
-            db.commit()
-            db.close()
+            # Update existing series in DB
+            series_in_db_list = []
+            series_in_db = TableShows.select(
+                TableShows.title,
+                TableShows.path,
+                TableShows.tvdb_id,
+                TableShows.sonarr_series_id,
+                TableShows.overview,
+                TableShows.poster,
+                TableShows.fanart,
+                TableShows.audio_language,
+                TableShows.sort_title,
+                TableShows.year,
+                TableShows.alternate_titles
+            ).dicts()
+
+            for item in series_in_db:
+                series_in_db_list.append(item)
+
+            series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
+
+            for updated_series in series_to_update_list:
+                TableShows.update(
+                    updated_series
+                ).where(
+                    TableShows.sonarr_series_id == updated_series['sonarr_series_id']
+                ).execute()
+
+            # Insert new series in DB
+            for added_series in series_to_add:
+                TableShows.insert(
+                    added_series
+                ).on_conflict_ignore().execute()
+                list_missing_subtitles(added_series['sonarr_series_id'])
+
+            # Remove old episodes from DB
+            removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
+
+            for series in removed_series:
+                print TableShows.delete().where(
+                    TableShows.tvdb_id == series
+                ).execute()
 
 
 def get_profile_list():
