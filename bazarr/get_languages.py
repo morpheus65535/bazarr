@@ -57,7 +57,8 @@ def language_from_alpha3(lang):
     result = TableSettingsLanguages.select(
         TableSettingsLanguages.name
     ).where(
-        TableSettingsLanguages.code3 == lang | TableSettingsLanguages.code3b == lang
+        (TableSettingsLanguages.code3 == lang) |
+        (TableSettingsLanguages.code3b == lang)
     ).first()
     return result.name
 
@@ -66,7 +67,8 @@ def alpha2_from_alpha3(lang):
     result = TableSettingsLanguages.select(
         TableSettingsLanguages.code2
     ).where(
-        TableSettingsLanguages.code3 == lang | TableSettingsLanguages.code3b == lang
+        (TableSettingsLanguages.code3 == lang) |
+        (TableSettingsLanguages.code3b == lang)
     ).first()
     return result.code2
 
