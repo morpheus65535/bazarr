@@ -5,7 +5,6 @@ import sys
 import sqlite3
 import ast
 import logging
-import operator
 import subprocess
 import time
 import cPickle as pickle
@@ -13,7 +12,7 @@ import codecs
 import types
 import re
 import subliminal
-import subliminal_patch
+import platform
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -58,26 +57,23 @@ def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=No
         path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
         used_scene_name = True
         hash_from = original_path
-    if providers:
-        try:
-            video = parse_video(path, hints=hints, providers=providers, dry_run=used_scene_name,
-                                hash_from=hash_from)
-            video.used_scene_name = used_scene_name
-            video.original_name = original_name
-            video.original_path = original_path
-            refine_from_db(original_path, video)
-
-            if use_mediainfo:
-                refine_from_mediainfo(original_path, video)
-
-            logging.debug('BAZARR is using those video object properties: %s', vars(video))
-            return video
+    
+    try:
+        video = parse_video(path, hints=hints, providers=providers, dry_run=used_scene_name,
+                            hash_from=hash_from)
+        video.used_scene_name = used_scene_name
+        video.original_name = original_name
+        video.original_path = original_path
+        refine_from_db(original_path, video)
         
-        except:
-            logging.exception("BAZARR Error trying to get video information for this file: " + path)
-    else:
-        logging.info("BAZARR All providers are throttled")
-        return None
+        if platform.system() != "Linux" and use_mediainfo:
+            refine_from_mediainfo(original_path, video)
+        
+        logging.debug('BAZARR is using those video object properties: %s', vars(video))
+        return video
+    
+    except:
+        logging.exception("BAZARR Error trying to get video information for this file: " + path)
 
 
 def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_score_series_perc=240 * 100 / 360.0,
@@ -125,9 +121,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         language = [language]
     
     if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True
-        providers_auth['subscene']['only_foreign'] = True
-        providers_auth['opensubtitles']['only_foreign'] = True
+        providers_auth['podnapisi']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
+        providers_auth['subscene']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
+        providers_auth['opensubtitles']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
     else:
         providers_auth['podnapisi']['only_foreign'] = False
         providers_auth['subscene']['only_foreign'] = False
@@ -136,11 +132,11 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     for l in language:
         if l == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
+            if forced:
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(l)
-            if forced == "True":
+            if forced:
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
@@ -161,8 +157,8 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         post_download_hook=None,
         language_hook=None
     """
-    
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers,
+                      media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -184,6 +180,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
+            return None
         
         saved_any = False
         if downloaded_subtitles:
@@ -273,9 +270,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         if not saved_any:
             logging.debug('BAZARR No subtitles were found for this file: ' + path)
             return None
-
+    
     subliminal.region.backend.sync()
-
+    
     logging.debug('BAZARR Ended searching subtitles for file: ' + path)
 
 
@@ -317,8 +314,12 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
-    
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=providers, media_type=media_type)
+    if providers:
+        video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers,
+                          media_type=media_type)
+    else:
+        logging.info("BAZARR All providers are throttled")
+        return None
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
                                                   min_score_series_perc=int(minimum_score))
@@ -333,6 +334,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
+                return None
         except Exception as e:
             logging.exception("BAZARR Error trying to get subtitle list from provider for this file: " + path)
         else:
@@ -368,9 +370,9 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
             final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching subtitles for this file: ' + path)
-
+    
     subliminal.region.backend.sync()
-
+    
     return final_subtitles
 
 
@@ -389,7 +391,8 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(path, title, sceneName, use_scenename, use_mediainfo, providers={provider}, media_type=media_type)
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers={provider},
+                      media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
         try:
@@ -483,9 +486,9 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         "BAZARR Tried to manually download a subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
                             subtitle.provider_name) + ". Please retry later or select a subtitles from another provider.")
                     return None
-
+    
     subliminal.region.backend.sync()
-
+    
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
 
 
@@ -510,23 +513,29 @@ def series_download_subtitles(no):
     count_episodes_details = len(episodes_details)
     
     for i, episode in enumerate(episodes_details, 1):
-        for language in ast.literal_eval(episode[1]):
-            if language is not None:
-                notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=i,
-                                    length=count_episodes_details)
-                result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                           series_details[0], series_details[2], providers_list,
-                                           providers_auth, str(episode[3]), series_details[1], 'series')
-                if result is not None:
-                    message = result[0]
-                    path = result[1]
-                    forced = result[5]
-                    language_code = result[2] + ":forced" if forced else result[2]
-                    provider = result[3]
-                    score = result[4]
-                    store_subtitles(path_replace(episode[0]))
-                    history_log(1, no, episode[2], message, path, language_code, provider, score)
-                    send_notifications(no, episode[2], message)
+        if providers_list:
+            for language in ast.literal_eval(episode[1]):
+                if language is not None:
+                    notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=i,
+                                        length=count_episodes_details)
+                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
+                                               series_details[0], series_details[2], providers_list,
+                                               providers_auth, str(episode[3]), series_details[1],
+                                               'series')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        language_code = result[2] + ":forced" if forced else result[2]
+                        provider = result[3]
+                        score = result[4]
+                        store_subtitles(path_replace(episode[0]))
+                        history_log(1, no, episode[2], message, path, language_code, provider, score)
+                        send_notifications(no, episode[2], message)
+        else:
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+            logging.info("BAZARR All providers are throttled")
+            break
     list_missing_subtitles(no)
     
     if count_episodes_details:
@@ -551,26 +560,36 @@ def episode_download_subtitles(no):
     providers_auth = get_providers_auth()
     
     for episode in episodes_details:
-        for language in ast.literal_eval(episode[1]):
-            if language is not None:
-                notifications.write(msg='Searching for ' + str(
-                    language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
-                                    queue='get_subtitle')
-                result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                           episode[4], episode[7], providers_list, providers_auth, str(episode[3]),
-                                           episode[5], 'series')
-                if result is not None:
-                    message = result[0]
-                    path = result[1]
-                    forced = result[5]
-                    language_code = result[2] + ":forced" if forced else result[2]
-                    provider = result[3]
-                    score = result[4]
-                    store_subtitles(path_replace(episode[0]))
-                    history_log(1, episode[6], episode[2], message, path, language_code, provider, score)
-                    send_notifications(episode[6], episode[2], message)
-        
-        list_missing_subtitles(episode[6])
+        if providers_list:
+            for language in ast.literal_eval(episode[1]):
+                if language is not None:
+                    notifications.write(msg='Searching for ' + str(
+                        language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
+                                        queue='get_subtitle')
+                    result = download_subtitle(path_replace(episode[0]),
+                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               episode[4],
+                                               True if len(language.split(':')) > 1 else False,
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode[3]),
+                                               episode[5],
+                                               'series')
+                    if result is not None:
+                        message = result[0]
+                        path = result[1]
+                        forced = result[5]
+                        language_code = result[2] + ":forced" if forced else result[2]
+                        provider = result[3]
+                        score = result[4]
+                        store_subtitles(path_replace(episode[0]))
+                        history_log(1, episode[6], episode[2], message, path, language_code, provider, score)
+                        send_notifications(episode[6], episode[2], message)
+                        list_missing_subtitles(episode[6])
+        else:
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+            logging.info("BAZARR All providers are throttled")
+            break
 
 
 def movies_download_subtitles(no):
@@ -587,20 +606,33 @@ def movies_download_subtitles(no):
     count_movie = len(ast.literal_eval(movie[1]))
     
     for i, language in enumerate(ast.literal_eval(movie[1]), 1):
-        if language is not None:
-            notifications.write(msg='Searching for movies subtitles', queue='get_subtitle', item=i, length=count_movie)
-            result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
-                                       movie[6], providers_list, providers_auth, str(movie[3]), movie[5], 'movie')
-            if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
-                provider = result[3]
-                score = result[4]
-                store_subtitles_movie(path_replace_movie(movie[0]))
-                history_log_movie(1, no, message, path, language_code, provider, score)
-                send_notifications_movie(no, message)
+        if providers_list:
+            if language is not None:
+                notifications.write(msg='Searching for movies subtitles', queue='get_subtitle', item=i,
+                                    length=count_movie)
+                result = download_subtitle(path_replace_movie(movie[0]),
+                                           str(alpha3_from_alpha2(language.split(':')[0])),
+                                           movie[4],
+                                           True if len(language.split(':')) > 1 else False,
+                                           providers_list,
+                                           providers_auth,
+                                           str(movie[3]),
+                                           movie[5],
+                                           'movie')
+                if result is not None:
+                    message = result[0]
+                    path = result[1]
+                    forced = result[5]
+                    language_code = result[2] + ":forced" if forced else result[2]
+                    provider = result[3]
+                    score = result[4]
+                    store_subtitles_movie(path_replace_movie(movie[0]))
+                    history_log_movie(1, no, message, path, language_code, provider, score)
+                    send_notifications_movie(no, message)
+        else:
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+            logging.info("BAZARR All providers are throttled")
+            break
     list_missing_subtitles_movies(no)
     
     if count_movie:
@@ -645,9 +677,15 @@ def wanted_download_subtitles(path, l, count_episodes):
                     if search_active(attempt[i][1]):
                         notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l,
                                             length=count_episodes)
-                        result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                                   episode[4], episode[8], providers_list, providers_auth,
-                                                   str(episode[5]), episode[7], 'series')
+                        result = download_subtitle(path_replace(episode[0]),
+                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   episode[4],
+                                                   True if len(language.split(':')) > 1 else False,
+                                                   providers_list,
+                                                   providers_auth,
+                                                   str(episode[5]),
+                                                   episode[7],
+                                                   'series')
                         if result is not None:
                             message = result[0]
                             path = result[1]
@@ -700,9 +738,15 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                     if search_active(attempt[i][1]) is True:
                         notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l,
                                             length=count_movies)
-                        result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
-                                                   movie[4], movie[8], providers_list, providers_auth, str(movie[5]),
-                                                   movie[7], 'movie')
+                        result = download_subtitle(path_replace_movie(movie[0]),
+                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   movie[4],
+                                                   True if len(language.split(':')) > 1 else False,
+                                                   providers_list,
+                                                   providers_auth,
+                                                   str(movie[5]),
+                                                   movie[7],
+                                                   'movie')
                         if result is not None:
                             message = result[0]
                             path = result[1]
@@ -744,24 +788,28 @@ def wanted_search_missing_subtitles():
     movies = c.fetchall()
     
     c.close()
-    providers = get_providers()
     if settings.general.getboolean('use_sonarr'):
-        if providers:
-            count_episodes = len(episodes)
-            for i, episode in enumerate(episodes, 1):
+        
+        count_episodes = len(episodes)
+        for i, episode in enumerate(episodes, 1):
+            providers = get_providers()
+            if providers:
                 wanted_download_subtitles(episode[0], i, count_episodes)
-        else:
-            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
-            logging.info("BAZARR All providers are throttled")
+            else:
+                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+                logging.info("BAZARR All providers are throttled")
+                return
     
     if settings.general.getboolean('use_radarr'):
-        if providers:
-            count_movies = len(movies)
-            for i, movie in enumerate(movies, 1):
+        count_movies = len(movies)
+        for i, movie in enumerate(movies, 1):
+            providers = get_providers()
+            if providers:
                 wanted_download_subtitles_movie(movie[0], i, count_movies)
-        else:
-            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
-            logging.info("BAZARR All providers are throttled")
+            else:
+                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+                logging.info("BAZARR All providers are throttled")
+                return
     
     logging.info('BAZARR Finished searching for missing subtitles. Check histories for more information.')
     
@@ -841,23 +889,23 @@ def refine_from_db(path, video):
 def refine_from_mediainfo(path, video):
     if video.fps:
         return
-
+    
     exe = get_binary('mediainfo')
     if not exe:
         logging.debug('BAZARR MediaInfo library not found!')
         return
     else:
         logging.debug('BAZARR MediaInfo library used is %s', exe)
-
+    
     media_info = MediaInfo.parse(path, library_file=exe)
-
+    
     video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
     if not video_track:
         logging.debug('BAZARR MediaInfo was unable to find video tracks in the file!')
         return
-
+    
     logging.debug('MediaInfo found: %s', video_track.to_data())
-
+    
     if not video.fps:
         if video_track.frame_rate:
             video.fps = float(video_track.frame_rate)
@@ -920,6 +968,11 @@ def upgrade_subtitles():
     
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
+            providers = get_providers()
+            if not providers:
+                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+                logging.info("BAZARR All providers are throttled")
+                return
             if episode[9] != "None":
                 desired_languages = ast.literal_eval(str(episode[9]))
                 if episode[10] == "True":
@@ -957,6 +1010,11 @@ def upgrade_subtitles():
     
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
+            providers = get_providers()
+            if not providers:
+                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+                logging.info("BAZARR All providers are throttled")
+                return
             if movie[8] != "None":
                 desired_languages = ast.literal_eval(str(movie[8]))
                 if movie[9] == "True":

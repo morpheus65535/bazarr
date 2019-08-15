@@ -220,8 +220,10 @@
 						for missing_subs_language in missing_subs_languages:
 							if len(missing_subs_language) > 2:
 								forced = missing_subs_language[2]
+								forced_bool = True
 							else:
 								forced = False
+								forced_bool = False
 							end
 
 						    if details.failed_attempts is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details.failed_attempts:

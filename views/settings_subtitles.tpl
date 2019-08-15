@@ -25,7 +25,8 @@
                                 <label>Use MediaInfo</label>
                             </div>
                             <div class="one wide column">
-                                <div id="settings_mediainfo" class="ui toggle checkbox" data-mediainfo={{settings.general.getboolean('use_mediainfo')}}>
+                                % import platform
+                                <div id="settings_mediainfo" class="ui toggle checkbox{{' disabled' if platform.system() == 'Linux' else ''}}" data-mediainfo={{settings.general.getboolean('use_mediainfo')}}>
                                     <input name="settings_general_mediainfo" type="checkbox">
                                     <label></label>
                                 </div>
@@ -39,7 +40,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="To use this feature on linux, please install mediainfo and its dependencies." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="This settings is only available on Windows and MacOS." data-inverted="">
                                         <i class="yellow warning sign icon"></i>
                                     </div>
                                 </div>
