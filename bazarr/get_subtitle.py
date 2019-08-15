@@ -132,11 +132,11 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     for l in language:
         if l == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
+            if forced:
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(l)
-            if forced == "True":
+            if forced:
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
@@ -566,9 +566,15 @@ def episode_download_subtitles(no):
                     notifications.write(msg='Searching for ' + str(
                         language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
                                         queue='get_subtitle')
-                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                               episode[4], episode[7], providers_list, providers_auth, str(episode[3]),
-                                               episode[5], 'series')
+                    result = download_subtitle(path_replace(episode[0]),
+                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               episode[4],
+                                               True if len(language.split(':')) > 1 else False,
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode[3]),
+                                               episode[5],
+                                               'series')
                     if result is not None:
                         message = result[0]
                         path = result[1]
@@ -604,8 +610,15 @@ def movies_download_subtitles(no):
             if language is not None:
                 notifications.write(msg='Searching for movies subtitles', queue='get_subtitle', item=i,
                                     length=count_movie)
-                result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)), movie[4],
-                                           movie[6], providers_list, providers_auth, str(movie[3]), movie[5], 'movie')
+                result = download_subtitle(path_replace_movie(movie[0]),
+                                           str(alpha3_from_alpha2(language.split(':')[0])),
+                                           movie[4],
+                                           True if len(language.split(':')) > 1 else False,
+                                           providers_list,
+                                           providers_auth,
+                                           str(movie[3]),
+                                           movie[5],
+                                           'movie')
                 if result is not None:
                     message = result[0]
                     path = result[1]
@@ -664,9 +677,15 @@ def wanted_download_subtitles(path, l, count_episodes):
                     if search_active(attempt[i][1]):
                         notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l,
                                             length=count_episodes)
-                        result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                                   episode[4], episode[8], providers_list, providers_auth,
-                                                   str(episode[5]), episode[7], 'series')
+                        result = download_subtitle(path_replace(episode[0]),
+                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   episode[4],
+                                                   True if len(language.split(':')) > 1 else False,
+                                                   providers_list,
+                                                   providers_auth,
+                                                   str(episode[5]),
+                                                   episode[7],
+                                                   'series')
                         if result is not None:
                             message = result[0]
                             path = result[1]
@@ -719,9 +738,15 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                     if search_active(attempt[i][1]) is True:
                         notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l,
                                             length=count_movies)
-                        result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
-                                                   movie[4], movie[8], providers_list, providers_auth, str(movie[5]),
-                                                   movie[7], 'movie')
+                        result = download_subtitle(path_replace_movie(movie[0]),
+                                                   str(alpha3_from_alpha2(language.split(':')[0])),
+                                                   movie[4],
+                                                   True if len(language.split(':')) > 1 else False,
+                                                   providers_list,
+                                                   providers_auth,
+                                                   str(movie[5]),
+                                                   movie[7],
+                                                   'movie')
                         if result is not None:
                             message = result[0]
                             path = result[1]
