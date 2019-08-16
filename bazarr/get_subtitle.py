@@ -108,7 +108,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     if settings.general.getboolean('utf8_encode'):
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
-        os.environ["SZ_KEEP_ENCODING"] = True
+        os.environ["SZ_KEEP_ENCODING"] = "True"
     
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
