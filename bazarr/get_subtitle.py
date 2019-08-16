@@ -109,7 +109,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     if settings.general.getboolean('utf8_encode'):
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
-        os.environ["SZ_KEEP_ENCODING"] = True
+        os.environ["SZ_KEEP_ENCODING"] = "True"
     
     logging.debug('BAZARR Searching subtitles for this file: ' + path)
     if hi == "True":
@@ -133,11 +133,11 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
     for l in language:
         if l == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced:
+            if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(l)
-            if forced:
+            if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
@@ -587,7 +587,7 @@ def episode_download_subtitles(no):
                     result = download_subtitle(path_replace(episode[0]),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
                                                episode[4],
-                                               True if len(language.split(':')) > 1 else False,
+                                               "True" if len(language.split(':')) > 1 else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode[3]),
@@ -631,7 +631,7 @@ def movies_download_subtitles(no):
                 result = download_subtitle(path_replace_movie(movie[0]),
                                            str(alpha3_from_alpha2(language.split(':')[0])),
                                            movie[4],
-                                           True if len(language.split(':')) > 1 else False,
+                                           "True" if len(language.split(':')) > 1 else "False",
                                            providers_list,
                                            providers_auth,
                                            str(movie[3]),
@@ -698,7 +698,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                         result = download_subtitle(path_replace(episode[0]),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    episode[4],
-                                                   True if len(language.split(':')) > 1 else False,
+                                                   "True" if len(language.split(':')) > 1 else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(episode[5]),
@@ -759,7 +759,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                         result = download_subtitle(path_replace_movie(movie[0]),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    movie[4],
-                                                   True if len(language.split(':')) > 1 else False,
+                                                   "True" if len(language.split(':')) > 1 else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(movie[5]),
