@@ -518,9 +518,14 @@ def series_download_subtitles(no):
                 if language is not None:
                     notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=i,
                                         length=count_episodes_details)
-                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                               series_details[0], series_details[2], providers_list,
-                                               providers_auth, str(episode[3]), series_details[1],
+                    result = download_subtitle(path_replace(episode[0]),
+                                               str(alpha3_from_alpha2(language.split(':')[0])),
+                                               series_details[0],
+                                               "True" if len(language.split(':')) > 1 else "False",
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode[3]),
+                                               series_details[1],
                                                'series')
                     if result is not None:
                         message = result[0]
