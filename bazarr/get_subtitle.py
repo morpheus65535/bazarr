@@ -534,7 +534,7 @@ def series_download_subtitles(no):
                     result = download_subtitle(path_replace(episode.path),
                                                str(alpha3_from_alpha2(language.split(':'))),
                                                series_details.hearing_impaired,
-                                               True if len(language.split(':')) > 1 else False,
+                                               "True" if len(language.split(':')) > 1 else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode.scene_name),
