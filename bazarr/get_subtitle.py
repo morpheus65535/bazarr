@@ -2,7 +2,6 @@
 
 import os
 import sys
-import sqlite3
 import ast
 import logging
 import subprocess
@@ -13,6 +12,7 @@ import types
 import re
 import subliminal
 import platform
+import operator
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -33,6 +33,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from get_args import args
 from queueconfig import notifications
 from pymediainfo import MediaInfo
+from database import TableShows, TableEpisodes, TableMovies
 
 
 def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=None, media_type="movie"):
@@ -493,34 +494,51 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
 
 
 def series_download_subtitles(no):
+    missing_subtitles_clause = [
+        (TableEpisodes.sonarr_series_id == no),
+        (TableEpisodes.missing_subtitles != '[]')
+    ]
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
+        missing_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
     
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    episodes_details = c_db.execute(
-        'SELECT path, missing_subtitles, sonarrEpisodeId, scene_name FROM table_episodes WHERE sonarrSeriesId = ? AND missing_subtitles != "[]"' + monitored_only_query_string,
-        (no,)).fetchall()
-    series_details = c_db.execute("SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId = ?",
-                                  (no,)).fetchone()
-    c_db.close()
+    episodes_details = TableEpisodes.select(
+        TableEpisodes.path,
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.scene_name
+    ).where(
+        reduce(operator.and_, missing_subtitles_clause)
+    )
+
+    series_details = TableShows.select(
+        TableShows.hearing_impaired,
+        TableShows.title,
+        TableShows.forced
+    ).where(
+        TableShows.sonarr_series_id == no
+    ).first()
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
-    count_episodes_details = len(episodes_details)
+    count_episodes_details = episodes_details.count()
     
     for i, episode in enumerate(episodes_details, 1):
         if providers_list:
-            for language in ast.literal_eval(episode[1]):
+            for language in ast.literal_eval(episode.missing_subtitles):
                 if language is not None:
                     notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=i,
                                         length=count_episodes_details)
-                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                               series_details[0], series_details[2], providers_list,
-                                               providers_auth, str(episode[3]), series_details[1],
+                    result = download_subtitle(path_replace(episode.path),
+                                               str(alpha3_from_alpha2(language.split(':'))),
+                                               series_details.hearing_impaired,
+                                               True if len(language.split(':')) > 1 else False,
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode.scene_name),
+                                               series_details.title,
                                                'series')
                     if result is not None:
                         message = result[0]
@@ -529,9 +547,9 @@ def series_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode[0]))
-                        history_log(1, no, episode[2], message, path, language_code, provider, score)
-                        send_notifications(no, episode[2], message)
+                        store_subtitles(path_replace(episode.path))
+                        history_log(1, no, episode.sonarr_episode_id, message, path, language_code, provider, score)
+                        send_notifications(no, episode.sonarr_episode_id, message)
         else:
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
