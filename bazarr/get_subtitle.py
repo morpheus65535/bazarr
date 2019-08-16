@@ -383,7 +383,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     if settings.general.getboolean('utf8_encode'):
         os.environ["SZ_KEEP_ENCODING"] = ""
     else:
-        os.environ["SZ_KEEP_ENCODING"] = True
+        os.environ["SZ_KEEP_ENCODING"] = "True"
     
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = settings.general.getboolean('use_scenename')
