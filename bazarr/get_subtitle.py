@@ -678,7 +678,6 @@ def wanted_download_subtitles(path, l, count_episodes):
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
-                    language = language.split(':')[0]
                     if search_active(attempt[i][1]):
                         notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l,
                                             length=count_episodes)
@@ -739,7 +738,6 @@ def wanted_download_subtitles_movie(path, l, count_movies):
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
-                    language = language.split(':')[0]
                     if search_active(attempt[i][1]) is True:
                         notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l,
                                             length=count_movies)
