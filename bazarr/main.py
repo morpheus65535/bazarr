@@ -17,7 +17,7 @@ import warnings
 import queueconfig
 import platform
 import apprise
-from peewee import *
+from peewee import fn, JOIN
 import operator
 
 from get_args import args

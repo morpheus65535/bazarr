@@ -34,6 +34,7 @@ from get_args import args
 from queueconfig import notifications
 from pymediainfo import MediaInfo
 from database import TableShows, TableEpisodes, TableMovies
+from peewee import fn, JOIN
 
 
 def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=None, media_type="movie"):
@@ -494,12 +495,12 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
 
 
 def series_download_subtitles(no):
-    missing_subtitles_clause = [
+    episodes_details_clause = [
         (TableEpisodes.sonarr_series_id == no),
         (TableEpisodes.missing_subtitles != '[]')
     ]
     if settings.sonarr.getboolean('only_monitored'):
-        missing_subtitles_clause.append(
+        episodes_details_clause.append(
             (TableEpisodes.monitored == 'True')
         )
     
@@ -509,7 +510,7 @@ def series_download_subtitles(no):
         TableEpisodes.sonarr_episode_id,
         TableEpisodes.scene_name
     ).where(
-        reduce(operator.and_, missing_subtitles_clause)
+        reduce(operator.and_, episodes_details_clause)
     )
 
     series_details = TableShows.select(
@@ -562,36 +563,47 @@ def series_download_subtitles(no):
 
 
 def episode_download_subtitles(no):
+    episodes_details_clause = [
+        (TableEpisodes.sonarr_series_id == no)
+    ]
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
+        episodes_details_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
     
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    episodes_details = c_db.execute(
-        'SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, table_shows.forced FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.sonarrEpisodeId = ?' + monitored_only_query_string,
-        (no,)).fetchall()
-    c_db.close()
+    episodes_details = TableEpisodes.select(
+        TableEpisodes.path,
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.scene_name,
+        TableShows.hearing_impaired,
+        TableShows.title,
+        TableShows.sonarr_series_id,
+        TableShows.forced
+    ).join_from(
+        TableEpisodes, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        reduce(operator.and_, episodes_details_clause)
+    )
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
     for episode in episodes_details:
         if providers_list:
-            for language in ast.literal_eval(episode[1]):
+            for language in ast.literal_eval(episode.missing_subtitles):
                 if language is not None:
                     notifications.write(msg='Searching for ' + str(
-                        language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode[0]),
+                        language_from_alpha2(language)) + ' subtitles for this episode: ' + path_replace(episode.path),
                                         queue='get_subtitle')
-                    result = download_subtitle(path_replace(episode[0]),
+                    result = download_subtitle(path_replace(episode.path),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               episode[4],
+                                               episode.hearing_impaired,
                                                "True" if len(language.split(':')) > 1 else "False",
                                                providers_list,
                                                providers_auth,
-                                               str(episode[3]),
-                                               episode[5],
+                                               str(episode.scene_name),
+                                               episode.title,
                                                'series')
                     if result is not None:
                         message = result[0]
@@ -600,10 +612,10 @@ def episode_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode[0]))
-                        history_log(1, episode[6], episode[2], message, path, language_code, provider, score)
-                        send_notifications(episode[6], episode[2], message)
-                        list_missing_subtitles(episode[6])
+                        store_subtitles(path_replace(episode.path))
+                        history_log(1, episode.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
+                        send_notifications(episode.sonarr_series_id, episode.sonarr_episode_id, message)
+                        list_missing_subtitles(episode.sonarr_series_id)
         else:
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
@@ -611,31 +623,36 @@ def episode_download_subtitles(no):
 
 
 def movies_download_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    movie = c_db.execute(
-        "SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title, forced FROM table_movies WHERE radarrId = ?",
-        (no,)).fetchone()
-    c_db.close()
+    movie = TableMovies.select(
+        TableMovies.path,
+        TableMovies.missing_subtitles,
+        TableMovies.radarr_id,
+        TableMovies.scene_name,
+        TableMovies.hearing_impaired,
+        TableMovies.title,
+        TableMovies.forced
+    ).where(
+        TableMovies.radarr_id == no
+    )
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
-    count_movie = len(ast.literal_eval(movie[1]))
+    count_movie = len(ast.literal_eval(movie.missing_subtitles))
     
-    for i, language in enumerate(ast.literal_eval(movie[1]), 1):
+    for i, language in enumerate(ast.literal_eval(movie.missing_subtitles), 1):
         if providers_list:
             if language is not None:
                 notifications.write(msg='Searching for movies subtitles', queue='get_subtitle', item=i,
                                     length=count_movie)
-                result = download_subtitle(path_replace_movie(movie[0]),
+                result = download_subtitle(path_replace_movie(movie.path),
                                            str(alpha3_from_alpha2(language.split(':')[0])),
-                                           movie[4],
+                                           movie.hearing_impaired,
                                            "True" if len(language.split(':')) > 1 else "False",
                                            providers_list,
                                            providers_auth,
-                                           str(movie[3]),
-                                           movie[5],
+                                           str(movie.scene_name),
+                                           movie.title,
                                            'movie')
                 if result is not None:
                     message = result[0]
@@ -644,7 +661,7 @@ def movies_download_subtitles(no):
                     language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
-                    store_subtitles_movie(path_replace_movie(movie[0]))
+                    store_subtitles_movie(path_replace_movie(movie.path))
                     history_log_movie(1, no, message, path, language_code, provider, score)
                     send_notifications_movie(no, message)
         else:
@@ -659,12 +676,23 @@ def movies_download_subtitles(no):
 
 
 def wanted_download_subtitles(path, l, count_episodes):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    episodes_details = c_db.execute(
-        "SELECT table_episodes.path, table_episodes.missing_subtitles, table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.failedAttempts, table_shows.title, table_shows.forced FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ? AND missing_subtitles != '[]'",
-        (path_replace_reverse(path),)).fetchall()
-    c_db.close()
+
+    episodes_details = TableEpisodes.select(
+        TableEpisodes.path,
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.sonarr_series_id,
+        TableShows.hearing_impaired,
+        TableEpisodes.scene_name,
+        TableEpisodes.failed_attempts,
+        TableShows.title,
+        TableShows.forced
+    ).join_from(
+        TableEpisodes, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        TableEpisodes.path == path_replace_reverse(path) &
+        TableEpisodes.missing_subtitles != '[]'
+    )
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -681,27 +709,28 @@ def wanted_download_subtitles(path, l, count_episodes):
                 att = zip(*attempt)[0]
                 if language not in att:
                     attempt.append([language, time.time()])
-            
-            conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c_db = conn_db.cursor()
-            c_db.execute('UPDATE table_episodes SET failedAttempts = ? WHERE sonarrEpisodeId = ?',
-                         (unicode(attempt), episode[2]))
-            conn_db.commit()
-            c_db.close()
+
+            TableEpisodes.update(
+                {
+                    TableEpisodes.failed_attempts: unicode(attempt)
+                }
+            ).where(
+                TableEpisodes.sonarr_episode_id == episode.sonarr_episode_id
+            ).execute()
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]):
                         notifications.write(msg='Searching for series subtitles...', queue='get_subtitle', item=l,
                                             length=count_episodes)
-                        result = download_subtitle(path_replace(episode[0]),
+                        result = download_subtitle(path_replace(episode.path),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   episode[4],
+                                                   episode.hearing_impaired,
                                                    "True" if len(language.split(':')) > 1 else "False",
                                                    providers_list,
                                                    providers_auth,
-                                                   str(episode[5]),
-                                                   episode[7],
+                                                   str(episode.scene_name),
+                                                   episode.title,
                                                    'series')
                         if result is not None:
                             message = result[0]
@@ -710,31 +739,38 @@ def wanted_download_subtitles(path, l, count_episodes):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles(path_replace(episode[0]))
-                            list_missing_subtitles(episode[3])
-                            history_log(1, episode[3], episode[2], message, path, language_code, provider, score)
-                            send_notifications(episode[3], episode[2], message)
+                            store_subtitles(path_replace(episode.path))
+                            list_missing_subtitles(episode.sonarr_series_id)
+                            history_log(1, episode.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
+                            send_notifications(episode.sonarr_series_id, episode.sonarr_episode_id, message)
                     else:
                         logging.debug(
-                            'BAZARR Search is not active for episode ' + episode[0] + ' Language: ' + attempt[i][0])
+                            'BAZARR Search is not active for episode ' + episode.path + ' Language: ' + attempt[i][0])
 
 
 def wanted_download_subtitles_movie(path, l, count_movies):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    movies_details = c_db.execute(
-        "SELECT path, missing_subtitles, radarrId, radarrId, hearing_impaired, sceneName, failedAttempts, title, forced FROM table_movies WHERE path = ? AND missing_subtitles != '[]'",
-        (path_replace_reverse_movie(path),)).fetchall()
-    c_db.close()
+    movies_details = TableMovies.select(
+        TableMovies.path,
+        TableMovies.missing_subtitles,
+        TableMovies.radarr_id,
+        TableMovies.hearing_impaired,
+        TableMovies.scene_name,
+        TableMovies.failed_attempts,
+        TableMovies.title,
+        TableMovies.forced
+    ).where(
+        TableMovies.path == path_replace_reverse_movie(path) &
+        TableMovies.missing_subtitles != '[]'
+    )
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
     for movie in movies_details:
-        attempt = movie[6]
+        attempt = movie.failed_attemps
         if type(attempt) == unicode:
             attempt = ast.literal_eval(attempt)
-        for language in ast.literal_eval(movie[1]):
+        for language in ast.literal_eval(movie.missing_subtitles):
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
@@ -743,25 +779,27 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                 if language not in att:
                     attempt.append([language, time.time()])
             
-            conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c_db = conn_db.cursor()
-            c_db.execute('UPDATE table_movies SET failedAttempts = ? WHERE radarrId = ?', (unicode(attempt), movie[2]))
-            conn_db.commit()
-            c_db.close()
+            TableMovies.update(
+                {
+                    TableMovies.failed_attempts: unicode(attempt)
+                }
+            ).where(
+                TableMovies.radarr_id == movie.radarr_id
+            ).execute()
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
                         notifications.write(msg='Searching for movies subtitles...', queue='get_subtitle', item=l,
                                             length=count_movies)
-                        result = download_subtitle(path_replace_movie(movie[0]),
+                        result = download_subtitle(path_replace_movie(movie.path),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   movie[4],
+                                                   movie.hearing_impaired,
                                                    "True" if len(language.split(':')) > 1 else "False",
                                                    providers_list,
                                                    providers_auth,
-                                                   str(movie[5]),
-                                                   movie[7],
+                                                   str(movie.scene_name),
+                                                   movie.title,
                                                    'movie')
                         if result is not None:
                             message = result[0]
@@ -770,43 +808,32 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles_movie(path_replace_movie(movie[0]))
-                            list_missing_subtitles_movies(movie[3])
-                            history_log_movie(1, movie[3], message, path, language_code, provider, score)
-                            send_notifications_movie(movie[3], message)
+                            store_subtitles_movie(path_replace_movie(movie.path))
+                            list_missing_subtitles_movies(movie.radarr_id)
+                            history_log_movie(1, movie.radarr_id, message, path, language_code, provider, score)
+                            send_notifications_movie(movie.radarr_id, message)
                     else:
                         logging.info(
-                            'BAZARR Search is not active for movie ' + movie[0] + ' Language: ' + attempt[i][0])
+                            'BAZARR Search is not active for movie ' + movie.path + ' Language: ' + attempt[i][0])
 
 
 def wanted_search_missing_subtitles():
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    db.create_function("path_substitution_movie", 1, path_replace_movie)
-    c = db.cursor()
-    
-    if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string_sonarr = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string_sonarr = ""
-    
-    if settings.radarr.getboolean('only_monitored'):
-        monitored_only_query_string_radarr = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string_radarr = ""
-    
-    c.execute(
-        "SELECT path_substitution(path) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr)
-    episodes = c.fetchall()
-    
-    c.execute(
-        "SELECT path_substitution_movie(path) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr)
-    movies = c.fetchall()
-    
-    c.close()
     if settings.general.getboolean('use_sonarr'):
-        
-        count_episodes = len(episodes)
+        episodes_clause = [
+            (TableEpisodes.missing_subtitles != '[]')
+        ]
+        if settings.sonarr.getboolean('only_monitored'):
+            episodes_clause.append(
+                (TableEpisodes.monitored == 'True')
+            )
+
+        episodes = TableEpisodes.select(
+            fn.path_substitution(TableEpisodes.path)
+        ).where(
+            reduce(operator.and_, episodes_clause)
+        )
+
+        count_episodes = episodes.count()
         for i, episode in enumerate(episodes, 1):
             providers = get_providers()
             if providers:
@@ -817,7 +844,20 @@ def wanted_search_missing_subtitles():
                 return
     
     if settings.general.getboolean('use_radarr'):
-        count_movies = len(movies)
+        movies_clause = [
+            (TableMovies.missing_subtitles != '[]')
+        ]
+        if settings.radarr.getboolean('only_monitored'):
+            movies_clause.append(
+                (TableMovies.monitored == 'True')
+            )
+        movies = TableMovies.select(
+            fn.path_substitution_movie(TableMovies.path)
+        ).where(
+            reduce(operator.and_, movies_clause)
+        )
+
+        count_movies = movies.count()
         for i, movie in enumerate(movies, 1):
             providers = get_providers()
             if providers:
@@ -854,50 +894,69 @@ def search_active(timestamp):
 
 def refine_from_db(path, video):
     if isinstance(video, Episode):
-        db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-        c = db.cursor()
-        data = c.execute(
-            "SELECT table_shows.title, table_episodes.season, table_episodes.episode, table_episodes.title, table_shows.year, table_shows.tvdbId, table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, table_episodes.video_codec, table_episodes.audio_codec FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.path = ?",
-            (unicode(path_replace_reverse(path)),)).fetchone()
-        db.close()
+        data = TableEpisodes.select(
+            TableShows.title.alias('seriesTitle'),
+            TableEpisodes.season,
+            TableEpisodes.episode,
+            TableEpisodes.title.alias('episodeTitle'),
+            TableShows.year,
+            TableShows.tvdb_id,
+            TableShows.alternate_titles,
+            TableEpisodes.format,
+            TableEpisodes.resolution,
+            TableEpisodes.video_codec,
+            TableEpisodes.audio_codec
+        ).join_from(
+            TableEpisodes, TableShows, JOIN.LEFT_OUTER
+        ).where(
+            TableEpisodes.path == unicode(path_replace_reverse(path))
+        ).first()
+
         if data:
-            video.series, year, country = series_re.match(data[0]).groups()
-            video.season = int(data[1])
-            video.episode = int(data[2])
-            video.title = data[3]
-            if data[4]:
-                if int(data[4]) > 0: video.year = int(data[4])
-            video.series_tvdb_id = int(data[5])
-            video.alternative_series = ast.literal_eval(data[6])
+            video.series, year, country = series_re.match(data.seriesTitle).groups()
+            video.season = int(data.season)
+            video.episode = int(data.episode)
+            video.title = data.episodeTitle
+            if data.year:
+                if int(data.year) > 0: video.year = int(data.year)
+            video.series_tvdb_id = int(data.tvdb_id)
+            video.alternative_series = ast.literal_eval(data.alternate_title)
             if not video.format:
-                video.format = str(data[7])
+                video.format = str(data.format)
             if not video.resolution:
-                video.resolution = str(data[8])
+                video.resolution = str(data.resolution)
             if not video.video_codec:
-                if data[9]: video.video_codec = data[9]
+                if data.video_codec: video.video_codec = data.video_codec
             if not video.audio_codec:
-                if data[10]: video.audio_codec = data[10]
+                if data.audio_codec: video.audio_codec = data.audio_codec
     elif isinstance(video, Movie):
-        db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-        c = db.cursor()
-        data = c.execute(
-            "SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, imdbId FROM table_movies WHERE path = ?",
-            (unicode(path_replace_reverse_movie(path)),)).fetchone()
-        db.close()
+        data = TableMovies.select(
+            TableMovies.title,
+            TableMovies.year,
+            TableMovies.alternative_titles,
+            TableMovies.format,
+            TableMovies.resolution,
+            TableMovies.video_codec,
+            TableMovies.audio_codec,
+            TableMovies.imdb_id
+        ).where(
+            TableMovies.path == unicode(path_replace_reverse_movie(path))
+        ).first()
+
         if data:
-            video.title = re.sub(r'(\(\d\d\d\d\))', '', data[0])
-            if data[1]:
-                if int(data[1]) > 0: video.year = int(data[1])
-            if data[7]: video.imdb_id = data[7]
-            video.alternative_titles = ast.literal_eval(data[2])
+            video.title = re.sub(r'(\(\d\d\d\d\))', '', data.title)
+            if data.year:
+                if int(data.year) > 0: video.year = int(data.year)
+            if data.imdb_id: video.imdb_id = data.imdb_id
+            video.alternative_titles = ast.literal_eval(data.alternate_title)
             if not video.format:
-                if data[3]: video.format = data[3]
+                if data.format: video.format = data.format
             if not video.resolution:
-                if data[4]: video.resolution = data[4]
+                if data.resolution: video.resolution = data.resolution
             if not video.video_codec:
-                if data[5]: video.video_codec = data[5]
+                if data.video_codec: video.video_codec = data.video_codec
             if not video.audio_codec:
-                if data[6]: video.audio_codec = data[6]
+                if data.audio_codec: video.audio_codec = data.audio_codec
     
     return video
 
