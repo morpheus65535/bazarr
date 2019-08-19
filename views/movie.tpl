@@ -382,6 +382,7 @@
 							<div class="nine wide column">
 								<div class="ui toggle checkbox">
 									<input name="forced" type="checkbox" value="1">
+									<label></label>
 								</div>
 							</div>
 						</div>
@@ -411,7 +412,7 @@
 </html>
 
 <script>
-	$('[name="language"]').dropdown();
+	$('[name="language"]').dropdown
 
 	$('#scan_disk').on('click', function(){
 		$('#loader_text').text("Scanning disk for existing subtitles...");

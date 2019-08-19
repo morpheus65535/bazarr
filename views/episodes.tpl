@@ -425,6 +425,7 @@
 							<div class="nine wide column">
 								<div class="ui toggle checkbox">
 									<input name="forced" type="checkbox" value="1">
+									<label></label>
 								</div>
 							</div>
 						</div>
