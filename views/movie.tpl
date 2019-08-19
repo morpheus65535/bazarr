@@ -380,7 +380,9 @@
 								<label>Forced</label>
 							</div>
 							<div class="nine wide column">
-								<input name="forced" type="checkbox" value="1">
+								<div class="ui toggle checkbox">
+									<input name="forced" type="checkbox" value="1">
+								</div>
 							</div>
 						</div>
 						<div class="middle aligned row">
@@ -409,6 +411,8 @@
 </html>
 
 <script>
+	$('[name="language"]').dropdown();
+
 	$('#scan_disk').on('click', function(){
 		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
