@@ -355,30 +355,42 @@
 			</div>
 		</div>
 
-		<div class="upload_dialog ui modal">
+		<div class="upload_dialog ui small modal">
 			<i class="close icon"></i>
 			<div class="header">
 				<span id="movie_title_upload_span"></span>
 			</div>
 			<div class="scrolling content">
 				<form class="ui form" name="upload_form" id="upload_form" action="{{base_url}}manual_upload_subtitle_movie" method="post" enctype="multipart/form-data">
-					<div class="field">
-						<label>Language</label>
-						<select class="ui search dropdown" name="language">
-							%for language in subs_languages_list:
-							<option value="{{language}}">{{language_from_alpha2(language)}}</option>
-							%end
-						</select>
-					</div>
-					<div class="field">
-						<div class="ui toggle checkbox">
-							<input name="forced" type="checkbox" value="1">
-							<label>Forced Subtitles</label>
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned five wide column">
+								<label>Language</label>
+							</div>
+							<div class="nine wide column">
+								<select class="ui search dropdown" name="language">
+									%for language in subs_languages_list:
+									<option value="{{language}}">{{language_from_alpha2(language)}}</option>
+									%end
+								</select>
+							</div>
 						</div>
-					</div>
-					<div class="field">
-						<label>File</label>
-						<input type="file" name="upload">
+						<div class="middle aligned row">
+							<div class="right aligned five wide column">
+								<label>Forced</label>
+							</div>
+							<div class="nine wide column">
+								<input name="forced" type="checkbox" value="1">
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned five wide column">
+								<label>File</label>
+							</div>
+							<div class="nine wide column">
+								<input type="file" name="upload">
+							</div>
+						</div>
 					</div>
 					<input type="hidden" id="upload_moviePath" name="moviePath" value="" />
 					<input type="hidden" id="upload_sceneName" name="sceneName" value="" />
