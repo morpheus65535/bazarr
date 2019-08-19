@@ -33,7 +33,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from get_args import args
 from queueconfig import notifications
 from pymediainfo import MediaInfo
-from database import TableShows, TableEpisodes, TableMovies
+from database import TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from peewee import fn, JOIN
 
 
@@ -905,12 +905,13 @@ def refine_from_db(path, video):
             TableEpisodes.format,
             TableEpisodes.resolution,
             TableEpisodes.video_codec,
-            TableEpisodes.audio_codec
+            TableEpisodes.audio_codec,
+            TableEpisodes.path
         ).join_from(
             TableEpisodes, TableShows, JOIN.LEFT_OUTER
         ).where(
-            TableEpisodes.path == unicode(path_replace_reverse(path))
-        ).first()
+            TableEpisodes.path == path_replace_reverse(path)
+        ).objects().first()
 
         if data:
             video.series, year, country = series_re.match(data.seriesTitle).groups()
@@ -920,7 +921,7 @@ def refine_from_db(path, video):
             if data.year:
                 if int(data.year) > 0: video.year = int(data.year)
             video.series_tvdb_id = int(data.tvdb_id)
-            video.alternative_series = ast.literal_eval(data.alternate_title)
+            video.alternative_series = ast.literal_eval(data.alternate_titles)
             if not video.format:
                 video.format = str(data.format)
             if not video.resolution:
@@ -948,7 +949,7 @@ def refine_from_db(path, video):
             if data.year:
                 if int(data.year) > 0: video.year = int(data.year)
             if data.imdb_id: video.imdb_id = data.imdb_id
-            video.alternative_titles = ast.literal_eval(data.alternate_title)
+            video.alternative_titles = ast.literal_eval(data.alternative_titles)
             if not video.format:
                 if data.format: video.format = data.format
             if not video.resolution:
@@ -998,41 +999,81 @@ def upgrade_subtitles():
     else:
         query_actions = [1, 3]
     
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    episodes_list = c.execute("""SELECT table_history.video_path, table_history.language, table_history.score,
-                                        table_shows.hearing_impaired, table_episodes.scene_name, table_episodes.title,
-                                        table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,
-                                        MAX(table_history.timestamp), table_shows.languages, table_shows.forced
-                                   FROM table_history
-                             INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId
-                             INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
-                                  WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
-                                        score is not null
-                               GROUP BY table_history.video_path, table_history.language""",
-                              (minimum_timestamp,)).fetchall()
-    movies_list = c.execute("""SELECT table_history_movie.video_path, table_history_movie.language,
-                                      table_history_movie.score, table_movies.hearing_impaired, table_movies.sceneName,
-                                      table_movies.title, table_movies.radarrId, MAX(table_history_movie.timestamp), 
-                                      table_movies.languages, table_movies.forced
-                                 FROM table_history_movie
-                           INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
-                                WHERE action  IN (""" + ','.join(map(str, query_actions)) + """) AND timestamp > ? AND 
-                                      score is not null
-                             GROUP BY table_history_movie.video_path, table_history_movie.language""",
-                            (minimum_timestamp,)).fetchall()
-    db.close()
-    
-    episodes_to_upgrade = []
     if settings.general.getboolean('use_sonarr'):
-        for episode in episodes_list:
-            if os.path.exists(path_replace(episode[0])) and int(episode[2]) < 357:
+        upgradable_episodes = TableHistory.select(
+            TableHistory.video_path,
+            TableHistory.language,
+            TableHistory.score,
+            TableShows.hearing_impaired,
+            TableEpisodes.scene_name,
+            TableEpisodes.title,
+            TableEpisodes.sonarr_series_id,
+            TableEpisodes.sonarr_episode_id,
+            fn.MAX(TableHistory.timestamp).alias('timestamp'),
+            TableShows.languages,
+            TableShows.forced
+        ).join_from(
+            TableHistory, TableShows, JOIN.LEFT_OUTER
+        ).join_from(
+            TableHistory, TableEpisodes, JOIN.LEFT_OUTER
+        ).where(
+            TableHistory.action.in_(query_actions) & TableHistory.score.is_null(False)
+        ).group_by(
+            TableHistory.video_path,
+            TableHistory.language
+        ).objects()
+
+        upgradable_episodes_not_perfect = []
+        for upgradable_episode in upgradable_episodes.dicts():
+            if upgradable_episode['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_episode['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_episode['score']) < 360:
+                        upgradable_episodes_not_perfect.append(upgradable_episode)
+
+        episodes_to_upgrade = []
+        for episode in upgradable_episodes_not_perfect:
+            if os.path.exists(path_replace(episode['video_path'])) and int(episode['score']) < 357:
                 episodes_to_upgrade.append(episode)
     
-    movies_to_upgrade = []
     if settings.general.getboolean('use_radarr'):
-        for movie in movies_list:
-            if os.path.exists(path_replace_movie(movie[0])) and int(movie[2]) < 117:
+        upgradable_movies = TableHistoryMovie.select(
+            TableHistoryMovie.video_path,
+            TableHistoryMovie.language,
+            TableHistoryMovie.score,
+            TableMovies.hearing_impaired,
+            TableMovies.scene_name,
+            TableMovies.title,
+            TableMovies.radarr_id,
+            fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+            TableMovies.languages,
+            TableMovies.forced
+        ).join_from(
+            TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+        ).where(
+            TableHistoryMovie.action.in_(query_actions) & TableHistoryMovie.score.is_null(False)
+        ).group_by(
+            TableHistoryMovie.video_path,
+            TableHistoryMovie.language
+        ).objects()
+
+        upgradable_movies_not_perfect = []
+        for upgradable_movie in upgradable_movies.dicts():
+            if upgradable_movie['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_movie['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_movie['score']) < 360:
+                        upgradable_movies_not_perfect.append(upgradable_movie)
+
+        movies_to_upgrade = []
+        for movie in upgradable_movies_not_perfect:
+            if os.path.exists(path_replace_movie(movie['video_path'])) and int(movie['score']) < 117:
                 movies_to_upgrade.append(movie)
     
     providers_list = get_providers()
@@ -1048,29 +1089,36 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode[9] != "None":
-                desired_languages = ast.literal_eval(str(episode[9]))
-                if episode[10] == "True":
+            if episode['languages'] != "None":
+                desired_languages = ast.literal_eval(str(episode['languages']))
+                if episode['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
-                elif episode[10] == "Both":
+                elif episode['forced'] == "Both":
                     forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
                 else:
                     forced_languages = desired_languages
                 
-                if episode[1] in forced_languages:
+                if episode['language'] in forced_languages:
                     notifications.write(msg='Upgrading series subtitles...',
                                         queue='upgrade_subtitle', item=i, length=count_episode_to_upgrade)
                     
-                    if episode[1].endswith('forced'):
-                        language = episode[1].split(':')[0]
+                    if episode['language'].endswith('forced'):
+                        language = episode['language'].split(':')[0]
                         is_forced = "True"
                     else:
-                        language = episode[1]
+                        language = episode['language']
                         is_forced = "False"
                     
-                    result = download_subtitle(path_replace(episode[0]), str(alpha3_from_alpha2(language)),
-                                               episode[3], is_forced, providers_list, providers_auth, str(episode[4]),
-                                               episode[5], 'series', forced_minimum_score=int(episode[2]),
+                    result = download_subtitle(path_replace(episode['video_path']),
+                                               str(alpha3_from_alpha2(language)),
+                                               episode['hearing_impaired'],
+                                               is_forced,
+                                               providers_list,
+                                               providers_auth,
+                                               str(episode['scene_name']),
+                                               episode['title'],
+                                               'series',
+                                               forced_minimum_score=int(episode['score']),
                                                is_upgrade=True)
                     if result is not None:
                         message = result[0]
@@ -1079,9 +1127,9 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode[0]))
-                        history_log(3, episode[6], episode[7], message, path, language_code, provider, score)
-                        send_notifications(episode[6], episode[7], message)
+                        store_subtitles(path_replace(episode['video_path']))
+                        history_log(3, episode['sonarr_series_id'], episode['sonarr_episode_id'], message, path, language_code, provider, score)
+                        send_notifications(episode['sonarr_series_id'], episode['sonarr_episode_id'], message)
     
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
@@ -1090,29 +1138,37 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if movie[8] != "None":
-                desired_languages = ast.literal_eval(str(movie[8]))
-                if movie[9] == "True":
+            if movie['languages'] != "None":
+                desired_languages = ast.literal_eval(str(movie['languages']))
+                if movie['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
-                elif movie[9] == "Both":
+                elif movie['forced'] == "Both":
                     forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
                 else:
                     forced_languages = desired_languages
                 
-                if movie[1] in forced_languages:
+                if movie['language'] in forced_languages:
                     notifications.write(msg='Upgrading movie subtitles...',
                                         queue='upgrade_subtitle', item=i, length=count_movie_to_upgrade)
                     
-                    if movie[1].endswith('forced'):
-                        language = movie[1].split(':')[0]
+                    if movie['language'].endswith('forced'):
+                        language = movie['language'].split(':')[0]
                         is_forced = "True"
                     else:
-                        language = movie[1]
+                        language = movie['language']
                         is_forced = "False"
                     
-                    result = download_subtitle(path_replace_movie(movie[0]), str(alpha3_from_alpha2(language)),
-                                               movie[3], is_forced, providers_list, providers_auth, str(movie[4]),
-                                               movie[5], 'movie', forced_minimum_score=int(movie[2]), is_upgrade=True)
+                    result = download_subtitle(path_replace_movie(movie['video_path']),
+                                               str(alpha3_from_alpha2(language)),
+                                               movie['hearing_impaired'],
+                                               is_forced,
+                                               providers_list,
+                                               providers_auth,
+                                               str(movie['scene_name']),
+                                               movie['title'],
+                                               'movie',
+                                               forced_minimum_score=int(movie['score']),
+                                               is_upgrade=True)
                     if result is not None:
                         message = result[0]
                         path = result[1]
@@ -1120,6 +1176,6 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles_movie(path_replace_movie(movie[0]))
-                        history_log_movie(3, movie[6], message, path, language_code, provider, score)
-                        send_notifications_movie(movie[6], message)
+                        store_subtitles_movie(path_replace_movie(movie['video_path']))
+                        history_log_movie(3, movie['radarr_id'], message, path, language_code, provider, score)
+                        send_notifications_movie(movie['radarr_id'], message)
