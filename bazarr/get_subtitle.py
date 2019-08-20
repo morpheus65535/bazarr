@@ -633,7 +633,7 @@ def movies_download_subtitles(no):
         TableMovies.forced
     ).where(
         TableMovies.radarr_id == no
-    )
+    ).first()
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -692,16 +692,16 @@ def wanted_download_subtitles(path, l, count_episodes):
     ).where(
         TableEpisodes.path == path_replace_reverse(path) &
         TableEpisodes.missing_subtitles != '[]'
-    )
+    ).objects()
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
     for episode in episodes_details:
-        attempt = episode[6]
+        attempt = episode.failed_attempts
         if type(attempt) == unicode:
             attempt = ast.literal_eval(attempt)
-        for language in ast.literal_eval(episode[1]):
+        for language in ast.literal_eval(episode.missing_subtitles):
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
@@ -740,9 +740,9 @@ def wanted_download_subtitles(path, l, count_episodes):
                             provider = result[3]
                             score = result[4]
                             store_subtitles(path_replace(episode.path))
-                            list_missing_subtitles(episode.sonarr_series_id)
-                            history_log(1, episode.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
-                            send_notifications(episode.sonarr_series_id, episode.sonarr_episode_id, message)
+                            list_missing_subtitles(episode.sonarr_series_id.sonarr_series_id)
+                            history_log(1, episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
+                            send_notifications(episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message)
                     else:
                         logging.debug(
                             'BAZARR Search is not active for episode ' + episode.path + ' Language: ' + attempt[i][0])
@@ -767,7 +767,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
     providers_auth = get_providers_auth()
     
     for movie in movies_details:
-        attempt = movie.failed_attemps
+        attempt = movie.failed_attempts
         if type(attempt) == unicode:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie.missing_subtitles):
@@ -828,7 +828,7 @@ def wanted_search_missing_subtitles():
             )
 
         episodes = TableEpisodes.select(
-            fn.path_substitution(TableEpisodes.path)
+            fn.path_substitution(TableEpisodes.path).alias('path')
         ).where(
             reduce(operator.and_, episodes_clause)
         )
@@ -837,7 +837,7 @@ def wanted_search_missing_subtitles():
         for i, episode in enumerate(episodes, 1):
             providers = get_providers()
             if providers:
-                wanted_download_subtitles(episode[0], i, count_episodes)
+                wanted_download_subtitles(episode.path, i, count_episodes)
             else:
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
@@ -852,7 +852,7 @@ def wanted_search_missing_subtitles():
                 (TableMovies.monitored == 'True')
             )
         movies = TableMovies.select(
-            fn.path_substitution_movie(TableMovies.path)
+            fn.path_substitution_movie(TableMovies.path).alias('path')
         ).where(
             reduce(operator.and_, movies_clause)
         )
@@ -861,7 +861,7 @@ def wanted_search_missing_subtitles():
         for i, movie in enumerate(movies, 1):
             providers = get_providers()
             if providers:
-                wanted_download_subtitles_movie(movie[0], i, count_movies)
+                wanted_download_subtitles_movie(movie.path, i, count_movies)
             else:
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
