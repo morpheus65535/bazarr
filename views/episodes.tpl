@@ -407,11 +407,11 @@
 				<form class="ui form" name="upload_form" id="upload_form" action="{{base_url}}manual_upload_subtitle" method="post" enctype="multipart/form-data">
 					<div class="ui grid">
 						<div class="middle aligned row">
-							<div class="right aligned five wide column">
+							<div class="right aligned three wide column">
 								<label>Language</label>
 							</div>
-							<div class="nine wide column">
-								<select class="ui search dropdown" name="language">
+							<div class="thirteen wide column">
+								<select class="ui search dropdown" id="language" name="language">
 									%for language in subs_languages_list:
 									<option value="{{language}}">{{language_from_alpha2(language)}}</option>
 									%end
@@ -419,10 +419,10 @@
 							</div>
 						</div>
 						<div class="middle aligned row">
-							<div class="right aligned five wide column">
+							<div class="right aligned three wide column">
 								<label>Forced</label>
 							</div>
-							<div class="nine wide column">
+							<div class="thirteen wide column">
 								<div class="ui toggle checkbox">
 									<input name="forced" type="checkbox" value="1">
 									<label></label>
@@ -430,10 +430,10 @@
 							</div>
 						</div>
 						<div class="middle aligned row">
-							<div class="right aligned five wide column">
+							<div class="right aligned three wide column">
 								<label>File</label>
 							</div>
-							<div class="nine wide column">
+							<div class="thirteen wide column">
 								<input type="file" name="upload">
 							</div>
 						</div>
@@ -456,8 +456,6 @@
 </html>
 
 <script>
-	$('[name="language"]').dropdown();
-	
 	$('#scan_disk').on('click', function(){
 		$('#loader_text').text("Scanning disk for existing subtitles...");
 		window.location = '{{base_url}}scan_disk/{{no}}';
@@ -681,6 +679,8 @@
 		var is_pb = languages.includes('pb');
 		var is_pt = languages.includes('pt');
 		var title = "{{!details[0].replace("'", "\'")}}";
+
+		$('#language').dropdown();
 
 		$('#upload_episodePath').val(episodePath);
 		$('#upload_sceneName').val(sceneName);
