@@ -136,6 +136,7 @@ def update_series():
             for item in series_in_db:
                 series_in_db_list.append(item)
 
+            # Group episodes by seasons
             series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
             for updated_series in series_to_update_list:

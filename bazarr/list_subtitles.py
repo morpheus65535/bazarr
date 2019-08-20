@@ -1,7 +1,5 @@
 # coding=utf-8
 
-import sqlite3
-
 import gc
 import os
 import babelfish
@@ -211,10 +209,10 @@ def store_subtitles_movie(file):
     return actual_subtitles
 
 
-def list_missing_subtitles(*no):
+def list_missing_subtitles(no=None):
     episodes_subtitles_clause = {TableShows.sonarr_series_id.is_null(False)}
-    if 'no' in locals():
-        episodes_subtitles_clause = {TableShows.sonarr_series_id == no[0]}
+    if no is not None:
+        episodes_subtitles_clause = {TableShows.sonarr_series_id ** no}
 
     episodes_subtitles = TableEpisodes.select(
         TableEpisodes.sonarr_episode_id,
@@ -277,10 +275,10 @@ def list_missing_subtitles(*no):
         ).execute()
 
 
-def list_missing_subtitles_movies(*no):
+def list_missing_subtitles_movies(no=None):
     movies_subtitles_clause = {TableMovies.radarr_id.is_null(False)}
-    if 'no' in locals():
-        movies_subtitles_clause = {TableMovies.radarr_id == no[0]}
+    if no is not None:
+        movies_subtitles_clause = {TableMovies.radarr_id ** no}
 
     movies_subtitles = TableMovies.select(
         TableMovies.radarr_id,
@@ -342,55 +340,55 @@ def list_missing_subtitles_movies(*no):
 
 
 def series_full_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    episodes = c_db.execute("SELECT path FROM table_episodes").fetchall()
-    c_db.close()
-    count_episodes = len(episodes)
+    episodes = TableEpisodes.select(
+        TableEpisodes.path
+    )
+    count_episodes = episodes.count()
     
     for i, episode in enumerate(episodes, 1):
         notifications.write(msg='Updating all episodes subtitles from disk...',
                             queue='list_subtitles_series', item=i, length=count_episodes)
-        store_subtitles(path_replace(episode[0]))
+        store_subtitles(path_replace(episode.path))
     
     gc.collect()
 
 
 def movies_full_scan_subtitles():
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    movies = c_db.execute("SELECT path FROM table_movies").fetchall()
-    c_db.close()
-    count_movies = len(movies)
+    movies = TableMovies.select(
+        TableMovies.path
+    )
+    count_movies = movies.count()
     
     for i, movie in enumerate(movies, 1):
         notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', item=i, length=count_movies)
-        store_subtitles_movie(path_replace_movie(movie[0]))
+        store_subtitles_movie(path_replace_movie(movie.path))
     
     gc.collect()
 
 
 def series_scan_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    episodes = c_db.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId = ?", (no,)).fetchall()
-    c_db.close()
+    episodes = TableEpisodes.select(
+        TableEpisodes.path
+    ).where(
+        TableEpisodes.sonarr_series_id == no
+    )
     
     for episode in episodes:
-        store_subtitles(path_replace(episode[0]))
+        store_subtitles(path_replace(episode.path))
     
     list_missing_subtitles(no)
 
 
 def movies_scan_subtitles(no):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    movies = c_db.execute("SELECT path FROM table_movies WHERE radarrId = ?", (no,)).fetchall()
-    c_db.close()
+    movies = TableMovies.select(
+        TableMovies.path
+    ).where(
+        TableMovies.radarr_id == no
+    )
     
     for movie in movies:
-        store_subtitles_movie(path_replace_movie(movie[0]))
+        store_subtitles_movie(path_replace_movie(movie.path))
     
     list_missing_subtitles_movies(no)
 
