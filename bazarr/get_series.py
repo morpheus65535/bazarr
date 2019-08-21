@@ -4,6 +4,7 @@ import os
 import requests
 import logging
 from queueconfig import notifications
+from collections import OrderedDict
 import datetime
 
 from get_args import args
@@ -76,17 +77,17 @@ def update_series():
                 current_shows_sonarr.append(show['tvdbId'])
                 
                 if show['tvdbId'] in current_shows_db_list:
-                    series_to_update.append({'title': show["title"],
-                                             'path': show["path"],
-                                             'tvdb_id': show["tvdbId"],
-                                             'sonarr_series_id': show["id"],
-                                             'overview': overview,
-                                             'poster': poster,
-                                             'fanart': fanart,
-                                             'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId'])),
-                                             'sort_title': show['sortTitle'],
-                                             'year': show['year'],
-                                             'alternate_titles': alternateTitles})
+                    series_to_update.append({'title': unicode(show["title"]),
+                                             'path': unicode(show["path"]),
+                                             'tvdb_id': int(show["tvdbId"]),
+                                             'sonarr_series_id': int(show["id"]),
+                                             'overview': unicode(overview),
+                                             'poster': unicode(poster),
+                                             'fanart': unicode(fanart),
+                                             'audio_language': unicode(profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId']))),
+                                             'sort_title': unicode(show['sortTitle']),
+                                             'year': unicode(show['year']),
+                                             'alternate_titles': unicode(alternateTitles)})
                 else:
                     if serie_default_enabled is True:
                         series_to_add.append({'title': show["title"],
@@ -135,7 +136,6 @@ def update_series():
             for item in series_in_db:
                 series_in_db_list.append(item)
 
-            # Group episodes by seasons
             series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
             for updated_series in series_to_update_list:
@@ -152,7 +152,7 @@ def update_series():
                 ).on_conflict_ignore().execute()
                 list_missing_subtitles(added_series['sonarr_series_id'])
 
-            # Remove old episodes from DB
+            # Remove old series from DB
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
             for series in removed_series:
