@@ -22,8 +22,8 @@ import operator
 
 from get_args import args
 from init import *
-from database import database_init, database_close, TableEpisodes, TableShows, TableMovies, TableHistory, \
-    TableHistoryMovie, TableSettingsLanguages, TableSettingsNotifier, System
+from database import database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+    TableSettingsLanguages, TableSettingsNotifier, System
 
 # Initiate database
 database_init()
@@ -187,7 +187,6 @@ def shutdown():
     else:
         stop_file.write('')
         stop_file.close()
-        database_close()
         server.stop()
 
 
