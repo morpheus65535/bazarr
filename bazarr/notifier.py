@@ -106,7 +106,7 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     
     apobj.notify(
         title='Bazarr notification',
-        body=(series + ' - S' + str(episode.season).zfill(2) + 'E' + str(episode.episode).zfill(2) + ' - ' + episode.title + ' : ' + message),
+        body=(series + ' - S' + str(episode[1]).zfill(2) + 'E' + str(episode[2]).zfill(2) + ' - ' + episode[0] + ' : ' + message),
     )
 
 
