@@ -482,11 +482,6 @@
 		$('#loader').addClass('active');
 	});
 
-	$('.modal')
-		.modal({
-			autofocus: false
-		});
-
 	$('#config').on('click', function(){
 		$('#movie_form').attr('action', '{{base_url}}edit_movie/{{no}}');
 
@@ -508,7 +503,12 @@
 			$("#movie_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.config_dialog').modal('show');
+		$('.config_dialog')
+			.modal({
+				centered: false,
+				autofocus: false
+			})
+			.modal('show');
 	});
 
 	$('.manual_search').on('click', function(){
@@ -610,7 +610,8 @@
 
 		$('.search_dialog')
 			.modal({
-				centered: false
+				centered: false,
+				autofocus: false
 			})
 			.modal('show')
 		;
@@ -634,7 +635,8 @@
 
 		$('.upload_dialog')
 			.modal({
-				centered: false
+				centered: false,
+				autofocus: false
 			})
 			.modal('show')
 		;
