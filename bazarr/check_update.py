@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
 import logging
-import sqlite3
 import json
 import requests
 import tarfile

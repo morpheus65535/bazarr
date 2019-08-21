@@ -18,17 +18,21 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
     
-    notifiers_current = TableSettingsNotifier.select(
+    notifiers_current_db = TableSettingsNotifier.select(
         TableSettingsNotifier.name
     )
 
+    notifiers_current = []
+    for notifier in notifiers_current_db:
+        notifiers_current.append(notifier.name)
+
     for x in results['schemas']:
-        if x['service_name'] not in str(notifiers_current):
+        if x['service_name'] not in notifiers_current:
             notifiers_new.append(x['service_name'])
             logging.debug('Adding new notifier agent: ' + x['service_name'])
         else:
             notifiers_old.append(x['service_name'])
-    notifier_current = [i.name for i in notifiers_current]
+    notifier_current = [i for i in notifiers_current]
     
     notifiers_to_delete = list(set(notifier_current) - set(notifiers_old))
     
@@ -42,7 +46,7 @@ def update_notifier():
     
     for notifier_to_delete in notifiers_to_delete:
         TableSettingsNotifier.delete().where(
-            TableSettingsNotifier.Name == notifier_to_delete
+            TableSettingsNotifier.name == notifier_to_delete
         ).execute()
 
 
