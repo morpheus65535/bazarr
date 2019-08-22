@@ -22,7 +22,7 @@ import operator
 
 from get_args import args
 from init import *
-from database import database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+from database import database, database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
     TableSettingsLanguages, TableSettingsNotifier, System
 
 # Initiate database
@@ -187,7 +187,10 @@ def shutdown():
     else:
         stop_file.write('')
         stop_file.close()
+        database.close()
+        database.stop()
         server.stop()
+        sys.exit(0)
 
 
 @route(base_url + 'restart')
@@ -206,6 +209,8 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
+            database.close()
+            database.stop()
 
 
 @route(base_url + 'wizard')

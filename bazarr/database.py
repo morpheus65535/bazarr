@@ -4,16 +4,19 @@ import atexit
 from get_args import args
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
-from playhouse.reflection import generate_models
 
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 
 database = SqliteQueueDatabase(
     os.path.join(args.config_dir, 'db', 'bazarr.db'),
-    use_gevent=False,  # Use the standard library "threading" module.
-    autostart=False,  # The worker thread now must be started manually.
+    use_gevent=False,
+    autostart=True,
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
     results_timeout=30.0)  # Max. time to wait for query to be executed.
+
+#database = SqliteDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'), pragmas={
+#    'journal_mode': 'wal',
+#    'cache_size': -1024 * 8})
 
 
 @database.func('path_substitution')
@@ -168,13 +171,7 @@ class TableSettingsNotifier(BaseModel):
         table_name = 'table_settings_notifier'
 
 
-@atexit.register
-def _stop_worker_threads():
-    database.stop()
-
-
 def database_init():
-    database.start()
     database.connect()
 
     models_list = [TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages,
@@ -190,3 +187,9 @@ def database_init():
                 System.configured: 0
             }
         ).execute()
+
+
+@atexit.register
+def _stop_worker_threads():
+    database.close()
+    database.stop()
