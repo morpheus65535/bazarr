@@ -8,9 +8,18 @@ from queueconfig import notifications
 from get_args import args
 from config import settings, url_radarr
 from helper import path_replace_movie
-from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies
+from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
+
 from get_subtitle import movies_download_subtitles
-from database import TableMovies
+from database import TableMovies, wal_cleaning
+
+
+def update_all_movies():
+    movies_full_scan_subtitles()
+    logging.info('BAZARR All existing movie subtitles indexed from disk.')
+    list_missing_subtitles_movies()
+    logging.info('BAZARR All missing movie subtitles updated in database.')
+    wal_cleaning()
 
 
 def update_movies():

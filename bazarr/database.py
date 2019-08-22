@@ -14,10 +14,6 @@ database = SqliteQueueDatabase(
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
     results_timeout=30.0)  # Max. time to wait for query to be executed.
 
-#database = SqliteDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'), pragmas={
-#    'journal_mode': 'wal',
-#    'cache_size': -1024 * 8})
-
 
 @database.func('path_substitution')
 def path_substitution(path):
@@ -174,6 +170,11 @@ class TableSettingsNotifier(BaseModel):
 def database_init():
     database.connect()
 
+    database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
+    database.cache_size = -1024  # Number of KB of cache for wal-journal.
+                                 # Must be negative because positive means number of pages.
+    database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
+
     models_list = [TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages,
                    TableSettingsNotifier, System]
 
@@ -187,6 +188,11 @@ def database_init():
                 System.configured: 0
             }
         ).execute()
+
+
+def wal_cleaning():
+    database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
+    database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
 
 
 @atexit.register

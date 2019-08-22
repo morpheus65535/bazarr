@@ -1,7 +1,7 @@
 # coding=utf-8
 
-from get_episodes import sync_episodes, update_all_episodes, update_all_movies
-from get_movies import update_movies
+from get_episodes import sync_episodes, update_all_episodes
+from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
 from get_subtitle import wanted_search_missing_subtitles, upgrade_subtitles

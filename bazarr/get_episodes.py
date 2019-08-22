@@ -4,13 +4,12 @@ import requests
 import logging
 import re
 from queueconfig import notifications
-from database import TableShows, TableEpisodes
+from database import TableShows, TableEpisodes, wal_cleaning
 
 from get_args import args
 from config import settings, url_sonarr
 from helper import path_replace
-from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, \
-    movies_full_scan_subtitles
+from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 
 
@@ -19,13 +18,7 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
     list_missing_subtitles()
     logging.info('BAZARR All missing episode subtitles updated in database.')
-
-
-def update_all_movies():
-    movies_full_scan_subtitles()
-    logging.info('BAZARR All existing movie subtitles indexed from disk.')
-    list_missing_subtitles()
-    logging.info('BAZARR All missing movie subtitles updated in database.')
+    wal_cleaning()
 
 
 def sync_episodes():

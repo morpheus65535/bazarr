@@ -32,7 +32,6 @@ def store_subtitles(file):
     logging.debug('BAZARR started subtitles indexing for this file: ' + file)
     actual_subtitles = []
     if os.path.exists(file):
-        # notifications.write(msg='Analyzing this file for subtitles: ' + file, queue='list_subtitles')
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
