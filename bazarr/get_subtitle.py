@@ -690,8 +690,8 @@ def wanted_download_subtitles(path, l, count_episodes):
     ).join_from(
         TableEpisodes, TableShows, JOIN.LEFT_OUTER
     ).where(
-        TableEpisodes.path == path_replace_reverse(path) &
-        TableEpisodes.missing_subtitles != '[]'
+        (TableEpisodes.path == path_replace_reverse(path)) &
+        (TableEpisodes.missing_subtitles != '[]')
     ).objects()
     
     providers_list = get_providers()
@@ -759,8 +759,8 @@ def wanted_download_subtitles_movie(path, l, count_movies):
         TableMovies.title,
         TableMovies.forced
     ).where(
-        TableMovies.path == path_replace_reverse_movie(path) &
-        TableMovies.missing_subtitles != '[]'
+        (TableMovies.path == path_replace_reverse_movie(path)) &
+        (TableMovies.missing_subtitles != '[]')
     )
     
     providers_list = get_providers()
@@ -1017,7 +1017,8 @@ def upgrade_subtitles():
         ).join_from(
             TableHistory, TableEpisodes, JOIN.LEFT_OUTER
         ).where(
-            TableHistory.action.in_(query_actions) & TableHistory.score.is_null(False)
+            (TableHistory.action.in_(query_actions)) &
+            (TableHistory.score.is_null(False))
         ).group_by(
             TableHistory.video_path,
             TableHistory.language
@@ -1054,7 +1055,8 @@ def upgrade_subtitles():
         ).join_from(
             TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
         ).where(
-            TableHistoryMovie.action.in_(query_actions) & TableHistoryMovie.score.is_null(False)
+            (TableHistoryMovie.action.in_(query_actions)) & 
+            (TableHistoryMovie.score.is_null(False))
         ).group_by(
             TableHistoryMovie.video_path,
             TableHistoryMovie.language

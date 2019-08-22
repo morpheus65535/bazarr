@@ -1133,7 +1133,7 @@ def historyseries():
     stats = TableHistory.select(
         TableHistory.timestamp
     ).where(
-        TableHistory.action | 0
+        TableHistory.action != 0
     )
     total = len(stats)
     for stat in stats:
@@ -1185,7 +1185,8 @@ def historyseries():
             fn.MAX(TableHistory.timestamp).alias('timestamp'),
             TableHistory.score
         ).where(
-            TableHistory.action.in_(query_actions) & TableHistory.score.is_null(False)
+            (TableHistory.action.in_(query_actions)) & 
+            (TableHistory.score.is_null(False))
         ).group_by(
             TableHistory.video_path,
             TableHistory.language
@@ -1275,7 +1276,8 @@ def historymovies():
             fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
             TableHistoryMovie.score
         ).where(
-            TableHistoryMovie.action.in_(query_actions) & TableHistoryMovie.score.is_null(False)
+            (TableHistoryMovie.action.in_(query_actions)) & 
+            (TableHistoryMovie.score.is_null(False))
         ).group_by(
             TableHistoryMovie.video_path,
             TableHistoryMovie.language
