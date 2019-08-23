@@ -61,12 +61,13 @@ from get_episodes import *
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle
+    manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 from helper import path_replace_movie
+from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from subliminal_patch.extensions import provider_registry as provider_manager
 
 reload(sys)
@@ -1917,6 +1918,51 @@ def manual_get_subtitle():
         pass
 
 
+@route(base_url + 'manual_upload_subtitle', method='POST')
+@custom_auth_basic(check_credentials)
+def perform_manual_upload_subtitle():
+    authorize()
+    ref = request.environ['HTTP_REFERER']
+
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
+    upload = request.files.get('upload')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
+
+    _, ext = os.path.splitext(upload.filename)
+
+    if ext not in SUBTITLE_EXTENSIONS:
+        raise ValueError('A subtitle of an invalid format was uploaded.')
+    
+    try:
+        result = manual_upload_subtitle(path=episodePath, 
+                                        language=language,
+                                        forced=forced,
+                                        title=title, 
+                                        scene_name=sceneName, 
+                                        media_type='series',
+                                        subtitle=upload)
+        
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = language + ":forced" if forced else language
+            provider = "manual"
+            score = 360
+            history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+            send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+            store_subtitles(unicode(episodePath))
+            list_missing_subtitles(sonarrSeriesId)
+        
+        redirect(ref)
+    except OSError:
+        pass
+
+
 @route(base_url + 'get_subtitle_movie', method='POST')
 @custom_auth_basic(check_credentials)
 def get_subtitle_movie():
@@ -2004,6 +2050,50 @@ def manual_get_subtitle_movie():
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
+        redirect(ref)
+    except OSError:
+        pass
+
+
+@route(base_url + 'manual_upload_subtitle_movie', method='POST')
+@custom_auth_basic(check_credentials)
+def perform_manual_upload_subtitle_movie():
+    authorize()
+    ref = request.environ['HTTP_REFERER']
+
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
+    upload = request.files.get('upload')
+    radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
+
+    _, ext = os.path.splitext(upload.filename)
+
+    if ext not in SUBTITLE_EXTENSIONS:
+        raise ValueError('A subtitle of an invalid format was uploaded.')
+    
+    try:
+        result = manual_upload_subtitle(path=moviePath, 
+                                        language=language,
+                                        forced=forced,
+                                        title=title, 
+                                        scene_name=sceneName, 
+                                        media_type='series',
+                                        subtitle=upload)
+        
+        if result is not None:
+            message = result[0]
+            path = result[1]
+            language_code = language + ":forced" if forced else language
+            provider = "manual"
+            score = 120
+            history_log_movie(4, radarrId, message, path, language_code, provider, score)
+            send_notifications_movie(radarrId, message)
+            store_subtitles_movie(unicode(moviePath))
+            list_missing_subtitles_movies(radarrId)
+        
         redirect(ref)
     except OSError:
         pass
