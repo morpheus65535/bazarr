@@ -16,6 +16,7 @@ langdetect=1.0.7
 peewee=3.9.6
 py-pretty=1
 pycountry=18.2.23
+pyprobe=0.1.2 <-- modified version: do not update!!!
 pysrt=1.1.1
 pytz=2018.4
 rarfile=3.0

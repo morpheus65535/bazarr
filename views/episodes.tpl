@@ -199,6 +199,7 @@
 										<th class="collapsing">Existing<br>subtitles</th>
 										<th class="collapsing">Missing<br>subtitles</th>
 										<th class="collapsing">Manual<br>search</th>
+										<th class="collapsing">Manual<br>upload</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -289,6 +290,11 @@
 										<td>
 											%if subs_languages is not None:
 											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-series_title="{{details.title}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											%end
+										</td>
+										<td>
+											%if subs_languages is not None:
+											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
 											%end
 										</td>
 									</tr>
@@ -397,6 +403,59 @@
 			</div>
 		</div>
 
+		<div class="upload_dialog ui small modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<span id="series_title_span_u"></span> - <span id="season_u"></span>x<span id="episode_u"></span> - <span id="episode_title_u"></span>
+			</div>
+			<div class="content">
+				<form class="ui form" name="upload_form" id="upload_form" action="{{base_url}}manual_upload_subtitle" method="post" enctype="multipart/form-data">
+					<div class="ui grid">
+						<div class="middle aligned row">
+							<div class="right aligned three wide column">
+								<label>Language</label>
+							</div>
+							<div class="thirteen wide column">
+								<select class="ui search dropdown" id="language" name="language">
+									%for language in subs_languages_list:
+									<option value="{{language}}">{{language_from_alpha2(language)}}</option>
+									%end
+								</select>
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned three wide column">
+								<label>Forced</label>
+							</div>
+							<div class="thirteen wide column">
+								<div class="ui toggle checkbox">
+									<input name="forced" type="checkbox" value="1">
+									<label></label>
+								</div>
+							</div>
+						</div>
+						<div class="middle aligned row">
+							<div class="right aligned three wide column">
+								<label>File</label>
+							</div>
+							<div class="thirteen wide column">
+								<input type="file" name="upload">
+							</div>
+						</div>
+					</div>
+					<input type="hidden" id="upload_episodePath" name="episodePath" value="" />
+					<input type="hidden" id="upload_sceneName" name="sceneName" value="" />
+					<input type="hidden" id="upload_sonarrSeriesId" name="sonarrSeriesId" value="" />
+					<input type="hidden" id="upload_sonarrEpisodeId" name="sonarrEpisodeId" value="" />
+					<input type="hidden" id="upload_title" name="title" value="" />
+				</form>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
+				<button type="submit" name="save" value="save" form="upload_form" class="ui blue approve button">Save</button>
+			</div>
+		</div>
+
 		% include('footer.tpl')
 	</body>
 </html>
@@ -469,14 +528,9 @@
 		});
 	});
 
-	$('a:not(.manual_search), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
+	$('a:not(.manual_search, .manual_upload), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
 		$('#loader').addClass('active');
 	});
-
-	$('.modal')
-		.modal({
-			autofocus: false
-		});
 
 	$('#config').on('click', function(){
 		$('#series_form').attr('action', '{{base_url}}edit_series/{{no}}');
@@ -499,7 +553,12 @@
 			$("#series_hearing-impaired_div").checkbox('uncheck');
 		}
 
-		$('.config_dialog').modal('show');
+		$('.config_dialog')
+			.modal({
+				centered: false,
+				autofocus: false
+			})
+			.modal('show');
 	});
 
 	$('.manual_search').on('click', function(){
@@ -604,7 +663,41 @@
 
 		$('.search_dialog')
 			.modal({
-				centered: false
+				centered: false,
+				autofocus: false
+			})
+			.modal('show');
+	});
+
+	$('.manual_upload').on('click', function(){
+		$("#series_title_span_u").html($(this).data("series_title"));
+		$("#season_u").html($(this).data("season"));
+		$("#episode_u").html($(this).data("episode"));
+		$("#episode_title_u").html($(this).data("episode_title"));
+
+		episodePath = $(this).attr("data-episodePath");
+		sceneName = $(this).attr("data-sceneName");
+		language = $(this).attr("data-language");
+        hi = $(this).attr("data-hi");
+		sonarrSeriesId = $(this).attr("data-sonarrSeriesId");
+		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+		var languages = Array.from({{!subs_languages_list}});
+		var is_pb = languages.includes('pb');
+		var is_pt = languages.includes('pt');
+		var title = "{{!details[0].replace("'", "\'")}}";
+
+		$('#language').dropdown();
+
+		$('#upload_episodePath').val(episodePath);
+		$('#upload_sceneName').val(sceneName);
+		$('#upload_sonarrSeriesId').val(sonarrSeriesId);
+		$('#upload_sonarrEpisodeId').val(sonarrEpisodeId);
+		$('#upload_title').val(title);
+
+		$('.upload_dialog')
+			.modal({
+				centered: false,
+				autofocus: false
 			})
 			.modal('show');
 	});

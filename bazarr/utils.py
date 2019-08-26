@@ -52,19 +52,13 @@ def get_binary(name):
     binaries_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
     exe = None
-    if name != 'mediainfo':
-        installed_exe = which(name)
+    installed_exe = which(name)
 
-    if name != 'mediainfo' and installed_exe and os.path.isfile(installed_exe):
+    if installed_exe and os.path.isfile(installed_exe):
         return installed_exe
     else:
         if platform.system() == "Windows":  # Windows
             exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.exe" % name))
-            if exe and not os.path.isfile(exe):
-                if sys.maxsize > 2**32:  # is 64bits Python
-                    exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "x86_64", name, "%s.dll" % name))
-                else:  # is 32bits Python
-                    exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.dll" % name))
 
         elif platform.system() == "Darwin":  # MacOSX
             exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", name, name))

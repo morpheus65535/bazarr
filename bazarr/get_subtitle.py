@@ -19,7 +19,7 @@ from subzero.video import parse_video
 from subliminal import region, score as subliminal_scores, \
     list_subtitles, Episode, Movie
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
-    list_all_subtitles
+    list_all_subtitles, get_subtitle_path
 from subliminal_patch.score import compute_score
 from subliminal.refiners.tvdb import series_re
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2
@@ -32,19 +32,18 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from get_args import args
 from queueconfig import notifications
-from pymediainfo import MediaInfo
+from pyprobe.pyprobe import VideoFileParser
 from database import TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from peewee import fn, JOIN
 
 
-def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=None, media_type="movie"):
+def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
     """
     Construct `Video` instance
     :param path: path to video
     :param title: series/movie title
     :param sceneName: sceneName
     :param use_scenename: use sceneName
-    :param use_mediainfo: use media info to refine the video
     :param providers: provider list for selective hashing
     :param media_type: movie/series
     :return: `Video` instance
@@ -66,10 +65,9 @@ def get_video(path, title, sceneName, use_scenename, use_mediainfo, providers=No
         video.used_scene_name = used_scene_name
         video.original_name = original_name
         video.original_path = original_path
+
         refine_from_db(original_path, video)
-        
-        if platform.system() != "Linux" and use_mediainfo:
-            refine_from_mediainfo(original_path, video)
+        refine_from_ffprobe(original_path, video)
         
         logging.debug('BAZARR is using those video object properties: %s', vars(video))
         return video
@@ -143,7 +141,6 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
-    use_mediainfo = settings.general.getboolean('use_mediainfo')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
@@ -159,7 +156,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         post_download_hook=None,
         language_hook=None
     """
-    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers,
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, providers=providers,
                       media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
@@ -282,7 +279,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
     
     final_subtitles = []
-    
+
+    initial_hi = True if hi == "True" else False
     if hi == "True":
         hi = "force HI"
     else:
@@ -311,13 +309,12 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
         language_set.add(lang_obj)
     
     use_scenename = settings.general.getboolean('use_scenename')
-    use_mediainfo = settings.general.getboolean('use_mediainfo')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     if providers:
-        video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers=providers,
+        video = get_video(force_unicode(path), title, sceneName, use_scenename, providers=providers,
                           media_type=media_type)
     else:
         logging.info("BAZARR All providers are throttled")
@@ -357,8 +354,11 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                     if can_verify_series and not {"series", "season", "episode"}.issubset(matches):
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
-                
-                score = compute_score(matches, s, video, hearing_impaired=hi)
+
+                if s.hearing_impaired == initial_hi:
+                    matches.add('hearing_impaired')
+
+                score = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 not_matched = scores - matches
                 s.score = score
                 
@@ -389,11 +389,10 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
     use_scenename = settings.general.getboolean('use_scenename')
-    use_mediainfo = settings.general.getboolean('use_mediainfo')
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(force_unicode(path), title, sceneName, use_scenename, use_mediainfo, providers={provider},
+    video = get_video(force_unicode(path), title, sceneName, use_scenename, providers={provider},
                       media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
@@ -492,6 +491,51 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
     subliminal.region.backend.sync()
     
     logging.debug('BAZARR Ended manually downloading subtitles for file: ' + path)
+
+
+def manual_upload_subtitle(path, language, forced, title, scene_name, media_type, subtitle):
+    logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
+
+    single = settings.general.getboolean('single_language')
+
+    chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
+        'win') and settings.general.getboolean('chmod_enabled') else None
+
+    _, ext = os.path.splitext(subtitle.filename)
+
+    language = alpha3_from_alpha2(language)
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        lang_obj = Language(language)
+
+    if forced:
+        lang_obj = Language.rebuild(lang_obj, forced=True)
+
+    subtitle_path = get_subtitle_path(video_path=force_unicode(path),
+                                      language=None if single else lang_obj,
+                                      extension=ext,
+                                      forced_tag=forced)
+
+    subtitle_path = force_unicode(subtitle_path)
+
+    if os.path.exists(subtitle_path):
+        os.remove(subtitle_path)
+
+    subtitle.save(subtitle_path)
+
+    if chmod:
+        os.chmod(subtitle_path, chmod)
+
+    message = language_from_alpha3(language) + (" forced" if forced else "") + " subtitles manually uploaded."
+
+    if media_type == 'series':
+        reversed_path = path_replace_reverse(path)
+    else:
+        reversed_path = path_replace_reverse_movie(path)
+
+    return message, reversed_path
 
 
 def series_download_subtitles(no):
@@ -962,31 +1006,42 @@ def refine_from_db(path, video):
     return video
 
 
-def refine_from_mediainfo(path, video):
-    if video.fps:
-        return
-    
-    exe = get_binary('mediainfo')
+def refine_from_ffprobe(path, video):
+    exe = get_binary('ffprobe')
     if not exe:
-        logging.debug('BAZARR MediaInfo library not found!')
+        logging.debug('BAZARR FFprobe not found!')
         return
     else:
-        logging.debug('BAZARR MediaInfo library used is %s', exe)
+        logging.debug('BAZARR FFprobe used is %s', exe)
     
-    media_info = MediaInfo.parse(path, library_file=exe)
-    
-    video_track = next((t for t in media_info.tracks if t.track_type == 'Video'), None)
-    if not video_track:
-        logging.debug('BAZARR MediaInfo was unable to find video tracks in the file!')
-        return
-    
-    logging.debug('MediaInfo found: %s', video_track.to_data())
-    
-    if not video.fps:
-        if video_track.frame_rate:
-            video.fps = float(video_track.frame_rate)
-        elif video_track.framerate_num and video_track.framerate_den:
-            video.fps = round(float(video_track.framerate_num) / float(video_track.framerate_den), 3)
+    parser = VideoFileParser(ffprobe=exe, includeMissing=True, rawMode=False)
+    data = parser.parseFfprobe(path)
+
+    logging.debug('FFprobe found: %s', data)
+
+    if 'videos' not in data:
+        logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
+    else:
+        if 'resolution' in data['videos'][0]:
+            if not video.resolution:
+                if data['videos'][0]['resolution'][0] >= 3200:
+                    video.resolution = "2160p"
+                elif data['videos'][0]['resolution'][0] >= 1800:
+                    video.resolution = "1080p"
+                elif data['videos'][0]['resolution'][0] >= 1200:
+                    video.resolution = "720p"
+                elif data['videos'][0]['resolution'][0] >= 0:
+                    video.resolution = "480p"
+        if 'codec' in data['videos'][0]:
+            if not video.video_codec:
+                video.video_codec = data['videos'][0]['codec']
+
+    if 'audios' not in data:
+        logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
+    else:
+        if 'codec' in data['audios'][0]:
+            if not video.audio_codec:
+                video.audio_codec = data['audios'][0]['codec'].upper()
 
 
 def upgrade_subtitles():
@@ -998,7 +1053,7 @@ def upgrade_subtitles():
         query_actions = [1, 2, 3]
     else:
         query_actions = [1, 3]
-    
+
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = TableHistory.select(
             TableHistory.video_path,
@@ -1039,7 +1094,7 @@ def upgrade_subtitles():
         for episode in upgradable_episodes_not_perfect:
             if os.path.exists(path_replace(episode['video_path'])) and int(episode['score']) < 357:
                 episodes_to_upgrade.append(episode)
-    
+
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = TableHistoryMovie.select(
             TableHistoryMovie.video_path,
@@ -1055,7 +1110,7 @@ def upgrade_subtitles():
         ).join_from(
             TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
         ).where(
-            (TableHistoryMovie.action.in_(query_actions)) & 
+            (TableHistoryMovie.action.in_(query_actions)) &
             (TableHistoryMovie.score.is_null(False))
         ).group_by(
             TableHistoryMovie.video_path,
