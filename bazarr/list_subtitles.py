@@ -81,7 +81,7 @@ def store_subtitles(file):
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(path_replace(os.path.join(os.path.dirname(file), subtitle)), 'r') as f:
+                        with open(os.path.join(os.path.dirname(file), subtitle), 'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -90,9 +90,9 @@ def store_subtitles(file):
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
-                                    'BAZARR Error trying to detect language for this subtitles file: ' + path_replace(
-                                        os.path.join(os.path.dirname(file),
-                                                     subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                                    'BAZARR Error trying to detect language for this subtitles file: ' +
+                                    os.path.join(os.path.dirname(file), subtitle) +
+                                    ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                             else:
                                 if len(detected_language) > 0:
                                     logging.debug(
@@ -171,8 +171,7 @@ def store_subtitles_movie(file):
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(path_replace_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle)),
-                                  'r') as f:
+                        with open(os.path.join(os.path.dirname(file), dest_folder, subtitle), 'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -181,9 +180,9 @@ def store_subtitles_movie(file):
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
-                                    'BAZARR Error trying to detect language for this subtitles file: ' + path_replace(
-                                        os.path.join(os.path.dirname(file),
-                                                     subtitle)) + ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
+                                    'BAZARR Error trying to detect language for this subtitles file: ' +
+                                    os.path.join(os.path.dirname(file), subtitle) +
+                                    ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                             else:
                                 if len(detected_language) > 0:
                                     logging.debug(
