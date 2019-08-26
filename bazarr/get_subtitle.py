@@ -962,6 +962,9 @@ def refine_from_ffprobe(path, video):
         if 'codec' in data['videos'][0]:
             if not video.video_codec:
                 video.video_codec = data['videos'][0]['codec']
+        if 'framerate' in data['videos'][0]:
+            if not video.fps:
+                video.fps = data['videos'][0]['framerate']
 
     if 'audios' not in data:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
