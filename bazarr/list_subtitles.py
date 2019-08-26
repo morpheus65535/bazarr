@@ -231,7 +231,7 @@ def list_missing_subtitles(no=None):
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        if episode_subtitles.sonarr_episode_id is not None:
+        if episode_subtitles.subtitles is not None:
             if use_embedded_subs:
                 actual_subtitles = ast.literal_eval(episode_subtitles.subtitles)
             else:
