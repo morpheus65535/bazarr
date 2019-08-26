@@ -22,33 +22,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use MediaInfo</label>
-                            </div>
-                            <div class="one wide column">
-                                % import platform
-                                <div id="settings_mediainfo" class="ui toggle checkbox{{' disabled' if platform.system() == 'Linux' else ''}}" data-mediainfo={{settings.general.getboolean('use_mediainfo')}}>
-                                    <input name="settings_general_mediainfo" type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use MediaInfo to extract video and audio stream properties." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="This settings is only available on Windows and MacOS." data-inverted="">
-                                        <i class="yellow warning sign icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>Minimum score for episodes</label>
                             </div>
                             <div class="two wide column">
@@ -577,12 +550,6 @@
                         $("#settings_scenename").checkbox('check');
                     } else {
                         $("#settings_scenename").checkbox('uncheck');
-                    }
-
-                    if ($('#settings_mediainfo').data("mediainfo") === "True") {
-                        $("#settings_mediainfo").checkbox('check');
-                    } else {
-                        $("#settings_mediainfo").checkbox('uncheck');
                     }
 
                     if ($('#settings_upgrade_subs').data("upgrade") === "True") {
