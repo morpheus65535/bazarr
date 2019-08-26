@@ -624,7 +624,7 @@
 		sceneName = $(this).attr("data-sceneName");
 		language = $(this).attr("data-language");
 		radarrId = $(this).attr("data-radarrId");
-		var title = "{{!details[0].replace("'", "\'")}}";
+		var title = "{{!details.title.replace("'", "\'")}}";
 
 		$('#language').dropdown();
 

@@ -294,7 +294,7 @@
 										</td>
 										<td>
 											%if subs_languages is not None:
-											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
+											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-series_title="{{details.title}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
 											%end
 										</td>
 									</tr>
@@ -684,7 +684,7 @@
 		var languages = Array.from({{!subs_languages_list}});
 		var is_pb = languages.includes('pb');
 		var is_pt = languages.includes('pt');
-		var title = "{{!details[0].replace("'", "\'")}}";
+		var title = "{{!details.title.replace("'", "\'")}}";
 
 		$('#language').dropdown();
 
