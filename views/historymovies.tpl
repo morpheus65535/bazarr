@@ -74,6 +74,10 @@
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
+						%elif row[0] == 4:
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually uploaded." data-inverted="" data-position="top left">
+								<i class="ui cloud upload icon"></i>
+							</div>
 						%end
 						</td>
 						<td>
