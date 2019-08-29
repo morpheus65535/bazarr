@@ -998,7 +998,12 @@ def historyseries():
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                              datetime(1970, 1, 1)).total_seconds()
-        
+
+        if settings.sonarr.getboolean('only_monitored'):
+            series_monitored_only_query_string = ' AND table_episodes.monitored = "True"'
+        else:
+            series_monitored_only_query_string = ""
+
         if settings.general.getboolean('upgrade_manual'):
             query_actions = [1, 2, 3]
         else:
@@ -1006,8 +1011,10 @@ def historyseries():
         
         upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
                                              FROM table_history
+                                       INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
                                             WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                  timestamp > ? AND score is not null
+                                                  timestamp > ? AND score is not null""" +
+                                        series_monitored_only_query_string + """
                                          GROUP BY table_history.video_path, table_history.language""",
                                         (minimum_timestamp,)).fetchall()
         for upgradable_episode in upgradable_episodes:
@@ -1071,7 +1078,12 @@ def historymovies():
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                              datetime(1970, 1, 1)).total_seconds()
-        
+
+        if settings.radarr.getboolean('only_monitored'):
+            movies_monitored_only_query_string = ' AND table_movies.monitored = "True"'
+        else:
+            movies_monitored_only_query_string = ""
+
         if settings.general.getboolean('upgrade_manual'):
             query_actions = [1, 2, 3]
         else:
@@ -1079,8 +1091,10 @@ def historymovies():
         
         upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
                                            FROM table_history_movie
+                                     INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
                                           WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                timestamp > ? AND score is not null
+                                                timestamp > ? AND score is not null""" +
+                                      movies_monitored_only_query_string + """
                                        GROUP BY video_path, language""",
                                       (minimum_timestamp,)).fetchall()
         for upgradable_movie in upgradable_movies:
