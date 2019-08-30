@@ -1175,19 +1175,30 @@ def historyseries():
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                              datetime(1970, 1, 1)).total_seconds()
-        
+
         if settings.general.getboolean('upgrade_manual'):
             query_actions = [1, 2, 3]
         else:
             query_actions = [1, 3]
-        
+
+        episodes_details_clause = [
+            (TableHistory.action.in_(query_actions)) &
+            (TableHistory.score.is_null(False))
+        ]
+
+        if settings.sonarr.getboolean('only_monitored'):
+            episodes_details_clause.append(
+                (TableEpisodes.monitored == 'True')
+            )
+
         upgradable_episodes = TableHistory.select(
             TableHistory.video_path,
             fn.MAX(TableHistory.timestamp).alias('timestamp'),
             TableHistory.score
+        ).join_from(
+            TableHistory, TableEpisodes, JOIN.LEFT_OUTER
         ).where(
-            (TableHistory.action.in_(query_actions)) &
-            (TableHistory.score.is_null(False))
+            reduce(operator.and_, episodes_details_clause)
         ).group_by(
             TableHistory.video_path,
             TableHistory.language
@@ -1271,14 +1282,25 @@ def historymovies():
             query_actions = [1, 2, 3]
         else:
             query_actions = [1, 3]
-        
+
+        movies_details_clause = [
+            (TableHistoryMovie.action.in_(query_actions)) &
+            (TableHistoryMovie.score.is_null(False))
+        ]
+
+        if settings.radarr.getboolean('only_monitored'):
+            movies_details_clause.append(
+                (TableMovies.monitored == 'True')
+            )
+
         upgradable_movies = TableHistoryMovie.select(
             TableHistoryMovie.video_path,
             fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
             TableHistoryMovie.score
+        ).join_from(
+            TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
         ).where(
-            (TableHistoryMovie.action.in_(query_actions)) &
-            (TableHistoryMovie.score.is_null(False))
+            reduce(operator.and_, movies_details_clause)
         ).group_by(
             TableHistoryMovie.video_path,
             TableHistoryMovie.language
