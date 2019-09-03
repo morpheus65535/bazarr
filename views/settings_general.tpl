@@ -666,6 +666,30 @@
                     </div>
                 </div>
 
+                <div class="ui dividing header">Analytics</div>
+                <div class="twelve wide column">
+                    <div class="ui grid">
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Enable</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="settings_analytics_enabled" class="ui toggle checkbox" data-analytics={{settings.analytics.getboolean('enabled')}}>
+                                    <input name="settings_analytics_enabled" type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <script>
                     % from get_args import args
 
@@ -702,6 +726,12 @@
                         $("#settings_chmod_enabled").checkbox('check');
                     } else {
                         $("#settings_chmod_enabled").checkbox('uncheck');
+                    }
+
+                    if ($('#settings_analytics_enabled').data("analytics") === "True") {
+                        $("#settings_analytics_enabled").checkbox('check');
+                    } else {
+                        $("#settings_analytics_enabled").checkbox('uncheck');
                     }
 
                     if ($('#settings_use_postprocessing').data("postprocessing") === "True") {

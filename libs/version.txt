@@ -15,6 +15,7 @@ guessit=2.1.4
 langdetect=1.0.7
 py-pretty=1
 pycountry=18.2.23
+pyga=2.6.1
 pyprobe=0.1.2 <-- modified version: do not update!!!
 pysrt=1.1.1
 pytz=2018.4

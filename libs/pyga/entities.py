@@ -2,9 +2,15 @@
 
 from datetime import datetime
 from operator import itemgetter
-import six
 from pyga import utils
 from pyga import exceptions
+try:
+    from urlparse import urlparse
+    from urllib import unquote_plus
+except ImportError as e:
+    from urllib.parse import urlparse
+    from urllib.parse import unquote_plus
+
 
 __author__ = "Arun KR (kra3) <the1.arun@gmail.com>"
 __license__ = "Simplified BSD"
@@ -95,7 +101,7 @@ class Campaign(object):
     @staticmethod
     def create_from_referrer(url):
         obj = Campaign(Campaign.TYPE_REFERRAL)
-        parse_rslt = six.moves.urllib.parse.urlparse(url)
+        parse_rslt = urlparse(url)
         obj.source = parse_rslt.netloc
         obj.content = parse_rslt.path
         return obj
@@ -114,7 +120,7 @@ class Campaign(object):
             key, val = param.split('=')
 
             try:
-                setattr(self, self.UTMZ_PARAM_MAP[key], six.moves.urllib.parse.unquote_plus(val))
+                setattr(self, self.UTMZ_PARAM_MAP[key], unquote_plus(val))
             except KeyError:
                 continue
 
