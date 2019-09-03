@@ -122,6 +122,9 @@ defaults = {
     },
     'betaseries': {
         'token': ''
+    },
+    'analytics': {
+        'enabled': 'True'
     }
 }
 

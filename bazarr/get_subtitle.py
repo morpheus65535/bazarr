@@ -36,6 +36,8 @@ from pyprobe.pyprobe import VideoFileParser
 from database import TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from peewee import fn, JOIN
 
+from analytics import track_event
+
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
     """
@@ -263,7 +265,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                             reversed_path = path_replace_reverse(path)
                         else:
                             reversed_path = path_replace_reverse_movie(path)
-                        
+
+                        track_event(category=downloaded_provider, action=action, label=downloaded_language)
+
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
         
         if not saved_any:
@@ -480,7 +484,9 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                             reversed_path = path_replace_reverse(path)
                         else:
                             reversed_path = path_replace_reverse_movie(path)
-                        
+
+                        track_event(category=downloaded_provider, action="downloaded", label=downloaded_language)
+
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
                 else:
                     logging.error(

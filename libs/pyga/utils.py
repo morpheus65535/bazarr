@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
-
-import logging
+from __future__ import unicode_literals
 from random import randint
 import re
-import six
-import os
+import sys
 from datetime import datetime
+
+try:
+    from urllib import quote
+except ImportError as e:
+    from urllib.parse import quote
+
+if sys.version_info < (3,):
+    text_type = unicode
+else:
+    text_type = str
+
 
 __author__ = "Arun KR (kra3) <the1.arun@gmail.com>"
 __license__ = "Simplified BSD"
@@ -60,7 +69,7 @@ def anonymize_ip(ip):
 
 def encode_uri_components(value):
     '''Mimics Javascript's encodeURIComponent() function for consistency with the GA Javascript client.'''
-    return convert_to_uri_component_encoding(six.moves.urllib.parse.quote(value))
+    return convert_to_uri_component_encoding(quote(value))
 
 def convert_to_uri_component_encoding(value):
     return value.replace('%21', '!').replace('%2A', '*').replace('%27', "'").replace('%28', '(').replace('%29', ')')
@@ -107,7 +116,7 @@ def stringify(s, stype=None, fn=None):
             # To do str(s). But, str() can fail on unicode. So, use .encode instead
             if not stype or (stype == type(s)):
                 try:
-                    return six.text_type(s)
+                    return text_type(s)
                     #return s.encode('ascii', 'replace')
                 except AttributeError:
                     return str(s)

@@ -43,12 +43,13 @@ from get_languages import load_language_in_db, language_from_alpha3
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
 from get_episodes import *
+from get_movies import *
 
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
     manual_search, manual_download_subtitle, manual_upload_subtitle
-from utils import history_log, history_log_movie
+from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
@@ -1277,7 +1278,12 @@ def historymovies():
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                              datetime(1970, 1, 1)).total_seconds()
-        
+
+        if settings.radarr.getboolean('only_monitored'):
+            movies_monitored_only_query_string = ' AND table_movies.monitored = "True"'
+        else:
+            movies_monitored_only_query_string = ""
+
         if settings.general.getboolean('upgrade_manual'):
             query_actions = [1, 2, 3]
         else:
@@ -1489,6 +1495,11 @@ def save_settings():
         settings_general_update_restart = 'False'
     else:
         settings_general_update_restart = 'True'
+    settings_analytics_enabled = request.forms.get('settings_analytics_enabled')
+    if settings_analytics_enabled is None:
+        settings_analytics_enabled = 'False'
+    else:
+        settings_analytics_enabled = 'True'
     settings_general_single_language = request.forms.get('settings_general_single_language')
     if settings_general_single_language is None:
         settings_general_single_language = 'False'
@@ -1578,6 +1589,7 @@ def save_settings():
     settings.general.branch = text_type(settings_general_branch)
     settings.general.auto_update = text_type(settings_general_automatic)
     settings.general.update_restart = text_type(settings_general_update_restart)
+    settings.analytics.enabled = text_type(settings_analytics_enabled)
     settings.general.single_language = text_type(settings_general_single_language)
     settings.general.minimum_score = text_type(settings_general_minimum_score)
     settings.general.use_scenename = text_type(settings_general_scenename)
@@ -1976,25 +1988,9 @@ def system():
         logging.exception(
             'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
     
-    use_sonarr = settings.general.getboolean('use_sonarr')
-    apikey_sonarr = settings.sonarr.apikey
-    sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
-    sonarr_version = ''
-    if use_sonarr:
-        try:
-            sonarr_version = requests.get(sv, timeout=15, verify=False).json()['version']
-        except:
-            pass
+    sonarr_version = get_sonarr_version()
     
-    use_radarr = settings.general.getboolean('use_radarr')
-    apikey_radarr = settings.radarr.apikey
-    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
-    radarr_version = ''
-    if use_radarr:
-        try:
-            radarr_version = requests.get(rv, timeout=15, verify=False).json()['version']
-        except:
-            pass
+    radarr_version = get_radarr_version()
     
     page_size = int(settings.general.page_size)
     
