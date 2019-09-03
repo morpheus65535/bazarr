@@ -679,12 +679,16 @@
                                     <label></label>
                                 </div>
                             </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
+                        </div>
+                        <div class="middle align row">
+                            <div class="right aligned four wide column">
+
+                            </div>
+                            <div class="one wide column">
+                                <i class="help circle large icon"></i>
+                            </div>
+                            <div class="ten wide column">
+                                Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr.
                             </div>
                         </div>
                     </div>
