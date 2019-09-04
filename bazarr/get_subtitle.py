@@ -483,7 +483,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         else:
                             reversed_path = path_replace_reverse_movie(path)
 
-                        track_event(category=downloaded_provider, action="downloaded", label=downloaded_language)
+                        track_event(category=downloaded_provider, action="manually_downloaded", label=downloaded_language)
                         
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
                 else:
