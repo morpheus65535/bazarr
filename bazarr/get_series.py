@@ -11,6 +11,7 @@ from get_args import args
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from database import TableShows
+from utils import get_sonarr_version
 
 
 def update_series():
@@ -24,7 +25,7 @@ def update_series():
     if apikey_sonarr is None:
         pass
     else:
-        get_profile_list()
+        audio_profiles = get_profile_list()
         
         # Get shows data from Sonarr
         url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
@@ -84,7 +85,7 @@ def update_series():
                                              'overview': unicode(overview),
                                              'poster': unicode(poster),
                                              'fanart': unicode(fanart),
-                                             'audio_language': unicode(profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId']))),
+                                             'audio_language': unicode(profile_id_to_language((show['qualityProfileId'] if sonarr_version == 2 else show['languageProfileId']), audio_profiles)),
                                              'sort_title': unicode(show['sortTitle']),
                                              'year': unicode(show['year']),
                                              'alternate_titles': unicode(alternateTitles)})
@@ -99,7 +100,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language(show['qualityProfileId']),
+                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_titles': alternateTitles,
@@ -112,7 +113,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language(show['qualityProfileId']),
+                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_title': alternateTitles})
@@ -163,53 +164,38 @@ def update_series():
 
 def get_profile_list():
     apikey_sonarr = settings.sonarr.apikey
-    
+    sonarr_version = get_sonarr_version()
+    profiles_list = []
     # Get profiles data from Sonarr
-    error = False
-    
-    url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
+
+    if sonarr_version.startswith('2'):
+        url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
+    elif sonarr_version.startswith('3'):
+        url_sonarr_api_series = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+
     try:
         profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
-        error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
     except requests.exceptions.Timeout as errt:
-        error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
     except requests.exceptions.RequestException as err:
-        error = True
         logging.exception("BAZARR Error trying to get profiles from Sonarr.")
-    
-    url_sonarr_api_series_v3 = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
-    try:
-        profiles_json_v3 = requests.get(url_sonarr_api_series_v3, timeout=60, verify=False)
-    except requests.exceptions.ConnectionError as errc:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Connection Error.")
-    except requests.exceptions.Timeout as errt:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr. Timeout Error.")
-    except requests.exceptions.RequestException as err:
-        error = True
-        logging.exception("BAZARR Error trying to get profiles from Sonarr.")
-    
-    global profiles_list
-    profiles_list = []
-    
-    if not error:
+    else:
         # Parsing data returned from Sonarr
-        global sonarr_version
-        if type(profiles_json_v3.json()) != list:
-            sonarr_version = 2
+        if sonarr_version.startswith('2'):
             for profile in profiles_json.json():
                 profiles_list.append([profile['id'], profile['language'].capitalize()])
-        else:
-            sonarr_version = 3
-            for profile in profiles_json_v3.json():
+        elif sonarr_version.startswith('3'):
+            for profile in profiles_json.json():
                 profiles_list.append([profile['id'], profile['name'].capitalize()])
 
+        return profiles_list
 
-def profile_id_to_language(id):
-    for profile in profiles_list:
+    return None
+
+
+def profile_id_to_language(id, profiles):
+    for profile in profiles:
         if id == profile[0]:
             return profile[1]
