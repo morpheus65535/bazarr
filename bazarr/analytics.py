@@ -45,9 +45,13 @@ def track_event(category=None, action=None, label=None):
     if settings.general.getboolean('use_radarr'):
         tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value=radarr_version, scope=1))
     tracker.add_custom_variable(CustomVariable(index=5, name='OSVersion', value=platform.platform(), scope=1))
-    tracker.track_event(event, session, visitor)
-    tracker.track_pageview(page, session, visitor)
 
-    settings.analytics.visitor = base64.b64encode(pickle.dumps(visitor))
-    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-        settings.write(handle)
+    try:
+        tracker.track_event(event, session, visitor)
+        tracker.track_pageview(page, session, visitor)
+    except:
+        pass
+    else:
+        settings.analytics.visitor = base64.b64encode(pickle.dumps(visitor))
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
