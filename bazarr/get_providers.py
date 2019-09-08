@@ -29,6 +29,9 @@ PROVIDER_THROTTLE_MAP = {
     "addic7ed": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+    },
+    "titulky": {
+        DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
     }
 }
 
@@ -118,7 +121,10 @@ def get_providers_auth():
         'napisy24': {'username': settings.napisy24.username,
                      'password': settings.napisy24.password,
                      },
-        'betaseries': {'token': settings.betaseries.token}
+        'betaseries': {'token': settings.betaseries.token},
+        'titulky': {'username': settings.titulky.username,
+                    'password': settings.titulky.password,
+                    }
     }
     
     return providers_auth
