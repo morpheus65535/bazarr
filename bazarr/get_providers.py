@@ -12,6 +12,7 @@ from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled)
+VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
 
 PROVIDER_THROTTLE_MAP = {
     "default": {
@@ -28,6 +29,9 @@ PROVIDER_THROTTLE_MAP = {
     "addic7ed": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+    },
+    "titulky": {
+        DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
     }
 }
 
@@ -117,7 +121,10 @@ def get_providers_auth():
         'napisy24': {'username': settings.napisy24.username,
                      'password': settings.napisy24.password,
                      },
-        'betaseries': {'token': settings.betaseries.token}
+        'betaseries': {'token': settings.betaseries.token},
+        'titulky': {'username': settings.titulky.username,
+                    'password': settings.titulky.password,
+                    }
     }
     
     return providers_auth
@@ -140,7 +147,7 @@ def provider_throttle(name, exception):
     throttle_delta, throttle_description = throttle_data
     throttle_until = datetime.datetime.now() + throttle_delta
     
-    if throttled_count(name):
+    if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
         tp[name] = (cls_name, throttle_until, throttle_description)
         settings.general.throtteled_providers = str(tp)
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
