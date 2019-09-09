@@ -1,15 +1,16 @@
 # coding=utf-8
 
 import os
-import sqlite3
 import requests
 import logging
 from queueconfig import notifications
+from collections import OrderedDict
 import datetime
 
 from get_args import args
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
+from database import TableShows
 from utils import get_sonarr_version
 
 
@@ -40,20 +41,16 @@ def update_series():
         except requests.exceptions.RequestException as err:
             logging.exception("BAZARR Error trying to get series from Sonarr.")
         else:
-            # Open database connection
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            
             # Get current shows in DB
-            current_shows_db = c.execute('SELECT tvdbId FROM table_shows').fetchall()
+            current_shows_db = TableShows.select(
+                TableShows.tvdb_id
+            )
             
-            # Close database connection
-            db.close()
-            
-            current_shows_db_list = [x[0] for x in current_shows_db]
+            current_shows_db_list = [x.tvdb_id for x in current_shows_db]
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
+            altered_series = []
 
             seriesListLength = len(r.json())
             for i, show in enumerate(r.json(), 1):
@@ -74,61 +71,95 @@ def update_series():
 
                 if show['alternateTitles'] != None:
                     alternateTitles = str([item['title'] for item in show['alternateTitles']])
+                else:
+                    alternateTitles = None
 
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['tvdbId'])
                 
                 if show['tvdbId'] in current_shows_db_list:
-                    series_to_update.append((show["title"], show["path"], show["tvdbId"], show["id"], overview, poster,
-                                             fanart, profile_id_to_language(
-                        (show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
-                                             show['sortTitle'], show['year'], alternateTitles, show["tvdbId"]))
+                    series_to_update.append({'title': unicode(show["title"]),
+                                             'path': unicode(show["path"]),
+                                             'tvdb_id': int(show["tvdbId"]),
+                                             'sonarr_series_id': int(show["id"]),
+                                             'overview': unicode(overview),
+                                             'poster': unicode(poster),
+                                             'fanart': unicode(fanart),
+                                             'audio_language': unicode(profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles)),
+                                             'sort_title': unicode(show['sortTitle']),
+                                             'year': unicode(show['year']),
+                                             'alternate_titles': unicode(alternateTitles)})
                 else:
                     if serie_default_enabled is True:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
-                                              serie_default_hi, show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId'], audio_profiles), show['sortTitle'],
-                                              show['year'], alternateTitles, serie_default_forced))
+                        series_to_add.append({'title': show["title"],
+                                              'path': show["path"],
+                                              'tvdb_id': show["tvdbId"],
+                                              'languages': serie_default_language,
+                                              'hearing_impaired': serie_default_hi,
+                                              'sonarr_series_id': show["id"],
+                                              'overview': overview,
+                                              'poster': poster,
+                                              'fanart': fanart,
+                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
+                                              'sort_title': show['sortTitle'],
+                                              'year': show['year'],
+                                              'alternate_titles': alternateTitles,
+                                              'forced': serie_default_forced})
                     else:
-                        series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
-                                              show["tvdbId"], show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId'], audio_profiles), show['sortTitle'],
-                                              show['year'], alternateTitles, show["id"]))
+                        series_to_add.append({'title': show["title"],
+                                              'path': show["path"],
+                                              'tvdb_id': show["tvdbId"],
+                                              'sonarr_series_id': show["id"],
+                                              'overview': overview,
+                                              'poster': poster,
+                                              'fanart': fanart,
+                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
+                                              'sort_title': show['sortTitle'],
+                                              'year': show['year'],
+                                              'alternate_title': alternateTitles})
             
-            # Update or insert series in DB
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            
-            updated_result = c.executemany(
-                '''UPDATE table_shows SET title = ?, path = ?, tvdbId = ?, sonarrSeriesId = ?, overview = ?, poster = ?, fanart = ?, `audio_language` = ? , sortTitle = ?, year = ?, alternateTitles = ? WHERE tvdbid = ?''',
-                series_to_update)
-            db.commit()
-            
-            if serie_default_enabled is True:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    series_to_add)
-                db.commit()
-            else:
-                added_result = c.executemany(
-                    '''INSERT OR IGNORE INTO table_shows(title, path, tvdbId, languages,`hearing_impaired`, sonarrSeriesId, overview, poster, fanart, `audio_language`, sortTitle, year, alternateTitles, forced) VALUES (?,?,?,(SELECT languages FROM table_shows WHERE tvdbId = ?),(SELECT `hearing_impaired` FROM table_shows WHERE tvdbId = ?), ?, ?, ?, ?, ?, ?, ?, ?, (SELECT `forced` FROM table_shows WHERE tvdbId = ?))''',
-                    series_to_add)
-                db.commit()
-            db.close()
-            
-            for show in series_to_add:
-                list_missing_subtitles(show[5])
-            
-            # Delete shows not in Sonarr anymore
-            deleted_items = []
-            for item in current_shows_db_list:
-                if item not in current_shows_sonarr:
-                    deleted_items.append(tuple([item]))
-            db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-            c = db.cursor()
-            c.executemany('DELETE FROM table_shows WHERE tvdbId = ?', deleted_items)
-            db.commit()
-            db.close()
+            # Update existing series in DB
+            series_in_db_list = []
+            series_in_db = TableShows.select(
+                TableShows.title,
+                TableShows.path,
+                TableShows.tvdb_id,
+                TableShows.sonarr_series_id,
+                TableShows.overview,
+                TableShows.poster,
+                TableShows.fanart,
+                TableShows.audio_language,
+                TableShows.sort_title,
+                TableShows.year,
+                TableShows.alternate_titles
+            ).dicts()
+
+            for item in series_in_db:
+                series_in_db_list.append(item)
+
+            series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
+
+            for updated_series in series_to_update_list:
+                TableShows.update(
+                    updated_series
+                ).where(
+                    TableShows.sonarr_series_id == updated_series['sonarr_series_id']
+                ).execute()
+
+            # Insert new series in DB
+            for added_series in series_to_add:
+                TableShows.insert(
+                    added_series
+                ).on_conflict_ignore().execute()
+                list_missing_subtitles(added_series['sonarr_series_id'])
+
+            # Remove old series from DB
+            removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
+
+            for series in removed_series:
+                print TableShows.delete().where(
+                    TableShows.tvdb_id == series
+                ).execute()
 
 
 def get_profile_list():

@@ -2,10 +2,10 @@
 
 import apprise
 import os
-import sqlite3
 import logging
 
 from get_args import args
+from database import TableSettingsNotifier, TableShows, TableEpisodes, TableMovies
 
 
 def update_notifier():
@@ -18,64 +18,79 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
     
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    notifiers_current = c_db.execute('SELECT name FROM table_settings_notifier').fetchall()
+    notifiers_current_db = TableSettingsNotifier.select(
+        TableSettingsNotifier.name
+    )
+
+    notifiers_current = []
+    for notifier in notifiers_current_db:
+        notifiers_current.append(notifier.name)
+
     for x in results['schemas']:
-        if x['service_name'] not in str(notifiers_current):
+        if x['service_name'] not in notifiers_current:
             notifiers_new.append(x['service_name'])
             logging.debug('Adding new notifier agent: ' + x['service_name'])
         else:
             notifiers_old.append(x['service_name'])
-    notifier_current = [i[0] for i in notifiers_current]
+    notifier_current = [i for i in notifiers_current]
     
     notifiers_to_delete = list(set(notifier_current) - set(notifiers_old))
     
     for notifier_new in notifiers_new:
-        c_db.execute('INSERT INTO `table_settings_notifier` (name, enabled) VALUES (?, ?);', (notifier_new, '0'))
+        TableSettingsNotifier.insert(
+            {
+                TableSettingsNotifier.name: notifier_new,
+                TableSettingsNotifier.enabled: 0
+            }
+        ).execute()
     
     for notifier_to_delete in notifiers_to_delete:
-        c_db.execute('DELETE FROM `table_settings_notifier` WHERE name=?', (notifier_to_delete,))
-    
-    conn_db.commit()
-    c_db.close()
+        TableSettingsNotifier.delete().where(
+            TableSettingsNotifier.name == notifier_to_delete
+        ).execute()
 
 
 def get_notifier_providers():
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    providers = c_db.execute('SELECT name, url FROM table_settings_notifier WHERE enabled = 1').fetchall()
-    c_db.close()
+    providers = TableSettingsNotifier.select(
+        TableSettingsNotifier.name,
+        TableSettingsNotifier.url
+    ).where(
+        TableSettingsNotifier.enabled == 1
+    )
     
     return providers
 
 
 def get_series_name(sonarrSeriesId):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    data = c_db.execute('SELECT title FROM table_shows WHERE sonarrSeriesId = ?', (sonarrSeriesId,)).fetchone()
-    c_db.close()
+    data = TableShows.select(
+        TableShows.title
+    ).where(
+        TableShows.sonarr_series_id == sonarrSeriesId
+    ).first()
     
-    return data[0]
+    return data.title
 
 
 def get_episode_name(sonarrEpisodeId):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    data = c_db.execute('SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId = ?',
-                        (sonarrEpisodeId,)).fetchone()
-    c_db.close()
+    data = TableEpisodes.select(
+        TableEpisodes.title,
+        TableEpisodes.season,
+        TableEpisodes.episode
+    ).where(
+        TableEpisodes.sonarr_episode_id == sonarrEpisodeId
+    ).first()
     
-    return data[0], data[1], data[2]
+    return data.title, data.season, data.episode
 
 
 def get_movies_name(radarrId):
-    conn_db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c_db = conn_db.cursor()
-    data = c_db.execute('SELECT title FROM table_movies WHERE radarrId = ?', (radarrId,)).fetchone()
-    c_db.close()
+    data = TableMovies.select(
+        TableMovies.title
+    ).where(
+        TableMovies.radarr_id == radarrId
+    ).first()
     
-    return data[0]
+    return data.title
 
 
 def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
@@ -86,13 +101,12 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     apobj = apprise.Apprise()
     
     for provider in providers:
-        if provider[1] is not None:
-            apobj.add(provider[1])
+        if provider.url is not None:
+            apobj.add(provider.url)
     
     apobj.notify(
         title='Bazarr notification',
-        body=(series + ' - S' + str(episode[1]).zfill(2) + 'E' + str(episode[2]).zfill(2) + ' - ' + episode[
-            0] + ' : ' + message),
+        body=(series + ' - S' + str(episode[1]).zfill(2) + 'E' + str(episode[2]).zfill(2) + ' - ' + episode[0] + ' : ' + message),
     )
 
 
@@ -103,8 +117,8 @@ def send_notifications_movie(radarrId, message):
     apobj = apprise.Apprise()
     
     for provider in providers:
-        if provider[1] is not None:
-            apobj.add(provider[1])
+        if provider.url is not None:
+            apobj.add(provider.url)
     
     apobj.notify(
         title='Bazarr notification',

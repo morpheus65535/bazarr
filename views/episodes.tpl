@@ -19,11 +19,11 @@
 		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 		
-		<title>{{details[0]}} - Bazarr</title>
+		<title>{{details.title}} - Bazarr</title>
 		<style>
 			body {
 				background-color: #1b1c1d;
-				background-image: url("{{base_url}}image_proxy{{details[3]}}");
+				background-image: url("{{base_url}}image_proxy{{details.fanart}}");
 				background-repeat: no-repeat;
 				background-attachment: fixed;
 				background-size: cover;
@@ -92,7 +92,7 @@
         %from config import settings
         %from helper import path_replace
 		%single_language = settings.general.getboolean('single_language')
-		<div style="display: none;"><img src="{{base_url}}image_proxy{{details[3]}}"></div>
+		<div style="display: none;"><img src="{{base_url}}image_proxy{{details.fanart}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
@@ -102,14 +102,14 @@
 			<div id="divdetails" class="ui container">
 				<div class="ui stackable grid">
 					<div class="three wide column">
-						<img class="ui image" style="max-height:250px;" src="{{base_url}}image_proxy{{details[2]}}">
+						<img class="ui image" style="max-height:250px;" src="{{base_url}}image_proxy{{details.poster}}">
 					</div>
 
 					<div class="thirteen wide column">
 						<div class="ui stackable grid">
 							<div class="ui row">
 								<div class="twelve wide left aligned column">
-									<h2>{{details[0]}}</h2>
+									<h2>{{details.title}}</h2>
 								</div>
 
 								<div class="four wide right aligned column">
@@ -117,7 +117,7 @@
 										<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles"><i class="ui inverted large compact refresh icon"></i></button>
 										<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles"><i class="ui inverted huge compact search icon"></i></button>
 										<%
-										subs_languages = ast.literal_eval(str(details[7]))
+										subs_languages = ast.literal_eval(str(details.languages))
 										subs_languages_list = []
 										if subs_languages is not None:
 											for subs_language in subs_languages:
@@ -125,18 +125,18 @@
 											end
 										end
 										%>
-										<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details[5]}}" data-title="{{details[0]}}" data-poster="{{details[2]}}" data-audio="{{details[6]}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details[4]}}" data-forced="{{details[9]}}"><i class="ui inverted large compact configure icon"></i></button>
+										<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details.tvdb_id}}" data-title="{{details.title}}" data-poster="{{details.poster}}" data-audio="{{details.audio_language}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details.hearing_impaired}}" data-forced="{{details.forced}}"><i class="ui inverted large compact configure icon"></i></button>
 									</div>
 								</div>
 							</div>
 
 							<div class="ui row">
-								<p>{{details[1]}}</p>
+								<p>{{details.overview}}</p>
 							</div>
 
 							<div class="ui row">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details[6]}}</div>
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details[8]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details.audio_language}}</div>
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details.path}}</div>
 								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{number}} files</div>
 							</div>
 
@@ -147,8 +147,8 @@
 							</div>
 
 							<div class="ui row" style="padding-top: 0em;">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details[4]}}</div>
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details[9]}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details.hearing_impaired}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details.forced}}</div>
 							</div>
 						</div>
 					</div>
@@ -162,7 +162,7 @@
 			%else:
 				%for season in seasons:
 				<div id="fondblanc" class="ui container">
-					%missing_subs = len([i for i in season if i[6] != "[]"])
+					%missing_subs = len([i for i in season if i['missing_subtitles'] != "[]"])
 					%total_subs = len(season)
 					%subs_label = ''
 					%if subs_languages is not None:
@@ -174,7 +174,12 @@
 					%	end
 					%	subs_label = subs_label + ' circular label">' + str(total_subs - missing_subs) + ' / ' + str(total_subs) + '</div>'
 					%end
-					<h1 class="ui header">Season {{season[0][2]}}{{!subs_label}}</h1>
+					% season_number = None
+					% for season_temp in season:
+					%     season_number = season_temp['season']
+                    %     break
+					% end
+					<h1 class="ui header">Season {{season_number}}{{!subs_label}}</h1>
 					<div class="ui accordion">
 						<div class="title">
 							<div class="ui one column stackable center aligned page grid">
@@ -201,22 +206,22 @@
 								%for episode in season:
 									<tr>
 										<td class="collapsing">
-                                            %if episode[9] == 'True':
+                                            %if episode['monitored'] == 'True':
                                             <span data-tooltip="Episode monitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark icon"></i></span>
                                             %else:
                                             <span data-tooltip="Episode unmonitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark outline icon"></i></span>
                                             %end
                                         </td>
-										<td>{{episode[3]}}</td>
+										<td>{{episode['episode']}}</td>
 										<td>
-											% if episode[8] is not None:
-											<span data-tooltip="Scenename is: {{episode[8]}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
+											% if episode['scene_name'] is not None:
+											<span data-tooltip="Scenename is: {{episode['scene_name']}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
                                        	% end
-											<span data-tooltip="Path is: {{episode[1]}}" data-inverted='' data-position="top left">{{episode[0]}}</span>
+											<span data-tooltip="Path is: {{episode['path']}}" data-inverted='' data-position="top left">{{episode['title']}}</span>
 										</td>
 										<td>
-										%if episode[4] is not None:
-										%	actual_languages = ast.literal_eval(episode[4])
+										%if episode['subtitles'] is not None:
+										%	actual_languages = ast.literal_eval(episode['subtitles'])
                                         %   actual_languages.sort()
 										%else:
 										%	actual_languages = '[]'
@@ -229,7 +234,7 @@
 												%	forced = False
 												%end
 												%if language[1] is not None:
-												<a data-episodePath="{{episode[1]}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{alpha3_from_alpha2(str(language[0]))}}" data-sonarrSeriesId={{episode[5]}} data-sonarrEpisodeId={{episode[7]}} class="remove_subtitles ui tiny label">
+												<a data-episodePath="{{episode['path']}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{alpha3_from_alpha2(str(language[0]))}}" data-sonarrSeriesId={{episode['sonarr_series_id']}} data-sonarrEpisodeId={{episode['sonarr_episode_id']}} class="remove_subtitles ui tiny label">
                                                     {{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language[0].split(':')[0]}}
 													<i class="delete icon"></i>
 												</a>
@@ -246,24 +251,24 @@
 										<td>
                                         %try:
                                         <%
-                                            if episode[6] is not None:
-                                                missing_languages = ast.literal_eval(episode[6])
+                                            if episode['missing_subtitles'] is not None:
+                                                missing_languages = ast.literal_eval(episode['missing_subtitles'])
                                                 missing_languages.sort()
 											end
 											if missing_languages is not None:
                                                 from get_subtitle import search_active
                                                 for language in missing_languages:
-													if episode[10] is not None and settings.general.getboolean('adaptive_searching') and language in episode[10]:
-                                                        for lang in ast.literal_eval(episode[10]):
+													if episode['failed_attempts'] is not None and settings.general.getboolean('adaptive_searching') and language in episode['failed_attempts']:
+                                                        for lang in ast.literal_eval(episode['failed_attempts']):
                                                             if language in lang:
 																if search_active(lang[1]):
                                         %>
-                                                                    <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                                    <a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                                     </a>
                                                                 %else:
-                                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="get_subtitle ui tiny label">
 													                {{language}}
                                                                     <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                                     </a>
@@ -271,7 +276,7 @@
                                                             %end
                                                         %end
                                                     %else:
-                                                        <a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details[4]}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="get_subtitle ui tiny label">
+                                                        <a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="get_subtitle ui tiny label">
                                                             {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                         </a>
@@ -284,12 +289,12 @@
 										</td>
 										<td>
 											%if subs_languages is not None:
-											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-forced="{{details[9]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
+											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-series_title="{{details.title}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
 											%end
 										</td>
 										<td>
 											%if subs_languages is not None:
-											<a data-episodePath="{{episode[1]}}" data-scenename="{{episode[8]}}" data-language="{{subs_languages_list}}" data-hi="{{details[4]}}" data-series_title="{{details[0]}}" data-season="{{episode[2]}}" data-episode="{{episode[3]}}" data-episode_title="{{episode[0]}}" data-sonarrSeriesId="{{episode[5]}}" data-sonarrEpisodeId="{{episode[7]}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
+											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-series_title="{{details.title}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarr_series_id']}}" data-sonarrEpisodeId="{{episode['sonarr_episode_id']}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
 											%end
 										</td>
 									</tr>
@@ -335,7 +340,7 @@
                                             <option value="None">None</option>
                                             %end
 											%for language in languages:
-											<option value="{{language[0]}}">{{language[1]}}</option>
+											<option value="{{language.code2}}">{{language.name}}</option>
 											%end
 										</select>
 									</div>
@@ -504,7 +509,7 @@
 			forced: $(this).attr("data-forced"),
 			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
 			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId'),
-			title: "{{!details[0].replace("'", "\\'")}}"
+			title: "{{!str(details.title).replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");
@@ -581,7 +586,7 @@
 			forced: forced,
 			sonarrSeriesId: sonarrSeriesId,
 			sonarrEpisodeId: sonarrEpisodeId,
-			title: "{{!details[0].replace("'", "\'")}}"
+			title: "{{!str(details.title).replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -679,7 +684,7 @@
 		var languages = Array.from({{!subs_languages_list}});
 		var is_pb = languages.includes('pb');
 		var is_pt = languages.includes('pt');
-		var title = "{{!details[0].replace("'", "\'")}}";
+		var title = "{{!details.title.replace("'", "\'")}}";
 
 		$('#language').dropdown();
 
@@ -707,7 +712,7 @@
 				hi: hi,
 				sonarrSeriesId: sonarrSeriesId,
 				sonarrEpisodeId: sonarrEpisodeId,
-				title: "{{!details[0].replace("'", "\\'")}}"
+				title: "{{!str(details.title).replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading subtitle to disk...");

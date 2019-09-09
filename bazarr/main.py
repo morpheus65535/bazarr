@@ -17,35 +17,21 @@ import warnings
 import queueconfig
 import platform
 import apprise
+from peewee import fn, JOIN
+import operator
 
 from get_args import args
 from init import *
-from update_db import *
+from database import database, database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+    TableSettingsLanguages, TableSettingsNotifier, System
+
+# Initiate database
+database_init()
+
 from notifier import update_notifier
 from logger import configure_logging, empty_log
 
-
-# Try to import gevent and exit if it's not available. This one is required to use websocket.
-try:
-    import gevent
-except ImportError:
-    import logging
-    
-    logging.exception('BAZARR require gevent Python module to be installed using pip.')
-    try:
-        import os
-        from get_args import args
-        
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
-        stop_file.write('')
-        stop_file.close()
-        os._exit(0)
-
-from gevent.pywsgi import WSGIServer
-from geventwebsocket.handler import WebSocketHandler
+from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from io import BytesIO
 from six import text_type
@@ -67,14 +53,12 @@ from utils import history_log, history_log_movie, get_sonarr_version, get_radarr
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
-from helper import path_replace_movie
-from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from subliminal_patch.extensions import provider_registry as provider_manager
+from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 gc.enable()
-update_notifier()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 os.environ["BAZARR_VERSION"] = bazarr_version
@@ -103,11 +87,10 @@ else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 # Reset restart required warning on start
-conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-c = conn.cursor()
-c.execute("UPDATE system SET configured = 0, updated = 0")
-conn.commit()
-c.close()
+System.update({
+    System.configured: 0,
+    System.updated: 0
+}).execute()
 
 # Load languages in database
 load_language_in_db()
@@ -125,6 +108,9 @@ session_opts = {
 }
 app = SessionMiddleware(app, session_opts)
 login_auth = settings.auth.type
+
+
+update_notifier()
 
 
 def custom_auth_basic(check):
@@ -203,7 +189,10 @@ def shutdown():
     else:
         stop_file.write('')
         stop_file.close()
+        database.close()
+        database.stop()
         server.stop()
+        sys.exit(0)
 
 
 @route(base_url + 'restart')
@@ -222,18 +211,20 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
+            database.close()
+            database.stop()
 
 
 @route(base_url + 'wizard')
 @custom_auth_basic(check_credentials)
 def wizard():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    settings_languages = c.execute("SELECT * FROM table_settings_languages ORDER BY name").fetchall()
+
+    # Get languages list
+    settings_languages = TableSettingsLanguages.select().order_by(TableSettingsLanguages.name)
+    # Get providers list
     settings_providers = sorted(provider_manager.names())
-    c.close()
-    
+
     return template('wizard', bazarr_version=bazarr_version, settings=settings,
                     settings_languages=settings_languages, settings_providers=settings_providers,
                     base_url=base_url)
@@ -243,10 +234,7 @@ def wizard():
 @custom_auth_basic(check_credentials)
 def save_wizard():
     authorize()
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
+
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
@@ -402,9 +390,15 @@ def save_wizard():
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
-    c.execute("UPDATE table_settings_languages SET enabled = 0")
+    # Disable all languages in DB
+    TableSettingsLanguages.update({TableSettingsLanguages.enabled: 0})
     for item in settings_subliminal_languages:
-        c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
+        # Enable each desired language in DB
+        TableSettingsLanguages.update(
+            {TableSettingsLanguages.enabled: 1}
+        ).where(
+            TableSettingsLanguages.code2 == item
+        ).execute()
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -449,10 +443,7 @@ def save_wizard():
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-    
-    conn.commit()
-    c.close()
-    
+
     configured()
     redirect(base_url)
 
@@ -539,15 +530,8 @@ def redirect_root():
 @custom_auth_basic(check_credentials)
 def series():
     authorize()
-    single_language = settings.general.getboolean('single_language')
-    
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_shows")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+
+    missing_count = TableShows.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -555,82 +539,156 @@ def series():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
+    # Get list of series
+    data = TableShows.select(
+        TableShows.tvdb_id,
+        TableShows.title,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.languages,
+        TableShows.hearing_impaired,
+        TableShows.sonarr_series_id,
+        TableShows.poster,
+        TableShows.audio_language,
+        TableShows.forced
+    ).order_by(
+        TableShows.sort_title.asc()
+    ).paginate(
+        int(page),
+        page_size
+    )
+
+    # Get languages list
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
+    # Build missing subtitles clause depending on only_monitored
+    missing_subtitles_clause = [
+        (TableShows.languages != 'None'),
+        (TableEpisodes.missing_subtitles != '[]')
+    ]
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
-    
-    c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.execute(
-        "SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' AND table_episodes.missing_subtitles IS NOT '[]'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
-    missing_subtitles_list = c.fetchall()
-    c.execute(
-        "SELECT table_shows.sonarrSeriesId, COUNT(table_episodes.missing_subtitles) FROM table_shows LEFT JOIN table_episodes ON table_shows.sonarrSeriesId=table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'" + monitored_only_query_string + " GROUP BY table_shows.sonarrSeriesId")
-    total_subtitles_list = c.fetchall()
-    c.close()
-    output = template('series', bazarr_version=bazarr_version, rows=data,
+        missing_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
+
+    # Get missing subtitles count by series
+    missing_subtitles_list = TableShows.select(
+        TableShows.sonarr_series_id,
+        fn.COUNT(TableEpisodes.missing_subtitles).alias('missing_subtitles')
+    ).join_from(
+        TableShows, TableEpisodes, JOIN.LEFT_OUTER
+    ).where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).group_by(
+        TableShows.sonarr_series_id
+    )
+
+    # Build total subtitles clause depending on only_monitored
+    total_subtitles_clause = [
+        (TableShows.languages != 'None')
+    ]
+    if settings.sonarr.getboolean('only_monitored'):
+        total_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
+
+    # Get total subtitles count by series
+    total_subtitles_list = TableShows.select(
+        TableShows.sonarr_series_id,
+        fn.COUNT(TableEpisodes.missing_subtitles).alias('missing_subtitles')
+    ).join_from(
+        TableShows, TableEpisodes, JOIN.LEFT_OUTER
+    ).where(
+        reduce(operator.and_, total_subtitles_clause)
+    ).group_by(
+        TableShows.sonarr_series_id
+    )
+
+    return template('series', bazarr_version=bazarr_version, rows=data,
                       missing_subtitles_list=missing_subtitles_list, total_subtitles_list=total_subtitles_list,
                       languages=languages, missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
-    return output
+                      single_language=settings.general.getboolean('single_language'), page_size=page_size,
+                      current_port=settings.general.port)
 
 
 @route(base_url + 'serieseditor')
 @custom_auth_basic(check_credentials)
 def serieseditor():
     authorize()
-    single_language = settings.general.getboolean('single_language')
     
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
+    # Get missing count
+    missing_count = TableShows().select().count()
     
-    c.execute("SELECT COUNT(*) FROM table_shows")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
-    
-    c.execute(
-        "SELECT tvdbId, title, path_substitution(path), languages, hearing_impaired, sonarrSeriesId, poster, audio_language, forced FROM table_shows ORDER BY title ASC")
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
-    output = template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=settings.general.port)
-    return output
+    # Get movies list
+    data = TableShows.select(
+        TableShows.tvdb_id,
+        TableShows.title,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.languages,
+        TableShows.hearing_impaired,
+        TableShows.sonarr_series_id,
+        TableShows.poster,
+        TableShows.audio_language,
+        TableShows.forced
+    ).order_by(
+        TableShows.sort_title.asc()
+    )
+
+    # Get languages list
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
+    return template('serieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
+                    missing_count=missing_count, base_url=base_url,
+                    single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
 
 
 @route(base_url + 'search_json/<query>', method='GET')
 @custom_auth_basic(check_credentials)
 def search_json(query):
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
+
+    query = '%' + query + '%'
     search_list = []
+
     if settings.general.getboolean('use_sonarr'):
-        c.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? ORDER BY title",
-                  ('%' + query + '%',))
-        series = c.fetchall()
+        # Get matching series
+        series = TableShows.select(
+            TableShows.title,
+            TableShows.sonarr_series_id,
+            TableShows.year
+        ).where(
+            TableShows.title ** query
+        ).order_by(
+            TableShows.title.asc()
+        )
         for serie in series:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', serie[0]) + ' (' + serie[2] + ')'),
-                                     ('url', base_url + 'episodes/' + str(serie[1]))]))
+            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', serie.title) + ' (' + serie.year + ')'),
+                                     ('url', base_url + 'episodes/' + str(serie.sonarr_series_id))]))
     
     if settings.general.getboolean('use_radarr'):
-        c.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY title",
-                  ('%' + query + '%',))
-        movies = c.fetchall()
+        # Get matching movies
+        movies = TableMovies.select(
+            TableMovies.title,
+            TableMovies.radarr_id,
+            TableMovies.year
+        ).where(
+            TableMovies.title ** query
+        ).order_by(
+            TableMovies.title.asc()
+        )
         for movie in movies:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie[0]) + ' (' + movie[2] + ')'),
-                                     ('url', base_url + 'movie/' + str(movie[1]))]))
-    c.close()
-    
+            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie.title) + ' (' + movie.year + ')'),
+                                     ('url', base_url + 'movie/' + str(movie.radarr_id))]))
+
     response.content_type = 'application/json'
     return dict(items=search_list)
 
@@ -664,14 +722,17 @@ def edit_series(no):
         hi = "True"
     else:
         hi = "False"
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE table_shows SET languages = ?, hearing_impaired = ?, forced = ? WHERE sonarrSeriesId LIKE ?",
-              (str(lang), hi, forced, no))
-    conn.commit()
-    c.close()
-    
+
+    result = TableShows.update(
+        {
+            TableShows.languages: lang,
+            TableShows.hearing_impaired: hi,
+            TableShows.forced: forced
+        }
+    ).where(
+        TableShows.sonarr_series_id ** no
+    ).execute()
+
     list_missing_subtitles(no)
     
     redirect(ref)
@@ -688,24 +749,36 @@ def edit_serieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
     forced = request.forms.get('forced')
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
+
     for serie in series:
         if str(lang) != "[]" and str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
                 lang = str(lang)
-            c.execute("UPDATE table_shows SET languages = ? WHERE sonarrSeriesId LIKE ?", (lang, serie))
+            TableShows.update(
+                {
+                    TableShows.languages: lang
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
         if hi != '':
-            c.execute("UPDATE table_shows SET hearing_impaired = ? WHERE sonarrSeriesId LIKE ?", (hi, serie))
+            TableShows.update(
+                {
+                    TableShows.hearing_impaired: hi
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
         if forced != '':
-            c.execute("UPDATE table_shows SET forced = ? WHERE sonarrSeriesId LIKE ?", (forced, serie))
-    
-    conn.commit()
-    c.close()
+            TableShows.update(
+                {
+                    TableShows.forced: forced
+                }
+            ).where(
+                TableShows.sonarr_series_id % serie
+            ).execute()
     
     for serie in series:
         list_missing_subtitles(serie)
@@ -717,29 +790,58 @@ def edit_serieseditor():
 @custom_auth_basic(check_credentials)
 def episodes(no):
     authorize()
-    # single_language = settings.general.getboolean('single_language')
+
+    series_details = TableShows.select(
+        TableShows.title,
+        TableShows.overview,
+        TableShows.poster,
+        TableShows.fanart,
+        TableShows.hearing_impaired,
+        TableShows.tvdb_id,
+        TableShows.audio_language,
+        TableShows.languages,
+        fn.path_substitution(TableShows.path).alias('path'),
+        TableShows.forced
+    ).where(
+        TableShows.sonarr_series_id ** str(no)
+    ).limit(1)
+    for series in series_details:
+        tvdbid = series.tvdb_id
+        series_details = series
+        break
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace)
-    c = conn.cursor()
-    
-    series_details = []
-    series_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tvdbid, audio_language, languages, path_substitution(path), forced FROM table_shows WHERE sonarrSeriesId LIKE ?",
-        (str(no),)).fetchone()
-    tvdbid = series_details[5]
-    
-    episodes = c.execute(
-        "SELECT title, path_substitution(path), season, episode, subtitles, sonarrSeriesId, missing_subtitles, sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE sonarrSeriesId LIKE ? ORDER BY episode ASC",
-        (str(no),)).fetchall()
+    episodes = TableEpisodes.select(
+        TableEpisodes.title,
+        fn.path_substitution(TableEpisodes.path).alias('path'),
+        TableEpisodes.season,
+        TableEpisodes.episode,
+        TableEpisodes.subtitles,
+        TableEpisodes.sonarr_series_id,
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.scene_name,
+        TableEpisodes.monitored,
+        TableEpisodes.failed_attempts
+    ).where(
+        TableEpisodes.sonarr_series_id % no
+    ).order_by(
+        TableEpisodes.season.desc(),
+        TableEpisodes.episode.desc()
+    )
+
     number = len(episodes)
-    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
-    c.close()
-    episodes = reversed(sorted(episodes, key=operator.itemgetter(2)))
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     seasons_list = []
-    for key, season in itertools.groupby(episodes, operator.itemgetter(2)):
+    for key, season in itertools.groupby(episodes.dicts(), lambda x: x['season']):
         seasons_list.append(list(season))
-    
+
     return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details,
                     languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url,
                     tvdbid=tvdbid, number=number, current_port=settings.general.port)
@@ -749,15 +851,8 @@ def episodes(no):
 @custom_auth_basic(check_credentials)
 def movies():
     authorize()
-    single_language = settings.general.getboolean('single_language')
-    
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace_movie)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_movies")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+
+    missing_count = TableMovies.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -765,16 +860,36 @@ def movies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, monitored, sceneName, forced FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
+    data = TableMovies.select(
+        TableMovies.tmdb_id,
+        TableMovies.title,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.languages,
+        TableMovies.hearing_impaired,
+        TableMovies.radarr_id,
+        TableMovies.poster,
+        TableMovies.audio_language,
+        TableMovies.monitored,
+        TableMovies.scene_name,
+        TableMovies.forced
+    ).order_by(
+        TableMovies.sort_title.asc()
+    ).paginate(
+        int(page),
+        page_size
+    )
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=single_language, page_size=page_size, current_port=settings.general.port)
+                      single_language=settings.general.getboolean('single_language'), page_size=page_size,
+                      current_port=settings.general.port)
     return output
 
 
@@ -782,25 +897,33 @@ def movies():
 @custom_auth_basic(check_credentials)
 def movieseditor():
     authorize()
-    single_language = settings.general.getboolean('single_language')
     
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace_movie)
-    c = db.cursor()
+    missing_count = TableMovies.select().count()
     
-    c.execute("SELECT COUNT(*) FROM table_movies")
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
-    
-    c.execute(
-        "SELECT tmdbId, title, path_substitution(path), languages, hearing_impaired, radarrId, poster, audio_language, forced FROM table_movies ORDER BY title ASC")
-    data = c.fetchall()
-    c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1")
-    languages = c.fetchall()
-    c.close()
+    data = TableMovies.select(
+        TableMovies.tmdb_id,
+        TableMovies.title,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.languages,
+        TableMovies.hearing_impaired,
+        TableMovies.radarr_id,
+        TableMovies.poster,
+        TableMovies.audio_language,
+        TableMovies.forced
+    ).order_by(
+        TableMovies.sort_title.asc()
+    )
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, base_url=base_url, single_language=single_language,
-                      current_port=settings.general.port)
+                      missing_count=missing_count, base_url=base_url,
+                      single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
     return output
 
 
@@ -815,24 +938,36 @@ def edit_movieseditor():
     lang = request.forms.getall('languages')
     hi = request.forms.get('hearing_impaired')
     forced = request.forms.get('forced')
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
+
     for movie in movies:
         if str(lang) != "[]" and str(lang) != "['']":
             if str(lang) == "['None']":
                 lang = 'None'
             else:
                 lang = str(lang)
-            c.execute("UPDATE table_movies SET languages = ? WHERE radarrId LIKE ?", (lang, movie))
+            TableMovies.update(
+                {
+                    TableMovies.languages: lang
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
         if hi != '':
-            c.execute("UPDATE table_movies SET hearing_impaired = ? WHERE radarrId LIKE ?", (hi, movie))
+            TableMovies.update(
+                {
+                    TableMovies.hearing_impaired: hi
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
         if forced != '':
-            c.execute("UPDATE table_movies SET forced = ? WHERE radarrId LIKE ?", (forced, movie))
-    
-    conn.commit()
-    c.close()
+            TableMovies.update(
+                {
+                    TableMovies.forced: forced
+                }
+            ).where(
+                TableMovies.radarr_id % movie
+            ).execute()
     
     for movie in movies:
         list_missing_subtitles_movies(movie)
@@ -870,13 +1005,16 @@ def edit_movie(no):
     else:
         hi = "False"
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE table_movies SET languages = ?, hearing_impaired = ?, forced = ? WHERE radarrId LIKE ?",
-              (str(lang), hi, forced, no))
-    conn.commit()
-    c.close()
-    
+    TableMovies.update(
+        {
+            TableMovies.languages: str(lang),
+            TableMovies.hearing_impaired: hi,
+            TableMovies.forced: forced
+        }
+    ).where(
+        TableMovies.radarr_id % no
+    ).execute()
+
     list_missing_subtitles_movies(no)
     
     redirect(ref)
@@ -887,19 +1025,40 @@ def edit_movie(no):
 def movie(no):
     authorize()
     
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    conn.create_function("path_substitution", 1, path_replace_movie)
-    c = conn.cursor()
-    
-    movies_details = []
-    movies_details = c.execute(
-        "SELECT title, overview, poster, fanart, hearing_impaired, tmdbid, audio_language, languages, path_substitution(path), subtitles, radarrId, missing_subtitles, sceneName, monitored, failedAttempts, forced FROM table_movies WHERE radarrId LIKE ?",
-        (str(no),)).fetchone()
-    tmdbid = movies_details[5]
-    
-    languages = c.execute("SELECT code2, name FROM table_settings_languages WHERE enabled = 1").fetchall()
-    c.close()
-    
+    movies_details = TableMovies.select(
+        TableMovies.title,
+        TableMovies.overview,
+        TableMovies.poster,
+        TableMovies.fanart,
+        TableMovies.hearing_impaired,
+        TableMovies.tmdb_id,
+        TableMovies.audio_language,
+        TableMovies.languages,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.subtitles,
+        TableMovies.radarr_id,
+        TableMovies.missing_subtitles,
+        TableMovies.scene_name,
+        TableMovies.monitored,
+        TableMovies.failed_attempts,
+        TableMovies.forced
+    ).where(
+        TableMovies.radarr_id % str(no)
+    )
+
+    for movie_details in movies_details:
+        movies_details = movie_details
+        break
+
+    tmdbid = movies_details.tmdb_id
+
+    languages = TableSettingsLanguages.select(
+        TableSettingsLanguages.code2,
+        TableSettingsLanguages.name
+    ).where(
+        TableSettingsLanguages.enabled == 1
+    )
+
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
                     languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
                     current_port=settings.general.port)
@@ -960,12 +1119,8 @@ def history():
 @custom_auth_basic(check_credentials)
 def historyseries():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_history")
-    row_count = c.fetchone()
-    row_count = row_count[0]
+
+    row_count = TableHistory.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -977,59 +1132,88 @@ def historyseries():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history WHERE action > 0").fetchall()
+    stats = TableHistory.select(
+        TableHistory.timestamp
+    ).where(
+        TableHistory.action != 0
+    )
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
-            today.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisweek.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            today.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
-    
-    c.execute(
-        "SELECT table_history.action, table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_history.timestamp, table_history.description, table_history.sonarrSeriesId, table_episodes.path, table_shows.languages, table_history.language, table_history.score, table_shows.forced FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId ORDER BY id DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    
-    upgradable_episodes = []
+
+    data = TableHistory.select(
+        TableHistory.action,
+        TableShows.title.alias('seriesTitle'),
+        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
+        TableEpisodes.title.alias('episodeTitle'),
+        TableHistory.timestamp,
+        TableHistory.description,
+        TableHistory.sonarr_series_id,
+        TableEpisodes.path,
+        TableShows.languages,
+        TableHistory.language,
+        TableHistory.score,
+        TableShows.forced
+    ).join_from(
+        TableHistory, TableShows, JOIN.LEFT_OUTER
+    ).join_from(
+        TableHistory, TableEpisodes, JOIN.LEFT_OUTER
+    ).order_by(
+        TableHistory.timestamp.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
+
     upgradable_episodes_not_perfect = []
     if settings.general.getboolean('upgrade_subs'):
         days_to_upgrade_subs = settings.general.days_to_upgrade_subs
         minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                              datetime(1970, 1, 1)).total_seconds()
 
-        if settings.sonarr.getboolean('only_monitored'):
-            series_monitored_only_query_string = ' AND table_episodes.monitored = "True"'
-        else:
-            series_monitored_only_query_string = ""
-
         if settings.general.getboolean('upgrade_manual'):
             query_actions = [1, 2, 3]
         else:
             query_actions = [1, 3]
-        
-        upgradable_episodes = c.execute("""SELECT video_path, MAX(timestamp), score
-                                             FROM table_history
-                                       INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId
-                                            WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                  timestamp > ? AND score is not null""" +
-                                        series_monitored_only_query_string + """
-                                         GROUP BY table_history.video_path, table_history.language""",
-                                        (minimum_timestamp,)).fetchall()
-        for upgradable_episode in upgradable_episodes:
-            try:
-                int(upgradable_episode[2])
-            except ValueError:
-                pass
-            else:
-                if int(upgradable_episode[2]) < 360:
-                    upgradable_episodes_not_perfect.append(upgradable_episode)
-    
-    c.close()
-    
-    data = reversed(sorted(data, key=operator.itemgetter(4)))
+
+        episodes_details_clause = [
+            (TableHistory.action.in_(query_actions)) &
+            (TableHistory.score.is_null(False))
+        ]
+
+        if settings.sonarr.getboolean('only_monitored'):
+            episodes_details_clause.append(
+                (TableEpisodes.monitored == 'True')
+            )
+
+        upgradable_episodes = TableHistory.select(
+            TableHistory.video_path,
+            fn.MAX(TableHistory.timestamp).alias('timestamp'),
+            TableHistory.score
+        ).join_from(
+            TableHistory, TableEpisodes, JOIN.LEFT_OUTER
+        ).where(
+            reduce(operator.and_, episodes_details_clause)
+        ).group_by(
+            TableHistory.video_path,
+            TableHistory.language
+        )
+
+        for upgradable_episode in upgradable_episodes.dicts():
+            if upgradable_episode['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_episode['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_episode['score']) < 360:
+                        upgradable_episodes_not_perfect.append(tuple(upgradable_episode.values()))
     
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
@@ -1040,12 +1224,8 @@ def historyseries():
 @custom_auth_basic(check_credentials)
 def historymovies():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    c.execute("SELECT COUNT(*) FROM table_history_movie")
-    row_count = c.fetchone()
-    row_count = row_count[0]
+
+    row_count = TableHistoryMovie.select().count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1057,21 +1237,40 @@ def historymovies():
     today = []
     thisweek = []
     thisyear = []
-    stats = c.execute("SELECT timestamp FROM table_history_movie WHERE action > 0").fetchall()
+    stats = TableHistoryMovie.select(
+        TableHistoryMovie.timestamp
+    ).where(
+        TableHistoryMovie.action > 0
+    )
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat[0]) <= now:
-            today.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisweek.append(datetime.fromtimestamp(stat[0]).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat[0]) <= now:
-            thisyear.append(datetime.fromtimestamp(stat[0]).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            today.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
+            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
     
-    c.execute(
-        "SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, table_history_movie.description, table_history_movie.radarrId, table_history_movie.video_path, table_movies.languages, table_history_movie.language, table_history_movie.score, table_movies.forced FROM table_history_movie LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId ORDER BY id DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
+    data = TableHistoryMovie.select(
+        TableHistoryMovie.action,
+        TableMovies.title,
+        TableHistoryMovie.timestamp,
+        TableHistoryMovie.description,
+        TableHistoryMovie.radarr_id,
+        TableHistoryMovie.video_path,
+        TableMovies.languages,
+        TableHistoryMovie.language,
+        TableHistoryMovie.score,
+        TableMovies.forced
+    ).join_from(
+        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).order_by(
+        TableHistoryMovie.timestamp.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
     
     upgradable_movies = []
     upgradable_movies_not_perfect = []
@@ -1089,26 +1288,40 @@ def historymovies():
             query_actions = [1, 2, 3]
         else:
             query_actions = [1, 3]
-        
-        upgradable_movies = c.execute("""SELECT video_path, MAX(timestamp), score
-                                           FROM table_history_movie
-                                     INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId
-                                          WHERE action IN (""" + ','.join(map(str, query_actions)) + """) AND 
-                                                timestamp > ? AND score is not null""" +
-                                      movies_monitored_only_query_string + """
-                                       GROUP BY video_path, language""",
-                                      (minimum_timestamp,)).fetchall()
-        for upgradable_movie in upgradable_movies:
-            try:
-                int(upgradable_movie[2])
-            except ValueError:
-                pass
-            else:
-                if int(upgradable_movie[2]) < 120:
-                    upgradable_movies_not_perfect.append(upgradable_movie)
-    
-    c.close()
-    data = reversed(sorted(data, key=operator.itemgetter(2)))
+
+        movies_details_clause = [
+            (TableHistoryMovie.action.in_(query_actions)) &
+            (TableHistoryMovie.score.is_null(False))
+        ]
+
+        if settings.radarr.getboolean('only_monitored'):
+            movies_details_clause.append(
+                (TableMovies.monitored == 'True')
+            )
+
+        upgradable_movies = TableHistoryMovie.select(
+            TableHistoryMovie.video_path,
+            fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
+            TableHistoryMovie.score
+        ).join_from(
+            TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+        ).where(
+            reduce(operator.and_, movies_details_clause)
+        ).group_by(
+            TableHistoryMovie.video_path,
+            TableHistoryMovie.language
+        )
+
+        for upgradable_movie in upgradable_movies.dicts():
+            if upgradable_movie['timestamp'] > minimum_timestamp:
+                try:
+                    int(upgradable_movie['score'])
+                except ValueError:
+                    pass
+                else:
+                    if int(upgradable_movie['score']) < 120:
+                        upgradable_movies_not_perfect.append(tuple(upgradable_movie.values()))
+
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
                     current_port=settings.general.port, upgradable_movies=upgradable_movies_not_perfect)
@@ -1125,18 +1338,18 @@ def wanted():
 @custom_auth_basic(check_credentials)
 def wantedseries():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace)
-    c = db.cursor()
-    
+
+    missing_subtitles_clause = [
+        (TableEpisodes.missing_subtitles != '[]')
+    ]
     if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
+        missing_subtitles_clause.append(
+            (TableEpisodes.monitored == 'True')
+        )
     
-    c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string)
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+    missing_count = TableEpisodes.select().where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1144,32 +1357,48 @@ def wantedseries():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, path_substitution(table_episodes.path), table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.close()
-    return template('wantedseries', bazarr_version=bazarr_version, rows=data,
-                    missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+    data = TableEpisodes.select(
+        TableShows.title.alias('seriesTitle'),
+        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
+        TableEpisodes.title.alias('episodeTitle'),
+        TableEpisodes.missing_subtitles,
+        TableEpisodes.sonarr_series_id,
+        fn.path_substitution(TableEpisodes.path).alias('path'),
+        TableShows.hearing_impaired,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.scene_name,
+        TableEpisodes.failed_attempts
+    ).join_from(
+        TableEpisodes, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).order_by(
+        TableEpisodes.sonarr_episode_id.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
+
+    return template('wantedseries', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page,
+                    max_page=max_page, base_url=base_url, page_size=page_size, current_port=settings.general.port)
 
 
 @route(base_url + 'wantedmovies')
 @custom_auth_basic(check_credentials)
 def wantedmovies():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    db.create_function("path_substitution", 1, path_replace_movie)
-    c = db.cursor()
-    
+
+    missing_subtitles_clause = [
+        (TableMovies.missing_subtitles != '[]')
+    ]
     if settings.radarr.getboolean('only_monitored'):
-        monitored_only_query_string = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string = ""
-    
-    c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string)
-    missing_count = c.fetchone()
-    missing_count = missing_count[0]
+        missing_subtitles_clause.append(
+            (TableMovies.monitored == 'True')
+        )
+
+    missing_count = TableMovies.select().where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1177,11 +1406,23 @@ def wantedmovies():
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
     
-    c.execute(
-        "SELECT title, missing_subtitles, radarrId, path_substitution(path), hearing_impaired, sceneName, failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
-        (page_size, offset,))
-    data = c.fetchall()
-    c.close()
+    data = TableMovies.select(
+        TableMovies.title,
+        TableMovies.missing_subtitles,
+        TableMovies.radarr_id,
+        fn.path_substitution_movie(TableMovies.path).alias('path'),
+        TableMovies.hearing_impaired,
+        TableMovies.scene_name,
+        TableMovies.failed_attempts
+    ).where(
+        reduce(operator.and_, missing_subtitles_clause)
+    ).order_by(
+        TableMovies.radarr_id.desc()
+    ).paginate(
+        int(page),
+        page_size
+    ).objects()
+
     return template('wantedmovies', bazarr_version=bazarr_version, rows=data,
                     missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
                     current_port=settings.general.port)
@@ -1202,15 +1443,11 @@ def wanted_search_missing_subtitles_list():
 @custom_auth_basic(check_credentials)
 def _settings():
     authorize()
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    c.execute("SELECT * FROM table_settings_languages ORDER BY name")
-    settings_languages = c.fetchall()
+
+    settings_languages = TableSettingsLanguages.select().order_by(TableSettingsLanguages.name)
     settings_providers = sorted(provider_manager.names())
-    c.execute("SELECT * FROM table_settings_notifier ORDER BY name")
-    settings_notifier = c.fetchall()
-    c.close()
-    
+    settings_notifier = TableSettingsNotifier.select().order_by(TableSettingsNotifier.name)
+
     return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages,
                     settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url,
                     current_port=settings.general.port)
@@ -1221,10 +1458,7 @@ def _settings():
 def save_settings():
     authorize()
     ref = request.environ['HTTP_REFERER']
-    
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    
+
     settings_general_ip = request.forms.get('settings_general_ip')
     settings_general_port = request.forms.get('settings_general_port')
     settings_general_baseurl = request.forms.get('settings_general_baseurl')
@@ -1556,9 +1790,15 @@ def save_settings():
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
-    c.execute("UPDATE table_settings_languages SET enabled = 0")
+    TableSettingsLanguages.update({TableSettingsLanguages.enabled: 0}).execute()
     for item in settings_subliminal_languages:
-        c.execute("UPDATE table_settings_languages SET enabled = '1' WHERE code2 = ?", (item,))
+        TableSettingsLanguages.update(
+            {
+                TableSettingsLanguages.enabled: 1
+            }
+        ).where(
+            TableSettingsLanguages.code2 == item
+        ).execute()
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -1609,19 +1849,22 @@ def save_settings():
     
     configure_logging(settings.general.getboolean('debug') or args.debug)
     
-    notifiers = c.execute("SELECT * FROM table_settings_notifier ORDER BY name").fetchall()
+    notifiers = TableSettingsNotifier.select().order_by(TableSettingsNotifier.name)
     for notifier in notifiers:
-        enabled = request.forms.get('settings_notifier_' + notifier[0] + '_enabled')
+        enabled = request.forms.get('settings_notifier_' + notifier.name + '_enabled')
         if enabled == 'on':
             enabled = 1
         else:
             enabled = 0
-        notifier_url = request.forms.get('settings_notifier_' + notifier[0] + '_url')
-        c.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
-                  (enabled, notifier_url, notifier[0]))
-    
-    conn.commit()
-    c.close()
+        notifier_url = request.forms.get('settings_notifier_' + notifier.name + '_url')
+        TableSettingsNotifier.update(
+            {
+                TableSettingsNotifier.enabled: enabled,
+                TableSettingsNotifier.url: notifier_url
+            }
+        ).where(
+            TableSettingsNotifier.name == notifier.name
+        ).execute()
     
     schedule_update_job()
     sonarr_full_update()
@@ -1936,16 +2179,16 @@ def perform_manual_upload_subtitle():
 
     if ext not in SUBTITLE_EXTENSIONS:
         raise ValueError('A subtitle of an invalid format was uploaded.')
-    
+
     try:
-        result = manual_upload_subtitle(path=episodePath, 
+        result = manual_upload_subtitle(path=episodePath,
                                         language=language,
                                         forced=forced,
-                                        title=title, 
-                                        scene_name=sceneName, 
+                                        title=title,
+                                        scene_name=sceneName,
                                         media_type='series',
                                         subtitle=upload)
-        
+
         if result is not None:
             message = result[0]
             path = result[1]
@@ -1956,7 +2199,7 @@ def perform_manual_upload_subtitle():
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(unicode(episodePath))
             list_missing_subtitles(sonarrSeriesId)
-        
+
         redirect(ref)
     except OSError:
         pass
@@ -2072,16 +2315,16 @@ def perform_manual_upload_subtitle_movie():
 
     if ext not in SUBTITLE_EXTENSIONS:
         raise ValueError('A subtitle of an invalid format was uploaded.')
-    
+
     try:
-        result = manual_upload_subtitle(path=moviePath, 
+        result = manual_upload_subtitle(path=moviePath,
                                         language=language,
                                         forced=forced,
-                                        title=title, 
-                                        scene_name=sceneName, 
+                                        title=title,
+                                        scene_name=sceneName,
                                         media_type='series',
                                         subtitle=upload)
-        
+
         if result is not None:
             message = result[0]
             path = result[1]
@@ -2092,58 +2335,100 @@ def perform_manual_upload_subtitle_movie():
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(unicode(moviePath))
             list_missing_subtitles_movies(radarrId)
-        
+
         redirect(ref)
     except OSError:
         pass
 
 
 def configured():
-    conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = conn.cursor()
-    c.execute("UPDATE system SET configured = 1")
-    conn.commit()
-    c.close()
+    System.update({System.configured: 1}).execute()
 
 
 @route(base_url + 'api/series/wanted')
 def api_wanted():
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    data = c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10").fetchall()
-    c.close()
-    return dict(subtitles=data)
+    data = TableEpisodes.select(
+        TableShows.title.alias('seriesTitle'),
+        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
+        TableEpisodes.title.alias('episodeTitle'),
+        TableEpisodes.missing_subtitles
+    ).join_from(
+        TableEpisodes, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        TableEpisodes.missing_subtitles != '[]'
+    ).order_by(
+        TableEpisodes.sonarr_episode_id.desc()
+    ).limit(10).objects()
+
+    wanted_subs = []
+    for item in data:
+        wanted_subs.append([item.seriesTitle, item.episode_number, item.episodeTitle, item.missing_subtitles])
+
+    return dict(subtitles=wanted_subs)
 
 
 @route(base_url + 'api/series/history')
 def api_history():
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    data = c.execute(
-        "SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')), table_history.description FROM table_history INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10").fetchall()
-    c.close()
-    return dict(subtitles=data)
+    data = TableHistory.select(
+        TableShows.title.alias('seriesTitle'),
+        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
+        TableEpisodes.title.alias('episodeTitle'),
+        fn.strftime('%Y-%m-%d', fn.datetime(TableHistory.timestamp, 'unixepoch')).alias('date'),
+        TableHistory.description
+    ).join_from(
+        TableHistory, TableShows, JOIN.LEFT_OUTER
+    ).join_from(
+        TableHistory, TableEpisodes, JOIN. LEFT_OUTER
+    ).where(
+        TableHistory.action != '0'
+    ).order_by(
+        TableHistory.id.desc()
+    ).limit(10).objects()
+
+    history_subs = []
+    for item in data:
+        history_subs.append([item.seriesTitle, item.episode_number, item.episodeTitle, item.date, item.description])
+
+    return dict(subtitles=history_subs)
 
 
 @route(base_url + 'api/movies/wanted')
 def api_wanted():
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    data = c.execute(
-        "SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC LIMIT 10").fetchall()
-    c.close()
-    return dict(subtitles=data)
+    data = TableMovies.select(
+        TableMovies.title,
+        TableMovies.missing_subtitles
+    ).where(
+        TableMovies.missing_subtitles != '[]'
+    ).order_by(
+        TableMovies.radarr_id.desc()
+    ).limit(10).objects()
+
+    wanted_subs = []
+    for item in data:
+        wanted_subs.append([item.title, item.missing_subtitles])
+
+    return dict(subtitles=wanted_subs)
 
 
 @route(base_url + 'api/movies/history')
 def api_history():
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    data = c.execute(
-        "SELECT table_movies.title, strftime('%Y-%m-%d', datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description FROM table_history_movie INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId WHERE table_history_movie.action != '0' ORDER BY id DESC LIMIT 10").fetchall()
-    c.close()
-    return dict(subtitles=data)
+    data = TableHistoryMovie.select(
+        TableMovies.title,
+        fn.strftime('%Y-%m-%d', fn.datetime(TableHistoryMovie.timestamp, 'unixepoch')).alias('date'),
+        TableHistoryMovie.description
+    ).join_from(
+        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).where(
+        TableHistoryMovie.action != '0'
+    ).order_by(
+        TableHistoryMovie.id.desc()
+    ).limit(10).objects()
+
+    history_subs = []
+    for item in data:
+        history_subs.append([item.title, item.date, item.description])
+
+    return dict(subtitles=history_subs)
 
 
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
@@ -2188,11 +2473,10 @@ def running_tasks_list():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-server = WSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app,
-                    handler_class=WebSocketHandler)
+server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
         args.port) if args.port else str(settings.general.port)) + str(base_url))
-    server.serve_forever()
+    server.start()
 except KeyboardInterrupt:
     shutdown()

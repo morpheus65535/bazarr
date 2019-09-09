@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
 import logging
-import sqlite3
 import json
 import requests
 import tarfile
@@ -9,6 +8,7 @@ import tarfile
 from get_args import args
 from config import settings, bazarr_url
 from queueconfig import notifications
+from database import System
 
 if not args.no_update and not args.release_update:
     import git
@@ -299,8 +299,4 @@ def updated(restart=True):
             logging.info('BAZARR Restart failed, please restart Bazarr manualy')
             updated(restart=False)
     else:
-        conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-        c = conn.cursor()
-        c.execute("UPDATE system SET updated = 1")
-        conn.commit()
-        c.close()
+        System.update({System.updated: 1}).execute()

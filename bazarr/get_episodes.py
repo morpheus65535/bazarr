@@ -1,16 +1,15 @@
 # coding=utf-8
 import os
-import sqlite3
 import requests
 import logging
 import re
 from queueconfig import notifications
+from database import TableShows, TableEpisodes, wal_cleaning
 
 from get_args import args
 from config import settings, url_sonarr
 from helper import path_replace
-from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles, \
-    movies_full_scan_subtitles
+from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 
 
@@ -19,13 +18,7 @@ def update_all_episodes():
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
     list_missing_subtitles()
     logging.info('BAZARR All missing episode subtitles updated in database.')
-
-
-def update_all_movies():
-    movies_full_scan_subtitles()
-    logging.info('BAZARR All existing movie subtitles indexed from disk.')
-    list_missing_subtitles()
-    logging.info('BAZARR All missing movie subtitles updated in database.')
+    wal_cleaning()
 
 
 def sync_episodes():
@@ -33,29 +26,31 @@ def sync_episodes():
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
-    # Open database connection
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
     # Get current episodes id in DB
-    current_episodes_db = c.execute('SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes').fetchall()
+    current_episodes_db = TableEpisodes.select(
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.path,
+        TableEpisodes.sonarr_series_id
+    )
 
-    current_episodes_db_list = [x[0] for x in current_episodes_db]
+    current_episodes_db_list = [x.sonarr_episode_id for x in current_episodes_db]
+
     current_episodes_sonarr = []
     episodes_to_update = []
     episodes_to_add = []
+    altered_episodes = []
     
     # Get sonarrId for each series from database
-    seriesIdList = c.execute("SELECT sonarrSeriesId, title FROM table_shows").fetchall()
+    seriesIdList = TableShows.select(
+        TableShows.sonarr_series_id,
+        TableShows.title
+    )
     
-    # Close database connection
-    c.close()
-
-    seriesIdListLength = len(seriesIdList)
+    seriesIdListLength = seriesIdList.count()
     for i, seriesId in enumerate(seriesIdList, 1):
         notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId[0]) + "&apikey=" + apikey_sonarr
+        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId.sonarr_series_id) + "&apikey=" + apikey_sonarr
         try:
             r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()
@@ -106,46 +101,82 @@ def sync_episodes():
                                 current_episodes_sonarr.append(episode['id'])
                                 
                                 if episode['id'] in current_episodes_db_list:
-                                    episodes_to_update.append((episode['title'], episode['episodeFile']['path'],
-                                                               episode['seasonNumber'], episode['episodeNumber'],
-                                                               sceneName, str(bool(episode['monitored'])),
-                                                               format, resolution,
-                                                               videoCodec, audioCodec, episode['id']))
+                                    episodes_to_update.append({'sonarr_series_id': episode['seriesId'],
+                                                               'sonarr_episode_id': episode['id'],
+                                                               'title': episode['title'],
+                                                               'path': episode['episodeFile']['path'],
+                                                               'season': episode['seasonNumber'],
+                                                               'episode': episode['episodeNumber'],
+                                                               'scene_name': sceneName,
+                                                               'monitored': str(bool(episode['monitored'])),
+                                                               'format': format,
+                                                               'resolution': resolution,
+                                                               'video_codec': videoCodec,
+                                                               'audio_codec': audioCodec})
                                 else:
-                                    episodes_to_add.append((episode['seriesId'], episode['id'], episode['title'],
-                                                            episode['episodeFile']['path'], episode['seasonNumber'],
-                                                            episode['episodeNumber'], sceneName,
-                                                            str(bool(episode['monitored'])), format, resolution,
-                                                            videoCodec, audioCodec))
-    
+                                    episodes_to_add.append({'sonarr_series_id': episode['seriesId'],
+                                                            'sonarr_episode_id': episode['id'],
+                                                            'title': episode['title'],
+                                                            'path': episode['episodeFile']['path'],
+                                                            'season': episode['seasonNumber'],
+                                                            'episode': episode['episodeNumber'],
+                                                            'scene_name': sceneName,
+                                                            'monitored': str(bool(episode['monitored'])),
+                                                            'format': format,
+                                                            'resolution': resolution,
+                                                            'video_codec': videoCodec,
+                                                            'audio_codec': audioCodec})
+
+    # Update existing episodes in DB
+    episode_in_db_list = []
+    episodes_in_db = TableEpisodes.select(
+        TableEpisodes.sonarr_series_id,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.title,
+        TableEpisodes.path,
+        TableEpisodes.season,
+        TableEpisodes.episode,
+        TableEpisodes.scene_name,
+        TableEpisodes.monitored,
+        TableEpisodes.format,
+        TableEpisodes.resolution,
+        TableEpisodes.video_codec,
+        TableEpisodes.audio_codec
+    ).dicts()
+
+    for item in episodes_in_db:
+        episode_in_db_list.append(item)
+
+    episodes_to_update_list = [i for i in episodes_to_update if i not in episode_in_db_list]
+
+    for updated_episode in episodes_to_update_list:
+        TableEpisodes.update(
+            updated_episode
+        ).where(
+            TableEpisodes.sonarr_episode_id == updated_episode['sonarr_episode_id']
+        ).execute()
+        altered_episodes.append([updated_episode['sonarr_episode_id'],
+                                 updated_episode['path'],
+                                 updated_episode['sonarr_series_id']])
+
+    # Insert new episodes in DB
+    for added_episode in episodes_to_add:
+        TableEpisodes.insert(
+            added_episode
+        ).on_conflict_ignore().execute()
+        altered_episodes.append([added_episode['sonarr_episode_id'],
+                                 added_episode['path'],
+                                 added_episode['sonarr_series_id']])
+
+    # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
-    
-    # Update or insert movies in DB
-    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    c = db.cursor()
-    
-    updated_result = c.executemany(
-        '''UPDATE table_episodes SET title = ?, path = ?, season = ?, episode = ?, scene_name = ?, monitored = ?, format = ?, resolution = ?, video_codec = ?, audio_codec = ? WHERE sonarrEpisodeId = ?''',
-        episodes_to_update)
-    db.commit()
-    
-    added_result = c.executemany(
-        '''INSERT OR IGNORE INTO table_episodes(sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, scene_name, monitored, format, resolution, video_codec, audio_codec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        episodes_to_add)
-    db.commit()
-    
+
     for removed_episode in removed_episodes:
-        c.execute('DELETE FROM table_episodes WHERE sonarrEpisodeId = ?', (removed_episode,))
-        db.commit()
+        TableEpisodes.delete().where(
+            TableEpisodes.sonarr_episode_id == removed_episode
+        ).execute()
 
-    # Get episodes list after INSERT and UPDATE
-    episodes_now_in_db = c.execute('SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes').fetchall()
-
-    # Close database connection
-    c.close()
-
-    # Get only episodes added or modified and store subtitles for them
-    altered_episodes = set(episodes_now_in_db).difference(set(current_episodes_db))
+    # Store subtitles for added or modified episodes
     for altered_episode in altered_episodes:
         store_subtitles(path_replace(altered_episode[1]))
         list_missing_subtitles(altered_episode[2])
@@ -158,7 +189,7 @@ def sync_episodes():
         for altered_episode in altered_episodes:
             episode_download_subtitles(altered_episode[0])
     else:
-        logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles.")
+        logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
 
 
 def SonarrFormatAudioCodec(audioCodec):

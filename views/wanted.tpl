@@ -35,27 +35,31 @@
 		% from get_args import args
 
 		% import os
-		% import sqlite3
-		% from config import settings
+		% from database import TableEpisodes, TableMovies, System
+		% import operator
+        % from config import settings
 
-        %if settings.sonarr.getboolean('only_monitored'):
-        %    monitored_only_query_string_sonarr = ' AND monitored = "True"'
-        %else:
-        %    monitored_only_query_string_sonarr = ""
+        %episodes_missing_subtitles_clause = [
+        %	 (TableEpisodes.missing_subtitles != '[]')
+    	%]
+    	%if settings.sonarr.getboolean('only_monitored'):
+        %    episodes_missing_subtitles_clause.append(
+        %        (TableEpisodes.monitored == 'True')
+        %    )
         %end
 
-        %if settings.radarr.getboolean('only_monitored'):
-        %    monitored_only_query_string_radarr = ' AND monitored = "True"'
-        %else:
-        %    monitored_only_query_string_radarr = ""
+        %movies_missing_subtitles_clause = [
+        %	 (TableMovies.missing_subtitles != '[]')
+    	%]
+    	%if settings.radarr.getboolean('only_monitored'):
+        %    movies_missing_subtitles_clause.append(
+        %        (TableMovies.monitored == 'True')
+        %    )
         %end
 
-        % conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    	% c = conn.cursor()
-		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr).fetchone()
-		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr).fetchone()
-		% c.close()
-
+        % wanted_series = TableEpisodes.select().where(reduce(operator.and_, episodes_missing_subtitles_clause)).count()
+		% wanted_movies = TableMovies.select().where(reduce(operator.and_, movies_missing_subtitles_clause)).count()
+		
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
@@ -65,12 +69,12 @@
 			<div class="ui top attached tabular menu">
 				<a id="series_tab" class="tabs item active" data-enabled="{{settings.general.getboolean('use_sonarr')}}" data-tab="series">Series
 					<div class="ui tiny yellow label">
-						{{wanted_series[0]}}
+						{{wanted_series}}
 					</div>
 				</a>
 				<a id="movies_tab" class="tabs item" data-enabled="{{settings.general.getboolean('use_radarr')}}" data-tab="movies">Movies
 					<div class="ui tiny green label">
-						{{wanted_movies[0]}}
+						{{wanted_movies}}
 					</div>
 				</a>
 			</div>

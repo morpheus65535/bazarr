@@ -58,25 +58,30 @@
 		% import ast
 		% import datetime
 		% import os
-		% import sqlite3
+		% from database import TableEpisodes, TableMovies, System
+		% import operator
         % from config import settings
 
-        %if settings.sonarr.getboolean('only_monitored'):
-        %    monitored_only_query_string_sonarr = ' AND monitored = "True"'
-        %else:
-        %    monitored_only_query_string_sonarr = ""
+        %episodes_missing_subtitles_clause = [
+        %	 (TableEpisodes.missing_subtitles != '[]')
+    	%]
+    	%if settings.sonarr.getboolean('only_monitored'):
+        %    episodes_missing_subtitles_clause.append(
+        %        (TableEpisodes.monitored == 'True')
+        %    )
         %end
 
-        %if settings.radarr.getboolean('only_monitored'):
-        %    monitored_only_query_string_radarr = ' AND monitored = "True"'
-        %else:
-        %    monitored_only_query_string_radarr = ""
+        %movies_missing_subtitles_clause = [
+        %	 (TableMovies.missing_subtitles != '[]')
+    	%]
+    	%if settings.radarr.getboolean('only_monitored'):
+        %    movies_missing_subtitles_clause.append(
+        %        (TableMovies.monitored == 'True')
+        %    )
         %end
 
-        % conn = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
-    	% c = conn.cursor()
-		% wanted_series = c.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr).fetchone()
-		% wanted_movies = c.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr).fetchone()
+        % wanted_series = TableEpisodes.select().where(reduce(operator.and_, episodes_missing_subtitles_clause)).count()
+		% wanted_movies = TableMovies.select().where(reduce(operator.and_, movies_missing_subtitles_clause)).count()
 		% from get_providers import list_throttled_providers
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
@@ -107,14 +112,14 @@
 							</a>
 							<a class="item" href="{{base_url}}wanted">
 								<i class="warning sign icon">
-									% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+									% if settings.general.getboolean('use_sonarr') and wanted_series > 0:
 									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
-										{{wanted_series[0]}}
+										{{wanted_series}}
 									</div>
 									% end
-									% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+									% if settings.general.getboolean('use_radarr') and wanted_movies > 0:
 									<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
-										{{wanted_movies[0]}}
+										{{wanted_movies}}
 									</div>
 									% end
 								</i>
@@ -178,14 +183,14 @@
 									<a class="item" href="{{base_url}}wanted">
 										<i class="warning sign icon"></i>
 										<span  style="margin-right: 1em;">Wanted</span>
-										% if settings.general.getboolean('use_sonarr') and wanted_series[0] > 0:
+										% if settings.general.getboolean('use_sonarr') and wanted_series > 0:
 										<div class="ui tiny yellow label">
-											{{wanted_series[0]}}
+											{{wanted_series}}
 										</div>
 										% end
-										% if settings.general.getboolean('use_radarr') and wanted_movies[0] > 0:
+										% if settings.general.getboolean('use_radarr') and wanted_movies > 0:
 										<div class="ui tiny green label">
-											{{wanted_movies[0]}}
+											{{wanted_movies}}
 										</div>
 										% end
 									</a>
@@ -214,14 +219,17 @@
 				</div>
 			</div>
 
-			% restart_required = c.execute("SELECT configured, updated FROM system").fetchone()
-			% c.close()
+			% restart_required = System.select(System.configured, System.updated)
+			% for item in restart_required:
+			%     restart_required = item
+			%     break
+			% end
 
-			% if restart_required[1] == '1' and restart_required[0] == '1':
+			% if restart_required.updated == '1' and restart_required.configured == '1':
 			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
-			% elif restart_required[1] == '1':
+			% elif restart_required.updated == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
-			% elif restart_required[0] == '1':
+			% elif restart_required.configured == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
 			% end
         </div>
