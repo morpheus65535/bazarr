@@ -100,7 +100,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
+                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_titles': alternateTitles,
@@ -113,7 +113,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language(show['qualityProfileId'], audio_profiles),
+                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_title': alternateTitles})
