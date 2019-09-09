@@ -8,6 +8,7 @@ from queueconfig import notifications
 from get_args import args
 from config import settings, url_radarr
 from helper import path_replace_movie
+from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
 
 from get_subtitle import movies_download_subtitles
@@ -33,7 +34,7 @@ def update_movies():
     if apikey_radarr is None:
         pass
     else:
-        get_profile_list()
+        audio_profiles = get_profile_list()
         
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
@@ -140,7 +141,7 @@ def update_movies():
                                                          'tmdb_id': unicode(movie["tmdbId"]),
                                                          'poster': unicode(poster),
                                                          'fanart': unicode(fanart),
-                                                         'audio_language': unicode(profile_id_to_language(movie['qualityProfileId'])),
+                                                         'audio_language': unicode(profile_id_to_language(movie['qualityProfileId'], audio_profiles)),
                                                          'scene_name': sceneName,
                                                          'monitored': unicode(bool(movie['monitored'])),
                                                          'year': unicode(movie['year']),
@@ -164,7 +165,7 @@ def update_movies():
                                                           'overview': overview,
                                                           'poster': poster,
                                                           'fanart': fanart,
-                                                          'audio_language': profile_id_to_language(movie['qualityProfileId']),
+                                                          'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
                                                           'scene_name': sceneName,
                                                           'monitored': unicode(bool(movie['monitored'])),
                                                           'sort_title': movie['sortTitle'],
@@ -184,7 +185,7 @@ def update_movies():
                                                           'overview': overview,
                                                           'poster': poster,
                                                           'fanart': fanart,
-                                                          'audio_language': profile_id_to_language(movie['qualityProfileId']),
+                                                          'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
                                                           'scene_name': sceneName,
                                                           'monitored': unicode(bool(movie['monitored'])),
                                                           'sort_title': movie['sortTitle'],
@@ -273,11 +274,10 @@ def update_movies():
 
 def get_profile_list():
     apikey_radarr = settings.radarr.apikey
-    
-    # Get profiles data from radarr
-    global profiles_list
+    radarr_version = get_radarr_version()
     profiles_list = []
-    
+    # Get profiles data from radarr
+
     url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
@@ -289,12 +289,20 @@ def get_profile_list():
         logging.exception("BAZARR Error trying to get profiles from Radarr.")
     else:
         # Parsing data returned from radarr
-        for profile in profiles_json.json():
-            profiles_list.append([profile['id'], profile['language'].capitalize()])
+        if radarr_version.startswith('0'):
+            for profile in profiles_json.json():
+                profiles_list.append([profile['id'], profile['language'].capitalize()])
+        elif radarr_version.startswith('2'):
+            for profile in profiles_json.json():
+                profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
+
+        return profiles_list
+
+    return None
 
 
-def profile_id_to_language(id):
-    for profile in profiles_list:
+def profile_id_to_language(id, profiles):
+    for profile in profiles:
         if id == profile[0]:
             return profile[1]
 
