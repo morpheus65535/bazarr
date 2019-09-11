@@ -100,15 +100,18 @@ def store_subtitles(file):
                                             detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
                                         os.path.join(os.path.dirname(file), subtitle))])
-        
-        logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-        TableEpisodes.update(
+
+        update_count = TableEpisodes.update(
             {
                 TableEpisodes.subtitles: str(actual_subtitles)
             }
         ).where(
             TableEpisodes.path == path_replace_reverse(file)
         ).execute()
+        if update_count > 0:
+            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+        else:
+            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
@@ -191,14 +194,17 @@ def store_subtitles_movie(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
                                         os.path.join(os.path.dirname(file), dest_folder, subtitle))])
         
-        logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-        TableMovies.update(
+        update_count = TableMovies.update(
             {
                 TableMovies.subtitles: str(actual_subtitles)
             }
         ).where(
             TableMovies.path == path_replace_reverse_movie(file)
         ).execute()
+        if update_count > 0:
+            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+        else:
+            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
