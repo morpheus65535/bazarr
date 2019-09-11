@@ -25,11 +25,11 @@ def sonarr_full_update():
     if settings.general.getboolean('use_sonarr'):
         full_update = settings.sonarr.full_update
         if full_update == "Daily":
-            scheduler.add_job(update_all_episodes, CronTrigger(hour=4), max_instances=1, coalesce=True,
+            scheduler.add_job(update_all_episodes, CronTrigger(hour=settings.sonarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_episodes',
                               name='Update all episodes subtitles from disk', replace_existing=True)
         elif full_update == "Weekly":
-            scheduler.add_job(update_all_episodes, CronTrigger(day_of_week='sun', hour=4), max_instances=1,
+            scheduler.add_job(update_all_episodes, CronTrigger(day_of_week=settings.sonarr.full_update_day, hour=settings.sonarr.full_update_hour), max_instances=1,
                               coalesce=True,
                               misfire_grace_time=15, id='update_all_episodes',
                               name='Update all episodes subtitles from disk', replace_existing=True)
@@ -43,17 +43,17 @@ def radarr_full_update():
     if settings.general.getboolean('use_radarr'):
         full_update = settings.radarr.full_update
         if full_update == "Daily":
-            scheduler.add_job(update_all_movies, CronTrigger(hour=5), max_instances=1, coalesce=True,
+            scheduler.add_job(update_all_movies, CronTrigger(hour=settings.radarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15,
                               id='update_all_movies', name='Update all movies subtitles from disk',
                               replace_existing=True)
         elif full_update == "Weekly":
-            scheduler.add_job(update_all_movies, CronTrigger(day_of_week='sun', hour=5), max_instances=1, coalesce=True,
+            scheduler.add_job(update_all_movies, CronTrigger(day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_movies',
                               name='Update all movies subtitles from disk',
                               replace_existing=True)
         elif full_update == "Manually":
-            scheduler.add_job(update_all_movies, CronTrigger(year='2100'), hour=5, max_instances=1, coalesce=True,
+            scheduler.add_job(update_all_movies, CronTrigger(year='2100'), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_movies',
                               name='Update all movies subtitles from disk',
                               replace_existing=True)
@@ -113,14 +113,20 @@ if settings.general.getboolean('use_radarr'):
     scheduler.add_job(update_movies, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15,
                       id='update_movies', name='Update movies list from Radarr')
 
-if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr'):
-    scheduler.add_job(wanted_search_missing_subtitles, IntervalTrigger(hours=3), max_instances=1, coalesce=True,
-                      misfire_grace_time=15, id='wanted_search_missing_subtitles', name='Search for wanted subtitles')
+def schedule_wanted_search():
+    if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr'):
+        scheduler.add_job(wanted_search_missing_subtitles,
+                          IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1,
+                          coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles',
+                          name='Search for wanted subtitles', replace_existing=True)
 
-if settings.general.getboolean('upgrade_subs') and (settings.general.getboolean('use_sonarr') or
-                                                    settings.general.getboolean('use_radarr')):
-    scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=12), max_instances=1, coalesce=True,
-                      misfire_grace_time=15, id='upgrade_subtitles', name='Upgrade previously downloaded subtitles')
+
+def schedule_upgrade_subs():
+    if settings.general.getboolean('upgrade_subs') and (settings.general.getboolean('use_sonarr') or
+                                                        settings.general.getboolean('use_radarr')):
+        scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)),
+                          max_instances=1, coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
+                          name='Upgrade previously downloaded subtitles', replace_existing=True)
 
 scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
                   misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
@@ -128,6 +134,8 @@ scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1,
 schedule_update_job()
 sonarr_full_update()
 radarr_full_update()
+schedule_wanted_search()
+schedule_upgrade_subs()
 scheduler.start()
 
 

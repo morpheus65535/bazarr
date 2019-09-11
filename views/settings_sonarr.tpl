@@ -126,14 +126,33 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Full sync frequency</label>
+                                <label>Full filesystem scan</label>
                             </div>
-                            <div class="five wide column">
+                            <div class="three wide column">
                                 <div class='field'>
                                     <select name="settings_sonarr_sync" id="settings_sonarr_sync" class="ui fluid selection dropdown">
                                         <option value="Manually">Manually</option>
-                                        <option value="Daily">Daily (at 4am)</option>
-                                        <option value="Weekly">Weekly (sunday at 4am)</option>
+                                        <option value="Daily">Daily</option>
+                                        <option value="Weekly">Weekly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="settings_sonarr_sync_day_div" class="three wide column">
+                                <div class='field'>
+                                    <select name="settings_sonarr_sync_day" id="settings_sonarr_sync_day" class="ui fluid selection dropdown">
+                                        % import calendar
+                                        % for idx, i in enumerate(calendar.day_name):
+                                        <option value="{{idx}}">{{i}}</option>
+                                        %end
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="settings_sonarr_sync_hour_div" class="two wide column">
+                                <div class='field'>
+                                    <select name="settings_sonarr_sync_hour" id="settings_sonarr_sync_hour" class="ui fluid selection dropdown">
+                                        % for i in range(24):
+                                        <option value="{{i}}">{{i}}:00</option>
+                                        %end
                                     </select>
                                 </div>
                             </div>
@@ -154,8 +173,28 @@
                         $("#settings_only_monitored_sonarr").checkbox('uncheck');
                     }
 
+                    $('#settings_sonarr_sync').dropdown('setting', 'onChange', function(){
+                        if ($('#settings_sonarr_sync').val() === "Manually") {
+                            $('#settings_sonarr_sync_day_div').hide();
+                            $('#settings_sonarr_sync_hour_div').hide();
+                        } else if ($('#settings_sonarr_sync').val() === "Daily") {
+                            $('#settings_sonarr_sync_day_div').hide();
+                            $('#settings_sonarr_sync_hour_div').show();
+                        } else if ($('#settings_sonarr_sync').val() === "Weekly") {
+                            $('#settings_sonarr_sync_day_div').show();
+                            $('#settings_sonarr_sync_hour_div').show();
+                        }
+                    });
+
                     $('#settings_sonarr_sync').dropdown('clear');
                     $('#settings_sonarr_sync').dropdown('set selected','{{!settings.sonarr.full_update}}');
+                    $('#settings_sonarr_sync').dropdown('refresh');
+                    $('#settings_sonarr_sync_day').dropdown('clear');
+                    $('#settings_sonarr_sync_day').dropdown('set selected','{{!settings.sonarr.full_update_day}}');
+                    $('#settings_sonarr_sync_day').dropdown('refresh');
+                    $('#settings_sonarr_sync_hour').dropdown('clear');
+                    $('#settings_sonarr_sync_hour').dropdown('set selected','{{!settings.sonarr.full_update_hour}}');
+                    $('#settings_sonarr_sync_hour').dropdown('refresh');
 
                     $('#sonarr_validate').on('click', function() {
                         if ($('#sonarr_ssl_div').checkbox('is checked')) {

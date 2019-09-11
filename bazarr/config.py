@@ -45,9 +45,11 @@ defaults = {
         'subfolder_custom': '',
         'update_restart': 'True',
         'upgrade_subs': 'True',
+        'upgrade_frequency': '12',
         'days_to_upgrade_subs': '7',
         'upgrade_manual': 'True',
-        'anti_captcha_provider': 'None'
+        'anti_captcha_provider': 'None',
+        'wanted_search_frequency': '3'
     },
     'auth': {
         'type': 'None',
@@ -61,6 +63,8 @@ defaults = {
         'ssl': 'False',
         'apikey': '',
         'full_update': 'Daily',
+        'full_update_day': '6',
+        'full_update_hour': '4',
         'only_monitored': 'False',
 },
     'radarr': {
@@ -70,6 +74,8 @@ defaults = {
         'ssl': 'False',
         'apikey': '',
         'full_update': 'Daily',
+        'full_update_day': '6',
+        'full_update_hour': '5',
         'only_monitored': 'False',
 },
     'proxy': {

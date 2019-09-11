@@ -19,6 +19,7 @@ import platform
 import apprise
 from peewee import fn, JOIN
 import operator
+from calendar import day_name
 
 from get_args import args
 from init import *
@@ -1505,6 +1506,7 @@ def save_settings():
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
+    settings_general_wanted_search_frequency = request.forms.get('settings_general_wanted_search_frequency')
     settings_general_scenename = request.forms.get('settings_general_scenename')
     if settings_general_scenename is None:
         settings_general_scenename = 'False'
@@ -1561,6 +1563,7 @@ def save_settings():
         settings_upgrade_subs = 'False'
     else:
         settings_upgrade_subs = 'True'
+    settings_upgrade_subs_frequency = request.forms.get('settings_upgrade_subs_frequency')
     settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
     settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
     if settings_upgrade_manual is None:
@@ -1592,6 +1595,7 @@ def save_settings():
     settings.analytics.enabled = text_type(settings_analytics_enabled)
     settings.general.single_language = text_type(settings_general_single_language)
     settings.general.minimum_score = text_type(settings_general_minimum_score)
+    settings.general.wanted_search_frequency = text_type(settings_general_wanted_search_frequency)
     settings.general.use_scenename = text_type(settings_general_scenename)
     settings.general.use_postprocessing = text_type(settings_general_use_postprocessing)
     settings.general.postprocessing_cmd = text_type(settings_general_postprocessing_cmd)
@@ -1605,6 +1609,7 @@ def save_settings():
     else:
         settings.general.subfolder_custom = text_type(settings_subfolder_custom)
     settings.general.upgrade_subs = text_type(settings_upgrade_subs)
+    settings.general.upgrade_frequency = text_type(settings_upgrade_subs_frequency)
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
     settings.general.anti_captcha_provider = text_type(settings_anti_captcha_provider)
@@ -1709,7 +1714,9 @@ def save_settings():
     else:
         settings_sonarr_only_monitored = 'True'
     settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
-    
+    settings_sonarr_sync_day = request.forms.get('settings_sonarr_sync_day')
+    settings_sonarr_sync_hour = request.forms.get('settings_sonarr_sync_hour')
+
     settings.sonarr.ip = text_type(settings_sonarr_ip)
     settings.sonarr.port = text_type(settings_sonarr_port)
     settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
@@ -1717,7 +1724,9 @@ def save_settings():
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
     settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
     settings.sonarr.full_update = text_type(settings_sonarr_sync)
-    
+    settings.sonarr.full_update_day = text_type(settings_sonarr_sync_day)
+    settings.sonarr.full_update_hour = text_type(settings_sonarr_sync_hour)
+
     settings_radarr_ip = request.forms.get('settings_radarr_ip')
     settings_radarr_port = request.forms.get('settings_radarr_port')
     settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
@@ -1733,7 +1742,9 @@ def save_settings():
     else:
         settings_radarr_only_monitored = 'True'
     settings_radarr_sync = request.forms.get('settings_radarr_sync')
-    
+    settings_radarr_sync_day = request.forms.get('settings_radarr_sync_day')
+    settings_radarr_sync_hour = request.forms.get('settings_radarr_sync_hour')
+
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
     settings.radarr.base_url = text_type(settings_radarr_baseurl)
@@ -1741,7 +1752,9 @@ def save_settings():
     settings.radarr.apikey = text_type(settings_radarr_apikey)
     settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
     settings.radarr.full_update = text_type(settings_radarr_sync)
-    
+    settings.radarr.full_update_day = text_type(settings_radarr_sync_day)
+    settings.radarr.full_update_hour = text_type(settings_radarr_sync_hour)
+
     settings_subliminal_providers = request.forms.getall('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
         settings_subliminal_providers)
@@ -1869,6 +1882,8 @@ def save_settings():
     schedule_update_job()
     sonarr_full_update()
     radarr_full_update()
+    schedule_wanted_search()
+    schedule_upgrade_subs()
     
     logging.info('BAZARR Settings saved succesfully.')
     
@@ -1894,7 +1909,7 @@ def check_update():
 @custom_auth_basic(check_credentials)
 def system():
     authorize()
-    
+
     def get_time_from_interval(td_object):
         seconds = int(td_object.total_seconds())
         periods = [
@@ -1914,54 +1929,26 @@ def system():
                 strings.append("%s %s%s" % (period_value, period_name, has_s))
         
         return ", ".join(strings)
-    
+
     def get_time_from_cron(cron):
-        text = ""
-        sun = str(cron[4])
+        year = str(cron[0])
+        if year == "2100":
+            return "Never"
+
+        day = str(cron[4])
         hour = str(cron[5])
-        minute = str(cron[6])
-        second = str(cron[7])
-        
-        if sun != "*":
-            text = "Sunday at "
-        
-        if hour != "0" and hour != "*":
-            text = text + hour
-            if hour == "0" or hour == "1":
-                text = text + " hour"
-            elif sun != "*" or hour == "4" or hour == "5":
-                text = text + "am"
-            else:
-                text = text + " hours"
-            
-            if minute != "*" and second != "0":
-                text = text + ", "
-            elif minute == "*" and second != "0":
-                text = text + " and "
-            elif minute != "0" and minute != "*" and second == "0":
-                text = text + " and "
-        if minute != "0" and minute != "*":
-            text = text + minute
-            if minute == "0" or minute == "1":
-                text = text + " minute"
-            else:
-                text = text + " minutes"
-            
-            if second != "0" and second != "*":
-                text = text + " and "
-        if second != "0" and second != "*":
-            text = text + second
-            if second == "0" or second == "1":
-                text = text + " second"
-            else:
-                text = text + " seconds"
-        if text != "" and sun == "*":
-            text = "everyday at " + text
-        elif text == "":
-            text = "Never"
-        
+        text = ""
+
+        if day == "*":
+            text = "everyday"
+        else:
+            text = "every " + day_name[int(day)]
+
+        if hour != "*":
+            text += " at " + hour + ":00"
+
         return text
-    
+
     task_list = []
     for job in scheduler.get_jobs():
         if isinstance(job.trigger, CronTrigger):

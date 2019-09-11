@@ -2,6 +2,22 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Search for missing subtitles frequency (in hours)</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <select name="settings_general_wanted_search_frequency" id="settings_general_wanted_search_frequency" class="ui fluid selection dropdown">
+                                        % for i in [1,3,6,12,24]:
+                                        <option value="{{i}}">{{i}}</option>
+                                        %end
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Use scene name when available</label>
                             </div>
@@ -117,9 +133,25 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Schedule a task that run every 12 hours to upgrade subtitles previously downloaded by Bazarr.'
+                                     data-tooltip='Schedule a task to upgrade subtitles previously downloaded by Bazarr.'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row upgrade_subs">
+                            <div class="two wide column"></div>
+                            <div class="right aligned four wide column">
+                                <label>Upgrade frequency (in hours)</label>
+                            </div>
+                            <div class="five wide column">
+                                <div class='field'>
+                                    <select name="settings_upgrade_subs_frequency" id="settings_upgrade_subs_frequency" class="ui fluid selection dropdown">
+                                        % for i in [1,3,6,12,24]:
+                                        <option value="{{i}}">{{i}}</option>
+                                        %end
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -540,6 +572,10 @@
                 </div>
 
                 <script>
+                    $('#settings_general_wanted_search_frequency').dropdown('clear');
+                    $('#settings_general_wanted_search_frequency').dropdown('set selected','{{!settings.general.wanted_search_frequency}}');
+                    $('#settings_general_wanted_search_frequency').dropdown('refresh');
+
                     if ($('#settings_single_language').data("single-language") === "True") {
                         $("#settings_single_language").checkbox('check');
                     } else {
@@ -557,6 +593,10 @@
                     } else {
                         $("#settings_upgrade_subs").checkbox('uncheck');
                     }
+
+                    $('#settings_upgrade_subs_frequency').dropdown('clear');
+                    $('#settings_upgrade_subs_frequency').dropdown('set selected','{{!settings.general.upgrade_frequency}}');
+                    $('#settings_upgrade_subs_frequency').dropdown('refresh');
 
                     if ($('#settings_upgrade_manual').data("upgrade-manual") === "True") {
                         $("#settings_upgrade_manual").checkbox('check');

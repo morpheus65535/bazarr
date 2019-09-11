@@ -126,14 +126,33 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Full sync frequency</label>
+                                <label>Full filesystem scan</label>
                             </div>
-                            <div class="five wide column">
+                            <div class="three wide column">
                                 <div class='field'>
                                     <select name="settings_radarr_sync" id="settings_radarr_sync" class="ui fluid selection dropdown">
                                         <option value="Manually">Manually</option>
-                                        <option value="Daily">Daily (at 5am)</option>
-                                        <option value="Weekly">Weekly (sunday at 5am)</option>
+                                        <option value="Daily">Daily</option>
+                                        <option value="Weekly">Weekly</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="settings_radarr_sync_day_div" class="three wide column">
+                                <div class='field'>
+                                    <select name="settings_radarr_sync_day" id="settings_radarr_sync_day" class="ui fluid selection dropdown">
+                                        % import calendar
+                                        % for idx, i in enumerate(calendar.day_name):
+                                        <option value="{{idx}}">{{i}}</option>
+                                        %end
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="settings_radarr_sync_hour_div" class="two wide column">
+                                <div class='field'>
+                                    <select name="settings_radarr_sync_hour" id="settings_radarr_sync_hour" class="ui fluid selection dropdown">
+                                        % for i in range(24):
+                                        <option value="{{i}}">{{i}}:00</option>
+                                        %end
                                     </select>
                                 </div>
                             </div>
@@ -154,8 +173,28 @@
                         $("#settings_only_monitored_radarr").checkbox('uncheck');
                     }
 
+                    $('#settings_radarr_sync').dropdown('setting', 'onChange', function(){
+                        if ($('#settings_radarr_sync').val() === "Manually") {
+                            $('#settings_radarr_sync_day_div').hide();
+                            $('#settings_radarr_sync_hour_div').hide();
+                        } else if ($('#settings_radarr_sync').val() === "Daily") {
+                            $('#settings_radarr_sync_day_div').hide();
+                            $('#settings_radarr_sync_hour_div').show();
+                        } else if ($('#settings_radarr_sync').val() === "Weekly") {
+                            $('#settings_radarr_sync_day_div').show();
+                            $('#settings_radarr_sync_hour_div').show();
+                        }
+                    });
+
                     $('#settings_radarr_sync').dropdown('clear');
                     $('#settings_radarr_sync').dropdown('set selected','{{!settings.radarr.full_update}}');
+                    $('#settings_radarr_sync').dropdown('refresh');
+                    $('#settings_radarr_sync_day').dropdown('clear');
+                    $('#settings_radarr_sync_day').dropdown('set selected','{{!settings.radarr.full_update_day}}');
+                    $('#settings_radarr_sync_day').dropdown('refresh');
+                    $('#settings_radarr_sync_hour').dropdown('clear');
+                    $('#settings_radarr_sync_hour').dropdown('set selected','{{!settings.radarr.full_update_hour}}');
+                    $('#settings_radarr_sync_hour').dropdown('refresh');
 
                     $('#radarr_validate').on('click', function() {
                         if ($('#radarr_ssl_div').checkbox('is checked')) {
