@@ -261,6 +261,8 @@ def update_movies():
                 store_subtitles_movie(path_replace_movie(altered_movie[1]))
                 list_missing_subtitles_movies(altered_movie[2])
 
+            logging.debug('BAZARR All movies synced from Radarr into database.')
+
             # Search for desired subtitles if no more than 5 movies have been added.
             if len(altered_movies) <= 5:
                 logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
@@ -268,8 +270,6 @@ def update_movies():
                     movies_download_subtitles(altered_movie[2])
             else:
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
-
-    logging.debug('BAZARR All movies synced from Radarr into database.')
 
 
 def get_profile_list():

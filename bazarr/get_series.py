@@ -161,6 +161,8 @@ def update_series():
                     TableShows.tvdb_id == series
                 ).execute()
 
+            logging.debug('BAZARR All series synced from Sonarr into database.')
+
 
 def get_profile_list():
     apikey_sonarr = settings.sonarr.apikey
