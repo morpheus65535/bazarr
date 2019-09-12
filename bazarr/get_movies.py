@@ -43,12 +43,16 @@ def update_movies():
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get movies from Radarr. Http error.")
+            return
         except requests.exceptions.ConnectionError as errc:
             logging.exception("BAZARR Error trying to get movies from Radarr. Connection Error.")
+            return
         except requests.exceptions.Timeout as errt:
             logging.exception("BAZARR Error trying to get movies from Radarr. Timeout Error.")
+            return
         except requests.exceptions.RequestException as err:
             logging.exception("BAZARR Error trying to get movies from Radarr.")
+            return
         else:
             # Get current movies in DB
             current_movies_db = TableMovies.select(

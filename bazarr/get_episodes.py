@@ -56,12 +56,16 @@ def sync_episodes():
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Http error.")
+            return
         except requests.exceptions.ConnectionError as errc:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Connection Error.")
+            return
         except requests.exceptions.Timeout as errt:
             logging.exception("BAZARR Error trying to get episodes from Sonarr. Timeout Error.")
+            return
         except requests.exceptions.RequestException as err:
             logging.exception("BAZARR Error trying to get episodes from Sonarr.")
+            return
         else:
             for episode in r.json():
                 if 'hasFile' in episode:
@@ -127,69 +131,69 @@ def sync_episodes():
                                                             'video_codec': videoCodec,
                                                             'audio_codec': audioCodec})
 
-            # Update existing episodes in DB
-            episode_in_db_list = []
-            episodes_in_db = TableEpisodes.select(
-                TableEpisodes.sonarr_series_id,
-                TableEpisodes.sonarr_episode_id,
-                TableEpisodes.title,
-                TableEpisodes.path,
-                TableEpisodes.season,
-                TableEpisodes.episode,
-                TableEpisodes.scene_name,
-                TableEpisodes.monitored,
-                TableEpisodes.format,
-                TableEpisodes.resolution,
-                TableEpisodes.video_codec,
-                TableEpisodes.audio_codec
-            ).dicts()
+    # Update existing episodes in DB
+    episode_in_db_list = []
+    episodes_in_db = TableEpisodes.select(
+        TableEpisodes.sonarr_series_id,
+        TableEpisodes.sonarr_episode_id,
+        TableEpisodes.title,
+        TableEpisodes.path,
+        TableEpisodes.season,
+        TableEpisodes.episode,
+        TableEpisodes.scene_name,
+        TableEpisodes.monitored,
+        TableEpisodes.format,
+        TableEpisodes.resolution,
+        TableEpisodes.video_codec,
+        TableEpisodes.audio_codec
+    ).dicts()
 
-            for item in episodes_in_db:
-                episode_in_db_list.append(item)
+    for item in episodes_in_db:
+        episode_in_db_list.append(item)
 
-            episodes_to_update_list = [i for i in episodes_to_update if i not in episode_in_db_list]
+    episodes_to_update_list = [i for i in episodes_to_update if i not in episode_in_db_list]
 
-            for updated_episode in episodes_to_update_list:
-                TableEpisodes.update(
-                    updated_episode
-                ).where(
-                    TableEpisodes.sonarr_episode_id == updated_episode['sonarr_episode_id']
-                ).execute()
-                altered_episodes.append([updated_episode['sonarr_episode_id'],
-                                         updated_episode['path'],
-                                         updated_episode['sonarr_series_id']])
+    for updated_episode in episodes_to_update_list:
+        TableEpisodes.update(
+            updated_episode
+        ).where(
+            TableEpisodes.sonarr_episode_id == updated_episode['sonarr_episode_id']
+        ).execute()
+        altered_episodes.append([updated_episode['sonarr_episode_id'],
+                                 updated_episode['path'],
+                                 updated_episode['sonarr_series_id']])
 
-            # Insert new episodes in DB
-            for added_episode in episodes_to_add:
-                TableEpisodes.insert(
-                    added_episode
-                ).on_conflict_ignore().execute()
-                altered_episodes.append([added_episode['sonarr_episode_id'],
-                                         added_episode['path'],
-                                         added_episode['sonarr_series_id']])
+    # Insert new episodes in DB
+    for added_episode in episodes_to_add:
+        TableEpisodes.insert(
+            added_episode
+        ).on_conflict_ignore().execute()
+        altered_episodes.append([added_episode['sonarr_episode_id'],
+                                 added_episode['path'],
+                                 added_episode['sonarr_series_id']])
 
-            # Remove old episodes from DB
-            removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
+    # Remove old episodes from DB
+    removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
-            for removed_episode in removed_episodes:
-                TableEpisodes.delete().where(
-                    TableEpisodes.sonarr_episode_id == removed_episode
-                ).execute()
+    for removed_episode in removed_episodes:
+        TableEpisodes.delete().where(
+            TableEpisodes.sonarr_episode_id == removed_episode
+        ).execute()
 
-            # Store subtitles for added or modified episodes
-            for altered_episode in altered_episodes:
-                store_subtitles(path_replace(altered_episode[1]))
-                list_missing_subtitles(altered_episode[2])
+    # Store subtitles for added or modified episodes
+    for altered_episode in altered_episodes:
+        store_subtitles(path_replace(altered_episode[1]))
+        list_missing_subtitles(altered_episode[2])
 
-            logging.debug('BAZARR All episodes synced from Sonarr into database.')
+    logging.debug('BAZARR All episodes synced from Sonarr into database.')
 
-            # Search for desired subtitles if no more than 5 episodes have been added.
-            if len(altered_episodes) <= 5:
-                logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
-                for altered_episode in altered_episodes:
-                    episode_download_subtitles(altered_episode[0])
-            else:
-                logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
+    # Search for desired subtitles if no more than 5 episodes have been added.
+    if len(altered_episodes) <= 5:
+        logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
+        for altered_episode in altered_episodes:
+            episode_download_subtitles(altered_episode[0])
+    else:
+        logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
 
 
 def SonarrFormatAudioCodec(audioCodec):

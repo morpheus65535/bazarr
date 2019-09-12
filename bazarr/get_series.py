@@ -34,12 +34,16 @@ def update_series():
             r.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             logging.exception("BAZARR Error trying to get series from Sonarr. Http error.")
+            return
         except requests.exceptions.ConnectionError as errc:
             logging.exception("BAZARR Error trying to get series from Sonarr. Connection Error.")
+            return
         except requests.exceptions.Timeout as errt:
             logging.exception("BAZARR Error trying to get series from Sonarr. Timeout Error.")
+            return
         except requests.exceptions.RequestException as err:
             logging.exception("BAZARR Error trying to get series from Sonarr.")
+            return
         else:
             # Get current shows in DB
             current_shows_db = TableShows.select(
