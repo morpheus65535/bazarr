@@ -272,9 +272,9 @@ class Subtitle(Subtitle_):
         def prepare_text(text, style):
             body = []
             for fragment, sty in parse_tags(text, style, sub.styles):
-                fragment = fragment.replace(ur"\h", u" ")
-                fragment = fragment.replace(ur"\n", u"\n")
-                fragment = fragment.replace(ur"\N", u"\n")
+                fragment = fragment.replace(r"\h", u" ")
+                fragment = fragment.replace(r"\n", u"\n")
+                fragment = fragment.replace(r"\N", u"\n")
                 if format == "srt":
                     if sty.italic:
                         fragment = u"<i>%s</i>" % fragment

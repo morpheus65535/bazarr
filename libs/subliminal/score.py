@@ -44,7 +44,7 @@ movie_scores = {'hash': 119, 'title': 60, 'year': 30, 'release_group': 15,
                 'format': 7, 'audio_codec': 3, 'resolution': 2, 'video_codec': 2, 'hearing_impaired': 1}
 
 #: Equivalent release groups
-equivalent_release_groups = ({'LOL', 'DIMENSION'}, {'ASAP', 'IMMERSE', 'FLEET'}, {'AVS', 'SVA'})
+equivalent_release_groups = ({'LOL', 'DIMENSION'}, {'ASAP', 'IMMERSE', 'FLEET'})
 
 
 def get_equivalent_release_groups(release_group):

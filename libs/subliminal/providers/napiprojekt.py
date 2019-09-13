@@ -42,7 +42,6 @@ class NapiProjektSubtitle(Subtitle):
     def __init__(self, language, hash):
         super(NapiProjektSubtitle, self).__init__(language)
         self.hash = hash
-        self.content = None
 
     @property
     def id(self):
@@ -63,10 +62,6 @@ class NapiProjektProvider(Provider):
     languages = {Language.fromalpha2(l) for l in ['pl']}
     required_hash = 'napiprojekt'
     server_url = 'http://napiprojekt.pl/unit_napisy/dl.php'
-    subtitle_class = NapiProjektSubtitle
-
-    def __init__(self):
-        self.session = None
 
     def initialize(self):
         self.session = Session()
@@ -86,16 +81,16 @@ class NapiProjektProvider(Provider):
             'f': hash,
             't': get_subhash(hash)}
         logger.info('Searching subtitle %r', params)
-        r = self.session.get(self.server_url, params=params, timeout=10)
-        r.raise_for_status()
+        response = self.session.get(self.server_url, params=params, timeout=10)
+        response.raise_for_status()
 
         # handle subtitles not found and errors
-        if r.content[:4] == b'NPc0':
+        if response.content[:4] == b'NPc0':
             logger.debug('No subtitles found')
             return None
 
-        subtitle = self.subtitle_class(language, hash)
-        subtitle.content = r.content
+        subtitle = NapiProjektSubtitle(language, hash)
+        subtitle.content = response.content
         logger.debug('Found subtitle %r', subtitle)
 
         return subtitle

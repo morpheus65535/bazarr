@@ -31,7 +31,7 @@ class ShiftOffset(SubtitleModification):
             else:
                 new_args[key] = int(value)
 
-        return dict(filter(lambda (k, v): bool(v), new_args.iteritems()))
+        return dict(filter(lambda kv: bool(kv[1]), new_args.items()))
 
     def modify(self, content, debug=False, parent=None, **kwargs):
         parent.f.shift(h=int(kwargs.get("h", 0)), m=int(kwargs.get("m", 0)), s=int(kwargs.get("s", 0)),

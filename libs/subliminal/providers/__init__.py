@@ -68,9 +68,6 @@ class Provider(object):
     #: Required hash, if any
     required_hash = None
 
-    #: Subtitle class to use
-    subtitle_class = None
-
     def __enter__(self):
         self.initialize()
         return self

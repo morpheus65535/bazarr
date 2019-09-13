@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import logging
 import re
@@ -9,6 +10,7 @@ import platform
 from logging.handlers import TimedRotatingFileHandler
 from get_args import args
 from config import settings
+import six
 
 
 logger = logging.getLogger()
@@ -107,10 +109,10 @@ class MyFilter(logging.Filter):
 
 class ArgsFilteringFilter(logging.Filter):
     def filter_args(self, record, func):
-        if isinstance(record.args, (types.ListType, types.TupleType)):
+        if isinstance(record.args, (list, tuple)):
             final_args = []
             for arg in record.args:
-                if not isinstance(arg, basestring):
+                if not isinstance(arg, six.string_types):
                     final_args.append(arg)
                     continue
                 
@@ -118,7 +120,7 @@ class ArgsFilteringFilter(logging.Filter):
             record.args = type(record.args)(final_args)
         elif isinstance(record.args, dict):
             for key, arg in record.args.items():
-                if not isinstance(arg, basestring):
+                if not isinstance(arg, six.string_types):
                     continue
                 
                 record.args[key] = func(arg)

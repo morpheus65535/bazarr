@@ -6,14 +6,14 @@ import pysubs2
 import logging
 import time
 
-from mods import EMPTY_TAG_PROCESSOR, EmptyEntryError
-from registry import registry
+from .mods import EMPTY_TAG_PROCESSOR, EmptyEntryError
+from .registry import registry
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
 
-lowercase_re = re.compile(ur'(?sux)[a-zà-ž]')
+lowercase_re = re.compile(r'(?sux)[a-zà-ž]')
 
 
 class SubtitleModifications(object):
@@ -143,7 +143,7 @@ class SubtitleModifications(object):
                 continue
 
             # clear empty args
-            final_mod_args = dict(filter(lambda (k, v): bool(v), args.iteritems()))
+            final_mod_args = dict(filter(lambda kv: bool(kv[1]), args.iteritems()))
 
             _data = SubtitleModifications.get_mod_signature(identifier, **final_mod_args)
             if _data == mods_merged_log[identifier]["final_identifier"]:
@@ -180,7 +180,7 @@ class SubtitleModifications(object):
         entries_used = 0
         for entry in self.f:
             entry_used = False
-            for sub in entry.text.strip().split("\N"):
+            for sub in entry.text.strip().split(r"\N"):
                 # skip HI bracket entries, those might actually be lowercase
                 sub = sub.strip()
                 for processor in registry.mods["remove_HI"].processors[:4]:
@@ -272,7 +272,7 @@ class SubtitleModifications(object):
                 continue
 
             skip_entry = False
-            for line in t.split(ur"\N"):
+            for line in t.split(r"\N"):
                 # don't bother the mods with surrounding tags
                 old_line = line
                 line = line.strip()
@@ -377,7 +377,7 @@ class SubtitleModifications(object):
                     logger.debug(u"%d: %r -> ''", index, entry.text)
                 continue
 
-            new_text = ur"\N".join(lines)
+            new_text = r"\N".join(lines)
 
             # cheap man's approach to avoid open tags
             add_start_tags = []

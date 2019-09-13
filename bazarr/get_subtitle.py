@@ -1,12 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import sys
 import ast
 import logging
 import subprocess
 import time
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import codecs
 import types
 import re
@@ -37,6 +38,9 @@ from database import TableShows, TableEpisodes, TableMovies, TableHistory, Table
 from peewee import fn, JOIN
 
 from analytics import track_event
+import six
+from six.moves import range
+from functools import reduce
 
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
@@ -91,11 +95,11 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     """
     max_score = 120.0
     min_score = max_score * min_score_movie_perc / 100.0
-    scores = subliminal_scores.movie_scores.keys()
+    scores = list(subliminal_scores.movie_scores.keys())
     if media_type == "series":
         max_score = 360.0
         min_score = max_score * min_score_series_perc / 100.0
-        scores = subliminal_scores.episode_scores.keys()
+        scores = list(subliminal_scores.episode_scores.keys())
         if video.is_special:
             min_score = max_score * min_score_special_ep / 100.0
     
@@ -119,7 +123,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         hi = "force non-HI"
     language_set = set()
     
-    if not isinstance(language, types.ListType):
+    if not isinstance(language, list):
         language = [language]
     
     if forced == "True":
@@ -185,7 +189,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         
         saved_any = False
         if downloaded_subtitles:
-            for video, subtitles in downloaded_subtitles.iteritems():
+            for video, subtitles in six.iteritems(downloaded_subtitles):
                 if not subtitles:
                     continue
                 
@@ -221,10 +225,10 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                         else:
                             action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
@@ -444,7 +448,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + downloaded_provider + " with a score of " + six.text_type(
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
@@ -749,7 +753,7 @@ def wanted_download_subtitles(path, l, count_episodes):
     
     for episode in episodes_details:
         attempt = episode.failed_attempts
-        if type(attempt) == unicode:
+        if type(attempt) == six.text_type:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode.missing_subtitles):
             if attempt is None:
@@ -762,7 +766,7 @@ def wanted_download_subtitles(path, l, count_episodes):
 
             TableEpisodes.update(
                 {
-                    TableEpisodes.failed_attempts: unicode(attempt)
+                    TableEpisodes.failed_attempts: six.text_type(attempt)
                 }
             ).where(
                 TableEpisodes.sonarr_episode_id == episode.sonarr_episode_id
@@ -818,7 +822,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
     
     for movie in movies_details:
         attempt = movie.failed_attempts
-        if type(attempt) == unicode:
+        if type(attempt) == six.text_type:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie.missing_subtitles):
             if attempt is None:
@@ -831,7 +835,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
             
             TableMovies.update(
                 {
-                    TableMovies.failed_attempts: unicode(attempt)
+                    TableMovies.failed_attempts: six.text_type(attempt)
                 }
             ).where(
                 TableMovies.radarr_id == movie.radarr_id
@@ -991,7 +995,7 @@ def refine_from_db(path, video):
             TableMovies.audio_codec,
             TableMovies.imdb_id
         ).where(
-            TableMovies.path == unicode(path_replace_reverse_movie(path))
+            TableMovies.path == six.text_type(path_replace_reverse_movie(path))
         ).first()
 
         if data:

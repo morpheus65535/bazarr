@@ -10,7 +10,7 @@ import time
 import operator
 
 import itertools
-from httplib import ResponseNotReady
+from http.client import ResponseNotReady
 
 import rarfile
 import requests
@@ -21,14 +21,13 @@ from babelfish import LanguageReverseError
 from guessit.jsonutils import GuessitEncoder
 from subliminal import ProviderError, refiner_manager
 
-from extensions import provider_registry
-from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
+from subliminal_patch.extensions import provider_registry
 from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ServiceUnavailable, DownloadLimitExceeded
 
 from subzero.language import Language
 from scandir import scandir, scandir_generic as _scandir_generic
@@ -186,7 +185,7 @@ class SZProviderPool(ProviderPool):
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out', provider)
 
-        except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled), e:
+        except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled) as e:
             self.throttle_callback(provider, e)
             return
 
@@ -283,7 +282,7 @@ class SZProviderPool(ProviderPool):
                 logger.debug("RAR Traceback: %s", traceback.format_exc())
                 return False
 
-            except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled), e:
+            except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled) as e:
                 self.throttle_callback(subtitle.provider_name, e)
                 self.discarded_providers.add(subtitle.provider_name)
                 return False
@@ -648,7 +647,7 @@ def search_external_subtitles(path, languages=None, only_one=False):
             abspath = unicode(os.path.abspath(
                 os.path.join(*[video_path if not os.path.isabs(folder_or_subfolder) else "", folder_or_subfolder,
                                video_filename])))
-        except Exception, e:
+        except Exception as e:
             logger.error("skipping path %s because of %s", repr(folder_or_subfolder), e)
             continue
         logger.debug("external subs: scanning path %s", abspath)

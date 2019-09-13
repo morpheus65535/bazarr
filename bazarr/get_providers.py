@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import os
 import datetime
 import logging
@@ -159,8 +160,8 @@ def provider_throttle(name, exception):
 
 def throttled_count(name):
     global throttle_count
-    if name in throttle_count.keys():
-        if 'count' in throttle_count[name].keys():
+    if name in list(throttle_count.keys()):
+        if 'count' in list(throttle_count[name].keys()):
             for key, value in throttle_count[name].items():
                 if key == 'count':
                     value += 1

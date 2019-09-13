@@ -8,7 +8,7 @@ import os
 import socket
 import logging
 import requests
-import xmlrpclib
+import xmlrpc.client
 import dns.resolver
 import ipaddress
 import re
@@ -16,7 +16,7 @@ import re
 from requests import exceptions
 from urllib3.util import connection
 from retry.api import retry_call
-from exceptions import APIThrottled
+from .exceptions import APIThrottled
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
 from subliminal_patch.pitcher import pitchers
@@ -32,10 +32,8 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-from subzero.lib.io import get_viable_encoding
-
 logger = logging.getLogger(__name__)
-pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))), "..", certifi.where()))
+pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", certifi.where()))
 try:
     default_ssl_context = ssl.create_default_context(cafile=pem_file)
 except AttributeError:
@@ -99,7 +97,7 @@ class CFSession(CloudScraper):
                     # Solve Challenge
                     resp = self.sendChallengeResponse(resp, **kwargs)
 
-        except ValueError, e:
+        except ValueError as e:
             if e.message == "Captcha":
                 parsed_url = urlparse(url)
                 domain = parsed_url.netloc
@@ -231,7 +229,7 @@ class RetryingCFSession(RetryingSession, CFSession):
     pass
 
 
-class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
+class SubZeroRequestsTransport(xmlrpc.client.SafeTransport):
     """
     Drop in Transport for xmlrpclib that uses Requests instead of httplib
 

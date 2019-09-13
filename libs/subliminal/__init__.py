@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 __title__ = 'subliminal'
-__version__ = '2.1.0.dev'
+__version__ = '2.0.5'
 __short_version__ = '.'.join(__version__.split('.')[:2])
 __author__ = 'Antoine Bertin'
 __license__ = 'MIT'

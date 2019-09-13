@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import ast
 import os
 import re
@@ -126,7 +127,7 @@ def force_unicode(s):
     :param s: string
     :return: unicode string
     """
-    if not isinstance(s, types.UnicodeType):
+    if not isinstance(s, str):
         try:
             s = s.decode("utf-8")
         except UnicodeDecodeError:

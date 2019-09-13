@@ -1,6 +1,7 @@
 # coding=utf-8
 
-import cPickle as pickle
+from __future__ import absolute_import
+import six.moves.cPickle as pickle
 import base64
 import random
 import platform
@@ -30,7 +31,7 @@ def track_event(category=None, action=None, label=None):
         visitor = pickle.loads(base64.b64decode(settings.analytics.visitor))
     except:
         visitor = Visitor()
-        unique_id = long(random.getrandbits(32))
+        unique_id = int(random.getrandbits(32))
         visitor.unique_id = unique_id
 
     session = Session()

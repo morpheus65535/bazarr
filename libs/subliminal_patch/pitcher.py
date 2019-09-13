@@ -8,7 +8,7 @@ from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
 from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException,\
     Proxy
-from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
+from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TIMEOUT
 
 
 logger = logging.getLogger(__name__)
@@ -185,7 +185,7 @@ class DBCProxyLessPitcher(Pitcher):
     password = None
 
     def __init__(self, website_name, website_url, website_key,
-                 timeout=DEFAULT_TOKEN_TIMEOUT, tries=3, *args, **kwargs):
+                 timeout=DEFAULT_TIMEOUT, tries=3, *args, **kwargs):
         super(DBCProxyLessPitcher, self).__init__(website_name, website_url, website_key, tries=tries)
 
         self.username, self.password = self.client_key.split(":", 1)

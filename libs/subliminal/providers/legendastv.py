@@ -18,7 +18,7 @@ from zipfile import ZipFile, is_zipfile
 from . import ParserBeautifulSoup, Provider
 from .. import __short_version__
 from ..cache import SHOW_EXPIRATION_TIME, region
-from ..exceptions import AuthenticationError, ConfigurationError, ProviderError, ServiceUnavailable
+from ..exceptions import AuthenticationError, ConfigurationError, ProviderError
 from ..subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches, sanitize
 from ..video import Episode, Movie
 
@@ -44,11 +44,8 @@ rating_re = re.compile(r'nota (?P<rating>\d+)')
 #: Timestamp parsing regex
 timestamp_re = re.compile(r'(?P<day>\d+)/(?P<month>\d+)/(?P<year>\d+) - (?P<hour>\d+):(?P<minute>\d+)')
 
-#: Title with year/country regex
-title_re = re.compile(r'^(?P<series>.*?)(?: \((?:(?P<year>\d{4})|(?P<country>[A-Z]{2}))\))?$')
-
 #: Cache key for releases
-releases_key = __name__ + ':releases|{archive_id}|{archive_name}'
+releases_key = __name__ + ':releases|{archive_id}'
 
 
 class LegendasTVArchive(object):
@@ -63,8 +60,8 @@ class LegendasTVArchive(object):
     :param int rating: rating (0-10).
     :param timestamp: timestamp.
     :type timestamp: datetime.datetime
-    """
 
+    """
     def __init__(self, id, name, pack, featured, link, downloads=0, rating=0, timestamp=None):
         #: Identifier
         self.id = id
@@ -99,11 +96,10 @@ class LegendasTVArchive(object):
 
 class LegendasTVSubtitle(Subtitle):
     """LegendasTV Subtitle."""
-
     provider_name = 'legendastv'
 
     def __init__(self, language, type, title, year, imdb_id, season, archive, name):
-        super(LegendasTVSubtitle, self).__init__(language, page_link=archive.link)
+        super(LegendasTVSubtitle, self).__init__(language, archive.link)
         self.type = type
         self.title = title
         self.year = year
@@ -122,12 +118,11 @@ class LegendasTVSubtitle(Subtitle):
         # episode
         if isinstance(video, Episode) and self.type == 'episode':
             # series
-            if video.series and (sanitize(self.title) in (
-                    sanitize(name) for name in [video.series] + video.alternative_series)):
+            if video.series and sanitize(self.title) == sanitize(video.series):
                 matches.add('series')
 
-            # year
-            if video.original_series and self.year is None or video.year and video.year == self.year:
+            # year (year is based on season air date hence the adjustment)
+            if video.original_series and self.year is None or video.year and video.year == self.year - self.season + 1:
                 matches.add('year')
 
             # imdb_id
@@ -137,8 +132,7 @@ class LegendasTVSubtitle(Subtitle):
         # movie
         elif isinstance(video, Movie) and self.type == 'movie':
             # title
-            if video.title and (sanitize(self.title) in (
-                    sanitize(name) for name in [video.title] + video.alternative_titles)):
+            if video.title and sanitize(self.title) == sanitize(video.title):
                 matches.add('title')
 
             # year
@@ -148,6 +142,9 @@ class LegendasTVSubtitle(Subtitle):
             # imdb_id
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 matches.add('imdb_id')
+
+        # archive name
+        matches |= guess_matches(video, guessit(self.archive.name, {'type': self.type}))
 
         # name
         matches |= guess_matches(video, guessit(self.name, {'type': self.type}))
@@ -160,38 +157,29 @@ class LegendasTVProvider(Provider):
 
     :param str username: username.
     :param str password: password.
-    """
 
+    """
     languages = {Language.fromlegendastv(l) for l in language_converters['legendastv'].codes}
     server_url = 'http://legendas.tv/'
-    subtitle_class = LegendasTVSubtitle
 
     def __init__(self, username=None, password=None):
-
-        # Provider needs UNRAR installed. If not available raise ConfigurationError
-        try:
-            rarfile.custom_check(rarfile.UNRAR_TOOL)
-        except rarfile.RarExecError:
-            raise ConfigurationError('UNRAR tool not available')
-
-        if any((username, password)) and not all((username, password)):
+        if username and not password or not username and password:
             raise ConfigurationError('Username and password must be specified')
 
         self.username = username
         self.password = password
         self.logged_in = False
-        self.session = None
 
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
 
         # login
-        if self.username and self.password:
+        if self.username is not None and self.password is not None:
             logger.info('Logging in')
             data = {'_method': 'POST', 'data[User][username]': self.username, 'data[User][password]': self.password}
             r = self.session.post(self.server_url + 'login', data, allow_redirects=False, timeout=10)
-            raise_for_status(r)
+            r.raise_for_status()
 
             soup = ParserBeautifulSoup(r.content, ['html.parser'])
             if soup.find('div', {'class': 'alert-error'}, string=re.compile(u'Usuário ou senha inválidos')):
@@ -205,174 +193,94 @@ class LegendasTVProvider(Provider):
         if self.logged_in:
             logger.info('Logging out')
             r = self.session.get(self.server_url + 'users/logout', allow_redirects=False, timeout=10)
-            raise_for_status(r)
+            r.raise_for_status()
             logger.debug('Logged out')
             self.logged_in = False
 
         self.session.close()
 
-    @staticmethod
-    def is_valid_title(title, title_id, sanitized_title, season, year):
-        """Check if is a valid title."""
-        sanitized_result = sanitize(title['title'])
-        if sanitized_result != sanitized_title:
-            logger.debug("Mismatched title, discarding title %d (%s)",
-                         title_id, sanitized_result)
-            return
-
-        # episode type
-        if season:
-            # discard mismatches on type
-            if title['type'] != 'episode':
-                logger.debug("Mismatched 'episode' type, discarding title %d (%s)", title_id, sanitized_result)
-                return
-
-            # discard mismatches on season
-            if 'season' not in title or title['season'] != season:
-                logger.debug('Mismatched season %s, discarding title %d (%s)',
-                             title.get('season'), title_id, sanitized_result)
-                return
-        # movie type
-        else:
-            # discard mismatches on type
-            if title['type'] != 'movie':
-                logger.debug("Mismatched 'movie' type, discarding title %d (%s)", title_id, sanitized_result)
-                return
-
-            # discard mismatches on year
-            if year is not None and 'year' in title and title['year'] != year:
-                logger.debug("Mismatched movie year, discarding title %d (%s)", title_id, sanitized_result)
-                return
-        return True
-
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
-    def search_titles(self, title, season, title_year):
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    def search_titles(self, title):
         """Search for titles matching the `title`.
 
-        For episodes, each season has it own title
         :param str title: the title to search for.
-        :param int season: season of the title
-        :param int title_year: year of the title
         :return: found titles.
         :rtype: dict
+
         """
+        # make the query
+        logger.info('Searching title %r', title)
+        r = self.session.get(self.server_url + 'legenda/sugestao/{}'.format(title), timeout=10)
+        r.raise_for_status()
+        results = json.loads(r.text)
+
+        # loop over results
         titles = {}
-        sanitized_titles = [sanitize(title)]
-        ignore_characters = {'\'', '.'}
-        if any(c in title for c in ignore_characters):
-            sanitized_titles.append(sanitize(title, ignore_characters=ignore_characters))
+        for result in results:
+            source = result['_source']
 
-        for sanitized_title in sanitized_titles:
-            # make the query
-            if season:
-                logger.info('Searching episode title %r for season %r', sanitized_title, season)
-            else:
-                logger.info('Searching movie title %r', sanitized_title)
+            # extract id
+            title_id = int(source['id_filme'])
 
-            r = self.session.get(self.server_url + 'legenda/sugestao/{}'.format(sanitized_title), timeout=10)
-            raise_for_status(r)
-            results = json.loads(r.text)
+            # extract type and title
+            title = {'type': type_map[source['tipo']], 'title': source['dsc_nome']}
 
-            # loop over results
-            for result in results:
-                source = result['_source']
+            # extract year
+            if source['dsc_data_lancamento'] and source['dsc_data_lancamento'].isdigit():
+                title['year'] = int(source['dsc_data_lancamento'])
 
-                # extract id
-                title_id = int(source['id_filme'])
+            # extract imdb_id
+            if source['id_imdb'] != '0':
+                if not source['id_imdb'].startswith('tt'):
+                    title['imdb_id'] = 'tt' + source['id_imdb'].zfill(7)
+                else:
+                    title['imdb_id'] = source['id_imdb']
 
-                # extract type
-                title = {'type': type_map[source['tipo']]}
-
-                # extract title, year and country
-                name, year, country = title_re.match(source['dsc_nome']).groups()
-                title['title'] = name
-
-                # extract imdb_id
-                if source['id_imdb'] != '0':
-                    if not source['id_imdb'].startswith('tt'):
-                        title['imdb_id'] = 'tt' + source['id_imdb'].zfill(7)
+            # extract season
+            if title['type'] == 'episode':
+                if source['temporada'] and source['temporada'].isdigit():
+                    title['season'] = int(source['temporada'])
+                else:
+                    match = season_re.search(source['dsc_nome_br'])
+                    if match:
+                        title['season'] = int(match.group('season'))
                     else:
-                        title['imdb_id'] = source['id_imdb']
+                        logger.warning('No season detected for title %d', title_id)
 
-                # extract season
-                if title['type'] == 'episode':
-                    if source['temporada'] and source['temporada'].isdigit():
-                        title['season'] = int(source['temporada'])
-                    else:
-                        match = season_re.search(source['dsc_nome_br'])
-                        if match:
-                            title['season'] = int(match.group('season'))
-                        else:
-                            logger.debug('No season detected for title %d (%s)', title_id, name)
+            # add title
+            titles[title_id] = title
 
-                # extract year
-                if year:
-                    title['year'] = int(year)
-                elif source['dsc_data_lancamento'] and source['dsc_data_lancamento'].isdigit():
-                    # year is based on season air date hence the adjustment
-                    title['year'] = int(source['dsc_data_lancamento']) - title.get('season', 1) + 1
-
-                # add title only if is valid
-                # Check against title without ignored chars
-                if self.is_valid_title(title, title_id, sanitized_titles[0], season, title_year):
-                    titles[title_id] = title
-
-            logger.debug('Found %d titles', len(titles))
+        logger.debug('Found %d titles', len(titles))
 
         return titles
 
     @region.cache_on_arguments(expiration_time=timedelta(minutes=15).total_seconds())
-    def get_archives(self, title_id, language_code, title_type, season, episode):
-        """Get the archive list from a given `title_id`, `language_code`, `title_type`, `season` and `episode`.
+    def get_archives(self, title_id, language_code):
+        """Get the archive list from a given `title_id` and `language_code`.
 
         :param int title_id: title id.
         :param int language_code: language code.
-        :param str title_type: episode or movie
-        :param int season: season
-        :param int episode: episode
         :return: the archives.
         :rtype: list of :class:`LegendasTVArchive`
 
         """
+        logger.info('Getting archives for title %d and language %d', title_id, language_code)
         archives = []
-        page = 0
+        page = 1
         while True:
             # get the archive page
-            url = self.server_url + 'legenda/busca/-/{language}/-/{page}/{title}'.format(
-                language=language_code, page=page, title=title_id)
+            url = self.server_url + 'util/carrega_legendas_busca_filme/{title}/{language}/-/{page}'.format(
+                title=title_id, language=language_code, page=page)
             r = self.session.get(url)
-            raise_for_status(r)
+            r.raise_for_status()
 
             # parse the results
             soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
-            for archive_soup in soup.select('div.list_element > article > div > div.f_left'):
+            for archive_soup in soup.select('div.list_element > article > div'):
                 # create archive
-                archive = LegendasTVArchive(archive_soup.a['href'].split('/')[2],
-                                            archive_soup.a.text,
-                                            'pack' in archive_soup.parent['class'],
-                                            'destaque' in archive_soup.parent['class'],
+                archive = LegendasTVArchive(archive_soup.a['href'].split('/')[2], archive_soup.a.text,
+                                            'pack' in archive_soup['class'], 'destaque' in archive_soup['class'],
                                             self.server_url + archive_soup.a['href'][1:])
-                # clean name of path separators and pack flags
-                clean_name = archive.name.replace('/', '-')
-                if archive.pack and clean_name.startswith('(p)'):
-                    clean_name = clean_name[3:]
-
-                # guess from name
-                guess = guessit(clean_name, {'type': title_type})
-
-                # episode
-                if season and episode:
-                    # discard mismatches on episode in non-pack archives
-
-                    # Guessit may return int for single episode or list for multi-episode
-                    # Check if archive name has multiple episodes releases on it
-                    if not archive.pack and 'episode' in guess:
-                        wanted_episode = set(episode) if isinstance(episode, list) else {episode}
-                        archive_episode = guess['episode'] if isinstance(guess['episode'], list) else {guess['episode']}
-
-                        if not wanted_episode.intersection(archive_episode):
-                            logger.debug('Mismatched episode %s, discarding archive: %s', guess['episode'], clean_name)
-                            continue
 
                 # extract text containing downloads, rating and timestamp
                 data_text = archive_soup.find('p', class_='data').text
@@ -392,8 +300,6 @@ class LegendasTVProvider(Provider):
                     raise ProviderError('Archive timestamp is in the future')
 
                 # add archive
-                logger.info('Found archive for title %d and language %d at page %s: %s',
-                            title_id, language_code, page, archive)
                 archives.append(archive)
 
             # stop on last page
@@ -416,7 +322,7 @@ class LegendasTVProvider(Provider):
         """
         logger.info('Downloading archive %s', archive.id)
         r = self.session.get(self.server_url + 'downloadarquivo/{}'.format(archive.id))
-        raise_for_status(r)
+        r.raise_for_status()
 
         # open the archive
         archive_stream = io.BytesIO(r.content)
@@ -431,26 +337,60 @@ class LegendasTVProvider(Provider):
 
     def query(self, language, title, season=None, episode=None, year=None):
         # search for titles
-        titles = self.search_titles(title, season, year)
+        titles = self.search_titles(sanitize(title))
+
+        # search for titles with the quote or dot character
+        ignore_characters = {'\'', '.'}
+        if any(c in title for c in ignore_characters):
+            titles.update(self.search_titles(sanitize(title, ignore_characters=ignore_characters)))
 
         subtitles = []
         # iterate over titles
         for title_id, t in titles.items():
+            # discard mismatches on title
+            if sanitize(t['title']) != sanitize(title):
+                continue
 
-            logger.info('Getting archives for title %d and language %d', title_id, language.legendastv)
-            archives = self.get_archives(title_id, language.legendastv, t['type'], season, episode)
-            if not archives:
-                logger.info('No archives found for title %d and language %d', title_id, language.legendastv)
+            # episode
+            if season and episode:
+                # discard mismatches on type
+                if t['type'] != 'episode':
+                    continue
+
+                # discard mismatches on season
+                if 'season' not in t or t['season'] != season:
+                    continue
+            # movie
+            else:
+                # discard mismatches on type
+                if t['type'] != 'movie':
+                    continue
+
+                # discard mismatches on year
+                if year is not None and 'year' in t and t['year'] != year:
+                    continue
 
             # iterate over title's archives
-            for a in archives:
+            for a in self.get_archives(title_id, language.legendastv):
+                # clean name of path separators and pack flags
+                clean_name = a.name.replace('/', '-')
+                if a.pack and clean_name.startswith('(p)'):
+                    clean_name = clean_name[3:]
+
+                # guess from name
+                guess = guessit(clean_name, {'type': t['type']})
+
+                # episode
+                if season and episode:
+                    # discard mismatches on episode in non-pack archives
+                    if not a.pack and 'episode' in guess and guess['episode'] != episode:
+                        continue
 
                 # compute an expiration time based on the archive timestamp
                 expiration_time = (datetime.utcnow().replace(tzinfo=pytz.utc) - a.timestamp).total_seconds()
 
                 # attempt to get the releases from the cache
-                cache_key = releases_key.format(archive_id=a.id, archive_name=a.name)
-                releases = region.get(cache_key, expiration_time=expiration_time)
+                releases = region.get(releases_key.format(archive_id=a.id), expiration_time=expiration_time)
 
                 # the releases are not in cache or cache is expired
                 if releases == NO_VALUE:
@@ -477,12 +417,12 @@ class LegendasTVProvider(Provider):
                         releases.append(name)
 
                     # cache the releases
-                    region.set(cache_key, releases)
+                    region.set(releases_key.format(archive_id=a.id), releases)
 
                 # iterate over releases
                 for r in releases:
-                    subtitle = self.subtitle_class(language, t['type'], t['title'], t.get('year'), t.get('imdb_id'),
-                                                   t.get('season'), a, r)
+                    subtitle = LegendasTVSubtitle(language, t['type'], t['title'], t.get('year'), t.get('imdb_id'),
+                                                  t.get('season'), a, r)
                     logger.debug('Found subtitle %r', subtitle)
                     subtitles.append(subtitle)
 
@@ -491,19 +431,13 @@ class LegendasTVProvider(Provider):
     def list_subtitles(self, video, languages):
         season = episode = None
         if isinstance(video, Episode):
-            titles = [video.series] + video.alternative_series
+            title = video.series
             season = video.season
             episode = video.episode
         else:
-            titles = [video.title] + video.alternative_titles
+            title = video.title
 
-        for title in titles:
-            subtitles = [s for l in languages for s in
-                         self.query(l, title, season=season, episode=episode, year=video.year)]
-            if subtitles:
-                return subtitles
-
-        return []
+        return [s for l in languages for s in self.query(l, title, season=season, episode=episode, year=video.year)]
 
     def download_subtitle(self, subtitle):
         # download archive in case we previously hit the releases cache and didn't download it
@@ -512,11 +446,3 @@ class LegendasTVProvider(Provider):
 
         # extract subtitle's content
         subtitle.content = fix_line_ending(subtitle.archive.content.read(subtitle.name))
-
-
-def raise_for_status(r):
-    # When site is under maintaince and http status code 200.
-    if 'Em breve estaremos de volta' in r.text:
-        raise ServiceUnavailable
-    else:
-        r.raise_for_status()

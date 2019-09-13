@@ -69,11 +69,10 @@ class Lock(object):
         """Return true if the expiration time is reached, or no
         value is available."""
 
-        return not self._has_value(createdtime) or \
-            (
-                self.expiretime is not None and
-                time.time() - createdtime > self.expiretime
-            )
+        return not self._has_value(createdtime) or (
+            self.expiretime is not None and
+            time.time() - createdtime > self.expiretime
+        )
 
     def _has_value(self, createdtime):
         """Return true if the creation function has proceeded
@@ -91,68 +90,100 @@ class Lock(object):
             value = NOT_REGENERATED
             createdtime = -1
 
-        generated = self._enter_create(createdtime)
+        generated = self._enter_create(value, createdtime)
 
         if generated is not NOT_REGENERATED:
             generated, createdtime = generated
             return generated
         elif value is NOT_REGENERATED:
+            # we called upon the creator, and it said that it
+            # didn't regenerate.  this typically means another
+            # thread is running the creation function, and that the
+            # cache should still have a value.  However,
+            # we don't have a value at all, which is unusual since we just
+            # checked for it, so check again (TODO: is this a real codepath?)
             try:
                 value, createdtime = value_fn()
                 return value
             except NeedRegenerationException:
-                raise Exception("Generation function should "
-                            "have just been called by a concurrent "
-                            "thread.")
+                raise Exception(
+                    "Generation function should "
+                    "have just been called by a concurrent "
+                    "thread.")
         else:
             return value
 
-    def _enter_create(self, createdtime):
-
+    def _enter_create(self, value, createdtime):
         if not self._is_expired(createdtime):
             return NOT_REGENERATED
 
-        async = False
+        _async = False
 
         if self._has_value(createdtime):
+            has_value = True
             if not self.mutex.acquire(False):
-                log.debug("creation function in progress "
-                            "elsewhere, returning")
+                log.debug(
+                    "creation function in progress "
+                    "elsewhere, returning")
                 return NOT_REGENERATED
         else:
+            has_value = False
             log.debug("no value, waiting for create lock")
             self.mutex.acquire()
 
         try:
             log.debug("value creation lock %r acquired" % self.mutex)
 
-            # see if someone created the value already
-            try:
-                value, createdtime = self.value_and_created_fn()
-            except NeedRegenerationException:
-                pass
-            else:
-                if not self._is_expired(createdtime):
-                    log.debug("value already present")
-                    return value, createdtime
-                elif self.async_creator:
-                    log.debug("Passing creation lock to async runner")
-                    self.async_creator(self.mutex)
-                    async = True
-                    return value, createdtime
+            if not has_value:
+                # we entered without a value, or at least with "creationtime ==
+                # 0".   Run the "getter" function again, to see if another
+                # thread has already generated the value while we waited on the
+                # mutex,  or if the caller is otherwise telling us there is a
+                # value already which allows us to use async regeneration. (the
+                # latter is used by the multi-key routine).
+                try:
+                    value, createdtime = self.value_and_created_fn()
+                except NeedRegenerationException:
+                    # nope, nobody created the value, we're it.
+                    # we must create it right now
+                    pass
+                else:
+                    has_value = True
+                    # caller is telling us there is a value and that we can
+                    # use async creation if it is expired.
+                    if not self._is_expired(createdtime):
+                        # it's not expired, return it
+                        log.debug("Concurrent thread created the value")
+                        return value, createdtime
 
-            log.debug("Calling creation function")
-            created = self.creator()
-            return created
+                    # otherwise it's expired, call creator again
+
+            if has_value and self.async_creator:
+                # we have a value we can return, safe to use async_creator
+                log.debug("Passing creation lock to async runner")
+
+                # so...run it!
+                self.async_creator(self.mutex)
+                _async = True
+
+                # and return the expired value for now
+                return value, createdtime
+
+            # it's expired, and it's our turn to create it synchronously, *or*,
+            # there's no value at all, and we have to create it synchronously
+            log.debug(
+                "Calling creation function for %s value",
+                "not-yet-present" if not has_value else
+                "previously expired"
+            )
+            return self.creator()
         finally:
-            if not async:
+            if not _async:
                 self.mutex.release()
                 log.debug("Released creation lock")
-
 
     def __enter__(self):
         return self._enter()
 
     def __exit__(self, type, value, traceback):
         pass
-

@@ -1,12 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import logging
 import time
 import rarfile
 
 from cork import Cork
-from ConfigParser2 import ConfigParser
+from backports import configparser2
 from config import settings
 from check_update import check_releases
 from get_args import args
@@ -66,7 +67,7 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-cfg = ConfigParser()
+cfg = configparser2.ConfigParser()
 
 
 def init_binaries():

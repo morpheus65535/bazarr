@@ -208,14 +208,8 @@ def guess_matches(video, guess, partial=False):
         if video.season and 'season' in guess and guess['season'] == video.season:
             matches.add('season')
         # episode
-        # Currently we only have single-ep support (guessit returns a multi-ep as a list with int values)
-        # Most providers only support single-ep, so make sure it contains only 1 episode
-        # In case of multi-ep, take the lowest episode (subtitles will normally be available on lowest episode number)
-        if video.episode and 'episode' in guess:
-            episode_guess = guess['episode']
-            episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
-            if episode == video.episode:
-                matches.add('episode')
+        if video.episode and 'episode' in guess and guess['episode'] == video.episode:
+            matches.add('episode')
         # year
         if video.year and 'year' in guess and guess['year'] == video.year:
             matches.add('year')
@@ -258,4 +252,4 @@ def fix_line_ending(content):
     :rtype: bytes
 
     """
-    return content.replace(b'\r\n', b'\n')
+    return content.replace(b'\r\n', b'\n').replace(b'\r', b'\n')

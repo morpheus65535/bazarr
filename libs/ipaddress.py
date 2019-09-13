@@ -6,8 +6,16 @@
 # s/class \(\w\+\):/class \1(object):/
 
 # Use iterator versions of map and range:
-from itertools import imap as map
-range = xrange
+try:
+    from itertools import imap as map
+except ImportError:
+    imap = map
+
+try:
+    import xrange
+    range = xrange
+except ImportError:
+    pass
 
 # Except that xrange only supports machine integers, not longs, so...
 def long_range(start, end):

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import gc
 import os
 import babelfish
@@ -24,6 +25,7 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
 
 from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
+import six
 
 gc.enable()
 
@@ -63,7 +65,7 @@ def store_subtitles(file):
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
-            for subtitle, language in subtitles.iteritems():
+            for subtitle, language in six.iteritems(subtitles):
                 subtitle_path = get_external_subtitles_path(file, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
@@ -155,7 +157,7 @@ def store_subtitles_movie(file):
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
-            for subtitle, language in subtitles.iteritems():
+            for subtitle, language in six.iteritems(subtitles):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series

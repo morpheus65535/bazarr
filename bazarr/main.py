@@ -1,5 +1,8 @@
 # coding=utf-8
 
+import six
+from six.moves import zip
+from functools import reduce
 bazarr_version = '0.8.2'
 
 import gc
@@ -12,7 +15,7 @@ import pretty
 import math
 import ast
 import hashlib
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import warnings
 import queueconfig
 import platform
@@ -1575,12 +1578,12 @@ def save_settings():
     settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
     settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
     
-    before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
-              unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
-              unicode(settings.general.getboolean('use_radarr')), unicode(settings.general.path_mappings_movie))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
-             unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
-             unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    before = (six.text_type(settings.general.ip), int(settings.general.port), six.text_type(settings.general.base_url),
+              six.text_type(settings.general.path_mappings), six.text_type(settings.general.getboolean('use_sonarr')),
+              six.text_type(settings.general.getboolean('use_radarr')), six.text_type(settings.general.path_mappings_movie))
+    after = (six.text_type(settings_general_ip), int(settings_general_port), six.text_type(settings_general_baseurl),
+             six.text_type(settings_general_pathmapping), six.text_type(settings_general_use_sonarr),
+             six.text_type(settings_general_use_radarr), six.text_type(settings_general_pathmapping_movie))
     
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -1645,7 +1648,7 @@ def save_settings():
     settings_proxy_password = request.forms.get('settings_proxy_password')
     settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
     
-    before_proxy_password = (unicode(settings.proxy.type), unicode(settings.proxy.exclude))
+    before_proxy_password = (six.text_type(settings.proxy.type), six.text_type(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
@@ -2029,7 +2032,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(unicode(episodePath))
+    store_subtitles(six.text_type(episodePath))
     list_missing_subtitles(sonarrSeriesId)
 
 
@@ -2048,7 +2051,7 @@ def remove_subtitles_movie():
         history_log_movie(0, radarrId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles_movie(unicode(moviePath))
+    store_subtitles_movie(six.text_type(moviePath))
     list_missing_subtitles_movies(radarrId)
 
 
@@ -2082,7 +2085,7 @@ def get_subtitle():
             score = result[4]
             history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(six.text_type(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
     except OSError:
@@ -2140,7 +2143,7 @@ def manual_get_subtitle():
             score = result[4]
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(six.text_type(episodePath))
             list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
     except OSError:
@@ -2184,7 +2187,7 @@ def perform_manual_upload_subtitle():
             score = 360
             history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(six.text_type(episodePath))
             list_missing_subtitles(sonarrSeriesId)
 
         redirect(ref)
@@ -2221,7 +2224,7 @@ def get_subtitle_movie():
             score = result[4]
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(six.text_type(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
     except OSError:
@@ -2277,7 +2280,7 @@ def manual_get_subtitle_movie():
             score = result[4]
             history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(six.text_type(moviePath))
             list_missing_subtitles_movies(radarrId)
         redirect(ref)
     except OSError:
@@ -2320,7 +2323,7 @@ def perform_manual_upload_subtitle_movie():
             score = 120
             history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(six.text_type(moviePath))
             list_missing_subtitles_movies(radarrId)
 
         redirect(ref)
@@ -2421,7 +2424,7 @@ def api_history():
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
-    url = urllib.unquote(url)
+    url = six.moves.urllib.parse.unquote(url)
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
     except:
@@ -2433,7 +2436,7 @@ def test_url(protocol, url):
 @route(base_url + 'test_notification/<protocol>/<provider:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_notification(protocol, provider):
-    provider = urllib.unquote(provider)
+    provider = six.moves.urllib.parse.unquote(provider)
     apobj = apprise.Apprise()
     apobj.add(protocol + "://" + provider)
     

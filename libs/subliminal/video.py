@@ -13,9 +13,9 @@ VIDEO_EXTENSIONS = ('.3g2', '.3gp', '.3gp2', '.3gpp', '.60d', '.ajp', '.asf', '.
                     '.bix', '.box', '.cam', '.dat', '.divx', '.dmf', '.dv', '.dvr-ms', '.evo', '.flc', '.fli',
                     '.flic', '.flv', '.flx', '.gvi', '.gvp', '.h264', '.m1v', '.m2p', '.m2ts', '.m2v', '.m4e',
                     '.m4v', '.mjp', '.mjpeg', '.mjpg', '.mkv', '.moov', '.mov', '.movhd', '.movie', '.movx', '.mp4',
-                    '.mpe', '.mpeg', '.mpg', '.mpv', '.mpv2', '.mxf', '.nsv', '.nut', '.ogg', '.ogm', '.ogv', '.omf',
+                    '.mpe', '.mpeg', '.mpg', '.mpv', '.mpv2', '.mxf', '.nsv', '.nut', '.ogg', '.ogm' '.ogv', '.omf',
                     '.ps', '.qt', '.ram', '.rm', '.rmvb', '.swf', '.ts', '.vfw', '.vid', '.video', '.viv', '.vivo',
-                    '.vob', '.vro', '.webm', '.wm', '.wmv', '.wmx', '.wrap', '.wvx', '.wx', '.x264', '.xvid')
+                    '.vob', '.vro', '.wm', '.wmv', '.wmx', '.wrap', '.wvx', '.wx', '.x264', '.xvid')
 
 
 class Video(object):
@@ -123,12 +123,11 @@ class Episode(Video):
     :param int year: year of the series.
     :param bool original_series: whether the series is the first with this name.
     :param int tvdb_id: TVDB id of the episode.
-    :param list alternative_series: alternative names of the series
     :param \*\*kwargs: additional parameters for the :class:`Video` constructor.
 
     """
     def __init__(self, name, series, season, episode, title=None, year=None, original_series=True, tvdb_id=None,
-                 series_tvdb_id=None, series_imdb_id=None, alternative_series=None, **kwargs):
+                 series_tvdb_id=None, series_imdb_id=None, **kwargs):
         super(Episode, self).__init__(name, **kwargs)
 
         #: Series of the episode
@@ -158,9 +157,6 @@ class Episode(Video):
         #: IMDb id of the series
         self.series_imdb_id = series_imdb_id
 
-        #: Alternative names of the series
-        self.alternative_series = alternative_series or []
-
     @classmethod
     def fromguess(cls, name, guess):
         if guess['type'] != 'episode':
@@ -169,13 +165,7 @@ class Episode(Video):
         if 'title' not in guess or 'episode' not in guess:
             raise ValueError('Insufficient data to process the guess')
 
-        # Currently we only have single-ep support (guessit returns a multi-ep as a list with int values)
-        # Most providers only support single-ep, so make sure it contains only 1 episode
-        # In case of multi-ep, take the lowest episode (subtitles will normally be available on lowest episode number)
-        episode_guess = guess.get('episode')
-        episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
-
-        return cls(name, guess['title'], guess.get('season', 1), episode, title=guess.get('episode_title'),
+        return cls(name, guess['title'], guess.get('season', 1), guess['episode'], title=guess.get('episode_title'),
                    year=guess.get('year'), format=guess.get('format'), original_series='year' not in guess,
                    release_group=guess.get('release_group'), resolution=guess.get('screen_size'),
                    video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'))
@@ -196,11 +186,10 @@ class Movie(Video):
 
     :param str title: title of the movie.
     :param int year: year of the movie.
-    :param list alternative_titles: alternative titles of the movie
     :param \*\*kwargs: additional parameters for the :class:`Video` constructor.
 
     """
-    def __init__(self, name, title, year=None, alternative_titles=None, **kwargs):
+    def __init__(self, name, title, year=None, **kwargs):
         super(Movie, self).__init__(name, **kwargs)
 
         #: Title of the movie
@@ -208,9 +197,6 @@ class Movie(Video):
 
         #: Year of the movie
         self.year = year
-
-        #: Alternative titles of the movie
-        self.alternative_titles = alternative_titles or []
 
     @classmethod
     def fromguess(cls, name, guess):
@@ -220,13 +206,9 @@ class Movie(Video):
         if 'title' not in guess:
             raise ValueError('Insufficient data to process the guess')
 
-        alternative_titles = []
-        if 'alternative_title' in guess:
-            alternative_titles.append(u"%s %s" % (guess['title'], guess['alternative_title']))
-
         return cls(name, guess['title'], format=guess.get('format'), release_group=guess.get('release_group'),
                    resolution=guess.get('screen_size'), video_codec=guess.get('video_codec'),
-                   audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles)
+                   audio_codec=guess.get('audio_codec'), year=guess.get('year'))
 
     @classmethod
     def fromname(cls, name):

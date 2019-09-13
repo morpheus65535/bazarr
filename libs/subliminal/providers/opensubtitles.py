@@ -11,8 +11,7 @@ from six.moves.xmlrpc_client import ServerProxy
 
 from . import Provider, TimeoutSafeTransport
 from .. import __short_version__
-from ..exceptions import (AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError,
-                          ServiceUnavailable)
+from ..exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
 from ..subtitle import Subtitle, fix_line_ending, guess_matches
 from ..utils import sanitize
 from ..video import Episode, Movie
@@ -27,8 +26,7 @@ class OpenSubtitlesSubtitle(Subtitle):
 
     def __init__(self, language, hearing_impaired, page_link, subtitle_id, matched_by, movie_kind, hash, movie_name,
                  movie_release_name, movie_year, movie_imdb_id, series_season, series_episode, filename, encoding):
-        super(OpenSubtitlesSubtitle, self).__init__(language, hearing_impaired=hearing_impaired,
-                                                    page_link=page_link, encoding=encoding)
+        super(OpenSubtitlesSubtitle, self).__init__(language, hearing_impaired, page_link, encoding)
         self.subtitle_id = subtitle_id
         self.matched_by = matched_by
         self.movie_kind = movie_kind
@@ -60,8 +58,7 @@ class OpenSubtitlesSubtitle(Subtitle):
         if isinstance(video, Episode) and self.movie_kind == 'episode':
             # tag match, assume series, year, season and episode matches
             if self.matched_by == 'tag':
-                if not video.imdb_id or self.movie_imdb_id == video.imdb_id:
-                    matches |= {'series', 'year', 'season', 'episode'}
+                matches |= {'series', 'year', 'season', 'episode'}
             # series
             if video.series and sanitize(self.series_name) == sanitize(video.series):
                 matches.add('series')
@@ -90,8 +87,7 @@ class OpenSubtitlesSubtitle(Subtitle):
         elif isinstance(video, Movie) and self.movie_kind == 'movie':
             # tag match, assume title and year matches
             if self.matched_by == 'tag':
-                if not video.imdb_id or self.movie_imdb_id == video.imdb_id:
-                    matches |= {'title', 'year'}
+                matches |= {'title', 'year'}
             # title
             if video.title and sanitize(self.movie_name) == sanitize(video.title):
                 matches.add('title')
@@ -126,11 +122,10 @@ class OpenSubtitlesProvider(Provider):
 
     """
     languages = {Language.fromopensubtitles(l) for l in language_converters['opensubtitles'].codes}
-    subtitle_class = OpenSubtitlesSubtitle
 
     def __init__(self, username=None, password=None):
         self.server = ServerProxy('https://api.opensubtitles.org/xml-rpc', TimeoutSafeTransport(10))
-        if any((username, password)) and not all((username, password)):
+        if username and not password or not username and password:
             raise ConfigurationError('Username and password must be specified')
         # None values not allowed for logging in, so replace it by ''
         self.username = username or ''
@@ -161,10 +156,7 @@ class OpenSubtitlesProvider(Provider):
         if hash and size:
             criteria.append({'moviehash': hash, 'moviebytesize': str(size)})
         if imdb_id:
-            if season and episode:
-                criteria.append({'imdbid': imdb_id[2:], 'season': season, 'episode': episode})
-            else:
-                criteria.append({'imdbid': imdb_id[2:]})
+            criteria.append({'imdbid': imdb_id[2:]})
         if tag:
             criteria.append({'tag': tag})
         if query and season and episode:
@@ -207,9 +199,9 @@ class OpenSubtitlesProvider(Provider):
             filename = subtitle_item['SubFileName']
             encoding = subtitle_item.get('SubEncoding') or None
 
-            subtitle = self.subtitle_class(language, hearing_impaired, page_link, subtitle_id, matched_by, movie_kind,
-                                           hash, movie_name, movie_release_name, movie_year, movie_imdb_id,
-                                           series_season, series_episode, filename, encoding)
+            subtitle = OpenSubtitlesSubtitle(language, hearing_impaired, page_link, subtitle_id, matched_by, movie_kind,
+                                             hash, movie_name, movie_release_name, movie_year, movie_imdb_id,
+                                             series_season, series_episode, filename, encoding)
             logger.debug('Found subtitle %r by %s', subtitle, matched_by)
             subtitles.append(subtitle)
 
@@ -265,6 +257,11 @@ class UnknownUserAgent(OpenSubtitlesError, AuthenticationError):
 
 class DisabledUserAgent(OpenSubtitlesError, AuthenticationError):
     """Exception raised when status is '415 Disabled user agent'."""
+    pass
+
+
+class ServiceUnavailable(OpenSubtitlesError):
+    """Exception raised when status is '503 Service Unavailable'."""
     pass
 
 

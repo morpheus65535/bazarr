@@ -28,7 +28,7 @@ class GeezipFile(gzip.GzipFile):
                 fileobj.write(self.compress.flush(Z_FINISH))
                 gzip.write32u(fileobj, self.crc)
                 # self.size may exceed 2GB, or even 4GB
-                gzip.write32u(fileobj, self.size & 0xffffffffL)
+                gzip.write32u(fileobj, self.size & 0xffffffff)
                 fileobj.flush()
         finally:
             myfileobj = self.myfileobj

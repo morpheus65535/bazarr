@@ -5,7 +5,7 @@ import warnings
 try:
     from bs4.builder import HTML5TreeBuilder
     HTML5LIB_PRESENT = True
-except ImportError, e:
+except ImportError as e:
     HTML5LIB_PRESENT = False
 from bs4.element import SoupStrainer
 from bs4.testing import (
@@ -22,7 +22,7 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
 
     @property
     def default_builder(self):
-        return HTML5TreeBuilder()
+        return HTML5TreeBuilder
 
     def test_soupstrainer(self):
         # The html5lib tree builder does not support SoupStrainers.
@@ -74,14 +74,14 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
     def test_reparented_markup(self):
         markup = '<p><em>foo</p>\n<p>bar<a></a></em></p>'
         soup = self.soup(markup)
-        self.assertEqual(u"<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p></body>", soup.body.decode())
+        self.assertEqual("<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p></body>", soup.body.decode())
         self.assertEqual(2, len(soup.find_all('p')))
 
 
     def test_reparented_markup_ends_with_whitespace(self):
         markup = '<p><em>foo</p>\n<p>bar<a></a></em></p>\n'
         soup = self.soup(markup)
-        self.assertEqual(u"<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p>\n</body>", soup.body.decode())
+        self.assertEqual("<body><p><em>foo</em></p><em>\n</em><p><em>bar<a></a></em></p>\n</body>", soup.body.decode())
         self.assertEqual(2, len(soup.find_all('p')))
 
     def test_reparented_markup_containing_identical_whitespace_nodes(self):
@@ -127,4 +127,44 @@ class HTML5LibBuilderSmokeTest(SoupTest, HTML5TreeBuilderSmokeTest):
     def test_foster_parenting(self):
         markup = b"""<table><td></tbody>A"""
         soup = self.soup(markup)
-        self.assertEqual(u"<body>A<table><tbody><tr><td></td></tr></tbody></table></body>", soup.body.decode())
+        self.assertEqual("<body>A<table><tbody><tr><td></td></tr></tbody></table></body>", soup.body.decode())
+
+    def test_extraction(self):
+        """
+        Test that extraction does not destroy the tree.
+
+        https://bugs.launchpad.net/beautifulsoup/+bug/1782928
+        """
+
+        markup = """
+<html><head></head>
+<style>
+</style><script></script><body><p>hello</p></body></html>
+"""
+        soup = self.soup(markup)
+        [s.extract() for s in soup('script')]
+        [s.extract() for s in soup('style')]
+
+        self.assertEqual(len(soup.find_all("p")), 1)
+
+    def test_empty_comment(self):
+        """
+        Test that empty comment does not break structure.
+
+        https://bugs.launchpad.net/beautifulsoup/+bug/1806598
+        """
+
+        markup = """
+<html>
+<body>
+<form>
+<!----><input type="text">
+</form>
+</body>
+</html>
+"""
+        soup = self.soup(markup)
+        inputs = []
+        for form in soup.find_all('form'):
+            inputs.extend(form.find_all('input'))
+        self.assertEqual(len(inputs), 1)

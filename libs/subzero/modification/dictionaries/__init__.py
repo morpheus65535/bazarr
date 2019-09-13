@@ -1,3 +1,3 @@
 # coding=utf-8
 
-from data import data
+from .data import data

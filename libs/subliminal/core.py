@@ -1,38 +1,19 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
-
-import platform
-is_windows_special_path = False
-
-if platform.system() == "Windows":
-    try:
-        __file__.decode("ascii")
-    except UnicodeDecodeError:
-        is_windows_special_path = True
-
-if not is_windows_special_path:
-    from concurrent.futures import ThreadPoolExecutor
-else:
-    ThreadPoolExecutor = object
-
-
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import io
 import itertools
 import logging
 import operator
-import os
+import os.path
 import socket
 
 from babelfish import Language, LanguageReverseError
 from guessit import guessit
-from six.moves.xmlrpc_client import ProtocolError
-from rarfile import BadRarFile, NotRarFile, RarCannotExec, RarFile
-from zipfile import BadZipfile
-from ssl import SSLError
+from rarfile import NotRarFile, RarCannotExec, RarFile
 import requests
 
-from .exceptions import ServiceUnavailable
 from .extensions import provider_manager, refiner_manager
 from .score import compute_score as default_compute_score
 from .subtitle import SUBTITLE_EXTENSIONS, get_subtitle_path
@@ -98,18 +79,6 @@ class ProviderPool(object):
             self.initialized_providers[name].terminate()
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out, improperly terminated', name)
-        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
-            logger.error('Provider %r unavailable, improperly terminated', name)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code in range(500, 600):
-                logger.error('Provider %r unavailable, improperly terminated', name)
-            else:
-                logger.exception('Provider %r http error %r, improperly terminated', name, e.response.status_code)
-        except SSLError as e:
-            if e.args[0] == 'The read operation timed out':
-                logger.error('Provider %r unavailable, improperly terminated', name)
-            else:
-                logger.exception('Provider %r SSL error %r, improperly terminated', name, e.args[0])
         except:
             logger.exception('Provider %r terminated unexpectedly', name)
 
@@ -149,18 +118,6 @@ class ProviderPool(object):
             return self[provider].list_subtitles(video, provider_languages)
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out', provider)
-        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
-            logger.error('Provider %r unavailable', provider)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code in range(500, 600):
-                logger.error('Provider %r unavailable', provider)
-            else:
-                logger.exception('Provider %r http error %r', provider, e.response.status_code)
-        except SSLError as e:
-            if e.args[0] == 'The read operation timed out':
-                logger.error('Provider %r unavailable', provider)
-            else:
-                logger.exception('Provider %r SSL error %r', provider, e.args[0])
         except:
             logger.exception('Unexpected error in provider %r', provider)
 
@@ -215,28 +172,6 @@ class ProviderPool(object):
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out, discarding it', subtitle.provider_name)
             self.discarded_providers.add(subtitle.provider_name)
-            return False
-        except (ServiceUnavailable, ProtocolError):  # OpenSubtitles raises xmlrpclib.ProtocolError when unavailable
-            logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
-            self.discarded_providers.add(subtitle.provider_name)
-            return False
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code in range(500, 600):
-                logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
-            else:
-                logger.exception('Provider %r http error %r, discarding it', subtitle.provider_name,
-                                 e.response.status_code)
-            self.discarded_providers.add(subtitle.provider_name)
-            return False
-        except SSLError as e:
-            if e.args[0] == 'The read operation timed out':
-                logger.error('Provider %r unavailable, discarding it', subtitle.provider_name)
-            else:
-                logger.exception('Provider %r SSL error %r, discarding it', subtitle.provider_name, e.args[0])
-            self.discarded_providers.add(subtitle.provider_name)
-            return False
-        except (BadRarFile, BadZipfile):
-            logger.error('Bad archive for %r', subtitle)
             return False
         except:
             logger.exception('Unexpected error in provider %r, discarding it', subtitle.provider_name)
@@ -557,15 +492,9 @@ def scan_videos(path, age=None, archives=True):
                 continue
 
             # skip old files
-            try:
-                file_age = datetime.utcfromtimestamp(os.path.getmtime(filepath))
-            except ValueError:
-                logger.warning('Could not get age of file %r in %r', filename, dirpath)
+            if age and datetime.utcnow() - datetime.utcfromtimestamp(os.path.getmtime(filepath)) > age:
+                logger.debug('Skipping old file %r in %r', filename, dirpath)
                 continue
-            else:
-                if age and datetime.utcnow() - file_age > age:
-                    logger.debug('Skipping old file %r in %r', filename, dirpath)
-                    continue
 
             # scan
             if filename.endswith(VIDEO_EXTENSIONS):  # video
@@ -612,8 +541,7 @@ def refine(video, episode_refiners=None, movie_refiners=None, **kwargs):
         try:
             refiner_manager[refiner].plugin(video, **kwargs)
         except:
-            logger.error('Failed to refine video %r', video.name)
-            logger.debug('Refiner exception:', exc_info=True)
+            logger.exception('Failed to refine video')
 
 
 def list_subtitles(videos, languages, pool_class=ProviderPool, **kwargs):
