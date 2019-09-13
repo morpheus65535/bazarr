@@ -68,6 +68,23 @@ config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.i
 
 cfg = ConfigParser()
 
+if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+    cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
+
+    cork._store.roles[''] = 100
+    cork._store.save_roles()
+
+    tstamp = str(time.time())
+    username = password = ''
+    cork._store.users[username] = {
+        'role': '',
+        'hash': cork._hash(username, password),
+        'email_addr': username,
+        'desc': username,
+        'creation_date': tstamp
+    }
+    cork._store.save_users()
+
 
 def init_binaries():
     exe = get_binary("unrar")
