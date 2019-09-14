@@ -27,7 +27,7 @@ class EmbeddedSubsReader:
             detected_languages = []
 
             for detected_language in data['subtitles']:
-                subtitles_list.append([detected_language['language'], detected_language['forced']])
+                subtitles_list.append([detected_language['language'], detected_language['forced'], detected_language["codec"]])
         else:
             if os.path.splitext(file)[1] == '.mkv':
                 with open(file, 'rb') as f:
