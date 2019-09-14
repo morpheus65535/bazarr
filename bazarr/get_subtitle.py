@@ -74,7 +74,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
         logging.debug('BAZARR is using those video object properties: %s', vars(video))
         return video
     
-    except:
+    except Exception as e:
         logging.exception("BAZARR Error trying to get video information for this file: " + path)
 
 
