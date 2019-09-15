@@ -1124,7 +1124,13 @@ def history():
 def historyseries():
     authorize()
 
-    row_count = TableHistory.select().count()
+    row_count = TableHistory.select(
+
+    ).join_from(
+        TableHistory, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        TableShows.title.is_null(False)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1168,6 +1174,8 @@ def historyseries():
         TableHistory, TableShows, JOIN.LEFT_OUTER
     ).join_from(
         TableHistory, TableEpisodes, JOIN.LEFT_OUTER
+    ).where(
+        TableShows.title.is_null(False)
     ).order_by(
         TableHistory.timestamp.desc()
     ).paginate(
@@ -1229,7 +1237,13 @@ def historyseries():
 def historymovies():
     authorize()
 
-    row_count = TableHistoryMovie.select().count()
+    row_count = TableHistoryMovie.select(
+
+    ).join_from(
+        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).where(
+        TableMovies.title.is_null(False)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1269,6 +1283,8 @@ def historymovies():
         TableMovies.forced
     ).join_from(
         TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).where(
+        TableMovies.title.is_null(False)
     ).order_by(
         TableHistoryMovie.timestamp.desc()
     ).paginate(
