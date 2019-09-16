@@ -34,8 +34,8 @@ class BaseModel(Model):
 
 
 class System(BaseModel):
-    configured = TextField()
-    updated = TextField()
+    configured = TextField(null=True)
+    updated = TextField(null=True)
 
     class Meta:
         table_name = 'system'
@@ -43,41 +43,41 @@ class System(BaseModel):
 
 
 class TableShows(BaseModel):
-    alternate_titles = TextField(column_name='alternateTitles')
-    audio_language = TextField()
-    fanart = TextField()
-    forced = TextField()
-    hearing_impaired = TextField()
-    languages = TextField()
-    overview = TextField()
+    alternate_titles = TextField(column_name='alternateTitles', null=True)
+    audio_language = TextField(null=True)
+    fanart = TextField(null=True)
+    forced = TextField(null=True)
+    hearing_impaired = TextField(null=True)
+    languages = TextField(null=True)
+    overview = TextField(null=True)
     path = TextField(unique=True)
-    poster = TextField()
+    poster = TextField(null=True)
     sonarr_series_id = IntegerField(column_name='sonarrSeriesId', unique=True)
-    sort_title = TextField(column_name='sortTitle')
+    sort_title = TextField(column_name='sortTitle', null=True)
     title = TextField()
     tvdb_id = AutoField(column_name='tvdbId')
-    year = TextField()
+    year = TextField(null=True)
 
     class Meta:
         table_name = 'table_shows'
 
 
 class TableEpisodes(BaseModel):
-    audio_codec = TextField()
+    audio_codec = TextField(null=True)
     episode = IntegerField()
-    failed_attempts = TextField(column_name='failedAttempts')
-    format = TextField()
-    missing_subtitles = TextField()
-    monitored = TextField()
+    failed_attempts = TextField(column_name='failedAttempts', null=True)
+    format = TextField(null=True)
+    missing_subtitles = TextField(null=True)
+    monitored = TextField(null=True)
     path = TextField()
-    resolution = TextField()
-    scene_name = TextField()
+    resolution = TextField(null=True)
+    scene_name = TextField(null=True)
     season = IntegerField()
     sonarr_episode_id = IntegerField(column_name='sonarrEpisodeId', unique=True)
     sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId')
-    subtitles = TextField()
+    subtitles = TextField(null=True)
     title = TextField()
-    video_codec = TextField()
+    video_codec = TextField(null=True)
 
     class Meta:
         table_name = 'table_episodes'
@@ -85,30 +85,30 @@ class TableEpisodes(BaseModel):
 
 
 class TableMovies(BaseModel):
-    alternative_titles = TextField(column_name='alternativeTitles')
-    audio_codec = TextField()
-    audio_language = TextField()
-    failed_attempts = TextField(column_name='failedAttempts')
-    fanart = TextField()
-    forced = TextField()
-    format = TextField()
-    hearing_impaired = TextField()
-    imdb_id = TextField(column_name='imdbId')
-    languages = TextField()
-    missing_subtitles = TextField()
-    monitored = TextField()
-    overview = TextField()
+    alternative_titles = TextField(column_name='alternativeTitles', null=True)
+    audio_codec = TextField(null=True)
+    audio_language = TextField(null=True)
+    failed_attempts = TextField(column_name='failedAttempts', null=True)
+    fanart = TextField(null=True)
+    forced = TextField(null=True)
+    format = TextField(null=True)
+    hearing_impaired = TextField(null=True)
+    imdb_id = TextField(column_name='imdbId', null=True)
+    languages = TextField(null=True)
+    missing_subtitles = TextField(null=True)
+    monitored = TextField(null=True)
+    overview = TextField(null=True)
     path = TextField(unique=True)
-    poster = TextField()
+    poster = TextField(null=True)
     radarr_id = IntegerField(column_name='radarrId', unique=True)
-    resolution = TextField()
-    scene_name = TextField(column_name='sceneName')
-    sort_title = TextField(column_name='sortTitle')
-    subtitles = TextField()
+    resolution = TextField(null=True)
+    scene_name = TextField(column_name='sceneName', null=True)
+    sort_title = TextField(column_name='sortTitle', null=True)
+    subtitles = TextField(null=True)
     title = TextField()
     tmdb_id = TextField(column_name='tmdbId', primary_key=True)
-    video_codec = TextField()
-    year = TextField()
+    video_codec = TextField(null=True)
+    year = TextField(null=True)
 
     class Meta:
         table_name = 'table_movies'
@@ -118,13 +118,13 @@ class TableHistory(BaseModel):
     id = IntegerField(null=False)
     action = IntegerField()
     description = TextField()
-    language = TextField(null=False)
-    provider = TextField(null=False)
-    score = TextField(null=False)
+    language = TextField(null=True)
+    provider = TextField(null=True)
+    score = TextField(null=True)
     sonarr_episode_id = ForeignKeyField(TableEpisodes, field='sonarr_episode_id', column_name='sonarrEpisodeId')
     sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId')
     timestamp = IntegerField()
-    video_path = TextField(null=False)
+    video_path = TextField(null=True)
 
     class Meta:
         table_name = 'table_history'
@@ -135,12 +135,12 @@ class TableHistoryMovie(BaseModel):
     id = IntegerField(null=False)
     action = IntegerField()
     description = TextField()
-    language = TextField(null=False)
-    provider = TextField(null=False)
+    language = TextField(null=True)
+    provider = TextField(null=True)
     radarr_id = ForeignKeyField(TableMovies, field='radarr_id', column_name='radarrId')
-    score = TextField(null=False)
+    score = TextField(null=True)
     timestamp = IntegerField()
-    video_path = TextField(null=False)
+    video_path = TextField(null=True)
 
     class Meta:
         table_name = 'table_history_movie'
@@ -148,10 +148,10 @@ class TableHistoryMovie(BaseModel):
 
 
 class TableSettingsLanguages(BaseModel):
-    code2 = TextField()
+    code2 = TextField(null=True)
     code3 = TextField(primary_key=True)
-    code3b = TextField()
-    enabled = IntegerField()
+    code3b = TextField(null=True)
+    enabled = IntegerField(null=True)
     name = TextField()
 
     class Meta:
@@ -159,9 +159,9 @@ class TableSettingsLanguages(BaseModel):
 
 
 class TableSettingsNotifier(BaseModel):
-    enabled = IntegerField()
-    name = TextField(primary_key=True)
-    url = TextField()
+    enabled = IntegerField(null=True)
+    name = TextField(null=True, primary_key=True)
+    url = TextField(null=True)
 
     class Meta:
         table_name = 'table_settings_notifier'
