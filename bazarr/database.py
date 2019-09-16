@@ -161,7 +161,7 @@ class TableSettingsLanguages(BaseModel):
 class TableSettingsNotifier(BaseModel):
     enabled = IntegerField()
     name = TextField(primary_key=True)
-    url = TextField()
+    url = TextField(null=True)
 
     class Meta:
         table_name = 'table_settings_notifier'
