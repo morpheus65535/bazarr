@@ -13,7 +13,7 @@
                             <div class="seven wide column">
                                 <div id="radarr_validated" class="ui read-only checkbox">
                                     <input id="radarr_validated_checkbox" type="checkbox">
-                                    <label id="radarr_validation_result">Not tested recently</label>
+                                    <label id="radarr_validation_result">Not Tested Recently</label>
                                 </div>
                             </div>
                         </div>
