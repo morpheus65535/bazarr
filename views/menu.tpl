@@ -226,11 +226,11 @@
 			% end
 
 			% if restart_required.updated == '1' and restart_required.configured == '1':
-			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update and changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
+			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply The Last Update & Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% elif restart_required.updated == '1':
-				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply last update. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To The Last Update. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% elif restart_required.configured == '1':
-				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr need to be restarted to apply changes to general settings. Click <a href=# id="restart_link">here</a> to restart.</div></div></div>
+				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% end
         </div>
     </body>
@@ -283,7 +283,7 @@
     }
 
     $('#restart_link').on('click', function(){
-		$('#loader_text').text("Bazarr is restarting, please wait...");
+		$('#loader_text').text("Bazarr is restarting. Please Wait...");
 		$.ajax({
 			url: "{{base_url}}restart",
 			async: true
@@ -377,7 +377,7 @@
 						button = [ Noty.button('Refresh', 'ui tiny primary button', function () { window.location.reload() }) ];
 					} else if (button === 'restart') {
 						// to be completed
-						button = [ Noty.button('Restart', 'ui tiny primary button', function () { alert('Restart not implemented yet!') }) ];
+						button = [ Noty.button('Restart', 'ui tiny primary button', function () { alert('Restart Not Implemented Yet!') }) ];
 					} else {
 						button = [];
 					}
