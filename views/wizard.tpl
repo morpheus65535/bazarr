@@ -48,7 +48,7 @@
     </head>
     <body>
         <div id='loader' class="ui page dimmer">
-            <div class="ui indeterminate text loader">Saving settings...</div>
+            <div class="ui indeterminate text loader">Saving Settings...</div>
         </div>
 
         <div class="ui modal" id="browsemodal">
@@ -58,35 +58,35 @@
         <div id="fondblanc" class="ui container">
             <form name="wizard_form" id="wizard_form" action="{{base_url}}save_wizard" method="post" class="ui form" autocomplete="off">
             <div id="form_validation_error" class="ui error message">
-                <p>Some fields are in error and you can't save settings until you have corrected them. Be sure to check in every tabs.</p>
+                <p>Some fields are incorrect and you cannot continue until you have corrected them. Be sure to check every tab.</p>
             </div>
             <div class="ui top attached mini steps">
                 <div class="active step" data-tab="general" id="general_tab">
                     <i class="setting icon"></i>
                     <div class="content">
                       <div class="title">General</div>
-                      <div class="description">General settings</div>
+                      <div class="description">General Settings</div>
                     </div>
                 </div>
                 <div class="step" data-tab="subtitles" id="subtitles_tab">
                     <i class="closed captioning icon"></i>
                     <div class="content">
                       <div class="title">Subtitles</div>
-                      <div class="description">Subtitles settings</div>
+                      <div class="description">Subtitles Settings</div>
                     </div>
                 </div>
                 <div class="step" data-tab="sonarr" id="sonarr_tab">
                     <i class="play icon"></i>
                     <div class="content">
                       <div class="title">Sonarr</div>
-                      <div class="description">Sonarr settings</div>
+                      <div class="description">Sonarr Settings</div>
                     </div>
                 </div>
                 <div class="step" data-tab="radarr" id="radarr_tab">
                     <i class="film icon"></i>
                     <div class="content">
                       <div class="title">Radarr</div>
-                      <div class="description">Radarr settings</div>
+                      <div class="description">Radarr Settings</div>
                     </div>
                 </div>
             </div>
