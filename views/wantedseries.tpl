@@ -48,7 +48,7 @@
 						<th>Series</th>
 						<th>Episode</th>
 						<th>Episode Title</th>
-						<th>Missing subtitles</th>
+						<th>Missing Subtitle(s)</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -56,7 +56,7 @@
 				%import pretty
 				%if rows.count() == 0:
 					<tr>
-						<td colspan="4">No missing episode subtitles.</td>
+						<td colspan="4">No Missing Subtitles.</td>
 					</tr>
 				%end
 				%for row in rows:
@@ -90,7 +90,7 @@
                                                     <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                     </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-sonarrSeriesId={{row.sonarr_series_id.sonarr_series_id}} data-sonarrEpisodeId={{row.sonarr_episode_id}} data-title="{{row.seriesTitle.replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top right" data-inverted="" data-episodePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-sonarrSeriesId={{row.sonarr_series_id.sonarr_series_id}} data-sonarrEpisodeId={{row.sonarr_episode_id}} data-title="{{row.seriesTitle.replace("'", "\'")}}" class="get_subtitle ui tiny label">
                                                                          {{language}}
                                                     <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
                                                     </a>
@@ -141,7 +141,7 @@
 			    		%end
 			    		 fast forward icon"></i>
 			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{missing_count}}</div>
+			    	<div class="right floated right aligned column">Total Records: {{missing_count}}</div>
 				</div>
 			</div>
             %end
@@ -187,7 +187,7 @@
 		            sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
                     title: $(this).attr("data-title")
 		    };
-		    $('#loader_text').text("Downloading subtitles...");
+		    $('#loader_text').text("Downloading Subtitles...");
 			$('#loader').addClass('active');
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle",
