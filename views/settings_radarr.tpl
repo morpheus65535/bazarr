@@ -112,7 +112,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Automatic ownload of Subtitles will only happen for monitored Movies in Radarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Automatic download of Subtitles will only happen for monitored Movies in Radarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
