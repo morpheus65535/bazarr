@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening IP address</label>
+                                <label>Listening IP Address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -19,7 +19,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Valid IP4 address or '0.0.0.0' for all interfaces" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Valid IP4 Address or '0.0.0.0' for all interfaces" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -27,7 +27,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening port</label>
+                                <label>Listening Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -78,7 +78,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Enable debug logging</label>
+                                <label>Enable Debug Logging</label>
                             </div>
                             <div class="five wide column">
                                 <div id="settings_debug" class="ui toggle checkbox" data-debug={{settings.general.getboolean('debug')}}>
@@ -94,7 +94,7 @@
                         </div>
                         <div id="chmod_enabled" class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Enable chmod</label>
+                                <label>Enable CHMOD</label>
                             </div>
                             <div class="five wide column">
                                 <div id="settings_chmod_enabled" class="ui toggle checkbox" data-chmod={{settings.general.getboolean('chmod_enabled')}}>
@@ -105,7 +105,7 @@
                         </div>
                         <div id="chmod" class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Set subtitle file permissions to</label>
+                                <label>Set Subtitle file permissions to</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -125,7 +125,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Page size</label>
+                                <label>Page Size</label>
                             </div>
                             <div class="five wide column">
                                 <select name="settings_page_size" id="settings_page_size" class="ui fluid selection dropdown">
@@ -154,7 +154,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Proxy type</label>
+                                <label>Proxy Type</label>
                             </div>
                             <div class="five wide column">
                                 <select name="settings_proxy_type" id="settings_proxy_type" class="ui fluid selection dropdown">
@@ -264,7 +264,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Security settings</div>
+                <div class="ui dividing header">Security Settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -322,7 +322,7 @@
 
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Authentication send username and password in clear over the network. You should add SSL encryption trough a reverse proxy." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Authentication send username and password in clear text over the network. You should add SSL encryption through a reverse proxy." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -346,7 +346,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable Sonarr integration." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Enable Sonarr Integration." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -365,7 +365,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable Radarr integration." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Enable Radarr Integration." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -374,7 +374,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Path Mappings for shows</div>
+                <div class="ui dividing header">Path Mappings For TV Shows</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
@@ -448,7 +448,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Path Mappings for movies</div>
+                <div class="ui dividing header">Path Mappings For Movies</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
@@ -525,7 +525,7 @@
                 <div class="ui dividing header">Post-processing</div>
                 <div class="twelve wide column">
                     <div class="ui orange message">
-                        <p>Be aware that the execution of post-processing command will prevent the user interface from being accessible until completion when downloading subtitles in interactive mode (meaning you'll see a loader during post-processing).</p>
+                        <p>Be aware that the execution of post-processing command will prevent the user interface from being accessible until completion, when downloading subtitles in interactive mode (meaning you'll see a loader during post-processing).</p>
                     </div>
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -655,7 +655,7 @@
                                 <div class="collapsed column">
                                     <div class="collapsed center aligned column">
                                         <div class="ui basic icon"
-                                             data-tooltip="Automatically restart after download and install updates. You will still be able to restart manualy"
+                                             data-tooltip="Automatically restart after downloading and installing updates. You will still be able to restart manually"
                                              data-inverted="">
                                             <i class="help circle large icon"></i>
                                         </div>
@@ -688,7 +688,7 @@
                                 <i class="help circle large icon"></i>
                             </div>
                             <div class="ten wide column">
-                                Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr.
+                                Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and what OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr.
                             </div>
                         </div>
                     </div>
