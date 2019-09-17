@@ -91,10 +91,16 @@ else:
     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
 
 # Reset restart required warning on start
-System.update({
-    System.configured: 0,
-    System.updated: 0
-}).execute()
+if System.select().count():
+    System.update({
+        System.configured: 0,
+        System.updated: 0
+    }).execute()
+else:
+    System.insert({
+        System.configured: 0,
+        System.updated: 0
+    }).execute()
 
 # Load languages in database
 load_language_in_db()
@@ -191,32 +197,29 @@ def shutdown():
     except Exception as e:
         logging.error('BAZARR Cannot create bazarr.stop file.')
     else:
-        stop_file.write('')
-        stop_file.close()
+        server.stop()
         database.close()
         database.stop()
-        server.stop()
+        stop_file.write('')
+        stop_file.close()
         sys.exit(0)
 
 
 @route(base_url + 'restart')
 def restart():
     try:
-        server.stop()
-    except:
-        logging.error('BAZARR Cannot stop CherryPy.')
+        restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
+    except Exception as e:
+        logging.error('BAZARR Cannot create bazarr.restart file.')
     else:
-        try:
-            restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
-        except Exception as e:
-            logging.error('BAZARR Cannot create bazarr.restart file.')
-        else:
-            # print 'Bazarr is being restarted...'
-            logging.info('Bazarr is being restarted...')
-            restart_file.write('')
-            restart_file.close()
-            database.close()
-            database.stop()
+        # print 'Bazarr is being restarted...'
+        logging.info('Bazarr is being restarted...')
+        server.stop()
+        database.close()
+        database.stop()
+        restart_file.write('')
+        restart_file.close()
+        sys.exit(0)
 
 
 @route(base_url + 'wizard')
@@ -442,7 +445,7 @@ def save_wizard():
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
     
-    settings_movie_default_forced = str(request.forms.getall('settings_movie_default_forced'))
+    settings_movie_default_forced = str(request.forms.get('settings_movie_default_forced'))
     settings.general.movie_default_forced = text_type(settings_movie_default_forced)
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -1124,7 +1127,13 @@ def history():
 def historyseries():
     authorize()
 
-    row_count = TableHistory.select().count()
+    row_count = TableHistory.select(
+
+    ).join_from(
+        TableHistory, TableShows, JOIN.LEFT_OUTER
+    ).where(
+        TableShows.title.is_null(False)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1168,6 +1177,8 @@ def historyseries():
         TableHistory, TableShows, JOIN.LEFT_OUTER
     ).join_from(
         TableHistory, TableEpisodes, JOIN.LEFT_OUTER
+    ).where(
+        TableShows.title.is_null(False)
     ).order_by(
         TableHistory.timestamp.desc()
     ).paginate(
@@ -1229,7 +1240,13 @@ def historyseries():
 def historymovies():
     authorize()
 
-    row_count = TableHistoryMovie.select().count()
+    row_count = TableHistoryMovie.select(
+
+    ).join_from(
+        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).where(
+        TableMovies.title.is_null(False)
+    ).count()
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1269,6 +1286,8 @@ def historymovies():
         TableMovies.forced
     ).join_from(
         TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
+    ).where(
+        TableMovies.title.is_null(False)
     ).order_by(
         TableHistoryMovie.timestamp.desc()
     ).paginate(

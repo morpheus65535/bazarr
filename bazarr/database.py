@@ -9,9 +9,9 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 
 database = SqliteQueueDatabase(
-    os.path.join(args.config_dir, 'db', 'bazarr.db'),
+    None,
     use_gevent=False,
-    autostart=True,
+    autostart=False,
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
     results_timeout=30.0)  # Max. time to wait for query to be executed.
 
@@ -169,6 +169,8 @@ class TableSettingsNotifier(BaseModel):
 
 
 def database_init():
+    database.init(os.path.join(args.config_dir, 'db', 'bazarr.db'))
+    database.start()
     database.connect()
 
     database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
@@ -181,22 +183,7 @@ def database_init():
 
     database.create_tables(models_list, safe=True)
 
-    # Insert default values
-    if System.select().count() == 0:
-        System.insert(
-            {
-                System.updated: 0,
-                System.configured: 0
-            }
-        ).execute()
-
 
 def wal_cleaning():
     database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
     database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
-
-
-@atexit.register
-def _stop_worker_threads():
-    database.close()
-    database.stop()

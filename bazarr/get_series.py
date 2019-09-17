@@ -20,6 +20,7 @@ import six
 def update_series():
     notifications.write(msg="Update series list from Sonarr is running...", queue='get_series')
     apikey_sonarr = settings.sonarr.apikey
+    sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
     serie_default_language = settings.general.serie_default_language
     serie_default_hi = settings.general.serie_default_hi
@@ -107,7 +108,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
+                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_titles': alternateTitles,
@@ -120,7 +121,7 @@ def update_series():
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
-                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
+                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
                                               'alternate_title': alternateTitles})

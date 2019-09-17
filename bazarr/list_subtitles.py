@@ -38,8 +38,12 @@ def store_subtitles(file):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(file)
-                for subtitle_language, subtitle_forced in subtitle_languages:
+                for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
+                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
+                            logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
+                            continue
+
                         if alpha2_from_alpha3(subtitle_language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_language))
                             if subtitle_forced:
@@ -130,8 +134,12 @@ def store_subtitles_movie(file):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(file)
-                for subtitle_language, subtitle_forced in subtitle_languages:
+                for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
+                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
+                            logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
+                            continue
+
                         if alpha2_from_alpha3(subtitle_language) is not None:
                             lang = str(alpha2_from_alpha3(subtitle_language))
                             if subtitle_forced:

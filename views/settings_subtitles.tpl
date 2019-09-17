@@ -9,7 +9,7 @@
                             <div class="five wide column">
                                 <div class='field'>
                                     <select name="settings_general_wanted_search_frequency" id="settings_general_wanted_search_frequency" class="ui fluid selection dropdown">
-                                        % for i in [1,3,6,12,24]:
+                                        % for i in [3,6,12,24]:
                                         <option value="{{i}}">{{i}}</option>
                                         %end
                                     </select>
