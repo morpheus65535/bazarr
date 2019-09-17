@@ -27,16 +27,16 @@ def sonarr_full_update():
         if full_update == "Daily":
             scheduler.add_job(update_all_episodes, CronTrigger(hour=settings.sonarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_episodes',
-                              name='Update all episodes subtitles from disk', replace_existing=True)
+                              name='Update all Episode Subtitles from disk', replace_existing=True)
         elif full_update == "Weekly":
             scheduler.add_job(update_all_episodes, CronTrigger(day_of_week=settings.sonarr.full_update_day, hour=settings.sonarr.full_update_hour), max_instances=1,
                               coalesce=True,
                               misfire_grace_time=15, id='update_all_episodes',
-                              name='Update all episodes subtitles from disk', replace_existing=True)
+                              name='Update all Episode Subtitles from disk', replace_existing=True)
         elif full_update == "Manually":
             scheduler.add_job(update_all_episodes, CronTrigger(year='2100'), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_episodes',
-                              name='Update all episodes subtitles from disk', replace_existing=True)
+                              name='Update all Episode Subtitles from disk', replace_existing=True)
 
 
 def radarr_full_update():
@@ -45,17 +45,17 @@ def radarr_full_update():
         if full_update == "Daily":
             scheduler.add_job(update_all_movies, CronTrigger(hour=settings.radarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15,
-                              id='update_all_movies', name='Update all movies subtitles from disk',
+                              id='update_all_movies', name='Update all Movie Subtitles from disk',
                               replace_existing=True)
         elif full_update == "Weekly":
             scheduler.add_job(update_all_movies, CronTrigger(day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_movies',
-                              name='Update all movies subtitles from disk',
+                              name='Update all Movie Subtitles from disk',
                               replace_existing=True)
         elif full_update == "Manually":
             scheduler.add_job(update_all_movies, CronTrigger(year='2100'), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_all_movies',
-                              name='Update all movies subtitles from disk',
+                              name='Update all Movie Subtitles from disk',
                               replace_existing=True)
 
 
@@ -87,38 +87,38 @@ def schedule_update_job():
         if settings.general.getboolean('auto_update'):
             scheduler.add_job(check_and_apply_update, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                               misfire_grace_time=15, id='update_bazarr',
-                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github',
+                              name='Update Bazarr from source on Github' if not args.release_update else 'Update Bazarr from release on Github',
                               replace_existing=True)
         else:
             scheduler.add_job(check_and_apply_update, CronTrigger(year='2100'), hour=4, id='update_bazarr',
-                              name='Update bazarr from source on Github' if not args.release_update else 'Update bazarr from release on Github',
+                              name='Update Bazarr from source on Github' if not args.release_update else 'Update Bazarr from release on Github',
                               replace_existing=True)
             scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
-                              misfire_grace_time=15, id='update_release', name='Update release info',
+                              misfire_grace_time=15, id='update_release', name='Update Release Info',
                               replace_existing=True)
     
     else:
         scheduler.add_job(check_releases, IntervalTrigger(hours=6), max_instances=1, coalesce=True,
                           misfire_grace_time=15,
-                          id='update_release', name='Update release info', replace_existing=True)
+                          id='update_release', name='Update Release Info', replace_existing=True)
 
 
 if settings.general.getboolean('use_sonarr'):
     scheduler.add_job(update_series, IntervalTrigger(minutes=1), max_instances=1, coalesce=True, misfire_grace_time=15,
-                      id='update_series', name='Update series list from Sonarr')
+                      id='update_series', name='Update Series list from Sonarr')
     scheduler.add_job(sync_episodes, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15,
                       id='sync_episodes', name='Sync episodes with Sonarr')
 
 if settings.general.getboolean('use_radarr'):
     scheduler.add_job(update_movies, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15,
-                      id='update_movies', name='Update movies list from Radarr')
+                      id='update_movies', name='Update Movie list from Radarr')
 
 def schedule_wanted_search():
     if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr'):
         scheduler.add_job(wanted_search_missing_subtitles,
                           IntervalTrigger(hours=int(settings.general.wanted_search_frequency)), max_instances=1,
                           coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles',
-                          name='Search for wanted subtitles', replace_existing=True)
+                          name='Search for wanted Subtitles', replace_existing=True)
 
 
 def schedule_upgrade_subs():
@@ -126,7 +126,7 @@ def schedule_upgrade_subs():
                                                         settings.general.getboolean('use_radarr')):
         scheduler.add_job(upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)),
                           max_instances=1, coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
-                          name='Upgrade previously downloaded subtitles', replace_existing=True)
+                          name='Upgrade previously downloaded Subtitles', replace_existing=True)
 
 scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
                   misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
