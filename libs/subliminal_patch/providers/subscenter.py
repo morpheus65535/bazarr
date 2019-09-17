@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 from subliminal.providers.subscenter import SubsCenterProvider as _SubsCenterProvider, \
     SubsCenterSubtitle as _SubsCenterSubtitle
 from subzero.language import Language

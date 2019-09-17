@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from dogpile.cache.api import CacheBackend, NO_VALUE
 from fcache.cache import FileCache
 

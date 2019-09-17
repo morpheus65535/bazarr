@@ -1,8 +1,10 @@
 # coding=utf-8
+from __future__ import absolute_import
 import re
 import logging
 
 from subzero.modification.processors.re_processor import ReProcessor, NReProcessor
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +85,7 @@ class SubtitleModification(object):
 
     @classmethod
     def get_signature(cls, **kwargs):
-        string_args = ",".join(["%s=%s" % (key, value) for key, value in kwargs.iteritems()])
+        string_args = ",".join(["%s=%s" % (key, value) for key, value in six.iteritems(kwargs)])
         return "%s(%s)" % (cls.identifier, string_args)
 
     @classmethod

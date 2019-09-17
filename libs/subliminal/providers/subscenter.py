@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import bisect
 from collections import defaultdict
 import io
@@ -26,7 +27,7 @@ class SubsCenterSubtitle(Subtitle):
     provider_name = 'subscenter'
 
     def __init__(self, language, hearing_impaired, page_link, series, season, episode, title, subtitle_id, subtitle_key,
-                 downloaded, releases):
+                 subtitle_version, downloaded, releases):
         super(SubsCenterSubtitle, self).__init__(language, hearing_impaired, page_link)
         self.series = series
         self.season = season
@@ -34,6 +35,7 @@ class SubsCenterSubtitle(Subtitle):
         self.title = title
         self.subtitle_id = subtitle_id
         self.subtitle_key = subtitle_key
+        self.subtitle_version = subtitle_version
         self.downloaded = downloaded
         self.releases = releases
 
@@ -74,7 +76,8 @@ class SubsCenterSubtitle(Subtitle):
 class SubsCenterProvider(Provider):
     """SubsCenter Provider."""
     languages = {Language.fromalpha2(l) for l in ['he']}
-    server_url = 'http://www.subscenter.co/he/'
+    server_url = 'http://www.subscenter.org/he/'
+    subtitle_class = SubsCenterSubtitle
 
     def __init__(self, username=None, password=None):
         if username is not None and password is None or username is None and password is not None:
@@ -189,6 +192,7 @@ class SubsCenterProvider(Provider):
                         hearing_impaired = bool(subtitle_item['hearing_impaired'])
                         subtitle_id = subtitle_item['id']
                         subtitle_key = subtitle_item['key']
+                        subtitle_version = subtitle_item['h_version']
                         downloaded = subtitle_item['downloaded']
                         release = subtitle_item['subtitle_version']
 
@@ -200,12 +204,13 @@ class SubsCenterProvider(Provider):
                             continue
 
                         # otherwise create it
-                        subtitle = SubsCenterSubtitle(language, hearing_impaired, page_link, title, season, episode,
-                                                      title, subtitle_id, subtitle_key, downloaded, [release])
+                        subtitle = self.subtitle_class(language, hearing_impaired, page_link, title, season, episode,
+                                                      title, subtitle_id, subtitle_key, subtitle_version, downloaded,
+                                                      [release])
                         logger.debug('Found subtitle %r', subtitle)
                         subtitles[subtitle_id] = subtitle
 
-        return subtitles.values()
+        return list(subtitles.values())
 
     def list_subtitles(self, video, languages):
         season = episode = None
@@ -221,15 +226,19 @@ class SubsCenterProvider(Provider):
     def download_subtitle(self, subtitle):
         # download
         url = self.server_url + 'subtitle/download/{}/{}/'.format(subtitle.language.alpha2, subtitle.subtitle_id)
-        params = {'v': subtitle.releases[0], 'key': subtitle.subtitle_key}
+        params = {'v': subtitle.subtitle_version, 'key': subtitle.subtitle_key}
         r = self.session.get(url, params=params, headers={'Referer': subtitle.page_link}, timeout=10)
         r.raise_for_status()
 
         # open the zip
-        with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
-            # remove some filenames from the namelist
-            namelist = [n for n in zf.namelist() if not n.endswith('.txt')]
-            if len(namelist) > 1:
-                raise ProviderError('More than one file to unzip')
+        try:
+            with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+                # remove some filenames from the namelist
+                namelist = [n for n in zf.namelist() if not n.endswith('.txt')]
+                if len(namelist) > 1:
+                    raise ProviderError('More than one file to unzip')
 
-            subtitle.content = fix_line_ending(zf.read(namelist[0]))
+                subtitle.content = fix_line_ending(zf.read(namelist[0]))
+        except zipfile.BadZipfile:
+            # if no zip file was retrieved, daily downloads limit has exceeded
+            raise ProviderError('Daily limit exceeded')

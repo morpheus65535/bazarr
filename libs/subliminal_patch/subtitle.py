@@ -1,6 +1,7 @@
 # coding=utf-8
 
 
+from __future__ import absolute_import
 import logging
 import traceback
 
@@ -362,7 +363,7 @@ def guess_matches(video, guess, partial=False):
         # series
         if video.series and 'title' in guess:
             titles = guess["title"]
-            if not isinstance(titles, types.ListType):
+            if not isinstance(titles, list):
                 titles = [titles]
 
             for title in titles:
@@ -401,7 +402,7 @@ def guess_matches(video, guess, partial=False):
     # release_group
     if 'release_group' in guess:
         release_groups = guess["release_group"]
-        if not isinstance(release_groups, types.ListType):
+        if not isinstance(release_groups, list):
             release_groups = [release_groups]
 
         if video.release_group:
@@ -418,7 +419,7 @@ def guess_matches(video, guess, partial=False):
     # format
     if 'format' in guess:
         formats = guess["format"]
-        if not isinstance(formats, types.ListType):
+        if not isinstance(formats, list):
             formats = [formats]
 
         if video.format:

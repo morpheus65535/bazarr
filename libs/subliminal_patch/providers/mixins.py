@@ -1,12 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import re
 import time
 import logging
 import traceback
 import types
 import os
-from httplib import ResponseNotReady
+from six.moves.http_client import ResponseNotReady
 
 from guessit import guessit
 from subliminal import ProviderError
@@ -107,7 +108,7 @@ class ProviderSubtitleArchiveMixin(object):
 
                     if "format" in subtitle.matches:
                         format_matches = False
-                        if isinstance(subtitle.releases, types.ListType):
+                        if isinstance(subtitle.releases, list):
                             releases = ",".join(subtitle.releases).lower()
                         else:
                             releases = subtitle.releases.lower()
@@ -117,7 +118,7 @@ class ProviderSubtitleArchiveMixin(object):
 
                         else:
                             formats = guess["format"]
-                            if not isinstance(formats, types.ListType):
+                            if not isinstance(formats, list):
                                 formats = [formats]
 
                             for f in formats:

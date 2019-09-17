@@ -1,8 +1,9 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import logging
 from libfilebot import get_filebot_attrs
-from common import update_video
+from .common import update_video
 
 logger = logging.getLogger(__name__)
 

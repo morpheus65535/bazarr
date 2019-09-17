@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 from itertools import chain, combinations, permutations
 
@@ -15,8 +17,8 @@ if __name__ == "__main__":
     leftover_keys = list(set(scores.keys()) - set(base_score_keys))
     base_score = sum([val for key, val in scores.items() if key in base_score_keys])
     leftover_scores = set([score for key, score in scores.items() if key in leftover_keys])
-    print "base score:", base_score
-    print "leftover:", sorted(set(leftover_scores))
+    print("base score:", base_score)
+    print("leftover:", sorted(set(leftover_scores)))
     # print sum_possible_scores(base_score, leftover_scores)
     # print list(permutations(leftover_scores))
-    print ",\n".join(map(lambda x: '"%s"' % x, ["66"] + sorted(set(permute(leftover_scores)))))
+    print(",\n".join(['"%s"' % x for x in ["66"] + sorted(set(permute(leftover_scores)))]))

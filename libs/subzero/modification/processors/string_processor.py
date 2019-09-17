@@ -1,8 +1,10 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import logging
 
 from subzero.modification.processors import Processor
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ class MultipleLineProcessor(Processor):
         if not self.snr_dict["data"]:
             return content
 
-        for key, value in self.snr_dict["data"].iteritems():
+        for key, value in six.iteritems(self.snr_dict["data"]):
             if debug and key in content:
                 logger.debug(u"Replacing '%s' with '%s' in '%s'", key, value, content)
 
@@ -54,7 +56,7 @@ class WholeLineProcessor(MultipleLineProcessor):
             return content
         content = content.strip()
 
-        for key, value in self.snr_dict["data"].iteritems():
+        for key, value in six.iteritems(self.snr_dict["data"]):
             if content == key:
                 if debug:
                     logger.debug(u"Replacing '%s' with '%s'", key, value)

@@ -1,3 +1,4 @@
+import six
 # coding=utf-8
 
 
@@ -29,7 +30,7 @@ class Processor(object):
         return repr(self)
 
     def __unicode__(self):
-        return unicode(repr(self))
+        return six.text_type(repr(self))
 
 
 class FuncProcessor(Processor):

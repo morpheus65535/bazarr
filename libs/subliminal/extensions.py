@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from pkg_resources import EntryPoint
 
 from stevedore import ExtensionManager
@@ -29,9 +30,9 @@ class RegistrableExtensionManager(ExtensionManager):
 
         super(RegistrableExtensionManager, self).__init__(namespace, **kwargs)
 
-    def _find_entry_points(self, namespace):
+    def list_entry_points(self):
         # copy of default extensions
-        eps = list(super(RegistrableExtensionManager, self)._find_entry_points(namespace))
+        eps = list(super(RegistrableExtensionManager, self).list_entry_points())
 
         # internal extensions
         for iep in self.internal_extensions:
@@ -93,7 +94,6 @@ provider_manager = RegistrableExtensionManager('subliminal.providers', [
     'opensubtitles = subliminal.providers.opensubtitles:OpenSubtitlesProvider',
     'podnapisi = subliminal.providers.podnapisi:PodnapisiProvider',
     'shooter = subliminal.providers.shooter:ShooterProvider',
-    'subscenter = subliminal.providers.subscenter:SubsCenterProvider',
     'thesubdb = subliminal.providers.thesubdb:TheSubDBProvider',
     'tvsubtitles = subliminal.providers.tvsubtitles:TVsubtitlesProvider'
 ])

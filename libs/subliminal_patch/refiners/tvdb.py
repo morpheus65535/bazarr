@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import datetime
 
 from subliminal.refiners.tvdb import Episode, logger, search_series, series_re, sanitize, get_series, \

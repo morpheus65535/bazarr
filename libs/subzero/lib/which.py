@@ -4,6 +4,7 @@
 # Public domain code by anatoly techtonik <techtonik@gmail.com>
 # AKA Linux `which` and Windows `where`
 
+from __future__ import absolute_import
 import os
 import sys
 

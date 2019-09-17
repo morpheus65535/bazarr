@@ -1,8 +1,10 @@
 # coding=utf-8
+from __future__ import absolute_import
 import types
 
 from babelfish.exceptions import LanguageError
 from babelfish import Language as Language_, basestr
+from six.moves import zip
 
 repl_map = {
     "dk": "da",
@@ -54,7 +56,7 @@ def wrap_forced(f):
         args = args[1:]
         s = args.pop(0)
         forced = None
-        if isinstance(s, types.StringTypes):
+        if isinstance(s, (str,)):
             base, forced = s.split(":") if ":" in s else (s, False)
         else:
             base = s
@@ -108,7 +110,7 @@ class Language(Language_):
         state = instance.__getstate__()
         attrs = ("country", "script", "forced")
         language = state[0]
-        kwa = dict(zip(attrs, state[1:]))
+        kwa = dict(list(zip(attrs, state[1:])))
         kwa.update(replkw)
         return cls(language, **kwa)
 

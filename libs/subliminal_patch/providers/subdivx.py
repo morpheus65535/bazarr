@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import io
 import logging
 import os
@@ -14,6 +15,7 @@ from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending,guess_matches
 from subliminal.video import Episode, Movie
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

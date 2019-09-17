@@ -1,8 +1,3 @@
 
-from .dict import *
-from .geezip import *
-from .httpfake import *
-from .io import *
-from .json import *
-from .rar import *
-from .which import *
+from __future__ import absolute_import
+from . import dict, geezip, httpfake, io, json, rar, which

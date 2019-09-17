@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import base64
 import logging
 import os
@@ -13,7 +14,7 @@ from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
     DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
-from mixins import ProviderRetryMixin
+from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
 from subliminal_patch.utils import sanitize

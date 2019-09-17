@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import re
 
 from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, EmptyEntryError, TAG

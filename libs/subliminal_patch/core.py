@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import codecs
 import json
 import re
@@ -10,7 +11,7 @@ import time
 import operator
 
 import itertools
-from http.client import ResponseNotReady
+from six.moves.http_client import ResponseNotReady
 
 import rarfile
 import requests
@@ -21,16 +22,18 @@ from babelfish import LanguageReverseError
 from guessit.jsonutils import GuessitEncoder
 from subliminal import ProviderError, refiner_manager
 
-from subliminal_patch.extensions import provider_registry
+from .extensions import provider_registry
+from subliminal.exceptions import ServiceUnavailable, DownloadLimitExceeded
 from subliminal.score import compute_score as default_compute_score
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ServiceUnavailable, DownloadLimitExceeded
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
 from subzero.language import Language
 from scandir import scandir, scandir_generic as _scandir_generic
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -644,7 +647,7 @@ def search_external_subtitles(path, languages=None, only_one=False):
     for folder_or_subfolder in [video_path] + CUSTOM_PATHS:
         # folder_or_subfolder may be a relative path or an absolute one
         try:
-            abspath = unicode(os.path.abspath(
+            abspath = six.text_type(os.path.abspath(
                 os.path.join(*[video_path if not os.path.isabs(folder_or_subfolder) else "", folder_or_subfolder,
                                video_filename])))
         except Exception as e:

@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from subliminal.converters.addic7ed import Addic7edConverter
 from babelfish.converters.opensubtitles import OpenSubtitlesConverter
 

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from datetime import datetime, timedelta
 from functools import wraps
 import logging
 import re
-
+import _strptime
 import requests
 
 from .. import __short_version__
@@ -331,6 +332,7 @@ def refine(video, **kwargs):
     # add series information
     logger.debug('Found series %r', series)
     video.series = matching_result['match']['series']
+    video.alternative_series.extend(series['aliases'])
     video.year = matching_result['match']['year']
     video.original_series = matching_result['match']['original_series']
     video.series_tvdb_id = series['id']

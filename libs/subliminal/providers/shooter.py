@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import json
 import logging
 import os
@@ -42,6 +43,10 @@ class ShooterProvider(Provider):
     """Shooter Provider."""
     languages = {Language(l) for l in ['eng', 'zho']}
     server_url = 'https://www.shooter.cn/api/subapi.php'
+    subtitle_class = ShooterSubtitle
+
+    def __init__(self):
+        self.session = None
 
     def initialize(self):
         self.session = Session()
@@ -64,7 +69,7 @@ class ShooterProvider(Provider):
 
         # parse the subtitles
         results = json.loads(r.text)
-        subtitles = [ShooterSubtitle(language, hash, t['Link']) for s in results for t in s['Files']]
+        subtitles = [self.subtitle_class(language, hash, t['Link']) for s in results for t in s['Files']]
 
         return subtitles
 

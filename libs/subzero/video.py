@@ -1,11 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import logging
 import os
 
 from babelfish.exceptions import LanguageError
 from subzero.language import Language, language_from_stream
 from subliminal_patch import scan_video, refine, search_external_subtitles
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +100,7 @@ def refine_video(video, no_refining=False, refiner_settings=None):
 
     # our own metadata refiner :)
     if "stream" in video_info:
-        for key, value in video_info["stream"].iteritems():
+        for key, value in six.iteritems(video_info["stream"]):
             if hasattr(video, key) and not getattr(video, key):
                 logger.info(u"Adding stream %s info: %s", key, value)
                 setattr(video, key, value)

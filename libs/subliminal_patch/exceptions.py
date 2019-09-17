@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 from subliminal import ProviderError
 
 
@@ -8,14 +9,4 @@ class TooManyRequests(ProviderError):
 
 
 class APIThrottled(ProviderError):
-    pass
-
-
-class ServiceUnavailable(ProviderError):
-    """Exception raised when status is '503 Service Unavailable'."""
-    pass
-
-
-class DownloadLimitExceeded(ProviderError):
-    """Exception raised by providers when download limit is exceeded."""
     pass
