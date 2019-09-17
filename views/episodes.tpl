@@ -114,8 +114,8 @@
 
 								<div class="four wide right aligned column">
 									<div class="ui basic icon buttons">
-										<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles"><i class="ui inverted large compact refresh icon"></i></button>
-										<button id="search_missing_subtitles" class="ui button" data-tooltip="Download missing subtitles"><i class="ui inverted huge compact search icon"></i></button>
+										<button id="scan_disk" class="ui button" data-tooltip="Scan Disk For Subtitles"><i class="ui inverted large compact refresh icon"></i></button>
+										<button id="search_missing_subtitles" class="ui button" data-tooltip="Download Missing Subtitles"><i class="ui inverted huge compact search icon"></i></button>
 										<%
 										subs_languages = ast.literal_eval(str(details.languages))
 										subs_languages_list = []
@@ -157,7 +157,7 @@
 
 			%if len(seasons) == 0:
 				<div id="fondblanc" class="ui container">
-					<h3 class="ui header">No episode files available for this series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
+					<h3 class="ui header">No episode files available for this Series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
 				</div>
 			%else:
 				%for season in seasons:
@@ -196,10 +196,10 @@
 										<th class="collapsing"></th>
 										<th class="collapsing">Episode</th>
                                        <th>Title</th>
-										<th class="collapsing">Existing<br>subtitles</th>
-										<th class="collapsing">Missing<br>subtitles</th>
-										<th class="collapsing">Manual<br>search</th>
-										<th class="collapsing">Manual<br>upload</th>
+										<th class="collapsing">Existing<br>Subtitles</th>
+										<th class="collapsing">Missing<br>Subtitles</th>
+										<th class="collapsing">Manual<br>Search</th>
+										<th class="collapsing">Manual<br>Upload</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -323,7 +323,7 @@
 							<div class="ui grid">
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Audio language</label>
+										<label>Audio Language</label>
 									</div>
 									<div class="nine wide column">
 										<div id="series_audio_language"></div>
@@ -331,7 +331,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Subtitles languages</label>
+										<label>Subtitles Language(s)</label>
 									</div>
 									<div class="nine wide column">
 										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
@@ -347,7 +347,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Hearing-impaired</label>
+										<label>Hearing-Impaired</label>
 									</div>
 									<div class="nine wide column">
 										<div id="series_hearing-impaired_div" class="ui toggle checkbox">
@@ -390,9 +390,9 @@
 						<tr>
 							<th style="text-align: left;">Score:</th>
 							<th style="text-align: left;">Language:</th>
-							<th style="text-align: left;">Hearing-impaired:</th>
+							<th style="text-align: left;">Hearing-Impaired:</th>
 							<th style="text-align: left;">Provider:</th>
-							<th style="text-align: left;">Based on:</th>
+							<th style="text-align: left;">Based On:</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -462,7 +462,7 @@
 
 <script>
 	$('#scan_disk').on('click', function(){
-		$('#loader_text').text("Scanning disk for existing subtitles...");
+		$('#loader_text').text("Scanning Disk For Existing Subtitles...");
 		window.location = '{{base_url}}scan_disk/{{no}}';
 	});
 
@@ -512,7 +512,7 @@
 			title: "{{!str(details.title).replace("'", "\\'")}}"
 		};
 
-		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader_text').text("Downloading Subtitle...");
 
 		$.ajax({
 			url: "{{base_url}}get_subtitle",
@@ -593,7 +593,7 @@
 		    destroy: true,
 		    language: {
 				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
-				zeroRecords: 'No subtitles found for this episode'
+				zeroRecords: 'No Subtitles Found For This Episode'
 		    },
 		    paging: true,
     		lengthChange: false,
@@ -715,7 +715,7 @@
 				title: "{{!str(details.title).replace("'", "\\'")}}"
 		};
 
-		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader_text').text("Downloading Subtitle...");
 		$('#loader').addClass('active');
 
 		$('.search_dialog').modal('hide');
