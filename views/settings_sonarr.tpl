@@ -112,7 +112,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Automatic download of Subtitles will happen only for monitored episodes in Sonarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Automatic download of Subtitles will only happen for monitored episodes in Sonarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
