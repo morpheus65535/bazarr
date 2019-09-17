@@ -1,10 +1,10 @@
                 <div class="ui dividing header">Notifications settings</div>
                 <div class="twelve wide column">
                     <div class="ui info message">
-                        <p>Thanks to caronc for his work on <a href="https://github.com/caronc/apprise" target="_blank">apprise</a> on which is based the notifications system.</p>
+                        <p>Thanks to caronc for his work on <a href="https://github.com/caronc/apprise" target="_blank">apprise</a>, which is based the notifications system.</p>
                     </div>
                     <div class="ui info message">
-                        <p>Please follow instructions on his <a href="https://github.com/caronc/apprise/wiki" target="_blank">wiki</a> to configure your notifications providers.</p>
+                        <p>Please follow instructions on his <a href="https://github.com/caronc/apprise/wiki" target="_blank">Wiki</a> to configure your notification providers.</p>
                     </div>
                     <div class="ui grid">
                         %for notifier in settings_notifier:
