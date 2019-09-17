@@ -46,7 +46,7 @@
 				<thead>
 					<tr>
 						<th>Movies</th>
-						<th>Missing subtitles</th>
+						<th>Missing Subtitle(s)</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -54,7 +54,7 @@
 				%import pretty
 				%if len(rows) == 0:
 					<tr>
-						<td colspan="2">No missing movie subtitles.</td>
+						<td colspan="2">No Missing Subtitles.</td>
 					</tr>
 				%end
                 %for row in rows:
@@ -83,7 +83,7 @@
                                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							                        </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-moviePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-radarrId={{row.radarr_id}} data-title="{{row.title.replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top right" data-inverted="" data-moviePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-radarrId={{row.radarr_id}} data-title="{{row.title.replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								                        {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
 							                        </a>
@@ -134,7 +134,7 @@
 			    		%end
 			    		 fast forward icon"></i>
 			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{missing_count}}</div>
+			    	<div class="right floated right aligned column">Total Records: {{missing_count}}</div>
 				</div>
 			</div>
             %end
@@ -179,7 +179,7 @@
 		            radarrId: $(this).attr("data-radarrId"),
                     title: $(this).attr("data-title")
 		    };
-		    $('#loader_text').text("Downloading subtitles...");
+		    $('#loader_text').text("Downloading Subtitles...");
 			$('#loader').addClass('active');
 		    $.ajax({
 		        url: "{{base_url}}get_subtitle_movie",
