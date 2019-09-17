@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Addic7ed (require anti-captcha)</label>
+                                <label>Addic7ed (Requires Anti-Captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="addic7ed" class="ui toggle checkbox provider">
@@ -35,7 +35,7 @@
                             </div>
                             <div class="middle aligned row">
                                 <div class="right aligned six wide column">
-                                    <label>Random user-agents</label>
+                                    <label>Random User-Agents</label>
                                 </div>
                                 <div class="one wide column">
                                     <div id="settings_addic7ed_random_agents" class="ui toggle checkbox" data-randomagents={{settings.addic7ed.getboolean('random_agents')}}>
@@ -45,7 +45,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use random user agents" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use Random User Agents" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -65,7 +65,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Spanish subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Spanish Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -87,7 +87,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Chinese Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -125,7 +125,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="This provider only uses the subtitle filename to find release group matches, subtitles may thus be out of sync." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="This provider only uses the Subtitle filename to find release group matches, Subtitles may thus be out of sync." data-inverted="">
                                         <i class="yellow warning sign icon"></i>
                                     </div>
                                 </div>
@@ -156,7 +156,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -178,7 +178,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Hungarian subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Hungarian Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -200,7 +200,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Latvian subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Latvian Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -222,7 +222,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Brazilian Portuguese subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Brazilian Portuguese Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -263,7 +263,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Polish subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Polish Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -285,7 +285,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Polish subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Polish Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -303,7 +303,7 @@
                                 </div>
                                 <div class="collapsed column">
                                     <div class="collapsed center aligned column">
-                                        <div data-tooltip="The provided credentials must have api access. Leave empty to use the defaults." data-inverted="" class="ui basic icon">
+                                        <div data-tooltip="The Provided Credentials Must Have API Access. Leave empty to use the defaults." data-inverted="" class="ui basic icon">
                                             <i class="yellow warning circle large icon"></i>
                                         </div>
                                     </div>
@@ -365,7 +365,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="ad-free subs, 1000 subs/day, no-cache VIP server: http://v.ht/osvip" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Ad-Free Subs, 1000 Subs/Day, No-Cache VIP Server: http://v.ht/osvip" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -401,7 +401,7 @@
                                 </div>
                                 <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Skip subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Skip Subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -436,7 +436,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Spanish subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Spanish Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -458,7 +458,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian (mostly) Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -470,7 +470,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Subscene (require anti-captcha)</label>
+                                <label>Subscene (Requires Anti-Captcha)</label>
                             </div>
                             <div class="one wide column">
                                 <div id="subscene" class="ui toggle checkbox provider">
@@ -530,7 +530,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Bulgarian mostly subtitle provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian (mostly) Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -552,7 +552,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -574,7 +574,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -596,7 +596,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Latvian subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Latvian Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -618,7 +618,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -685,7 +685,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -726,7 +726,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Chinese subtitles provider." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Chinese Subtitles Provider." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
