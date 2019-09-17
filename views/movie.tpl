@@ -102,9 +102,9 @@
 								<div class="twelve wide left aligned column">
 									<h2>
 					                    %if details.monitored == 'True':
-					                    <span data-tooltip="Movie monitored in Radarr"><i class="bookmark icon"></i></span>
+					                    <span data-tooltip="Movie is Monitored in Radarr"><i class="bookmark icon"></i></span>
 					                    %else:
-					                    <span data-tooltip="Movie unmonitored in Radarr"><i class="bookmark outline icon"></i></span>
+					                    <span data-tooltip="Movie is not Monitored in Radarr"><i class="bookmark outline icon"></i></span>
 					                    %end
 										{{details.title}}
 					                </h2>
@@ -112,8 +112,8 @@
 
 								<div class="four wide right aligned column">
 									<div class="ui right floated basic icon buttons">
-										<button id="scan_disk" class="ui button" data-tooltip="Scan disk for subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download missing subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
+										<button id="scan_disk" class="ui button" data-tooltip="Scan Disk For Subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
+										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download Missing Subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
 										<%
 										subs_languages = ast.literal_eval(str(details.languages))
 										subs_languages_list = []
@@ -124,10 +124,10 @@
 										end
 										%>
 										%if subs_languages is not None:
-										<button class="manual_search ui button" data-tooltip="Manually search for subtitles" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-movie_title="{{details.title}}" data-radarrId="{{details.radarr_id}}"><i class="ui inverted large compact user icon"></i></button>
-										<button class="manual_upload ui button" data-tooltip="Manually upload subtitles" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-movie_title="{{details.forced}}" data-radarrId="{{details.title}}"><i class="ui inverted large compact cloud upload icon"></i></button>
+										<button class="manual_search ui button" data-tooltip="Manually Search For Subtitles" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-movie_title="{{details.title}}" data-radarrId="{{details.radarr_id}}"><i class="ui inverted large compact user icon"></i></button>
+										<button class="manual_upload ui button" data-tooltip="Upload Subtitle File" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-movie_title="{{details.forced}}" data-radarrId="{{details.title}}"><i class="ui inverted large compact cloud upload icon"></i></button>
 										%end
-										<button id="config" class="ui button" data-tooltip="Edit movie" data-inverted="" data-tmdbid="{{details.tmdb_id}}" data-title="{{details.title}}" data-poster="{{details.poster}}" data-audio="{{details.audio_language}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details.hearing_impaired}}" data-forced="{{details.forced}}"><i class="ui inverted large compact configure icon"></i></button>
+										<button id="config" class="ui button" data-tooltip="Edit Movie" data-inverted="" data-tmdbid="{{details.tmdb_id}}" data-title="{{details.title}}" data-poster="{{details.poster}}" data-audio="{{details.audio_language}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details.hearing_impaired}}" data-forced="{{details.forced}}"><i class="ui inverted large compact configure icon"></i></button>
 									</div>
 								</div>
 							</div>
@@ -162,8 +162,8 @@
 					<table class="ui very basic single line selectable table">
 						<thead>
 							<tr>
-								<th>Subtitles path</th>
-								<th>Language</th>
+								<th>Subtitles Path</th>
+								<th>Language(s)</th>
 								<th></th>
 							</tr>
 						</thead>
@@ -180,11 +180,11 @@
 									end
 							%>
 							<tr>
-								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video file subtitles track'}}</td>
+								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video File Subtitles Track'}}</td>
 								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete subtitles file from disk" data-inverted="" data-position="top right" data-moviePath="{{details.path}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details.radarr_id}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details.path}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details.radarr_id}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
@@ -194,7 +194,7 @@
 								end
 								if len(subtitles_files) == 0:
 							%>
-							<tr><td colspan="3">No subtitles detected for this movie.</td></tr>
+							<tr><td colspan="3">No Subtitles Detected For This Movie.</td></tr>
 							<%
 								end
 							end
@@ -213,7 +213,7 @@
 					<table class="ui very basic single line selectable table">
 						<thead>
 							<tr>
-								<th>Missing subtitles</th>
+								<th>Missing Subtitles</th>
 							</tr>
 						</thead>
 					</table>
@@ -237,7 +237,7 @@
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
-                            <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-radarrId={{details.radarr_id}}>
+                            <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-radarrId={{details.radarr_id}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -275,7 +275,7 @@
 							<div class="ui grid">
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Audio language</label>
+										<label>Audio Language</label>
 									</div>
 									<div class="nine wide column">
 										<div id="movie_audio_language"></div>
@@ -283,7 +283,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Subtitles languages</label>
+										<label>Subtitle Languages</label>
 									</div>
 									<div class="nine wide column">
 										<select name="languages" id="movie_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
@@ -299,7 +299,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Hearing-impaired</label>
+										<label>Hearing-Impaired</label>
 									</div>
 									<div class="nine wide column">
 										<div id="movie_hearing-impaired_div" class="ui toggle checkbox">
@@ -342,9 +342,9 @@
 						<tr>
 							<th style="text-align: left;">Score:</th>
 							<th style="text-align: left;">Language:</th>
-							<th style="text-align: left;">Hearing-impaired:</th>
+							<th style="text-align: left;">Hearing-Impaired:</th>
 							<th style="text-align: left;">Provider:</th>
-							<th style="text-align: left;">Based on:</th>
+							<th style="text-align: left;">Based On:</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -413,7 +413,7 @@
 
 <script>
 	$('#scan_disk').on('click', function(){
-		$('#loader_text').text("Scanning disk for existing subtitles...");
+		$('#loader_text').text("Scanning Disk For Existing Subtitles...");
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
 	});
 
@@ -434,7 +434,7 @@
 			tmdbid: {{tmdbid}}
 		};
 
-		$('#loader_text').text("Deleting subtitle from disk...");
+		$('#loader_text').text("Deleting Subtitle...");
 
 		$.ajax({
 			url: "{{base_url}}remove_subtitles_movie",
@@ -462,7 +462,7 @@
 			title: "{{!details.title.replace("'", "\\'")}}"
 		};
 
-		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader_text').text("Downloading Subtitle File...");
 
 		$.ajax({
 			url: "{{base_url}}get_subtitle_movie",
@@ -538,7 +538,7 @@
 		    destroy: true,
 		    language: {
 				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
-				zeroRecords: 'No subtitles found for this movie'
+				zeroRecords: 'No Subtitles Found For This Movie'
 		    },
 		    paging: true,
 			lengthChange: false,
@@ -654,7 +654,7 @@
 				title: "{{!details.title.replace("'", "\\'")}}"
 		};
 
-		$('#loader_text').text("Downloading subtitle to disk...");
+		$('#loader_text').text("Downloading Subtitle File...");
 		$('#loader').addClass('active');
 
 		$('.search_dialog').modal('hide');
