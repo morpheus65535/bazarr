@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Settings validation:</label>
+                                <label>Settings Validation:</label>
                             </div>
                             <div class="two wide column">
                                 <button id="sonarr_validate" class="test ui blue button" type="button">
@@ -13,14 +13,14 @@
                             <div class="seven wide column">
                                 <div id="sonarr_validated" class="ui read-only checkbox">
                                     <input id="sonarr_validated_checkbox" type="checkbox">
-                                    <label id="sonarr_validation_result">Not tested recently</label>
+                                    <label id="sonarr_validation_result">Not Tested Recently</label>
                                 </div>
                             </div>
                         </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hostname or IP address</label>
+                                <label>Hostname or IP Address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -30,7 +30,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Hostname or IP4 address of Sonarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Hostname or IP4 Address of Sonarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -38,7 +38,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening port</label>
+                                <label>Listening Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -48,7 +48,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="TCP port of Sonarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="TCP Port of Sonarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -72,7 +72,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>SSL enabled</label>
+                                <label>SSL Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.sonarr.getboolean('ssl')}}>
@@ -84,7 +84,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>API key</label>
+                                <label>API Key</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -94,7 +94,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="API key for Sonarr (32 alphanumeric characters)" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="API Key for Sonarr (32 alphanumeric characters)" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -102,7 +102,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Download only monitored</label>
+                                <label>Download Only Monitored</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_only_monitored_sonarr" class="ui toggle checkbox" data-monitored={{settings.sonarr.getboolean('only_monitored')}}>
@@ -112,7 +112,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored episodes in Sonarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Automatic download of Subtitles will happen only for monitored episodes in Sonarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -126,7 +126,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Full filesystem scan</label>
+                                <label>Full Filesystem Scan</label>
                             </div>
                             <div class="three wide column">
                                 <div class='field'>
@@ -207,12 +207,12 @@
                         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
                             if (data.status) {
                                 $('#sonarr_validated').checkbox('check');
-                                $('#sonarr_validation_result').text('Test successful: Sonarr v' + data.version).css('color', 'green');
+                                $('#sonarr_validation_result').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             } else {
                                 $('#sonarr_validated').checkbox('uncheck');
-                                $('#sonarr_validation_result').text('Test failed').css('color', 'red');
+                                $('#sonarr_validation_result').text('Test Failed').css('color', 'red');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             }
@@ -221,14 +221,14 @@
 
                     $('.sonarr_config').on('keyup', function() {
                         $('#sonarr_validated').checkbox('uncheck');
-                        $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+                        $('#sonarr_validation_result').text('You Must Test Your Sonarr Connection Settings Before Saving.').css('color', 'red');
                         $('.form').form('validate form');
                         $('#loader').removeClass('active');
                     });
 
                     $('#settings_sonarr_ssl').on('change', function() {
                         $('#sonarr_validated').checkbox('uncheck');
-                        $('#sonarr_validation_result').text('You must test your Sonarr connection settings before saving settings.').css('color', 'red');
+                        $('#sonarr_validation_result').text('You Must Test Your Sonarr Connection Settings Before Saving.').css('color', 'red');
                         $('.form').form('validate form');
                         $('#loader').removeClass('active');
                     });
