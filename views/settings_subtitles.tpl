@@ -1,10 +1,10 @@
-                <div class="ui dividing header">Subtitles options</div>
+                <div class="ui dividing header">Subtitle Options</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Search for missing subtitles frequency (in hours)</label>
+                                <label>Search for missing Subtitles frequency (in hours)</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -19,7 +19,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use scene name when available</label>
+                                <label>Use Scene name when available</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings.general.getboolean('use_scenename')}}>
@@ -29,7 +29,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use the scene name from Sonarr/Radarr if available to circumvent usage of episode file renaming." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use the Scene name from Sonarr/Radarr if available to circumvent usage of episode file renaming." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -38,7 +38,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Minimum score for episodes</label>
+                                <label>Minimum Score For Episodes</label>
                             </div>
                             <div class="two wide column">
                                 <div class='field'>
@@ -49,7 +49,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Minimum score for an episode subtitle to be downloaded (0 to 100)." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Minimum score for an Episodes Subtitle to be downloaded (0 to 100)." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -58,7 +58,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Minimum score for movies</label>
+                                <label>Minimum Score For Movies</label>
                             </div>
                             <div class="two wide column">
                                 <div class='field'>
@@ -69,7 +69,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Minimum score for a movie subtitle to be downloaded (0 to 100)." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Minimum score for a Movie Subtitle to be downloaded (0 to 100)." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -78,20 +78,20 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Subtitle folder</label>
+                                <label>Subtitle Folder</label>
                             </div>
                             <div class="five wide column">
                                 <select name="settings_subfolder" id="settings_subfolder"
                                         class="ui fluid selection dropdown">
-                                    <option value="current">Alongside media file</option>
-                                    <option value="relative">Relative path to media file</option>
-                                    <option value="absolute">Absolute path</option>
+                                    <option value="current">Alongside Media File</option>
+                                    <option value="relative">Relative Path To Media File</option>
+                                    <option value="absolute">Absolute Path</option>
                                 </select>
                             </div>
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose folder where you want to store/read the subtitles'
+                                     data-tooltip='Choose the folder you wish to store/read the Subtitles'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -101,7 +101,7 @@
                         <div class="middle aligned row subfolder">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Custom Subtitle folder</label>
+                                <label>Custom Subtitle Folder</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -114,7 +114,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
+                                     data-tooltip='Choose your own folder for Subtitles' data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -122,7 +122,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Upgrade previously downloaded subtitles</label>
+                                <label>Upgrade Previously Downloaded Subtitles</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_upgrade_subs" class="ui toggle checkbox" data-upgrade={{settings.general.getboolean('upgrade_subs')}}>
@@ -133,7 +133,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Schedule a task to upgrade subtitles previously downloaded by Bazarr.'
+                                     data-tooltip='Schedule a task to upgrade Subtitles previously downloaded by Bazarr.'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -143,7 +143,7 @@
                         <div class="middle aligned row upgrade_subs">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Upgrade frequency (in hours)</label>
+                                <label>Upgrade Frequency (In Hours)</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -159,7 +159,7 @@
                         <div class="middle aligned row upgrade_subs">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Number of days to go back in history to upgrade subtitles (up to 30)</label>
+                                <label>Number of days to go back in history to upgrade Subtitles (up to 30)</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -174,7 +174,7 @@
                         <div class="middle aligned row upgrade_subs">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Upgrade manually downloaded subtitles</label>
+                                <label>Upgrade Manually Downloaded Subtitles</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_upgrade_manual" class="ui toggle checkbox" data-upgrade-manual={{settings.general.getboolean('upgrade_manual')}}>
@@ -185,7 +185,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Enable or disable upgrade of manually searched and downloaded subtitles.'
+                                     data-tooltip='Enable or disable upgrade of manually searched and downloaded Subtitles.'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -194,7 +194,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use embedded subtitles</label>
+                                <label>Use Embedded Subtitles</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_embedded" class="ui toggle checkbox" data-embedded={{settings.general.getboolean('use_embedded_subs')}}>
@@ -204,7 +204,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Use embedded subtitles in media files when determining missing ones." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Use embedded Subtitles in media files when determining missing ones." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -213,7 +213,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Ignore embedded PGS subtitles</label>
+                                <label>Ignore Embedded PGS Subtitles</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_ignore_pgs" class="ui toggle checkbox" data-ignorepgs={{settings.general.getboolean('ignore_pgs_subs')}}>
@@ -223,7 +223,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Ignores pgs subtitles in embedded subtitles detection. Only relevant if 'Use embedded subtitles' is enabled." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Ignores PGS Subtitles in Embedded Subtitles detection. Only relevant if 'Use embedded Subtitles' is enabled." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -232,7 +232,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Adaptive searching</label>
+                                <label>Adaptive Searching</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_adaptive_searching" class="ui toggle checkbox" data-adaptive={{settings.general.getboolean('adaptive_searching')}}>
@@ -242,7 +242,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="When searching for subtitles, Bazarr will search less frequently after sometime to limit call to providers." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="When searching for Subtitles, Bazarr will search less frequently to limit call to providers." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -251,7 +251,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Search enabled providers simultaneously</label>
+                                <label>Search Enabled Providers Simultaneously</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_multithreading" class="ui toggle checkbox"
@@ -262,7 +262,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Search multi providers at once (Don't choose this on low powered devices)" data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Search multiple providers at once (Don't choose this on low powered devices)" data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -271,7 +271,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Encode subtitles to UTF8</label>
+                                <label>Encode Subtitles To UTF8</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_utf8_encode" class="ui toggle checkbox" data-utf8encode={{ settings.general.getboolean('utf8_encode') }}>
@@ -281,7 +281,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Re-encode downloaded subtitles to UTF8. Should be left enabled in most case." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Re-encode downloaded Subtitles to UTF8. Should be left enabled in most case." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -290,7 +290,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Anti-captcha options</div>
+                <div class="ui dividing header">Anti-Captcha Options</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
@@ -307,7 +307,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose the anti-captcha provider you want to use.'
+                                     data-tooltip='Choose the Anti-Captcha provider you want to use.'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -317,7 +317,7 @@
                         <div class="middle aligned row anticaptcha">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Provider website</label>
+                                <label>Provider Website</label>
                             </div>
                             <div class="five wide column">
                                 <a href="http://getcaptchasolution.com/eixxo1rsnw" target="_blank">Anti-Captcha.com</a>
@@ -342,7 +342,7 @@
                         <div class="middle aligned row deathbycaptcha">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Provider website</label>
+                                <label>Provider Website</label>
                             </div>
                             <div class="five wide column">
                                 <a href="https://www.deathbycaptcha.com" target="_blank">DeathByCaptcha.com</a>
@@ -388,7 +388,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Single language</label>
+                                <label>Single Language</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_single_language" class="ui toggle checkbox" data-single-language={{settings.general.getboolean('single_language')}}>
@@ -398,7 +398,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Download a single subtitles file and don't add the language code to the filename." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Download a single Subtitles file without adding the language code to the filename." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -407,7 +407,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Enabled languages</label>
+                                <label>Enabled Languages</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
@@ -427,12 +427,12 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Series default settings</div>
+                <div class="ui dividing header">Series Default Settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Default enabled</label>
+                                <label>Default Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
@@ -470,7 +470,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hearing-impaired</label>
+                                <label>Hearing-Impaired</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
@@ -499,12 +499,12 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Movies default settings</div>
+                <div class="ui dividing header">Movie Default Settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Default enabled</label>
+                                <label>Default Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
@@ -516,7 +516,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Apply only to movies added to Bazarr after enabling this option." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Apply only to Movies added to Bazarr after enabling this option." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -542,7 +542,7 @@
 
                         <div class="middle aligned row">
                             <div id="movie_default_hi_label" class="right aligned four wide column">
-                                <label>Hearing-impaired</label>
+                                <label>Hearing-Impaired</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
