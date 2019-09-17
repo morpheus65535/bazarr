@@ -116,7 +116,7 @@
 							%             forced_languages = desired_languages
 							%         end
                             %         if row.language in forced_languages:
-										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
+										  <div class="ui inverted basic compact icon" data-tooltip="This Subtitle file is eligible to an upgrade." data-inverted="" data-position="top left">
 										      <i class="ui green recycle icon upgrade"></i>{{row.description}}
 										  </div>
 							%         else:
@@ -161,7 +161,7 @@
 			    		%end
 			    		 fast forward icon"></i>
 			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
+			    	<div class="right floated right aligned column">Total Records: {{row_count}}</div>
 				</div>
 			</div>
 			%end
@@ -173,7 +173,7 @@
 			    		<br>
 			    		Series
 						<br>
-						statistics
+						Statistics
 			    	</div>
 			    	<div class="label">
 			    		
@@ -184,7 +184,7 @@
 			    		{{stats[0]}}
 			    	</div>
 			    	<div class="label">
-			    		Since 24 hours
+			    		In 24 Hours
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -192,7 +192,7 @@
 			    		{{stats[1]}}
 			    	</div>
 			    	<div class="label">
-			    		Since one week
+			    		In One Week
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -200,7 +200,7 @@
 			    		{{stats[2]}}
 			    	</div>
 			    	<div class="label">
-			    		Since one year
+			    		In One Year
 		    		</div>
 			    </div>
 			    <div class="statistic">
