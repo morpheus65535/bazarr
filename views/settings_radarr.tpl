@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Settings validation:</label>
+                                <label>Settings Validation:</label>
                             </div>
                             <div class="two wide column">
                                 <button id="radarr_validate" class="test ui blue button" type="button">
@@ -20,7 +20,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hostname or IP address</label>
+                                <label>Hostname or IP Address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -38,7 +38,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening port</label>
+                                <label>Listening Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -48,7 +48,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="TCP port of Radarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="TCP Port of Radarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -72,7 +72,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>SSL enabled</label>
+                                <label>SSL Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div id="radarr_ssl_div" class="ui toggle checkbox" data-ssl={{settings.radarr.getboolean('ssl')}}>
@@ -84,7 +84,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>API key</label>
+                                <label>API Key</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -94,7 +94,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="API key for Radarr (32 alphanumeric characters)" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="API Key for Radarr (32 alphanumeric characters)" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -102,7 +102,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Download only monitored</label>
+                                <label>Download Only Monitored</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_only_monitored_radarr" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('only_monitored')}}>
@@ -112,7 +112,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored movies in Radarr." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Automatic download of Subtitles will happen only for monitored Movies in Radarr." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -126,7 +126,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Full filesystem scan</label>
+                                <label>Full Filesystem Scan</label>
                             </div>
                             <div class="three wide column">
                                 <div class='field'>
