@@ -108,9 +108,9 @@
                     <div class="row">
                         <div class="left floatedcolumn">
                             <div class="ui basic buttons">
-                                <button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh current page</button>
-                                <button id="download_log" class="ui button"><i class="download icon"></i>Download log file</button>
-                                <button id="empty_log" class="ui button"><i class="trash icon"></i>Empty log file</button>
+                                <button id="refresh_log" class="ui button"><i class="refresh icon"></i>Refresh Current Page</button>
+                                <button id="download_log" class="ui button"><i class="download icon"></i>Download Log File</button>
+                                <button id="empty_log" class="ui button"><i class="trash icon"></i>Empty Log</button>
                             </div>
                         </div>
                         <div class="right floated right aligned column">
@@ -167,7 +167,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Bazarr version</label>
+                                <label>Bazarr Version:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -180,7 +180,7 @@
                         % if settings.general.getboolean('use_sonarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Sonarr version</label>
+                                <label>Sonarr Version:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -194,7 +194,7 @@
                         % if settings.general.getboolean('use_radarr'):
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Radarr version</label>
+                                <label>Radarr Version:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -207,7 +207,7 @@
                         % end
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Operating system</label>
+                                <label>Operating System:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -219,7 +219,7 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Python version</label>
+                                <label>Python Version:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -231,7 +231,7 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Bazarr directory</label>
+                                <label>Bazarr Directory:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -243,7 +243,7 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Bazarr config directory</label>
+                                <label>Bazarr Config Directory:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -260,19 +260,19 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Home page</label>
+                                <label>Home Page:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
                                     <div class="ui fluid input">
-                                        <i class="paper plane icon"></i><a href="https://www.bazarr.media" target="_blank">Bazarr website</a>
+                                        <i class="paper plane icon"></i><a href="https://www.bazarr.media" target="_blank">Bazarr Website</a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Source</label>
+                                <label>Source:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -284,7 +284,7 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Wiki</label>
+                                <label>Wiki:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -296,7 +296,7 @@
                         </div>
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Discord</label>
+                                <label>Discord:</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -315,7 +315,7 @@
 				%for release in releases:
 				<h2 class="ui header">
 					%if release[0][1:] == bazarr_version:
-					{{release[0]}} <div class="ui green label">Current version</div>
+					{{release[0]}} <div class="ui green label">Current Version</div>
 					%else:
 					{{release[0]}}
 					%end
