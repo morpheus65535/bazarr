@@ -140,7 +140,7 @@ class AssrtProvider(Provider):
             logger.debug('No subtitle found')
 
         # parse the subtitles
-        pattern = re.compile(ur'lang(?P<code>\w+)')
+        pattern = re.compile(r'lang(?P<code>\w+)')
         subtitles = []
         for sub in result['sub']['subs']:
             if 'lang' not in sub:

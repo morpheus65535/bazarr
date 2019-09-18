@@ -16,6 +16,7 @@ from bs4 import UnicodeDammit
 from itertools import islice
 from database import TableShows, TableEpisodes, TableMovies
 from peewee import fn, JOIN
+from functools import reduce
 
 from get_args import args
 from get_languages import alpha2_from_alpha3, get_language_set
@@ -224,9 +225,9 @@ def store_subtitles_movie(file):
 
 
 def list_missing_subtitles(no=None):
-    episodes_subtitles_clause = {TableShows.sonarr_series_id.is_null(False)}
+    episodes_subtitles_clause = "TableShows.sonarr_series_id.is_null(False)"
     if no is not None:
-        episodes_subtitles_clause = {TableShows.sonarr_series_id ** no}
+        episodes_subtitles_clause = "TableShows.sonarr_series_id ** no"
 
     episodes_subtitles = TableEpisodes.select(
         TableEpisodes.sonarr_episode_id,

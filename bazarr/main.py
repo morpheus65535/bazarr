@@ -1,9 +1,10 @@
 # coding=utf-8
 
+bazarr_version = '0.8.2'
+
 import six
 from six.moves import zip
 from functools import reduce
-bazarr_version = '0.8.2'
 
 import gc
 import sys
@@ -60,8 +61,6 @@ from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonar
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-reload(sys)
-sys.setdefaultencoding('utf8')
 gc.enable()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -2016,10 +2015,12 @@ def system():
 def get_logs():
     authorize()
     logs = []
-    for line in reversed(open(os.path.join(args.config_dir, 'log', 'bazarr.log')).readlines()):
-        lin = []
-        lin = line.split('|')
-        logs.append(lin)
+    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as file:
+        for line in file.readlines():
+            lin = []
+            lin = line.split('|')
+            logs.append(lin)
+        logs.reverse()
     
     return dict(data=logs)
 

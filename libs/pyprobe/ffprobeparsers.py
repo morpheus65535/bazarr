@@ -1,6 +1,6 @@
 from os import path
 
-from baseparser import BaseParser
+from pyprobe.baseparser import BaseParser
 
 
 class StreamParser(BaseParser):
@@ -44,7 +44,7 @@ class VideoStreamParser(BaseParser):
         """Returns a tuple (width, height)"""
         width = data.get("width", None)
         height = data.get("height", None)
-        if width is None and height is None:
+        if width == None and height == None:
             return None, (0, 0)
         try:
             return (width, height), (int(float(width)), int(float(height)))
@@ -67,7 +67,7 @@ class VideoStreamParser(BaseParser):
         input_str = data.get("avg_frame_rate", None)
         try:
             num, den = input_str.split("/")
-            return input_str, round(float(num) / float(den), 3)
+            return input_str, float(num) / float(den)
         except (ValueError, ZeroDivisionError, AttributeError):
             info = cls.average_framerate(data)
             return input_str, info
@@ -123,15 +123,6 @@ class SubtitleStreamParser(BaseParser):
         if tags:
             info = tags.get("language", None)
             return info, (info or "null")
-        return None, "null"
-
-    @staticmethod
-    def value_forced(data):
-        """Returns a bool """
-        disposition = data.get("disposition", None)
-        if disposition:
-            info = disposition.get("forced", None)
-            return bool(info), (bool(info) or False)
         return None, "null"
 
 
@@ -191,7 +182,7 @@ class RootParser(BaseParser):
     def value_size(data):
         """Returns an int"""
         info = data.get("size", None)
-        if info is None:
+        if info == None:
             file_path = data.get("filename", "")
             if path.isfile(file_path):
                 info = str(path.getsize(file_path))
@@ -204,7 +195,7 @@ class RootParser(BaseParser):
     def value_bit_rate(cls, data):
         """Returns an int"""
         info = data.get("bit_rate", None)
-        if info is None:
+        if info == None:
             _, size = cls.value_size(data)
             _, duration = cls.value_duration(data)
             if size and duration:

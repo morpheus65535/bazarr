@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from __future__ import absolute_import
+from __future__ import print_function
 import subprocess
 import sys
 import traceback
@@ -10,7 +12,7 @@ import types
 import os
 
 from pipes import quote
-from lib import find_executable
+from .lib import find_executable
 
 mswindows = False
 if sys.platform == "win32":
@@ -87,7 +89,7 @@ def get_filebot_attrs(fn):
     args_func, match_func = XATTR_MAP.get(sys.platform, XATTR_MAP["default"])
 
     args = args_func(fn)
-    if isinstance(args, types.ListType):
+    if isinstance(args, list):
         try:
             env = dict(os.environ)
             if not mswindows:
@@ -132,4 +134,4 @@ def get_filebot_attrs(fn):
 
 
 if __name__ == "__main__":
-    print get_filebot_attrs(sys.argv[1])
+    print(get_filebot_attrs(sys.argv[1]))

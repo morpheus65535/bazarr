@@ -82,6 +82,9 @@ class Language(Language_):
     def __setstate__(self, state):
         self.alpha3, self.country, self.script, self.forced = state
 
+    def __hash__(self):
+        return hash(str(self))
+
     def __eq__(self, other):
         if isinstance(other, basestr):
             return str(self) == other

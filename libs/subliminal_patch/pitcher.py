@@ -243,7 +243,7 @@ class DBCPitcher(DBCProxyLessPitcher):
 
 
 def load_verification(site_name, session, callback=lambda x: None):
-    ccks = region.get("%s_data" % site_name, expiration_time=15552000)  # 6m
+    ccks = str(region.get("%s_data" % site_name, expiration_time=15552000))  # 6m
     if ccks != NO_VALUE:
         cookies, user_agent = ccks
         logger.debug("%s: Re-using previous user agent: %s", site_name.capitalize(), user_agent)
@@ -257,4 +257,4 @@ def load_verification(site_name, session, callback=lambda x: None):
 
 
 def store_verification(site_name, session):
-    region.set("%s_data" % site_name, (session.cookies._cookies, session.headers["User-Agent"]))
+    region.set("%s_data" % site_name, bytes(session.cookies._cookies, session.headers["User-Agent"]))

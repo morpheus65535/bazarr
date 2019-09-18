@@ -22,7 +22,7 @@ class Provider(_Provider):
 
 # register providers
 # fixme: this is bad
-for name in os.listdir(os.path.dirname(six.text_type(__file__, get_viable_encoding()))):
+for name in os.listdir(os.path.dirname(__file__)):
     if name in ("__init__.py", "mixins.py", "utils.py") or not name.endswith(".py"):
         continue
 

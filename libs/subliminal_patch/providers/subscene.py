@@ -141,7 +141,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         logger.info("Creating session")
         self.session = RetryingCFSession()
 
-        prev_cookies = region.get("subscene_cookies2")
+        prev_cookies = str(region.get("subscene_cookies2"))
         if prev_cookies != NO_VALUE:
             logger.debug("Re-using old subscene cookies: %r", prev_cookies)
             self.session.cookies.update(prev_cookies)
@@ -194,7 +194,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                             del cj[cn]
 
                     logger.debug("Storing cookies: %r", cj)
-                    region.set("subscene_cookies2", cj)
+                    region.set("subscene_cookies2", bytes(cj)
                     return
         raise ProviderError("Something went wrong when trying to log in #1")
 
@@ -219,9 +219,9 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         acc_filters["SelectedIds"] = selected_ids
         self.filters["LanguageFilter"] = ",".join(acc_filters["SelectedIds"])
 
-        last_filters = region.get("subscene_filters")
+        last_filters = str(region.get("subscene_filters"))
         if last_filters != acc_filters:
-            region.set("subscene_filters", acc_filters)
+            region.set("subscene_filters", bytes(acc_filters)
             logger.debug("Setting account filters to %r", acc_filters)
             self.session.post("https://u.subscene.com/filter", acc_filters, allow_redirects=False)
 
