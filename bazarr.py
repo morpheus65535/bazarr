@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import platform
+import re
 
 from bazarr.get_args import args
 
@@ -18,7 +19,7 @@ def check_python_version():
         print "Python 3 isn't supported. Please use Python " + minimum_python_version + " or greater."
         os._exit(0)
 
-    elif int(python_version[1]) < minimum_python_version_tuple[1] or int(python_version[2].rstrip('+')) < minimum_python_version_tuple[2]:
+    elif int(python_version[1]) < minimum_python_version_tuple[1] or int(re.search(r'\d+', python_version[2]).group()) < minimum_python_version_tuple[2]:
         print "Python " + minimum_python_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python."
         os._exit(0)
 
