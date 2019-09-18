@@ -87,12 +87,14 @@ def update_series():
                     if serie_default_enabled is True:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], serie_default_language,
                                               serie_default_hi, show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId'], audio_profiles), show['sortTitle'],
+                                              profile_id_to_language(
+                        (show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles), show['sortTitle'],
                                               show['year'], alternateTitles, serie_default_forced))
                     else:
                         series_to_add.append((show["title"], show["path"], show["tvdbId"], show["tvdbId"],
                                               show["tvdbId"], show["id"], overview, poster, fanart,
-                                              profile_id_to_language(show['qualityProfileId'], audio_profiles), show['sortTitle'],
+                                              profile_id_to_language(
+                        (show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles), show['sortTitle'],
                                               show['year'], alternateTitles, show["id"]))
             
             # Update or insert series in DB
