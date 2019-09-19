@@ -10,8 +10,8 @@ __license__ = "WTFPL"
 from datetime import datetime
 
 def _df(seconds, denominator=1, text='', past=True):
-    if past:   return         str((seconds + denominator/2)/ denominator) + text + ' ago'
-    else:      return 'in ' + str((seconds + denominator/2)/ denominator) + text
+    if past:   return         str(round(seconds / denominator)) + text + ' ago'
+    else:      return 'in ' + str(round(seconds / denominator)) + text
 
 def date(time=False, asdays=False, short=False):
     '''Returns a pretty formatted date.

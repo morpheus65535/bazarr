@@ -23,7 +23,7 @@ class ReadWriteMutex(object):
 
     def __init__(self):
         # counts how many asynchronous methods are executing
-        self.async = 0
+        self._async = 0
 
         # pointer to thread that is the current sync operation
         self.current_sync_operation = None
@@ -45,7 +45,7 @@ class ReadWriteMutex(object):
                 if self.current_sync_operation is not None:
                     return False
 
-            self.async += 1
+            self._async += 1
             log.debug("%s acquired read lock", self)
         finally:
             self.condition.release()
@@ -57,16 +57,16 @@ class ReadWriteMutex(object):
         """Release the 'read' lock."""
         self.condition.acquire()
         try:
-            self.async -= 1
+            self._async -= 1
 
             # check if we are the last asynchronous reader thread
             # out the door.
-            if self.async == 0:
+            if self._async == 0:
                 # yes. so if a sync operation is waiting, notifyAll to wake
                 # it up
                 if self.current_sync_operation is not None:
                     self.condition.notifyAll()
-            elif self.async < 0:
+            elif self._async < 0:
                 raise LockError("Synchronizer error - too many "
                                 "release_read_locks called")
             log.debug("%s released read lock", self)
@@ -96,7 +96,7 @@ class ReadWriteMutex(object):
             self.current_sync_operation = threading.currentThread()
 
             # now wait again for asyncs to finish
-            if self.async > 0:
+            if self._async > 0:
                 if wait:
                     # wait
                     self.condition.wait()

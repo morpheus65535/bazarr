@@ -855,7 +855,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             content = subtitle.get_modified_content(format=format, debug=debug_mods)
             if content:
                 with open(subtitle_path, 'w') as f:
-                    f.write(content)
+                    f.write(content.decode('utf-8'))
                 subtitle.storage_path = subtitle_path
             else:
                 logger.error(u"Something went wrong when getting modified subtitle for %s", subtitle)

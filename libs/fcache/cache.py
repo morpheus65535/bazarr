@@ -4,12 +4,8 @@ import os
 import pickle
 import shutil
 import tempfile
-import traceback
-import hashlib
 
 import appdirs
-
-from scandir import scandir, scandir_generic as _scandir_generic
 
 try:
     from collections.abc import MutableMapping
@@ -90,7 +86,7 @@ class FileCache(MutableMapping):
     """
 
     def __init__(self, appname, flag='c', mode=0o666, keyencoding='utf-8',
-                 serialize=True, app_cache_dir=None, key_file_ext=".txt"):
+                 serialize=True, app_cache_dir=None):
         """Initialize a :class:`FileCache` object."""
         if not isinstance(flag, str):
             raise TypeError("flag must be str not '{}'".format(type(flag)))
@@ -131,7 +127,6 @@ class FileCache(MutableMapping):
         self._mode = mode
         self._keyencoding = keyencoding
         self._serialize = serialize
-        self.key_file_ext = key_file_ext
 
     def _parse_appname(self, appname):
         """Splits an appname into the appname and subcache components."""
@@ -185,16 +180,7 @@ class FileCache(MutableMapping):
         self._sync = True
         for ekey in self._buffer:
             filename = self._key_to_filename(ekey)
-            try:
-                self._write_to_file(filename, self._buffer[ekey])
-            except:
-                logger.error("Couldn't write content from %r to cache file: %r: %s", ekey, filename,
-                             traceback.format_exc())
-            try:
-                self.__write_to_file(filename + self.key_file_ext, ekey)
-            except:
-                logger.error("Couldn't write content from %r to cache file: %r: %s", ekey, filename,
-                             traceback.format_exc())
+            self._write_to_file(filename, self._buffer[ekey])
         self._buffer.clear()
         self._sync = False
 
@@ -203,7 +189,8 @@ class FileCache(MutableMapping):
         raise ValueError("invalid operation on closed cache")
 
     def _encode_key(self, key):
-        """
+        """Encode key using *hex_codec* for constructing a cache filename.
+
         Keys are implicitly converted to :class:`bytes` if passed as
         :class:`str`.
 
@@ -212,15 +199,16 @@ class FileCache(MutableMapping):
             key = key.encode(self._keyencoding)
         elif not isinstance(key, bytes):
             raise TypeError("key must be bytes or str")
-        return key.decode(self._keyencoding)
+        return codecs.encode(key, 'hex_codec').decode(self._keyencoding)
 
     def _decode_key(self, key):
-        """
+        """Decode key using hex_codec to retrieve the original key.
+
         Keys are returned as :class:`str` if serialization is enabled.
         Keys are returned as :class:`bytes` if serialization is disabled.
 
         """
-        bkey = key.encode(self._keyencoding)
+        bkey = codecs.decode(key.encode(self._keyencoding), 'hex_codec')
         return bkey.decode(self._keyencoding) if self._serialize else bkey
 
     def _dumps(self, value):
@@ -231,27 +219,19 @@ class FileCache(MutableMapping):
 
     def _key_to_filename(self, key):
         """Convert an encoded key to an absolute cache filename."""
-        if isinstance(key, unicode):
-            key = key.encode(self._keyencoding)
-        return os.path.join(self.cache_dir, hashlib.md5(key).hexdigest())
+        return os.path.join(self.cache_dir, key)
 
     def _filename_to_key(self, absfilename):
         """Convert an absolute cache filename to a key name."""
-        hkey_hdr_fn = absfilename + self.key_file_ext
-        if os.path.isfile(hkey_hdr_fn):
-            with open(hkey_hdr_fn, 'rb') as f:
-                key = f.read()
-                return key.decode(self._keyencoding) if self._serialize else key
+        return os.path.split(absfilename)[1]
 
-    def _all_filenames(self, scandir_generic=True):
+    def _all_filenames(self):
         """Return a list of absolute cache filenames"""
-        _scandir = _scandir_generic if scandir_generic else scandir
         try:
-            for entry in _scandir(self.cache_dir):
-                if entry.is_file(follow_symlinks=False) and not entry.name.endswith(self.key_file_ext):
-                    yield os.path.join(self.cache_dir, entry.name)
+            return [os.path.join(self.cache_dir, filename) for filename in
+                    os.listdir(self.cache_dir)]
         except (FileNotFoundError, OSError):
-            raise StopIteration
+            return []
 
     def _all_keys(self):
         """Return a list of all encoded key names."""
@@ -261,16 +241,13 @@ class FileCache(MutableMapping):
         else:
             return set(file_keys + list(self._buffer))
 
-    def __write_to_file(self, filename, value):
+    def _write_to_file(self, filename, bytesvalue):
         """Write bytesvalue to filename."""
         fh, tmp = tempfile.mkstemp()
         with os.fdopen(fh, self._flag) as f:
-            f.write(value)
+            f.write(self._dumps(bytesvalue))
         rename(tmp, filename)
         os.chmod(filename, self._mode)
-
-    def _write_to_file(self, filename, bytesvalue):
-        self.__write_to_file(filename, self._dumps(bytesvalue))
 
     def _read_from_file(self, filename):
         """Read data from filename."""
@@ -288,7 +265,6 @@ class FileCache(MutableMapping):
         else:
             filename = self._key_to_filename(ekey)
             self._write_to_file(filename, value)
-            self.__write_to_file(filename + self.key_file_ext, ekey)
 
     def __getitem__(self, key):
         ekey = self._encode_key(key)
@@ -298,9 +274,8 @@ class FileCache(MutableMapping):
             except KeyError:
                 pass
         filename = self._key_to_filename(ekey)
-        if not os.path.isfile(filename):
+        if filename not in self._all_filenames():
             raise KeyError(key)
-
         return self._read_from_file(filename)
 
     def __delitem__(self, key):
@@ -317,11 +292,6 @@ class FileCache(MutableMapping):
         except (IOError, OSError):
             pass
 
-        try:
-            os.remove(filename + self.key_file_ext)
-        except (IOError, OSError):
-            pass
-
     def __iter__(self):
         for key in self._all_keys():
             yield self._decode_key(key)
@@ -331,10 +301,4 @@ class FileCache(MutableMapping):
 
     def __contains__(self, key):
         ekey = self._encode_key(key)
-        if not self._sync:
-            try:
-                return ekey in self._buffer
-            except KeyError:
-                pass
-        filename = self._key_to_filename(ekey)
-        return os.path.isfile(filename)
+        return ekey in self._all_keys()

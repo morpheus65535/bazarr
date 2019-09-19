@@ -1,4 +1,2 @@
 
-from pyprobe.pyprobe import VideoFileParser
-from pyprobe.helpers import timeToTuple, sizeStr
- 
+from .pyprobe import VideoFileParser

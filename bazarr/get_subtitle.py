@@ -430,7 +430,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                                                  directory=fld,
                                                  chmod=chmod,
                                                  # formats=("srt", "vtt")
-                                                 path_decoder=force_unicode)
+                                                 path_decoder=None)
             
             except Exception as e:
                 logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)

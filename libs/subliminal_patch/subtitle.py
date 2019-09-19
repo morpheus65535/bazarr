@@ -104,7 +104,7 @@ class Subtitle(Subtitle_):
         self.set_encoding("utf-8")
 
         # normalize line endings
-        self.content = self.content.replace("\r\n", "\n").replace('\r', '\n')
+        self.content = self.content.replace(b"\r\n", b"\n").replace(b'\r', b'\n')
 
     def guess_encoding(self):
         """Guess encoding using the language, falling back on chardet.

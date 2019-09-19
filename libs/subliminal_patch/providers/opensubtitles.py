@@ -154,7 +154,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         self.token = response['token']
         logger.debug('Logged in with token %r', self.token[:10]+"X"*(len(self.token)-10))
 
-        region.set("os_token", bytes(self.token))
+        region.set("os_token", bytearray(self.token, encoding='utf-8'))
 
     def use_token_or_login(self, func):
         if not self.token:
