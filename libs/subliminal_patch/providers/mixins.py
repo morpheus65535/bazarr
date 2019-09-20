@@ -158,13 +158,5 @@ class ProviderSubtitleArchiveMixin(object):
         elif subs_fallback:
             matching_sub = subs_fallback[0]
 
-        try:
-            matching_sub_unicode = matching_sub.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                matching_sub_unicode = matching_sub.decode("cp437")
-            except UnicodeDecodeError:
-                matching_sub_unicode = matching_sub.decode("utf-8", errors='replace')
-
-        logger.info(u"Using %s from the archive", matching_sub_unicode)
+        logger.info(u"Using %s from the archive", matching_sub)
         return fix_line_ending(archive.read(matching_sub))

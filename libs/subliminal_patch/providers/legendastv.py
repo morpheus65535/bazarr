@@ -199,7 +199,7 @@ class LegendasTVProvider(_LegendasTVProvider):
 
                 # attempt to get the releases from the cache
                 cache_key = releases_key.format(archive_id=a.id, archive_name=a.name)
-                releases = region.get(cache_key, expiration_time=expiration_time)
+                releases = str(region.get(cache_key, expiration_time=expiration_time))
 
                 # the releases are not in cache or cache is expired
                 if releases == NO_VALUE:
@@ -226,7 +226,7 @@ class LegendasTVProvider(_LegendasTVProvider):
                         releases.append(name)
 
                     # cache the releases
-                    region.set(cache_key, releases)
+                    region.set(cache_key, bytearray(releases, encoding='utf-8'))
 
                 # iterate over releases
                 for r in releases:

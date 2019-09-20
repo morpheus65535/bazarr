@@ -148,7 +148,7 @@ class CFSession(CloudScraper):
         cache_key = "cf_data3_%s" % domain
 
         if not self.cookies.get("cf_clearance", "", domain=domain):
-            cf_data = region.get(cache_key)
+            cf_data = str(region.get(cache_key))
             if cf_data is not NO_VALUE:
                 cf_cookies, hdrs = cf_data
                 logger.debug("Trying to use old cf data for %s: %s", domain, cf_data)
@@ -165,9 +165,9 @@ class CFSession(CloudScraper):
             pass
         else:
             if cf_data and "cf_clearance" in cf_data[0] and cf_data[0]["cf_clearance"]:
-                if cf_data != region.get(cache_key):
+                if cf_data != str(region.get(cache_key)):
                     logger.debug("Storing cf data for %s: %s", domain, cf_data)
-                    region.set(cache_key, cf_data)
+                    region.set(cache_key, bytearray(cf_data, encoding='utf-8'))
                 elif cf_data[0]["cf_clearance"]:
                     logger.debug("CF Live tokens not updated")
 

@@ -104,11 +104,11 @@ class Addic7edProvider(_Addic7edProvider):
             tries = 0
             while tries < 3:
                 r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
-                if "grecaptcha" in r.content:
+                if "grecaptcha" in r.text:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
                                 'happen once every so often')
 
-                    site_key = re.search(r'grecaptcha.execute\(\'(.+?)\',', r.content).group(1)
+                    site_key = re.search(r'grecaptcha.execute\(\'(.+?)\',', r.text).group(1)
                     if not site_key:
                         logger.error("Addic7ed: Captcha site-key not found!")
                         return
@@ -127,11 +127,11 @@ class Addic7edProvider(_Addic7edProvider):
                 r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
                                       headers={"Referer": self.server_url + "login.php"})
 
-                if "relax, slow down" in r.content:
+                if "relax, slow down" in r.text:
                     raise TooManyRequests(self.username)
 
                 if r.status_code != 302:
-                    if "User <b></b> doesn't exist" in r.content and tries <= 2:
+                    if "User <b></b> doesn't exist" in r.text and tries <= 2:
                         logger.info("Addic7ed: Error, trying again. (%s/%s)", tries+1, 3)
                         tries += 1
                         continue
@@ -208,8 +208,8 @@ class Addic7edProvider(_Addic7edProvider):
         if show_cells:
             soup = ParserBeautifulSoup(b''.join(show_cells), ['lxml', 'html.parser'])
         else:
-            # If RegEx fails, fall back to original r.content and use 'html.parser'
-            soup = ParserBeautifulSoup(r.content, ['html.parser'])
+            # If RegEx fails, fall back to original r.text and use 'html.parser'
+            soup = ParserBeautifulSoup(r.text, ['html.parser'])
 
         # populate the show ids
         show_ids = {}
@@ -265,7 +265,7 @@ class Addic7edProvider(_Addic7edProvider):
             r = self.session.get(self.server_url + endpoint, params=params, timeout=10, headers=headers)
             r.raise_for_status()
 
-            if r.content and "Sorry, your search" not in r.content:
+            if r.text and "Sorry, your search" not in r.text:
                 break
 
             time.sleep(4)
@@ -273,7 +273,7 @@ class Addic7edProvider(_Addic7edProvider):
         if r.status_code == 304:
             raise TooManyRequests()
 
-        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
+        soup = ParserBeautifulSoup(r.text, ['lxml', 'html.parser'])
 
         suggestion = None
 
@@ -315,13 +315,13 @@ class Addic7edProvider(_Addic7edProvider):
         if r.status_code == 304:
             raise TooManyRequests()
 
-        if not r.content:
+        if not r.text:
             # Provider wrongful return a status of 304 Not Modified with an empty content
             # raise_for_status won't raise exception for that status code
             logger.error('No data returned from provider')
             return []
 
-        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
+        soup = ParserBeautifulSoup(r.text, ['lxml', 'html.parser'])
 
         # loop over subtitle rows
         subtitles = []
@@ -364,7 +364,7 @@ class Addic7edProvider(_Addic7edProvider):
         if r.status_code == 304:
             raise TooManyRequests()
 
-        if not r.content:
+        if not r.text:
             # Provider wrongful return a status of 304 Not Modified with an empty content
             # raise_for_status won't raise exception for that status code
             logger.error('Unable to download subtitle. No data returned from provider')

@@ -257,4 +257,4 @@ def load_verification(site_name, session, callback=lambda x: None):
 
 
 def store_verification(site_name, session):
-    region.set("%s_data" % site_name, session.cookies._cookies, session.headers["User-Agent"])
+    region.set("%s_data" % site_name, (session.cookies._cookies, session.headers["User-Agent"]))

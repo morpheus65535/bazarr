@@ -66,7 +66,14 @@ class SSAFile(MutableSequence):
                 be detected from the file, in which case you don't need
                 to specify it here (when given, this argument overrides
                 autodetection).
-            kwargs: Extra options for the parser.
+            keep_unknown_html_tags (bool): This affects SubRip only (SRT),
+                for other formats this argument is ignored.
+                By default, HTML tags are converted to equivalent SubStation tags
+                (eg. ``<i>`` to ``{\\i1}`` and any remaining tags are removed
+                to keep the text clean. Set this parameter to ``True``
+                if you want to pass through these tags (eg. ``<sub>``).
+                This is useful if your output format is SRT and your player
+                supports these tags.
 
         Returns:
             SSAFile
@@ -86,6 +93,7 @@ class SSAFile(MutableSequence):
         Example:
             >>> subs1 = pysubs2.load("subrip-subtitles.srt")
             >>> subs2 = pysubs2.load("microdvd-subtitles.sub", fps=23.976)
+            >>> subs3 = pysubs2.load("subrip-subtitles-with-fancy-tags.srt", keep_unknown_html_tags=True)
 
         """
         with open(path, encoding=encoding) as fp:

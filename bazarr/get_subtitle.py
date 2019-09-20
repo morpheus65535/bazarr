@@ -202,7 +202,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                                                      directory=fld,
                                                      chmod=chmod,
                                                      # formats=("srt", "vtt")
-                                                     path_decoder=force_unicode
+                                                     path_decoder=None
                                                      )
                 except Exception as e:
                     logging.exception('BAZARR Error saving subtitles file to disk for this file:' + path)
@@ -419,7 +419,6 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
             if not subtitle.is_valid():
                 logging.exception('BAZARR No valid subtitles file found for this file: ' + path)
                 return
-            logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 fld = get_target_folder(path)
