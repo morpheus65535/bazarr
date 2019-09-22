@@ -186,12 +186,9 @@ class SZProviderPool(ProviderPool):
         except (requests.Timeout, socket.timeout):
             logger.error('Provider %r timed out', provider)
 
-        except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled), e:
-            self.throttle_callback(provider, e)
-            return
-
-        except:
+        except Exception as e:
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
+            self.throttle_callback(provider, e)
 
     def list_subtitles(self, video, languages):
         """List subtitles.

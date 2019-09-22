@@ -141,10 +141,11 @@ def provider_throttle(name, exception):
     throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
                     PROVIDER_THROTTLE_MAP["default"].get(cls, None)
     
-    if not throttle_data:
-        return
+    if throttle_data:
+        throttle_delta, throttle_description = throttle_data
+    else:
+        throttle_delta, throttle_description = datetime.timedelta(minutes=10), "10 minutes"
     
-    throttle_delta, throttle_description = throttle_data
     throttle_until = datetime.datetime.now() + throttle_delta
     
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
