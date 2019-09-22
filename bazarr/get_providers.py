@@ -8,7 +8,7 @@ import time
 
 from get_args import args
 from config import settings
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled)
@@ -20,6 +20,7 @@ PROVIDER_THROTTLE_MAP = {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
         APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
+        ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
     },
     "opensubtitles": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
