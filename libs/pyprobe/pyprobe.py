@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from six import PY3
 import json
 import subprocess
 from os import path
@@ -176,14 +177,25 @@ class VideoFileParser:
 
         """
         command = [parser] + commandArgs + [inputFile]
-        completedProcess = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8"
-        )
-        if completedProcess.returncode != 0:
-            raise IOError(
-                "Error occurred during execution - " + completedProcess.stderr
+        if PY3:
+            completedProcess = subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8"
             )
-        return completedProcess.stdout
+            if completedProcess.returncode != 0:
+                raise IOError(
+                    "Error occurred during execution - " + completedProcess.stderr
+                )
+            return completedProcess.stdout
+        else:
+            try:
+                completedProcess = subprocess.check_output(
+                    command, stderr=subprocess.STDOUT
+                )
+            except subprocess.CalledProcessError as e:
+                raise IOError(
+                    "Error occurred during execution - " + e.output
+                )
+            return completedProcess
 
     @staticmethod
     def _checkExecutable(executable):

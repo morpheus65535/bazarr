@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
+from __future__ import unicode_literals
 import re
 
 from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, EmptyEntryError, TAG

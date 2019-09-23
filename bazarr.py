@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from six import PY3
 import subprocess as sp
 import time
 import os
@@ -43,7 +44,10 @@ def start_bazarr():
     print("Bazarr starting...")
     try:
         for line in iter(ep.stdout.readline, ''):
-            sys.stdout.buffer.write(line)
+            if PY3:
+                sys.stdout.buffer.write(line)
+            else:
+                sys.stdout.write(line)
     except KeyboardInterrupt:
         pass
 
