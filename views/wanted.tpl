@@ -38,6 +38,7 @@
 		% from database import TableEpisodes, TableMovies, System
 		% import operator
         % from config import settings
+		% from functools import reduce
 
         %episodes_missing_subtitles_clause = [
         %	 (TableEpisodes.missing_subtitles != '[]')
