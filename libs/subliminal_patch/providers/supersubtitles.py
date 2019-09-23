@@ -84,7 +84,7 @@ class SuperSubtitlesSubtitle(Subtitle):
         return str(self.subtitle_id)
 
     def get_matches(self, video):
-        matches = guess_matches(video, guessit(self.release_info.encode("utf-8")))
+        matches = guess_matches(video, guessit(self.release_info))
 
         # episode
         if isinstance(video, Episode):
