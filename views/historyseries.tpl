@@ -61,23 +61,23 @@
 					<tr class="selectable">
 						<td class="collapsing">
 						%if row.action == 0:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been erased." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
 						%elif row.action == 1:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been downloaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
 						%elif row.action == 2:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually downloaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been manually downloaded." data-inverted="" data-position="top left">
 								<i class="ui user icon"></i>
 							</div>
 						%elif row.action == 3:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been upgraded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
 						%elif row.action == 4:
-							<div class="ui inverted basic compact icon" data-tooltip="Subtitles file has been manually uploaded." data-inverted="" data-position="top left">
+							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been manually uploaded." data-inverted="" data-position="top left">
 								<i class="ui cloud upload icon"></i>
 							</div>
 						%end
@@ -116,7 +116,7 @@
 							%             forced_languages = desired_languages
 							%         end
                             %         if row.language in forced_languages:
-										  <div class="ui inverted basic compact icon" data-tooltip="This subtitles is eligible to an upgrade." data-inverted="" data-position="top left">
+										  <div class="ui inverted basic compact icon" data-tooltip="This Subtitle file is eligible for an upgrade." data-inverted="" data-position="top left">
 										      <i class="ui green recycle icon upgrade"></i>{{row.description}}
 										  </div>
 							%         else:
@@ -161,7 +161,7 @@
 			    		%end
 			    		 fast forward icon"></i>
 			    	</div>
-			    	<div class="right floated right aligned column">Total records: {{row_count}}</div>
+			    	<div class="right floated right aligned column">Total Records: {{row_count}}</div>
 				</div>
 			</div>
 			%end
@@ -173,7 +173,7 @@
 			    		<br>
 			    		Series
 						<br>
-						statistics
+						Statistics
 			    	</div>
 			    	<div class="label">
 			    		
@@ -184,7 +184,7 @@
 			    		{{stats[0]}}
 			    	</div>
 			    	<div class="label">
-			    		Since 24 hours
+			    		In 24 Hours
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -192,7 +192,7 @@
 			    		{{stats[1]}}
 			    	</div>
 			    	<div class="label">
-			    		Since one week
+			    		In One Week
 			    	</div>
 			    </div>
 			    <div class="statistic">
@@ -200,7 +200,7 @@
 			    		{{stats[2]}}
 			    	</div>
 			    	<div class="label">
-			    		Since one year
+			    		In One Year
 		    		</div>
 			    </div>
 			    <div class="statistic">

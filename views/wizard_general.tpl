@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening IP address</label>
+                                <label>Listening IP Address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -14,12 +14,12 @@
                             </div>
 
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Requires A Restart To Take Effect" data-inverted="">
                                     <i class="yellow warning sign icon"></i>
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Valid IP4 address or '0.0.0.0' for all interfaces" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Valid IP4 Address or '0.0.0.0' for all interfaces" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -27,7 +27,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening port</label>
+                                <label>Listening Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -38,12 +38,12 @@
                             </div>
 
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Requires A Restart To Take Effect" data-inverted="">
                                     <i class="yellow warning sign icon"></i>
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Valid TCP port (default: 6767)" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Valid TCP Port (default: 6767)" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -65,12 +65,12 @@
                             </div>
 
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Requires restart to take effect" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Requires A Restart To Take Effect" data-inverted="">
                                     <i class="yellow warning sign icon"></i>
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="For reverse proxy support, default is '/'" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="For Reverse Proxy Support, Default Is '/'" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -78,7 +78,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Path Mappings for shows</div>
+                <div class="ui dividing header">Path Mappings For TV Shows</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast
@@ -152,7 +152,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Path Mappings for movies</div>
+                <div class="ui dividing header">Path Mappings For Movies</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         %import ast

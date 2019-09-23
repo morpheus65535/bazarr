@@ -61,9 +61,9 @@
 							</div>
 						</th>
 						<th class="sorted ascending">Name</th>
-						<th>Audio language</th>
-						<th>Subtitles languages</th>
-						<th>Hearing-impaired</th>
+						<th>Audio Language</th>
+						<th>Subtitles Language(s)</th>
+						<th>Hearing-Impaired</th>
 						<th>Forced</th>
 					</tr>
 				</thead>
@@ -100,9 +100,9 @@
 				<input type="hidden" name="series" id="checked" />
 				<div class="fields">
 			    	<div class="eight wide field">
-			      		<label style='color: white;'>Subtitles languages</label>
+			      		<label style='color: white;'>Subtitles Language(s)</label>
 			      		<select name="languages" {{!'multiple="" ' if single_language is False else ''}}class="select ui disabled selection dropdown">
-			                <option value="">No change</option>
+			                <option value="">No Change</option>
 			                <option value="None">None</option>
 			                %for language in languages:
 							<option value="{{language.code2}}">{{language.name}}</option>
@@ -110,9 +110,9 @@
 			            </select>
 			    	</div>
 			    	<div class="field">
-			    		<label style='color: white;'>Hearing-impaired</label>
+			    		<label style='color: white;'>Hearing-Impaired</label>
 			    		<select name="hearing_impaired" class="select ui disabled selection dropdown">
-			                <option value="">No change</option>
+			                <option value="">No Change</option>
 			                <option value="True">True</option>
 			                <option value="False">False</option>
 			            </select>
@@ -127,7 +127,7 @@
 			            </select>
 			    	</div>
 			    	<div class='field'>
-						<label style='color: white;'><span id='count'>0</span> series selected</label>
+						<label style='color: white;'><span id='count'>0</span> Series Selected</label>
 						<button type="submit" id="save" name="save" value="save" class="ui disabled blue approve button">Save</button>
 					</div>
 				</div>

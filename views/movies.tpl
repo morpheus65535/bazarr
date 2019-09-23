@@ -58,9 +58,9 @@
 						<th></th>
 						<th>Name</th>
 						<th>Path</th>
-						<th>Audio<br>language</th>
-						<th>Subtitles<br>languages</th>
-						<th>Hearing-<br>impaired</th>
+						<th>Audio<br>Language</th>
+						<th>Subtitles<br>Languages</th>
+						<th>Hearing-<br>Impaired</th>
 						<th>Forced</th>
 						<th></th>
 					</tr>
@@ -87,7 +87,7 @@
 							%if os.path.isfile(row.path):
 							<span data-tooltip="This path seems to be valid." data-inverted="" data-position="top left"><i class="checkmark icon"></i></span>
 							%else:
-							<span data-tooltip="This path doesn't seems to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
+							<span data-tooltip="This path doesn't seem to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
 							%end
 							{{row.path}}
 						</td>
@@ -111,7 +111,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit movies" data-inverted="" data-position="top right" data-no="{{row.radarr_id}}" data-title="{{row.title}}" data-poster="{{row.poster}}" data-languages="{{!subs_languages_list}}" data-forced="{{row.forced}}" data-hearing-impaired="{{row.hearing_impaired}}" data-audio="{{row.audio_language}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit Movie" data-inverted="" data-position="top right" data-no="{{row.radarr_id}}" data-title="{{row.title}}" data-poster="{{row.poster}}" data-languages="{{!subs_languages_list}}" data-forced="{{row.forced}}" data-hearing-impaired="{{row.hearing_impaired}}" data-audio="{{row.audio_language}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -149,7 +149,7 @@
 						%end
 						 fast forward icon"></i>
 					</div>
-					<div class="right floated right aligned column">Total records: {{missing_count}}</div>
+					<div class="right floated right aligned column">Total Records: {{missing_count}}</div>
 				</div>
 			</div>
 			%end
@@ -170,7 +170,7 @@
 							<div class="ui grid">
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Audio language</label>
+										<label>Audio Language</label>
 									</div>
 									<div class="nine wide column">
 										<div id="movies_audio_language"></div>
@@ -178,7 +178,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Subtitles languages</label>
+										<label>Subtitle Languages</label>
 									</div>
 									<div class="nine wide column">
 										<select name="languages" id="movies_languages" {{!'multiple="" ' if single_language is False else ''}}class="ui fluid selection dropdown">
@@ -194,7 +194,7 @@
 								</div>
 								<div class="middle aligned row">
 									<div class="right aligned five wide column">
-										<label>Hearing-impaired</label>
+										<label>Hearing-Impaired</label>
 									</div>
 									<div class="nine wide column">
 										<div id="movies_hearing-impaired_div" class="ui toggle checkbox">

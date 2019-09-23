@@ -24,16 +24,15 @@ class SubdivxSubtitle(Subtitle):
     provider_name = 'subdivx'
     hash_verifiable = False
 
-    def __init__(self, language, page_link, download_link, description, title):
+    def __init__(self, language, page_link, description, title):
         super(SubdivxSubtitle, self).__init__(language, hearing_impaired=False,
                                               page_link=page_link)
-        self.download_link = download_link
         self.description = description.lower()
         self.title = title
 
     @property
     def id(self):
-        return self.download_link
+        return self.page_link
 
     def get_matches(self, video):
         matches = set()
@@ -144,10 +143,8 @@ class SubdivxSubtitlesProvider(Provider):
 
                 # body
                 description = body_soup.find("div", {'id': 'buscador_detalle_sub'}).text
-                download_link = body_soup.find("div", {'id': 'buscador_detalle_sub_datos'}
-                    ).find("a", {'target': 'new'})["href"].replace('http://', 'https://')
 
-                subtitle = self.subtitle_class(language, page_link, download_link, description, title)
+                subtitle = self.subtitle_class(language, page_link, description, title)
 
                 logger.debug('Found subtitle %r', subtitle)
                 subtitles.append(subtitle)
@@ -180,12 +177,28 @@ class SubdivxSubtitlesProvider(Provider):
 
         return subtitles
 
+    def get_download_link(self, subtitle):
+        r = self.session.get(subtitle.page_link, timeout=10)
+        r.raise_for_status()
+
+        if r.content:
+            page_soup = ParserBeautifulSoup(r.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
+            links_soup = page_soup.find_all("a", {'class': 'detalle_link'})
+            for link_soup in links_soup:
+                if link_soup['href'].startswith('bajar'):
+                    return self.server_url + link_soup['href']
+
+        logger.debug('No data returned from provider')
+        return None
+
     def download_subtitle(self, subtitle):
         if isinstance(subtitle, SubdivxSubtitle):
             # download the subtitle
             logger.info('Downloading subtitle %r', subtitle)
-            r = self.session.get(subtitle.download_link, headers={'Referer': subtitle.page_link},
-                                 timeout=30)
+
+            # get download link
+            download_link = self.get_download_link(subtitle)
+            r = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
             r.raise_for_status()
 
             if not r.content:

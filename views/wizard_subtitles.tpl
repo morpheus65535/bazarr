@@ -4,20 +4,20 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Subtitle folder</label>
+                                <label>Subtitle Folder</label>
                             </div>
                             <div class="five wide column">
                                 <select name="settings_subfolder" id="settings_subfolder"
                                         class="ui fluid selection dropdown">
-                                    <option value="current">Alongside media file</option>
-                                    <option value="relative">Relative path to media file</option>
-                                    <option value="absolute">Absolute path</option>
+                                    <option value="current">Alongside Media File</option>
+                                    <option value="relative">Relative Path To Media File</option>
+                                    <option value="absolute">Absolute Path</option>
                                 </select>
                             </div>
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose folder where you want to store/read the subtitles'
+                                     data-tooltip='Choose the folder you want to store/read the Subtitles in'
                                      data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
@@ -27,7 +27,7 @@
                         <div class="middle aligned row subfolder">
                             <div class="two wide column"></div>
                             <div class="right aligned four wide column">
-                                <label>Custom Subtitle folder</label>
+                                <label>Custom Subtitle Folder</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -40,7 +40,7 @@
 
                             <div class="collapsed center aligned column">
                                 <div class="ui basic icon"
-                                     data-tooltip='Choose your own folder for the subtitles' data-inverted="">
+                                     data-tooltip='Choose your own folder for Subtitles' data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -48,7 +48,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use embedded subtitles</label>
+                                <label>Use Embedded Subtitles</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_embedded" class="ui toggle checkbox"
@@ -60,7 +60,7 @@
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon"
-                                         data-tooltip="Use embedded subtitles in media files when determining missing ones."
+                                         data-tooltip="Use Embedded Subtitles in media files when determining missing ones."
                                          data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
@@ -78,7 +78,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Single language</label>
+                                <label>Single Language</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_single_language" class="ui toggle checkbox"  data-single-language={{settings.general.getboolean('single_language')}}>
@@ -88,7 +88,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Download a single subtitles file and don't add the language code to the filename." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Download a single subtitle file without adding the language code to the filename." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -97,7 +97,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Enabled languages</label>
+                                <label>Enabled Languages</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class='field'>
@@ -122,7 +122,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Default enabled</label>
+                                <label>Default Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
@@ -134,7 +134,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Apply only to series added to Bazarr after enabling this option." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Apply only to Series added to Bazarr after enabling this option." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -160,7 +160,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hearing-impaired</label>
+                                <label>Hearing-Impaired</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">
@@ -189,12 +189,12 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Movies default settings</div>
+                <div class="ui dividing header">Movie Default Settings</div>
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Default enabled</label>
+                                <label>Default Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div class="nine wide column">
@@ -206,7 +206,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Apply only to movies added to Bazarr after enabling this option." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Apply only to Movies added to Bazarr after enabling this option." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -232,7 +232,7 @@
 
                         <div class="middle aligned row">
                             <div id="movie_default_hi_label" class="right aligned four wide column">
-                                <label>Hearing-impaired</label>
+                                <label>Hearing-Impaired</label>
                             </div>
                             <div class="eleven wide column">
                                 <div class="nine wide column">

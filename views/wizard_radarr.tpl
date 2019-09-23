@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Settings validation:</label>
+                                <label>Settings Validation:</label>
                             </div>
                             <div class="two wide column">
                                 <button id="radarr_validate" class="test ui blue button" type="button">
@@ -13,7 +13,7 @@
                             <div class="seven wide column">
                                 <div id="radarr_validated" class="ui read-only checkbox">
                                     <input id="radarr_validated_checkbox" type="checkbox">
-                                    <label id="radarr_validation_result">Not tested recently</label>
+                                    <label id="radarr_validation_result">Not Tested Recently</label>
                                 </div>
                             </div>
                         </div>
@@ -30,7 +30,7 @@
                             </div>
                             <div class="collapsed column">
                                 <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Enable Radarr integration." data-inverted="">
+                                    <div class="ui basic icon" data-tooltip="Enable Radarr Integration." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
                                 </div>
@@ -39,7 +39,7 @@
 
                         <div class="radarr_hide middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Hostname or IP address</label>
+                                <label>Hostname or IP Address</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -49,7 +49,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Hostname or IP4 address of Radarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Hostname or IP4 Address of Radarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -57,7 +57,7 @@
 
                         <div class="radarr_hide middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Listening port</label>
+                                <label>Listening Port</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -67,7 +67,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="TCP port of Radarr" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="TCP Port of Radarr" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -91,7 +91,7 @@
 
                         <div class="radarr_hide middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>SSL enabled</label>
+                                <label>SSL Enabled</label>
                             </div>
                             <div class="one wide column">
                                 <div id="radarr_ssl_div" class="ui toggle checkbox">
@@ -103,7 +103,7 @@
 
                         <div class="radarr_hide middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>API key</label>
+                                <label>API Key</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -113,7 +113,7 @@
                                 </div>
                             </div>
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="API key for Radarr (32 alphanumeric characters)" data-inverted="">
+                                <div class="ui basic icon" data-tooltip="API Key for Radarr (32 alphanumeric characters)" data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -121,7 +121,7 @@
 
                         <div class="radarr_hide middle aligned row">
                         <div class="right aligned four wide column">
-                            <label>Download only monitored</label>
+                            <label>Download Only Monitored</label>
                         </div>
                         <div class="one wide column">
                             <div id="settings_only_monitored_radarr" class="ui toggle checkbox" data-monitored={{settings.radarr.getboolean('only_monitored')}}>
@@ -131,7 +131,7 @@
                         </div>
                         <div class="collapsed column">
                             <div class="collapsed center aligned column">
-                                <div class="ui basic icon" data-tooltip="Automatic download of subtitles will happen only for monitored movies in Radarr." data-inverted="">
+                                <div class="ui basic icon" data-tooltip="Only Download Subtitles For Monitored Movies in Radarr." data-inverted="">
                                     <i class="help circle large icon"></i>
                                 </div>
                             </div>
@@ -179,7 +179,7 @@
                                 $('#loader').removeClass('active');
                             } else {
                                 $('#radarr_validated').checkbox('uncheck');
-                                $('#radarr_validation_result').text('Test failed').css('color', 'red');
+                                $('#radarr_validation_result').text('Test Failed').css('color', 'red');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             }
@@ -188,14 +188,14 @@
 
                     $('.radarr_config').on('keyup', function() {
                         $('#radarr_validated').checkbox('uncheck');
-                        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
+                        $('#radarr_validation_result').text('You Must Test Your Radarr Connection Settings Before Saving.').css('color', 'red');
                         $('.form').form('validate form');
                         $('#loader').removeClass('active');
                     });
 
                     $('#settings_radarr_ssl').on('change', function() {
                         $('#radarr_validated').checkbox('uncheck');
-                        $('#radarr_validation_result').text('You must test your Radarr connection settings before saving settings.').css('color', 'red');
+                        $('#radarr_validation_result').text('You Must Test Your Radarr Connection Settings Before Saving.').css('color', 'red');
                         $('.form').form('validate form');
                         $('#loader').removeClass('active');
                     });
