@@ -19,9 +19,12 @@ def check_python_version():
     minimum_python_version = ".".join(str(i) for i in minimum_python_version_tuple)
     minimum_python3_version = ".".join(str(i) for i in minimum_python3_version_tuple)
 
-    if int(python_version[0]) == minimum_python3_version_tuple[0] and int(python_version[1]) < minimum_python3_version_tuple[1]:
-        print("Python " + minimum_python3_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python.")
-        os._exit(0)
+    if int(python_version[0]) == minimum_python3_version_tuple[0]:
+        if int(python_version[1]) >= minimum_python3_version_tuple[1]:
+            pass
+        else:
+            print("Python " + minimum_python3_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python.")
+            os._exit(0)
 
     elif int(python_version[1]) < minimum_python_version_tuple[1] or int(re.search(r'\d+', python_version[2]).group()) < minimum_python_version_tuple[2]:
         print("Python " + minimum_python_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python.")

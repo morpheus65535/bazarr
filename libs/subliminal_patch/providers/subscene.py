@@ -141,7 +141,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         logger.info("Creating session")
         self.session = RetryingCFSession()
 
-        prev_cookies = str(region.get("subscene_cookies2"))
+        prev_cookies = region.get("subscene_cookies2")
         if prev_cookies != NO_VALUE:
             logger.debug("Re-using old subscene cookies: %r", prev_cookies)
             self.session.cookies.update(prev_cookies)
@@ -152,11 +152,11 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def login(self):
         r = self.session.get("https://subscene.com/account/login")
-        if "Server Error" in r.content:
+        if "Server Error" in r.text:
             logger.error("Login unavailable; Maintenance?")
             raise ServiceUnavailable("Login unavailable; Maintenance?")
 
-        match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.content)
+        match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.text)
 
         if match:
             h = six.moves.html_parser.HTMLParser()
@@ -178,7 +178,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                                     r"scope.+?value=\"(?P<scope>.+?)\".+?"
                                     r"state.+?value=\"(?P<state>.+?)\".+?"
                                     r"session_state.+?value=\"(?P<session_state>.+?)\"",
-                                    r.content, re.MULTILINE | re.DOTALL)
+                                    r.text, re.MULTILINE | re.DOTALL)
 
             if pep_content:
                 r = self.session.post(SITE_DOMAIN, pep_content.groupdict())
@@ -194,7 +194,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                             del cj[cn]
 
                     logger.debug("Storing cookies: %r", cj)
-                    region.set("subscene_cookies2", bytearray(cj, encoding='utf-8'))
+                    region.set("subscene_cookies2", bytearray(cj,encoding='utf-8'))
                     return
         raise ProviderError("Something went wrong when trying to log in #1")
 
@@ -219,7 +219,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         acc_filters["SelectedIds"] = selected_ids
         self.filters["LanguageFilter"] = ",".join(acc_filters["SelectedIds"])
 
-        last_filters = str(region.get("subscene_filters"))
+        last_filters = region.get("subscene_filters")
         if last_filters != acc_filters:
             region.set("subscene_filters", bytearray(acc_filters, encoding='utf-8'))
             logger.debug("Setting account filters to %r", acc_filters)

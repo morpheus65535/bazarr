@@ -122,7 +122,7 @@ class SubsCenterProvider(Provider):
 
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
     def _search_url_titles(self, title):
         """Search the URL titles by kind for the given `title`.
 
