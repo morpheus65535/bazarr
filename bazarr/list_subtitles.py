@@ -225,9 +225,9 @@ def store_subtitles_movie(file):
 
 
 def list_missing_subtitles(no=None):
-    episodes_subtitles_clause = "TableShows.sonarr_series_id.is_null(False)"
+    episodes_subtitles_clause = [(TableShows.sonarr_series_id.is_null(False))]
     if no is not None:
-        episodes_subtitles_clause = "TableShows.sonarr_series_id ** no"
+        episodes_subtitles_clause.append((TableShows.sonarr_series_id ** no))
 
     episodes_subtitles = TableEpisodes.select(
         TableEpisodes.sonarr_episode_id,
@@ -237,7 +237,7 @@ def list_missing_subtitles(no=None):
     ).join_from(
         TableEpisodes, TableShows, JOIN.LEFT_OUTER
     ).where(
-        episodes_subtitles_clause
+        reduce(operator.and_, episodes_subtitles_clause)
     ).objects()
 
     missing_subtitles_global = []
@@ -291,9 +291,9 @@ def list_missing_subtitles(no=None):
 
 
 def list_missing_subtitles_movies(no=None):
-    movies_subtitles_clause = "TableMovies.radarr_id.is_null(False)"
+    movies_subtitles_clause = [(TableMovies.radarr_id.is_null(False))]
     if no is not None:
-        movies_subtitles_clause = "TableMovies.radarr_id ** no"
+        movies_subtitles_clause.append((TableMovies.radarr_id == no))
 
     movies_subtitles = TableMovies.select(
         TableMovies.radarr_id,
@@ -301,7 +301,7 @@ def list_missing_subtitles_movies(no=None):
         TableMovies.languages,
         TableMovies.forced
     ).where(
-        movies_subtitles_clause
+        reduce(operator.and_, movies_subtitles_clause)
     )
     
     missing_subtitles_global = []
