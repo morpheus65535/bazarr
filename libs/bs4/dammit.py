@@ -8,10 +8,13 @@ XML or HTML to reflect a new encoding; that's the tree builder's job.
 """
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import absolute_import
+from six import unichr
+import six
 __license__ = "MIT"
 
 import codecs
-from htmlentitydefs import codepoint2name
+from six.moves.html_entities import codepoint2name
 import re
 import logging
 import string
@@ -274,7 +277,7 @@ class EncodingDetector:
     def strip_byte_order_mark(cls, data):
         """If a byte-order mark is present, strip it and return the encoding it implies."""
         encoding = None
-        if isinstance(data, unicode):
+        if isinstance(data, six.text_type):
             # Unicode data cannot have a byte-order mark.
             return data, encoding
         if (len(data) >= 4) and (data[:2] == b'\xfe\xff') \
@@ -352,9 +355,9 @@ class UnicodeDammit:
             markup, override_encodings, is_html, exclude_encodings)
 
         # Short-circuit if the data is in Unicode to begin with.
-        if isinstance(markup, unicode) or markup == '':
+        if isinstance(markup, six.text_type) or markup == '':
             self.markup = markup
-            self.unicode_markup = unicode(markup)
+            self.unicode_markup = six.text_type(markup)
             self.original_encoding = None
             return
 
@@ -438,7 +441,7 @@ class UnicodeDammit:
     def _to_unicode(self, data, encoding, errors="strict"):
         '''Given a string and its encoding, decodes the string into Unicode.
         %encoding is a string recognized by encodings.aliases'''
-        return unicode(data, encoding, errors)
+        return six.text_type(data, encoding, errors)
 
     @property
     def declared_html_encoding(self):

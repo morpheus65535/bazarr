@@ -20,6 +20,10 @@ http://www.crummy.com/software/BeautifulSoup/bs4/doc/
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 __author__ = "Leonard Richardson (leonardr@segfault.org)"
 __version__ = "4.6.0"
 __copyright__ = "Copyright (c) 2004-2017 Leonard Richardson"
@@ -50,7 +54,7 @@ from .element import (
 
 # The very first thing we do is give a useful error if someone is
 # running this code under Python 3 without converting it.
-'You are trying to run the Python 2 version of Beautiful Soup under Python 3. This will not work.'<>'You need to convert the code, either by installing it (`python setup.py install`) or by running 2to3 (`2to3 -w bs4`).'
+'You are trying to run the Python 2 version of Beautiful Soup under Python 3. This will not work.'!='You need to convert the code, either by installing it (`python setup.py install`) or by running 2to3 (`2to3 -w bs4`).'
 
 class BeautifulSoup(Tag):
     """
@@ -142,18 +146,18 @@ class BeautifulSoup(Tag):
         from_encoding = from_encoding or deprecated_argument(
             "fromEncoding", "from_encoding")
 
-        if from_encoding and isinstance(markup, unicode):
+        if from_encoding and isinstance(markup, six.text_type):
             warnings.warn("You provided Unicode markup but also provided a value for from_encoding. Your from_encoding will be ignored.")
             from_encoding = None
 
         if len(kwargs) > 0:
-            arg = kwargs.keys().pop()
+            arg = list(kwargs.keys()).pop()
             raise TypeError(
                 "__init__() got an unexpected keyword argument '%s'" % arg)
 
         if builder is None:
             original_features = features
-            if isinstance(features, basestring):
+            if isinstance(features, six.string_types):
                 features = [features]
             if features is None or len(features) == 0:
                 features = self.DEFAULT_BUILDER_FEATURES
@@ -191,13 +195,13 @@ class BeautifulSoup(Tag):
             markup = markup.read()
         elif len(markup) <= 256 and (
                 (isinstance(markup, bytes) and not b'<' in markup)
-                or (isinstance(markup, unicode) and not u'<' in markup)
+                or (isinstance(markup, six.text_type) and not u'<' in markup)
         ):
             # Print out warnings for a couple beginner problems
             # involving passing non-markup to Beautiful Soup.
             # Beautiful Soup will still parse the input as markup,
             # just in case that's what the user really wants.
-            if (isinstance(markup, unicode)
+            if (isinstance(markup, six.text_type)
                 and not os.path.supports_unicode_filenames):
                 possible_filename = markup.encode("utf8")
             else:
@@ -205,13 +209,13 @@ class BeautifulSoup(Tag):
             is_file = False
             try:
                 is_file = os.path.exists(possible_filename)
-            except Exception, e:
+            except Exception as e:
                 # This is almost certainly a problem involving
                 # characters not valid in filenames on this
                 # system. Just let it go.
                 pass
             if is_file:
-                if isinstance(markup, unicode):
+                if isinstance(markup, six.text_type):
                     markup = markup.encode("utf8")
                 warnings.warn(
                     '"%s" looks like a filename, not markup. You should'
@@ -263,7 +267,7 @@ class BeautifulSoup(Tag):
         if isinstance(markup, bytes):
             space = b' '
             cant_start_with = (b"http:", b"https:")
-        elif isinstance(markup, unicode):
+        elif isinstance(markup, six.text_type):
             space = u' '
             cant_start_with = (u"http:", u"https:")
         else:
@@ -526,4 +530,4 @@ class FeatureNotFound(ValueError):
 if __name__ == '__main__':
     import sys
     soup = BeautifulSoup(sys.stdin)
-    print soup.prettify()
+    print(soup.prettify())

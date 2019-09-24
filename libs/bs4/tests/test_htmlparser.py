@@ -1,6 +1,7 @@
 """Tests to ensure that the html.parser tree builder generates good
 trees."""
 
+from __future__ import absolute_import
 from pdb import set_trace
 import pickle
 from bs4.testing import SoupTest, HTMLTreeBuilderSmokeTest

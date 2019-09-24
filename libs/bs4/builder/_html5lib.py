@@ -1,6 +1,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import absolute_import
+import six
 __all__ = [
     'HTML5TreeBuilder',
     ]
@@ -33,7 +35,7 @@ try:
     # Pre-0.99999999
     from html5lib.treebuilders import _base as treebuilder_base
     new_html5lib = False
-except ImportError, e:
+except ImportError as e:
     # 0.99999999 and up
     from html5lib.treebuilders import base as treebuilder_base
     new_html5lib = True
@@ -64,7 +66,7 @@ class HTML5TreeBuilder(HTMLTreeBuilder):
         parser = html5lib.HTMLParser(tree=self.create_treebuilder)
 
         extra_kwargs = dict()
-        if not isinstance(markup, unicode):
+        if not isinstance(markup, six.text_type):
             if new_html5lib:
                 extra_kwargs['override_encoding'] = self.user_specified_encoding
             else:
@@ -72,13 +74,13 @@ class HTML5TreeBuilder(HTMLTreeBuilder):
         doc = parser.parse(markup, **extra_kwargs)
 
         # Set the character encoding detected by the tokenizer.
-        if isinstance(markup, unicode):
+        if isinstance(markup, six.text_type):
             # We need to special-case this because html5lib sets
             # charEncoding to UTF-8 if it gets Unicode input.
             doc.original_encoding = None
         else:
             original_encoding = parser.tokenizer.stream.charEncoding[0]
-            if not isinstance(original_encoding, basestring):
+            if not isinstance(original_encoding, six.string_types):
                 # In 0.99999999 and up, the encoding is an html5lib
                 # Encoding object. We want to use a string for compatibility
                 # with other tree builders.
@@ -229,7 +231,7 @@ class Element(treebuilder_base.Node):
 
     def appendChild(self, node):
         string_child = child = None
-        if isinstance(node, basestring):
+        if isinstance(node, six.string_types):
             # Some other piece of code decided to pass in a string
             # instead of creating a TextElement object to contain the
             # string.
@@ -246,7 +248,7 @@ class Element(treebuilder_base.Node):
             child = node.element
             node.parent = self
 
-        if not isinstance(child, basestring) and child.parent is not None:
+        if not isinstance(child, six.string_types) and child.parent is not None:
             node.element.extract()
 
         if (string_child and self.element.contents
@@ -259,7 +261,7 @@ class Element(treebuilder_base.Node):
             old_element.replace_with(new_element)
             self.soup._most_recent_element = new_element
         else:
-            if isinstance(node, basestring):
+            if isinstance(node, six.string_types):
                 # Create a brand new NavigableString from this string.
                 child = self.soup.new_string(node)
 

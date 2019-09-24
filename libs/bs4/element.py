@@ -1,5 +1,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import absolute_import
+from __future__ import print_function
+import six
 __license__ = "MIT"
 
 import collections
@@ -26,22 +29,22 @@ def _alias(attr):
     return alias
 
 
-class NamespacedAttribute(unicode):
+class NamespacedAttribute(six.text_type):
 
     def __new__(cls, prefix, name, namespace=None):
         if name is None:
-            obj = unicode.__new__(cls, prefix)
+            obj = six.text_type.__new__(cls, prefix)
         elif prefix is None:
             # Not really namespaced.
-            obj = unicode.__new__(cls, name)
+            obj = six.text_type.__new__(cls, name)
         else:
-            obj = unicode.__new__(cls, prefix + ":" + name)
+            obj = six.text_type.__new__(cls, prefix + ":" + name)
         obj.prefix = prefix
         obj.name = name
         obj.namespace = namespace
         return obj
 
-class AttributeValueWithCharsetSubstitution(unicode):
+class AttributeValueWithCharsetSubstitution(six.text_type):
     """A stand-in object for a character encoding specified in HTML."""
 
 class CharsetMetaAttributeValue(AttributeValueWithCharsetSubstitution):
@@ -52,7 +55,7 @@ class CharsetMetaAttributeValue(AttributeValueWithCharsetSubstitution):
     """
 
     def __new__(cls, original_value):
-        obj = unicode.__new__(cls, original_value)
+        obj = six.text_type.__new__(cls, original_value)
         obj.original_value = original_value
         return obj
 
@@ -75,9 +78,9 @@ class ContentMetaAttributeValue(AttributeValueWithCharsetSubstitution):
         match = cls.CHARSET_RE.search(original_value)
         if match is None:
             # No substitution necessary.
-            return unicode.__new__(unicode, original_value)
+            return six.text_type.__new__(six.text_type, original_value)
 
-        obj = unicode.__new__(cls, original_value)
+        obj = six.text_type.__new__(cls, original_value)
         obj.original_value = original_value
         return obj
 
@@ -312,7 +315,7 @@ class PageElement(object):
             raise ValueError("Cannot insert None into a tag.")
         if new_child is self:
             raise ValueError("Cannot insert a tag into itself.")
-        if (isinstance(new_child, basestring)
+        if (isinstance(new_child, six.string_types)
             and not isinstance(new_child, NavigableString)):
             new_child = NavigableString(new_child)
 
@@ -533,7 +536,7 @@ class PageElement(object):
                 result = (element for element in generator
                           if isinstance(element, Tag))
                 return ResultSet(strainer, result)
-            elif isinstance(name, basestring):
+            elif isinstance(name, six.string_types):
                 # Optimization to find all tags with a given name.
                 if name.count(':') == 1:
                     # This is a name with a prefix.
@@ -691,7 +694,7 @@ class PageElement(object):
         return self.parents
 
 
-class NavigableString(unicode, PageElement):
+class NavigableString(six.text_type, PageElement):
 
     PREFIX = ''
     SUFFIX = ''
@@ -709,10 +712,10 @@ class NavigableString(unicode, PageElement):
         passed in to the superclass's __new__ or the superclass won't know
         how to handle non-ASCII characters.
         """
-        if isinstance(value, unicode):
-            u = unicode.__new__(cls, value)
+        if isinstance(value, six.text_type):
+            u = six.text_type.__new__(cls, value)
         else:
-            u = unicode.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
+            u = six.text_type.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
         u.setup()
         return u
 
@@ -723,7 +726,7 @@ class NavigableString(unicode, PageElement):
         return type(self)(self)
 
     def __getnewargs__(self):
-        return (unicode(self),)
+        return (six.text_type(self),)
 
     def __getattr__(self, attr):
         """text.string gives you text. This is for backwards
@@ -1142,8 +1145,8 @@ class Tag(PageElement):
                 else:
                     if isinstance(val, list) or isinstance(val, tuple):
                         val = ' '.join(val)
-                    elif not isinstance(val, basestring):
-                        val = unicode(val)
+                    elif not isinstance(val, six.string_types):
+                        val = six.text_type(val)
                     elif (
                         isinstance(val, AttributeValueWithCharsetSubstitution)
                         and eventual_encoding is not None):
@@ -1151,7 +1154,7 @@ class Tag(PageElement):
 
                     text = self.format_string(val, formatter)
                     decoded = (
-                        unicode(key) + '='
+                        six.text_type(key) + '='
                         + EntitySubstitution.quoted_attribute_value(text))
                 attrs.append(decoded)
         close = ''
@@ -1368,7 +1371,7 @@ class Tag(PageElement):
                 'Final combinator "%s" is missing an argument.' % tokens[-1])
 
         if self._select_debug:
-            print 'Running CSS selector "%s"' % selector
+            print('Running CSS selector "%s"' % selector)
 
         for index, token in enumerate(tokens):
             new_context = []
@@ -1377,11 +1380,11 @@ class Tag(PageElement):
             if tokens[index-1] in self._selector_combinators:
                 # This token was consumed by the previous combinator. Skip it.
                 if self._select_debug:
-                    print '  Token was consumed by the previous combinator.'
+                    print('  Token was consumed by the previous combinator.')
                 continue
 
             if self._select_debug:
-                print ' Considering token "%s"' % token
+                print(' Considering token "%s"' % token)
             recursive_candidate_generator = None
             tag_name = None
 
@@ -1488,14 +1491,14 @@ class Tag(PageElement):
                 next_token = tokens[index+1]
                 def recursive_select(tag):
                     if self._select_debug:
-                        print '    Calling select("%s") recursively on %s %s' % (next_token, tag.name, tag.attrs)
-                        print '-' * 40
+                        print('    Calling select("%s") recursively on %s %s' % (next_token, tag.name, tag.attrs))
+                        print('-' * 40)
                     for i in tag.select(next_token, recursive_candidate_generator):
                         if self._select_debug:
-                            print '(Recursive select picked up candidate %s %s)' % (i.name, i.attrs)
+                            print('(Recursive select picked up candidate %s %s)' % (i.name, i.attrs))
                         yield i
                     if self._select_debug:
-                        print '-' * 40
+                        print('-' * 40)
                 _use_candidate_generator = recursive_select
             elif _candidate_generator is None:
                 # By default, a tag's candidates are all of its
@@ -1506,7 +1509,7 @@ class Tag(PageElement):
                         check = "[any]"
                     else:
                         check = tag_name
-                    print '   Default candidate generator, tag name="%s"' % check
+                    print('   Default candidate generator, tag name="%s"' % check)
                 if self._select_debug:
                     # This is redundant with later code, but it stops
                     # a bunch of bogus tags from cluttering up the
@@ -1527,8 +1530,8 @@ class Tag(PageElement):
             count = 0
             for tag in current_context:
                 if self._select_debug:
-                    print "    Running candidate generator on %s %s" % (
-                        tag.name, repr(tag.attrs))
+                    print("    Running candidate generator on %s %s" % (
+                        tag.name, repr(tag.attrs)))
                 for candidate in _use_candidate_generator(tag):
                     if not isinstance(candidate, Tag):
                         continue
@@ -1543,23 +1546,23 @@ class Tag(PageElement):
                             break
                     if checker is None or result:
                         if self._select_debug:
-                            print "     SUCCESS %s %s" % (candidate.name, repr(candidate.attrs))
+                            print("     SUCCESS %s %s" % (candidate.name, repr(candidate.attrs)))
                         if id(candidate) not in new_context_ids:
                             # If a tag matches a selector more than once,
                             # don't include it in the context more than once.
                             new_context.append(candidate)
                             new_context_ids.add(id(candidate))
                     elif self._select_debug:
-                        print "     FAILURE %s %s" % (candidate.name, repr(candidate.attrs))
+                        print("     FAILURE %s %s" % (candidate.name, repr(candidate.attrs)))
 
             current_context = new_context
         if limit and len(current_context) >= limit:
             current_context = current_context[:limit]
 
         if self._select_debug:
-            print "Final verdict:"
+            print("Final verdict:")
             for i in current_context:
-                print " %s %s" % (i.name, i.attrs)
+                print(" %s %s" % (i.name, i.attrs))
         return current_context
 
     # Old names for backwards compatibility
@@ -1612,7 +1615,7 @@ class SoupStrainer(object):
     def _normalize_search_value(self, value):
         # Leave it alone if it's a Unicode string, a callable, a
         # regular expression, a boolean, or None.
-        if (isinstance(value, unicode) or callable(value) or hasattr(value, 'match')
+        if (isinstance(value, six.text_type) or callable(value) or hasattr(value, 'match')
             or isinstance(value, bool) or value is None):
             return value
 
@@ -1625,7 +1628,7 @@ class SoupStrainer(object):
             new_value = []
             for v in value:
                 if (hasattr(v, '__iter__') and not isinstance(v, bytes)
-                    and not isinstance(v, unicode)):
+                    and not isinstance(v, six.text_type)):
                     # This is almost certainly the user's mistake. In the
                     # interests of avoiding infinite loops, we'll let
                     # it through as-is rather than doing a recursive call.
@@ -1637,7 +1640,7 @@ class SoupStrainer(object):
         # Otherwise, convert it into a Unicode string.
         # The unicode(str()) thing is so this will do the same thing on Python 2
         # and Python 3.
-        return unicode(str(value))
+        return six.text_type(str(value))
 
     def __str__(self):
         if self.text:
@@ -1691,7 +1694,7 @@ class SoupStrainer(object):
         found = None
         # If given a list of items, scan it for a text element that
         # matches.
-        if hasattr(markup, '__iter__') and not isinstance(markup, (Tag, basestring)):
+        if hasattr(markup, '__iter__') and not isinstance(markup, (Tag, six.string_types)):
             for element in markup:
                 if isinstance(element, NavigableString) \
                        and self.search(element):
@@ -1704,7 +1707,7 @@ class SoupStrainer(object):
                 found = self.search_tag(markup)
         # If it's text, make sure the text matches.
         elif isinstance(markup, NavigableString) or \
-                 isinstance(markup, basestring):
+                 isinstance(markup, six.string_types):
             if not self.name and not self.attrs and self._matches(markup, self.text):
                 found = markup
         else:
@@ -1749,7 +1752,7 @@ class SoupStrainer(object):
             return not match_against
 
         if (hasattr(match_against, '__iter__')
-            and not isinstance(match_against, basestring)):
+            and not isinstance(match_against, six.string_types)):
             # We're asked to match against an iterable of items.
             # The markup must be match at least one item in the
             # iterable. We'll try each one in turn.
@@ -1776,7 +1779,7 @@ class SoupStrainer(object):
         # the tag's name and once against its prefixed name.
         match = False
         
-        if not match and isinstance(match_against, unicode):
+        if not match and isinstance(match_against, six.text_type):
             # Exact string match
             match = markup == match_against
 

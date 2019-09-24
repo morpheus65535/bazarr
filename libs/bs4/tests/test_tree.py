@@ -10,6 +10,7 @@ same markup, but all Beautiful Soup trees can be traversed with the
 methods tested here.
 """
 
+from __future__ import absolute_import
 from pdb import set_trace
 import copy
 import pickle
@@ -34,6 +35,7 @@ from bs4.testing import (
     SoupTest,
     skipIf,
 )
+import six
 
 XML_BUILDER_PRESENT = (builder_registry.lookup("xml") is not None)
 LXML_PRESENT = (builder_registry.lookup("lxml") is not None)
@@ -1111,7 +1113,7 @@ class TestTreeModification(SoupTest):
 <script>baz</script>
 </html>""")
         [soup.script.extract() for i in soup.find_all("script")]
-        self.assertEqual("<body>\n\n<a></a>\n</body>", unicode(soup.body))
+        self.assertEqual("<body>\n\n<a></a>\n</body>", six.text_type(soup.body))
 
 
     def test_extract_works_when_element_is_surrounded_by_identical_strings(self):
@@ -1349,7 +1351,7 @@ class TestPersistence(SoupTest):
         soup = BeautifulSoup(b'<p>&nbsp;</p>', 'html.parser')
         encoding = soup.original_encoding
         copy = soup.__copy__()
-        self.assertEqual(u"<p> </p>", unicode(copy))
+        self.assertEqual(u"<p> </p>", six.text_type(copy))
         self.assertEqual(encoding, copy.original_encoding)
 
     def test_unicode_pickle(self):
@@ -1393,7 +1395,7 @@ class TestPersistence(SoupTest):
         div_copy = copy.copy(div)
 
         # The two tags look the same, and evaluate to equal.
-        self.assertEqual(unicode(div), unicode(div_copy))
+        self.assertEqual(six.text_type(div), six.text_type(div_copy))
         self.assertEqual(div, div_copy)
 
         # But they're not the same object.
@@ -1505,7 +1507,7 @@ class TestSubstitutions(SoupTest):
 
     def test_prettify_outputs_unicode_by_default(self):
         soup = self.soup("<a></a>")
-        self.assertEqual(unicode, type(soup.prettify()))
+        self.assertEqual(six.text_type, type(soup.prettify()))
 
     def test_prettify_can_encode_data(self):
         soup = self.soup("<a></a>")

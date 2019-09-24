@@ -1,5 +1,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+from __future__ import absolute_import
+import six
 __all__ = [
     'LXMLTreeBuilderForXML',
     'LXMLTreeBuilder',
@@ -101,12 +103,12 @@ class LXMLTreeBuilderForXML(TreeBuilder):
         else:
             self.processing_instruction_class = XMLProcessingInstruction
 
-        if isinstance(markup, unicode):
+        if isinstance(markup, six.text_type):
             # We were given Unicode. Maybe lxml can parse Unicode on
             # this system?
             yield markup, None, document_declared_encoding, False
 
-        if isinstance(markup, unicode):
+        if isinstance(markup, six.text_type):
             # No, apparently not. Convert the Unicode to UTF-8 and
             # tell lxml to parse it as UTF-8.
             yield (markup.encode("utf8"), "utf8",
@@ -121,7 +123,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
     def feed(self, markup):
         if isinstance(markup, bytes):
             markup = BytesIO(markup)
-        elif isinstance(markup, unicode):
+        elif isinstance(markup, six.text_type):
             markup = StringIO(markup)
 
         # Call feed() at least once, even if the markup is empty,
@@ -136,7 +138,7 @@ class LXMLTreeBuilderForXML(TreeBuilder):
                 if len(data) != 0:
                     self.parser.feed(data)
             self.parser.close()
-        except (UnicodeDecodeError, LookupError, etree.ParserError), e:
+        except (UnicodeDecodeError, LookupError, etree.ParserError) as e:
             raise ParserRejectedMarkup(str(e))
 
     def close(self):
@@ -249,7 +251,7 @@ class LXMLTreeBuilder(HTMLTreeBuilder, LXMLTreeBuilderForXML):
             self.parser = self.parser_for(encoding)
             self.parser.feed(markup)
             self.parser.close()
-        except (UnicodeDecodeError, LookupError, etree.ParserError), e:
+        except (UnicodeDecodeError, LookupError, etree.ParserError) as e:
             raise ParserRejectedMarkup(str(e))
 
 

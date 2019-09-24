@@ -2,6 +2,7 @@
 
 # pylint: disable-msg=E0611,W0142
 
+from __future__ import absolute_import
 __metaclass__ = type
 __all__ = [
     'additional_tests',
