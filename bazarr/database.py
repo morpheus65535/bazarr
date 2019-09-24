@@ -50,12 +50,12 @@ class TableShows(BaseModel):
     hearing_impaired = TextField(null=True)
     languages = TextField(null=True)
     overview = TextField(null=True)
-    path = TextField(unique=True)
+    path = TextField(null=False, unique=True)
     poster = TextField(null=True)
-    sonarr_series_id = IntegerField(column_name='sonarrSeriesId', unique=True)
+    sonarr_series_id = IntegerField(column_name='sonarrSeriesId', null=True, unique=True)
     sort_title = TextField(column_name='sortTitle', null=True)
-    title = TextField()
-    tvdb_id = AutoField(column_name='tvdbId')
+    title = TextField(null=True)
+    tvdb_id = IntegerField(column_name='tvdbId', null=True, unique=True, primary_key=True)
     year = TextField(null=True)
 
     class Meta:
@@ -64,19 +64,19 @@ class TableShows(BaseModel):
 
 class TableEpisodes(BaseModel):
     audio_codec = TextField(null=True)
-    episode = IntegerField()
+    episode = IntegerField(null=False)
     failed_attempts = TextField(column_name='failedAttempts', null=True)
     format = TextField(null=True)
     missing_subtitles = TextField(null=True)
     monitored = TextField(null=True)
-    path = TextField()
+    path = TextField(null=False)
     resolution = TextField(null=True)
     scene_name = TextField(null=True)
-    season = IntegerField()
-    sonarr_episode_id = IntegerField(column_name='sonarrEpisodeId', unique=True)
-    sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId')
+    season = IntegerField(null=False)
+    sonarr_episode_id = IntegerField(column_name='sonarrEpisodeId', unique=True, null=False)
+    sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId', null=False)
     subtitles = TextField(null=True)
-    title = TextField()
+    title = TextField(null=True)
     video_codec = TextField(null=True)
 
     class Meta:
@@ -100,13 +100,13 @@ class TableMovies(BaseModel):
     overview = TextField(null=True)
     path = TextField(unique=True)
     poster = TextField(null=True)
-    radarr_id = IntegerField(column_name='radarrId', unique=True)
+    radarr_id = IntegerField(column_name='radarrId', null=False, unique=True)
     resolution = TextField(null=True)
     scene_name = TextField(column_name='sceneName', null=True)
     sort_title = TextField(column_name='sortTitle', null=True)
     subtitles = TextField(null=True)
-    title = TextField()
-    tmdb_id = TextField(column_name='tmdbId', primary_key=True)
+    title = TextField(null=False)
+    tmdb_id = TextField(column_name='tmdbId', primary_key=True, null=False)
     video_codec = TextField(null=True)
     year = TextField(null=True)
 
@@ -115,52 +115,50 @@ class TableMovies(BaseModel):
 
 
 class TableHistory(BaseModel):
-    id = IntegerField(null=False)
-    action = IntegerField()
-    description = TextField()
+    id = PrimaryKeyField(null=False)
+    action = IntegerField(null=False)
+    description = TextField(null=False)
     language = TextField(null=True)
     provider = TextField(null=True)
     score = TextField(null=True)
-    sonarr_episode_id = ForeignKeyField(TableEpisodes, field='sonarr_episode_id', column_name='sonarrEpisodeId')
-    sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId')
-    timestamp = IntegerField()
+    sonarr_episode_id = ForeignKeyField(TableEpisodes, field='sonarr_episode_id', column_name='sonarrEpisodeId', null=False, unique=True)
+    sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId', null=False)
+    timestamp = IntegerField(null=False)
     video_path = TextField(null=True)
 
     class Meta:
         table_name = 'table_history'
-        primary_key = False
 
 
 class TableHistoryMovie(BaseModel):
-    id = IntegerField(null=False)
-    action = IntegerField()
-    description = TextField()
+    id = PrimaryKeyField(null=False)
+    action = IntegerField(null=False)
+    description = TextField(null=False)
     language = TextField(null=True)
     provider = TextField(null=True)
     radarr_id = ForeignKeyField(TableMovies, field='radarr_id', column_name='radarrId')
     score = TextField(null=True)
-    timestamp = IntegerField()
+    timestamp = IntegerField(null=False)
     video_path = TextField(null=True)
 
     class Meta:
         table_name = 'table_history_movie'
-        primary_key = False
 
 
 class TableSettingsLanguages(BaseModel):
-    code2 = TextField(null=True)
-    code3 = TextField(primary_key=True)
+    code2 = TextField(null=False)
+    code3 = TextField(null=False, unique=True, primary_key=True)
     code3b = TextField(null=True)
     enabled = IntegerField(null=True)
-    name = TextField()
+    name = TextField(null=False)
 
     class Meta:
         table_name = 'table_settings_languages'
 
 
 class TableSettingsNotifier(BaseModel):
-    enabled = IntegerField(null=True)
-    name = TextField(null=True, primary_key=True)
+    enabled = IntegerField(null=False)
+    name = TextField(null=False, primary_key=True)
     url = TextField(null=True)
 
     class Meta:
