@@ -2,13 +2,14 @@
 
 bazarr_version = '0.8.2'
 
+import gc
+import sys
+import libs
+
 import six
 from six.moves import zip
 from functools import reduce
 
-import gc
-import sys
-import libs
 import bottle
 import itertools
 import operator

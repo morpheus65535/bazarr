@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+
+import bazarr.libs
 from six import PY3
 import subprocess as sp
 import time
