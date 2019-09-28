@@ -61,6 +61,9 @@ from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonar
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
+if six.PY2:
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 gc.enable()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"

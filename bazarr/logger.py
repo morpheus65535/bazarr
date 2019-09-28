@@ -42,7 +42,8 @@ class NoExceptionFormatter(logging.Formatter):
 
 
 def configure_logging(debug=False):
-    warnings.simplefilter('ignore', category=ResourceWarning)
+    if six.PY3:
+        warnings.simplefilter('ignore', category=ResourceWarning)
 
     if not debug:
         log_level = "INFO"

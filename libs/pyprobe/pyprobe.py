@@ -176,7 +176,7 @@ class VideoFileParser:
             IOError: ffprobe execution failed
 
         """
-        command = [parser] + commandArgs + [inputFile]
+        command = [parser] + commandArgs + [inputFile.encode(getfilesystemencoding())]
         if PY3:
             completedProcess = subprocess.run(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8"
