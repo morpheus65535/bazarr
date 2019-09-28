@@ -21,10 +21,8 @@ class User_Agent():
     def loadUserAgent(self, *args, **kwargs):
         browser = kwargs.pop('browser', 'chrome')
 
-        user_agents = json.load(
-            open(os.path.join(os.path.dirname(__file__), 'browsers.json'), 'r'),
-            object_pairs_hook=OrderedDict
-        )
+        with open(os.path.join(os.path.dirname(__file__), 'browsers.json'), 'r') as file:
+            user_agents = json.load(file, object_pairs_hook=OrderedDict)
 
         if not user_agents.get(browser):
             logging.error('Sorry "{}" browser User-Agent was not found.'.format(browser))

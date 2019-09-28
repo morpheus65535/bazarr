@@ -759,7 +759,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                 attempt = []
                 attempt.append([language, time.time()])
             else:
-                att = zip(*attempt)[0]
+                att = list(zip(*attempt))[0]
                 if language not in att:
                     attempt.append([language, time.time()])
 
@@ -828,7 +828,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                 attempt = []
                 attempt.append([language, time.time()])
             else:
-                att = zip(*attempt)[0]
+                att = list(zip(*attempt))[0]
                 if language not in att:
                     attempt.append([language, time.time()])
             

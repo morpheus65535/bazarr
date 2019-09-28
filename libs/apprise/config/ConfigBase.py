@@ -26,14 +26,7 @@
 import os
 import re
 import six
-
-try:
-    import yaml
-except ImportError:
-    if six.PY3:
-        import yaml3 as yaml
-    else:
-        import yaml2 as yaml
+import yaml
 
 from .. import plugins
 from ..AppriseAsset import AppriseAsset

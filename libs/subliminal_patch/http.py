@@ -13,6 +13,7 @@ import six.moves.xmlrpc_client
 import dns.resolver
 import ipaddress
 import re
+from six import PY3
 
 from requests import exceptions
 from urllib3.util import connection
@@ -102,13 +103,17 @@ class CFSession(CloudScraper):
                     resp = self.sendChallengeResponse(resp, **kwargs)
 
         except ValueError as e:
-            if e.message == "Captcha":
+            if PY3:
+                error = str(e)
+            else:
+                error = e.message
+            if error == "Captcha":
                 parsed_url = urlparse(url)
                 domain = parsed_url.netloc
                 # solve the captcha
-                site_key = re.search(r'data-sitekey="(.+?)"', resp.content).group(1)
-                challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.content).group(1)
-                challenge_ray = re.search(r'data-ray="(.+?)"', resp.content).group(1)
+                site_key = re.search(r'data-sitekey="(.+?)"', resp.text).group(1)
+                challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.text).group(1)
+                challenge_ray = re.search(r'data-ray="(.+?)"', resp.text).group(1)
                 if not all([site_key, challenge_s, challenge_ray]):
                     raise Exception("cf: Captcha site-key not found!")
 

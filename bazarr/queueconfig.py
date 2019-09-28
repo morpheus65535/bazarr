@@ -37,7 +37,7 @@ class Notify:
             :rtype: str
         """
         
-        if self.queue:
+        if self.queue and (len(self.queue) > 0):
             return self.queue.popleft()
 
 
