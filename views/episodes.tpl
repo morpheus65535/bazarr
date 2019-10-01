@@ -383,16 +383,19 @@
 			<i class="close icon"></i>
 			<div class="header">
 				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
+				<br><div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="episode_path_span"></span></div>
+				<br><div class="ui tiny inverted label" style="background-color: orange;"><span id="episode_scenename_span"></span></div>
 			</div>
 			<div class="scrolling content">
 				<table id="search_result" class="display" style="width:100%">
 					<thead>
 						<tr>
 							<th style="text-align: left;">Score:</th>
-							<th style="text-align: left;">Language:</th>
-							<th style="text-align: left;">Hearing-Impaired:</th>
+							<th style="text-align: left;">Lang.:</th>
+							<th style="text-align: left;">HI:</th>
 							<th style="text-align: left;">Provider:</th>
-							<th style="text-align: left;">Based On:</th>
+							<th style="text-align: left;">Matching:</th>
+							<th style="text-align: left;">Filename:</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -566,6 +569,8 @@
 		$("#season").html($(this).data("season"));
 		$("#episode").html($(this).data("episode"));
 		$("#episode_title").html($(this).data("episode_title"));
+		$("#episode_path_span").html($(this).attr("data-episodePath"));
+		$("#episode_scenename_span").html($(this).attr("data-sceneName"));
 
 		episodePath = $(this).attr("data-episodePath");
 		sceneName = $(this).attr("data-sceneName");
@@ -609,6 +614,7 @@
 			},
 			drawCallback: function(settings) {
                 $('.inline.dropdown').dropdown();
+                $('.ui.accordion').accordion();
 			},
 			columns: [
 				{ data: 'score',
@@ -654,6 +660,18 @@
     				}
 				},
 				{ data: null,
+				render: function ( data, type, row ) {
+                    const array_release_info = data.release_info;
+                    let i;
+                    let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content">';
+                    for (i = 0; i < array_release_info.length; i++) {
+                        text += '<div class="ui tiny label" style="margin-bottom: 2px;">' + array_release_info[i] + '</div>';
+                    }
+                    text += '</div></div>';
+                    return text;
+                    }
+				},
+                { data: null,
 				render: function ( data, type, row ) {
         			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId)" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
     				}

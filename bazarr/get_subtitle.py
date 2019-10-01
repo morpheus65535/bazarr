@@ -371,7 +371,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                          language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
-                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched)))
+                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
+                         release_info=s.release_info.split(',') if hasattr(s, 'release_info') else 'n/a'))
             
             final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
