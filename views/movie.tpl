@@ -79,6 +79,7 @@
 	</head>
 	<body>
 		%import ast
+		%from os import path
 		%from get_languages import *
         %from config import settings
         %from helper import path_replace_movie
@@ -180,7 +181,11 @@
 									end
 							%>
 							<tr>
-								<td>{{path_replace_movie(subtitles_file[1]) if subtitles_file[1] is not None else 'Video File Subtitles Track'}}</td>
+								%if subtitles_file[1] is not None:
+								<td><span data-tooltip="Path is: {{path_replace_movie(subtitles_file[1])}}" data-inverted='' data-position="top left">{{path.basename(path_replace_movie(subtitles_file[1]))}}</span></td>
+								%else:
+								<td>Video File Subtitles Track</td>
+								%end
 								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
