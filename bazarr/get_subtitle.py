@@ -369,13 +369,19 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 score = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 not_matched = scores - matches
                 s.score = score
-                
+
+                releases = ['n/a']
+                if hasattr(s, 'release_info'):
+                    if s.release_info is not None:
+                        releases = s.release_info.split(',')
+
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
-                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched)))
+                         url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
+                         release_info=releases))
             
             final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
