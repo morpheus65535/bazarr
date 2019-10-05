@@ -66,7 +66,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
-},
+    },
     'radarr': {
         'ip': '127.0.0.1',
         'port': '7878',
@@ -77,7 +77,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '5',
         'only_monitored': 'False',
-},
+    },
     'proxy': {
         'type': 'None',
         'url': '',
@@ -131,6 +131,10 @@ defaults = {
     },
     'analytics': {
         'enabled': 'True'
+    },
+    'titlovi': {
+        'username': '',
+        'password': ''
     }
 }
 

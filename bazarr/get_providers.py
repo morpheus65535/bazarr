@@ -126,7 +126,10 @@ def get_providers_auth():
         'betaseries': {'token': settings.betaseries.token},
         'titulky': {'username': settings.titulky.username,
                     'password': settings.titulky.password,
-                    }
+                    },
+        'titlovi': {'username': settings.titlovi.username,
+                  'password': settings.titlovi.password,
+                  },
     }
     
     return providers_auth

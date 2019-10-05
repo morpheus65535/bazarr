@@ -391,6 +391,8 @@ def save_wizard():
     settings.napisy24.password = request.forms.get('settings_napisy24_password')
     settings.subscene.username = request.forms.get('settings_subscene_username')
     settings.subscene.password = request.forms.get('settings_subscene_password')
+    settings.titlovi.username = request.forms.get('settings_titlovi_username')
+    settings.titlovi.password = request.forms.get('settings_titlovi_password')
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
@@ -1819,6 +1821,8 @@ def save_settings():
     settings.napisy24.password = request.forms.get('settings_napisy24_password')
     settings.subscene.username = request.forms.get('settings_subscene_username')
     settings.subscene.password = request.forms.get('settings_subscene_password')
+    settings.titlovi.username = request.forms.get('settings_titlovi_username')
+    settings.titlovi.password = request.forms.get('settings_titlovi_password')
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
