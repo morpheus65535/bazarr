@@ -17,7 +17,8 @@ def has_external_subtitle(part_id, stored_subs, language):
 
 
 def set_existing_languages(video, video_info, external_subtitles=False, embedded_subtitles=False, known_embedded=None,
-                           stored_subs=None, languages=None, only_one=False, known_metadata_subs=None):
+                           stored_subs=None, languages=None, only_one=False, known_metadata_subs=None,
+                           match_strictness="strict"):
     logger.debug(u"Determining existing subtitles for %s", video.name)
 
     external_langs_found = set()
@@ -27,7 +28,8 @@ def set_existing_languages(video, video_info, external_subtitles=False, embedded
         external_langs_found = known_metadata_subs
 
     external_langs_found.update(set(search_external_subtitles(video.name, languages=languages,
-                                                              only_one=only_one).values()))
+                                                              only_one=only_one,
+                                                              match_strictness=match_strictness).values()))
 
     # found external subtitles should be considered?
     if external_subtitles:

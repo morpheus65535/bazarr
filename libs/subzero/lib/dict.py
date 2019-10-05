@@ -107,6 +107,12 @@ class Dicked(object):
         for key, value in entries.iteritems():
             self.__dict__[key] = (Dicked(**value) if isinstance(value, dict) else value)
 
+    def has(self, key):
+        return self._entries is not None and key in self._entries
+
+    def get(self, key, default=None):
+        return self._entries.get(key, default) if self._entries else default
+
     def __repr__(self):
         return str(self)
 

@@ -27,16 +27,6 @@ class TitloviConverter(LanguageReverseConverter):
                            }
         self.codes = set(self.from_titlovi.keys())
 
-        # temporary fix, should be removed as soon as API is used
-        self.lang_from_countrycode = {'ba': ('bos',),
-                                 'en': ('eng',),
-                                 'hr': ('hrv',),
-                                 'mk': ('mkd',),
-                                 'rs': ('srp',),
-                                 'rsc': ('srp', None, 'Cyrl'),
-                                 'si': ('slv',)
-                                 }
-
     def convert(self, alpha3, country=None, script=None):
         if (alpha3, country, script) in self.to_titlovi:
             return self.to_titlovi[(alpha3, country, script)]
@@ -48,10 +38,6 @@ class TitloviConverter(LanguageReverseConverter):
     def reverse(self, titlovi):
         if titlovi in self.from_titlovi:
             return self.from_titlovi[titlovi]
-
-        # temporary fix, should be removed as soon as API is used
-        if titlovi in self.lang_from_countrycode:
-            return self.lang_from_countrycode[titlovi]
 
         raise ConfigurationError('Unsupported language number for titlovi: %s' % titlovi)
 

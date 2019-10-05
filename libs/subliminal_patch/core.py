@@ -30,7 +30,7 @@ from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, 
     ThreadPoolExecutor, check_video
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 
-from subzero.language import Language
+from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE
 from scandir import scandir, scandir_generic as _scandir_generic
 
 logger = logging.getLogger(__name__)
@@ -571,12 +571,14 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
     return video
 
 
-def _search_external_subtitles(path, languages=None, only_one=False, scandir_generic=False):
+def _search_external_subtitles(path, languages=None, only_one=False, scandir_generic=False, match_strictness="strict"):
     dirpath, filename = os.path.split(path)
     dirpath = dirpath or '.'
-    fileroot, fileext = os.path.splitext(filename)
+    fn_no_ext, fileext = os.path.splitext(filename)
+    fn_no_ext_lower = fn_no_ext.lower()
     subtitles = {}
     _scandir = _scandir_generic if scandir_generic else scandir
+
     for entry in _scandir(dirpath):
         if (not entry.name or entry.name in ('\x0c', '$', ',', '\x7f')) and not scandir_generic:
             logger.debug('Could not determine the name of the file, retrying with scandir_generic')
@@ -587,8 +589,10 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         p = entry.name
 
         # keep only valid subtitle filenames
-        if not p.lower().startswith(fileroot.lower()) or not p.lower().endswith(SUBTITLE_EXTENSIONS):
+        if not p.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
+
+        # not p.lower().startswith(fileroot.lower()) or not
 
         p_root, p_ext = os.path.splitext(p)
         if not INCLUDE_EXOTIC_SUBS and p_ext not in (".srt", ".ass", ".ssa", ".vtt"):
@@ -608,7 +612,19 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             forced = "forced" in adv_tag
 
         # extract the potential language code
-        language_code = p_root[len(fileroot):].replace('_', '-')[1:]
+        language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
+
+        # remove possible language code for matching
+        p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub("", p_root)
+
+        p_root_lower = p_root_bare.lower()
+
+        filename_matches = p_root_lower == fn_no_ext_lower
+        filename_contains = p_root_lower in fn_no_ext_lower
+
+        if not filename_matches:
+            if match_strictness == "strict" or (match_strictness == "loose" and not filename_contains):
+                continue
 
         # default language is undefined
         language = Language('und')
@@ -632,7 +648,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
     return subtitles
 
 
-def search_external_subtitles(path, languages=None, only_one=False):
+def search_external_subtitles(path, languages=None, only_one=False, match_strictness="strict"):
     """
     wrap original search_external_subtitles function to search multiple paths for one given video
     # todo: cleanup and merge with _search_external_subtitles
@@ -653,10 +669,11 @@ def search_external_subtitles(path, languages=None, only_one=False):
         if os.path.isdir(os.path.dirname(abspath)):
             try:
                 subtitles.update(_search_external_subtitles(abspath, languages=languages,
-                                                            only_one=only_one))
+                                                            only_one=only_one, match_strictness=match_strictness))
             except OSError:
                 subtitles.update(_search_external_subtitles(abspath, languages=languages,
-                                                            only_one=only_one, scandir_generic=True))
+                                                            only_one=only_one, match_strictness=match_strictness,
+                                                            scandir_generic=True))
     logger.debug("external subs: found %s", subtitles)
     return subtitles
 
