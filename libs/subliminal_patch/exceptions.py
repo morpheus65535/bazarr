@@ -9,3 +9,8 @@ class TooManyRequests(ProviderError):
 
 class APIThrottled(ProviderError):
     pass
+
+
+class ParseResponseError(ProviderError):
+    """Exception raised by providers when they are not able to parse the response."""
+    pass
