@@ -645,7 +645,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titlovi (require anti-captcha)</label>
+                                <label>Titlovi</label>
                             </div>
                             <div class="one wide column">
                                 <div id="titlovi" class="ui toggle checkbox provider">
