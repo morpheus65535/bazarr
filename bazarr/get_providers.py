@@ -11,7 +11,8 @@ from config import settings
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 
-VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled)
+VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
+                             ParseResponseError)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
 
 PROVIDER_THROTTLE_MAP = {
