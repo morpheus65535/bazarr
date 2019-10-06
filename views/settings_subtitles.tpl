@@ -2,7 +2,6 @@
                 <div class="twelve wide column">
                     <div class="ui grid">
                         <div class="middle aligned row">
-                            <div class="two wide column"></div>
                             <div class="right aligned four wide column">
                                 <label>Search for missing Subtitles frequency (in hours)</label>
                             </div>

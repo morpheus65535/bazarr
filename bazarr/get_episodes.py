@@ -185,7 +185,9 @@ def sync_episodes():
         ).execute()
 
     # Store subtitles for added or modified episodes
-    for altered_episode in altered_episodes:
+    for i, altered_episode in enumerate(altered_episodes, 1):
+        notifications.write(msg='Indexing episodes embedded subtitles...', queue='get_episodes', item=i,
+                            length=len(altered_episodes))
         store_subtitles(path_replace(altered_episode[1]))
         list_missing_subtitles(altered_episode[2])
 

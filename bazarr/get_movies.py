@@ -267,7 +267,9 @@ def update_movies():
                 ).execute()
 
             # Store subtitles for added or modified movies
-            for altered_movie in altered_movies:
+            for i, altered_movie in enumerate(altered_movies, 1):
+                notifications.write(msg='Indexing movies embedded subtitles...', queue='get_movies', item=i,
+                                    length=len(altered_movies))
                 store_subtitles_movie(path_replace_movie(altered_movie[1]))
                 list_missing_subtitles_movies(altered_movie[2])
 
