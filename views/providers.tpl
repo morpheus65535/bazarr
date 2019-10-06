@@ -645,7 +645,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titlovi (require anti-captcha)</label>
+                                <label>Titlovi</label>
                             </div>
                             <div class="one wide column">
                                 <div id="titlovi" class="ui toggle checkbox provider">
@@ -655,7 +655,26 @@
                             </div>
                         </div>
                         <div id="titlovi_option" class="ui grid container">
-
+                        	<div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_titlovi_username" type="text" value="{{settings.titlovi.username if settings.titlovi.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_titlovi_password" type="password" value="{{settings.titlovi.password if settings.titlovi.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="middle aligned row">

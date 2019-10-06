@@ -158,7 +158,8 @@ def update_movies():
                                                          'video_codec': six.text_type(videoCodec),
                                                          'audio_codec': six.text_type(audioCodec),
                                                          'overview': six.text_type(overview),
-                                                         'imdb_id': six.text_type(imdbId)})
+                                                         'imdb_id': six.text_type(imdbId),
+                                                         'movie_file_id': movie['movieFile']['id']})
                             else:
                                 if movie_default_enabled is True:
                                     movies_to_add.append({'radarr_id': movie["id"],
@@ -182,7 +183,8 @@ def update_movies():
                                                           'video_codec': videoCodec,
                                                           'audio_codec': audioCodec,
                                                           'imdb_id': imdbId,
-                                                          'forced': movie_default_forced})
+                                                          'forced': movie_default_forced,
+                                                          'movie_file_id': movie['movieFile']['id']})
                                 else:
                                     movies_to_add.append({'radarr_id': movie["id"],
                                                           'title': movie["title"],
@@ -201,7 +203,8 @@ def update_movies():
                                                           'resolution': resolution,
                                                           'video_codec': videoCodec,
                                                           'audio_codec': audioCodec,
-                                                          'imdb_id': imdbId})
+                                                          'imdb_id': imdbId,
+                                                          'movie_file_id': movie['movieFile']['id']})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -227,7 +230,8 @@ def update_movies():
                 TableMovies.resolution,
                 TableMovies.video_codec,
                 TableMovies.audio_codec,
-                TableMovies.imdb_id
+                TableMovies.imdb_id,
+                TableMovies.movie_file_id
             ).dicts()
 
             for item in movies_in_db:

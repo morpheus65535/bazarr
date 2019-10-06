@@ -101,9 +101,10 @@ def get_sonarr_version():
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey
     sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
+    sonarr_version = ''
     if use_sonarr:
         try:
-            sonarr_version = requests.get(sv, timeout=30, verify=False).json()['version']
+            sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
         except Exception as e:
             logging.DEBUG('BAZARR cannot get Sonarr version')
 
@@ -114,9 +115,10 @@ def get_radarr_version():
     use_radarr = settings.general.getboolean('use_radarr')
     apikey_radarr = settings.radarr.apikey
     rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    radarr_version = ''
     if use_radarr:
         try:
-            radarr_version = requests.get(rv, timeout=30, verify=False).json()['version']
+            radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
         except Exception as e:
             logging.DEBUG('BAZARR cannot get Radarr version')
 

@@ -8,13 +8,14 @@ import zipfile
 
 import rarfile
 from subzero.language import Language
-from guessit import guessit
 from requests import Session
 
 from subliminal import __short_version__
+from subliminal.exceptions import ServiceUnavailable
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending,guess_matches
 from subliminal.video import Episode, Movie
+from subliminal_patch.exceptions import ParseResponseError
 from six.moves import range
 
 logger = logging.getLogger(__name__)
@@ -121,35 +122,17 @@ class SubdivxSubtitlesProvider(Provider):
         language = self.language_list[0]
         search_link = self.server_url + 'index.php'
         while True:
-            r = self.session.get(search_link, params=params, timeout=10)
-            r.raise_for_status()
+            response = self.session.get(search_link, params=params, timeout=10)
+            self._check_response(response)
 
-            if not r.content:
-                logger.debug('No data returned from provider')
-                return []
+            try:
+                page_subtitles = self._parse_subtitles_page(response, language)
+            except Exception as e:
+                raise ParseResponseError('Error parsing subtitles list: ' + str(e))
 
-            page_soup = ParserBeautifulSoup(r.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
-            title_soups = page_soup.find_all("div", {'id': 'menu_detalle_buscador'})
-            body_soups = page_soup.find_all("div", {'id': 'buscador_detalle'})
-            if len(title_soups) != len(body_soups):
-                logger.debug('Error in provider data')
-                return []
-            for subtitle in range(0, len(title_soups)):
-                title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
+            subtitles += page_subtitles
 
-                # title
-                title = title_soup.find("a").text.replace("Subtitulo de ", "")
-                page_link = title_soup.find("a")["href"].replace('http://', 'https://')
-
-                # body
-                description = body_soup.find("div", {'id': 'buscador_detalle_sub'}).text
-
-                subtitle = self.subtitle_class(language, page_link, description, title)
-
-                logger.debug('Found subtitle %r', subtitle)
-                subtitles.append(subtitle)
-
-            if len(title_soups) >= 20:
+            if len(page_subtitles) >= 20:
                 params['pg'] += 1  # search next page
                 time.sleep(self.multi_result_throttle)
             else:
@@ -177,67 +160,91 @@ class SubdivxSubtitlesProvider(Provider):
 
         return subtitles
 
-    def get_download_link(self, subtitle):
-        r = self.session.get(subtitle.page_link, timeout=10)
-        r.raise_for_status()
-
-        if r.content:
-            page_soup = ParserBeautifulSoup(r.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
-            links_soup = page_soup.find_all("a", {'class': 'detalle_link'})
-            for link_soup in links_soup:
-                if link_soup['href'].startswith('bajar'):
-                    return self.server_url + link_soup['href']
-
-        logger.debug('No data returned from provider')
-        return None
-
     def download_subtitle(self, subtitle):
         if isinstance(subtitle, SubdivxSubtitle):
             # download the subtitle
             logger.info('Downloading subtitle %r', subtitle)
 
             # get download link
-            download_link = self.get_download_link(subtitle)
-            r = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
-            r.raise_for_status()
+            download_link = self._get_download_link(subtitle)
 
-            if not r.content:
-                logger.debug('Unable to download subtitle. No data returned from provider')
-                return
+            # download zip / rar file with the subtitle
+            response = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
+            self._check_response(response)
 
-            archive = _get_archive(r.content)
+            # open the compressed archive
+            archive = self._get_archive(response.content)
 
-            subtitle_content = _get_subtitle_from_archive(archive)
-            if subtitle_content:
-                subtitle.content = fix_line_ending(subtitle_content)
-            else:
-                logger.debug('Could not extract subtitle from %r', archive)
+            # extract the subtitle
+            subtitle_content = self._get_subtitle_from_archive(archive)
+            subtitle.content = fix_line_ending(subtitle_content)
 
+    def _check_response(self, response):
+        if response.status_code != 200:
+            raise ServiceUnavailable('Bad status code: ' + str(response.status_code))
 
-def _get_archive(content):
-    # open the archive
-    archive_stream = io.BytesIO(content)
-    archive = None
-    if rarfile.is_rarfile(archive_stream):
-        logger.debug('Identified rar archive')
-        archive = rarfile.RarFile(archive_stream)
-    elif zipfile.is_zipfile(archive_stream):
-        logger.debug('Identified zip archive')
-        archive = zipfile.ZipFile(archive_stream)
+    def _parse_subtitles_page(self, response, language):
+        subtitles = []
 
-    return archive
+        page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
+        title_soups = page_soup.find_all("div", {'id': 'menu_detalle_buscador'})
+        body_soups = page_soup.find_all("div", {'id': 'buscador_detalle'})
 
+        for subtitle in range(0, len(title_soups)):
+            title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
 
-def _get_subtitle_from_archive(archive):
-    for name in archive.namelist():
-        # discard hidden files
-        if os.path.split(name)[-1].startswith('.'):
-            continue
+            # title
+            title = title_soup.find("a").text.replace("Subtitulo de ", "")
+            page_link = title_soup.find("a")["href"].replace('http://', 'https://')
 
-        # discard non-subtitle files
-        if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-            continue
+            # body
+            description = body_soup.find("div", {'id': 'buscador_detalle_sub'}).text
 
-        return archive.read(name)
+            subtitle = self.subtitle_class(language, page_link, description, title)
 
-    return None
+            logger.debug('Found subtitle %r', subtitle)
+            subtitles.append(subtitle)
+
+        return subtitles
+
+    def _get_download_link(self, subtitle):
+        response = self.session.get(subtitle.page_link, timeout=10)
+        self._check_response(response)
+        try:
+            page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
+            links_soup = page_soup.find_all("a", {'class': 'detalle_link'})
+            for link_soup in links_soup:
+                if link_soup['href'].startswith('bajar'):
+                    return self.server_url + link_soup['href']
+        except Exception as e:
+            raise ParseResponseError('Error parsing download link: ' + str(e))
+
+        raise ParseResponseError('Download link not found')
+
+    def _get_archive(self, content):
+        # open the archive
+        archive_stream = io.BytesIO(content)
+        if rarfile.is_rarfile(archive_stream):
+            logger.debug('Identified rar archive')
+            archive = rarfile.RarFile(archive_stream)
+        elif zipfile.is_zipfile(archive_stream):
+            logger.debug('Identified zip archive')
+            archive = zipfile.ZipFile(archive_stream)
+        else:
+            raise ParseResponseError('Unsupported compressed format')
+
+        return archive
+
+    def _get_subtitle_from_archive(self, archive):
+        for name in archive.namelist():
+            # discard hidden files
+            if os.path.split(name)[-1].startswith('.'):
+                continue
+
+            # discard non-subtitle files
+            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
+                continue
+
+            return archive.read(name)
+
+        raise ParseResponseError('Can not find the subtitle in the compressed file')

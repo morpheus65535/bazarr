@@ -8,10 +8,11 @@ import time
 
 from get_args import args
 from config import settings
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 
-VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled)
+VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
+                             ParseResponseError)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
 
 PROVIDER_THROTTLE_MAP = {
@@ -20,6 +21,7 @@ PROVIDER_THROTTLE_MAP = {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
         APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
+        ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
     },
     "opensubtitles": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
@@ -124,7 +126,10 @@ def get_providers_auth():
         'betaseries': {'token': settings.betaseries.token},
         'titulky': {'username': settings.titulky.username,
                     'password': settings.titulky.password,
-                    }
+                    },
+        'titlovi': {'username': settings.titlovi.username,
+                  'password': settings.titlovi.password,
+                  },
     }
     
     return providers_auth
@@ -141,10 +146,11 @@ def provider_throttle(name, exception):
     throttle_data = PROVIDER_THROTTLE_MAP.get(name, PROVIDER_THROTTLE_MAP["default"]).get(cls, None) or \
                     PROVIDER_THROTTLE_MAP["default"].get(cls, None)
     
-    if not throttle_data:
-        return
+    if throttle_data:
+        throttle_delta, throttle_description = throttle_data
+    else:
+        throttle_delta, throttle_description = datetime.timedelta(minutes=10), "10 minutes"
     
-    throttle_delta, throttle_description = throttle_data
     throttle_until = datetime.datetime.now() + throttle_delta
     
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
