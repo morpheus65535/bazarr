@@ -866,6 +866,8 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             logger.debug(u"Saving %r to %r", subtitle, subtitle_path)
             content = subtitle.get_modified_content(format=format, debug=debug_mods)
             if content:
+                if os.path.exists(subtitle_path):
+                    os.remove(subtitle_path)
                 with open(subtitle_path, 'w') as f:
                     f.write(content)
                 subtitle.storage_path = subtitle_path
