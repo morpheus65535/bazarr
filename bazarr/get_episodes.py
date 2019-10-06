@@ -116,7 +116,8 @@ def sync_episodes():
                                                                'format': format,
                                                                'resolution': resolution,
                                                                'video_codec': videoCodec,
-                                                               'audio_codec': audioCodec})
+                                                               'audio_codec': audioCodec,
+                                                               'episode_file_id': episode['episodeFile']['id']})
                                 else:
                                     episodes_to_add.append({'sonarr_series_id': episode['seriesId'],
                                                             'sonarr_episode_id': episode['id'],
@@ -129,7 +130,8 @@ def sync_episodes():
                                                             'format': format,
                                                             'resolution': resolution,
                                                             'video_codec': videoCodec,
-                                                            'audio_codec': audioCodec})
+                                                            'audio_codec': audioCodec,
+                                                            'episode_file_id': episode['episodeFile']['id']})
 
     # Update existing episodes in DB
     episode_in_db_list = []
@@ -145,7 +147,8 @@ def sync_episodes():
         TableEpisodes.format,
         TableEpisodes.resolution,
         TableEpisodes.video_codec,
-        TableEpisodes.audio_codec
+        TableEpisodes.audio_codec,
+        TableEpisodes.episode_file_id
     ).dicts()
 
     for item in episodes_in_db:

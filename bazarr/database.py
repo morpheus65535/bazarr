@@ -4,6 +4,7 @@ import atexit
 from get_args import args
 from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
+from playhouse.migrate import *
 
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 
@@ -13,6 +14,8 @@ database = SqliteQueueDatabase(
     autostart=False,
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
     results_timeout=30.0)  # Max. time to wait for query to be executed.
+
+migrator = SqliteMigrator(database)
 
 
 @database.func('path_substitution')
@@ -78,6 +81,11 @@ class TableEpisodes(BaseModel):
     subtitles = TextField(null=True)
     title = TextField(null=True)
     video_codec = TextField(null=True)
+    episode_file_id = IntegerField(null=True)
+
+    migrate(
+        migrator.add_column('table_episodes', 'episode_file_id', episode_file_id),
+    )
 
     class Meta:
         table_name = 'table_episodes'
@@ -109,6 +117,11 @@ class TableMovies(BaseModel):
     tmdb_id = TextField(column_name='tmdbId', primary_key=True, null=False)
     video_codec = TextField(null=True)
     year = TextField(null=True)
+    movie_file_id = IntegerField(null=True)
+
+    migrate(
+        migrator.add_column('table_movies', 'movie_file_id', movie_file_id),
+    )
 
     class Meta:
         table_name = 'table_movies'
