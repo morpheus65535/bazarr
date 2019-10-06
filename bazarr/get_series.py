@@ -162,7 +162,7 @@ def update_series():
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
             for series in removed_series:
-                print TableShows.delete().where(
+                TableShows.delete().where(
                     TableShows.tvdb_id == series
                 ).execute()
 
