@@ -24,8 +24,6 @@ class EmbeddedSubsReader:
             parser = VideoFileParser(ffprobe=self.ffprobe, includeMissing=True, rawMode=False)
             data = parser.parseFfprobe(file)
 
-            detected_languages = []
-
             for detected_language in data['subtitles']:
                 subtitles_list.append([detected_language['language'], detected_language['forced'], detected_language["codec"]])
         else:
