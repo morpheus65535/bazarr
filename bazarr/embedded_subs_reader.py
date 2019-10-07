@@ -25,8 +25,6 @@ class EmbeddedSubsReader:
             parser = VideoFileParser(ffprobe=self.ffprobe, includeMissing=True, rawMode=False)
             data = parser.parseFfprobe(file)
 
-            detected_languages = []
-
             for detected_language in data['subtitles']:
                 subtitles_list.append([detected_language['language'], detected_language['forced'], detected_language["codec"]])
         else:
@@ -34,7 +32,7 @@ class EmbeddedSubsReader:
                 with open(file, 'rb') as f:
                     mkv = enzyme.MKV(f)
                 for subtitle_track in mkv.subtitle_tracks:
-                    subtitles_list.append([subtitle_track.language, subtitle_track.forced])
+                    subtitles_list.append([subtitle_track.language, subtitle_track.forced, subtitle_track.codec_id])
 
         return subtitles_list
 
