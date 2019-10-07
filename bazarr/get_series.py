@@ -121,7 +121,7 @@ def update_series():
                                               'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles),
                                               'sort_title': show['sortTitle'],
                                               'year': show['year'],
-                                              'alternate_title': alternateTitles})
+                                              'alternate_titles': alternateTitles})
             
             # Update existing series in DB
             series_in_db_list = []
