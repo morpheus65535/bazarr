@@ -33,7 +33,7 @@ class EmbeddedSubsReader:
                 with open(file, 'rb') as f:
                     mkv = enzyme.MKV(f)
                 for subtitle_track in mkv.subtitle_tracks:
-                    subtitles_list.append([subtitle_track.language, subtitle_track.forced])
+                    subtitles_list.append([subtitle_track.language, subtitle_track.forced, subtitle_track.codec_id])
 
         return subtitles_list
 

@@ -615,7 +615,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         try:
             language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
             try:
-                language_code = Language.fromietf(language_code)
+                Language.fromietf(language_code)
             except:
                 language_code = None
         except IndexError:
