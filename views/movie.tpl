@@ -340,8 +340,8 @@
 			<i class="close icon"></i>
 			<div class="header">
 				<span id="movie_title_span"></span>
-				<br><div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="movie_path_span"></span></div>
-				<br><div class="ui tiny inverted label" style="background-color: orange;"><span id="movie_scenename_span"></span></div>
+				<br><h5>Movie path is: <div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="movie_path_span"></span></div>
+				<br>Scenename is: <div class="ui tiny inverted label" style="background-color: orange;"><span id="movie_scenename_span"></span></div></h5>
 			</div>
 			<div class="scrolling content">
 				<table id="search_result" class="display" style="width:100%">
