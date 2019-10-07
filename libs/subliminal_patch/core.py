@@ -614,7 +614,10 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             forced = "forced" in adv_tag
 
         # extract the potential language code
-        language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
+        try:
+            language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
+        except IndexError:
+            language_code = None
 
         # remove possible language code for matching
         p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub("", p_root)
