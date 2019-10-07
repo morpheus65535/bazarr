@@ -136,7 +136,7 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = 'argenteam'
     languages = {Language.fromalpha2(l) for l in ['es']}
     video_types = (Episode, Movie)
-    BASE_URL = "http://www.argenteam.net/"
+    BASE_URL = "https://argenteam.net/"
     API_URL = BASE_URL + "api/v1/"
     subtitle_class = ArgenteamSubtitle
     hearing_impaired_verifiable = False
@@ -244,7 +244,9 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
                 for s in r['subtitles']:
                     movie_kind = "episode" if is_episode else "movie"
                     page_link = self.BASE_URL + movie_kind + "/" + str(aid)
-                    sub = ArgenteamSubtitle(language, page_link, s['uri'], movie_kind, returned_title,
+                    # use https and new domain
+                    download_link = s['uri'].replace('http://www.argenteam.net/', self.BASE_URL)
+                    sub = ArgenteamSubtitle(language, page_link, download_link, movie_kind, returned_title,
                                             season, episode, year, r.get('team'), r.get('tags'),
                                             r.get('source'), r.get('codec'), content.get("tvdb"), imdb_id,
                                             asked_for_release_group=video.release_group,
