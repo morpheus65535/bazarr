@@ -29,6 +29,15 @@
 				margin-bottom: 3em;
 				padding: 1em;
 			}
+			.fast.backward, .backward, .forward, .fast.forward {
+    			cursor: pointer;
+			}
+			.fast.backward, .backward, .forward, .fast.forward { pointer-events: auto; }
+			.fast.backward.disabled, .backward.disabled, .forward.disabled, .fast.forward.disabled { pointer-events: none; }
+            .ui.tabular.menu > .disabled.item {
+                opacity: 0.45 !important;
+                pointer-events: none !important;
+            }
 		</style>
 	</head>
 	<body>
@@ -68,14 +77,18 @@
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
 				<a id="series_tab" class="tabs item active" data-enabled="{{settings.general.getboolean('use_sonarr')}}" data-tab="series">Series
+					%if settings.general.getboolean('use_sonarr'):
 					<div class="ui tiny yellow label">
 						{{wanted_series}}
 					</div>
+					%end
 				</a>
 				<a id="movies_tab" class="tabs item" data-enabled="{{settings.general.getboolean('use_radarr')}}" data-tab="movies">Movies
+					%if settings.general.getboolean('use_radarr'):
 					<div class="ui tiny green label">
 						{{wanted_movies}}
 					</div>
+					%end
 				</a>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="series">
