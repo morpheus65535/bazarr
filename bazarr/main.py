@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.2'
+bazarr_version = '0.8.2.1'
 
 import gc
 import sys
