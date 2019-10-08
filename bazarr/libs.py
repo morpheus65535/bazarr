@@ -13,8 +13,7 @@ def clean_libs():
     module_list = ['enum', 'concurrent']
     for module in module_list:
         module_path = os.path.join(libs_dir, module)
-        if os.path.isdir(module_path):
-            rmtree(module_path)
+        rmtree(module_path, ignore_errors=True)
 
 
 def set_libs():
