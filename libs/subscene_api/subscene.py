@@ -25,14 +25,7 @@ this script that does the job by parsing the website"s pages.
 
 # imports
 import re
-
-from six import PY3
-
-if PY3:
-    import enum
-else:
-    import enum2 as enum
-
+import enum
 import sys
 import requests
 import time
