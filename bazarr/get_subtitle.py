@@ -1133,6 +1133,8 @@ def upgrade_subtitles():
             if os.path.exists(path_replace(episode['video_path'])) and int(episode['score']) < 357:
                 episodes_to_upgrade.append(episode)
 
+        count_episode_to_upgrade = len(episodes_to_upgrade)
+
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = TableHistoryMovie.select(
             TableHistoryMovie.video_path,
@@ -1169,13 +1171,12 @@ def upgrade_subtitles():
         for movie in upgradable_movies_not_perfect:
             if os.path.exists(path_replace_movie(movie['video_path'])) and int(movie['score']) < 117:
                 movies_to_upgrade.append(movie)
+
+        count_movie_to_upgrade = len(movies_to_upgrade)
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
-    count_episode_to_upgrade = len(episodes_to_upgrade)
-    count_movie_to_upgrade = len(movies_to_upgrade)
-    
+
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
             providers = get_providers()
