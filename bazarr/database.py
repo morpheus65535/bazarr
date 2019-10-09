@@ -7,8 +7,6 @@ from peewee import *
 from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import *
 
-from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
-
 database = SqliteQueueDatabase(
     None,
     use_gevent=False,
@@ -21,11 +19,13 @@ migrator = SqliteMigrator(database)
 
 @database.func('path_substitution')
 def path_substitution(path):
+    from helper import path_replace
     return path_replace(path)
 
 
 @database.func('path_substitution_movie')
 def path_substitution_movie(path):
+    from helper import path_replace_movie
     return path_replace_movie(path)
 
 

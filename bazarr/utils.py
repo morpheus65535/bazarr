@@ -111,6 +111,23 @@ def get_sonarr_version():
     return sonarr_version
 
 
+def get_sonarr_platform():
+    use_sonarr = settings.general.getboolean('use_sonarr')
+    apikey_sonarr = settings.sonarr.apikey
+    sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
+    sonarr_platform = ''
+    if use_sonarr:
+        try:
+            if requests.get(sv, timeout=60, verify=False).json()['isLinux'] or requests.get(sv, timeout=60, verify=False).json()['isOsx']:
+                sonarr_platform = 'posix'
+            elif requests.get(sv, timeout=60, verify=False).json()['isWindows']:
+                sonarr_platform = 'nt'
+        except Exception as e:
+            logging.DEBUG('BAZARR cannot get Sonarr platform')
+
+    return sonarr_platform
+
+
 def get_radarr_version():
     use_radarr = settings.general.getboolean('use_radarr')
     apikey_radarr = settings.radarr.apikey
@@ -123,3 +140,20 @@ def get_radarr_version():
             logging.DEBUG('BAZARR cannot get Radarr version')
 
     return radarr_version
+
+
+def get_radarr_platform():
+    use_radarr = settings.general.getboolean('use_radarr')
+    apikey_radarr = settings.radarr.apikey
+    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    radarr_platform = ''
+    if use_radarr:
+        try:
+            if requests.get(rv, timeout=60, verify=False).json()['isLinux'] or requests.get(rv, timeout=60, verify=False).json()['isOsx']:
+                radarr_platform = 'posix'
+            elif requests.get(rv, timeout=60, verify=False).json()['isWindows']:
+                radarr_platform = 'nt'
+        except Exception as e:
+            logging.DEBUG('BAZARR cannot get Radarr platform')
+
+    return radarr_platform
