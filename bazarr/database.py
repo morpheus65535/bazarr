@@ -50,7 +50,7 @@ class TableShows(BaseModel):
     alternate_titles = TextField(column_name='alternateTitles', null=True)
     audio_language = TextField(null=True)
     fanart = TextField(null=True)
-    forced = TextField(null=True)
+    forced = TextField(null=True, constraints=[SQL('DEFAULT "False"')])
     hearing_impaired = TextField(null=True)
     languages = TextField(null=True)
     overview = TextField(null=True)
@@ -61,6 +61,10 @@ class TableShows(BaseModel):
     title = TextField(null=True)
     tvdb_id = IntegerField(column_name='tvdbId', null=True, unique=True, primary_key=True)
     year = TextField(null=True)
+
+    migrate(
+        migrator.add_column('table_shows', 'forced', forced),
+    )
 
     class Meta:
         table_name = 'table_shows'
@@ -99,7 +103,7 @@ class TableMovies(BaseModel):
     audio_language = TextField(null=True)
     failed_attempts = TextField(column_name='failedAttempts', null=True)
     fanart = TextField(null=True)
-    forced = TextField(null=True)
+    forced = TextField(null=True, constraints=[SQL('DEFAULT "False"')])
     format = TextField(null=True)
     hearing_impaired = TextField(null=True)
     imdb_id = TextField(column_name='imdbId', null=True)
@@ -121,6 +125,7 @@ class TableMovies(BaseModel):
     movie_file_id = IntegerField(null=True)
 
     migrate(
+        migrator.add_column('table_movies', 'forced', forced),
         migrator.add_column('table_movies', 'movie_file_id', movie_file_id),
     )
 
@@ -135,7 +140,7 @@ class TableHistory(BaseModel):
     language = TextField(null=True)
     provider = TextField(null=True)
     score = TextField(null=True)
-    sonarr_episode_id = ForeignKeyField(TableEpisodes, field='sonarr_episode_id', column_name='sonarrEpisodeId', null=False, unique=True)
+    sonarr_episode_id = ForeignKeyField(TableEpisodes, field='sonarr_episode_id', column_name='sonarrEpisodeId', null=False)
     sonarr_series_id = ForeignKeyField(TableShows, field='sonarr_series_id', column_name='sonarrSeriesId', null=False)
     timestamp = IntegerField(null=False)
     video_path = TextField(null=True)
@@ -150,7 +155,7 @@ class TableHistoryMovie(BaseModel):
     description = TextField(null=False)
     language = TextField(null=True)
     provider = TextField(null=True)
-    radarr_id = ForeignKeyField(TableMovies, field='radarr_id', column_name='radarrId')
+    radarr_id = ForeignKeyField(TableMovies, field='radarr_id', column_name='radarrId', null=False)
     score = TextField(null=True)
     timestamp = IntegerField(null=False)
     video_path = TextField(null=True)
