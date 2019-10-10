@@ -28,18 +28,19 @@ class SubtitulamosTVSubtitle(Subtitle):
 
     def __init__(self, language, page_link, download_link, description, title, matches, release_info):
         super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False,
-                                              page_link=page_link, release_info=release_info, encoding="windows-1252")
+                                              page_link=page_link, encoding="windows-1252")
         self.download_link = download_link
         self.description = description.lower()
         self.title = title
-        self.matches = matches
+        self.release_info = release_info
+        self.found_matches = matches
 
     @property
     def id(self):
         return self.download_link
 
     def get_matches(self, video):
-        matches = self.matches
+        matches = self.found_matches
 
         # release_group
         if video.release_group and video.release_group.lower() in self.description:
@@ -92,7 +93,6 @@ class SubtitulamosTVProvider(Provider):
     def query(self, languages, video):
         # query the server
         result = None
-        matches = set()
         year = (" (%d)" % video.year) if video.year else ""
         q = "%s%s %dx%02d" % (video.series, year, video.season, video.episode)
         logger.debug('Searching subtitles "%s"', q)
@@ -117,7 +117,7 @@ class SubtitulamosTVProvider(Provider):
                     logger.debug('Found subtitles in "%s" language.', language)
 
                     for subt_m in re.finditer(r"<div class=\"version_name\">(.*?)</div>.*?<a href=\"/(subtitles/\d+/download)\" rel=\"nofollow\">(?:.*?<div class=\"version_comments ?\">.*?</i>(.*?)</p>)?", lang_m.group(0), re.S):
-                        logger.debug('Found release "%s".', subt_m.group(1))
+                        matches = set()
                         if video.alternative_series is None:
                             if video.series.lower() == s['name'].lower():
                                 matches.add('series')
@@ -131,7 +131,6 @@ class SubtitulamosTVProvider(Provider):
                             matches.add('title')
                         #if video.year is None or ("(%d)" % video.year) in s['name']:
                         matches.add('year')
-                        logger.debug('%d' % video.year)
                         subtitles.append(
                             SubtitulamosTVSubtitle(
                                 Language.fromietf(language), 
@@ -140,7 +139,7 @@ class SubtitulamosTVProvider(Provider):
                                 subt_m.group(1)+(subt_m.group(3) if not subt_m.group(3) is None else ""), 
                                 e['name'], 
                                 matches,
-                                ('%s %dx%d' % (s['name'], e['season'], e['number']), subt_m.group(1), lang_m.group(1))
+                                '%s %dx%d,%s,%s' % (s['name'], e['season'], e['number'], subt_m.group(1), lang_m.group(1)), 
                             )
                         )
                         
