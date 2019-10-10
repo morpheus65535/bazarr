@@ -18,9 +18,15 @@ from utils import get_sonarr_platform, get_radarr_platform
 def sonarr_path_mapping_regex():
     global path_mapping
     global sonarr_regex
+    global sonarr_use_path_mapping
 
-    path_mapping = dict(ast.literal_eval(settings.general.path_mappings))
-    sonarr_regex = re.compile("|".join(map(re.escape, path_mapping.keys())))
+    path_mapping_temp = dict(ast.literal_eval(settings.general.path_mappings))
+    path_mapping = {k: v for k, v in path_mapping_temp.items() if k != ''}
+    if any(item for sublist in path_mapping for item in sublist):
+        sonarr_use_path_mapping = True
+        sonarr_regex = re.compile("|".join(path_mapping.keys()))
+    else:
+        sonarr_use_path_mapping = False
 
 
 def sonarr_path_mapping_reverse_regex():
@@ -56,8 +62,8 @@ def radarr_path_mapping_reverse_regex():
 
 
 def path_replace(path):
-    if path is None:
-        return None
+    if path is None or sonarr_use_path_mapping is False:
+        return path
 
     reverted_path = sonarr_regex.sub(lambda match: path_mapping[match.group(0)], path, count=1)
 
