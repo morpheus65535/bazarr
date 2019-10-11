@@ -93,7 +93,7 @@ def store_subtitles(file):
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
                             try:
-                                text = text.encode().decode(encoding.original_encoding)
+                                text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
@@ -190,7 +190,7 @@ def store_subtitles_movie(file):
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
                             try:
-                                text = text.encode().decode(encoding.original_encoding)
+                                text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
