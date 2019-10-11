@@ -31,14 +31,14 @@ import six
 gc.enable()
 
 
-def store_subtitles(file):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + file)
+def store_subtitles(original_path, reversed_path):
+    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
-    if os.path.exists(file):
+    if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(file)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
                         if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
@@ -56,39 +56,39 @@ def store_subtitles(file):
                         pass
             except Exception as e:
                 logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
-        
+
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
             dest_folder = get_subtitle_destination_folder()
             subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
-            subtitles = search_external_subtitles(file, languages=get_language_set(),
+            subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
             for subtitle, language in six.iteritems(subtitles):
-                subtitle_path = get_external_subtitles_path(file, subtitle)
+                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse(subtitle_path)])
+                        [str("pb"), original_path])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
-                        [str("pb:forced"), path_replace_reverse(subtitle_path)])
-                
+                        [str("pb:forced"), original_path])
+
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse(subtitle_path)])
+                        [str(language), original_path])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(os.path.join(os.path.dirname(file), subtitle), 'r') as f:
+                        with open(os.path.join(os.path.dirname(reversed_path), subtitle), 'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -98,7 +98,7 @@ def store_subtitles(file):
                             except Exception as e:
                                 logging.exception(
                                     'BAZARR Error trying to detect language for this subtitles file: ' +
-                                    os.path.join(os.path.dirname(file), subtitle) +
+                                    os.path.join(os.path.dirname(reversed_path), subtitle) +
                                     ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                             else:
                                 if len(detected_language) > 0:
@@ -106,14 +106,14 @@ def store_subtitles(file):
                                         "BAZARR external subtitles detected and analysis guessed this language: " + str(
                                             detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
-                                        os.path.join(os.path.dirname(file), subtitle))])
+                                        os.path.join(os.path.dirname(reversed_path), subtitle))])
 
         update_count = TableEpisodes.update(
             {
                 TableEpisodes.subtitles: str(actual_subtitles)
             }
         ).where(
-            TableEpisodes.path == path_replace_reverse(file)
+            TableEpisodes.path == original_path
         ).execute()
         if update_count > 0:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
@@ -122,19 +122,19 @@ def store_subtitles(file):
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
+    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
     
     return actual_subtitles
 
 
-def store_subtitles_movie(file):
-    logging.debug('BAZARR started subtitles indexing for this file: ' + file)
+def store_subtitles_movie(original_path, reversed_path):
+    logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
-    if os.path.exists(file):
+    if os.path.exists(reversed_path):
         if settings.general.getboolean('use_embedded_subs'):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
-                subtitle_languages = embedded_subs_reader.list_languages(file)
+                subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
                         if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
@@ -152,7 +152,7 @@ def store_subtitles_movie(file):
                         pass
             except Exception as e:
                 logging.exception(
-                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(file)[1], file))
+                    "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
         
         dest_folder = get_subtitle_destination_folder() or ''
@@ -160,32 +160,29 @@ def store_subtitles_movie(file):
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
-            subtitles = search_external_subtitles(file, languages=get_language_set(),
+            subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
             for subtitle, language in six.iteritems(subtitles):
-                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)) is True:
+                if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"),
-                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
-                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)) is True:
+                        [str("pb"), original_path])
+                elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
-                        [str("pb:forced"),
-                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                        [str("pb:forced"), original_path])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language),
-                         path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                        [str(language), original_path])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(os.path.join(os.path.dirname(file), dest_folder, subtitle), 'r') as f:
+                        with open(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle), 'r') as f:
                             text = list(islice(f, 100))
                             text = ' '.join(text)
                             encoding = UnicodeDammit(text)
@@ -195,7 +192,7 @@ def store_subtitles_movie(file):
                             except Exception as e:
                                 logging.exception(
                                     'BAZARR Error trying to detect language for this subtitles file: ' +
-                                    os.path.join(os.path.dirname(file), subtitle) +
+                                    os.path.join(os.path.dirname(reversed_path), subtitle) +
                                     ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
                             else:
                                 if len(detected_language) > 0:
@@ -203,14 +200,14 @@ def store_subtitles_movie(file):
                                         "BAZARR external subtitles detected and analysis guessed this language: " + str(
                                             detected_language))
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
-                                        os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                                        os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))])
         
         update_count = TableMovies.update(
             {
                 TableMovies.subtitles: str(actual_subtitles)
             }
         ).where(
-            TableMovies.path == path_replace_reverse_movie(file)
+            TableMovies.path == original_path
         ).execute()
         if update_count > 0:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
@@ -219,7 +216,7 @@ def store_subtitles_movie(file):
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
-    logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
+    logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
     
     return actual_subtitles
 
@@ -363,7 +360,7 @@ def series_full_scan_subtitles():
     for i, episode in enumerate(episodes, 1):
         notifications.write(msg='Updating all episodes subtitles from disk...',
                             queue='list_subtitles_series', item=i, length=count_episodes)
-        store_subtitles(path_replace(episode.path))
+        store_subtitles(episode.path, path_replace(episode.path))
     
     gc.collect()
 
@@ -377,7 +374,7 @@ def movies_full_scan_subtitles():
     for i, movie in enumerate(movies, 1):
         notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', item=i, length=count_movies)
-        store_subtitles_movie(path_replace_movie(movie.path))
+        store_subtitles_movie(movie.path, path_replace_movie(movie.path))
     
     gc.collect()
 
@@ -390,7 +387,7 @@ def series_scan_subtitles(no):
     )
     
     for episode in episodes:
-        store_subtitles(path_replace(episode.path))
+        store_subtitles(episode.path, path_replace(episode.path))
     
     list_missing_subtitles(no)
 
@@ -403,7 +400,7 @@ def movies_scan_subtitles(no):
     )
     
     for movie in movies:
-        store_subtitles_movie(path_replace_movie(movie.path))
+        store_subtitles_movie(movie.path, path_replace_movie(movie.path))
     
     list_missing_subtitles_movies(no)
 

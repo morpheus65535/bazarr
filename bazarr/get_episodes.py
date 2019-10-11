@@ -5,7 +5,7 @@ import requests
 import logging
 import re
 from queueconfig import notifications
-from database import TableShows, TableEpisodes, wal_cleaning
+from database import database, TableShows, TableEpisodes, wal_cleaning
 
 from get_args import args
 from config import settings, url_sonarr
@@ -188,7 +188,7 @@ def sync_episodes():
     for i, altered_episode in enumerate(altered_episodes, 1):
         notifications.write(msg='Indexing episodes embedded subtitles...', queue='get_episodes', item=i,
                             length=len(altered_episodes))
-        store_subtitles(path_replace(altered_episode[1]))
+        store_subtitles(altered_episode[1], path_replace(altered_episode[1]))
         list_missing_subtitles(altered_episode[2])
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')

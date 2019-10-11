@@ -53,21 +53,34 @@ def sonarr_path_mapping_reverse_regex():
 def radarr_path_mapping_regex():
     global path_mapping_movie
     global radarr_regex
+    global radarr_use_path_mapping
 
-    path_mapping_movie = dict(ast.literal_eval(settings.general.path_mappings_movie))
-    radarr_regex = re.compile("|".join(map(re.escape, path_mapping_movie.keys())))
+    path_mapping_movie = ast.literal_eval(settings.general.path_mappings_movie)
+    path_mapping_movie = sorted(path_mapping_movie, key=operator.itemgetter(0), reverse=True)
+    path_mapping_movie = OrderedDict((mapping[0], mapping[1]) for mapping in path_mapping_movie if mapping[0] != '')
+    if any(item for sublist in path_mapping_movie for item in sublist):
+        radarr_use_path_mapping = True
+        radarr_regex = re.compile("|".join(path_mapping_movie.keys()))
+    else:
+        radarr_use_path_mapping = False
 
 
 def radarr_path_mapping_reverse_regex():
     global radarr_platform
     global path_mapping_reverse_movie
     global radarr_reverse_regex
+    global radarr_use_path_mapping
 
-    radarr_platform = get_radarr_platform()
+    radarr_platform = get_sonarr_platform()
 
-    path_mapping_reverse_movie_temp = ast.literal_eval(settings.general.path_mappings_movie)
-    path_mapping_reverse_movie = dict([sublist[::-1] for sublist in path_mapping_reverse_movie_temp])
-    radarr_reverse_regex = re.compile("|".join(map(re.escape, path_mapping_reverse_movie.keys())))
+    path_mapping_reverse_movie = ast.literal_eval(settings.general.path_mappings)
+    path_mapping_reverse_movie = sorted(path_mapping_reverse_movie, key=operator.itemgetter(0), reverse=True)
+    path_mapping_reverse_movie = OrderedDict((mapping[1], mapping[0]) for mapping in path_mapping_reverse_movie if mapping[0] != '')
+    if any(item for sublist in path_mapping_reverse_movie for item in sublist):
+        radarr_use_path_mapping = True
+        radarr_reverse_regex = re.compile("|".join(map(re.escape, path_mapping_reverse_movie.keys())))
+    else:
+        radarr_use_path_mapping = False
 
 
 def path_replace(path):
@@ -98,7 +111,7 @@ def path_replace_reverse(path):
 
 
 def path_replace_movie(path):
-    if path is None:
+    if path is None or radarr_use_path_mapping is False:
         return None
 
     reverted_path = radarr_regex.sub(lambda match: path_mapping_movie[match.group(0)], path, count=1)
@@ -109,17 +122,17 @@ def path_replace_movie(path):
 
 
 def path_replace_reverse_movie(path):
-    if path is None:
-        return None
+    if path is None or radarr_use_path_mapping is False:
+        return path
 
-    reverted_path_movie_temp = radarr_reverse_regex.sub(lambda match: path_mapping_reverse_movie[match.group(0)], path, count=1)
+    reverted_path_temp = radarr_reverse_regex.sub(lambda match: path_mapping_reverse_movie[match.group(0)], path, count=1)
 
     if radarr_platform == 'posix':
         from posixpath import normpath
-        reverted_path = reverted_path_movie_temp.replace('\\', '/')
+        reverted_path = reverted_path_temp.replace('\\', '/')
     elif radarr_platform == 'nt':
         from ntpath import normpath
-        reverted_path = reverted_path_movie_temp.replace('/', '\\')
+        reverted_path = reverted_path_temp.replace('/', '\\')
 
     return normpath(reverted_path)
 

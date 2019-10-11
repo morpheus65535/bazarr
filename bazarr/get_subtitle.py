@@ -607,7 +607,7 @@ def series_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode.path))
+                        store_subtitles(episode.path, path_replace(episode.path))
                         history_log(1, no, episode.sonarr_episode_id, message, path, language_code, provider, score)
                         send_notifications(no, episode.sonarr_episode_id, message)
         else:
@@ -671,7 +671,7 @@ def episode_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode.path))
+                        store_subtitles(episode.path, path_replace(episode.path))
                         history_log(1, episode.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
                         send_notifications(episode.sonarr_series_id, episode.sonarr_episode_id, message)
                         list_missing_subtitles(episode.sonarr_series_id)
@@ -720,7 +720,7 @@ def movies_download_subtitles(no):
                     language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
-                    store_subtitles_movie(path_replace_movie(movie.path))
+                    store_subtitles_movie(movie.path, path_replace_movie(movie.path))
                     history_log_movie(1, no, message, path, language_code, provider, score)
                     send_notifications_movie(no, message)
         else:
@@ -798,7 +798,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles(path_replace(episode.path))
+                            store_subtitles(episode.path, path_replace(episode.path))
                             list_missing_subtitles(episode.sonarr_series_id.sonarr_series_id)
                             history_log(1, episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
                             send_notifications(episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message)
@@ -867,7 +867,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles_movie(path_replace_movie(movie.path))
+                            store_subtitles_movie(movie.path, path_replace_movie(movie.path))
                             list_missing_subtitles_movies(movie.radarr_id)
                             history_log_movie(1, movie.radarr_id, message, path, language_code, provider, score)
                             send_notifications_movie(movie.radarr_id, message)
@@ -1222,7 +1222,7 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode['video_path']))
+                        store_subtitles(episode['video_path'], path_replace(episode['video_path']))
                         history_log(3, episode['sonarr_series_id'], episode['sonarr_episode_id'], message, path, language_code, provider, score)
                         send_notifications(episode['sonarr_series_id'], episode['sonarr_episode_id'], message)
     
@@ -1271,6 +1271,6 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles_movie(path_replace_movie(movie['video_path']))
+                        store_subtitles_movie(movie['video_path'], path_replace_movie(movie['video_path']))
                         history_log_movie(3, movie['radarr_id'], message, path, language_code, provider, score)
                         send_notifications_movie(movie['radarr_id'], message)
