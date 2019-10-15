@@ -294,7 +294,8 @@ def request_json(url, **kwargs):
 def updated(restart=True):
     if settings.general.getboolean('update_restart') and restart:
         try:
-            requests.get(bazarr_url + 'restart')
+            from main import restart
+            restart()
         except requests.ConnectionError:
             logging.info('BAZARR Restart failed, please restart Bazarr manualy')
             updated(restart=False)

@@ -121,7 +121,7 @@ class SubtitleStreamParser(BaseParser):
         """Returns a string """
         tags = data.get("tags", None)
         if tags:
-            info = tags.get("language", None)
+            info = tags.get("language", None) or tags.get("LANGUAGE", None)
             return info, (info or "null")
         return None, "null"
 
