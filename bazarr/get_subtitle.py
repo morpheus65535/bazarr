@@ -1181,7 +1181,7 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode['languages'] != "None":
+            if episode['languages']:
                 desired_languages = ast.literal_eval(str(episode['languages']))
                 if episode['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
@@ -1230,7 +1230,7 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if movie['languages'] != "None":
+            if movie['languages']:
                 desired_languages = ast.literal_eval(str(movie['languages']))
                 if movie['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
