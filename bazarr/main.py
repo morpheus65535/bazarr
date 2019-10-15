@@ -23,11 +23,8 @@ from calendar import day_name
 
 from get_args import args
 from init import *
-from database import database, database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+from database import database, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
     TableSettingsLanguages, TableSettingsNotifier, System
-
-# Initiate database
-database_init()
 
 from notifier import update_notifier
 from logger import configure_logging, empty_log
@@ -736,7 +733,7 @@ def edit_series(no):
             TableShows.forced: forced
         }
     ).where(
-        TableShows.sonarr_series_id ** no
+        TableShows.sonarr_series_id == no
     ).execute()
 
     list_missing_subtitles(no)
@@ -809,7 +806,7 @@ def episodes(no):
         fn.path_substitution(TableShows.path).alias('path'),
         TableShows.forced
     ).where(
-        TableShows.sonarr_series_id ** str(no)
+        TableShows.sonarr_series_id == no
     ).limit(1)
     for series in series_details:
         tvdbid = series.tvdb_id

@@ -33,7 +33,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from get_args import args
 from queueconfig import notifications
 from pyprobe.pyprobe import VideoFileParser
-from database import TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
+from database import database, TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from peewee import fn, JOIN
 
 from analytics import track_event
@@ -620,7 +620,7 @@ def series_download_subtitles(no):
 
 def episode_download_subtitles(no):
     episodes_details_clause = [
-        (TableEpisodes.sonarr_series_id == no)
+        (TableEpisodes.sonarr_episode_id == no)
     ]
     if settings.sonarr.getboolean('only_monitored'):
         episodes_details_clause.append(

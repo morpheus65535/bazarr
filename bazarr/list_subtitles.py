@@ -222,11 +222,11 @@ def store_subtitles_movie(file):
 
 
 def list_missing_subtitles(no=None):
-    episodes_subtitles_clause = {TableShows.sonarr_series_id.is_null(False)}
+    episodes_subtitles_clause = (TableShows.sonarr_series_id.is_null(False))
     if no is not None:
-        episodes_subtitles_clause = {TableShows.sonarr_series_id ** no}
-
+        episodes_subtitles_clause = (TableShows.sonarr_series_id == no)
     episodes_subtitles = TableEpisodes.select(
+        TableShows.sonarr_series_id,
         TableEpisodes.sonarr_episode_id,
         TableEpisodes.subtitles,
         TableShows.languages,
@@ -288,9 +288,9 @@ def list_missing_subtitles(no=None):
 
 
 def list_missing_subtitles_movies(no=None):
-    movies_subtitles_clause = {TableMovies.radarr_id.is_null(False)}
+    movies_subtitles_clause = (TableMovies.radarr_id.is_null(False))
     if no is not None:
-        movies_subtitles_clause = {TableMovies.radarr_id ** no}
+        movies_subtitles_clause = (TableMovies.radarr_id == no)
 
     movies_subtitles = TableMovies.select(
         TableMovies.radarr_id,
