@@ -3,13 +3,20 @@ import atexit
 
 from get_args import args
 from peewee import *
+from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import *
 
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 
-database = SqliteDatabase(os.path.join(args.config_dir, 'db', 'bazarr.db'))
+database = SqliteQueueDatabase(
+    os.path.join(args.config_dir, 'db', 'bazarr.db'),
+    use_gevent=False,
+    autostart=True,
+    queue_max_size=256,  # Max. # of pending writes that can accumulate.
+    results_timeout=30.0  # Max. time to wait for query to be executed.
+)
+
 database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
-database.timeout = 30  # Number of second to wait for database
 database.cache_size = -1024  # Number of KB of cache for wal-journal.
                              # Must be negative because positive means number of pages.
 database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
