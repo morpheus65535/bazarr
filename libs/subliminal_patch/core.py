@@ -28,7 +28,7 @@ from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter,
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
 from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE
 from scandir import scandir, scandir_generic as _scandir_generic
@@ -280,14 +280,10 @@ class SZProviderPool(ProviderPool):
                 logger.debug("RAR Traceback: %s", traceback.format_exc())
                 return False
 
-            except (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled, ParseResponseError) as e:
-                self.throttle_callback(subtitle.provider_name, e)
-                self.discarded_providers.add(subtitle.provider_name)
-                return False
-
-            except:
+            except Exception as e:
                 logger.exception('Unexpected error in provider %r, Traceback: %s', subtitle.provider_name,
                                  traceback.format_exc())
+                self.throttle_callback(subtitle.provider_name, e)
                 self.discarded_providers.add(subtitle.provider_name)
                 return False
 
@@ -611,16 +607,6 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         if adv_tag:
             forced = "forced" in adv_tag
 
-        # extract the potential language code
-        try:
-            language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
-            try:
-                Language.fromietf(language_code)
-            except:
-                language_code = None
-        except IndexError:
-            language_code = None
-
         # remove possible language code for matching
         p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub("", p_root)
 
@@ -633,19 +619,21 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             if match_strictness == "strict" or (match_strictness == "loose" and not filename_contains):
                 continue
 
-        # default language is undefined
-        language = Language('und')
+        language = None
 
-        # attempt to parse
-        if language_code:
+        # extract the potential language code
+        try:
+            language_code = p_root.rsplit(".", 1)[1].replace('_', '-')
             try:
                 language = Language.fromietf(language_code)
                 language.forced = forced
             except ValueError:
                 logger.error('Cannot parse language code %r', language_code)
-                language = None
+                language_code = None
+        except IndexError:
+            language_code = None
 
-        elif not language_code and only_one:
+        if not language and not language_code and only_one:
             language = Language.rebuild(list(languages)[0], forced=forced)
 
         subtitles[p] = language
@@ -875,6 +863,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             if content:
                 if os.path.exists(subtitle_path):
                     os.remove(subtitle_path)
+
                 with open(subtitle_path, 'w') as f:
                     f.write(content)
                 subtitle.storage_path = subtitle_path
