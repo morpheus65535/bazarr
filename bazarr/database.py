@@ -8,13 +8,17 @@ from playhouse.sqliteq import SqliteQueueDatabase
 from playhouse.migrate import *
 
 database = SqliteQueueDatabase(
-    None,
+    os.path.join(args.config_dir, 'db', 'bazarr.db'),
     use_gevent=False,
-    autostart=False,
+    autostart=True,
     queue_max_size=256,  # Max. # of pending writes that can accumulate.
-    results_timeout=30.0)  # Max. time to wait for query to be executed.
+    results_timeout=30.0  # Max. time to wait for query to be executed.
+)
 
-migrator = SqliteMigrator(database)
+database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
+database.cache_size = -1024  # Number of KB of cache for wal-journal.
+                             # Must be negative because positive means number of pages.
+database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
 
 
 @database.func('path_substitution')
@@ -62,15 +66,12 @@ class TableShows(BaseModel):
     tvdb_id = IntegerField(column_name='tvdbId', null=True, unique=True, primary_key=True)
     year = TextField(null=True)
 
-    migrate(
-        migrator.add_column('table_shows', 'forced', forced),
-    )
-
     class Meta:
         table_name = 'table_shows'
 
 
 class TableEpisodes(BaseModel):
+    rowid = IntegerField()
     audio_codec = TextField(null=True)
     episode = IntegerField(null=False)
     failed_attempts = TextField(column_name='failedAttempts', null=True)
@@ -88,16 +89,13 @@ class TableEpisodes(BaseModel):
     video_codec = TextField(null=True)
     episode_file_id = IntegerField(null=True)
 
-    migrate(
-        migrator.add_column('table_episodes', 'episode_file_id', episode_file_id),
-    )
-
     class Meta:
         table_name = 'table_episodes'
         primary_key = False
 
 
 class TableMovies(BaseModel):
+    rowid = IntegerField()
     alternative_titles = TextField(column_name='alternativeTitles', null=True)
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
@@ -123,11 +121,6 @@ class TableMovies(BaseModel):
     video_codec = TextField(null=True)
     year = TextField(null=True)
     movie_file_id = IntegerField(null=True)
-
-    migrate(
-        migrator.add_column('table_movies', 'forced', forced),
-        migrator.add_column('table_movies', 'movie_file_id', movie_file_id),
-    )
 
     class Meta:
         table_name = 'table_movies'
@@ -184,20 +177,37 @@ class TableSettingsNotifier(BaseModel):
         table_name = 'table_settings_notifier'
 
 
-def database_init():
-    database.init(os.path.join(args.config_dir, 'db', 'bazarr.db'))
-    database.start()
-    database.connect()
+# Database tables creation if they don't exists
+models_list = [TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages,
+               TableSettingsNotifier, System]
+database.create_tables(models_list, safe=True)
 
-    database.pragma('wal_checkpoint', 'TRUNCATE')  # Run a checkpoint and merge remaining wal-journal.
-    database.cache_size = -1024  # Number of KB of cache for wal-journal.
-                                 # Must be negative because positive means number of pages.
-    database.wal_autocheckpoint = 50  # Run an automatic checkpoint every 50 write transactions.
 
-    models_list = [TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie, TableSettingsLanguages,
-                   TableSettingsNotifier, System]
+# Database migration
+migrator = SqliteMigrator(database)
 
-    database.create_tables(models_list, safe=True)
+# TableShows migration
+table_shows_columns = []
+for column in database.get_columns('table_shows'):
+    table_shows_columns.append(column.name)
+if 'forced' not in table_shows_columns:
+    migrate(migrator.add_column('table_shows', 'forced', TableShows.forced))
+
+# TableEpisodes migration
+table_episodes_columns = []
+for column in database.get_columns('table_episodes'):
+    table_episodes_columns.append(column.name)
+if 'episode_file_id' not in table_episodes_columns:
+    migrate(migrator.add_column('table_episodes', 'episode_file_id', TableEpisodes.episode_file_id))
+
+# TableMovies migration
+table_movies_columns = []
+for column in database.get_columns('table_movies'):
+    table_movies_columns.append(column.name)
+if 'forced' not in table_movies_columns:
+    migrate(migrator.add_column('table_movies', 'forced', TableMovies.forced))
+if 'movie_file_id' not in table_movies_columns:
+    migrate(migrator.add_column('table_movies', 'movie_file_id', TableMovies.movie_file_id))
 
 
 def wal_cleaning():

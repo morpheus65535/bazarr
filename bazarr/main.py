@@ -28,11 +28,8 @@ from calendar import day_name
 
 from get_args import args
 from init import *
-from database import database, database_init, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
+from database import database, TableEpisodes, TableShows, TableMovies, TableHistory, TableHistoryMovie, \
     TableSettingsLanguages, TableSettingsNotifier, System
-
-# Initiate database
-database_init()
 
 from notifier import update_notifier
 from logger import configure_logging, empty_log
@@ -742,10 +739,10 @@ def edit_series(no):
             TableShows.forced: forced
         }
     ).where(
-        TableShows.sonarr_series_id ** no
+        TableShows.sonarr_series_id == no
     ).execute()
 
-    list_missing_subtitles(no)
+    list_missing_subtitles(no=no)
     
     redirect(ref)
 
@@ -793,7 +790,7 @@ def edit_serieseditor():
             ).execute()
     
     for serie in series:
-        list_missing_subtitles(serie)
+        list_missing_subtitles(no=serie)
     
     redirect(ref)
 
@@ -815,7 +812,7 @@ def episodes(no):
         fn.path_substitution(TableShows.path).alias('path'),
         TableShows.forced
     ).where(
-        TableShows.sonarr_series_id ** str(no)
+        TableShows.sonarr_series_id == no
     ).limit(1)
     for series in series_details:
         tvdbid = series.tvdb_id
@@ -1401,7 +1398,7 @@ def wantedseries():
     ).where(
         reduce(operator.and_, missing_subtitles_clause)
     ).order_by(
-        TableEpisodes.sonarr_episode_id.desc()
+        TableEpisodes.rowid.desc()
     ).paginate(
         int(page),
         page_size
@@ -1445,7 +1442,7 @@ def wantedmovies():
     ).where(
         reduce(operator.and_, missing_subtitles_clause)
     ).order_by(
-        TableMovies.radarr_id.desc()
+        TableMovies.rowid.desc()
     ).paginate(
         int(page),
         page_size
@@ -2060,8 +2057,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(episodePath, six.text_type(episodePath))
-    list_missing_subtitles(sonarrSeriesId)
+    store_subtitles(episodePath, unicode(episodePath))
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
@@ -2080,7 +2076,6 @@ def remove_subtitles_movie():
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles_movie(moviePath, six.text_type(moviePath))
-    list_missing_subtitles_movies(radarrId)
 
 
 @route(base_url + 'get_subtitle', method='POST')
@@ -2114,7 +2109,6 @@ def get_subtitle():
             history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(episodePath, six.text_type(episodePath))
-            list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
     except OSError:
         pass
@@ -2172,7 +2166,6 @@ def manual_get_subtitle():
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(episodePath, six.text_type(episodePath))
-            list_missing_subtitles(sonarrSeriesId)
         redirect(ref)
     except OSError:
         pass
@@ -2216,7 +2209,6 @@ def perform_manual_upload_subtitle():
             history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
             store_subtitles(episodePath, six.text_type(episodePath))
-            list_missing_subtitles(sonarrSeriesId)
 
         redirect(ref)
     except OSError:
@@ -2253,7 +2245,6 @@ def get_subtitle_movie():
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(moviePath, six.text_type(moviePath))
-            list_missing_subtitles_movies(radarrId)
         redirect(ref)
     except OSError:
         pass
@@ -2309,7 +2300,6 @@ def manual_get_subtitle_movie():
             history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(moviePath, six.text_type(moviePath))
-            list_missing_subtitles_movies(radarrId)
         redirect(ref)
     except OSError:
         pass
@@ -2352,7 +2342,6 @@ def perform_manual_upload_subtitle_movie():
             history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
             store_subtitles_movie(moviePath, six.text_type(moviePath))
-            list_missing_subtitles_movies(radarrId)
 
         redirect(ref)
     except OSError:

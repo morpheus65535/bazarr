@@ -1,5 +1,4 @@
 # coding=utf-8
-from __future__ import absolute_import
 import logging
 import re
 import datetime
@@ -11,7 +10,7 @@ from requests import Session
 from subliminal.cache import region
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
-    Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup, show_cells_re
+    Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.utils import sanitize
 from subliminal_patch.exceptions import TooManyRequests
@@ -19,6 +18,8 @@ from subliminal_patch.pitcher import pitchers, load_verification, store_verifica
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
+
+show_cells_re = re.compile(b'<td class="(?:version|vr)">.*?</td>', re.DOTALL)
 
 #: Series header parsing regex
 series_year_re = re.compile(r'^(?P<series>[ \w\'.:(),*&!?-]+?)(?: \((?P<year>\d{4})\))?$')
@@ -104,11 +105,15 @@ class Addic7edProvider(_Addic7edProvider):
             tries = 0
             while tries < 3:
                 r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
-                if "grecaptcha" in r.text:
+                if "g-recaptcha" in r.text or "grecaptcha" in r.text:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
                                 'happen once every so often')
 
-                    site_key = re.search(r'grecaptcha.execute\(\'(.+?)\',', r.text).group(1)
+                    for g, s in (("g-recaptcha-response", r'g-recaptcha.+?data-sitekey=\"(.+?)\"'),
+                                 ("recaptcha_response", r'grecaptcha.execute\(\'(.+?)\',')):
+                        site_key = re.search(s, r.text).group(1)
+                        if site_key:
+                            break
                     if not site_key:
                         logger.error("Addic7ed: Captcha site-key not found!")
                         return
@@ -122,7 +127,7 @@ class Addic7edProvider(_Addic7edProvider):
                     if not result:
                         raise Exception("Addic7ed: Couldn't solve captcha!")
 
-                    data["recaptcha_response"] = result
+                    data[g] = result
 
                 r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
                                       headers={"Referer": self.server_url + "login.php"})
@@ -130,12 +135,11 @@ class Addic7edProvider(_Addic7edProvider):
                 if "relax, slow down" in r.text:
                     raise TooManyRequests(self.username)
 
-                if r.status_code != 302:
-                    if "User <b></b> doesn't exist" in r.text and tries <= 2:
-                        logger.info("Addic7ed: Error, trying again. (%s/%s)", tries+1, 3)
-                        tries += 1
-                        continue
+                if "Try again" in r.content or "Wrong password" in r.content:
+                    raise AuthenticationError(self.username)
 
+                if r.status_code != 302:
+                    logger.error("Addic7ed: Something went wrong when logging in")
                     raise AuthenticationError(self.username)
                 break
 

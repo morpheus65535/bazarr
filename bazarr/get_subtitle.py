@@ -34,7 +34,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from get_args import args
 from queueconfig import notifications
 from pyprobe.pyprobe import VideoFileParser
-from database import TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
+from database import database, TableShows, TableEpisodes, TableMovies, TableHistory, TableHistoryMovie
 from peewee import fn, JOIN
 
 from analytics import track_event
@@ -614,7 +614,6 @@ def series_download_subtitles(no):
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
             break
-    list_missing_subtitles(no)
     
     if count_episodes_details:
         notifications.write(msg='Search Complete. Please Reload The Page.', type='success', duration='permanent',
@@ -623,7 +622,7 @@ def series_download_subtitles(no):
 
 def episode_download_subtitles(no):
     episodes_details_clause = [
-        (TableEpisodes.sonarr_series_id == no)
+        (TableEpisodes.sonarr_episode_id == no)
     ]
     if settings.sonarr.getboolean('only_monitored'):
         episodes_details_clause.append(
@@ -674,7 +673,6 @@ def episode_download_subtitles(no):
                         store_subtitles(episode.path, path_replace(episode.path))
                         history_log(1, episode.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
                         send_notifications(episode.sonarr_series_id, episode.sonarr_episode_id, message)
-                        list_missing_subtitles(episode.sonarr_series_id)
         else:
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
@@ -727,7 +725,6 @@ def movies_download_subtitles(no):
             notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
             logging.info("BAZARR All providers are throttled")
             break
-    list_missing_subtitles_movies(no)
     
     if count_movie:
         notifications.write(msg='Search Complete. Please Reload The Page.', type='success', duration='permanent',
@@ -799,7 +796,6 @@ def wanted_download_subtitles(path, l, count_episodes):
                             provider = result[3]
                             score = result[4]
                             store_subtitles(episode.path, path_replace(episode.path))
-                            list_missing_subtitles(episode.sonarr_series_id.sonarr_series_id)
                             history_log(1, episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message, path, language_code, provider, score)
                             send_notifications(episode.sonarr_series_id.sonarr_series_id, episode.sonarr_episode_id, message)
                     else:
@@ -868,7 +864,6 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             provider = result[3]
                             score = result[4]
                             store_subtitles_movie(movie.path, path_replace_movie(movie.path))
-                            list_missing_subtitles_movies(movie.radarr_id)
                             history_log_movie(1, movie.radarr_id, message, path, language_code, provider, score)
                             send_notifications_movie(movie.radarr_id, message)
                     else:
@@ -1184,7 +1179,7 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if episode['languages'] != "None":
+            if episode['languages']:
                 desired_languages = ast.literal_eval(str(episode['languages']))
                 if episode['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
@@ -1233,7 +1228,7 @@ def upgrade_subtitles():
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
                 logging.info("BAZARR All providers are throttled")
                 return
-            if movie['languages'] != "None":
+            if movie['languages']:
                 desired_languages = ast.literal_eval(str(movie['languages']))
                 if movie['forced'] == "True":
                     forced_languages = [l + ":forced" for l in desired_languages]
