@@ -63,6 +63,7 @@ class TableShows(BaseModel):
 
 
 class TableEpisodes(BaseModel):
+    rowid = IntegerField()
     audio_codec = TextField(null=True)
     episode = IntegerField(null=False)
     failed_attempts = TextField(column_name='failedAttempts', null=True)
@@ -86,6 +87,7 @@ class TableEpisodes(BaseModel):
 
 
 class TableMovies(BaseModel):
+    rowid = IntegerField()
     alternative_titles = TextField(column_name='alternativeTitles', null=True)
     audio_codec = TextField(null=True)
     audio_language = TextField(null=True)
