@@ -16,8 +16,6 @@ from get_subtitle import episode_download_subtitles
 def update_all_episodes():
     series_full_scan_subtitles()
     logging.info('BAZARR All existing episode subtitles indexed from disk.')
-    list_missing_subtitles()
-    logging.info('BAZARR All missing episode subtitles updated in database.')
     wal_cleaning()
 
 
@@ -172,8 +170,7 @@ def sync_episodes():
             added_episode
         ).on_conflict_ignore().execute()
         altered_episodes.append([added_episode['sonarr_episode_id'],
-                                 added_episode['path'],
-                                 added_episode['sonarr_series_id']])
+                                 added_episode['path']])
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
@@ -188,7 +185,6 @@ def sync_episodes():
         notifications.write(msg='Indexing episodes embedded subtitles...', queue='get_episodes', item=i,
                             length=len(altered_episodes))
         store_subtitles(path_replace(altered_episode[1]))
-        list_missing_subtitles(altered_episode[2])
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 

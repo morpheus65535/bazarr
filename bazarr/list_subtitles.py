@@ -120,7 +120,15 @@ def store_subtitles(file):
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
-    
+
+    episode = TableEpisodes.select(
+        TableEpisodes.sonarr_episode_id
+    ).where(
+        TableEpisodes.path == path_replace_reverse(file)
+    ).first()
+
+    list_missing_subtitles(epno=episode.sonarr_episode_id)
+
     return actual_subtitles
 
 
@@ -217,14 +225,24 @@ def store_subtitles_movie(file):
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
-    
+
+    movie = TableMovies.select(
+        TableMovies.radarr_id
+    ).where(
+        TableMovies.path == path_replace_reverse_movie(file)
+    ).first()
+
+    list_missing_subtitles_movies(no=movie.radarr_id)
+
     return actual_subtitles
 
 
-def list_missing_subtitles(no=None):
+def list_missing_subtitles(no=None, epno=None):
     episodes_subtitles_clause = (TableShows.sonarr_series_id.is_null(False))
     if no is not None:
         episodes_subtitles_clause = (TableShows.sonarr_series_id == no)
+    elif epno is not None:
+        episodes_subtitles_clause = (TableEpisodes.sonarr_episode_id == epno)
     episodes_subtitles = TableEpisodes.select(
         TableShows.sonarr_series_id,
         TableEpisodes.sonarr_episode_id,
@@ -388,8 +406,6 @@ def series_scan_subtitles(no):
     
     for episode in episodes:
         store_subtitles(path_replace(episode.path))
-    
-    list_missing_subtitles(no)
 
 
 def movies_scan_subtitles(no):
@@ -401,8 +417,6 @@ def movies_scan_subtitles(no):
     
     for movie in movies:
         store_subtitles_movie(path_replace_movie(movie.path))
-    
-    list_missing_subtitles_movies(no)
 
 
 def get_external_subtitles_path(file, subtitle):

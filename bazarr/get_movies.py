@@ -18,8 +18,6 @@ from database import TableMovies, wal_cleaning
 def update_all_movies():
     movies_full_scan_subtitles()
     logging.info('BAZARR All existing movie subtitles indexed from disk.')
-    list_missing_subtitles_movies()
-    logging.info('BAZARR All missing movie subtitles updated in database.')
     wal_cleaning()
 
 
@@ -269,7 +267,6 @@ def update_movies():
                 notifications.write(msg='Indexing movies embedded subtitles...', queue='get_movies', item=i,
                                     length=len(altered_movies))
                 store_subtitles_movie(path_replace_movie(altered_movie[1]))
-                list_missing_subtitles_movies(altered_movie[2])
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 

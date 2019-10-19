@@ -156,7 +156,7 @@ def update_series():
                 TableShows.insert(
                     added_series
                 ).on_conflict_ignore().execute()
-                list_missing_subtitles(added_series['sonarr_series_id'])
+                list_missing_subtitles(no=added_series['sonarr_series_id'])
 
             # Remove old series from DB
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
