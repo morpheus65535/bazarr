@@ -1395,7 +1395,7 @@ def wantedseries():
     ).where(
         reduce(operator.and_, missing_subtitles_clause)
     ).order_by(
-        TableEpisodes.sonarr_episode_id.desc()
+        TableEpisodes.rowid.desc()
     ).paginate(
         int(page),
         page_size
@@ -1439,7 +1439,7 @@ def wantedmovies():
     ).where(
         reduce(operator.and_, missing_subtitles_clause)
     ).order_by(
-        TableMovies.radarr_id.desc()
+        TableMovies.rowid.desc()
     ).paginate(
         int(page),
         page_size
