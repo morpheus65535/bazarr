@@ -62,7 +62,7 @@ class SZProviderPool(ProviderPool):
     def __init__(self, providers=None, provider_configs=None, blacklist=None, throttle_callback=None,
                  pre_download_hook=None, post_download_hook=None, language_hook=None):
         #: Name of providers to use
-        self.providers = providers or provider_registry.names()
+        self.providers = providers
 
         #: Provider configuration
         self.provider_configs = provider_configs or {}
