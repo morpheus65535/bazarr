@@ -395,7 +395,7 @@
 							<th style="text-align: left;">HI:</th>
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Matching:</th>
-							<th style="text-align: left;">Filename:</th>
+							<th style="text-align: left;">Releases:</th>
 							<th></th>
 						</tr>
 					</thead>
