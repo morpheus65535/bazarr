@@ -243,7 +243,8 @@ def update_movies():
                 ).execute()
                 altered_movies.append([updated_movie['tmdb_id'],
                                        updated_movie['path'],
-                                       updated_movie['radarr_id']])
+                                       updated_movie['radarr_id'],
+                                       updated_movie['monitored']])
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
@@ -252,7 +253,8 @@ def update_movies():
                 ).on_conflict_ignore().execute()
                 altered_movies.append([added_movie['tmdb_id'],
                                        added_movie['path'],
-                                       added_movie['radarr_id']])
+                                       added_movie['radarr_id'],
+                                       added_movie['monitored']])
 
             # Remove old movies from DB
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
@@ -274,7 +276,11 @@ def update_movies():
             if len(altered_movies) <= 5:
                 logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
                 for altered_movie in altered_movies:
-                    movies_download_subtitles(altered_movie[2])
+                    if settings.radarr.getboolean('only_monitored'):
+                        if altered_movie[3] == 'True':
+                            movies_download_subtitles(altered_movie[2])
+                    else:
+                        movies_download_subtitles(altered_movie[2])
             else:
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
