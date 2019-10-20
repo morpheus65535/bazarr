@@ -1,4 +1,5 @@
 import enzyme
+from enzyme.exceptions import MalformedMKVError
 import logging
 import os
 import subprocess
@@ -29,7 +30,10 @@ class EmbeddedSubsReader:
         else:
             if os.path.splitext(file)[1] == '.mkv':
                 with open(file, 'rb') as f:
-                    mkv = enzyme.MKV(f)
+                    try:
+                        mkv = enzyme.MKV(f)
+                    except MalformedMKVError:
+                        logging.error('BAZARR cannot analyze this MKV with our built-in MKV parser, you should install ffmpeg: ' + file)
                 for subtitle_track in mkv.subtitle_tracks:
                     subtitles_list.append([subtitle_track.language, subtitle_track.forced, subtitle_track.codec_id])
 
