@@ -722,45 +722,25 @@ def episodes(no):
 def movies():
     authorize()
 
-    missing_count = TableMovies.select().count()
+    missing_count = database.execute("SELECT COUNT(*) FROM table_movies")
     page = request.GET.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-    
-    data = TableMovies.select(
-        TableMovies.tmdb_id,
-        TableMovies.title,
-        fn.path_substitution_movie(TableMovies.path).alias('path'),
-        TableMovies.languages,
-        TableMovies.hearing_impaired,
-        TableMovies.radarr_id,
-        TableMovies.poster,
-        TableMovies.audio_language,
-        TableMovies.monitored,
-        TableMovies.scene_name,
-        TableMovies.forced
-    ).order_by(
-        TableMovies.sort_title.asc()
-    ).paginate(
-        int(page),
-        page_size
-    )
 
-    languages = TableSettingsLanguages.select(
-        TableSettingsLanguages.code2,
-        TableSettingsLanguages.name
-    ).where(
-        TableSettingsLanguages.enabled == 1
-    )
+    # path_replace_movie
+    data = database.execute("SELECT tmdbId, title, path, languages, hearing_impaired, radarrId, poster, "
+                            "audio_language, monitored, scenename, forced FROM table_movies ORDER BY sortTitle ASC "
+                            "LIMIT ? OFFSET ?", (page_size, offset))
 
-    output = template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
+    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
+
+    return template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
                       missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
                       single_language=settings.general.getboolean('single_language'), page_size=page_size,
                       current_port=settings.general.port)
-    return output
 
 
 @route(base_url + 'movieseditor')
@@ -768,33 +748,17 @@ def movies():
 def movieseditor():
     authorize()
     
-    missing_count = TableMovies.select().count()
-    
-    data = TableMovies.select(
-        TableMovies.tmdb_id,
-        TableMovies.title,
-        fn.path_substitution_movie(TableMovies.path).alias('path'),
-        TableMovies.languages,
-        TableMovies.hearing_impaired,
-        TableMovies.radarr_id,
-        TableMovies.poster,
-        TableMovies.audio_language,
-        TableMovies.forced
-    ).order_by(
-        TableMovies.sort_title.asc()
-    )
+    missing_count = database.execute("SELECT COUNT(*) FORM table_movies")
 
-    languages = TableSettingsLanguages.select(
-        TableSettingsLanguages.code2,
-        TableSettingsLanguages.name
-    ).where(
-        TableSettingsLanguages.enabled == 1
-    )
+    # path_replace_movie
+    data = database.execute("SELECT tmdbId, title, path, languages, hearing_impaired, radarrId, poster, "
+                            "audio_language, forced FROM table_movies ORDER BY sortTitle ASC")
 
-    output = template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, base_url=base_url,
-                      single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
-    return output
+    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
+
+    return template('movieseditor', bazarr_version=bazarr_version, rows=data, languages=languages,
+                    missing_count=missing_count, base_url=base_url, single_language=
+                    settings.general.getboolean('single_language'), current_port=settings.general.port)
 
 
 @route(base_url + 'edit_movieseditor', method='POST')
@@ -815,29 +779,11 @@ def edit_movieseditor():
                 lang = 'None'
             else:
                 lang = str(lang)
-            TableMovies.update(
-                {
-                    TableMovies.languages: lang
-                }
-            ).where(
-                TableMovies.radarr_id % movie
-            ).execute()
+            database.execute("UPDATE table_movies (languages) VALUES (?) WHERE radarrId=?", (lang, movie))
         if hi != '':
-            TableMovies.update(
-                {
-                    TableMovies.hearing_impaired: hi
-                }
-            ).where(
-                TableMovies.radarr_id % movie
-            ).execute()
+            database.execute("UPDATE table_movies (hearing_impaired) VALUES (?) WHERE radarrId=?", (hi, movie))
         if forced != '':
-            TableMovies.update(
-                {
-                    TableMovies.forced: forced
-                }
-            ).where(
-                TableMovies.radarr_id % movie
-            ).execute()
+            database.execute("UPDATE table_movies (forced) VALUES (?) WHERE radarrId=?", (forced, movie))
     
     for movie in movies:
         list_missing_subtitles_movies(movie)
@@ -874,16 +820,9 @@ def edit_movie(no):
         hi = "True"
     else:
         hi = "False"
-    
-    TableMovies.update(
-        {
-            TableMovies.languages: str(lang),
-            TableMovies.hearing_impaired: hi,
-            TableMovies.forced: forced
-        }
-    ).where(
-        TableMovies.radarr_id % no
-    ).execute()
+
+    database.execute("UPDATE table_movies (languages, hearing_impaired, forced) VALUES (?,?,?) WHERE radarrId=?",
+                     (str(lang), hi, forced, no))
 
     list_missing_subtitles_movies(no)
     
@@ -894,40 +833,20 @@ def edit_movie(no):
 @custom_auth_basic(check_credentials)
 def movie(no):
     authorize()
-    
-    movies_details = TableMovies.select(
-        TableMovies.title,
-        TableMovies.overview,
-        TableMovies.poster,
-        TableMovies.fanart,
-        TableMovies.hearing_impaired,
-        TableMovies.tmdb_id,
-        TableMovies.audio_language,
-        TableMovies.languages,
-        fn.path_substitution_movie(TableMovies.path).alias('path'),
-        TableMovies.subtitles,
-        TableMovies.radarr_id,
-        TableMovies.missing_subtitles,
-        TableMovies.scene_name,
-        TableMovies.monitored,
-        TableMovies.failed_attempts,
-        TableMovies.forced
-    ).where(
-        TableMovies.radarr_id % str(no)
-    )
+
+    # path_replace_movie
+    movies_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbId, "
+                                      "audio_language, languages, path, subtitles, radarrId, missing_subtitles, "
+                                      "scenename, monitored, failedAttempts, forced FROM table_movies "
+                                      "WHERE radarrId=?", (no,))
 
     for movie_details in movies_details:
         movies_details = movie_details
         break
 
-    tmdbid = movies_details.tmdb_id
+    tmdbid = movies_details['tmdb_id']
 
-    languages = TableSettingsLanguages.select(
-        TableSettingsLanguages.code2,
-        TableSettingsLanguages.name
-    ).where(
-        TableSettingsLanguages.enabled == 1
-    )
+    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
                     languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
