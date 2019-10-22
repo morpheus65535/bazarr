@@ -627,7 +627,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             try:
                 language = Language.fromietf(language_code)
                 language.forced = forced
-            except ValueError:
+            except (ValueError, LanguageReverseError):
                 logger.error('Cannot parse language code %r', language_code)
                 language_code = None
         except IndexError:
