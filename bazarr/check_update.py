@@ -8,7 +8,7 @@ import tarfile
 from get_args import args
 from config import settings, bazarr_url
 from queueconfig import notifications
-from database import System
+from database import database
 
 if not args.no_update and not args.release_update:
     import git
@@ -300,4 +300,4 @@ def updated(restart=True):
             logging.info('BAZARR Restart failed, please restart Bazarr manualy')
             updated(restart=False)
     else:
-        System.update({System.updated: 1}).execute()
+        database.execute("UPDATE system SET updated='1'")

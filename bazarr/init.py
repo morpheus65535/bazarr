@@ -11,7 +11,6 @@ from config import settings
 from check_update import check_releases
 from get_args import args
 from utils import get_binary
-from database import database_init
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -54,9 +53,6 @@ if not os.path.exists(os.path.join(args.config_dir, 'log')):
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
     logging.debug("BAZARR Created cache folder")
-
-# Initiate database
-database_init()
 
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")

@@ -10,7 +10,7 @@ import requests
 from whichcraft import which
 from get_args import args
 from config import settings, url_sonarr, url_radarr
-from database import TableHistory, TableHistoryMovie
+from database import database
 
 from subliminal import region as subliminal_cache_region
 import datetime
@@ -19,35 +19,18 @@ import glob
 
 def history_log(action, sonarrSeriesId, sonarrEpisodeId, description, video_path=None, language=None, provider=None,
                 score=None, forced=False):
-    TableHistory.insert(
-        {
-            TableHistory.action: action,
-            TableHistory.sonarr_series_id: sonarrSeriesId,
-            TableHistory.sonarr_episode_id: sonarrEpisodeId,
-            TableHistory.timestamp: time.time(),
-            TableHistory.description: description,
-            TableHistory.video_path: video_path,
-            TableHistory.language: language,
-            TableHistory.provider: provider,
-            TableHistory.score: score
-        }
-    ).execute()
+    database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
+                     "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)", (action, sonarrSeriesId,
+                                                                                           sonarrEpisodeId, time.time(),
+                                                                                           description, video_path,
+                                                                                           language, provider, score))
 
 
 def history_log_movie(action, radarrId, description, video_path=None, language=None, provider=None, score=None,
                       forced=False):
-    TableHistoryMovie.insert(
-        {
-            TableHistoryMovie.action: action,
-            TableHistoryMovie.radarr_id: radarrId,
-            TableHistoryMovie.timestamp: time.time(),
-            TableHistoryMovie.description: description,
-            TableHistoryMovie.video_path: video_path,
-            TableHistoryMovie.language: language,
-            TableHistoryMovie.provider: provider,
-            TableHistoryMovie.score: score
-        }
-    ).execute()
+    database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
+                     "provider, score) VALUES (?,?,?,?,?,?,?,?)", (action, radarrId, time.time(), description,
+                                                                   video_path, language, provider, score))
 
 
 def get_binary(name):

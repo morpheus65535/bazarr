@@ -5,7 +5,7 @@ import os
 import logging
 
 from get_args import args
-from database import TableSettingsNotifier, TableShows, TableEpisodes, TableMovies
+from database import database
 
 
 def update_notifier():
@@ -18,13 +18,11 @@ def update_notifier():
     notifiers_new = []
     notifiers_old = []
     
-    notifiers_current_db = TableSettingsNotifier.select(
-        TableSettingsNotifier.name
-    )
+    notifiers_current_db = database.execute("SELECT name FROM table_settings_notifier")
 
     notifiers_current = []
     for notifier in notifiers_current_db:
-        notifiers_current.append(notifier.name)
+        notifiers_current.append(notifier['name'])
 
     for x in results['schemas']:
         if x['service_name'] not in notifiers_current:
@@ -37,60 +35,32 @@ def update_notifier():
     notifiers_to_delete = list(set(notifier_current) - set(notifiers_old))
     
     for notifier_new in notifiers_new:
-        TableSettingsNotifier.insert(
-            {
-                TableSettingsNotifier.name: notifier_new,
-                TableSettingsNotifier.enabled: 0
-            }
-        ).execute()
+        database.execute("INSERT INTO table_settings_notifier (name, enabled) VALUES (?, ?)", (notifier_new, 0))
     
     for notifier_to_delete in notifiers_to_delete:
-        TableSettingsNotifier.delete().where(
-            TableSettingsNotifier.name == notifier_to_delete
-        ).execute()
+        database.execute("DELETE FROM table_settings_notifier WHERE name=?", (notifier_to_delete,))
 
 
 def get_notifier_providers():
-    providers = TableSettingsNotifier.select(
-        TableSettingsNotifier.name,
-        TableSettingsNotifier.url
-    ).where(
-        TableSettingsNotifier.enabled == 1
-    )
-    
+    providers = database.execute("SELECT name, url FROM table_settings_notifier WHERE enabled=1")
     return providers
 
 
 def get_series_name(sonarrSeriesId):
-    data = TableShows.select(
-        TableShows.title
-    ).where(
-        TableShows.sonarr_series_id == sonarrSeriesId
-    ).first()
+    data = database.execute("SELECT title FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,))
     
-    return data.title
+    return data[0]['title'] or None
 
 
 def get_episode_name(sonarrEpisodeId):
-    data = TableEpisodes.select(
-        TableEpisodes.title,
-        TableEpisodes.season,
-        TableEpisodes.episode
-    ).where(
-        TableEpisodes.sonarr_episode_id == sonarrEpisodeId
-    ).first()
+    data = database.execute("SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,))
     
-    return data.title, data.season, data.episode
+    return data['title'], data['season'], data['episode']
 
 
 def get_movies_name(radarrId):
-    data = TableMovies.select(
-        TableMovies.title
-    ).where(
-        TableMovies.radarr_id == radarrId
-    ).first()
-    
-    return data.title
+    data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarrId,))
+    return data['title']
 
 
 def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
