@@ -690,52 +690,23 @@ def edit_serieseditor():
 def episodes(no):
     authorize()
 
-    series_details = TableShows.select(
-        TableShows.title,
-        TableShows.overview,
-        TableShows.poster,
-        TableShows.fanart,
-        TableShows.hearing_impaired,
-        TableShows.tvdb_id,
-        TableShows.audio_language,
-        TableShows.languages,
-        fn.path_substitution(TableShows.path).alias('path'),
-        TableShows.forced
-    ).where(
-        TableShows.sonarr_series_id == no
-    ).limit(1)
+    # path_replace
+    series_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbId, "
+                                      "audio_language, languages, path, forced FROM table_shows WHERE "
+                                      "sonarrSeriesId=?", (no,))
     for series in series_details:
         tvdbid = series.tvdb_id
         series_details = series
         break
-    
-    episodes = TableEpisodes.select(
-        TableEpisodes.title,
-        fn.path_substitution(TableEpisodes.path).alias('path'),
-        TableEpisodes.season,
-        TableEpisodes.episode,
-        TableEpisodes.subtitles,
-        TableEpisodes.sonarr_series_id,
-        TableEpisodes.missing_subtitles,
-        TableEpisodes.sonarr_episode_id,
-        TableEpisodes.scene_name,
-        TableEpisodes.monitored,
-        TableEpisodes.failed_attempts
-    ).where(
-        TableEpisodes.sonarr_series_id % no
-    ).order_by(
-        TableEpisodes.season.desc(),
-        TableEpisodes.episode.desc()
-    )
+
+    # path_replace
+    episodes = database.execute("SELECT title, path, season, episode, subtitles, sonarrSeriesId, missing_subtitles, "
+                                "sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE "
+                                "sonarrSeriesId=? ORDER BY season DESC, episode DESC", (no,))
 
     number = len(episodes)
 
-    languages = TableSettingsLanguages.select(
-        TableSettingsLanguages.code2,
-        TableSettingsLanguages.name
-    ).where(
-        TableSettingsLanguages.enabled == 1
-    )
+    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
     seasons_list = []
     for key, season in itertools.groupby(episodes.dicts(), lambda x: x['season']):
