@@ -13,10 +13,9 @@ from subliminal import core
 from subliminal_patch import search_external_subtitles
 from bs4 import UnicodeDammit
 from itertools import islice
-from database import TableShows, TableEpisodes, TableMovies
-from peewee import fn, JOIN
 
 from get_args import args
+from database import database
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
@@ -105,29 +104,19 @@ def store_subtitles(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
                                         os.path.join(os.path.dirname(file), subtitle))])
 
-        update_count = TableEpisodes.update(
-            {
-                TableEpisodes.subtitles: str(actual_subtitles)
-            }
-        ).where(
-            TableEpisodes.path == path_replace_reverse(file)
-        ).execute()
-        if update_count > 0:
+        database.execute("UPDATE table_episodes (subtitles) VALUES (?) WHERE path=?",
+                         (str(actual_subtitles), path_replace_reverse(file)))
+        episode = database.execute("SELECT sonarrSeriesId FROM table_episodes WHERE path=?", (path_replace_reverse(file),))
+
+        if len(episode):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+            list_missing_subtitles(epno=episode[0]['sonarrEpisodeId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
-
-    episode = TableEpisodes.select(
-        TableEpisodes.sonarr_episode_id
-    ).where(
-        TableEpisodes.path == path_replace_reverse(file)
-    ).first()
-
-    list_missing_subtitles(epno=episode.sonarr_episode_id)
 
     return actual_subtitles
 
@@ -210,15 +199,13 @@ def store_subtitles_movie(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
                                         os.path.join(os.path.dirname(file), dest_folder, subtitle))])
         
-        update_count = TableMovies.update(
-            {
-                TableMovies.subtitles: str(actual_subtitles)
-            }
-        ).where(
-            TableMovies.path == path_replace_reverse_movie(file)
-        ).execute()
-        if update_count > 0:
+        database.execute("UPDATE table_movies (subtitles) VALUES (?) WHERE path=?",
+                         (str(actual_subtitles), path_replace_reverse_movie(file)))
+        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (path_replace_reverse_movie(file),))
+
+        if len(movie):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+            list_missing_subtitles_movies(no=movie[0]['radarrId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
@@ -226,34 +213,21 @@ def store_subtitles_movie(file):
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + file)
 
-    movie = TableMovies.select(
-        TableMovies.radarr_id
-    ).where(
-        TableMovies.path == path_replace_reverse_movie(file)
-    ).first()
-
-    list_missing_subtitles_movies(no=movie.radarr_id)
-
     return actual_subtitles
 
 
 def list_missing_subtitles(no=None, epno=None):
-    episodes_subtitles_clause = (TableShows.sonarr_series_id.is_null(False))
     if no is not None:
-        episodes_subtitles_clause = (TableShows.sonarr_series_id == no)
+        episodes_subtitles_clause = " WHERE sonarrSeriesId=no"
     elif epno is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarr_episode_id == epno)
-    episodes_subtitles = TableEpisodes.select(
-        TableShows.sonarr_series_id,
-        TableEpisodes.sonarr_episode_id,
-        TableEpisodes.subtitles,
-        TableShows.languages,
-        TableShows.forced
-    ).join_from(
-        TableEpisodes, TableShows, JOIN.LEFT_OUTER
-    ).where(
-        episodes_subtitles_clause
-    ).objects()
+        episodes_subtitles_clause = " WHERE sonarrEpisodeId=no"
+    else:
+        episodes_subtitles_clause = ""
+    episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
+                                          "table_episodes.subtitles, table_shows.languages, table_shows.forced "
+                                          "FROM table_episodes LEFT JOIN table_shows "
+                                          "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
+                                          episodes_subtitles_clause)
 
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -296,28 +270,18 @@ def list_missing_subtitles(no=None, epno=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles.sonarr_episode_id]))
 
     for missing_subtitles_item in missing_subtitles_global:
-        TableEpisodes.update(
-            {
-                TableEpisodes.missing_subtitles: missing_subtitles_item[0]
-            }
-        ).where(
-            TableEpisodes.sonarr_episode_id == missing_subtitles_item[1]
-        ).execute()
+        database.execute("UPDATE table_episodes (missing_subtitles) VALUES (?) WHERE sonarrEpisodeId=?",
+                         (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
 def list_missing_subtitles_movies(no=None):
-    movies_subtitles_clause = (TableMovies.radarr_id.is_null(False))
     if no is not None:
-        movies_subtitles_clause = (TableMovies.radarr_id == no)
+        movies_subtitles_clause = " WHERE radarrId=no"
+    else:
+        movies_subtitles_clause = ""
 
-    movies_subtitles = TableMovies.select(
-        TableMovies.radarr_id,
-        TableMovies.subtitles,
-        TableMovies.languages,
-        TableMovies.forced
-    ).where(
-        movies_subtitles_clause
-    )
+    movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" +
+                                        movies_subtitles_clause)
     
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -360,60 +324,43 @@ def list_missing_subtitles_movies(no=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles.radarr_id]))
     
     for missing_subtitles_item in missing_subtitles_global:
-        TableMovies.update(
-            {
-                TableMovies.missing_subtitles: missing_subtitles_item[0]
-            }
-        ).where(
-            TableMovies.radarr_id == missing_subtitles_item[1]
-        ).execute()
+        database.execute("UPDATE table_movies (missing_subtitles) VALUES (?) WHERE radarrIr=?",
+                         (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
 def series_full_scan_subtitles():
-    episodes = TableEpisodes.select(
-        TableEpisodes.path
-    )
-    count_episodes = episodes.count()
+    episodes = database.execute("SELECT path FROM table_episodes")
+    count_episodes = len(episodes)
     
     for i, episode in enumerate(episodes, 1):
         notifications.write(msg='Updating all episodes subtitles from disk...',
                             queue='list_subtitles_series', item=i, length=count_episodes)
-        store_subtitles(path_replace(episode.path))
+        store_subtitles(path_replace(episode['path']))
     
     gc.collect()
 
 
 def movies_full_scan_subtitles():
-    movies = TableMovies.select(
-        TableMovies.path
-    )
-    count_movies = movies.count()
+    movies = database.execute("SELECT path FROM table_movies")
+    count_movies = len(movies)
     
     for i, movie in enumerate(movies, 1):
         notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', item=i, length=count_movies)
-        store_subtitles_movie(path_replace_movie(movie.path))
+        store_subtitles_movie(path_replace_movie(movie['path']))
     
     gc.collect()
 
 
 def series_scan_subtitles(no):
-    episodes = TableEpisodes.select(
-        TableEpisodes.path
-    ).where(
-        TableEpisodes.sonarr_series_id == no
-    )
+    episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=?", (no,))
     
     for episode in episodes:
         store_subtitles(path_replace(episode.path))
 
 
 def movies_scan_subtitles(no):
-    movies = TableMovies.select(
-        TableMovies.path
-    ).where(
-        TableMovies.radarr_id == no
-    )
+    movies = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (no,))
     
     for movie in movies:
         store_subtitles_movie(path_replace_movie(movie.path))

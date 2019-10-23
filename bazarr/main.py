@@ -909,13 +909,9 @@ def history():
 def historyseries():
     authorize()
 
-    row_count = TableHistory.select(
-
-    ).join_from(
-        TableHistory, TableShows, JOIN.LEFT_OUTER
-    ).where(
-        TableShows.title.is_null(False)
-    ).count()
+    row_count = database.execute("SELECT COUNT(*) FROM table_history LEFT JOIN table_shows on "
+                                 "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE table_shows.title "
+                                 "is not NULL")
     page = request.GET.page
     if page == "":
         page = "1"
@@ -927,46 +923,25 @@ def historyseries():
     today = []
     thisweek = []
     thisyear = []
-    stats = TableHistory.select(
-        TableHistory.timestamp
-    ).where(
-        TableHistory.action != 0
-    )
+    stats = database.execute("SELECT timestamp FROM table_history WHERE action != 0")
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            today.append(datetime.fromtimestamp(stat.timestamp).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            today.append(datetime.fromtimestamp(stat['timestamp']).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            thisweek.append(datetime.fromtimestamp(stat['timestamp']).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            thisyear.append(datetime.fromtimestamp(stat['timestamp']).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
 
-    data = TableHistory.select(
-        TableHistory.action,
-        TableShows.title.alias('seriesTitle'),
-        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
-        TableEpisodes.title.alias('episodeTitle'),
-        TableHistory.timestamp,
-        TableHistory.description,
-        TableHistory.sonarr_series_id,
-        TableEpisodes.path,
-        TableShows.languages,
-        TableHistory.language,
-        TableHistory.score,
-        TableShows.forced
-    ).join_from(
-        TableHistory, TableShows, JOIN.LEFT_OUTER
-    ).join_from(
-        TableHistory, TableEpisodes, JOIN.LEFT_OUTER
-    ).where(
-        TableShows.title.is_null(False)
-    ).order_by(
-        TableHistory.timestamp.desc()
-    ).paginate(
-        int(page),
-        page_size
-    ).objects()
+    data = database.execute("SELECT table_history.action, table_shows.title, "
+                            "table_episodes.season || 'x' || table_episodes.episode, table_episodes.title, "
+                            "table_history.timestamp, table_history.description, table_history.sonarrSeriesId, "
+                            "table_episodes.path, table_shows.languages, table_history.language, table_history.score, "
+                            "table_shows.forced FROM table_history LEFT JOIN table_shows on "
+                            "table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on "
+                            "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_history.title "
+                            "is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?", (page_size, offset))
 
     upgradable_episodes_not_perfect = []
     if settings.general.getboolean('upgrade_subs'):
@@ -979,30 +954,20 @@ def historyseries():
         else:
             query_actions = [1, 3]
 
-        episodes_details_clause = [
-            (TableHistory.action.in_(query_actions)) &
-            (TableHistory.score.is_null(False))
-        ]
-
         if settings.sonarr.getboolean('only_monitored'):
-            episodes_details_clause.append(
-                (TableEpisodes.monitored == 'True')
-            )
+            series_monitored_only_query_string = " AND monitored='True'"
+        else:
+            series_monitored_only_query_string = ''
 
-        upgradable_episodes = TableHistory.select(
-            TableHistory.video_path,
-            fn.MAX(TableHistory.timestamp).alias('timestamp'),
-            TableHistory.score
-        ).join_from(
-            TableHistory, TableEpisodes, JOIN.LEFT_OUTER
-        ).where(
-            reduce(operator.and_, episodes_details_clause)
-        ).group_by(
-            TableHistory.video_path,
-            TableHistory.language
-        )
+        upgradable_episodes = database.execute("SELECT video_path, MAX(timestamp), score FROM table_history "
+                                               "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
+                                               "table_history.sonarrEpisodeId WHERE action IN (" +
+                                               ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
+                                               "score is not null" + series_monitored_only_query_string + " GROUP BY "
+                                               "table_history.video_path, table_history.language",
+                                               (minimum_timestamp,))
 
-        for upgradable_episode in upgradable_episodes.dicts():
+        for upgradable_episode in upgradable_episodes:
             if upgradable_episode['timestamp'] > minimum_timestamp:
                 try:
                     int(upgradable_episode['score'])
@@ -1010,7 +975,7 @@ def historyseries():
                     pass
                 else:
                     if int(upgradable_episode['score']) < 360:
-                        upgradable_episodes_not_perfect.append(tuple(upgradable_episode.values()))
+                        upgradable_episodes_not_perfect.append(upgradable_episode)
     
     return template('historyseries', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
@@ -1022,13 +987,9 @@ def historyseries():
 def historymovies():
     authorize()
 
-    row_count = TableHistoryMovie.select(
-
-    ).join_from(
-        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
-    ).where(
-        TableMovies.title.is_null(False)
-    ).count()
+    row_count = database.execute("SELECT COUNT(*) FROM table_history_movie LEFT JOIN table_movies ON "
+                                 "table_history_movie.radarrId=table_movies.radarrId "
+                                 "WHERE table_movies.title is not NULL")
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1040,42 +1001,23 @@ def historymovies():
     today = []
     thisweek = []
     thisyear = []
-    stats = TableHistoryMovie.select(
-        TableHistoryMovie.timestamp
-    ).where(
-        TableHistoryMovie.action > 0
-    )
+    stats = database.execute("SELECT timestamp FROM table_history_movie WHERE action != 0")
     total = len(stats)
     for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            today.append(datetime.fromtimestamp(stat.timestamp).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            thisweek.append(datetime.fromtimestamp(stat.timestamp).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat.timestamp) <= now:
-            thisyear.append(datetime.fromtimestamp(stat.timestamp).date())
+        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            today.append(datetime.fromtimestamp(stat['timestamp']).date())
+        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            thisweek.append(datetime.fromtimestamp(stat['timestamp']).date())
+        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat['timestamp']) <= now:
+            thisyear.append(datetime.fromtimestamp(stat['timestamp']).date())
     stats = [len(today), len(thisweek), len(thisyear), total]
     
-    data = TableHistoryMovie.select(
-        TableHistoryMovie.action,
-        TableMovies.title,
-        TableHistoryMovie.timestamp,
-        TableHistoryMovie.description,
-        TableHistoryMovie.radarr_id,
-        TableHistoryMovie.video_path,
-        TableMovies.languages,
-        TableHistoryMovie.language,
-        TableHistoryMovie.score,
-        TableMovies.forced
-    ).join_from(
-        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
-    ).where(
-        TableMovies.title.is_null(False)
-    ).order_by(
-        TableHistoryMovie.timestamp.desc()
-    ).paginate(
-        int(page),
-        page_size
-    ).objects()
+    data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
+                            "table_history_movie.description, table_history_movie.radarrId, "
+                            "table_history_movie.video_path, table_movies.languages, table_history_movie.language, "
+                            "table_history_movie.score, table_movies.forced FROM table_history_movie "
+                            "LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
+                            "ORDER BY timestamp DESC LIMIT ? OFFSET ?", (page_size, offset,))
     
     upgradable_movies = []
     upgradable_movies_not_perfect = []
@@ -1094,30 +1036,15 @@ def historymovies():
         else:
             query_actions = [1, 3]
 
-        movies_details_clause = [
-            (TableHistoryMovie.action.in_(query_actions)) &
-            (TableHistoryMovie.score.is_null(False))
-        ]
+        upgradable_movies = database.execute("SELECT video_path, MAX(timestamp), score FROM table_history_movie "
+                                             "INNER JOIN table_movies on table_movies.radarrId="
+                                             "table_history_movie.radarrId WHERE action IN (" +
+                                             ','.join(map(str, query_actions)) +
+                                             ") AND timestamp > ? AND score is not NULL" +
+                                             movies_monitored_only_query_string + " GROUP BY video_path, language",
+                                             (minimum_timestamp,))
 
-        if settings.radarr.getboolean('only_monitored'):
-            movies_details_clause.append(
-                (TableMovies.monitored == 'True')
-            )
-
-        upgradable_movies = TableHistoryMovie.select(
-            TableHistoryMovie.video_path,
-            fn.MAX(TableHistoryMovie.timestamp).alias('timestamp'),
-            TableHistoryMovie.score
-        ).join_from(
-            TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
-        ).where(
-            reduce(operator.and_, movies_details_clause)
-        ).group_by(
-            TableHistoryMovie.video_path,
-            TableHistoryMovie.language
-        )
-
-        for upgradable_movie in upgradable_movies.dicts():
+        for upgradable_movie in upgradable_movies:
             if upgradable_movie['timestamp'] > minimum_timestamp:
                 try:
                     int(upgradable_movie['score'])
@@ -1125,7 +1052,7 @@ def historymovies():
                     pass
                 else:
                     if int(upgradable_movie['score']) < 120:
-                        upgradable_movies_not_perfect.append(tuple(upgradable_movie.values()))
+                        upgradable_movies_not_perfect.append(upgradable_movie)
 
     return template('historymovies', bazarr_version=bazarr_version, rows=data, row_count=row_count,
                     page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
@@ -1144,45 +1071,28 @@ def wanted():
 def wantedseries():
     authorize()
 
-    missing_subtitles_clause = [
-        (TableEpisodes.missing_subtitles != '[]')
-    ]
     if settings.sonarr.getboolean('only_monitored'):
-        missing_subtitles_clause.append(
-            (TableEpisodes.monitored == 'True')
-        )
+        monitored_only_query_string = " AND monitored='True'"
+    else:
+        monitored_only_query_string = ''
     
-    missing_count = TableEpisodes.select().where(
-        reduce(operator.and_, missing_subtitles_clause)
-    ).count()
+    missing_count = database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" +
+                                     monitored_only_query_string)
     page = request.GET.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-    
-    data = TableEpisodes.select(
-        TableShows.title.alias('seriesTitle'),
-        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
-        TableEpisodes.title.alias('episodeTitle'),
-        TableEpisodes.missing_subtitles,
-        TableEpisodes.sonarr_series_id,
-        fn.path_substitution(TableEpisodes.path).alias('path'),
-        TableShows.hearing_impaired,
-        TableEpisodes.sonarr_episode_id,
-        TableEpisodes.scene_name,
-        TableEpisodes.failed_attempts
-    ).join_from(
-        TableEpisodes, TableShows, JOIN.LEFT_OUTER
-    ).where(
-        reduce(operator.and_, missing_subtitles_clause)
-    ).order_by(
-        TableEpisodes.rowid.desc()
-    ).paginate(
-        int(page),
-        page_size
-    ).objects()
+
+    # path_replace
+    data = database.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, "
+                            "table_episodes.title, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, "
+                            "table_episodes.path, table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, "
+                            "table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes "
+                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
+                            "WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string +
+                            " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset))
 
     return template('wantedseries', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page,
                     max_page=max_page, base_url=base_url, page_size=page_size, current_port=settings.general.port)
@@ -1193,40 +1103,25 @@ def wantedseries():
 def wantedmovies():
     authorize()
 
-    missing_subtitles_clause = [
-        (TableMovies.missing_subtitles != '[]')
-    ]
     if settings.radarr.getboolean('only_monitored'):
-        missing_subtitles_clause.append(
-            (TableMovies.monitored == 'True')
-        )
+        monitored_only_query_string = " AND monitored='True'"
+    else:
+        monitored_only_query_string = ''
 
-    missing_count = TableMovies.select().where(
-        reduce(operator.and_, missing_subtitles_clause)
-    ).count()
+    missing_count = database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" +
+                                     monitored_only_query_string)
     page = request.GET.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
     max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-    
-    data = TableMovies.select(
-        TableMovies.title,
-        TableMovies.missing_subtitles,
-        TableMovies.radarr_id,
-        fn.path_substitution_movie(TableMovies.path).alias('path'),
-        TableMovies.hearing_impaired,
-        TableMovies.scene_name,
-        TableMovies.failed_attempts
-    ).where(
-        reduce(operator.and_, missing_subtitles_clause)
-    ).order_by(
-        TableMovies.rowid.desc()
-    ).paginate(
-        int(page),
-        page_size
-    ).objects()
+
+    # path_replace_movie
+    data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
+                            "failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" +
+                            monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
+                            (page_size, offset))
 
     return template('wantedmovies', bazarr_version=bazarr_version, rows=data,
                     missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
@@ -1249,9 +1144,9 @@ def wanted_search_missing_subtitles_list():
 def _settings():
     authorize()
 
-    settings_languages = TableSettingsLanguages.select().order_by(TableSettingsLanguages.name)
+    settings_languages = database.execute("SELECT * FROM table_settings_languages ORDER BY name")
     settings_providers = sorted(provider_manager.names())
-    settings_notifier = TableSettingsNotifier.select().order_by(TableSettingsNotifier.name)
+    settings_notifier = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
 
     return template('settings', bazarr_version=bazarr_version, settings=settings, settings_languages=settings_languages,
                     settings_providers=settings_providers, settings_notifier=settings_notifier, base_url=base_url,
@@ -1609,15 +1504,9 @@ def save_settings():
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
-    TableSettingsLanguages.update({TableSettingsLanguages.enabled: 0}).execute()
+    database.execute("UPDATE table_settings_languages (enabled) VALUES (0)")
     for item in settings_subliminal_languages:
-        TableSettingsLanguages.update(
-            {
-                TableSettingsLanguages.enabled: 1
-            }
-        ).where(
-            TableSettingsLanguages.code2 == item
-        ).execute()
+        database.execute("UPDATE table_settings_languages (enabled) VALUES (1) WHERE code2=?", (item,))
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -1668,22 +1557,16 @@ def save_settings():
     
     configure_logging(settings.general.getboolean('debug') or args.debug)
     
-    notifiers = TableSettingsNotifier.select().order_by(TableSettingsNotifier.name)
+    notifiers = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     for notifier in notifiers:
-        enabled = request.forms.get('settings_notifier_' + notifier.name + '_enabled')
+        enabled = request.forms.get('settings_notifier_' + notifier['name'] + '_enabled')
         if enabled == 'on':
             enabled = 1
         else:
             enabled = 0
-        notifier_url = request.forms.get('settings_notifier_' + notifier.name + '_url')
-        TableSettingsNotifier.update(
-            {
-                TableSettingsNotifier.enabled: enabled,
-                TableSettingsNotifier.url: notifier_url
-            }
-        ).where(
-            TableSettingsNotifier.name == notifier.name
-        ).execute()
+        notifier_url = request.forms.get('settings_notifier_' + notifier['name'] + '_url')
+        database.execute("UPDATE table_settings_notifier (enabled, url) VALUES (?,?) WHERE name=?",
+                         (enabled,notifier_url,notifier['name']))
     
     schedule_update_job()
     sonarr_full_update()
@@ -2132,86 +2015,59 @@ def configured():
 
 @route(base_url + 'api/series/wanted')
 def api_wanted():
-    data = TableEpisodes.select(
-        TableShows.title.alias('seriesTitle'),
-        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
-        TableEpisodes.title.alias('episodeTitle'),
-        TableEpisodes.missing_subtitles
-    ).join_from(
-        TableEpisodes, TableShows, JOIN.LEFT_OUTER
-    ).where(
-        TableEpisodes.missing_subtitles != '[]'
-    ).order_by(
-        TableEpisodes.sonarr_episode_id.desc()
-    ).limit(10).objects()
+    data = database.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, "
+                            "table_episodes.title, table_episodes.missing_subtitles FROM table_episodes "
+                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
+                            "WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC "
+                            "LIMIT 10")
 
     wanted_subs = []
     for item in data:
-        wanted_subs.append([item.seriesTitle, item.episode_number, item.episodeTitle, item.missing_subtitles])
+        wanted_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['missing_subtitles']])
 
     return dict(subtitles=wanted_subs)
 
 
 @route(base_url + 'api/series/history')
 def api_history():
-    data = TableHistory.select(
-        TableShows.title.alias('seriesTitle'),
-        TableEpisodes.season.cast('str').concat('x').concat(TableEpisodes.episode.cast('str')).alias('episode_number'),
-        TableEpisodes.title.alias('episodeTitle'),
-        fn.strftime('%Y-%m-%d', fn.datetime(TableHistory.timestamp, 'unixepoch')).alias('date'),
-        TableHistory.description
-    ).join_from(
-        TableHistory, TableShows, JOIN.LEFT_OUTER
-    ).join_from(
-        TableHistory, TableEpisodes, JOIN. LEFT_OUTER
-    ).where(
-        TableHistory.action != '0'
-    ).order_by(
-        TableHistory.id.desc()
-    ).limit(10).objects()
+    data = database.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, "
+                            "table_episodes.title, strftime('%Y-%m-%d', "
+                            "datetime(table_history.timestamp, 'unixepoch')), table_history.description "
+                            "FROM table_history "
+                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
+                            "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId "
+                            "WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
 
     history_subs = []
     for item in data:
-        history_subs.append([item.seriesTitle, item.episode_number, item.episodeTitle, item.date, item.description])
+        history_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['date'], item['description']])
 
     return dict(subtitles=history_subs)
 
 
 @route(base_url + 'api/movies/wanted')
 def api_wanted():
-    data = TableMovies.select(
-        TableMovies.title,
-        TableMovies.missing_subtitles
-    ).where(
-        TableMovies.missing_subtitles != '[]'
-    ).order_by(
-        TableMovies.radarr_id.desc()
-    ).limit(10).objects()
+    data = database.execute("SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies "
+                            "WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC LIMIT 10")
 
     wanted_subs = []
     for item in data:
-        wanted_subs.append([item.title, item.missing_subtitles])
+        wanted_subs.append([item['title'], item['missing_subtitles']])
 
     return dict(subtitles=wanted_subs)
 
 
 @route(base_url + 'api/movies/history')
 def api_history():
-    data = TableHistoryMovie.select(
-        TableMovies.title,
-        fn.strftime('%Y-%m-%d', fn.datetime(TableHistoryMovie.timestamp, 'unixepoch')).alias('date'),
-        TableHistoryMovie.description
-    ).join_from(
-        TableHistoryMovie, TableMovies, JOIN.LEFT_OUTER
-    ).where(
-        TableHistoryMovie.action != '0'
-    ).order_by(
-        TableHistoryMovie.id.desc()
-    ).limit(10).objects()
+    data = database.execute("SELECT table_movies.title, strftime('%Y-%m-%d', "
+                            "datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description "
+                            "FROM table_history_movie "
+                            "INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
+                            "WHERE table_history_movie.action != '0' ORDER BY id DESC LIMIT 10")
 
     history_subs = []
     for item in data:
-        history_subs.append([item.title, item.date, item.description])
+        history_subs.append([item['title'], item['date'], item['description']])
 
     return dict(subtitles=history_subs)
 
