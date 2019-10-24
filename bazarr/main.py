@@ -647,7 +647,7 @@ def edit_series(no):
     else:
         hi = "False"
 
-    result = database.execute("UPDATE table_shows (languages, hearing_impaired, forced) VALUES (?,?,?) WHERE "
+    result = database.execute("UPDATE table_shows  SET languages=?, hearing_impaired=?, forced=?) WHERE "
                               "sonarrSeriesId=?", (lang, hi, forced, no))
 
     list_missing_subtitles(no=no)
@@ -673,11 +673,11 @@ def edit_serieseditor():
                 lang = 'None'
             else:
                 lang = str(lang)
-            database.execute("UPDATE table_shows (languages) VALUES (?) WHERE sonarrSeriesId=?", (lang,serie))
+            database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", (lang,serie))
         if hi != '':
-            database.execute("UPDATE table_shows (hearing_impaired) VALUES (?) WHERE sonarrSeriesId=?", (hi, serie))
+            database.execute("UPDATE table_shows SET hearing_impaired=? WHERE sonarrSeriesId=?", (hi, serie))
         if forced != '':
-            database.execute("UPDATE table_shows (forced) VALUES (?) WHERE sonarrSeriesId=?", (forced, serie))
+            database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", (forced, serie))
     
     for serie in series:
         list_missing_subtitles(no=serie)
@@ -779,11 +779,11 @@ def edit_movieseditor():
                 lang = 'None'
             else:
                 lang = str(lang)
-            database.execute("UPDATE table_movies (languages) VALUES (?) WHERE radarrId=?", (lang, movie))
+            database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", (lang, movie))
         if hi != '':
-            database.execute("UPDATE table_movies (hearing_impaired) VALUES (?) WHERE radarrId=?", (hi, movie))
+            database.execute("UPDATE table_movies SET hearing_impaired=? WHERE radarrId=?", (hi, movie))
         if forced != '':
-            database.execute("UPDATE table_movies (forced) VALUES (?) WHERE radarrId=?", (forced, movie))
+            database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", (forced, movie))
     
     for movie in movies:
         list_missing_subtitles_movies(movie)
@@ -821,7 +821,7 @@ def edit_movie(no):
     else:
         hi = "False"
 
-    database.execute("UPDATE table_movies (languages, hearing_impaired, forced) VALUES (?,?,?) WHERE radarrId=?",
+    database.execute("UPDATE table_movies SET languages=?, hearing_impaired=?, forced=? WHERE radarrId=?",
                      (str(lang), hi, forced, no))
 
     list_missing_subtitles_movies(no)
@@ -1504,9 +1504,9 @@ def save_settings():
     settings.betaseries.token = request.forms.get('settings_betaseries_token')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
-    database.execute("UPDATE table_settings_languages (enabled) VALUES (0)")
+    database.execute("UPDATE table_settings_languages SET enabled=0")
     for item in settings_subliminal_languages:
-        database.execute("UPDATE table_settings_languages (enabled) VALUES (1) WHERE code2=?", (item,))
+        database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -1565,7 +1565,7 @@ def save_settings():
         else:
             enabled = 0
         notifier_url = request.forms.get('settings_notifier_' + notifier['name'] + '_url')
-        database.execute("UPDATE table_settings_notifier (enabled, url) VALUES (?,?) WHERE name=?",
+        database.execute("UPDATE table_settings_notifier SET enabled=?, url=? WHERE name=?",
                          (enabled,notifier_url,notifier['name']))
     
     schedule_update_job()

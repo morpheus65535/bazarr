@@ -104,7 +104,7 @@ def store_subtitles(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
                                         os.path.join(os.path.dirname(file), subtitle))])
 
-        database.execute("UPDATE table_episodes (subtitles) VALUES (?) WHERE path=?",
+        database.execute("UPDATE table_episodes SET =? WHERE path=?",
                          (str(actual_subtitles), path_replace_reverse(file)))
         episode = database.execute("SELECT sonarrSeriesId FROM table_episodes WHERE path=?", (path_replace_reverse(file),))
 
@@ -199,7 +199,7 @@ def store_subtitles_movie(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
                                         os.path.join(os.path.dirname(file), dest_folder, subtitle))])
         
-        database.execute("UPDATE table_movies (subtitles) VALUES (?) WHERE path=?",
+        database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), path_replace_reverse_movie(file)))
         movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (path_replace_reverse_movie(file),))
 
@@ -270,7 +270,7 @@ def list_missing_subtitles(no=None, epno=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles.sonarr_episode_id]))
 
     for missing_subtitles_item in missing_subtitles_global:
-        database.execute("UPDATE table_episodes (missing_subtitles) VALUES (?) WHERE sonarrEpisodeId=?",
+        database.execute("UPDATE table_episodes SET  missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
@@ -324,7 +324,7 @@ def list_missing_subtitles_movies(no=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles.radarr_id]))
     
     for missing_subtitles_item in missing_subtitles_global:
-        database.execute("UPDATE table_movies (missing_subtitles) VALUES (?) WHERE radarrIr=?",
+        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrIr=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
