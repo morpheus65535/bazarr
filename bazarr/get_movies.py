@@ -12,13 +12,12 @@ from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
 
 from get_subtitle import movies_download_subtitles
-from database import TableMovies, wal_cleaning
+from database import database, dict_converter
 
 
 def update_all_movies():
     movies_full_scan_subtitles()
     logging.info('BAZARR All existing movie subtitles indexed from disk.')
-    wal_cleaning()
 
 
 def update_movies():
@@ -53,13 +52,9 @@ def update_movies():
             return
         else:
             # Get current movies in DB
-            current_movies_db = TableMovies.select(
-                TableMovies.tmdb_id,
-                TableMovies.path,
-                TableMovies.radarr_id
-            )
+            current_movies_db = database.execute("SELECT tmdbId, path, radarrId FROM table_movies")
             
-            current_movies_db_list = [x.tmdb_id for x in current_movies_db]
+            current_movies_db_list = [x['tmdb_id'] for x in current_movies_db]
 
             current_movies_radarr = []
             movies_to_update = []
@@ -208,27 +203,10 @@ def update_movies():
             
             # Update or insert movies in DB
             movies_in_db_list = []
-            movies_in_db = TableMovies.select(
-                TableMovies.radarr_id,
-                TableMovies.title,
-                TableMovies.path,
-                TableMovies.tmdb_id,
-                TableMovies.overview,
-                TableMovies.poster,
-                TableMovies.fanart,
-                TableMovies.audio_language,
-                TableMovies.scene_name,
-                TableMovies.monitored,
-                TableMovies.sort_title,
-                TableMovies.year,
-                TableMovies.alternative_titles,
-                TableMovies.format,
-                TableMovies.resolution,
-                TableMovies.video_codec,
-                TableMovies.audio_codec,
-                TableMovies.imdb_id,
-                TableMovies.movie_file_id
-            ).dicts()
+            movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
+                                            "audio_language, sceneName, monitored, sortTitle, year, "
+                                            "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
+                                            "movie_file_id FROM table_movies")
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
@@ -236,11 +214,9 @@ def update_movies():
             movies_to_update_list = [i for i in movies_to_update if i not in movies_in_db_list]
 
             for updated_movie in movies_to_update_list:
-                TableMovies.update(
-                    updated_movie
-                ).where(
-                    TableMovies.radarr_id == updated_movie['radarr_id']
-                ).execute()
+                query = dict_converter.convert(updated_movie)
+                database.execute("UPDATE table_movies SET ? WHERE radarrId=?",
+                                 (query.items, updated_movie['radarr_id']))
                 altered_movies.append([updated_movie['tmdb_id'],
                                        updated_movie['path'],
                                        updated_movie['radarr_id'],
@@ -248,9 +224,9 @@ def update_movies():
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                TableMovies.insert(
-                    added_movie
-                ).on_conflict_ignore().execute()
+                query = dict_converter.convert(updated_movie)
+                database.execute("INSERT OR IGNORE INTO table_movies(?) VALUES(?)",
+                                 (query.keys, query.values))
                 altered_movies.append([added_movie['tmdb_id'],
                                        added_movie['path'],
                                        added_movie['radarr_id'],
@@ -260,9 +236,7 @@ def update_movies():
             removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
 
             for removed_movie in removed_movies:
-                TableMovies.delete().where(
-                    TableMovies.tmdb_id == removed_movie
-                ).execute()
+                database.execute("DELETE FROM table_movies WHERE tmdbId=?", (removed_movie,))
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):

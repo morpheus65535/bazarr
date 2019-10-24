@@ -10,7 +10,7 @@ import datetime
 from get_args import args
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
-from database import TableShows
+from database import database, dict_converter
 from utils import get_sonarr_version
 
 
@@ -47,9 +47,7 @@ def update_series():
             return
         else:
             # Get current shows in DB
-            current_shows_db = TableShows.select(
-                TableShows.tvdb_id
-            )
+            current_shows_db = database.execute("SELECT tvdbId FROM table_shows")
             
             current_shows_db_list = [x.tvdb_id for x in current_shows_db]
             current_shows_sonarr = []
@@ -125,19 +123,8 @@ def update_series():
             
             # Update existing series in DB
             series_in_db_list = []
-            series_in_db = TableShows.select(
-                TableShows.title,
-                TableShows.path,
-                TableShows.tvdb_id,
-                TableShows.sonarr_series_id,
-                TableShows.overview,
-                TableShows.poster,
-                TableShows.fanart,
-                TableShows.audio_language,
-                TableShows.sort_title,
-                TableShows.year,
-                TableShows.alternate_titles
-            ).dicts()
+            series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
+                                            "audio_language, sortTitle, year, alternateTitles FROM table_shows")
 
             for item in series_in_db:
                 series_in_db_list.append(item)
@@ -145,26 +132,22 @@ def update_series():
             series_to_update_list = [i for i in series_to_update if i not in series_in_db_list]
 
             for updated_series in series_to_update_list:
-                TableShows.update(
-                    updated_series
-                ).where(
-                    TableShows.sonarr_series_id == updated_series['sonarr_series_id']
-                ).execute()
+                query = dict_converter.convert(updated_series)
+                database.execute("UPDATE table_shows SET ? WHERE sonarrSeriesId=?",
+                                 (query.items, updated_series['sonarr_series_id']))
 
             # Insert new series in DB
             for added_series in series_to_add:
-                TableShows.insert(
-                    added_series
-                ).on_conflict_ignore().execute()
+                query = dict_converter.convert(added_series)
+                database.execute("INSERT OR IGNORE INTO table_shows(?) VALUES(?)",
+                                 (query.keys, query.values))
                 list_missing_subtitles(no=added_series['sonarr_series_id'])
 
             # Remove old series from DB
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
             for series in removed_series:
-                TableShows.delete().where(
-                    TableShows.tvdb_id == series
-                ).execute()
+                database.execute("DELETE FROM table_shows WHERE tvdbId=?",(series,))
 
             logging.debug('BAZARR All series synced from Sonarr into database.')
 
