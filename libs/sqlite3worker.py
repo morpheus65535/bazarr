@@ -52,7 +52,7 @@ class Sqlite3Worker(threading.Thread):
         sql_worker.execute("SELECT * from tester")
         sql_worker.close()
     """
-    def __init__(self, file_name, max_queue_size=100):
+    def __init__(self, file_name, max_queue_size=100, as_dict=False):
         """Automatically starts the thread.
 
         Args:
@@ -64,7 +64,8 @@ class Sqlite3Worker(threading.Thread):
         self.sqlite3_conn = sqlite3.connect(
             file_name, check_same_thread=False,
             detect_types=sqlite3.PARSE_DECLTYPES)
-        self.sqlite3_conn.row_factory = sqlite3.Row
+        if as_dict:
+            self.sqlite3_conn.row_factory = dict_factory
         self.sqlite3_cursor = self.sqlite3_conn.cursor()
         self.sql_queue = Queue.Queue(maxsize=max_queue_size)
         self.results = {}
@@ -196,3 +197,10 @@ class Sqlite3Worker(threading.Thread):
             return self.query_results(token)
         else:
             self.sql_queue.put((token, query, values), timeout=5)
+
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d

@@ -16,7 +16,8 @@ def load_language_in_db():
     
     # Insert languages in database table
     for lang in langs:
-        database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)", (lang,))
+        database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)",
+                         (lang['code3'], lang['code2'], lang['name']))
 
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
                      "VALUES ('pob', 'pb', 'Brazilian Portuguese')")

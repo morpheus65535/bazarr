@@ -2015,8 +2015,8 @@ def configured():
 
 @route(base_url + 'api/series/wanted')
 def api_wanted():
-    data = database.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, "
-                            "table_episodes.title, table_episodes.missing_subtitles FROM table_episodes "
+    data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || table_episodes.episode as episode_number, "
+                            "table_episodes.title as episodeTitle, table_episodes.missing_subtitles FROM table_episodes "
                             "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
                             "WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC "
                             "LIMIT 10")
@@ -2030,10 +2030,11 @@ def api_wanted():
 
 @route(base_url + 'api/series/history')
 def api_history():
-    data = database.execute("SELECT table_shows.title, table_episodes.season || 'x' || table_episodes.episode, "
-                            "table_episodes.title, strftime('%Y-%m-%d', "
-                            "datetime(table_history.timestamp, 'unixepoch')), table_history.description "
-                            "FROM table_history "
+    data = database.execute("SELECT table_shows.title as seriesTitle, "
+                            "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
+                            "table_episodes.title as episodeTitle, "
+                            "strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')) as date, "
+                            "table_history.description FROM table_history "
                             "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
                             "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId "
                             "WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
@@ -2060,8 +2061,8 @@ def api_wanted():
 @route(base_url + 'api/movies/history')
 def api_history():
     data = database.execute("SELECT table_movies.title, strftime('%Y-%m-%d', "
-                            "datetime(table_history_movie.timestamp, 'unixepoch')), table_history_movie.description "
-                            "FROM table_history_movie "
+                            "datetime(table_history_movie.timestamp, 'unixepoch')) as date, "
+                            "table_history_movie.description FROM table_history_movie "
                             "INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
                             "WHERE table_history_movie.action != '0' ORDER BY id DESC LIMIT 10")
 
