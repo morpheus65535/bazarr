@@ -105,7 +105,7 @@ def get_sonarr_version():
         try:
             sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
         except Exception as e:
-            logging.DEBUG('BAZARR cannot get Sonarr version')
+            logging.debug('BAZARR cannot get Sonarr version')
 
     return sonarr_version
 
@@ -119,6 +119,6 @@ def get_radarr_version():
         try:
             radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
         except Exception as e:
-            logging.DEBUG('BAZARR cannot get Radarr version')
+            logging.debug('BAZARR cannot get Radarr version')
 
     return radarr_version
