@@ -9,18 +9,20 @@ database = Sqlite3Worker(os.path.join(args.config_dir, 'db', 'bazarr.db'), max_q
 
 class SqliteDictConverter:
     def __init__(self):
+        pass
+
+    def convert(self, values_dict):
         self.keys = str()
         self.values = str()
         self.items = str()
 
-    def convert(self, values_dict):
         if type(values_dict) is dict:
             for key, value in values_dict.items():
                 self.keys += key + ", "
-                if type(value) is not str:
+                if type(value) not in [str, unicode]:
                     value = str(value)
                 else:
-                    value = "'" + value + "'"
+                    value = "\"" + value + "\""
                 self.values += value + ", "
                 self.items += key + "=" + value + ", "
             self.keys = self.keys.rstrip(", ")
@@ -32,3 +34,19 @@ class SqliteDictConverter:
 
 
 dict_converter = SqliteDictConverter()
+
+
+class SqliteDictPathMapper:
+    def __init__(self):
+        pass
+
+    def path_replace(self, values_dict):
+        for item in values_dict:
+            item['path'] = path_replace(item['path'])
+
+    def path_replace_movie(self, values_dict):
+        for item in values_dict:
+            item['path'] = path_replace_movie(item['path'])
+
+
+dict_mapper = SqliteDictPathMapper()

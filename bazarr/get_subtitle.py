@@ -33,7 +33,7 @@ from get_providers import get_providers, get_providers_auth, provider_throttle, 
 from get_args import args
 from queueconfig import notifications
 from pyprobe.pyprobe import VideoFileParser
-from database import database
+from database import database, dict_mapper
 
 from analytics import track_event
 
@@ -816,9 +816,10 @@ def wanted_search_missing_subtitles():
         else:
             monitored_only_query_string_sonarr = ""
 
-        # path_replace
         episodes = database.execute("SELECT path FROM table_episodes WHERE missing_subtitles != '[]'" +
                                     monitored_only_query_string_sonarr)
+        # path_replace
+        dict_mapper.path_replace(episodes)
 
         count_episodes = len(episodes)
         for i, episode in enumerate(episodes, 1):
@@ -836,9 +837,10 @@ def wanted_search_missing_subtitles():
         else:
             monitored_only_query_string_radarr = ""
 
-        # path_replace_movie
         movies = database.execute("SELECT path FROM table_movies WHERE missing_subtitles != '[]'" +
                                   monitored_only_query_string_radarr)
+        # path_replace
+        dict_mapper.path_replace_movie(movies)
 
         count_movies = len(movies)
         for i, movie in enumerate(movies, 1):
@@ -883,17 +885,17 @@ def refine_from_db(path, video):
                                 "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
                                 "FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),))
+                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),))[0]
 
         if data:
             video.series, year, country = series_re.match(data['seriesTitle']).groups()
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
-            if data.year:
+            if data['year']:
                 if int(data['year']) > 0: video.year = int(data['year'])
-            video.series_tvdb_id = int(data['tvdb_id'])
-            video.alternative_series = ast.literal_eval(data['alternate_titles'])
+            video.series_tvdb_id = int(data['tvdbId'])
+            video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if not video.format:
                 video.format = str(data['format'])
             if not video.resolution:
@@ -908,7 +910,7 @@ def refine_from_db(path, video):
 
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
-            if data.year:
+            if data['year']:
                 if int(data['year']) > 0: video.year = int(data['year'])
             if data['imdb_id']: video.imdb_id = data['imdb_id']
             video.alternative_titles = ast.literal_eval(data['alternative_titles'])

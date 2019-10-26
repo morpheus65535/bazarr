@@ -58,6 +58,7 @@ class Sqlite3Worker(threading.Thread):
         Args:
             file_name: The name of the file.
             max_queue_size: The max queries that will be queued.
+            as_dict: Return result as a dictionary.
         """
         threading.Thread.__init__(self)
         self.daemon = True
@@ -89,11 +90,11 @@ class Sqlite3Worker(threading.Thread):
         """
         LOGGER.debug("run: Thread started")
         execute_count = 0
-        for token, query, values in iter(self.sql_queue.get, None):
+        for token, query, values, only_one in iter(self.sql_queue.get, None):
             LOGGER.debug("sql_queue: %s", self.sql_queue.qsize())
             if token != self.exit_token:
                 LOGGER.debug("run: %s", query)
-                self.run_query(token, query, values)
+                self.run_query(token, query, values, only_one)
                 execute_count += 1
                 # Let the executes build up a little before committing to disk
                 # to speed things up.
@@ -111,7 +112,7 @@ class Sqlite3Worker(threading.Thread):
                 self.thread_running = False
                 return
 
-    def run_query(self, token, query, values):
+    def run_query(self, token, query, values, only_one):
         """Run a query.
 
         Args:
@@ -122,7 +123,10 @@ class Sqlite3Worker(threading.Thread):
         if query.lower().strip().startswith("select"):
             try:
                 self.sqlite3_cursor.execute(query, values)
-                self.results[token] = self.sqlite3_cursor.fetchall()
+                if only_one:
+                    self.results[token] = self.sqlite3_cursor.fetchone()
+                else:
+                    self.results[token] = self.sqlite3_cursor.fetchall()
             except sqlite3.Error as err:
                 # Put the error into the output queue since a response
                 # is required.
@@ -173,7 +177,7 @@ class Sqlite3Worker(threading.Thread):
             if delay < 8:
                 delay += delay
 
-    def execute(self, query, values=None):
+    def execute(self, query, values=None, only_one=False):
         """Execute a query.
 
         Args:
@@ -193,10 +197,10 @@ class Sqlite3Worker(threading.Thread):
         # If it's a select we queue it up with a token to mark the results
         # into the output queue so we know what results are ours.
         if query.lower().strip().startswith("select"):
-            self.sql_queue.put((token, query, values), timeout=5)
+            self.sql_queue.put((token, query, values, only_one), timeout=5)
             return self.query_results(token)
         else:
-            self.sql_queue.put((token, query, values), timeout=5)
+            self.sql_queue.put((token, query, values, only_one), timeout=5)
 
 
 def dict_factory(cursor, row):

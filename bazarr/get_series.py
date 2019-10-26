@@ -49,7 +49,7 @@ def update_series():
             # Get current shows in DB
             current_shows_db = database.execute("SELECT tvdbId FROM table_shows")
             
-            current_shows_db_list = [x.tvdb_id for x in current_shows_db]
+            current_shows_db_list = [x['tvdbId'] for x in current_shows_db]
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
@@ -83,43 +83,43 @@ def update_series():
                 if show['tvdbId'] in current_shows_db_list:
                     series_to_update.append({'title': unicode(show["title"]),
                                              'path': unicode(show["path"]),
-                                             'tvdb_id': int(show["tvdbId"]),
-                                             'sonarr_series_id': int(show["id"]),
+                                             'tvdbId': int(show["tvdbId"]),
+                                             'sonarrSeriesId': int(show["id"]),
                                              'overview': unicode(overview),
                                              'poster': unicode(poster),
                                              'fanart': unicode(fanart),
                                              'audio_language': unicode(profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles)),
-                                             'sort_title': unicode(show['sortTitle']),
+                                             'sortTitle': unicode(show['sortTitle']),
                                              'year': unicode(show['year']),
-                                             'alternate_titles': unicode(alternateTitles)})
+                                             'alternateTitles': unicode(alternateTitles)})
                 else:
                     if serie_default_enabled is True:
                         series_to_add.append({'title': show["title"],
                                               'path': show["path"],
-                                              'tvdb_id': show["tvdbId"],
+                                              'tvdbId': show["tvdbId"],
                                               'languages': serie_default_language,
                                               'hearing_impaired': serie_default_hi,
-                                              'sonarr_series_id': show["id"],
+                                              'sonarrSeriesId': show["id"],
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
                                               'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles),
-                                              'sort_title': show['sortTitle'],
+                                              'sortTitle': show['sortTitle'],
                                               'year': show['year'],
-                                              'alternate_titles': alternateTitles,
+                                              'alternateTitles': alternateTitles,
                                               'forced': serie_default_forced})
                     else:
                         series_to_add.append({'title': show["title"],
                                               'path': show["path"],
-                                              'tvdb_id': show["tvdbId"],
-                                              'sonarr_series_id': show["id"],
+                                              'tvdbId': show["tvdbId"],
+                                              'sonarrSeriesId': show["id"],
                                               'overview': overview,
                                               'poster': poster,
                                               'fanart': fanart,
                                               'audio_language': profile_id_to_language((show['qualityProfileId'] if sonarr_version.startswith('2') else show['languageProfileId']), audio_profiles),
-                                              'sort_title': show['sortTitle'],
+                                              'sortTitle': show['sortTitle'],
                                               'year': show['year'],
-                                              'alternate_titles': alternateTitles})
+                                              'alternateTitles': alternateTitles})
             
             # Update existing series in DB
             series_in_db_list = []
@@ -133,15 +133,14 @@ def update_series():
 
             for updated_series in series_to_update_list:
                 query = dict_converter.convert(updated_series)
-                database.execute("UPDATE table_shows SET ? WHERE sonarrSeriesId=?",
-                                 (query.items, updated_series['sonarr_series_id']))
+                database.execute("""UPDATE table_shows SET {0} WHERE sonarrSeriesId=?""".format(query.items),
+                                 (updated_series['sonarrSeriesId'],))
 
             # Insert new series in DB
             for added_series in series_to_add:
                 query = dict_converter.convert(added_series)
-                database.execute("INSERT OR IGNORE INTO table_shows(?) VALUES(?)",
-                                 (query.keys, query.values))
-                list_missing_subtitles(no=added_series['sonarr_series_id'])
+                database.execute("""INSERT OR IGNORE INTO table_shows({0}) VALUES({1})""".format(query.keys, query.values))
+                list_missing_subtitles(no=added_series['sonarrSeriesId'])
 
             # Remove old series from DB
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
