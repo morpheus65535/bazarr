@@ -47,19 +47,20 @@ def get_notifier_providers():
 
 
 def get_series_name(sonarrSeriesId):
-    data = database.execute("SELECT title FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,))
+    data = database.execute("SELECT title FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
     
     return data[0]['title'] or None
 
 
 def get_episode_name(sonarrEpisodeId):
-    data = database.execute("SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,))
+    data = database.execute("SELECT title, season, episode FROM table_episodes WHERE sonarrEpisodeId=?",
+                            (sonarrEpisodeId,), only_one=True)
     
     return data['title'], data['season'], data['episode']
 
 
 def get_movies_name(radarrId):
-    data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarrId,))
+    data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
     return data['title']
 
 

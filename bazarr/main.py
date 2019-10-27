@@ -575,7 +575,7 @@ def serieseditor():
     authorize()
     
     # Get missing count
-    missing_count = database.execute("SELECT COUNT(*) FROM table_shows")
+    missing_count = len(database.execute("SELECT COUNT(*) FROM table_shows"))
 
     # Get series list
     data = database.execute("SELECT tvdbId, title, path, languages, hearing_impaired, sonarrSeriesId, poster, "
@@ -649,8 +649,8 @@ def edit_series(no):
     else:
         hi = "False"
 
-    result = database.execute("UPDATE table_shows  SET languages=?, hearing_impaired=?, forced=?) WHERE "
-                              "sonarrSeriesId=?", (lang, hi, forced, no))
+    result = database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
+                              "sonarrSeriesId=?", (str(lang), hi, forced, no))
 
     list_missing_subtitles(no=no)
     
@@ -694,14 +694,11 @@ def episodes(no):
 
     series_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbId, "
                                       "audio_language, languages, path, forced FROM table_shows WHERE "
-                                      "sonarrSeriesId=?", (no,))
+                                      "sonarrSeriesId=?", (no,), only_one=True)
     # path_replace
     dict_mapper.path_replace(series_details)
     
-    for series in series_details:
-        tvdbid = series['tvdbId']
-        series_details = series
-        break
+    tvdbid = series_details['tvdbId']
 
     episodes = database.execute("SELECT title, path, season, episode, subtitles, sonarrSeriesId, missing_subtitles, "
                                 "sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE "
@@ -727,7 +724,7 @@ def episodes(no):
 def movies():
     authorize()
 
-    missing_count = database.execute("SELECT COUNT(*) FROM table_movies")
+    missing_count = len(database.execute("SELECT COUNT(*) FROM table_movies"))
     page = request.GET.page
     if page == "":
         page = "1"
@@ -754,7 +751,7 @@ def movies():
 def movieseditor():
     authorize()
     
-    missing_count = database.execute("SELECT COUNT(*) FORM table_movies")
+    missing_count = len(database.execute("SELECT COUNT(*) FROM table_movies"))
 
     data = database.execute("SELECT tmdbId, title, path, languages, hearing_impaired, radarrId, poster, "
                             "audio_language, forced FROM table_movies ORDER BY sortTitle ASC")
@@ -844,7 +841,7 @@ def movie(no):
     movies_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbId, "
                                       "audio_language, languages, path, subtitles, radarrId, missing_subtitles, "
                                       "scenename, monitored, failedAttempts, forced FROM table_movies "
-                                      "WHERE radarrId=?", (no,))
+                                      "WHERE radarrId=?", (no,), only_one=True)
     # path_replace
     dict_mapper.path_replace(movies_details)
 
@@ -917,9 +914,9 @@ def history():
 def historyseries():
     authorize()
 
-    row_count = database.execute("SELECT COUNT(*) FROM table_history LEFT JOIN table_shows on "
-                                 "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE table_shows.title "
-                                 "is not NULL")
+    row_count = len(database.execute("SELECT COUNT(*) FROM table_history LEFT JOIN table_shows on "
+                                     "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
+                                     "table_shows.title is not NULL"))
     page = request.GET.page
     if page == "":
         page = "1"
@@ -995,9 +992,9 @@ def historyseries():
 def historymovies():
     authorize()
 
-    row_count = database.execute("SELECT COUNT(*) FROM table_history_movie LEFT JOIN table_movies ON "
-                                 "table_history_movie.radarrId=table_movies.radarrId "
-                                 "WHERE table_movies.title is not NULL")
+    row_count = len(database.execute("SELECT COUNT(*) FROM table_history_movie LEFT JOIN table_movies ON "
+                                     "table_history_movie.radarrId=table_movies.radarrId "
+                                     "WHERE table_movies.title is not NULL"))
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1084,8 +1081,8 @@ def wantedseries():
     else:
         monitored_only_query_string = ''
     
-    missing_count = database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string)
+    missing_count = len(database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" +
+                                         monitored_only_query_string))
     page = request.GET.page
     if page == "":
         page = "1"
@@ -1117,8 +1114,8 @@ def wantedmovies():
     else:
         monitored_only_query_string = ''
 
-    missing_count = database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string)
+    missing_count = len(database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" +
+                                         monitored_only_query_string))
     page = request.GET.page
     if page == "":
         page = "1"

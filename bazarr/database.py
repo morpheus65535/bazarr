@@ -41,12 +41,18 @@ class SqliteDictPathMapper:
         pass
 
     def path_replace(self, values_dict):
-        for item in values_dict:
-            item['path'] = path_replace(item['path'])
+        if type(values_dict) is list:
+            for item in values_dict:
+                item['path'] = path_replace(item['path'])
+        elif type(values_dict) is dict:
+            values_dict['path'] = path_replace(values_dict['path'])
 
     def path_replace_movie(self, values_dict):
-        for item in values_dict:
-            item['path'] = path_replace_movie(item['path'])
+        if type(values_dict) is list:
+            for item in values_dict:
+                item['path'] = path_replace_movie(item['path'])
+        elif type(values_dict) is dict:
+            values_dict['path'] = path_replace_movie(values_dict['path'])
 
 
 dict_mapper = SqliteDictPathMapper()

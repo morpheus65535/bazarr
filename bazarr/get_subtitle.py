@@ -560,7 +560,7 @@ def series_download_subtitles(no):
                                         episodes_details_clause, (no,))
 
     series_details = database.execute("SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId=?",
-                                      (no,))
+                                      (no,), only_one=True)
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -657,7 +657,7 @@ def movies_download_subtitles(no):
         movie_details_clause = ''
 
     movie = database.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title, forced "
-                             "FROM table_movies WHERE radarrId=?" + movie_details_clause, (no,))
+                             "FROM table_movies WHERE radarrId=?" + movie_details_clause, (no,), only_one=True)
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -885,7 +885,7 @@ def refine_from_db(path, video):
                                 "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
                                 "FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),))[0]
+                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),), only_one=True)
 
         if data:
             video.series, year, country = series_re.match(data['seriesTitle']).groups()
@@ -906,7 +906,8 @@ def refine_from_db(path, video):
                 if data['audio_codec']: video.audio_codec = data['audio_codec']
     elif isinstance(video, Movie):
         data = database.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, "
-                                "imdbId FROM table_movies WHERE path = ?", (unicode(path_replace_reverse_movie(path)),))
+                                "imdbId FROM table_movies WHERE path = ?",
+                                (unicode(path_replace_reverse_movie(path)),), only_one=True)
 
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])

@@ -104,13 +104,14 @@ def store_subtitles(file):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
                                         os.path.join(os.path.dirname(file), subtitle))])
 
-        database.execute("UPDATE table_episodes SET =? WHERE path=?",
+        database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), path_replace_reverse(file)))
-        episode = database.execute("SELECT sonarrSeriesId FROM table_episodes WHERE path=?", (path_replace_reverse(file),))
+        episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
+                                   (path_replace_reverse(file),), only_one=True)
 
         if len(episode):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles(epno=episode[0]['sonarrEpisodeId'])
+            list_missing_subtitles(epno=episode['sonarrEpisodeId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
@@ -270,7 +271,7 @@ def list_missing_subtitles(no=None, epno=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId']]))
 
     for missing_subtitles_item in missing_subtitles_global:
-        database.execute("UPDATE table_episodes SET  missing_subtitles=? WHERE sonarrEpisodeId=?",
+        database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
@@ -356,14 +357,14 @@ def series_scan_subtitles(no):
     episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=?", (no,))
     
     for episode in episodes:
-        store_subtitles(path_replace(episode.path))
+        store_subtitles(path_replace(episode['path']))
 
 
 def movies_scan_subtitles(no):
     movies = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (no,))
     
     for movie in movies:
-        store_subtitles_movie(path_replace_movie(movie.path))
+        store_subtitles_movie(path_replace_movie(movie['path']))
 
 
 def get_external_subtitles_path(file, subtitle):

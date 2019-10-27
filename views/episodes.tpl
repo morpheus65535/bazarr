@@ -258,8 +258,8 @@
 											if missing_languages is not None:
                                                 from get_subtitle import search_active
                                                 for language in missing_languages:
-													if episode['failed_attempts'] is not None and settings.general.getboolean('adaptive_searching') and language in episode['failed_attempts']:
-                                                        for lang in ast.literal_eval(episode['failed_attempts']):
+													if episode['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and language in episode['failedAttempts']:
+                                                        for lang in ast.literal_eval(episode['failedAttempts']):
                                                             if language in lang:
 																if search_active(lang[1]):
                                         %>
@@ -276,7 +276,7 @@
                                                             %end
                                                         %end
                                                     %else:
-                                                        <a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="get_subtitle ui tiny label">
+														<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="get_subtitle ui tiny label">
                                                             {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
                                                         </a>
