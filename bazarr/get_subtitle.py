@@ -913,8 +913,8 @@ def refine_from_db(path, video):
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
             if data['year']:
                 if int(data['year']) > 0: video.year = int(data['year'])
-            if data['imdb_id']: video.imdb_id = data['imdb_id']
-            video.alternative_titles = ast.literal_eval(data['alternative_titles'])
+            if data['imdbId']: video.imdb_id = data['imdbId']
+            video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.format:
                 if data['format']: video.format = data['format']
             if not video.resolution:

@@ -277,7 +277,7 @@ def list_missing_subtitles(no=None, epno=None):
 
 def list_missing_subtitles_movies(no=None):
     if no is not None:
-        movies_subtitles_clause = " WHERE radarrId=no"
+        movies_subtitles_clause = " WHERE radarrId=" + str(no)
     else:
         movies_subtitles_clause = ""
 
@@ -325,7 +325,7 @@ def list_missing_subtitles_movies(no=None):
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles['radarrId']]))
     
     for missing_subtitles_item in missing_subtitles_global:
-        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrIr=?",
+        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 

@@ -49,7 +49,7 @@ def get_notifier_providers():
 def get_series_name(sonarrSeriesId):
     data = database.execute("SELECT title FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
     
-    return data[0]['title'] or None
+    return data['title'] or None
 
 
 def get_episode_name(sonarrEpisodeId):

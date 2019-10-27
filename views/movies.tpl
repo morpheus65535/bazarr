@@ -71,38 +71,38 @@
 				%for row in rows:
 					<tr class="selectable">
 						<td>
-							%if row.monitored == "True":
+							%if row['monitored'] == "True":
 							<span data-tooltip="Movie monitored in Radarr" data-inverted="" data-position="top left"><i class="bookmark icon"></i></span>
 							%else:
 							<span data-tooltip="Movie unmonitored in Radarr" data-inverted="" data-position="top left"><i class="bookmark outline icon"></i></span>
 							%end
 						</td>
 						<td>
-							% if row.scene_name is not None:
-							<span data-tooltip="Scenename is: {{row.scene_name}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
+							% if row['sceneName'] is not None:
+							<span data-tooltip="Scenename is: {{row['sceneName']}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
 							% end
-							<a href="{{base_url}}movie/{{row.radarr_id}}">{{row.title}}</a>
+							<a href="{{base_url}}movie/{{row['radarrId']}}">{{row['title']}}</a>
 						</td>
 						<td>
-							%if os.path.isfile(row.path):
+							%if os.path.isfile(row['path']):
 							<span data-tooltip="This path seems to be valid." data-inverted="" data-position="top left"><i class="checkmark icon"></i></span>
 							%else:
 							<span data-tooltip="This path doesn't seem to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
 							%end
-							{{row.path}}
+							{{row['path']}}
 						</td>
-						<td>{{row.audio_language}}</td>
+						<td>{{row['audio_language']}}</td>
 						<td>
-							%subs_languages = ast.literal_eval(str(row.languages))
+							%subs_languages = ast.literal_eval(str(row['languages']))
 							%if subs_languages is not None:
 								%for subs_language in subs_languages:
 									<div class="ui tiny label">{{subs_language}}</div>
 								%end
 							%end
 						</td>
-						<td>{{!"" if row.hearing_impaired is None else row.hearing_impaired}}</td>
-						<td>{{row.forced}}</td>
-						<td {{!"style='background-color: #e8e8e8;'" if row.hearing_impaired is None else ""}}>
+						<td>{{!"" if row['hearing_impaired'] is None else row['hearing_impaired']}}</td>
+						<td>{{row['forced']}}</td>
+						<td {{!"style='background-color: #e8e8e8;'" if row['hearing_impaired'] is None else ""}}>
 							<%
 							subs_languages_list = []
 							if subs_languages is not None:
@@ -111,7 +111,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit Movie" data-inverted="" data-position="top right" data-no="{{row.radarr_id}}" data-title="{{row.title}}" data-poster="{{row.poster}}" data-languages="{{!subs_languages_list}}" data-forced="{{row.forced}}" data-hearing-impaired="{{row.hearing_impaired}}" data-audio="{{row.audio_language}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit Movie" data-inverted="" data-position="top right" data-no="{{row['radarrId']}}" data-title="{{row['title']}}" data-poster="{{row['poster']}}" data-languages="{{!subs_languages_list}}" data-forced="{{row['forced']}}" data-hearing-impaired="{{row['hearing_impaired']}}" data-audio="{{row['audio_language']}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -187,7 +187,7 @@
                                         	<option value="None">None</option>
                                         	%end
 											%for language in languages:
-											<option value="{{language.code2}}">{{language.name}}</option>
+											<option value="{{language['code2']}}">{{language['name']}}</option>
 											%end
 										</select>
 									</div>

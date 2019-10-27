@@ -1,5 +1,6 @@
 import os
 from sqlite3worker import Sqlite3Worker
+from six import string_types
 
 from get_args import args
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
@@ -19,7 +20,7 @@ class SqliteDictConverter:
         if type(values_dict) is dict:
             for key, value in values_dict.items():
                 self.keys += key + ", "
-                if type(value) not in [str, unicode]:
+                if type(value) is not string_types:
                     value = str(value)
                 else:
                     value = "\"" + value + "\""
@@ -46,6 +47,8 @@ class SqliteDictPathMapper:
                 item['path'] = path_replace(item['path'])
         elif type(values_dict) is dict:
             values_dict['path'] = path_replace(values_dict['path'])
+        else:
+            return path_replace(values_dict)
 
     def path_replace_movie(self, values_dict):
         if type(values_dict) is list:
@@ -53,6 +56,8 @@ class SqliteDictPathMapper:
                 item['path'] = path_replace_movie(item['path'])
         elif type(values_dict) is dict:
             values_dict['path'] = path_replace_movie(values_dict['path'])
+        else:
+            return path_replace(values_dict)
 
 
 dict_mapper = SqliteDictPathMapper()

@@ -44,30 +44,24 @@
 		% from get_args import args
 
 		% import os
-		% from database import TableEpisodes, TableMovies, System
+		% from database import database
 		% import operator
         % from config import settings
 
-        %episodes_missing_subtitles_clause = [
-        %	 (TableEpisodes.missing_subtitles != '[]')
-    	%]
-    	%if settings.sonarr.getboolean('only_monitored'):
-        %    episodes_missing_subtitles_clause.append(
-        %        (TableEpisodes.monitored == 'True')
-        %    )
+        %if settings.sonarr.getboolean('only_monitored'):
+        %    episodes_missing_subtitles_clause = " AND monitored='True'"
+        %else:
+        %    episodes_missing_subtitles_clause = ""
         %end
 
-        %movies_missing_subtitles_clause = [
-        %	 (TableMovies.missing_subtitles != '[]')
-    	%]
-    	%if settings.radarr.getboolean('only_monitored'):
-        %    movies_missing_subtitles_clause.append(
-        %        (TableMovies.monitored == 'True')
-        %    )
+        %if settings.radarr.getboolean('only_monitored'):
+        %    episodes_missing_subtitles_clause_movie = " AND monitored='True'"
+        %else:
+        %    episodes_missing_subtitles_clause_movie = ""
         %end
 
-        % wanted_series = TableEpisodes.select().where(reduce(operator.and_, episodes_missing_subtitles_clause)).count()
-		% wanted_movies = TableMovies.select().where(reduce(operator.and_, movies_missing_subtitles_clause)).count()
+        % wanted_series = len(database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause))
+		% wanted_movies = len(database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause_movie))
 		
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>

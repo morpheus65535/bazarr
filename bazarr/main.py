@@ -609,7 +609,7 @@ def search_json(query):
     
     if settings.general.getboolean('use_radarr'):
         # Get matching movies
-        movies = database.execute("SELECT title, radarrId, year FROM table_movies WEHRE title LIKE ? ORDER BY "
+        movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
                                   "title ASC", (query,))
         for movie in movies:
             search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie['title']) + ' (' + movie['year'] + ')'),
@@ -741,9 +741,9 @@ def movies():
     languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
     return template('movies', bazarr_version=bazarr_version, rows=data, languages=languages,
-                      missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                      single_language=settings.general.getboolean('single_language'), page_size=page_size,
-                      current_port=settings.general.port)
+                    missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
+                    single_language=settings.general.getboolean('single_language'), page_size=page_size,
+                    current_port=settings.general.port)
 
 
 @route(base_url + 'movieseditor')
@@ -843,13 +843,9 @@ def movie(no):
                                       "scenename, monitored, failedAttempts, forced FROM table_movies "
                                       "WHERE radarrId=?", (no,), only_one=True)
     # path_replace
-    dict_mapper.path_replace(movies_details)
+    dict_mapper.path_replace_movie(movies_details)
 
-    for movie_details in movies_details:
-        movies_details = movie_details
-        break
-
-    tmdbid = movies_details['tmdb_id']
+    tmdbid = movies_details['tmdbId']
 
     languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
