@@ -144,7 +144,7 @@ class Sqlite3Worker(threading.Thread):
     def close(self):
         """Close down the thread and close the sqlite3 database file."""
         self.exit_set = True
-        self.sql_queue.put((self.exit_token, "", ""), timeout=5)
+        self.sql_queue.put((self.exit_token, "", "", ""), timeout=5)
         # Sleep and check that the thread is done before returning.
         while self.thread_running:
             time.sleep(.01)  # Don't kill the CPU waiting.
