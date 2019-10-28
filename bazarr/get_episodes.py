@@ -136,8 +136,8 @@ def sync_episodes():
 
     for updated_episode in episodes_to_update_list:
         query = dict_converter.convert(updated_episode)
-        database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
-                         query.values + (updated_episode['sonarrSeriesId'],))
+        database.execute('''UPDATE table_episodes SET ''' + query.keys_update + ''' WHERE sonarrEpisodeId = ?''',
+                         query.values + (updated_episode['sonarrEpisodeId'],))
         altered_episodes.append([updated_episode['sonarrEpisodeId'],
                                  updated_episode['path'],
                                  updated_episode['sonarrSeriesId']])
