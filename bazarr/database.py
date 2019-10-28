@@ -103,7 +103,15 @@ def db_upgrade():
         ['table_movies', 'audio_codec', 'text'],
         ['table_movies', 'imdbId', 'text'],
         ['table_movies', 'forced', 'text', 'False'],
-        ['table_movies', 'movie_file_id', 'integer']
+        ['table_movies', 'movie_file_id', 'integer'],
+        ['table_history', 'video_path', 'text'],
+        ['table_history', 'language', 'text'],
+        ['table_history', 'provider', 'text'],
+        ['table_history', 'score', 'text'],
+        ['table_history_movie', 'video_path', 'text'],
+        ['table_history_movie', 'language', 'text'],
+        ['table_history_movie', 'provider', 'text'],
+        ['table_history_movie', 'score', 'text']
     ]
 
     for column in columnToAdd:
