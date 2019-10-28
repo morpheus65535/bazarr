@@ -74,8 +74,8 @@
         %    monitored_only_query_string_radarr = ""
         %end
 
-        % wanted_series = len(database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr))
-		% wanted_movies = len(database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr))
+        % wanted_series = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr, only_one=True)['count']
+		% wanted_movies = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr, only_one=True)['count']
 		% from get_providers import list_throttled_providers
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">

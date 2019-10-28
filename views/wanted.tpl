@@ -60,8 +60,8 @@
         %    episodes_missing_subtitles_clause_movie = ""
         %end
 
-        % wanted_series = len(database.execute("SELECT COUNT(*) FROM table_episodes WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause))
-		% wanted_movies = len(database.execute("SELECT COUNT(*) FROM table_movies WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause_movie))
+        % wanted_series = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause, only_one=True)['count']
+		% wanted_movies = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" + episodes_missing_subtitles_clause_movie, only_one=True)['count']
 		
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>

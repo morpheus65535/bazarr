@@ -232,8 +232,8 @@
 								forced_bool = False
 							end
 
-						    if details['failed_attempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failed_attempts']:
-                                for lang in ast.literal_eval(details['failed_attempts']):
+						    if details['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failedAttempts']:
+                                for lang in ast.literal_eval(details['failedAttempts']):
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
 					%>

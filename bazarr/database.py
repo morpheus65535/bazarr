@@ -10,25 +10,22 @@ database = Sqlite3Worker(os.path.join(args.config_dir, 'db', 'bazarr.db'), max_q
 
 class SqliteDictConverter:
     def __init__(self):
-        pass
+        self.keys_insert = tuple()
+        self.keys_update = tuple()
+        self.values = tuple()
+        self.question_marks = tuple()
 
     def convert(self, values_dict):
-        self.keys = str()
-        self.values = str()
-        self.items = str()
-
         if type(values_dict) is dict:
-            for key, value in values_dict.items():
-                self.keys += key + ", "
-                if type(value) is not string_types:
-                    value = str(value)
-                else:
-                    value = "\"" + value + "\""
-                self.values += value + ", "
-                self.items += key + "=" + value + ", "
-            self.keys = self.keys.rstrip(", ")
-            self.values = self.values.rstrip(", ")
-            self.items = self.items.rstrip(", ")
+            temp_keys = list()
+            temp_values = list()
+            for item in values_dict.items():
+                temp_keys.append(item[0])
+                temp_values.append(item[1])
+            self.keys_insert = ','.join(temp_keys)
+            self.keys_update = ','.join([k + '=?' for k in temp_keys])
+            self.values = tuple(temp_values)
+            self.question_marks = ','.join(list('?'*len(values_dict)))
             return self
         else:
             pass

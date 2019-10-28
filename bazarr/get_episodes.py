@@ -26,7 +26,7 @@ def sync_episodes():
     # Get current episodes id in DB
     current_episodes_db = database.execute("SELECT sonarrEpisodeId, path, sonarrSeriesId FROM table_episodes")
 
-    current_episodes_db_list = [x.sonarr_episode_id for x in current_episodes_db]
+    current_episodes_db_list = [x['sonarrEpisodeId'] for x in current_episodes_db]
 
     current_episodes_sonarr = []
     episodes_to_update = []
@@ -36,11 +36,11 @@ def sync_episodes():
     # Get sonarrId for each series from database
     seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
     
-    seriesIdListLength = seriesIdList.count()
+    seriesIdListLength = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
         notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId['sonarr_series_id']) + "&apikey=" + apikey_sonarr
+        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
             r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()
@@ -136,18 +136,19 @@ def sync_episodes():
 
     for updated_episode in episodes_to_update_list:
         query = dict_converter.convert(updated_episode)
-        database.execute("UPDATE table_episodes SET ? WHERE sonarrEpisodeId=?",
-                         (query.items, updated_episode['sonarr_episode_id']))
-        altered_episodes.append([updated_episode['sonarr_episode_id'],
+        database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
+                         query.values + (updated_episode['sonarrSeriesId'],))
+        altered_episodes.append([updated_episode['sonarrEpisodeId'],
                                  updated_episode['path'],
-                                 updated_episode['sonarr_series_id']])
+                                 updated_episode['sonarrSeriesId']])
 
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
         query = dict_converter.convert(added_episode)
-        database.execute("INSERT OR IGNORE INTO table_episodes(?) VALUES(?)",
-                         (query.keys, query.values))
-        altered_episodes.append([added_episode['sonarr_episode_id'],
+        database.execute(
+            '''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' + query.question_marks +
+            ''')''', query.values)
+        altered_episodes.append([added_episode['sonarrEpisodeId'],
                                  added_episode['path']])
 
     # Remove old episodes from DB

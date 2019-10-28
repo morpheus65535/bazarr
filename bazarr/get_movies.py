@@ -54,7 +54,7 @@ def update_movies():
             # Get current movies in DB
             current_movies_db = database.execute("SELECT tmdbId, path, radarrId FROM table_movies")
             
-            current_movies_db_list = [x['tmdb_id'] for x in current_movies_db]
+            current_movies_db_list = [x['tmdbId'] for x in current_movies_db]
 
             current_movies_radarr = []
             movies_to_update = []
@@ -132,31 +132,31 @@ def update_movies():
                             current_movies_radarr.append(unicode(movie['tmdbId']))
                             
                             if unicode(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append({'radarr_id': movie["id"],
+                                movies_to_update.append({'radarrId': movie["id"],
                                                          'title': unicode(movie["title"]),
                                                          'path': unicode(movie["path"] + separator + movie['movieFile']['relativePath']),
-                                                         'tmdb_id': unicode(movie["tmdbId"]),
+                                                         'tmdbId': unicode(movie["tmdbId"]),
                                                          'poster': unicode(poster),
                                                          'fanart': unicode(fanart),
                                                          'audio_language': unicode(profile_id_to_language(movie['qualityProfileId'], audio_profiles)),
-                                                         'scene_name': sceneName,
+                                                         'sceneName': sceneName,
                                                          'monitored': unicode(bool(movie['monitored'])),
                                                          'year': unicode(movie['year']),
-                                                         'sort_title': unicode(movie['sortTitle']),
-                                                         'alternative_titles': unicode(alternativeTitles),
+                                                         'sortTitle': unicode(movie['sortTitle']),
+                                                         'alternativeTitles': unicode(alternativeTitles),
                                                          'format': unicode(format),
                                                          'resolution': unicode(resolution),
                                                          'video_codec': unicode(videoCodec),
                                                          'audio_codec': unicode(audioCodec),
                                                          'overview': unicode(overview),
-                                                         'imdb_id': unicode(imdbId),
+                                                         'imdbId': unicode(imdbId),
                                                          'movie_file_id': movie['movieFile']['id']})
                             else:
                                 if movie_default_enabled is True:
-                                    movies_to_add.append({'radarr_id': movie["id"],
+                                    movies_to_add.append({'radarrId': movie["id"],
                                                           'title': movie["title"],
                                                           'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdb_id': movie["tmdbId"],
+                                                          'tmdbId': movie["tmdbId"],
                                                           'languages': movie_default_language,
                                                           'subtitles': '[]',
                                                           'hearing_impaired': movie_default_hi,
@@ -164,37 +164,41 @@ def update_movies():
                                                           'poster': poster,
                                                           'fanart': fanart,
                                                           'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
-                                                          'scene_name': sceneName,
+                                                          'sceneName': sceneName,
                                                           'monitored': unicode(bool(movie['monitored'])),
-                                                          'sort_title': movie['sortTitle'],
+                                                          'sortTitle': movie['sortTitle'],
                                                           'year': movie['year'],
-                                                          'alternative_titles': alternativeTitles,
+                                                          'alternativeTitles': alternativeTitles,
                                                           'format': format,
                                                           'resolution': resolution,
                                                           'video_codec': videoCodec,
                                                           'audio_codec': audioCodec,
-                                                          'imdb_id': imdbId,
+                                                          'imdbId': imdbId,
                                                           'forced': movie_default_forced,
                                                           'movie_file_id': movie['movieFile']['id']})
                                 else:
-                                    movies_to_add.append({'radarr_id': movie["id"],
+                                    movies_to_add.append({'radarrId': movie["id"],
                                                           'title': movie["title"],
                                                           'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdb_id': movie["tmdbId"],
+                                                          'tmdbId': movie["tmdbId"],
+                                                          'languages': None,
+                                                          'subtitles': '[]',
+                                                          'hearing_impaired': None,
                                                           'overview': overview,
                                                           'poster': poster,
                                                           'fanart': fanart,
                                                           'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
-                                                          'scene_name': sceneName,
+                                                          'sceneName': sceneName,
                                                           'monitored': unicode(bool(movie['monitored'])),
-                                                          'sort_title': movie['sortTitle'],
+                                                          'sortTitle': movie['sortTitle'],
                                                           'year': movie['year'],
-                                                          'alternative_titles': alternativeTitles,
+                                                          'alternativeTitles': alternativeTitles,
                                                           'format': format,
                                                           'resolution': resolution,
                                                           'video_codec': videoCodec,
                                                           'audio_codec': audioCodec,
-                                                          'imdb_id': imdbId,
+                                                          'imdbId': imdbId,
+                                                          'forced': None,
                                                           'movie_file_id': movie['movieFile']['id']})
                         else:
                             logging.error(
@@ -215,21 +219,22 @@ def update_movies():
 
             for updated_movie in movies_to_update_list:
                 query = dict_converter.convert(updated_movie)
-                database.execute("UPDATE table_movies SET ? WHERE radarrId=?",
-                                 (query.items, updated_movie['radarr_id']))
-                altered_movies.append([updated_movie['tmdb_id'],
+                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
+                                 query.values + (updated_movie['radarrId'],))
+                altered_movies.append([updated_movie['tmdbId'],
                                        updated_movie['path'],
-                                       updated_movie['radarr_id'],
+                                       updated_movie['radarrId'],
                                        updated_movie['monitored']])
 
             # Insert new movies in DB
             for added_movie in movies_to_add:
-                query = dict_converter.convert(updated_movie)
-                database.execute("INSERT OR IGNORE INTO table_movies(?) VALUES(?)",
-                                 (query.keys, query.values))
-                altered_movies.append([added_movie['tmdb_id'],
+                query = dict_converter.convert(added_movie)
+                database.execute(
+                    '''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
+                    query.question_marks + ''')''', query.values)
+                altered_movies.append([added_movie['tmdbId'],
                                        added_movie['path'],
-                                       added_movie['radarr_id'],
+                                       added_movie['radarrId'],
                                        added_movie['monitored']])
 
             # Remove old movies from DB

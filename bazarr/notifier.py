@@ -61,6 +61,7 @@ def get_episode_name(sonarrEpisodeId):
 
 def get_movies_name(radarrId):
     data = database.execute("SELECT title FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+
     return data['title']
 
 

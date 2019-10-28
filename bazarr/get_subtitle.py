@@ -574,7 +574,7 @@ def series_download_subtitles(no):
                     notifications.write(msg='Searching for Series Subtitles...', queue='get_subtitle', item=i,
                                         length=count_episodes_details)
                     result = download_subtitle(path_replace(episode['path']),
-                                               str(alpha3_from_alpha2(language.split(':'))),
+                                               str(alpha3_from_alpha2(language.split(':')[0])),
                                                series_details['hearing_impaired'],
                                                "True" if len(language.split(':')) > 1 else "False",
                                                providers_list,
@@ -589,7 +589,7 @@ def series_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode.path))
+                        store_subtitles(path_replace(episode['path']))
                         history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score)
                         send_notifications(no, episode['sonarrEpisodeId'], message)
         else:
@@ -661,8 +661,11 @@ def movies_download_subtitles(no):
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
-    count_movie = len(ast.literal_eval(movie['missing_subtitles']))
+
+    if ast.literal_eval(movie['missing_subtitles']):
+        count_movie = len(ast.literal_eval(movie['missing_subtitles']))
+    else:
+        count_movie = 0
     
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
         if providers_list:
@@ -712,7 +715,7 @@ def wanted_download_subtitles(path, l, count_episodes):
     providers_auth = get_providers_auth()
     
     for episode in episodes_details:
-        attempt = episode['failed_attempts']
+        attempt = episode['failedAttempts']
         if type(attempt) == unicode:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode['missing_subtitles']):
@@ -725,7 +728,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                     attempt.append([language, time.time()])
 
             database.execute("UPDATE table_episodes SET failedAttempts=? WHERE sonarrEpisodeId=?",
-                             (unicode(attempt), episode['sonarrEpisdoeId']))
+                             (unicode(attempt), episode['sonarrEpisodeId']))
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -750,7 +753,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             score = result[4]
                             store_subtitles(path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path, language_code, provider, score)
-                            send_notifications(episode['sonarrSeriesId'], episode['sonarrSeriesId'], message)
+                            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
                         logging.debug(
                             'BAZARR Search is not active for episode ' + episode['path'] + ' Language: ' + attempt[i][0])
@@ -765,7 +768,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
     providers_auth = get_providers_auth()
     
     for movie in movies_details:
-        attempt = movie['failed_attempts']
+        attempt = movie['failedAttempts']
         if type(attempt) == unicode:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie['missing_subtitles']):

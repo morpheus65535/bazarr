@@ -133,13 +133,15 @@ def update_series():
 
             for updated_series in series_to_update_list:
                 query = dict_converter.convert(updated_series)
-                database.execute("""UPDATE table_shows SET {0} WHERE sonarrSeriesId=?""".format(query.items),
-                                 (updated_series['sonarrSeriesId'],))
+                database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
+                                 query.values + (updated_series['sonarrSeriesId'],))
 
             # Insert new series in DB
             for added_series in series_to_add:
                 query = dict_converter.convert(added_series)
-                database.execute("""INSERT OR IGNORE INTO table_shows({0}) VALUES({1})""".format(query.keys, query.values))
+                database.execute(
+                    '''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
+                    query.question_marks + ''')''', query.values)
                 list_missing_subtitles(no=added_series['sonarrSeriesId'])
 
             # Remove old series from DB
