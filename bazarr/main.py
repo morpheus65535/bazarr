@@ -518,7 +518,7 @@ def redirect_root():
 def series():
     authorize()
 
-    series_count = len(database.execute("SELECT COUNT(*) FROM table_shows"))
+    series_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
     page = request.GET.page
     if page == "":
         page = "1"
@@ -725,7 +725,7 @@ def episodes(no):
 def movies():
     authorize()
 
-    missing_count = len(database.execute("SELECT COUNT(*) FROM table_movies"))
+    missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
     page = request.GET.page
     if page == "":
         page = "1"
@@ -911,9 +911,9 @@ def history():
 def historyseries():
     authorize()
 
-    row_count = len(database.execute("SELECT COUNT(*) FROM table_history LEFT JOIN table_shows on "
-                                     "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
-                                     "table_shows.title is not NULL"))
+    row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_shows on "
+                                 "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
+                                 "table_shows.title is not NULL", only_one=True)['count']
     page = request.GET.page
     if page == "":
         page = "1"
@@ -990,9 +990,9 @@ def historyseries():
 def historymovies():
     authorize()
 
-    row_count = len(database.execute("SELECT COUNT(*) FROM table_history_movie LEFT JOIN table_movies ON "
-                                     "table_history_movie.radarrId=table_movies.radarrId "
-                                     "WHERE table_movies.title is not NULL"))
+    row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies ON "
+                                 "table_history_movie.radarrId=table_movies.radarrId "
+                                 "WHERE table_movies.title is not NULL", only_one=True)['count']
     page = request.GET.page
     if page == "":
         page = "1"
