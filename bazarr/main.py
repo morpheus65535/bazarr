@@ -2,6 +2,10 @@
 
 bazarr_version = '0.8.3'
 
+import os
+os.environ["SZ_USER_AGENT"] = "Bazarr/1"
+os.environ["BAZARR_VERSION"] = bazarr_version
+
 import gc
 import sys
 import libs
@@ -58,9 +62,6 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 reload(sys)
 sys.setdefaultencoding('utf8')
 gc.enable()
-
-os.environ["SZ_USER_AGENT"] = "Bazarr/1"
-os.environ["BAZARR_VERSION"] = bazarr_version
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
