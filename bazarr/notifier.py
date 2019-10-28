@@ -73,8 +73,8 @@ def send_notifications(sonarrSeriesId, sonarrEpisodeId, message):
     apobj = apprise.Apprise()
     
     for provider in providers:
-        if provider.url is not None:
-            apobj.add(provider.url)
+        if provider['url'] is not None:
+            apobj.add(provider['url'])
     
     apobj.notify(
         title='Bazarr notification',
@@ -89,8 +89,8 @@ def send_notifications_movie(radarrId, message):
     apobj = apprise.Apprise()
     
     for provider in providers:
-        if provider.url is not None:
-            apobj.add(provider.url)
+        if provider['url'] is not None:
+            apobj.add(provider['url'])
     
     apobj.notify(
         title='Bazarr notification',
