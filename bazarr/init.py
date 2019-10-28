@@ -120,7 +120,7 @@ def init_binaries():
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
-    logging.info("Using UnRAR from: %s", exe)
+    logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
     
     return unrar

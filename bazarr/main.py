@@ -21,11 +21,15 @@ import operator
 from calendar import day_name
 
 from get_args import args
+from logger import configure_logging, empty_log
+from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
+
+configure_logging(settings.general.getboolean('debug') or args.debug)
+
 from init import *
 from database import database, dict_mapper
 
 from notifier import update_notifier
-from logger import configure_logging, empty_log
 
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
@@ -48,7 +52,6 @@ from get_subtitle import download_subtitle, series_download_subtitles, movies_do
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
-from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -58,8 +61,6 @@ gc.enable()
 
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 os.environ["BAZARR_VERSION"] = bazarr_version
-
-configure_logging(settings.general.getboolean('debug') or args.debug)
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
