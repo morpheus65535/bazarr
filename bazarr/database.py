@@ -41,6 +41,11 @@ class SqliteDictConverter:
 
     def convert(self, values_dict):
         if type(values_dict) is dict:
+            self.keys_insert = tuple()
+            self.keys_update = tuple()
+            self.values = tuple()
+            self.question_marks = tuple()
+
             temp_keys = list()
             temp_values = list()
             for item in values_dict.items():
