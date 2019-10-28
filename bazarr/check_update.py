@@ -296,7 +296,7 @@ def updated(restart=True):
         try:
             from main import restart
             restart()
-        except requests.ConnectionError:
+        except:
             logging.info('BAZARR Restart failed, please restart Bazarr manualy')
             updated(restart=False)
     else:
