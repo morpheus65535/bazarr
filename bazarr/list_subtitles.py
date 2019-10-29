@@ -76,7 +76,8 @@ def store_subtitles(file):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_replace_reverse(subtitle_path)])
-                
+                elif not language:
+                    continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
@@ -172,6 +173,8 @@ def store_subtitles_movie(file):
                     actual_subtitles.append(
                         [str("pb:forced"),
                          path_replace_reverse_movie(os.path.join(os.path.dirname(file), dest_folder, subtitle))])
+                elif not language:
+                    continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
