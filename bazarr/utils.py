@@ -11,7 +11,6 @@ import requests
 from whichcraft import which
 from get_args import args
 from config import settings, url_sonarr, url_radarr
-from database import database
 
 from subliminal import region as subliminal_cache_region
 import datetime
@@ -20,6 +19,7 @@ import glob
 
 def history_log(action, sonarrSeriesId, sonarrEpisodeId, description, video_path=None, language=None, provider=None,
                 score=None, forced=False):
+    from database import database
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
                      "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)", (action, sonarrSeriesId,
                                                                                            sonarrEpisodeId, time.time(),
@@ -29,6 +29,7 @@ def history_log(action, sonarrSeriesId, sonarrEpisodeId, description, video_path
 
 def history_log_movie(action, radarrId, description, video_path=None, language=None, provider=None, score=None,
                       forced=False):
+    from database import database
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
                      "provider, score) VALUES (?,?,?,?,?,?,?,?)", (action, radarrId, time.time(), description,
                                                                    video_path, language, provider, score))
