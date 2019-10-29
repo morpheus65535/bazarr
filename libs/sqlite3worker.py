@@ -93,7 +93,7 @@ class Sqlite3Worker(threading.Thread):
         for token, query, values, only_one in iter(self.sql_queue.get, None):
             LOGGER.debug("sql_queue: %s", self.sql_queue.qsize())
             if token != self.exit_token:
-                LOGGER.debug("run: %s", query)
+                LOGGER.debug("run: %s, %s", query, values)
                 self.run_query(token, query, values, only_one)
                 execute_count += 1
                 # Let the executes build up a little before committing to disk
@@ -188,9 +188,9 @@ class Sqlite3Worker(threading.Thread):
             If it's a select query it will return the results of the query.
         """
         if self.exit_set:
-            LOGGER.debug("Exit set, not running: %s", query)
+            LOGGER.debug("Exit set, not running: %s, %s", query, values)
             return "Exit Called"
-        LOGGER.debug("execute: %s", query)
+        LOGGER.debug("execute: %s, %s", query, values)
         values = values or []
         # A token to track this query with.
         token = str(uuid.uuid4())
