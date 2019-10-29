@@ -205,11 +205,12 @@ def store_subtitles_movie(file):
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), path_replace_reverse_movie(file)))
-        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (path_replace_reverse_movie(file),))
+        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?",
+                                 (path_replace_reverse_movie(file),), only_one=True)
 
         if len(movie):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles_movies(no=movie[0]['radarrId'])
+            list_missing_subtitles_movies(no=movie['radarrId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
