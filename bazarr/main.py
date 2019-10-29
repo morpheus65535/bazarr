@@ -1733,7 +1733,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(episodePath, unicode(episodePath))
+    store_subtitles(episodePath, path_replace(episodePath))
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
@@ -1784,7 +1784,7 @@ def get_subtitle():
             score = result[4]
             history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(episodePath, six.text_type(episodePath))
+            store_subtitles(path, episodePath)
         redirect(ref)
     except OSError:
         pass

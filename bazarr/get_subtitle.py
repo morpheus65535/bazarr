@@ -891,7 +891,7 @@ def refine_from_db(path, video):
                                 "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
                                 "FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),), only_one=True)
+                                "WHERE table_episodes.path = ?", (path_replace_reverse(path),), only_one=True)
 
         if data:
             video.series, year, country = series_re.match(data['seriesTitle']).groups()

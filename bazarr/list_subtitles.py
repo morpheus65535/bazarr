@@ -73,16 +73,16 @@ def store_subtitles(original_path, reversed_path):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), original_path])
+                        [str("pb"), path_replace_reverse(subtitle_path)])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
-                        [str("pb:forced"), original_path])
+                        [str("pb:forced"), path_replace_reverse(subtitle_path)])
 
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), original_path])
+                        [str(language), path_replace_reverse(subtitle_path)])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
@@ -103,8 +103,7 @@ def store_subtitles(original_path, reversed_path):
                                     logging.debug(
                                         "BAZARR external subtitles detected and analysis guessed this language: " + str(
                                             detected_language))
-                                    actual_subtitles.append([str(detected_language), path_replace_reverse(
-                                        os.path.join(os.path.dirname(reversed_path), subtitle))])
+                                    actual_subtitles.append([str(detected_language), path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -164,24 +163,16 @@ def store_subtitles_movie(original_path, reversed_path):
             pass
         else:
             for subtitle, language in six.iteritems(subtitles):
+                subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
-                    actual_subtitles.append(
-                        [str("pb"),
-                         path_replace_reverse_movie(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))]
-                    )
+                    actual_subtitles.append([str("pb"), path_replace_reverse_movie(subtitle_path)])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
-                    actual_subtitles.append(
-                        [str("pb:forced"),
-                        path_replace_reverse_movie(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))]
-                    )
+                    actual_subtitles.append([str("pb:forced"), path_replace_reverse_movie(subtitle_path)])
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
-                    actual_subtitles.append(
-                        [str(language),
-                         path_replace_reverse_movie(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))]
-                    )
+                    actual_subtitles.append([str(language), path_replace_reverse_movie(subtitle_path)])
                 else:
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
@@ -200,10 +191,9 @@ def store_subtitles_movie(original_path, reversed_path):
                             else:
                                 if len(detected_language) > 0:
                                     logging.debug(
-                                        "BAZARR external subtitles detected and analysis guessed this language: " + str(
-                                            detected_language))
-                                    actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
-                                        os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))])
+                                        "BAZARR external subtitles detected and analysis guessed this language: " +
+                                        str(detected_language))
+                                    actual_subtitles.append([str(detected_language), path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
