@@ -19,11 +19,11 @@
 		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
 		<meta name="theme-color" content="#ffffff">
 		
-		<title>{{details.title}} - Bazarr</title>
+		<title>{{details['title']}} - Bazarr</title>
 		<style>
 			body {
 				background-color: #1b1c1d;
-				background-image: url("{{base_url}}image_proxy_movies{{details.fanart}}");
+				background-image: url("{{base_url}}image_proxy_movies{{details['fanart']}}");
 				background-repeat: no-repeat;
 				background-attachment: fixed;
 				background-size: cover;
@@ -84,7 +84,7 @@
         %from config import settings
         %from helper import path_replace_movie
 		%single_language = settings.general.getboolean('single_language')
-		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details.fanart}}"></div>
+		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details['fanart']}}"></div>
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
@@ -94,7 +94,7 @@
 			<div id="divdetails" class="ui container">
 				<div class="ui stackable grid">
 					<div class="three wide column">
-						<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details.poster}}">
+						<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details['poster']}}">
 					</div>
 
 					<div class="thirteen wide column">
@@ -102,12 +102,12 @@
 							<div class="ui row">
 								<div class="twelve wide left aligned column">
 									<h2>
-					                    %if details.monitored == 'True':
+					                    %if details['monitored'] == 'True':
 					                    <span data-tooltip="Movie is Monitored in Radarr"><i class="bookmark icon"></i></span>
 					                    %else:
 					                    <span data-tooltip="Movie is not Monitored in Radarr"><i class="bookmark outline icon"></i></span>
 					                    %end
-										{{details.title}}
+										{{details['title']}}
 					                </h2>
 								</div>
 
@@ -116,7 +116,7 @@
 										<button id="scan_disk" class="ui button" data-tooltip="Scan Disk For Subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
 										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download Missing Subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
 										<%
-										subs_languages = ast.literal_eval(str(details.languages))
+										subs_languages = ast.literal_eval(str(details['languages']))
 										subs_languages_list = []
 										if subs_languages is not None:
 											for subs_language in subs_languages:
@@ -125,23 +125,23 @@
 										end
 										%>
 										%if subs_languages is not None:
-										<button class="manual_search ui button" data-tooltip="Manually Search For Subtitles" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-movie_title="{{details.title}}" data-radarrId="{{details.radarr_id}}"><i class="ui inverted large compact user icon"></i></button>
-										<button class="manual_upload ui button" data-tooltip="Upload Subtitle File" data-inverted="" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{subs_languages_list}}" data-hi="{{details.hearing_impaired}}" data-movie_title="{{details.forced}}" data-radarrId="{{details.title}}"><i class="ui inverted large compact cloud upload icon"></i></button>
+										<button class="manual_search ui button" data-tooltip="Manually Search For Subtitles" data-inverted="" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-movie_title="{{details['title']}}" data-radarrId="{{details['radarrId']}}"><i class="ui inverted large compact user icon"></i></button>
+										<button class="manual_upload ui button" data-tooltip="Upload Subtitle File" data-inverted="" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-movie_title="{{details['forced']}}" data-radarrId="{{details['title']}}"><i class="ui inverted large compact cloud upload icon"></i></button>
 										%end
-										<button id="config" class="ui button" data-tooltip="Edit Movie" data-inverted="" data-tmdbid="{{details.tmdb_id}}" data-title="{{details.title}}" data-poster="{{details.poster}}" data-audio="{{details.audio_language}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details.hearing_impaired}}" data-forced="{{details.forced}}"><i class="ui inverted large compact configure icon"></i></button>
+										<button id="config" class="ui button" data-tooltip="Edit Movie" data-inverted="" data-tmdbid="{{details['tmdbId']}}" data-title="{{details['title']}}" data-poster="{{details['poster']}}" data-audio="{{details['audio_language']}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}"><i class="ui inverted large compact configure icon"></i></button>
 									</div>
 								</div>
 							</div>
 
 							<div class="ui row">
-								{{details.overview}}
+								{{details['overview']}}
 							</div>
 
 							<div class="ui row">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details.audio_language}}</div>
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details.path}}</div>
-								% if details.scene_name is not None:
-								<div class="ui tiny inverted label" style='background-color: orange;'>{{details.scene_name}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details['audio_language']}}</div>
+								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details['path']}}</div>
+								% if details['sceneName'] is not None:
+								<div class="ui tiny inverted label" style='background-color: orange;'>{{details['sceneName']}}</div>
 								% end
 							</div>
 
@@ -152,8 +152,8 @@
 							</div>
 
 							<div class="ui row" style="padding-top: 0em;">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details.hearing_impaired}}</div>
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details.forced}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details['hearing_impaired']}}</div>
+								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details['forced']}}</div>
 							</div>
 						</div>
 					</div>
@@ -170,7 +170,7 @@
 						</thead>
 						<tbody>
 							<%
-							subtitles_files = ast.literal_eval(str(details.subtitles))
+							subtitles_files = ast.literal_eval(str(details['subtitles']))
 							subtitles_files.sort(key = lambda x: x[0])
 							if subtitles_files is not None:
 								for subtitles_file in subtitles_files:
@@ -189,7 +189,7 @@
 								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
 								<td>
 									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details.path}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details.radarr_id}}>
+									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details['path']}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details['radarrId']}}>
 										<i class="ui black delete icon"></i>
 									</a>
 									%end
@@ -207,8 +207,8 @@
 						</tbody>
 					</table>
 					<%
-					if details.missing_subtitles is not None:
-						missing_subs_languages = ast.literal_eval(details.missing_subtitles)
+					if details['missing_subtitles'] is not None:
+						missing_subs_languages = ast.literal_eval(details['missing_subtitles'])
 					else:
 						missing_subs_languages = []
 					end
@@ -232,17 +232,17 @@
 								forced_bool = False
 							end
 
-						    if details.failed_attempts is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details.failed_attempts:
-                                for lang in ast.literal_eval(details.failed_attempts):
+						    if details['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failedAttempts']:
+                                for lang in ast.literal_eval(details['failedAttempts']):
                                     if missing_subs_language in lang:
                                         if search_active(lang[1]):
 					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-radarrId={{details.radarr_id}}>
+							<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
                                         %else:
-                            <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-radarrId={{details.radarr_id}}>
+                            <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -252,7 +252,7 @@
                                 end
                             else:
                     %>
-                            <a class="get_subtitle ui small blue label" data-moviePath="{{details.path}}" data-scenename="{{details.scene_name}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details.hearing_impaired}}" data-forced="{{details.forced}}" data-radarrId={{details.radarr_id}}>
+                            <a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
 								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
 								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							</a>
@@ -297,7 +297,7 @@
                                         	<option value="None">None</option>
                                         	%end
 											%for language in languages:
-											<option value="{{language.code2}}">{{language.name}}</option>
+											<option value="{{language['code2']}}">{{language['name']}}</option>
 											%end
 										</select>
 									</div>
@@ -352,8 +352,8 @@
 							<th style="text-align: left;">HI:</th>
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Matching:</th>
-							<th style="text-align: left;">Subtitles filename:</th>
-							<th></th>
+							<th style="text-align: left;">Releases:</th>
+							<th></th>details
 						</tr>
 					</thead>
 				</table>
@@ -467,7 +467,7 @@
 			forced: $(this).attr("data-forced"),
 			radarrId: $(this).attr("data-radarrId"),
 			tmdbid: {{tmdbid}},
-			title: "{{!details.title.replace("'", "\\'")}}"
+			title: "{{!details['title'].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading Subtitle File...");
@@ -541,7 +541,7 @@
 			hi: hi,
 			forced: forced,
 			radarrId: radarrId,
-			title: "{{!details.title.replace("'", "\'")}}"
+			title: "{{!details['title'].replace("'", "\'")}}"
 		};
 
 		$('#search_result').DataTable( {
@@ -647,7 +647,7 @@
 		sceneName = $(this).attr("data-sceneName");
 		language = $(this).attr("data-language");
 		radarrId = $(this).attr("data-radarrId");
-		var title = "{{!details.title.replace("'", "\'")}}";
+		var title = "{{!details['title'].replace("'", "\'")}}";
 
 		$('#language').dropdown();
 
@@ -674,7 +674,7 @@
 				language: $(button).attr("data-language"),
 				hi: hi,
 				radarrId: radarrId,
-				title: "{{!details.title.replace("'", "\\'")}}"
+				title: "{{!details['title'].replace("'", "\\'")}}"
 		};
 
 		$('#loader_text').text("Downloading Subtitle File...");

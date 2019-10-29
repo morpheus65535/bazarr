@@ -60,71 +60,71 @@
 				%for row in rows:
 					<tr class="selectable">
 						<td class="collapsing">
-						%if row.action == 0:
+						%if row['action'] == 0:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been erased." data-inverted="" data-position="top left">
 								<i class="ui trash icon"></i>
 							</div>
-						%elif row.action == 1:
+						%elif row['action'] == 1:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been downloaded." data-inverted="" data-position="top left">
 								<i class="ui download icon"></i>
 							</div>
-						%elif row.action == 2:
+						%elif row['action'] == 2:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been manually downloaded." data-inverted="" data-position="top left">
 								<i class="ui user icon"></i>
 							</div>
-						%elif row.action == 3:
+						%elif row['action'] == 3:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been upgraded." data-inverted="" data-position="top left">
 								<i class="ui recycle icon"></i>
 							</div>
-						%elif row.action == 4:
+						%elif row['action'] == 4:
 							<div class="ui inverted basic compact icon" data-tooltip="Subtitle file has been manually uploaded." data-inverted="" data-position="top left">
 								<i class="ui cloud upload icon"></i>
 							</div>
 						%end
 						</td>
 						<td>
-							<a href="{{base_url}}episodes/{{row.sonarr_series_id.sonarr_series_id}}">{{row.seriesTitle}}</a>
+							<a href="{{base_url}}episodes/{{row['sonarrSeriesId']}}">{{row['seriesTitle']}}</a>
 						</td>
 						<td class="collapsing">
-							%if row.episode_number is not None:
-							%	episode = row.episode_number.split('x')
+							%if row['episode_number'] is not None:
+							%	episode = row['episode_number'].split('x')
 							{{episode[0] + 'x' + episode[1].zfill(2)}}
 							%end
 						</td>
 						<td>
-							%if row.episodeTitle is not None:
-							{{row.episodeTitle}}
+							%if row['episodeTitle'] is not None:
+							{{row['episodeTitle']}}
 							%else:
 							<em>Deleted episode</em>
 							%end
 						</td>
 						<td class="collapsing">
-							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row.timestamp))}}" data-inverted="" data-position="top left">
-								{{pretty.date(int(row.timestamp))}}
+							<div class="ui inverted" data-tooltip="{{time.strftime('%Y/%m/%d %H:%M', time.localtime(row['timestamp']))}}" data-inverted="" data-position="top left">
+								{{pretty.date(int(row['timestamp']))}}
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = (row.timestamp, row.path, row.score)
+							% upgradable_criteria = (row['timestamp'], row['path'], row['score'])
 							% if upgradable_criteria in upgradable_episodes:
-							%     if row.languages != "None":
-							%         desired_languages = ast.literal_eval(str(row.languages))
-							%         if row.forced == "True":
+							%     if row['languages'] != "None":
+							%         desired_languages = ast.literal_eval(str(row['languages']))
+							%         if row['forced'] == "True":
 							%             forced_languages = [l + ":forced" for l in desired_languages]
-							%         elif row.forced == "Both":
+							%         elif row['forced'] == "Both":
 							%             forced_languages = [l + ":forced" for l in desired_languages] + desired_languages
 							%         else:
 							%             forced_languages = desired_languages
 							%         end
-                            %         if row.language in forced_languages:
+                            %         if row['language'] in forced_languages:
 										  <div class="ui inverted basic compact icon" data-tooltip="This Subtitle file is eligible for an upgrade." data-inverted="" data-position="top left">
-										      <i class="ui green recycle icon upgrade"></i>{{row.description}}
+										      <i class="ui green recycle icon upgrade"></i>{{row['description']}}
 										  </div>
 							%         else:
-							              {{row.description}}
+							              {{row['description']}}
 							%         end
 							%     end
 							% else:
-							      {{row.description}}
+							      {{row['description']}}
 							% end
 						</td>
 					</tr>

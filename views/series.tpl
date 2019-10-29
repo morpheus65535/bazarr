@@ -77,26 +77,26 @@
 				%import os
 				%for row in rows:
 					<tr class="selectable">
-						<td><a href="{{base_url}}episodes/{{row.sonarr_series_id}}">{{row.title}}</a></td>
+						<td><a href="{{base_url}}episodes/{{row['sonarrSeriesId']}}">{{row['title']}}</a></td>
 						<td>
-							%if os.path.isdir(row.path):
+							%if os.path.isdir(row['path']):
 							<span data-tooltip="This path seems to be valid." data-inverted="" data-position="top left"><i class="checkmark icon"></i></span>
 							%else:
 							<span data-tooltip="This path doesn't seem to be valid." data-inverted="" data-position="top left"><i class="warning sign icon"></i></span>
 							%end
-							{{row.path}}
+							{{row['path']}}
 						</td>
-						<td>{{row.audio_language}}</td>
+						<td>{{row['audio_language']}}</td>
 						<td>
-							%subs_languages = ast.literal_eval(str(row.languages))
+							%subs_languages = ast.literal_eval(str(row['languages']))
 							%if subs_languages is not None:
 								%for subs_language in subs_languages:
 									<div class="ui tiny label">{{subs_language}}</div>
 								%end
 							%end
 						</td>
-						<td>{{!"" if row.hearing_impaired is None else row.hearing_impaired}}</td>
-						<td>{{row.forced}}</td>
+						<td>{{!"" if row['hearing_impaired'] is None else row['hearing_impaired']}}</td>
+						<td>{{row['forced']}}</td>
 						<td>
 							%total_subs = 0
 							%missing_subs = 0
@@ -104,13 +104,13 @@
 							%	pass
 							%else:
 							%	for total_subtitles in total_subtitles_list:
-							%		if total_subtitles.sonarr_series_id == row.sonarr_series_id:
-							%			total_subs = total_subtitles.missing_subtitles
+							%		if total_subtitles['sonarrSeriesId'] == row['sonarrSeriesId']:
+							%			total_subs = total_subtitles['missing_subtitles']
 							%		end
 							%	end
 							%	for missing_subtitles in missing_subtitles_list:
-							%		if missing_subtitles.sonarr_series_id == row.sonarr_series_id:
-							%			missing_subs = missing_subtitles.missing_subtitles
+							%		if missing_subtitles['sonarrSeriesId'] == row['sonarrSeriesId']:
+							%			missing_subs = missing_subtitles['missing_subtitles']
 							%		end
 							%	end
 							%end
@@ -120,7 +120,7 @@
 								</div>
 							</div>
 						</td>
-						<td {{!"style='background-color: #e8e8e8;'" if row.hearing_impaired == None else ""}}>
+						<td {{!"style='background-color: #e8e8e8;'" if row['hearing_impaired'] == None else ""}}>
 							<%
 							subs_languages_list = []
 							if subs_languages is not None:
@@ -129,7 +129,7 @@
 								end
 							end
 							%>
-							<div class="config ui inverted basic compact icon" data-tooltip="Edit Series" data-inverted="" data-position="top right" data-no="{{row.sonarr_series_id}}" data-title="{{row.title}}" data-poster="{{row.poster}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row.hearing_impaired}}" data-forced="{{row.forced}}" data-audio="{{row.audio_language}}">
+							<div class="config ui inverted basic compact icon" data-tooltip="Edit Series" data-inverted="" data-position="top right" data-no="{{row['sonarrSeriesId']}}" data-title="{{row['title']}}" data-poster="{{row['poster']}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{row['hearing_impaired']}}" data-forced="{{row['forced']}}" data-audio="{{row['audio_language']}}">
 								<i class="ui black configure icon"></i>
 							</div>
 						</td>
@@ -205,7 +205,7 @@
                                         	<option value="None">None</option>
                                         	%end
 											%for language in languages:
-											<option value="{{language.code2}}">{{language.name}}</option>
+											<option value="{{language['code2']}}">{{language['name']}}</option>
 											%end
 										</select>
 									</div>

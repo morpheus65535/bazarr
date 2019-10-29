@@ -59,10 +59,10 @@
 				%end
                 %for row in rows:
 					<tr class="selectable">
-						<td><a href="{{base_url}}movie/{{row.radarr_id}}">{{row.title}}</a></td>
+						<td><a href="{{base_url}}movie/{{row['radarrId']}}">{{row['title']}}</a></td>
 						<td>
 						<%
-                        missing_languages = ast.literal_eval(row.missing_subtitles)
+                        missing_languages = ast.literal_eval(row['missing_subtitles'])
 						if missing_languages is not None:
                             from get_subtitle import search_active
                             from config import settings
@@ -72,18 +72,18 @@
 								else:
 									forced = False
 								end
-                                if row.failed_attempts is not None and settings.general.getboolean('adaptive_searching') and language in row.failed_attempts:
-                                        for lang in ast.literal_eval(row.failed_attempts):
+                                if row['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and language in row['failedAttempts']:
+                                        for lang in ast.literal_eval(row['failedAttempts']):
                                             if language in lang:
                                                 active = search_active(lang[1])
                                                 if active:
                         %>
-                                                    <a data-moviePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-radarrId={{row.radarr_id}} data-title="{{row.title.replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-moviePath="{{row['path']}}" data-sceneName="{{row['sceneName']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row['hearing_impaired']}}" data-forced="{{forced}}" data-radarrId={{row['radarrId']}} data-title="{{row['title'].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								                        {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							                        </a>
                                                 %else:
-                                                    <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top right" data-inverted="" data-moviePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-radarrId={{row.radarr_id}} data-title="{{row.title.replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                                    <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top right" data-inverted="" data-moviePath="{{row['path']}}" data-sceneName="{{row['sceneName']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row['hearing_impaired']}}" data-forced="{{forced}}" data-radarrId={{row['radarrId']}} data-title="{{row['title'].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								                        {{language}}
                                                         <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
 							                        </a>
@@ -91,7 +91,7 @@
                                             %end
                                         %end
                                 %else:
-                                        <a data-moviePath="{{row.path}}" data-sceneName="{{row.scene_name}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row.hearing_impaired}}" data-forced="{{forced}}" data-radarrId="{{row.radarr_id}}" data-title="{{row.title.replace("'", "\'")}}" class="get_subtitle ui tiny label">
+                                        <a data-moviePath="{{row['path']}}" data-sceneName="{{row['sceneName']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{row['hearing_impaired']}}" data-forced="{{forced}}" data-radarrId="{{row['radarrId']}}" data-title="{{row['title'].replace("'", "\'")}}" class="get_subtitle ui tiny label">
 								            {{language}}
                                             <i style="margin-left:3px; margin-right:0" class="search icon"></i>
 							            </a>

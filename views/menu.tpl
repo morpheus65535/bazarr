@@ -58,31 +58,25 @@
 		% import ast
 		% import datetime
 		% import os
-		% from database import TableEpisodes, TableMovies, System
+		% from database import database
 		% import operator
         % from config import settings
 		% from functools import reduce
 
-        %episodes_missing_subtitles_clause = [
-        %	 (TableEpisodes.missing_subtitles != '[]')
-    	%]
-    	%if settings.sonarr.getboolean('only_monitored'):
-        %    episodes_missing_subtitles_clause.append(
-        %        (TableEpisodes.monitored == 'True')
-        %    )
+        %if settings.sonarr.getboolean('only_monitored'):
+        %    monitored_only_query_string_sonarr = ' AND monitored = "True"'
+        %else:
+        %    monitored_only_query_string_sonarr = ""
         %end
 
-        %movies_missing_subtitles_clause = [
-        %	 (TableMovies.missing_subtitles != '[]')
-    	%]
-    	%if settings.radarr.getboolean('only_monitored'):
-        %    movies_missing_subtitles_clause.append(
-        %        (TableMovies.monitored == 'True')
-        %    )
+        %if settings.radarr.getboolean('only_monitored'):
+        %    monitored_only_query_string_radarr = ' AND monitored = "True"'
+        %else:
+        %    monitored_only_query_string_radarr = ""
         %end
 
-        % wanted_series = TableEpisodes.select().where(reduce(operator.and_, episodes_missing_subtitles_clause)).count()
-		% wanted_movies = TableMovies.select().where(reduce(operator.and_, movies_missing_subtitles_clause)).count()
+        % wanted_series = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" + monitored_only_query_string_sonarr, only_one=True)['count']
+		% wanted_movies = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" + monitored_only_query_string_radarr, only_one=True)['count']
 		% from get_providers import list_throttled_providers
 		% throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
 		<div id="divmenu" class="ui container">
@@ -220,17 +214,17 @@
 				</div>
 			</div>
 
-			% restart_required = System.select(System.configured, System.updated)
+			% restart_required = database.execute("SELECT configured, updated FROM system")
 			% for item in restart_required:
 			%     restart_required = item
 			%     break
 			% end
 
-			% if restart_required.updated == '1' and restart_required.configured == '1':
+			% if restart_required['updated'] == '1' and restart_required['configured'] == '1':
 			<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply The Last Update & Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
-			% elif restart_required.updated == '1':
+			% elif restart_required['updated'] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To The Last Update. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
-			% elif restart_required.configured == '1':
+			% elif restart_required['configured'] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% end
         </div>

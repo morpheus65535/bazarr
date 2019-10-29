@@ -14,11 +14,9 @@ from subliminal import core
 from subliminal_patch import search_external_subtitles
 from bs4 import UnicodeDammit
 from itertools import islice
-from database import TableShows, TableEpisodes, TableMovies
-from peewee import fn, JOIN
-from functools import reduce
 
 from get_args import args
+from database import database
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
@@ -108,29 +106,20 @@ def store_subtitles(original_path, reversed_path):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse(
                                         os.path.join(os.path.dirname(reversed_path), subtitle))])
 
-        update_count = TableEpisodes.update(
-            {
-                TableEpisodes.subtitles: str(actual_subtitles)
-            }
-        ).where(
-            TableEpisodes.path == original_path
-        ).execute()
-        if update_count > 0:
+        database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
+                         (str(actual_subtitles), original_path))
+        episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
+                                   (original_path,), only_one=True)
+
+        if len(episode):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+            list_missing_subtitles(epno=episode['sonarrEpisodeId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
-
-    episode = TableEpisodes.select(
-        TableEpisodes.sonarr_episode_id
-    ).where(
-        TableEpisodes.path == path_replace_reverse(file)
-    ).first()
-
-    list_missing_subtitles(epno=episode.sonarr_episode_id)
 
     return actual_subtitles
 
@@ -216,15 +205,13 @@ def store_subtitles_movie(original_path, reversed_path):
                                     actual_subtitles.append([str(detected_language), path_replace_reverse_movie(
                                         os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle))])
         
-        update_count = TableMovies.update(
-            {
-                TableMovies.subtitles: str(actual_subtitles)
-            }
-        ).where(
-            TableMovies.path == original_path
-        ).execute()
-        if update_count > 0:
+        database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
+                         (str(actual_subtitles), original_path))
+        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
+
+        if len(movie):
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+            list_missing_subtitles_movies(no=movie[0]['radarrId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
@@ -232,34 +219,21 @@ def store_subtitles_movie(original_path, reversed_path):
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
 
-    movie = TableMovies.select(
-        TableMovies.radarr_id
-    ).where(
-        TableMovies.path == path_replace_reverse_movie(file)
-    ).first()
-
-    list_missing_subtitles_movies(no=movie.radarr_id)
-
     return actual_subtitles
 
 
 def list_missing_subtitles(no=None, epno=None):
-    episodes_subtitles_clause = (TableShows.sonarr_series_id.is_null(False))
     if no is not None:
-        episodes_subtitles_clause = (TableShows.sonarr_series_id == no)
+        episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
     elif epno is not None:
-        episodes_subtitles_clause = (TableEpisodes.sonarr_episode_id == epno)
-    episodes_subtitles = TableEpisodes.select(
-        TableShows.sonarr_series_id,
-        TableEpisodes.sonarr_episode_id,
-        TableEpisodes.subtitles,
-        TableShows.languages,
-        TableShows.forced
-    ).join_from(
-        TableEpisodes, TableShows, JOIN.LEFT_OUTER
-    ).where(
-        reduce(operator.and_, episodes_subtitles_clause)
-    ).objects()
+        episodes_subtitles_clause = " WHERE table_episodes.sonarrEpisodeId=" + str(epno)
+    else:
+        episodes_subtitles_clause = ""
+    episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
+                                          "table_episodes.subtitles, table_shows.languages, table_shows.forced "
+                                          "FROM table_episodes LEFT JOIN table_shows "
+                                          "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
+                                          episodes_subtitles_clause)
 
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -269,27 +243,27 @@ def list_missing_subtitles(no=None, epno=None):
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        if episode_subtitles.subtitles is not None:
+        if episode_subtitles['subtitles'] is not None:
             if use_embedded_subs:
-                actual_subtitles = ast.literal_eval(episode_subtitles.subtitles)
+                actual_subtitles = ast.literal_eval(episode_subtitles['subtitles'])
             else:
-                actual_subtitles_temp = ast.literal_eval(episode_subtitles.subtitles)
+                actual_subtitles_temp = ast.literal_eval(episode_subtitles['subtitles'])
                 for subtitle in actual_subtitles_temp:
                     if subtitle[1] is not None:
                         actual_subtitles.append(subtitle)
-        if episode_subtitles.languages is not None:
-            desired_subtitles = ast.literal_eval(episode_subtitles.languages)
-            if episode_subtitles.forced == "True" and desired_subtitles is not None:
+        if episode_subtitles['languages'] is not None:
+            desired_subtitles = ast.literal_eval(episode_subtitles['languages'])
+            if episode_subtitles['forced'] == "True" and desired_subtitles is not None:
                 for i, desired_subtitle in enumerate(desired_subtitles):
                     desired_subtitles[i] = desired_subtitle + ":forced"
-            elif episode_subtitles.forced == "Both" and desired_subtitles is not None:
+            elif episode_subtitles['forced'] == "Both" and desired_subtitles is not None:
                 for desired_subtitle in desired_subtitles:
                     desired_subtitles_temp.append(desired_subtitle)
                     desired_subtitles_temp.append(desired_subtitle + ":forced")
                 desired_subtitles = desired_subtitles_temp
         actual_subtitles_list = []
         if desired_subtitles is None:
-            missing_subtitles_global.append(tuple(['[]', episode_subtitles.sonarr_episode_id]))
+            missing_subtitles_global.append(tuple(['[]', episode_subtitles['sonarrEpisodeId']]))
         else:
             for item in actual_subtitles:
                 if item[0] == "pt-BR":
@@ -299,31 +273,21 @@ def list_missing_subtitles(no=None, epno=None):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles.sonarr_episode_id]))
+            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId']]))
 
     for missing_subtitles_item in missing_subtitles_global:
-        TableEpisodes.update(
-            {
-                TableEpisodes.missing_subtitles: missing_subtitles_item[0]
-            }
-        ).where(
-            TableEpisodes.sonarr_episode_id == missing_subtitles_item[1]
-        ).execute()
+        database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
+                         (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
 def list_missing_subtitles_movies(no=None):
-    movies_subtitles_clause = (TableMovies.radarr_id.is_null(False))
     if no is not None:
-        movies_subtitles_clause = (TableMovies.radarr_id == no)
+        movies_subtitles_clause = " WHERE radarrId=" + str(no)
+    else:
+        movies_subtitles_clause = ""
 
-    movies_subtitles = TableMovies.select(
-        TableMovies.radarr_id,
-        TableMovies.subtitles,
-        TableMovies.languages,
-        TableMovies.forced
-    ).where(
-        reduce(operator.and_, movies_subtitles_clause)
-    )
+    movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" +
+                                        movies_subtitles_clause)
     
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -333,27 +297,27 @@ def list_missing_subtitles_movies(no=None):
         actual_subtitles = []
         desired_subtitles = []
         missing_subtitles = []
-        if movie_subtitles.subtitles is not None:
+        if movie_subtitles['subtitles'] is not None:
             if use_embedded_subs:
-                actual_subtitles = ast.literal_eval(movie_subtitles.subtitles)
+                actual_subtitles = ast.literal_eval(movie_subtitles['subtitles'])
             else:
-                actual_subtitles_temp = ast.literal_eval(movie_subtitles.subtitles)
+                actual_subtitles_temp = ast.literal_eval(movie_subtitles['subtitles'])
                 for subtitle in actual_subtitles_temp:
                     if subtitle[1] is not None:
                         actual_subtitles.append(subtitle)
-        if movie_subtitles.languages is not None:
-            desired_subtitles = ast.literal_eval(movie_subtitles.languages)
-            if movie_subtitles.forced == "True" and desired_subtitles is not None:
+        if movie_subtitles['languages'] is not None:
+            desired_subtitles = ast.literal_eval(movie_subtitles['languages'])
+            if movie_subtitles['forced'] == "True" and desired_subtitles is not None:
                 for i, desired_subtitle in enumerate(desired_subtitles):
                     desired_subtitles[i] = desired_subtitle + ":forced"
-            elif movie_subtitles.forced == "Both" and desired_subtitles is not None:
+            elif movie_subtitles['forced'] == "Both" and desired_subtitles is not None:
                 for desired_subtitle in desired_subtitles:
                     desired_subtitles_temp.append(desired_subtitle)
                     desired_subtitles_temp.append(desired_subtitle + ":forced")
                 desired_subtitles = desired_subtitles_temp
         actual_subtitles_list = []
         if desired_subtitles is None:
-            missing_subtitles_global.append(tuple(['[]', movie_subtitles.radarr_id]))
+            missing_subtitles_global.append(tuple(['[]', movie_subtitles['radarrId']]))
         else:
             for item in actual_subtitles:
                 if item[0] == "pt-BR":
@@ -363,66 +327,49 @@ def list_missing_subtitles_movies(no=None):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-            missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles.radarr_id]))
+            missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles['radarrId']]))
     
     for missing_subtitles_item in missing_subtitles_global:
-        TableMovies.update(
-            {
-                TableMovies.missing_subtitles: missing_subtitles_item[0]
-            }
-        ).where(
-            TableMovies.radarr_id == missing_subtitles_item[1]
-        ).execute()
+        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
+                         (missing_subtitles_item[0], missing_subtitles_item[1]))
 
 
 def series_full_scan_subtitles():
-    episodes = TableEpisodes.select(
-        TableEpisodes.path
-    )
-    count_episodes = episodes.count()
+    episodes = database.execute("SELECT path FROM table_episodes")
+    count_episodes = len(episodes)
     
     for i, episode in enumerate(episodes, 1):
         notifications.write(msg='Updating all episodes subtitles from disk...',
                             queue='list_subtitles_series', item=i, length=count_episodes)
-        store_subtitles(episode.path, path_replace(episode.path))
+        store_subtitles(episode['path'], path_replace(episode['path']))
     
     gc.collect()
 
 
 def movies_full_scan_subtitles():
-    movies = TableMovies.select(
-        TableMovies.path
-    )
-    count_movies = movies.count()
+    movies = database.execute("SELECT path FROM table_movies")
+    count_movies = len(movies)
     
     for i, movie in enumerate(movies, 1):
         notifications.write(msg='Updating all movies subtitles from disk...',
                             queue='list_subtitles_movies', item=i, length=count_movies)
-        store_subtitles_movie(movie.path, path_replace_movie(movie.path))
+        store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
     
     gc.collect()
 
 
 def series_scan_subtitles(no):
-    episodes = TableEpisodes.select(
-        TableEpisodes.path
-    ).where(
-        TableEpisodes.sonarr_series_id == no
-    )
+    episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=?", (no,))
     
     for episode in episodes:
-        store_subtitles(episode.path, path_replace(episode.path))
+        store_subtitles(episode['path'], path_replace(episode['path']))
 
 
 def movies_scan_subtitles(no):
-    movies = TableMovies.select(
-        TableMovies.path
-    ).where(
-        TableMovies.radarr_id == no
-    )
+    movies = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (no,))
     
     for movie in movies:
-        store_subtitles_movie(movie.path, path_replace_movie(movie.path))
+        store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
 
 
 def get_external_subtitles_path(file, subtitle):

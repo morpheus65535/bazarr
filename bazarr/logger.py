@@ -77,7 +77,7 @@ def configure_logging(debug=False):
     logger.addHandler(fh)
     
     if debug:
-        logging.getLogger("peewee").setLevel(logging.INFO)
+        logging.getLogger("sqlite3worker").setLevel(logging.DEBUG)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
@@ -89,6 +89,7 @@ def configure_logging(debug=False):
         logging.debug('Operating system: %s', platform.platform())
         logging.debug('Python version: %s', platform.python_version())
     else:
+        logging.getLogger("sqlite3worker").setLevel(logging.CRITICAL)
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)

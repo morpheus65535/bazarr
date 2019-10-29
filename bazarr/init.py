@@ -9,9 +9,7 @@ import rarfile
 from cork import Cork
 from backports import configparser2
 from config import settings
-from check_update import check_releases
 from get_args import args
-from utils import get_binary
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -55,6 +53,27 @@ if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
     logging.debug("BAZARR Created cache folder")
 
+# create database file
+if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
+    import sqlite3
+    # Get SQL script from file
+    fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
+    script = fd.read()
+    # Close SQL script file
+    fd.close()
+    # Open database connection
+    db = sqlite3.connect(os.path.join(args.config_dir, 'db', 'bazarr.db'), timeout=30)
+    c = db.cursor()
+    # Execute script and commit change to database
+    c.executescript(script)
+    # Close database connection
+    db.close()
+    logging.info('BAZARR Database created successfully')
+
+# upgrade database schema
+from database import db_upgrade
+db_upgrade()
+
 # Configure dogpile file caching for Subliminal request
 register_cache_backend("subzero.cache.file", "subzero.cache_backends.file", "SZFileBackend")
 subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timedelta(days=30),
@@ -62,6 +81,7 @@ subliminal.region.configure('subzero.cache.file', expiration_time=datetime.timed
 subliminal.region.backend.sync()
 
 if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
+    from check_update import check_releases
     check_releases()
     logging.debug("BAZARR Created releases file")
 
@@ -88,6 +108,7 @@ if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', '
 
 
 def init_binaries():
+    from utils import get_binary
     exe = get_binary("unrar")
     
     rarfile.UNRAR_TOOL = exe
@@ -100,7 +121,7 @@ def init_binaries():
     rarfile.OPEN_ARGS = rarfile.ORIG_OPEN_ARGS
     rarfile.EXTRACT_ARGS = rarfile.ORIG_EXTRACT_ARGS
     rarfile.TEST_ARGS = rarfile.ORIG_TEST_ARGS
-    logging.info("Using UnRAR from: %s", exe)
+    logging.debug("Using UnRAR from: %s", exe)
     unrar = exe
     
     return unrar

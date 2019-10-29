@@ -8,12 +8,25 @@ See the datetime section of the Python Library Reference for information
 on how to use these modules.
 '''
 
+import sys
+import datetime
+import os.path
+
+from pytz.exceptions import AmbiguousTimeError
+from pytz.exceptions import InvalidTimeError
+from pytz.exceptions import NonExistentTimeError
+from pytz.exceptions import UnknownTimeZoneError
+from pytz.lazy import LazyDict, LazyList, LazySet  # noqa
+from pytz.tzinfo import unpickler, BaseTzInfo
+from pytz.tzfile import build_tzinfo
+
+
 # The IANA (nee Olson) database is updated several times a year.
-OLSON_VERSION = '2017b'
-VERSION = '2017.2'  # Switching to pip compatible version numbering.
+OLSON_VERSION = '2019c'
+VERSION = '2019.3'  # pip compatible version number.
 __version__ = VERSION
 
-OLSEN_VERSION = OLSON_VERSION # Old releases had this misspelling
+OLSEN_VERSION = OLSON_VERSION  # Old releases had this misspelling
 
 __all__ = [
     'timezone', 'utc', 'country_timezones', 'country_names',
@@ -21,23 +34,11 @@ __all__ = [
     'NonExistentTimeError', 'UnknownTimeZoneError',
     'all_timezones', 'all_timezones_set',
     'common_timezones', 'common_timezones_set',
-    ]
-
-import sys, datetime, os.path, gettext
-
-from pytz.exceptions import AmbiguousTimeError
-from pytz.exceptions import InvalidTimeError
-from pytz.exceptions import NonExistentTimeError
-from pytz.exceptions import UnknownTimeZoneError
-from pytz.lazy import LazyDict, LazyList, LazySet
-from pytz.tzinfo import unpickler
-from pytz.tzfile import build_tzinfo, _byte_string
+    'BaseTzInfo',
+]
 
 
-try:
-    unicode
-
-except NameError: # Python 3.x
+if sys.version_info[0] > 2:  # Python 3.x
 
     # Python 3.x doesn't have unicode(), making writing code
     # for Python 2.3 and Python 3.x a pain.
@@ -52,10 +53,13 @@ except NameError: # Python 3.x
             ...
         UnicodeEncodeError: ...
         """
-        s.encode('ASCII') # Raise an exception if not ASCII
-        return s # But return the original string - not a byte string.
+        if type(s) == bytes:
+            s = s.decode('ASCII')
+        else:
+            s.encode('ASCII')  # Raise an exception if not ASCII
+        return s  # But the string - not a byte string.
 
-else: # Python 2.x
+else:  # Python 2.x
 
     def ascii(s):
         r"""
@@ -76,24 +80,31 @@ def open_resource(name):
 
     Uses the pkg_resources module if available and no standard file
     found at the calculated location.
+
+    It is possible to specify different location for zoneinfo
+    subdir by using the PYTZ_TZDATADIR environment variable.
     """
     name_parts = name.lstrip('/').split('/')
     for part in name_parts:
         if part == os.path.pardir or os.path.sep in part:
             raise ValueError('Bad path segment: %r' % part)
-    filename = os.path.join(os.path.dirname(__file__),
-                            'zoneinfo', *name_parts)
-    if not os.path.exists(filename):
-        # http://bugs.launchpad.net/bugs/383171 - we avoid using this
-        # unless absolutely necessary to help when a broken version of
-        # pkg_resources is installed.
-        try:
-            from pkg_resources import resource_stream
-        except ImportError:
-            resource_stream = None
+    zoneinfo_dir = os.environ.get('PYTZ_TZDATADIR', None)
+    if zoneinfo_dir is not None:
+        filename = os.path.join(zoneinfo_dir, *name_parts)
+    else:
+        filename = os.path.join(os.path.dirname(__file__),
+                                'zoneinfo', *name_parts)
+        if not os.path.exists(filename):
+            # http://bugs.launchpad.net/bugs/383171 - we avoid using this
+            # unless absolutely necessary to help when a broken version of
+            # pkg_resources is installed.
+            try:
+                from pkg_resources import resource_stream
+            except ImportError:
+                resource_stream = None
 
-        if resource_stream is not None:
-            return resource_stream(__name__, 'zoneinfo/' + name)
+            if resource_stream is not None:
+                return resource_stream(__name__, 'zoneinfo/' + name)
     return open(filename, 'rb')
 
 
@@ -106,22 +117,8 @@ def resource_exists(name):
         return False
 
 
-# Enable this when we get some translations?
-# We want an i18n API that is useful to programs using Python's gettext
-# module, as well as the Zope3 i18n package. Perhaps we should just provide
-# the POT file and translations, and leave it up to callers to make use
-# of them.
-#
-# t = gettext.translation(
-#         'pytz', os.path.join(os.path.dirname(__file__), 'locales'),
-#         fallback=True
-#         )
-# def _(timezone_name):
-#     """Translate a timezone name using the current locale, returning Unicode"""
-#     return t.ugettext(timezone_name)
-
-
 _tzinfo_cache = {}
+
 
 def timezone(zone):
     r''' Return a datetime.tzinfo implementation for the given timezone
@@ -160,6 +157,9 @@ def timezone(zone):
     Unknown
 
     '''
+    if zone is None:
+        raise UnknownTimeZoneError(None)
+
     if zone.upper() == 'UTC':
         return utc
 
@@ -169,9 +169,9 @@ def timezone(zone):
         # All valid timezones are ASCII
         raise UnknownTimeZoneError(zone)
 
-    zone = _unmunge_zone(zone)
+    zone = _case_insensitive_zone_lookup(_unmunge_zone(zone))
     if zone not in _tzinfo_cache:
-        if zone in all_timezones_set:
+        if zone in all_timezones_set:  # noqa
             fp = open_resource(zone)
             try:
                 _tzinfo_cache[zone] = build_tzinfo(zone, fp)
@@ -188,11 +188,22 @@ def _unmunge_zone(zone):
     return zone.replace('_plus_', '+').replace('_minus_', '-')
 
 
+_all_timezones_lower_to_standard = None
+
+
+def _case_insensitive_zone_lookup(zone):
+    """case-insensitively matching timezone, else return zone unchanged"""
+    global _all_timezones_lower_to_standard
+    if _all_timezones_lower_to_standard is None:
+        _all_timezones_lower_to_standard = dict((tz.lower(), tz) for tz in all_timezones)  # noqa
+    return _all_timezones_lower_to_standard.get(zone.lower()) or zone  # noqa
+
+
 ZERO = datetime.timedelta(0)
 HOUR = datetime.timedelta(hours=1)
 
 
-class UTC(datetime.tzinfo):
+class UTC(BaseTzInfo):
     """UTC
 
     Optimized UTC implementation. It unpickles using the single module global
@@ -275,6 +286,8 @@ def _UTC():
     False
     """
     return utc
+
+
 _UTC.__safe_for_unpickling__ = True
 
 
@@ -285,8 +298,9 @@ def _p(*args):
     by shortening the path.
     """
     return unpickler(*args)
-_p.__safe_for_unpickling__ = True
 
+
+_p.__safe_for_unpickling__ = True
 
 
 class _CountryTimezoneDict(LazyDict):
@@ -334,7 +348,7 @@ class _CountryTimezoneDict(LazyDict):
                 if line.startswith('#'):
                     continue
                 code, coordinates, zone = line.split(None, 4)[:3]
-                if zone not in all_timezones_set:
+                if zone not in all_timezones_set:  # noqa
                     continue
                 try:
                     data[code].append(zone)
@@ -343,6 +357,7 @@ class _CountryTimezoneDict(LazyDict):
             self.data = data
         finally:
             zone_tab.close()
+
 
 country_timezones = _CountryTimezoneDict()
 
@@ -367,6 +382,7 @@ class _CountryNameDict(LazyDict):
         finally:
             zone_tab.close()
 
+
 country_names = _CountryNameDict()
 
 
@@ -374,7 +390,7 @@ country_names = _CountryNameDict()
 
 class _FixedOffset(datetime.tzinfo):
 
-    zone = None # to match the standard pytz API
+    zone = None  # to match the standard pytz API
 
     def __init__(self, minutes):
         if abs(minutes) >= 1440:
@@ -412,24 +428,24 @@ class _FixedOffset(datetime.tzinfo):
         return dt.astimezone(self)
 
 
-def FixedOffset(offset, _tzinfos = {}):
+def FixedOffset(offset, _tzinfos={}):
     """return a fixed-offset timezone based off a number of minutes.
 
         >>> one = FixedOffset(-330)
         >>> one
         pytz.FixedOffset(-330)
-        >>> one.utcoffset(datetime.datetime.now())
-        datetime.timedelta(-1, 66600)
-        >>> one.dst(datetime.datetime.now())
-        datetime.timedelta(0)
+        >>> str(one.utcoffset(datetime.datetime.now()))
+        '-1 day, 18:30:00'
+        >>> str(one.dst(datetime.datetime.now()))
+        '0:00:00'
 
         >>> two = FixedOffset(1380)
         >>> two
         pytz.FixedOffset(1380)
-        >>> two.utcoffset(datetime.datetime.now())
-        datetime.timedelta(0, 82800)
-        >>> two.dst(datetime.datetime.now())
-        datetime.timedelta(0)
+        >>> str(two.utcoffset(datetime.datetime.now()))
+        '23:00:00'
+        >>> str(two.dst(datetime.datetime.now()))
+        '0:00:00'
 
     The datetime.timedelta must be between the range of -1 and 1 day,
     non-inclusive.
@@ -478,18 +494,19 @@ def FixedOffset(offset, _tzinfos = {}):
 
     return info
 
+
 FixedOffset.__safe_for_unpickling__ = True
 
 
 def _test():
-    import doctest, os, sys
+    import doctest
     sys.path.insert(0, os.pardir)
     import pytz
     return doctest.testmod(pytz)
 
+
 if __name__ == '__main__':
     _test()
-
 all_timezones = \
 ['Africa/Abidjan',
  'Africa/Accra',
@@ -792,6 +809,7 @@ all_timezones = \
  'Asia/Pontianak',
  'Asia/Pyongyang',
  'Asia/Qatar',
+ 'Asia/Qostanay',
  'Asia/Qyzylorda',
  'Asia/Rangoon',
  'Asia/Riyadh',
@@ -865,7 +883,6 @@ all_timezones = \
  'CST6CDT',
  'Canada/Atlantic',
  'Canada/Central',
- 'Canada/East-Saskatchewan',
  'Canada/Eastern',
  'Canada/Mountain',
  'Canada/Newfoundland',
@@ -1077,7 +1094,6 @@ all_timezones = \
  'US/Michigan',
  'US/Mountain',
  'US/Pacific',
- 'US/Pacific-New',
  'US/Samoa',
  'UTC',
  'Universal',
@@ -1358,6 +1374,7 @@ common_timezones = \
  'Asia/Pontianak',
  'Asia/Pyongyang',
  'Asia/Qatar',
+ 'Asia/Qostanay',
  'Asia/Qyzylorda',
  'Asia/Riyadh',
  'Asia/Sakhalin',

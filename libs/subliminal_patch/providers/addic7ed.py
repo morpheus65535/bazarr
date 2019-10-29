@@ -6,9 +6,11 @@ import subliminal
 import time
 
 from random import randint
+
+from dogpile.cache.api import NO_VALUE
 from requests import Session
 from subliminal.cache import region
-from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError
+from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
@@ -68,10 +70,14 @@ class Addic7edProvider(_Addic7edProvider):
     server_url = 'https://www.addic7ed.com/'
 
     sanitize_characters = {'-', ':', '(', ')', '.', '/'}
+    last_show_ids_fetch_key = "addic7ed_last_id_fetch"
 
     def __init__(self, username=None, password=None, use_random_agents=False):
         super(Addic7edProvider, self).__init__(username=username, password=password)
         self.USE_ADDICTED_RANDOM_AGENTS = use_random_agents
+
+        if not all((username, password)):
+            raise ConfigurationError('Username and password must be specified')
 
     def initialize(self):
         self.session = Session()
@@ -103,7 +109,8 @@ class Addic7edProvider(_Addic7edProvider):
                     'remember': 'true'}
 
             tries = 0
-            while tries < 3:
+            while tries <= 3:
+                tries += 1
                 r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
                 if "g-recaptcha" in r.text or "grecaptcha" in r.text:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
@@ -125,7 +132,10 @@ class Addic7edProvider(_Addic7edProvider):
 
                     result = pitcher.throw()
                     if not result:
-                        raise Exception("Addic7ed: Couldn't solve captcha!")
+                        if tries >= 3:
+                            raise Exception("Addic7ed: Couldn't solve captcha!")
+                        logger.info("Addic7ed: Couldn't solve captcha! Retrying")
+                        continue
 
                     data[g] = result
 
@@ -135,12 +145,15 @@ class Addic7edProvider(_Addic7edProvider):
                 if "relax, slow down" in r.text:
                     raise TooManyRequests(self.username)
 
-                if "Try again" in r.content or "Wrong password" in r.content:
+                if "Wrong password" in r.content or "doesn't exist" in r.content:
                     raise AuthenticationError(self.username)
 
                 if r.status_code != 302:
-                    logger.error("Addic7ed: Something went wrong when logging in")
-                    raise AuthenticationError(self.username)
+                    if tries >= 3:
+                        logger.error("Addic7ed: Something went wrong when logging in")
+                        raise AuthenticationError(self.username)
+                    logger.info("Addic7ed: Something went wrong when logging in; retrying")
+                    continue
                 break
 
             store_verification("addic7ed", self.session)
@@ -151,7 +164,7 @@ class Addic7edProvider(_Addic7edProvider):
     def terminate(self):
         self.session.close()
 
-    def get_show_id(self, series, year=None, country_code=None):
+    def get_show_id(self, series, year=None, country_code=None, ignore_cache=False):
         """Get the best matching show id for `series`, `year` and `country_code`.
 
         First search in the result of :meth:`_get_show_ids` and fallback on a search with :meth:`_search_show_id`.
@@ -163,32 +176,45 @@ class Addic7edProvider(_Addic7edProvider):
         :type country_code: str
         :return: the show id, if found.
         :rtype: int
-
         """
-        series_sanitized = sanitize(series).lower()
-        show_ids = self._get_show_ids()
         show_id = None
+        ids_to_look_for = {sanitize(series).lower(), sanitize(series.replace(".", "")).lower()}
+        show_ids = self._get_show_ids()
+        if ignore_cache or not show_ids:
+            show_ids = self._get_show_ids.refresh(self)
 
-        # attempt with country
-        if not show_id and country_code:
-            logger.debug('Getting show id with country')
-            show_id = show_ids.get('%s %s' % (series_sanitized, country_code.lower()))
+        logger.debug("Trying show ids: %s", ids_to_look_for)
+        for series_sanitized in ids_to_look_for:
+            # attempt with country
+            if not show_id and country_code:
+                logger.debug('Getting show id with country')
+                show_id = show_ids.get('%s %s' % (series_sanitized, country_code.lower()))
 
-        # attempt with year
-        if not show_id and year:
-            logger.debug('Getting show id with year')
-            show_id = show_ids.get('%s %d' % (series_sanitized, year))
+            # attempt with year
+            if not show_id and year:
+                logger.debug('Getting show id with year')
+                show_id = show_ids.get('%s %d' % (series_sanitized, year))
 
-        # attempt clean
-        if not show_id:
-            logger.debug('Getting show id')
-            show_id = show_ids.get(series_sanitized)
+            # attempt clean
+            if not show_id:
+                logger.debug('Getting show id')
+                show_id = show_ids.get(series_sanitized)
 
-        # search as last resort
-        # broken right now
-        # if not show_id:
-        #     logger.warning('Series %s not found in show ids', series)
-        #     show_id = self._search_show_id(series)
+                if not show_id:
+                    now = datetime.datetime.now()
+                    last_fetch = region.get(self.last_show_ids_fetch_key)
+
+                    # re-fetch show ids once per day if any show ID not found
+                    if not ignore_cache and last_fetch != NO_VALUE and last_fetch + datetime.timedelta(days=1) < now:
+                        logger.info("Show id not found; re-fetching show ids")
+                        return self.get_show_id(series, year=year, country_code=country_code, ignore_cache=True)
+                    logger.debug("Not refreshing show ids, as the last fetch has been too recent")
+
+            # search as last resort
+            # broken right now
+            # if not show_id:
+            #     logger.warning('Series %s not found in show ids', series)
+            #     show_id = self._search_show_id(series)
 
         return show_id
 
@@ -202,6 +228,8 @@ class Addic7edProvider(_Addic7edProvider):
         """
         # get the show page
         logger.info('Getting show ids')
+        region.set(self.last_show_ids_fetch_key, datetime.datetime.now())
+
         r = self.session.get(self.server_url + 'shows.php', timeout=10)
         r.raise_for_status()
 
@@ -210,14 +238,15 @@ class Addic7edProvider(_Addic7edProvider):
         # Assuming the site's markup is bad, and stripping it down to only contain what's needed.
         show_cells = re.findall(show_cells_re, r.content)
         if show_cells:
-            soup = ParserBeautifulSoup(b''.join(show_cells), ['lxml', 'html.parser'])
+            soup = ParserBeautifulSoup(b''.join(show_cells).decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
         else:
             # If RegEx fails, fall back to original r.text and use 'html.parser'
             soup = ParserBeautifulSoup(r.text, ['html.parser'])
 
         # populate the show ids
         show_ids = {}
-        for show in soup.select('td > h3 > a[href^="/show/"]'):
+        shows = soup.select('td > h3 > a[href^="/show/"]')
+        for show in shows:
             show_clean = sanitize(show.text, default_characters=self.sanitize_characters)
             try:
                 show_id = int(show['href'][6:])
@@ -234,6 +263,9 @@ class Addic7edProvider(_Addic7edProvider):
         soup = None
 
         logger.debug('Found %d show ids', len(show_ids))
+
+        if not show_ids:
+            raise Exception("Addic7ed: No show IDs found!")
 
         return show_ids
 
@@ -334,7 +366,7 @@ class Addic7edProvider(_Addic7edProvider):
 
             # ignore incomplete subtitles
             status = cells[5].text
-            if status != 'Completed':
+            if "%" in status:
                 logger.debug('Ignoring subtitle with status %s', status)
                 continue
 

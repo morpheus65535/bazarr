@@ -74,22 +74,22 @@
 					<tr class="selectable">
 						<td class="collapsing">
 							<div class="ui checkbox">
-								<input id='{{row.sonarr_series_id}}' type="checkbox" class="selected">
+								<input id='{{row['sonarrSeriesId']}}' type="checkbox" class="selected">
 								<label></label>
 							</div>
 						</td>
-						<td><a href="{{base_url}}episodes/{{row.sonarr_series_id}}">{{row.title}}</a></td>
-						<td>{{row.audio_language}}</td>
+						<td><a href="{{base_url}}episodes/{{row['sonarrSeriesId']}}">{{row['title']}}</a></td>
+						<td>{{row['audio_language']}}</td>
 						<td>
-							%subs_languages = ast.literal_eval(str(row.languages))
+							%subs_languages = ast.literal_eval(str(row['languages']))
 							%if subs_languages is not None:
 								%for subs_language in subs_languages:
 									<div class="ui tiny label">{{subs_language}}</div>
 								%end
 							%end
 						</td>
-						<td>{{!"" if row.hearing_impaired is None else row.hearing_impaired}}</td>
-						<td>{{!"" if row.forced is None else row.forced}}</td>
+						<td>{{!"" if row['hearing_impaired'] is None else row['hearing_impaired']}}</td>
+						<td>{{!"" if row['forced'] is None else row['forced']}}</td>
 					</tr>
 				%end
 				</tbody>
@@ -105,7 +105,7 @@
 			                <option value="">No Change</option>
 			                <option value="None">None</option>
 			                %for language in languages:
-							<option value="{{language.code2}}">{{language.name}}</option>
+							<option value="{{language['code2']}}">{{language['name']}}</option>
 							%end
 			            </select>
 			    	</div>
