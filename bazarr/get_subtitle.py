@@ -996,7 +996,8 @@ def upgrade_subtitles():
                                                "table_history.score, table_shows.hearing_impaired, "
                                                "table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
-                                               "MAX(table_history.timestamp), table_shows.languages, table_shows.forced "
+                                               "MAX(table_history.timestamp) as timestamp, "
+                                               "table_shows.languages, table_shows.forced "
                                                "FROM table_history INNER JOIN table_shows on "
                                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
                                                "table_episodes on table_episodes.sonarrEpisodeId = "
@@ -1028,7 +1029,7 @@ def upgrade_subtitles():
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
                                              "table_history_movie.score, table_movies.hearing_impaired, "
                                              "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
-                                             "MAX(table_history_movie.timestamp), table_movies.languages, "
+                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.languages, "
                                              "table_movies.forced FROM table_history_movie INNER JOIN "
                                              "table_movies on table_movies.radarrId = table_history_movie.radarrId "
                                              "WHERE action  IN (" + ','.join(map(str, query_actions)) +

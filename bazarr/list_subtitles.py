@@ -110,7 +110,7 @@ def store_subtitles(file):
         episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
                                    (path_replace_reverse(file),), only_one=True)
 
-        if len(episode):
+        if episode:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
             list_missing_subtitles(epno=episode['sonarrEpisodeId'])
         else:
@@ -208,7 +208,7 @@ def store_subtitles_movie(file):
         movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?",
                                  (path_replace_reverse_movie(file),), only_one=True)
 
-        if len(movie):
+        if movie:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
             list_missing_subtitles_movies(no=movie['radarrId'])
         else:

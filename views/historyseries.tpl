@@ -104,7 +104,7 @@
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = (row['timestamp'], row['path'], row['score'])
+							% upgradable_criteria = dict([('timestamp', row['timestamp']), ('video_path', row['path']), ('score', row['score'])])
 							% if upgradable_criteria in upgradable_episodes:
 							%     if row['languages'] != "None":
 							%         desired_languages = ast.literal_eval(str(row['languages']))
