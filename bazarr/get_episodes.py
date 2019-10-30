@@ -123,6 +123,12 @@ def sync_episodes():
                                                             'audio_codec': audioCodec,
                                                             'episode_file_id': episode['episodeFile']['id']})
 
+    # Remove old episodes from DB
+    removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
+
+    for removed_episode in removed_episodes:
+        database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (removed_episode,))
+
     # Update existing episodes in DB
     episode_in_db_list = []
     episodes_in_db = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId, title, path, season, episode, "
@@ -145,17 +151,14 @@ def sync_episodes():
     # Insert new episodes in DB
     for added_episode in episodes_to_add:
         query = dict_converter.convert(added_episode)
-        database.execute(
+        result = database.execute(
             '''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' + query.question_marks +
             ''')''', query.values)
-        altered_episodes.append([added_episode['sonarrEpisodeId'],
-                                 added_episode['path']])
-
-    # Remove old episodes from DB
-    removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
-
-    for removed_episode in removed_episodes:
-        database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (removed_episode,))
+        if result:
+            altered_episodes.append([added_episode['sonarrEpisodeId'], added_episode['path']])
+        else:
+            logging.debug('BAZARR unable to insert this episode into the database:',
+                          path_replace(added_episode['path']))
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):

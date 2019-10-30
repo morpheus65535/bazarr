@@ -12,6 +12,7 @@ from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from database import database, dict_converter
 from utils import get_sonarr_version
+from helper import path_replace
 
 
 def update_series():
@@ -120,6 +121,12 @@ def update_series():
                                               'sortTitle': show['sortTitle'],
                                               'year': show['year'],
                                               'alternateTitles': alternateTitles})
+
+            # Remove old series from DB
+            removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
+
+            for series in removed_series:
+                database.execute("DELETE FROM table_shows WHERE tvdbId=?",(series,))
             
             # Update existing series in DB
             series_in_db_list = []
@@ -139,16 +146,14 @@ def update_series():
             # Insert new series in DB
             for added_series in series_to_add:
                 query = dict_converter.convert(added_series)
-                database.execute(
+                result = database.execute(
                     '''INSERT OR IGNORE INTO table_shows(''' + query.keys_insert + ''') VALUES(''' +
                     query.question_marks + ''')''', query.values)
-                list_missing_subtitles(no=added_series['sonarrSeriesId'])
-
-            # Remove old series from DB
-            removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
-
-            for series in removed_series:
-                database.execute("DELETE FROM table_shows WHERE tvdbId=?",(series,))
+                if result:
+                    list_missing_subtitles(no=added_series['sonarrSeriesId'])
+                else:
+                    logging.debug('BAZARR unable to insert this series into the database:',
+                                  path_replace(added_series['path']))
 
             logging.debug('BAZARR All series synced from Sonarr into database.')
 
