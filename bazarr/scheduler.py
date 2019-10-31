@@ -16,7 +16,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
-from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED
+from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime
 import pytz
 from tzlocal import get_localzone
@@ -73,14 +73,18 @@ global running_tasks
 running_tasks = []
 
 
-def task_listener(event):
-    if event.job_id in running_tasks:
-        running_tasks.remove(event.job_id)
-    else:
+def task_listener_add(event):
+    if event.job_id not in running_tasks:
         running_tasks.append(event.job_id)
 
 
-scheduler.add_listener(task_listener, EVENT_JOB_SUBMITTED | EVENT_JOB_EXECUTED)
+def task_listener_remove(event):
+    if event.job_id in running_tasks:
+        running_tasks.remove(event.job_id)
+
+
+scheduler.add_listener(task_listener_add, EVENT_JOB_SUBMITTED)
+scheduler.add_listener(task_listener_remove, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
 
 def schedule_update_job():
