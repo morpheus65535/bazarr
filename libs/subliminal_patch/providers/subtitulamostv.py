@@ -15,7 +15,6 @@ from subliminal.exceptions import AuthenticationError, ConfigurationError, Downl
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
-from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class SubtitulamosTVSubtitle(Subtitle):
 
     def __init__(self, language, page_link, download_link, description, title, matches, release_info):
         super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False,
-                                              page_link=page_link, encoding="windows-1252")
+                                              page_link=page_link)
         self.download_link = download_link
         self.description = description.lower()
         self.title = title
@@ -153,6 +152,7 @@ class SubtitulamosTVProvider(Provider):
         r = self.session.get(subtitle.download_link, timeout=10)
         r.raise_for_status()
 
+        r.encoding = "ISO-8859-1"
         subtitle_content = r.text
 
         if subtitle_content:
