@@ -562,9 +562,15 @@ def series_download_subtitles(no):
     episodes_details = database.execute("SELECT path, missing_subtitles, sonarrEpisodeId, scene_name "
                                         "FROM table_episodes WHERE sonarrSeriesId=? and missing_subtitles!='[]'" +
                                         episodes_details_clause, (no,))
+    if not episodes_details:
+        logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
+        return
 
     series_details = database.execute("SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId=?",
                                       (no,), only_one=True)
+    if not series_details:
+        logging.debug("BAZARR no series with that sonarrSeriesId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -618,6 +624,10 @@ def episode_download_subtitles(no):
                                         "table_shows.forced FROM table_episodes LEFT JOIN table_shows on "
                                         "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
                                         "WHERE sonarrEpisodeId=?" + episodes_details_clause, (no,))
+
+    if not episodes_details:
+        logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -662,6 +672,10 @@ def movies_download_subtitles(no):
 
     movie = database.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title, forced "
                              "FROM table_movies WHERE radarrId=?" + movie_details_clause, (no,), only_one=True)
+
+    if not movie:
+        logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
