@@ -112,7 +112,7 @@ def path_replace_reverse(path):
 
 def path_replace_movie(path):
     if path is None or radarr_use_path_mapping is False:
-        return None
+        return path
 
     reverted_path = radarr_regex.sub(lambda match: path_mapping_movie[match.group(0)], path, count=1)
 
