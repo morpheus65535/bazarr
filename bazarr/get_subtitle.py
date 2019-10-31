@@ -1022,7 +1022,7 @@ def upgrade_subtitles():
                                                "table_history.sonarrEpisodeId WHERE action IN "
                                                "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
                                                "score is not null" + series_monitored_only_query_string +
-                                               "GROUP BY table_history.video_path, table_history.language",
+                                               " GROUP BY table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
 
         upgradable_episodes_not_perfect = []
