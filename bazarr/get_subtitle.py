@@ -181,6 +181,8 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                                                            pre_download_hook=None,  # fixme
                                                            post_download_hook=None,  # fixme
                                                            language_hook=None)  # fixme
+            for provider in providers:
+                track_event(category=provider, action='search', label=language[0])
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
@@ -337,6 +339,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                provider_configs=providers_auth,
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
+                for provider in providers:
+                    track_event(category=provider, action='search', label=language[0])
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
@@ -561,9 +565,15 @@ def series_download_subtitles(no):
     episodes_details = database.execute("SELECT path, missing_subtitles, sonarrEpisodeId, scene_name "
                                         "FROM table_episodes WHERE sonarrSeriesId=? and missing_subtitles!='[]'" +
                                         episodes_details_clause, (no,))
+    if not episodes_details:
+        logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
+        return
 
     series_details = database.execute("SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId=?",
                                       (no,), only_one=True)
+    if not series_details:
+        logging.debug("BAZARR no series with that sonarrSeriesId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -617,6 +627,10 @@ def episode_download_subtitles(no):
                                         "table_shows.forced FROM table_episodes LEFT JOIN table_shows on "
                                         "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
                                         "WHERE sonarrEpisodeId=?" + episodes_details_clause, (no,))
+
+    if not episodes_details:
+        logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -661,6 +675,10 @@ def movies_download_subtitles(no):
 
     movie = database.execute("SELECT path, missing_subtitles, radarrId, sceneName, hearing_impaired, title, forced "
                              "FROM table_movies WHERE radarrId=?" + movie_details_clause, (no,), only_one=True)
+
+    if not movie:
+        logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
+        return
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -999,14 +1017,15 @@ def upgrade_subtitles():
                                                "table_history.score, table_shows.hearing_impaired, "
                                                "table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
-                                               "MAX(table_history.timestamp), table_shows.languages, table_shows.forced "
+                                               "MAX(table_history.timestamp) as timestamp, "
+                                               "table_shows.languages, table_shows.forced "
                                                "FROM table_history INNER JOIN table_shows on "
                                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
                                                "table_episodes on table_episodes.sonarrEpisodeId = "
                                                "table_history.sonarrEpisodeId WHERE action IN "
                                                "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
                                                "score is not null" + series_monitored_only_query_string +
-                                               "GROUP BY table_history.video_path, table_history.language",
+                                               " GROUP BY table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
 
         upgradable_episodes_not_perfect = []
@@ -1031,7 +1050,7 @@ def upgrade_subtitles():
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
                                              "table_history_movie.score, table_movies.hearing_impaired, "
                                              "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
-                                             "MAX(table_history_movie.timestamp), table_movies.languages, "
+                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.languages, "
                                              "table_movies.forced FROM table_history_movie INNER JOIN "
                                              "table_movies on table_movies.radarrId = table_history_movie.radarrId "
                                              "WHERE action  IN (" + ','.join(map(str, query_actions)) +

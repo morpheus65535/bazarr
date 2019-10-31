@@ -78,7 +78,8 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_replace_reverse(subtitle_path)])
-
+                elif not language:
+                    continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
@@ -110,7 +111,7 @@ def store_subtitles(original_path, reversed_path):
         episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
                                    (original_path,), only_one=True)
 
-        if len(episode):
+        if episode:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
             list_missing_subtitles(epno=episode['sonarrEpisodeId'])
         else:
@@ -170,6 +171,8 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append([str("pb:forced"), path_replace_reverse_movie(subtitle_path)])
+                elif not language:
+                    continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append([str(language), path_replace_reverse_movie(subtitle_path)])
@@ -197,11 +200,11 @@ def store_subtitles_movie(original_path, reversed_path):
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
+        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,), only_one=True)
 
-        if len(movie):
+        if movie:
             logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles_movies(no=movie[0]['radarrId'])
+            list_missing_subtitles_movies(no=movie['radarrId'])
         else:
             logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:

@@ -206,8 +206,14 @@ def update_movies():
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
                                 movie['movieFile']['relativePath'])
-            
-            # Update or insert movies in DB
+
+            # Remove old movies from DB
+            removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
+
+            for removed_movie in removed_movies:
+                database.execute("DELETE FROM table_movies WHERE tmdbId=?", (removed_movie,))
+
+            # Update movies in DB
             movies_in_db_list = []
             movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
                                             "audio_language, sceneName, monitored, sortTitle, year, "
@@ -231,19 +237,17 @@ def update_movies():
             # Insert new movies in DB
             for added_movie in movies_to_add:
                 query = dict_converter.convert(added_movie)
-                database.execute(
+                result = database.execute(
                     '''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
                     query.question_marks + ''')''', query.values)
-                altered_movies.append([added_movie['tmdbId'],
-                                       added_movie['path'],
-                                       added_movie['radarrId'],
-                                       added_movie['monitored']])
-
-            # Remove old movies from DB
-            removed_movies = list(set(current_movies_db_list) - set(current_movies_radarr))
-
-            for removed_movie in removed_movies:
-                database.execute("DELETE FROM table_movies WHERE tmdbId=?", (removed_movie,))
+                if result:
+                    altered_movies.append([added_movie['tmdbId'],
+                                           added_movie['path'],
+                                           added_movie['radarrId'],
+                                           added_movie['monitored']])
+                else:
+                    logging.debug('BAZARR unable to insert this movie into the database:',
+                                  path_replace_movie(added_movie['path']))
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
