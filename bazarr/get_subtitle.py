@@ -177,6 +177,8 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                                                            pre_download_hook=None,  # fixme
                                                            post_download_hook=None,  # fixme
                                                            language_hook=None)  # fixme
+            for provider in providers:
+                track_event(category=provider, action='search', label=language[0])
         else:
             downloaded_subtitles = None
             logging.info("BAZARR All providers are throttled")
@@ -333,6 +335,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                provider_configs=providers_auth,
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
+                for provider in providers:
+                    track_event(category=provider, action='search', label=language[0])
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
