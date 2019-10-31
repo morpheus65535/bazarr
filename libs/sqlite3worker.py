@@ -66,12 +66,11 @@ class Sqlite3Worker(threading.Thread):
             file_name, check_same_thread=False,
             detect_types=sqlite3.PARSE_DECLTYPES)
         if as_dict:
-            self.sqlite3_conn.row_factory = sqlite3.Row
+            self.sqlite3_conn.row_factory = dict_factory
         self.sqlite3_cursor = self.sqlite3_conn.cursor()
         self.sql_queue = Queue.Queue(maxsize=max_queue_size)
         self.results = {}
         self.max_queue_size = max_queue_size
-        self.as_dict = as_dict
         self.exit_set = False
         # Token that is put into queue when close() is called.
         self.exit_token = str(uuid.uuid4())
@@ -127,10 +126,7 @@ class Sqlite3Worker(threading.Thread):
                 if only_one:
                     self.results[token] = self.sqlite3_cursor.fetchone()
                 else:
-                    if self.as_dict:
-                        self.results[token] = [dict(row) for row in self.sqlite3_cursor.fetchall()]
-                    else:
-                        self.results[token] = self.sqlite3_cursor.fetchall()
+                    self.results[token] = self.sqlite3_cursor.fetchall()
             except sqlite3.Error as err:
                 # Put the error into the output queue since a response
                 # is required.
@@ -187,11 +183,9 @@ class Sqlite3Worker(threading.Thread):
         Args:
             query: The sql string using ? for placeholders of dynamic values.
             values: A tuple of values to be replaced into the ? of the query.
-            only_one: A boolean to use fetchone() instead of fetchall().
 
         Returns:
             If it's a select query it will return the results of the query.
-            Normally it return a list of lists/dicts but if only_one it return a single list/dict.
         """
         if self.exit_set:
             LOGGER.debug("Exit set, not running: %s, %s", query, values)
@@ -207,3 +201,10 @@ class Sqlite3Worker(threading.Thread):
             return self.query_results(token)
         else:
             self.sql_queue.put((token, query, values, only_one), timeout=5)
+
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
