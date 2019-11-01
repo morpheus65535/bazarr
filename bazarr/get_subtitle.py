@@ -336,7 +336,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
                 for provider in providers:
-                    track_event(category=provider, action='search', label=language_from_alpha3(language[0]))
+                    track_event(category=provider, action='search', label=language_from_alpha3(lang))
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
