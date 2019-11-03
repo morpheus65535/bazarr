@@ -154,7 +154,7 @@ def sync_episodes():
         result = database.execute(
             '''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' + query.question_marks +
             ''')''', query.values)
-        if result:
+        if result > 0:
             altered_episodes.append([added_episode['sonarrEpisodeId'], added_episode['path']])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:',
