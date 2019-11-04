@@ -34,8 +34,9 @@ class EmbeddedSubsReader:
                         mkv = enzyme.MKV(f)
                     except MalformedMKVError:
                         logging.error('BAZARR cannot analyze this MKV with our built-in MKV parser, you should install ffmpeg: ' + file)
-                for subtitle_track in mkv.subtitle_tracks:
-                    subtitles_list.append([subtitle_track.language, subtitle_track.forced, subtitle_track.codec_id])
+                    else:
+                        for subtitle_track in mkv.subtitle_tracks:
+                            subtitles_list.append([subtitle_track.language, subtitle_track.forced, subtitle_track.codec_id])
 
         return subtitles_list
 
