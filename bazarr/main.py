@@ -178,31 +178,36 @@ def redirect_root():
 @route(base_url + 'shutdown')
 def shutdown():
     try:
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
         server.stop()
+    except:
+        logging.error('BAZARR Cannot stop CherryPy.')
+    else:
         database.close()
-        stop_file.write('')
-        stop_file.close()
-        sys.exit(0)
+        try:
+            stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+        except Exception as e:
+            logging.error('BAZARR Cannot create bazarr.stop file.')
+        else:
+            stop_file.write('')
+            stop_file.close()
 
 
 @route(base_url + 'restart')
 def restart():
     try:
-        restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.restart file.')
-    else:
-        # print 'Bazarr is being restarted...'
-        logging.info('Bazarr is being restarted...')
         server.stop()
+    except:
+        logging.error('BAZARR Cannot stop CherryPy.')
+    else:
         database.close()
-        restart_file.write('')
-        restart_file.close()
-        sys.exit(0)
+        try:
+            restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
+        except Exception as e:
+            logging.error('BAZARR Cannot create bazarr.restart file.')
+        else:
+            logging.info('Bazarr is being restarted...')
+            restart_file.write('')
+            restart_file.close()
 
 
 @route(base_url + 'wizard')
