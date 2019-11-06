@@ -146,7 +146,8 @@ def post_get(name, default=''):
 
 @hook('before_request')
 def enable_cors():
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    if response:
+        response.headers['Access-Control-Allow-Origin'] = '*'
 
 
 @route(base_url + 'login')
