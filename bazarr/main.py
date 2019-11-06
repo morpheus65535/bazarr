@@ -30,12 +30,11 @@ import operator
 from calendar import day_name
 
 from get_args import args
-from logger import configure_logging, empty_log
+from logger import empty_log
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 
-configure_logging(settings.general.getboolean('debug') or args.debug)
-
 from init import *
+import logging
 from database import database, dict_mapper
 
 from notifier import update_notifier
@@ -152,7 +151,8 @@ def post_get(name, default=''):
 
 @hook('before_request')
 def enable_cors():
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    if response:
+        response.headers['Access-Control-Allow-Origin'] = '*'
 
 
 @route(base_url + 'login')
@@ -184,31 +184,36 @@ def redirect_root():
 @route(base_url + 'shutdown')
 def shutdown():
     try:
-        stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.stop file.')
-    else:
         server.stop()
+    except:
+        logging.error('BAZARR Cannot stop CherryPy.')
+    else:
         database.close()
-        stop_file.write('')
-        stop_file.close()
-        sys.exit(0)
+        try:
+            stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+        except Exception as e:
+            logging.error('BAZARR Cannot create bazarr.stop file.')
+        else:
+            stop_file.write('')
+            stop_file.close()
 
 
 @route(base_url + 'restart')
 def restart():
     try:
-        restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
-    except Exception as e:
-        logging.error('BAZARR Cannot create bazarr.restart file.')
-    else:
-        # print 'Bazarr is being restarted...'
-        logging.info('Bazarr is being restarted...')
         server.stop()
+    except:
+        logging.error('BAZARR Cannot stop CherryPy.')
+    else:
         database.close()
-        restart_file.write('')
-        restart_file.close()
-        sys.exit(0)
+        try:
+            restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
+        except Exception as e:
+            logging.error('BAZARR Cannot create bazarr.restart file.')
+        else:
+            logging.info('Bazarr is being restarted...')
+            restart_file.write('')
+            restart_file.close()
 
 
 @route(base_url + 'wizard')
@@ -472,10 +477,10 @@ def download_log():
 def image_proxy(url):
     authorize()
     apikey = settings.sonarr.apikey
-    url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
+    url_image = url_sonarr_short() + '/' + url + '?apikey=' + apikey
     try:
         image_buffer = BytesIO(
-            requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content)
+            requests.get(url_sonarr() + '/api' + url_image.split(url_sonarr())[1], timeout=15, verify=False).content)
     except:
         return None
     else:
@@ -491,13 +496,13 @@ def image_proxy_movies(url):
     authorize()
     apikey = settings.radarr.apikey
     try:
-        url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
+        url_image = (url_radarr_short() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         image_buffer = BytesIO(
-            requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
+            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
     except:
-        url_image = url_radarr_short + '/' + url + '?apikey=' + apikey
+        url_image = url_radarr_short() + '/' + url + '?apikey=' + apikey
         image_buffer = BytesIO(
-            requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
+            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
     else:
         image_buffer.seek(0)
         bytes = image_buffer.read()
@@ -723,7 +728,7 @@ def episodes(no):
         seasons_list.append(list(season))
 
     return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details,
-                    languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url,
+                    languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short(), base_url=base_url,
                     tvdbid=tvdbid, number=number, current_port=settings.general.port)
 
 
@@ -858,7 +863,7 @@ def movie(no):
     languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
-                    languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
+                    languages=languages, url_radarr_short=url_radarr_short(), base_url=base_url, tmdbid=tmdbid,
                     current_port=settings.general.port)
 
 
@@ -2025,7 +2030,7 @@ def perform_manual_upload_subtitle_movie():
 
 
 def configured():
-    System.update({System.configured: 1}).execute()
+    database.execute("UPDATE system SET configured = 1")
 
 
 @route(base_url + 'api/series/wanted')

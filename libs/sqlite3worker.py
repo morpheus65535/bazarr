@@ -137,7 +137,11 @@ class Sqlite3Worker(threading.Thread):
         else:
             try:
                 self.sqlite3_cursor.execute(query, values)
+                if query.lower().strip().startswith(("insert", "update")):
+                    self.results[token] = self.sqlite3_cursor.rowcount
             except sqlite3.Error as err:
+                self.results[token] = (
+                        "Query returned error: %s: %s: %s" % (query, values, err))
                 LOGGER.error(
                     "Query returned error: %s: %s: %s", query, values, err)
 
@@ -196,7 +200,7 @@ class Sqlite3Worker(threading.Thread):
         token = str(uuid.uuid4())
         # If it's a select we queue it up with a token to mark the results
         # into the output queue so we know what results are ours.
-        if query.lower().strip().startswith("select"):
+        if query.lower().strip().startswith(("select", "insert", "update")):
             self.sql_queue.put((token, query, values, only_one), timeout=5)
             return self.query_results(token)
         else:

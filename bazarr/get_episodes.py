@@ -41,7 +41,7 @@ def sync_episodes():
     for i, seriesId in enumerate(seriesIdList, 1):
         notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
+        url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
             r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()
@@ -155,7 +155,7 @@ def sync_episodes():
         result = database.execute(
             '''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' + query.question_marks +
             ''')''', query.values)
-        if result:
+        if result > 0:
             altered_episodes.append([added_episode['sonarrEpisodeId'], added_episode['path']])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:',

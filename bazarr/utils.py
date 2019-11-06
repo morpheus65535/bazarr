@@ -84,7 +84,7 @@ def cache_maintenance():
 def get_sonarr_version():
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey
-    sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
+    sv = url_sonarr() + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_version = ''
     if use_sonarr:
         try:
@@ -115,7 +115,7 @@ def get_sonarr_platform():
 def get_radarr_version():
     use_radarr = settings.general.getboolean('use_radarr')
     apikey_radarr = settings.radarr.apikey
-    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    rv = url_radarr() + "/api/system/status?apikey=" + apikey_radarr
     radarr_version = ''
     if use_radarr:
         try:

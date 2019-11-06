@@ -12,6 +12,7 @@ import subliminal_patch
 import operator
 from subliminal import core
 from subliminal_patch import search_external_subtitles
+from subzero.language import Language
 from bs4 import UnicodeDammit
 from itertools import islice
 
@@ -64,6 +65,7 @@ def store_subtitles(original_path, reversed_path):
             subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
+            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(file), subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -151,14 +153,14 @@ def store_subtitles_movie(original_path, reversed_path):
                 logging.exception(
                     "BAZARR error when trying to analyze this %s file: %s" % (os.path.splitext(reversed_path)[1], reversed_path))
                 pass
-        
-        dest_folder = get_subtitle_destination_folder() or ''
-        subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+
         brazilian_portuguese = [".pt-br", ".pob", "pb"]
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
-            subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
-                                                  only_one=settings.general.getboolean('single_language'))
+            dest_folder = get_subtitle_destination_folder() or ''
+            subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+            subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
+            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -390,3 +392,31 @@ def get_external_subtitles_path(file, subtitle):
         path = None
     
     return path
+
+
+def guess_external_subtitles(dest_folder, subtitles):
+    for subtitle, language in subtitles.iteritems():
+        if not language:
+            subtitle_path = os.path.join(dest_folder, subtitle)
+            if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
+                logging.debug("BAZARR falling back to file content analysis to detect language.")
+                detected_language = None
+                with open(subtitle_path, 'r') as f:
+                    text = ' '.join(list(islice(f, 100)))
+                    try:
+                        encoding = UnicodeDammit(text)
+                        text = text.decode(encoding.original_encoding)
+                        detected_language = langdetect.detect(text)
+                    except Exception as e:
+                        logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
+                                          subtitle_path + ' You should try to delete this subtitles file manually and ask '
+                                                          'Bazarr to download it again.')
+                    else:
+                        if detected_language:
+                            logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
+                                detected_language))
+                            try:
+                                subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
+                            except:
+                                pass
+    return subtitles

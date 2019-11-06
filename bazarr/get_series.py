@@ -33,7 +33,7 @@ def update_series():
         audio_profiles = get_profile_list()
         
         # Get shows data from Sonarr
-        url_sonarr_api_series = url_sonarr + "/api/series?apikey=" + apikey_sonarr
+        url_sonarr_api_series = url_sonarr() + "/api/series?apikey=" + apikey_sonarr
         try:
             r = requests.get(url_sonarr_api_series, timeout=60, verify=False)
             r.raise_for_status()
@@ -168,9 +168,9 @@ def get_profile_list():
     # Get profiles data from Sonarr
 
     if sonarr_version.startswith('2'):
-        url_sonarr_api_series = url_sonarr + "/api/profile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = url_sonarr() + "/api/profile?apikey=" + apikey_sonarr
     elif sonarr_version.startswith('3'):
-        url_sonarr_api_series = url_sonarr + "/api/v3/languageprofile?apikey=" + apikey_sonarr
+        url_sonarr_api_series = url_sonarr() + "/api/v3/languageprofile?apikey=" + apikey_sonarr
 
     try:
         profiles_json = requests.get(url_sonarr_api_series, timeout=60, verify=False)

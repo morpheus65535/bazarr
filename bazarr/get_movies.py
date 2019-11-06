@@ -36,7 +36,7 @@ def update_movies():
         audio_profiles = get_profile_list()
         
         # Get movies data from radarr
-        url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
+        url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
         try:
             r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
             r.raise_for_status()
@@ -240,7 +240,7 @@ def update_movies():
                 result = database.execute(
                     '''INSERT OR IGNORE INTO table_movies(''' + query.keys_insert + ''') VALUES(''' +
                     query.question_marks + ''')''', query.values)
-                if result:
+                if result > 0:
                     altered_movies.append([added_movie['tmdbId'],
                                            added_movie['path'],
                                            added_movie['radarrId'],
@@ -276,7 +276,7 @@ def get_profile_list():
     profiles_list = []
     # Get profiles data from radarr
 
-    url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
+    url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
