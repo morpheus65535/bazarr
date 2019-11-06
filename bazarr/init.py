@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import logging
 import time
 import rarfile
 
@@ -9,6 +8,7 @@ from cork import Cork
 from ConfigParser2 import ConfigParser
 from config import settings
 from get_args import args
+from logger import configure_logging
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -33,24 +33,21 @@ if not os.path.exists(args.config_dir):
     # Create config_dir directory tree
     try:
         os.mkdir(os.path.join(args.config_dir))
-        logging.debug("BAZARR Created data directory")
     except OSError:
-        logging.exception(
-            "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
+        print "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?)."
         exit(2)
 
 if not os.path.exists(os.path.join(args.config_dir, 'config')):
     os.mkdir(os.path.join(args.config_dir, 'config'))
-    logging.debug("BAZARR Created config folder")
 if not os.path.exists(os.path.join(args.config_dir, 'db')):
     os.mkdir(os.path.join(args.config_dir, 'db'))
-    logging.debug("BAZARR Created db folder")
 if not os.path.exists(os.path.join(args.config_dir, 'log')):
     os.mkdir(os.path.join(args.config_dir, 'log'))
-    logging.debug("BAZARR Created log folder")
 if not os.path.exists(os.path.join(args.config_dir, 'cache')):
     os.mkdir(os.path.join(args.config_dir, 'cache'))
-    logging.debug("BAZARR Created cache folder")
+
+configure_logging(settings.general.getboolean('debug') or args.debug)
+import logging
 
 # create database file
 if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):

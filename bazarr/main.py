@@ -25,12 +25,11 @@ import operator
 from calendar import day_name
 
 from get_args import args
-from logger import configure_logging, empty_log
+from logger import empty_log
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
 
-configure_logging(settings.general.getboolean('debug') or args.debug)
-
 from init import *
+import logging
 from database import database, dict_mapper
 
 from notifier import update_notifier
