@@ -2018,7 +2018,7 @@ def perform_manual_upload_subtitle_movie():
 
 
 def configured():
-    System.update({System.configured: 1}).execute()
+    database.execute("UPDATE system SET configured = 1")
 
 
 @route(base_url + 'api/series/wanted')
