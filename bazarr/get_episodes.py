@@ -40,7 +40,7 @@ def sync_episodes():
     for i, seriesId in enumerate(seriesIdList, 1):
         notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
-        url_sonarr_api_episode = url_sonarr + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
+        url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
             r = requests.get(url_sonarr_api_episode, timeout=60, verify=False)
             r.raise_for_status()

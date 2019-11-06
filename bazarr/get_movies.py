@@ -34,7 +34,7 @@ def update_movies():
         audio_profiles = get_profile_list()
         
         # Get movies data from radarr
-        url_radarr_api_movies = url_radarr + "/api/movie?apikey=" + apikey_radarr
+        url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
         try:
             r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
             r.raise_for_status()
@@ -274,7 +274,7 @@ def get_profile_list():
     profiles_list = []
     # Get profiles data from radarr
 
-    url_radarr_api_movies = url_radarr + "/api/profile?apikey=" + apikey_radarr
+    url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:

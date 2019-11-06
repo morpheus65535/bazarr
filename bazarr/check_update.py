@@ -6,7 +6,7 @@ import requests
 import tarfile
 
 from get_args import args
-from config import settings, bazarr_url
+from config import settings
 from queueconfig import notifications
 from database import database
 

@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.3'
+bazarr_version = '0.8.3.1'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -466,10 +466,10 @@ def download_log():
 def image_proxy(url):
     authorize()
     apikey = settings.sonarr.apikey
-    url_image = url_sonarr_short + '/' + url + '?apikey=' + apikey
+    url_image = url_sonarr_short() + '/' + url + '?apikey=' + apikey
     try:
         image_buffer = BytesIO(
-            requests.get(url_sonarr + '/api' + url_image.split(url_sonarr)[1], timeout=15, verify=False).content)
+            requests.get(url_sonarr() + '/api' + url_image.split(url_sonarr())[1], timeout=15, verify=False).content)
     except:
         return None
     else:
@@ -485,13 +485,13 @@ def image_proxy_movies(url):
     authorize()
     apikey = settings.radarr.apikey
     try:
-        url_image = (url_radarr_short + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
+        url_image = (url_radarr_short() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         image_buffer = BytesIO(
-            requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
+            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
     except:
-        url_image = url_radarr_short + '/' + url + '?apikey=' + apikey
+        url_image = url_radarr_short() + '/' + url + '?apikey=' + apikey
         image_buffer = BytesIO(
-            requests.get(url_radarr + '/api' + url_image.split(url_radarr)[1], timeout=15, verify=False).content)
+            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
     else:
         image_buffer.seek(0)
         bytes = image_buffer.read()
@@ -717,7 +717,7 @@ def episodes(no):
         seasons_list.append(list(season))
 
     return template('episodes', bazarr_version=bazarr_version, no=no, details=series_details,
-                    languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short, base_url=base_url,
+                    languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short(), base_url=base_url,
                     tvdbid=tvdbid, number=number, current_port=settings.general.port)
 
 
@@ -852,7 +852,7 @@ def movie(no):
     languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
 
     return template('movie', bazarr_version=bazarr_version, no=no, details=movies_details,
-                    languages=languages, url_radarr_short=url_radarr_short, base_url=base_url, tmdbid=tmdbid,
+                    languages=languages, url_radarr_short=url_radarr_short(), base_url=base_url, tmdbid=tmdbid,
                     current_port=settings.general.port)
 
 

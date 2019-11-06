@@ -142,36 +142,66 @@ settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
-bazarr_url = 'http://localhost:' + (str(args.port) if args.port else settings.general.port) + base_url
 
-# sonarr url
-if settings.sonarr.getboolean('ssl'):
-    protocol_sonarr = "https"
-else:
-    protocol_sonarr = "http"
 
-if settings.sonarr.base_url == '':
-    settings.sonarr.base_url = "/"
-if not settings.sonarr.base_url.startswith("/"):
-    settings.sonarr.base_url = "/" + settings.sonarr.base_url
-if settings.sonarr.base_url.endswith("/"):
-    settings.sonarr.base_url = settings.sonarr.base_url[:-1]
+def url_sonarr():
+    if settings.sonarr.getboolean('ssl'):
+        protocol_sonarr = "https"
+    else:
+        protocol_sonarr = "http"
 
-url_sonarr = protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port + settings.sonarr.base_url
-url_sonarr_short = protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port
+    if settings.sonarr.base_url == '':
+        settings.sonarr.base_url = "/"
+    if not settings.sonarr.base_url.startswith("/"):
+        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+    if settings.sonarr.base_url.endswith("/"):
+        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
 
-# radarr url
-if settings.radarr.getboolean('ssl'):
-    protocol_radarr = "https"
-else:
-    protocol_radarr = "http"
+    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port + settings.sonarr.base_url
 
-if settings.radarr.base_url == '':
-    settings.radarr.base_url = "/"
-if not settings.radarr.base_url.startswith("/"):
-    settings.radarr.base_url = "/" + settings.radarr.base_url
-if settings.radarr.base_url.endswith("/"):
-    settings.radarr.base_url = settings.radarr.base_url[:-1]
 
-url_radarr = protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port + settings.radarr.base_url
-url_radarr_short = protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
+def url_sonarr_short():
+    if settings.sonarr.getboolean('ssl'):
+        protocol_sonarr = "https"
+    else:
+        protocol_sonarr = "http"
+
+    if settings.sonarr.base_url == '':
+        settings.sonarr.base_url = "/"
+    if not settings.sonarr.base_url.startswith("/"):
+        settings.sonarr.base_url = "/" + settings.sonarr.base_url
+    if settings.sonarr.base_url.endswith("/"):
+        settings.sonarr.base_url = settings.sonarr.base_url[:-1]
+    return protocol_sonarr + "://" + settings.sonarr.ip + ":" + settings.sonarr.port
+
+
+def url_radarr():
+    if settings.radarr.getboolean('ssl'):
+        protocol_radarr = "https"
+    else:
+        protocol_radarr = "http"
+
+    if settings.radarr.base_url == '':
+        settings.radarr.base_url = "/"
+    if not settings.radarr.base_url.startswith("/"):
+        settings.radarr.base_url = "/" + settings.radarr.base_url
+    if settings.radarr.base_url.endswith("/"):
+        settings.radarr.base_url = settings.radarr.base_url[:-1]
+
+    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port + settings.radarr.base_url
+
+
+def url_radarr_short():
+    if settings.radarr.getboolean('ssl'):
+        protocol_radarr = "https"
+    else:
+        protocol_radarr = "http"
+
+    if settings.radarr.base_url == '':
+        settings.radarr.base_url = "/"
+    if not settings.radarr.base_url.startswith("/"):
+        settings.radarr.base_url = "/" + settings.radarr.base_url
+    if settings.radarr.base_url.endswith("/"):
+        settings.radarr.base_url = settings.radarr.base_url[:-1]
+
+    return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
