@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import os
 import time
 import rarfile
@@ -35,7 +35,7 @@ if not os.path.exists(args.config_dir):
     try:
         os.mkdir(os.path.join(args.config_dir))
     except OSError:
-        print "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?)."
+        print("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
 if not os.path.exists(os.path.join(args.config_dir, 'config')):

@@ -15,6 +15,7 @@ from subliminal_patch import search_external_subtitles
 from subzero.language import Language
 from bs4 import UnicodeDammit
 from itertools import islice
+import six
 
 from get_args import args
 from database import database
@@ -65,7 +66,7 @@ def store_subtitles(original_path, reversed_path):
             subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(file), subtitles)
+            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -395,7 +396,7 @@ def get_external_subtitles_path(file, subtitle):
 
 
 def guess_external_subtitles(dest_folder, subtitles):
-    for subtitle, language in subtitles.iteritems():
+    for subtitle, language in six.iteritems(subtitles):
         if not language:
             subtitle_path = os.path.join(dest_folder, subtitle)
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:

@@ -98,7 +98,7 @@ def get_sonarr_version():
 def get_sonarr_platform():
     use_sonarr = settings.general.getboolean('use_sonarr')
     apikey_sonarr = settings.sonarr.apikey
-    sv = url_sonarr + "/api/system/status?apikey=" + apikey_sonarr
+    sv = url_sonarr() + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_platform = ''
     if use_sonarr:
         try:
@@ -129,7 +129,7 @@ def get_radarr_version():
 def get_radarr_platform():
     use_radarr = settings.general.getboolean('use_radarr')
     apikey_radarr = settings.radarr.apikey
-    rv = url_radarr + "/api/system/status?apikey=" + apikey_radarr
+    rv = url_radarr() + "/api/system/status?apikey=" + apikey_radarr
     radarr_platform = ''
     if use_radarr:
         try:
