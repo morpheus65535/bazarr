@@ -120,7 +120,7 @@ class SubtitulamosTVProvider(Provider):
                         if video.alternative_series is None:
                             if video.series.lower() == s['name'].lower():
                                 matches.add('series')
-                        elif s['name'].lower() in [video.series.lower()]+map(lambda name: name.lower(), video.alternative_series):
+                        elif s['name'].lower() in [video.series.lower()]+list(map(lambda name: name.lower(), video.alternative_series)):
                             matches.add('series')
                         if video.season == e['season']:
                             matches.add('season')
@@ -153,7 +153,7 @@ class SubtitulamosTVProvider(Provider):
         r.raise_for_status()
 
         r.encoding = "ISO-8859-1"
-        subtitle_content = r.text
+        subtitle_content = r.content
 
         if subtitle_content:
             subtitle.content = fix_line_ending(subtitle_content)
