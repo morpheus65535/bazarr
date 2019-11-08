@@ -58,6 +58,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
     manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
+from helper import path_replace_reverse, path_replace_reverse_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
@@ -1738,7 +1739,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(episodePath, path_replace(episodePath))
+    store_subtitles(path_replace_reverse(episodePath), episodePath)
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
@@ -1756,7 +1757,7 @@ def remove_subtitles_movie():
         history_log_movie(0, radarrId, result)
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles_movie(moviePath, six.text_type(moviePath))
+    store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
 
 
 @route(base_url + 'get_subtitle', method='POST')
@@ -1846,7 +1847,7 @@ def manual_get_subtitle():
             score = result[4]
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(episodePath, six.text_type(episodePath))
+            store_subtitles(path, episodePath)
         redirect(ref)
     except OSError:
         pass
@@ -1889,7 +1890,7 @@ def perform_manual_upload_subtitle():
             score = 360
             history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(episodePath, six.text_type(episodePath))
+            store_subtitles(path, episodePath)
 
         redirect(ref)
     except OSError:
@@ -1925,7 +1926,7 @@ def get_subtitle_movie():
             score = result[4]
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(moviePath, six.text_type(moviePath))
+            store_subtitles_movie(path, moviePath)
         redirect(ref)
     except OSError:
         pass
@@ -1980,7 +1981,7 @@ def manual_get_subtitle_movie():
             score = result[4]
             history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(moviePath, six.text_type(moviePath))
+            store_subtitles_movie(path, moviePath)
         redirect(ref)
     except OSError:
         pass
@@ -2022,7 +2023,7 @@ def perform_manual_upload_subtitle_movie():
             score = 120
             history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(moviePath, six.text_type(moviePath))
+            store_subtitles_movie(path, moviePath)
 
         redirect(ref)
     except OSError:

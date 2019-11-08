@@ -198,7 +198,7 @@ class LegendasTVProvider(_LegendasTVProvider):
                 expiration_time = (datetime.utcnow().replace(tzinfo=pytz.utc) - a.timestamp).total_seconds()
 
                 # attempt to get the releases from the cache
-                cache_key = releases_key.format(archive_id=a.id, archive_name=a.name)
+                cache_key = str(a.id + "|" + a.name)
                 releases = region.get(cache_key, expiration_time=expiration_time)
 
                 # the releases are not in cache or cache is expired
@@ -226,7 +226,7 @@ class LegendasTVProvider(_LegendasTVProvider):
                         releases.append(name)
 
                     # cache the releases
-                    region.set(cache_key, bytearray(releases))
+                    region.set(cache_key, releases)
 
                 # iterate over releases
                 for r in releases:
