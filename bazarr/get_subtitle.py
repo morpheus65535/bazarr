@@ -931,7 +931,7 @@ def refine_from_db(path, video):
     elif isinstance(video, Movie):
         data = database.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, "
                                 "imdbId FROM table_movies WHERE path = ?",
-                                (text_type(path_replace_reverse_movie(path)),), only_one=True)
+                                (path_replace_reverse_movie(path),), only_one=True)
 
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
