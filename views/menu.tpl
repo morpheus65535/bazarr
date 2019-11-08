@@ -227,6 +227,12 @@
 			% elif restart_required['configured'] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% end
+
+			% from six import PY2
+			% import datetime
+			% if PY2:
+			    <div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui yellow message">Bazarr is now compatible with Python 3.6 and earlier. You should upgrade Python as we'll drop support for Python 2.7.x by the end of 2019.</div></div></div>
+			% end
         </div>
     </body>
 </html>
