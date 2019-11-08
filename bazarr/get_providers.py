@@ -10,6 +10,7 @@ from get_args import args
 from config import settings
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
+from subliminal import region as subliminal_cache_region
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError)
@@ -154,13 +155,20 @@ def provider_throttle(name, exception):
     throttle_until = datetime.datetime.now() + throttle_delta
     
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
-        tp[name] = (cls_name, throttle_until, throttle_description)
-        settings.general.throtteled_providers = str(tp)
-        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-            settings.write(handle)
-        
-        logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name, throttle_description,
-                     throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.message)
+        if cls_name == 'ValueError' and exception.message.startswith('unsupported pickle protocol'):
+            for fn in subliminal_cache_region.backend.all_filenames:
+                try:
+                    os.remove(fn)
+                except (IOError, OSError):
+                    logging.debug("Couldn't remove cache file: %s", os.path.basename(fn))
+        else:
+            tp[name] = (cls_name, throttle_until, throttle_description)
+            settings.general.throtteled_providers = str(tp)
+            with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+                settings.write(handle)
+
+            logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name, throttle_description,
+                         throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.message)
 
 
 def throttled_count(name):
