@@ -231,7 +231,7 @@
 			% from six import PY2
 			% import datetime
 			% if PY2:
-			<div class='ui left aligned grid'><div class='fluid column'><div class="ui yellow icon message"><i class="python icon"></i><div class="content"><div class="header">Python deprecation warning</div>Bazarr is now compatible with Python 3.6 and earlier. You should upgrade Python as we'll drop support for Python 2.7.x by the end of 2019.</div></div></div></div>
+			<div class='ui left aligned grid'><div class='fluid column'><div class="ui yellow icon message"><i class="python icon"></i><div class="content"><div class="header">Python deprecation warning</div>Bazarr is now compatible with Python 3.6 and newer. You should upgrade Python as we'll drop support for Python 2.7.x by the end of 2019.</div></div></div></div>
 			% end
         </div>
     </body>
