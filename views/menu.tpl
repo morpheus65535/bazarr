@@ -276,11 +276,11 @@
 		$('#loader_text').text("Bazarr is restarting. Please Wait...");
 		$.ajax({
 			url: "{{base_url}}restart",
-			async: true
+			async: true,
+			error: (function(){
+    			setTimeout(function(){ setInterval(ping, 2000); },8000);
+			})
 		})
-		.done(function(){
-    		setTimeout(function(){ setInterval(ping, 2000); },8000);
-		});
 	});
 
 	% from config import settings

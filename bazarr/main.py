@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.3.2'
+bazarr_version = '0.8.3.3'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -190,6 +190,7 @@ def shutdown():
         else:
             stop_file.write('')
             stop_file.close()
+            sys.exit(0)
 
 
 @route(base_url + 'restart')
@@ -208,6 +209,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
+            sys.exit(0)
 
 
 @route(base_url + 'wizard')
