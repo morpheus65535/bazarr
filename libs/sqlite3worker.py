@@ -90,11 +90,11 @@ class Sqlite3Worker(threading.Thread):
         """
         LOGGER.debug("run: Thread started")
         execute_count = 0
-        for token, query, values, only_one in iter(self.sql_queue.get, None):
+        for token, query, values, only_one, execute_many in iter(self.sql_queue.get, None):
             LOGGER.debug("sql_queue: %s", self.sql_queue.qsize())
             if token != self.exit_token:
                 LOGGER.debug("run: %s, %s", query, values)
-                self.run_query(token, query, values, only_one)
+                self.run_query(token, query, values, only_one, execute_many)
                 execute_count += 1
                 # Let the executes build up a little before committing to disk
                 # to speed things up.
@@ -112,7 +112,7 @@ class Sqlite3Worker(threading.Thread):
                 self.thread_running = False
                 return
 
-    def run_query(self, token, query, values, only_one):
+    def run_query(self, token, query, values, only_one=False, execute_many=False):
         """Run a query.
 
         Args:
@@ -136,9 +136,14 @@ class Sqlite3Worker(threading.Thread):
                     "Query returned error: %s: %s: %s", query, values, err)
         else:
             try:
-                self.sqlite3_cursor.execute(query, values)
-                if query.lower().strip().startswith(("insert", "update")):
-                    self.results[token] = self.sqlite3_cursor.rowcount
+                if execute_many:
+                    self.sqlite3_cursor.executemany(query, values)
+                    if query.lower().strip().startswith(("insert", "update")):
+                        self.results[token] = self.sqlite3_cursor.rowcount
+                else:
+                    self.sqlite3_cursor.execute(query, values)
+                    if query.lower().strip().startswith(("insert", "update")):
+                        self.results[token] = self.sqlite3_cursor.rowcount
             except sqlite3.Error as err:
                 self.results[token] = (
                         "Query returned error: %s: %s: %s" % (query, values, err))
@@ -181,7 +186,7 @@ class Sqlite3Worker(threading.Thread):
             if delay < 8:
                 delay += delay
 
-    def execute(self, query, values=None, only_one=False):
+    def execute(self, query, values=None, only_one=False, execute_many=False):
         """Execute a query.
 
         Args:
@@ -201,10 +206,10 @@ class Sqlite3Worker(threading.Thread):
         # If it's a select we queue it up with a token to mark the results
         # into the output queue so we know what results are ours.
         if query.lower().strip().startswith(("select", "insert", "update")):
-            self.sql_queue.put((token, query, values, only_one), timeout=5)
+            self.sql_queue.put((token, query, values, only_one, execute_many), timeout=5)
             return self.query_results(token)
         else:
-            self.sql_queue.put((token, query, values, only_one), timeout=5)
+            self.sql_queue.put((token, query, values, only_one, execute_many), timeout=5)
 
 
 def dict_factory(cursor, row):

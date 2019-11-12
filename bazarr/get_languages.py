@@ -11,25 +11,23 @@ from database import database
 
 def load_language_in_db():
     # Get languages list in langs tuple
-    langs = [{'code3': lang.alpha_3, 'code2': lang.alpha_2, 'name': lang.name}
+    langs = [[lang.alpha_3, lang.alpha_2, lang.name]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2')]
     
     # Insert languages in database table
-    for lang in langs:
-        database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)",
-                         (lang['code3'], lang['code2'], lang['name']))
+    database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) VALUES (?, ?, ?)",
+                     langs, execute_many=True)
 
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
                      "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
 
-    langs = [{'code3b': lang.bibliographic, 'code3': lang.alpha_3}
+    langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
              if hasattr(lang, 'alpha_2') and hasattr(lang, 'bibliographic')]
     
     # Update languages in database table
-    for lang in langs:
-        database.execute("UPDATE table_settings_languages SET code3b=? WHERE code3=?", (lang['code3b'], lang['code3']))
+    database.execute("UPDATE table_settings_languages SET code3b=? WHERE code3=?", langs, execute_many=True)
 
 
 def language_from_alpha2(lang):
