@@ -197,6 +197,7 @@ def shutdown():
         else:
             stop_file.write('')
             stop_file.close()
+            sys.exit(0)
 
 
 @route(base_url + 'restart')
@@ -215,6 +216,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write('')
             restart_file.close()
+            sys.exit(0)
 
 
 @route(base_url + 'wizard')
