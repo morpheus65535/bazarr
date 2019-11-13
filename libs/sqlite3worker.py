@@ -138,11 +138,11 @@ class Sqlite3Worker(threading.Thread):
             try:
                 if execute_many:
                     self.sqlite3_cursor.executemany(query, values)
-                    if query.lower().strip().startswith(("insert", "update")):
+                    if query.lower().strip().startswith(("insert", "update", "delete")):
                         self.results[token] = self.sqlite3_cursor.rowcount
                 else:
                     self.sqlite3_cursor.execute(query, values)
-                    if query.lower().strip().startswith(("insert", "update")):
+                    if query.lower().strip().startswith(("insert", "update", "delete")):
                         self.results[token] = self.sqlite3_cursor.rowcount
             except sqlite3.Error as err:
                 self.results[token] = (
@@ -153,7 +153,7 @@ class Sqlite3Worker(threading.Thread):
     def close(self):
         """Close down the thread and close the sqlite3 database file."""
         self.exit_set = True
-        self.sql_queue.put((self.exit_token, "", "", ""), timeout=5)
+        self.sql_queue.put((self.exit_token, "", "", "", ""), timeout=5)
         # Sleep and check that the thread is done before returning.
         while self.thread_running:
             time.sleep(.01)  # Don't kill the CPU waiting.
@@ -205,7 +205,7 @@ class Sqlite3Worker(threading.Thread):
         token = str(uuid.uuid4())
         # If it's a select we queue it up with a token to mark the results
         # into the output queue so we know what results are ours.
-        if query.lower().strip().startswith(("select", "insert", "update")):
+        if query.lower().strip().startswith(("select", "insert", "update", "delete")):
             self.sql_queue.put((token, query, values, only_one, execute_many), timeout=5)
             return self.query_results(token)
         else:
