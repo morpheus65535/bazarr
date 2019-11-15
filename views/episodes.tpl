@@ -222,7 +222,7 @@
 										<td>
 										%if episode['subtitles'] is not None:
 										%	actual_languages = ast.literal_eval(episode['subtitles'])
-                                        %   actual_languages.sort()
+										%   actual_languages = sorted(actual_languages, key=lambda x: (x is None, x))
 										%else:
 										%	actual_languages = '[]'
 										%end
