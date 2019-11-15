@@ -145,7 +145,7 @@ class Addic7edProvider(_Addic7edProvider):
                 if "relax, slow down" in r.text:
                     raise TooManyRequests(self.username)
 
-                if "Wrong password" in r.content or "doesn't exist" in r.content:
+                if "Wrong password" in r.text or "doesn't exist" in r.text:
                     raise AuthenticationError(self.username)
 
                 if r.status_code != 302:
