@@ -204,9 +204,14 @@ def throttled_count(name):
 def update_throttled_provider():
     changed = False
     if settings.general.enabled_providers:
-        for provider in settings.general.enabled_providers.lower().split(','):
+        for provider in list(tp):
+            if provider not in settings.general.enabled_providers:
+                del tp[provider]
+                settings.general.throtteled_providers = str(tp)
+                changed = True
+
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
-            
+
             if reason:
                 now = datetime.datetime.now()
                 if now < until:
