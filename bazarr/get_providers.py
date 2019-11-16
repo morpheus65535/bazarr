@@ -155,7 +155,7 @@ def provider_throttle(name, exception):
     throttle_until = datetime.datetime.now() + throttle_delta
     
     if cls_name not in VALID_COUNT_EXCEPTIONS or throttled_count(name):
-        if cls_name == 'ValueError' and exception.message.startswith('unsupported pickle protocol'):
+        if cls_name == 'ValueError' and exception.args[0].startswith('unsupported pickle protocol'):
             for fn in subliminal_cache_region.backend.all_filenames:
                 try:
                     os.remove(fn)
@@ -168,7 +168,7 @@ def provider_throttle(name, exception):
                 settings.write(handle)
 
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name, throttle_description,
-                         throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.message)
+                         throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0])
 
 
 def throttled_count(name):
