@@ -171,7 +171,7 @@
 						<tbody>
 							<%
 							subtitles_files = ast.literal_eval(str(details['subtitles']))
-							subtitles_files = sorted(subtitles_files, key=lambda x: (x is None, x))
+							subtitles_files.sort(key=lambda x: x[0])
 							if subtitles_files is not None:
 								for subtitles_file in subtitles_files:
 									if subtitles_file[0].endswith(':forced'):
