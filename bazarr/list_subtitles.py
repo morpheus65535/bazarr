@@ -93,7 +93,8 @@ def store_subtitles(original_path, reversed_path):
                             text = f.read()
                             try:
                                 encoding = UnicodeDammit(text)
-                                text = text.decode(encoding.original_encoding)
+                                if six.PY2:
+                                    text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
@@ -184,7 +185,8 @@ def store_subtitles_movie(original_path, reversed_path):
                             text = f.read()
                             try:
                                 encoding = UnicodeDammit(text)
-                                text = text.decode(encoding.original_encoding)
+                                if six.PY2:
+                                    text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
                                 logging.exception(
@@ -403,7 +405,8 @@ def guess_external_subtitles(dest_folder, subtitles):
                     text = f.read()
                     try:
                         encoding = UnicodeDammit(text)
-                        text = text.decode(encoding.original_encoding)
+                        if six.PY2:
+                            text = text.decode(encoding.original_encoding)
                         detected_language = langdetect.detect(text)
                     except Exception as e:
                         logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
