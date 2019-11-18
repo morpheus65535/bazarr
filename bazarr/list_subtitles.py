@@ -14,7 +14,6 @@ from subliminal import core
 from subliminal_patch import search_external_subtitles
 from subzero.language import Language
 from bs4 import UnicodeDammit
-from itertools import islice
 import six
 
 from get_args import args
@@ -91,10 +90,9 @@ def store_subtitles(original_path, reversed_path):
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
                         with open(os.path.join(os.path.dirname(reversed_path), subtitle), 'r') as f:
-                            text = list(islice(f, 100))
-                            text = ' '.join(text)
-                            encoding = UnicodeDammit(text)
+                            text = f.read()
                             try:
+                                encoding = UnicodeDammit(text)
                                 text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
@@ -183,10 +181,9 @@ def store_subtitles_movie(original_path, reversed_path):
                     if os.path.splitext(subtitle)[1] != ".sub":
                         logging.debug("BAZARR falling back to file content analysis to detect language.")
                         with open(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle), 'r') as f:
-                            text = list(islice(f, 100))
-                            text = ' '.join(text)
-                            encoding = UnicodeDammit(text)
+                            text = f.read()
                             try:
+                                encoding = UnicodeDammit(text)
                                 text = text.decode(encoding.original_encoding)
                                 detected_language = langdetect.detect(text)
                             except Exception as e:
@@ -403,7 +400,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.debug("BAZARR falling back to file content analysis to detect language.")
                 detected_language = None
                 with open(subtitle_path, 'r') as f:
-                    text = ' '.join(list(islice(f, 100)))
+                    text = f.read()
                     try:
                         encoding = UnicodeDammit(text)
                         text = text.decode(encoding.original_encoding)
