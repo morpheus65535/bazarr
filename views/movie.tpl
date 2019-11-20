@@ -41,6 +41,7 @@
 			}
 			#fondblanc {
 				background-color: #ffffff;
+				color: #000000;
 				opacity: 0.9;
 				border-radius: 1px;
 				box-shadow: 0 0 3px 3px #ffffff;
@@ -160,107 +161,130 @@
 				</div>
 
 				<div id="fondblanc" class="ui container">
-					<table class="ui very basic single line selectable table">
-						<thead>
-							<tr>
-								<th>Subtitles Path</th>
-								<th>Language(s)</th>
-								<th></th>
-							</tr>
-						</thead>
-						<tbody>
+					<div class="ui top attached tabular menu">
+						<a id="subtitles_tab" class="tabs item active" data-tab="subtitles">Subtitles</a>
+						<a id="history_tab" class="tabs item" data-tab="history">History</a>
+					</div>
+					<div class="ui bottom attached tab active segment" data-tab="subtitles">
+						<div class="content">
+							<table class="ui very basic single line selectable table">
+								<thead>
+									<tr>
+										<th>Subtitles Path</th>
+										<th>Language(s)</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									<%
+									subtitles_files = ast.literal_eval(str(details['subtitles']))
+									subtitles_files.sort(key=lambda x: x[0])
+									if subtitles_files is not None:
+										for subtitles_file in subtitles_files:
+											if subtitles_file[0].endswith(':forced'):
+												forced = True
+											else:
+												forced = False
+											end
+									%>
+									<tr>
+										%if subtitles_file[1] is not None:
+										<td><span data-tooltip="Path is: {{path_replace_movie(subtitles_file[1])}}" data-inverted='' data-position="top left">{{path.basename(path_replace_movie(subtitles_file[1]))}}</span></td>
+										%else:
+										<td>Video File Subtitles Track</td>
+										%end
+										<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
+										<td>
+											%if subtitles_file[1] is not None:
+											<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details['path']}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details['radarrId']}}>
+												<i class="ui black delete icon"></i>
+											</a>
+											%end
+										</td>
+									</tr>
+									<%
+										end
+										if len(subtitles_files) == 0:
+									%>
+									<tr><td colspan="3">No Subtitles Detected For This Movie.</td></tr>
+									<%
+										end
+									end
+									%>
+								</tbody>
+							</table>
 							<%
-							subtitles_files = ast.literal_eval(str(details['subtitles']))
-							subtitles_files.sort(key=lambda x: x[0])
-							if subtitles_files is not None:
-								for subtitles_file in subtitles_files:
-									if subtitles_file[0].endswith(':forced'):
-										forced = True
+							if details['missing_subtitles'] is not None:
+								missing_subs_languages = ast.literal_eval(details['missing_subtitles'])
+							else:
+								missing_subs_languages = []
+							end
+							from get_subtitle import search_active
+							if missing_subs_languages is not None:
+							%>
+							<table class="ui very basic single line selectable table">
+								<thead>
+									<tr>
+										<th>Missing Subtitles</th>
+									</tr>
+								</thead>
+							</table>
+							<%
+								for missing_subs_language in missing_subs_languages:
+									if len(missing_subs_language) > 2:
+										forced = missing_subs_language[2]
+										forced_bool = True
 									else:
 										forced = False
+										forced_bool = False
 									end
-							%>
-							<tr>
-								%if subtitles_file[1] is not None:
-								<td><span data-tooltip="Path is: {{path_replace_movie(subtitles_file[1])}}" data-inverted='' data-position="top left">{{path.basename(path_replace_movie(subtitles_file[1]))}}</span></td>
-								%else:
-								<td>Video File Subtitles Track</td>
-								%end
-								<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
-								<td>
-									%if subtitles_file[1] is not None:
-									<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details['path']}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details['radarrId']}}>
-										<i class="ui black delete icon"></i>
-									</a>
-									%end
-								</td>
-							</tr>
-							<%
-								end
-								if len(subtitles_files) == 0:
-							%>
-							<tr><td colspan="3">No Subtitles Detected For This Movie.</td></tr>
-							<%
-								end
-							end
-							%>
-						</tbody>
-					</table>
-					<%
-					if details['missing_subtitles'] is not None:
-						missing_subs_languages = ast.literal_eval(details['missing_subtitles'])
-					else:
-						missing_subs_languages = []
-					end
-                	from get_subtitle import search_active
-					if missing_subs_languages is not None:
-					%>
-					<table class="ui very basic single line selectable table">
-						<thead>
-							<tr>
-								<th>Missing Subtitles</th>
-							</tr>
-						</thead>
-					</table>
-					<%
-						for missing_subs_language in missing_subs_languages:
-							if len(missing_subs_language) > 2:
-								forced = missing_subs_language[2]
-								forced_bool = True
-							else:
-								forced = False
-								forced_bool = False
-							end
 
-						    if details['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failedAttempts']:
-                                for lang in ast.literal_eval(details['failedAttempts']):
-                                    if missing_subs_language in lang:
-                                        if search_active(lang[1]):
-					%>
-							<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-							</a>
-                                        %else:
-                            <a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-							</a>
-					<%
-                                        end
-                                    end
-                                end
-                            else:
-                    %>
-                            <a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-								{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-								<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-							</a>
-                    <%
-                            end
-						end
-					end
-					%>
+									if details['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failedAttempts']:
+										for lang in ast.literal_eval(details['failedAttempts']):
+											if missing_subs_language in lang:
+												if search_active(lang[1]):
+							%>
+									<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
+										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
+										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
+									</a>
+												%else:
+									<a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
+										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
+										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
+									</a>
+							<%
+												end
+											end
+										end
+									else:
+							%>
+									<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
+										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
+										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
+									</a>
+							<%
+									end
+								end
+							end
+							%>
+						</div>
+					</div>
+					<div class="ui bottom attached tab segment" data-tab="history">
+						<div class="content">
+							<table id="movie_result" class="display" style="width:100%">
+								<thead>
+									<tr>
+										<th></th>
+										<th style="text-align: left;">Language.:</th>
+										<th style="text-align: left;">Provider:</th>
+										<th style="text-align: left;">Score:</th>
+										<th style="text-align: left;">Date:</th>
+									</tr>
+								</thead>
+							</table>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -420,6 +444,9 @@
 </html>
 
 <script>
+	$('.menu .item')
+		.tab();
+
 	$('#scan_disk').on('click', function(){
 		$('#loader_text').text("Scanning Disk For Existing Subtitles...");
 		window.location = '{{base_url}}scan_disk_movie/{{no}}';
@@ -486,7 +513,7 @@
 		});
 	});
 
-	$('a, .menu .item, button:not(#config, .cancel, .manual_search, .manual_upload, #search_missing_subtitles_movie)').on('click', function(){
+	$('a:not(.tabs), button:not(#config, .cancel, .manual_search, .manual_upload, #search_missing_subtitles_movie)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -517,6 +544,37 @@
 				autofocus: false
 			})
 			.modal('show');
+	});
+
+	$('#history_tab').on('click', function(){
+		$('#movie_result').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No History Records Found For This Movie'
+		    },
+		    paging: true,
+    		lengthChange: false,
+			pageLength: 5,
+    		searching: true,
+    		ordering: true,
+    		processing: false,
+        	serverSide: false,
+        	ajax: {
+				url: '{{base_url}}movie_history/{{no}}'
+			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+                $('.ui.accordion').accordion();
+			},
+			columns: [
+				{ data: 'action'},
+				{ data: 'language' },
+				{ data: 'provider' },
+				{ data: 'score'},
+				{ data: 'timestamp' }
+			]
+		} );
 	});
 
 	$('.manual_search').on('click', function(){

@@ -217,7 +217,7 @@
 											% if episode['scene_name'] is not None:
 											<span data-tooltip="Scenename is: {{episode['scene_name']}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
                                        	% end
-											<span data-tooltip="Path is: {{episode['path']}}" data-inverted='' data-position="top left">{{episode['title']}}</span>
+											<span data-tooltip="Path is: {{episode['path']}}" data-inverted='' data-position="top left"><a data-series_title="{{details['title']}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="episode_history">{{episode['title']}}</a></span>
 										</td>
 										<td>
 										%if episode['subtitles'] is not None:
@@ -379,6 +379,29 @@
 			</div>
 		</div>
 
+		<div class="episode_dialog ui modal">
+			<i class="close icon"></i>
+			<div class="header">
+				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
+			</div>
+			<div class="scrolling content">
+				<table id="episode_result" class="display" style="width:100%">
+					<thead>
+						<tr>
+							<th></th>
+							<th style="text-align: left;">Language.:</th>
+							<th style="text-align: left;">Provider:</th>
+							<th style="text-align: left;">Score:</th>
+							<th style="text-align: left;">Date:</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div class="actions">
+				<button class="ui cancel button" >Cancel</button>
+			</div>
+		</div>
+
 		<div class="search_dialog ui modal">
 			<i class="close icon"></i>
 			<div class="header">
@@ -531,7 +554,7 @@
 		});
 	});
 
-	$('a:not(.manual_search, .manual_upload), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
+	$('a:not(.manual_search, .manual_upload, .episode_history), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
 		$('#loader').addClass('active');
 	});
 
@@ -557,6 +580,51 @@
 		}
 
 		$('.config_dialog')
+			.modal({
+				centered: false,
+				autofocus: false
+			})
+			.modal('show');
+	});
+
+	$('.episode_history').on('click', function(){
+		$("#series_title_span").html($(this).data("series_title"));
+		$("#season").html($(this).data("season"));
+		$("#episode").html($(this).data("episode"));
+		$("#episode_title").html($(this).data("episode_title"));
+
+		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+
+		$('#episode_result').DataTable( {
+		    destroy: true,
+		    language: {
+				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+				zeroRecords: 'No History Records Found For This Episode'
+		    },
+		    paging: true,
+    		lengthChange: false,
+			pageLength: 5,
+    		searching: true,
+    		ordering: true,
+    		processing: false,
+        	serverSide: false,
+        	ajax: {
+				url: '{{base_url}}episode_history/' + sonarrEpisodeId
+			},
+			drawCallback: function(settings) {
+                $('.inline.dropdown').dropdown();
+                $('.ui.accordion').accordion();
+			},
+			columns: [
+				{ data: 'action'},
+				{ data: 'language' },
+				{ data: 'provider' },
+				{ data: 'score'},
+				{ data: 'timestamp' }
+			]
+		} );
+
+		$('.episode_dialog')
 			.modal({
 				centered: false,
 				autofocus: false
