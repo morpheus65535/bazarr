@@ -52,7 +52,7 @@ def track_event(category=None, action=None, label=None):
 
     try:
         tracker.track_event(event, session, visitor)
-        tracker.track_pageview(page, session, visitor)
+        # tracker.track_pageview(page, session, visitor) ## Commented because we were having too much hits on GA.
     except:
         pass
     else:
