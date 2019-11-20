@@ -42,7 +42,8 @@ from beaker.middleware import SessionMiddleware
 from cork import Cork
 from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook
 from datetime import timedelta
-from get_languages import load_language_in_db, language_from_alpha3
+from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
+
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
 from get_episodes import *
@@ -1729,7 +1730,7 @@ def remove_subtitles():
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
-        history_log(0, sonarrSeriesId, sonarrEpisodeId, result)
+        history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles(unicode(episodePath))
@@ -1747,7 +1748,7 @@ def remove_subtitles_movie():
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
-        history_log_movie(0, radarrId, result)
+        history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
     store_subtitles_movie(unicode(moviePath))
@@ -2125,6 +2126,85 @@ def notifications():
 @custom_auth_basic(check_credentials)
 def running_tasks_list():
     return dict(tasks=running_tasks)
+
+
+@route(base_url + 'episode_history/<no:int>')
+@custom_auth_basic(check_credentials)
+def episode_history(no):
+    authorize()
+    episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
+                                       "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (no,))
+    for item in episode_history:
+        if item['action'] == 0:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "erased.' data-inverted='' data-position='top left'><i class='ui trash icon'></i></div>"
+        elif item['action'] == 1:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "downloaded.' data-inverted='' data-position='top left'><i class='ui download " \
+                             "icon'></i></div>"
+        elif item['action'] == 2:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "manually downloaded.' data-inverted='' data-position='top left'><i class='ui user " \
+                             "icon'></i></div>"
+        elif item['action'] == 3:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "upgraded.' data-inverted='' data-position='top left'><i class='ui recycle " \
+                             "icon'></i></div>"
+        elif item['action'] == 4:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "manually uploaded.' data-inverted='' data-position='top left'><i class='ui cloud " \
+                             "upload icon'></i></div>"
+        item['timestamp'] = "<div data-tooltip='" + \
+                            time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + "'>" + \
+                            pretty.date(datetime.fromtimestamp(item['timestamp'])) + "</div>"
+        if item['language']:
+            item['language'] = language_from_alpha2(item['language'])
+        else:
+            item['language'] = "<i>undefined</i>"
+        if item['score']:
+            item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
+
+    return dict(data=episode_history)
+
+
+@route(base_url + 'movie_history/<no:int>')
+@custom_auth_basic(check_credentials)
+def movie_history(no):
+    authorize()
+    movie_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history_movie "
+                                     "WHERE radarrId=? ORDER BY timestamp DESC", (no,))
+    for item in movie_history:
+        if item['action'] == 0:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "erased.' data-inverted='' data-position='top left'><i class='ui trash icon'></i></div>"
+        elif item['action'] == 1:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "downloaded.' data-inverted='' data-position='top left'><i class='ui download " \
+                             "icon'></i></div>"
+        elif item['action'] == 2:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "manually downloaded.' data-inverted='' data-position='top left'><i class='ui user " \
+                             "icon'></i></div>"
+        elif item['action'] == 3:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "upgraded.' data-inverted='' data-position='top left'><i class='ui recycle " \
+                             "icon'></i></div>"
+        elif item['action'] == 4:
+            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
+                             "manually uploaded.' data-inverted='' data-position='top left'><i class='ui cloud " \
+                             "upload icon'></i></div>"
+
+        item['timestamp'] = "<div data-tooltip='" + \
+                            time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + "'>" + \
+                            pretty.date(datetime.fromtimestamp(item['timestamp'])) + "</div>"
+        if item['language']:
+            item['language'] = language_from_alpha2(item['language'])
+        else:
+            item['language'] = "<i>undefined</i>"
+        if item['score']:
+            item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
+
+    return dict(data=movie_history)
 
 
 # Mute DeprecationWarning
