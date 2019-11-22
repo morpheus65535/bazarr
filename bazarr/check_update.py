@@ -4,6 +4,7 @@ import logging
 import json
 import requests
 import tarfile
+import sys
 
 from get_args import args
 from config import settings
@@ -294,10 +295,14 @@ def request_json(url, **kwargs):
 def updated(restart=True):
     if settings.general.getboolean('update_restart') and restart:
         try:
-            from main import restart
-            restart()
-        except:
-            logging.info('BAZARR Restart failed, please restart Bazarr manualy')
+            database.close()
+            restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
+            logging.info('Bazarr is being restarted...')
+            restart_file.write('')
+            restart_file.close()
+            sys.exit(0)
+        except Exception as e:
+            logging.info('BAZARR Restart failed, please restart Bazarr manually')
             updated(restart=False)
     else:
         database.execute("UPDATE system SET updated='1'")
