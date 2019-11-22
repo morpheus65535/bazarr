@@ -294,10 +294,11 @@ def request_json(url, **kwargs):
 def updated(restart=True):
     if settings.general.getboolean('update_restart') and restart:
         try:
-            from main import restart
-            restart()
-        except:
-            logging.info('BAZARR Restart failed, please restart Bazarr manualy')
+            requests.get('http://127.0.0.1:' + settings.general.port + settings.general.base_url + 'restart')
+        except requests.ConnectionError:
+            pass
+        except (requests.ConnectTimeout, requests.HTTPError, requests.ReadTimeout, requests.Timeout):
+            logging.info('BAZARR Restart failed, please restart Bazarr manually')
             updated(restart=False)
     else:
         database.execute("UPDATE system SET updated='1'")
