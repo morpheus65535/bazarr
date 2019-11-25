@@ -28,6 +28,7 @@ import requests
 from json import dumps
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyImageSize
 from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
@@ -67,7 +68,9 @@ class NotifyJSON(NotifyBase):
         '{schema}://{user}:{password}@{host}:{port}',
     )
 
-    # Define our tokens
+    # Define our tokens; these are the minimum tokens required required to
+    # be passed into this function (as arguments). The syntax appends any
+    # previously defined in the base package and builds onto them
     template_tokens = dict(NotifyBase.template_tokens, **{
         'host': {
             'name': _('Hostname'),
@@ -120,7 +123,7 @@ class NotifyJSON(NotifyBase):
 
         return
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -140,7 +143,8 @@ class NotifyJSON(NotifyBase):
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
                 user=NotifyJSON.quote(self.user, safe=''),
-                password=NotifyJSON.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         elif self.user:
             auth = '{user}@'.format(
@@ -149,12 +153,13 @@ class NotifyJSON(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}/?{args}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             hostname=NotifyJSON.quote(self.host, safe=''),
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
+            fullpath=NotifyJSON.quote(self.fullpath, safe='/'),
             args=NotifyJSON.urlencode(args),
         )
 

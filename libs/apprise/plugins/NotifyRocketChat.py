@@ -31,6 +31,7 @@ from json import dumps
 from itertools import chain
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyImageSize
 from ..common import NotifyFormat
 from ..common import NotifyType
@@ -279,7 +280,7 @@ class NotifyRocketChat(NotifyBase):
 
         return
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -297,13 +298,14 @@ class NotifyRocketChat(NotifyBase):
         if self.mode == RocketChatAuthMode.BASIC:
             auth = '{user}:{password}@'.format(
                 user=NotifyRocketChat.quote(self.user, safe=''),
-                password=NotifyRocketChat.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         else:
             auth = '{user}{webhook}@'.format(
                 user='{}:'.format(NotifyRocketChat.quote(self.user, safe=''))
                 if self.user else '',
-                webhook=NotifyRocketChat.quote(self.webhook, safe=''),
+                webhook=self.pprint(self.webhook, privacy, safe=''),
             )
 
         default_port = 443 if self.secure else 80
@@ -562,9 +564,19 @@ class NotifyRocketChat(NotifyBase):
                 self.headers['X-User-Id'] = response.get(
                     'data', {'userId': None}).get('userId')
 
+        except (AttributeError, TypeError, ValueError):
+            # Our response was not the JSON type we had expected it to be
+            # - ValueError = r.content is Unparsable
+            # - TypeError = r.content is None
+            # - AttributeError = r is None
+            self.logger.warning(
+                'A commuication error occured authenticating {} on '
+                'Rocket.Chat.'.format(self.user))
+            return False
+
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured authenticating {} on '
+                'A connection error occured authenticating {} on '
                 'Rocket.Chat.'.format(self.user))
             self.logger.debug('Socket Exception: %s' % str(e))
             return False

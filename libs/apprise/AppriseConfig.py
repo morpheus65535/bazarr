@@ -30,6 +30,7 @@ from . import ConfigBase
 from . import URLBase
 from .AppriseAsset import AppriseAsset
 
+from .common import MATCH_ALL_TAG
 from .utils import GET_SCHEMA_RE
 from .utils import parse_list
 from .utils import is_exclusive_match
@@ -55,8 +56,19 @@ class AppriseConfig(object):
 
         If no path is specified then a default list is used.
 
-        If cache is set to True, then after the data is loaded, it's cached
-        within this object so it isn't retrieved again later.
+        By default we cache our responses so that subsiquent calls does not
+        cause the content to be retrieved again. Setting this to False does
+        mean more then one call can be made to retrieve the (same) data.  This
+        method can be somewhat inefficient if disabled and you're set up to
+        make remote calls.  Only disable caching if you understand the
+        consequences.
+
+        You can alternatively set the cache value to an int identifying the
+        number of seconds the previously retrieved can exist for before it
+        should be considered expired.
+
+        It's also worth nothing that the cache value is only set to elements
+        that are not already of subclass ConfigBase()
         """
 
         # Initialize a server list of URLs
@@ -66,23 +78,42 @@ class AppriseConfig(object):
         self.asset = \
             asset if isinstance(asset, AppriseAsset) else AppriseAsset()
 
+        # Set our cache flag
+        self.cache = cache
+
         if paths is not None:
             # Store our path(s)
             self.add(paths)
 
         return
 
-    def add(self, configs, asset=None, tag=None):
+    def add(self, configs, asset=None, tag=None, cache=True):
         """
         Adds one or more config URLs into our list.
 
         You can override the global asset if you wish by including it with the
         config(s) that you add.
 
+        By default we cache our responses so that subsiquent calls does not
+        cause the content to be retrieved again. Setting this to False does
+        mean more then one call can be made to retrieve the (same) data.  This
+        method can be somewhat inefficient if disabled and you're set up to
+        make remote calls.  Only disable caching if you understand the
+        consequences.
+
+        You can alternatively set the cache value to an int identifying the
+        number of seconds the previously retrieved can exist for before it
+        should be considered expired.
+
+        It's also worth nothing that the cache value is only set to elements
+        that are not already of subclass ConfigBase()
         """
 
         # Initialize our return status
         return_status = True
+
+        # Initialize our default cache value
+        cache = cache if cache is not None else self.cache
 
         if isinstance(asset, AppriseAsset):
             # prepare default asset
@@ -103,7 +134,7 @@ class AppriseConfig(object):
                 'specified.'.format(type(configs)))
             return False
 
-        # Iterate over our
+        # Iterate over our configuration
         for _config in configs:
 
             if isinstance(_config, ConfigBase):
@@ -122,7 +153,8 @@ class AppriseConfig(object):
 
             # Instantiate ourselves an object, this function throws or
             # returns None if it fails
-            instance = AppriseConfig.instantiate(_config, asset=asset, tag=tag)
+            instance = AppriseConfig.instantiate(
+                _config, asset=asset, tag=tag, cache=cache)
             if not isinstance(instance, ConfigBase):
                 return_status = False
                 continue
@@ -133,7 +165,7 @@ class AppriseConfig(object):
         # Return our status
         return return_status
 
-    def servers(self, tag=None, cache=True):
+    def servers(self, tag=MATCH_ALL_TAG, *args, **kwargs):
         """
         Returns all of our servers dynamically build based on parsed
         configuration.
@@ -160,21 +192,20 @@ class AppriseConfig(object):
         for entry in self.configs:
 
             # Apply our tag matching based on our defined logic
-            if tag is not None and not is_exclusive_match(
-                    logic=tag, data=entry.tags):
-                continue
-
-            # Build ourselves a list of services dynamically and return the
-            # as a list
-            response.extend(entry.servers(cache=cache))
+            if is_exclusive_match(
+                    logic=tag, data=entry.tags, match_all=MATCH_ALL_TAG):
+                # Build ourselves a list of services dynamically and return the
+                # as a list
+                response.extend(entry.servers())
 
         return response
 
     @staticmethod
-    def instantiate(url, asset=None, tag=None, suppress_exceptions=True):
+    def instantiate(url, asset=None, tag=None, cache=None,
+                    suppress_exceptions=True):
         """
         Returns the instance of a instantiated configuration plugin based on
-        the provided Server URL.  If the url fails to be parsed, then None
+        the provided Config URL.  If the url fails to be parsed, then None
         is returned.
 
         """
@@ -210,6 +241,10 @@ class AppriseConfig(object):
         # Prepare our Asset Object
         results['asset'] = \
             asset if isinstance(asset, AppriseAsset) else AppriseAsset()
+
+        if cache is not None:
+            # Force an over-ride of the cache value to what we have specified
+            results['cache'] = cache
 
         if suppress_exceptions:
             try:
@@ -262,10 +297,11 @@ class AppriseConfig(object):
         # If we reach here, then we indexed out of range
         raise IndexError('list index out of range')
 
-    def pop(self, index):
+    def pop(self, index=-1):
         """
-        Removes an indexed Apprise Configuration from the stack and
-        returns it.
+        Removes an indexed Apprise Configuration from the stack and returns it.
+
+        By default, the last element is removed from the list
         """
         # Remove our entry
         return self.configs.pop(index)
@@ -275,6 +311,20 @@ class AppriseConfig(object):
         Returns the indexed config entry of a loaded apprise configuration
         """
         return self.configs[index]
+
+    def __bool__(self):
+        """
+        Allows the Apprise object to be wrapped in an Python 3.x based 'if
+        statement'.  True is returned if at least one service has been loaded.
+        """
+        return True if self.configs else False
+
+    def __nonzero__(self):
+        """
+        Allows the Apprise object to be wrapped in an Python 2.x based 'if
+        statement'.  True is returned if at least one service has been loaded.
+        """
+        return True if self.configs else False
 
     def __iter__(self):
         """

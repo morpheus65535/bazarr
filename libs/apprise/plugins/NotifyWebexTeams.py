@@ -63,10 +63,8 @@ from json import dumps
 from .NotifyBase import NotifyBase
 from ..common import NotifyType
 from ..common import NotifyFormat
+from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
-
-# Token required as part of the API request
-VALIDATE_TOKEN = re.compile(r'[a-z0-9]{80}', re.I)
 
 # Extend HTTP Error Messages
 # Based on: https://developer.webex.com/docs/api/basics/rate-limiting
@@ -119,7 +117,7 @@ class NotifyWebexTeams(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'[a-z0-9]{80}', 'i'),
+            'regex': (r'^[a-z0-9]{80}$', 'i'),
         },
     })
 
@@ -129,19 +127,14 @@ class NotifyWebexTeams(NotifyBase):
         """
         super(NotifyWebexTeams, self).__init__(**kwargs)
 
-        if not token:
-            msg = 'The Webex Teams token is not specified.'
-            self.logger.warning(msg)
-            raise TypeError(msg)
-
-        if not VALIDATE_TOKEN.match(token.strip()):
+        # The token associated with the account
+        self.token = validate_regex(
+            token, *self.template_tokens['token']['regex'])
+        if not self.token:
             msg = 'The Webex Teams token specified ({}) is invalid.'\
                 .format(token)
             self.logger.warning(msg)
             raise TypeError(msg)
-
-        # The token associated with the account
-        self.token = token.strip()
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
@@ -210,7 +203,7 @@ class NotifyWebexTeams(NotifyBase):
 
         return True
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -224,7 +217,7 @@ class NotifyWebexTeams(NotifyBase):
 
         return '{schema}://{token}/?{args}'.format(
             schema=self.secure_protocol,
-            token=NotifyWebexTeams.quote(self.token, safe=''),
+            token=self.pprint(self.token, privacy, safe=''),
             args=NotifyWebexTeams.urlencode(args),
         )
 
@@ -255,7 +248,7 @@ class NotifyWebexTeams(NotifyBase):
         result = re.match(
             r'^https?://api\.ciscospark\.com/v[1-9][0-9]*/webhooks/incoming/'
             r'(?P<webhook_token>[A-Z0-9_-]+)/?'
-            r'(?P<args>\?[.+])?$', url, re.I)
+            r'(?P<args>\?.+)?$', url, re.I)
 
         if result:
             return NotifyWebexTeams.parse_url(

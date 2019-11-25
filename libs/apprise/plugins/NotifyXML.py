@@ -28,6 +28,7 @@ import six
 import requests
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyImageSize
 from ..common import NotifyType
 from ..AppriseLocale import gettext_lazy as _
@@ -57,7 +58,6 @@ class NotifyXML(NotifyBase):
     # local anyway
     request_rate_per_sec = 0
 
-    # Define object templates
     # Define object templates
     templates = (
         '{schema}://{host}',
@@ -138,7 +138,7 @@ class NotifyXML(NotifyBase):
 
         return
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -158,7 +158,8 @@ class NotifyXML(NotifyBase):
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
                 user=NotifyXML.quote(self.user, safe=''),
-                password=NotifyXML.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         elif self.user:
             auth = '{user}@'.format(
@@ -167,12 +168,13 @@ class NotifyXML(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}/?{args}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             hostname=NotifyXML.quote(self.host, safe=''),
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
+            fullpath=NotifyXML.quote(self.fullpath, safe='/'),
             args=NotifyXML.urlencode(args),
         )
 

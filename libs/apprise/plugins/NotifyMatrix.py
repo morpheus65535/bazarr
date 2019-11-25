@@ -35,6 +35,7 @@ from json import loads
 from time import time
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyType
 from ..common import NotifyImageSize
 from ..common import NotifyFormat
@@ -920,8 +921,11 @@ class NotifyMatrix(NotifyBase):
                     # Return; we're done
                     return (False, response)
 
-            except ValueError:
+            except (AttributeError, TypeError, ValueError):
                 # This gets thrown if we can't parse our JSON Response
+                #  - ValueError = r.content is Unparsable
+                #  - TypeError = r.content is None
+                #  - AttributeError = r is None
                 self.logger.warning('Invalid response from Matrix server.')
                 self.logger.debug(
                     'Response Details:\r\n{}'.format(r.content))
@@ -946,7 +950,7 @@ class NotifyMatrix(NotifyBase):
         """
         self._logout()
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -965,7 +969,8 @@ class NotifyMatrix(NotifyBase):
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
                 user=NotifyMatrix.quote(self.user, safe=''),
-                password=NotifyMatrix.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
 
         elif self.user:

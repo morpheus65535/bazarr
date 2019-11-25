@@ -30,14 +30,15 @@ from markdown import markdown
 from itertools import chain
 from .common import NotifyType
 from .common import NotifyFormat
+from .common import MATCH_ALL_TAG
 from .utils import is_exclusive_match
 from .utils import parse_list
 from .utils import split_urls
-from .utils import GET_SCHEMA_RE
 from .logger import logger
 
 from .AppriseAsset import AppriseAsset
 from .AppriseConfig import AppriseConfig
+from .AppriseAttachment import AppriseAttachment
 from .AppriseLocale import AppriseLocale
 from .config.ConfigBase import ConfigBase
 from .plugins.NotifyBase import NotifyBase
@@ -107,38 +108,8 @@ class Apprise(object):
         results = None
 
         if isinstance(url, six.string_types):
-            # swap hash (#) tag values with their html version
-            _url = url.replace('/#', '/%23')
-
-            # Attempt to acquire the schema at the very least to allow our
-            # plugins to determine if they can make a better interpretation of
-            # a URL geared for them
-            schema = GET_SCHEMA_RE.match(_url)
-            if schema is None:
-                logger.error(
-                    'Unparseable schema:// found in URL {}.'.format(url))
-                return None
-
-            # Ensure our schema is always in lower case
-            schema = schema.group('schema').lower()
-
-            # Some basic validation
-            if schema not in plugins.SCHEMA_MAP:
-                # Give the user the benefit of the doubt that the user may be
-                # using one of the URLs provided to them by their notification
-                # service. Before we fail for good, just scan all the plugins
-                # that support he native_url() parse function
-                results = \
-                    next((r['plugin'].parse_native_url(_url)
-                          for r in plugins.MODULE_MAP.values()
-                          if r['plugin'].parse_native_url(_url) is not None),
-                         None)
-
-            else:
-                # Parse our url details of the server object as dictionary
-                # containing all of the information parsed from our URL
-                results = plugins.SCHEMA_MAP[schema].parse_url(_url)
-
+            # Acquire our url tokens
+            results = plugins.url_to_dict(url)
             if results is None:
                 # Failed to parse the server URL
                 logger.error('Unparseable URL {}.'.format(url))
@@ -273,29 +244,11 @@ class Apprise(object):
         """
         self.servers[:] = []
 
-    def notify(self, body, title='', notify_type=NotifyType.INFO,
-               body_format=None, tag=None):
+    def find(self, tag=MATCH_ALL_TAG):
         """
-        Send a notification to all of the plugins previously loaded.
-
-        If the body_format specified is NotifyFormat.MARKDOWN, it will
-        be converted to HTML if the Notification type expects this.
-
-        if the tag is specified (either a string or a set/list/tuple
-        of strings), then only the notifications flagged with that
-        tagged value are notified.  By default all added services
-        are notified (tag=None)
+        Returns an list of all servers matching against the tag specified.
 
         """
-
-        # Initialize our return result
-        status = len(self) > 0
-
-        if not (title or body):
-            return False
-
-        # Tracks conversions
-        conversion_map = dict()
 
         # Build our tag setup
         #   - top level entries are treated as an 'or'
@@ -319,78 +272,134 @@ class Apprise(object):
 
             for server in servers:
                 # Apply our tag matching based on our defined logic
-                if tag is not None and not is_exclusive_match(
-                        logic=tag, data=server.tags):
-                    continue
+                if is_exclusive_match(
+                        logic=tag, data=server.tags, match_all=MATCH_ALL_TAG):
+                    yield server
+        return
 
-                # If our code reaches here, we either did not define a tag (it
-                # was set to None), or we did define a tag and the logic above
-                # determined we need to notify the service it's associated with
-                if server.notify_format not in conversion_map:
-                    if body_format == NotifyFormat.MARKDOWN and \
-                            server.notify_format == NotifyFormat.HTML:
+    def notify(self, body, title='', notify_type=NotifyType.INFO,
+               body_format=None, tag=MATCH_ALL_TAG, attach=None):
+        """
+        Send a notification to all of the plugins previously loaded.
 
-                        # Apply Markdown
-                        conversion_map[server.notify_format] = markdown(body)
+        If the body_format specified is NotifyFormat.MARKDOWN, it will
+        be converted to HTML if the Notification type expects this.
 
-                    elif body_format == NotifyFormat.TEXT and \
-                            server.notify_format == NotifyFormat.HTML:
+        if the tag is specified (either a string or a set/list/tuple
+        of strings), then only the notifications flagged with that
+        tagged value are notified.  By default all added services
+        are notified (tag=MATCH_ALL_TAG)
 
-                        # Basic TEXT to HTML format map; supports keys only
-                        re_map = {
-                            # Support Ampersand
-                            r'&': '&amp;',
+        This function returns True if all notifications were successfully
+        sent, False if even just one of them fails, and None if no
+        notifications were sent at all as a result of tag filtering and/or
+        simply having empty configuration files that were read.
 
-                            # Spaces to &nbsp; for formatting purposes since
-                            # multiple spaces are treated as one an this may
-                            # not be the callers intention
-                            r' ': '&nbsp;',
+        Attach can contain a list of attachment URLs.  attach can also be
+        represented by a an AttachBase() (or list of) object(s). This
+        identifies the products you wish to notify
+        """
 
-                            # Tab support
-                            r'\t': '&nbsp;&nbsp;&nbsp;',
+        if len(self) == 0:
+            # Nothing to notify
+            return False
 
-                            # Greater than and Less than Characters
-                            r'>': '&gt;',
-                            r'<': '&lt;',
-                        }
+        # Initialize our return result which only turns to True if we send
+        # at least one valid notification
+        status = None
 
-                        # Compile our map
-                        re_table = re.compile(
-                            r'(' + '|'.join(
-                                map(re.escape, re_map.keys())) + r')',
-                            re.IGNORECASE,
-                        )
+        if not (title or body):
+            return False
 
-                        # Execute our map against our body in addition to
-                        # swapping out new lines and replacing them with <br/>
-                        conversion_map[server.notify_format] = \
-                            re.sub(r'\r*\n', '<br/>\r\n',
-                                   re_table.sub(
-                                       lambda x: re_map[x.group()], body))
+        # Tracks conversions
+        conversion_map = dict()
 
-                    else:
-                        # Store entry directly
-                        conversion_map[server.notify_format] = body
+        # Prepare attachments if required
+        if attach is not None and not isinstance(attach, AppriseAttachment):
+            try:
+                attach = AppriseAttachment(attach, asset=self.asset)
 
-                try:
-                    # Send notification
-                    if not server.notify(
-                            body=conversion_map[server.notify_format],
-                            title=title,
-                            notify_type=notify_type):
+            except TypeError:
+                # bad attachments
+                return False
 
-                        # Toggle our return status flag
-                        status = False
+        # Iterate over our loaded plugins
+        for server in self.find(tag):
+            if status is None:
+                # We have at least one server to notify; change status
+                # to be a default value of True from now (purely an
+                # initialiation at this point)
+                status = True
 
-                except TypeError:
-                    # These our our internally thrown notifications
+            # If our code reaches here, we either did not define a tag (it
+            # was set to None), or we did define a tag and the logic above
+            # determined we need to notify the service it's associated with
+            if server.notify_format not in conversion_map:
+                if body_format == NotifyFormat.MARKDOWN and \
+                        server.notify_format == NotifyFormat.HTML:
+
+                    # Apply Markdown
+                    conversion_map[server.notify_format] = markdown(body)
+
+                elif body_format == NotifyFormat.TEXT and \
+                        server.notify_format == NotifyFormat.HTML:
+
+                    # Basic TEXT to HTML format map; supports keys only
+                    re_map = {
+                        # Support Ampersand
+                        r'&': '&amp;',
+
+                        # Spaces to &nbsp; for formatting purposes since
+                        # multiple spaces are treated as one an this may
+                        # not be the callers intention
+                        r' ': '&nbsp;',
+
+                        # Tab support
+                        r'\t': '&nbsp;&nbsp;&nbsp;',
+
+                        # Greater than and Less than Characters
+                        r'>': '&gt;',
+                        r'<': '&lt;',
+                    }
+
+                    # Compile our map
+                    re_table = re.compile(
+                        r'(' + '|'.join(
+                            map(re.escape, re_map.keys())) + r')',
+                        re.IGNORECASE,
+                    )
+
+                    # Execute our map against our body in addition to
+                    # swapping out new lines and replacing them with <br/>
+                    conversion_map[server.notify_format] = \
+                        re.sub(r'\r*\n', '<br/>\r\n',
+                               re_table.sub(
+                                   lambda x: re_map[x.group()], body))
+
+                else:
+                    # Store entry directly
+                    conversion_map[server.notify_format] = body
+
+            try:
+                # Send notification
+                if not server.notify(
+                        body=conversion_map[server.notify_format],
+                        title=title,
+                        notify_type=notify_type,
+                        attach=attach):
+
+                    # Toggle our return status flag
                     status = False
 
-                except Exception:
-                    # A catch all so we don't have to abort early
-                    # just because one of our plugins has a bug in it.
-                    logger.exception("Notification Exception")
-                    status = False
+            except TypeError:
+                # These our our internally thrown notifications
+                status = False
+
+            except Exception:
+                # A catch all so we don't have to abort early
+                # just because one of our plugins has a bug in it.
+                logger.exception("Notification Exception")
+                status = False
 
         return status
 
@@ -518,6 +527,20 @@ class Apprise(object):
 
         # If we reach here, then we indexed out of range
         raise IndexError('list index out of range')
+
+    def __bool__(self):
+        """
+        Allows the Apprise object to be wrapped in an Python 3.x based 'if
+        statement'.  True is returned if at least one service has been loaded.
+        """
+        return len(self) > 0
+
+    def __nonzero__(self):
+        """
+        Allows the Apprise object to be wrapped in an Python 2.x based 'if
+        statement'.  True is returned if at least one service has been loaded.
+        """
+        return len(self) > 0
 
     def __iter__(self):
         """

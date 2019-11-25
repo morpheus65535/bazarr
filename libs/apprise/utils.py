@@ -28,6 +28,7 @@ import six
 import contextlib
 import os
 from os.path import expanduser
+from functools import reduce
 
 try:
     # Python 2.7
@@ -113,9 +114,16 @@ GET_EMAIL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Regular expression used to extract a phone number
+GET_PHONE_NO_RE = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
+
 # Regular expression used to destinguish between multiple URLs
 URL_DETECTION_RE = re.compile(
     r'([a-z0-9]+?:\/\/.*?)[\s,]*(?=$|[a-z0-9]+?:\/\/)', re.I)
+
+# validate_regex() utilizes this mapping to track and re-use pre-complied
+# regular expressions
+REGEX_VALIDATE_LOOKUP = {}
 
 
 def is_hostname(hostname):
@@ -512,14 +520,6 @@ def parse_list(*args):
         elif isinstance(arg, (set, list, tuple)):
             result += parse_list(*arg)
 
-        elif arg is None:
-            # Ignore
-            continue
-
-        else:
-            # Convert whatever it is to a string and work with it
-            result += parse_list(str(arg))
-
     #
     # filter() eliminates any empty entries
     #
@@ -529,7 +529,7 @@ def parse_list(*args):
     return sorted([x for x in filter(bool, list(set(result)))])
 
 
-def is_exclusive_match(logic, data):
+def is_exclusive_match(logic, data, match_all='all'):
     """
 
     The data variable should always be a set of strings that the logic can be
@@ -547,21 +547,22 @@ def is_exclusive_match(logic, data):
         logic=[('tagB', 'tagC')]          = tagB and tagC
     """
 
-    if logic is None:
-        # If there is no logic to apply then we're done early
-        return True
-
-    elif isinstance(logic, six.string_types):
+    if isinstance(logic, six.string_types):
         # Update our logic to support our delimiters
         logic = set(parse_list(logic))
+
+    if not logic:
+        # If there is no logic to apply then we're done early; we only match
+        # if there is also no data to match against
+        return not data
 
     if not isinstance(logic, (list, tuple, set)):
         # garbage input
         return False
 
-    # using the data detected; determine if we'll allow the
-    # notification to be sent or not
-    matched = (len(logic) == 0)
+    # Track what we match against; but by default we do not match
+    # against anything
+    matched = False
 
     # Every entry here will be or'ed with the next
     for entry in logic:
@@ -572,8 +573,13 @@ def is_exclusive_match(logic, data):
         # treat these entries as though all elements found
         # must exist in the notification service
         entries = set(parse_list(entry))
+        if not entries:
+            # We got a bogus set of tags to parse
+            # If there is no logic to apply then we're done early; we only
+            # match if there is also no data to match against
+            return not data
 
-        if len(entries.intersection(data)) == len(entries):
+        if len(entries.intersection(data.union({match_all}))) == len(entries):
             # our set contains all of the entries found
             # in our notification data set
             matched = True
@@ -584,6 +590,82 @@ def is_exclusive_match(logic, data):
     # Return True if we matched against our logic (or simply none was
     # specified).
     return matched
+
+
+def validate_regex(value, regex=r'[^\s]+', flags=re.I, strip=True, fmt=None):
+    """
+    A lot of the tokens, secrets, api keys, etc all have some regular
+    expression validation they support.  This hashes the regex after it's
+    compiled and returns it's content if matched, otherwise it returns None.
+
+    This function greatly increases performance as it prevents apprise modules
+    from having to pre-compile all of their regular expressions.
+
+        value is the element being tested
+        regex is the regular expression to be compiled and tested. By default
+         we extract the first chunk of code while eliminating surrounding
+         whitespace (if present)
+
+        flags is the regular expression flags that should be applied
+        format is used to alter the response format if the regular
+         expression matches. You identify your format using {tags}.
+         Effectively nesting your ID's between {}. Consider a regex of:
+          '(?P<year>[0-9]{2})[0-9]+(?P<value>[A-Z])'
+        to which you could set your format up as '{value}-{year}'. This
+        would substitute the matched groups and format a response.
+    """
+
+    if flags:
+        # Regex String -> Flag Lookup Map
+        _map = {
+            # Ignore Case
+            'i': re.I,
+            # Multi Line
+            'm': re.M,
+            # Dot Matches All
+            's': re.S,
+            # Locale Dependant
+            'L': re.L,
+            # Unicode Matching
+            'u': re.U,
+            # Verbose
+            'x': re.X,
+        }
+
+        if isinstance(flags, six.string_types):
+            # Convert a string of regular expression flags into their
+            # respected integer (expected) Python values and perform
+            # a bit-wise or on each match found:
+            flags = reduce(
+                lambda x, y: x | y,
+                [0] + [_map[f] for f in flags if f in _map])
+
+    else:
+        # Handles None/False/'' cases
+        flags = 0
+
+    # A key is used to store our compiled regular expression
+    key = '{}{}'.format(regex, flags)
+
+    if key not in REGEX_VALIDATE_LOOKUP:
+        REGEX_VALIDATE_LOOKUP[key] = re.compile(regex, flags)
+
+    # Perform our lookup usig our pre-compiled result
+    try:
+        result = REGEX_VALIDATE_LOOKUP[key].match(value)
+        if not result:
+            # let outer exception handle this
+            raise TypeError
+
+        if fmt:
+            # Map our format back to our response
+            value = fmt.format(**result.groupdict())
+
+    except (TypeError, AttributeError):
+        return None
+
+    # Return our response
+    return value.strip() if strip else value
 
 
 @contextlib.contextmanager

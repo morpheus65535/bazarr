@@ -35,6 +35,7 @@ from json import dumps
 from json import loads
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..utils import parse_bool
 from ..common import NotifyType
 from .. import __version__ as VERSION
@@ -138,7 +139,7 @@ class NotifyEmby(NotifyBase):
 
         if not self.user:
             # User was not specified
-            msg = 'No Username was specified.'
+            msg = 'No Emby username was specified.'
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -239,9 +240,12 @@ class NotifyEmby(NotifyBase):
         try:
             results = loads(r.content)
 
-        except ValueError:
-            # A string like '' would cause this; basicallly the content
-            # that was provided was not a JSON string. We can stop here
+        except (AttributeError, TypeError, ValueError):
+            # ValueError = r.content is Unparsable
+            # TypeError = r.content is None
+            # AttributeError = r is None
+
+            # This is a problem; abort
             return False
 
         # Acquire our Access Token
@@ -399,10 +403,12 @@ class NotifyEmby(NotifyBase):
         try:
             results = loads(r.content)
 
-        except ValueError:
-            # A string like '' would cause this; basicallly the content
-            # that was provided was not a JSON string. There is nothing
-            # more we can do at this point
+        except (AttributeError, TypeError, ValueError):
+            # ValueError = r.content is Unparsable
+            # TypeError = r.content is None
+            # AttributeError = r is None
+
+            # We need to abort at this point
             return sessions
 
         for entry in results:
@@ -581,7 +587,7 @@ class NotifyEmby(NotifyBase):
 
         return not has_error
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -599,7 +605,8 @@ class NotifyEmby(NotifyBase):
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
                 user=NotifyEmby.quote(self.user, safe=''),
-                password=NotifyEmby.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         else:  # self.user is set
             auth = '{user}@'.format(

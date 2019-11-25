@@ -49,6 +49,7 @@ from ..common import NotifyImageSize
 from ..common import NotifyFormat
 from ..common import NotifyType
 from ..utils import parse_bool
+from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
 
@@ -144,19 +145,21 @@ class NotifyDiscord(NotifyBase):
         """
         super(NotifyDiscord, self).__init__(**kwargs)
 
-        if not webhook_id:
-            msg = 'An invalid Client ID was specified.'
+        # Webhook ID (associated with project)
+        self.webhook_id = validate_regex(webhook_id)
+        if not self.webhook_id:
+            msg = 'An invalid Discord Webhook ID ' \
+                  '({}) was specified.'.format(webhook_id)
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        if not webhook_token:
-            msg = 'An invalid Webhook Token was specified.'
+        # Webhook Token (associated with project)
+        self.webhook_token = validate_regex(webhook_token)
+        if not self.webhook_token:
+            msg = 'An invalid Discord Webhook Token ' \
+                  '({}) was specified.'.format(webhook_token)
             self.logger.warning(msg)
             raise TypeError(msg)
-
-        # Store our data
-        self.webhook_id = webhook_id
-        self.webhook_token = webhook_token
 
         # Text To Speech
         self.tts = tts
@@ -175,17 +178,12 @@ class NotifyDiscord(NotifyBase):
 
         return
 
-    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
+             **kwargs):
         """
         Perform Discord Notification
         """
 
-        headers = {
-            'User-Agent': self.app_id,
-            'Content-Type': 'multipart/form-data',
-        }
-
-        # Prepare JSON Object
         payload = {
             # Text-To-Speech
             'tts': self.tts,
@@ -255,6 +253,50 @@ class NotifyDiscord(NotifyBase):
             # Optionally override the default username of the webhook
             payload['username'] = self.user
 
+        if not self._send(payload):
+            # We failed to post our message
+            return False
+
+        if attach:
+            # Update our payload; the idea is to preserve it's other detected
+            # and assigned values for re-use here too
+            payload.update({
+                # Text-To-Speech
+                'tts': False,
+                # Wait until the upload has posted itself before continuing
+                'wait': True,
+            })
+
+            # Remove our text/title based content for attachment use
+            if 'embeds' in payload:
+                # Markdown
+                del payload['embeds']
+
+            if 'content' in payload:
+                # Markdown
+                del payload['content']
+
+            # Send our attachments
+            for attachment in attach:
+                self.logger.info(
+                    'Posting Discord Attachment {}'.format(attachment.name))
+                if not self._send(payload, attach=attachment):
+                    # We failed to post our message
+                    return False
+
+        # Otherwise return
+        return True
+
+    def _send(self, payload, attach=None, **kwargs):
+        """
+        Wrapper to the requests (post) object
+        """
+
+        # Our headers
+        headers = {
+            'User-Agent': self.app_id,
+        }
+
         # Construct Notify URL
         notify_url = '{0}/{1}/{2}'.format(
             self.notify_url,
@@ -270,11 +312,22 @@ class NotifyDiscord(NotifyBase):
         # Always call throttle before any remote server i/o is made
         self.throttle()
 
+        # Our attachment path (if specified)
+        files = None
         try:
+
+            # Open our attachment path if required:
+            if attach:
+                files = {'file': (attach.name, open(attach.path, 'rb'))}
+
+            else:
+                headers['Content-Type'] = 'application/json; charset=utf-8'
+
             r = requests.post(
                 notify_url,
-                data=dumps(payload),
+                data=payload if files else dumps(payload),
                 headers=headers,
+                files=files,
                 verify=self.verify_certificate,
             )
             if r.status_code not in (
@@ -285,8 +338,9 @@ class NotifyDiscord(NotifyBase):
                     NotifyBase.http_response_code_lookup(r.status_code)
 
                 self.logger.warning(
-                    'Failed to send Discord notification: '
+                    'Failed to send {}to Discord notification: '
                     '{}{}error={}.'.format(
+                        attach.name if attach else '',
                         status_str,
                         ', ' if status_str else '',
                         r.status_code))
@@ -297,19 +351,32 @@ class NotifyDiscord(NotifyBase):
                 return False
 
             else:
-                self.logger.info('Sent Discord notification.')
+                self.logger.info('Sent Discord {}.'.format(
+                    'attachment' if attach else 'notification'))
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Discord '
-                'notification.'
-            )
+                'A Connection error occured posting {}to Discord.'.format(
+                    attach.name if attach else ''))
             self.logger.debug('Socket Exception: %s' % str(e))
             return False
 
+        except (OSError, IOError) as e:
+            self.logger.warning(
+                'An I/O error occured while reading {}.'.format(
+                    attach.name if attach else 'attachment'))
+            self.logger.debug('I/O Exception: %s' % str(e))
+            return False
+
+        finally:
+            # Close our file (if it's open) stored in the second element
+            # of our files tuple (index 1)
+            if files:
+                files['file'][1].close()
+
         return True
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -328,8 +395,8 @@ class NotifyDiscord(NotifyBase):
 
         return '{schema}://{webhook_id}/{webhook_token}/?{args}'.format(
             schema=self.secure_protocol,
-            webhook_id=NotifyDiscord.quote(self.webhook_id, safe=''),
-            webhook_token=NotifyDiscord.quote(self.webhook_token, safe=''),
+            webhook_id=self.pprint(self.webhook_id, privacy, safe=''),
+            webhook_token=self.pprint(self.webhook_token, privacy, safe=''),
             args=NotifyDiscord.urlencode(args),
         )
 
@@ -405,7 +472,7 @@ class NotifyDiscord(NotifyBase):
             r'^https?://discordapp\.com/api/webhooks/'
             r'(?P<webhook_id>[0-9]+)/'
             r'(?P<webhook_token>[A-Z0-9_-]+)/?'
-            r'(?P<args>\?[.+])?$', url, re.I)
+            r'(?P<args>\?.+)?$', url, re.I)
 
         if result:
             return NotifyDiscord.parse_url(
@@ -427,8 +494,8 @@ class NotifyDiscord(NotifyBase):
 
         """
         regex = re.compile(
-            r'^\s*#+\s*(?P<name>[^#\n]+)([ \r\t\v#])?'
-            r'(?P<value>([^ \r\t\v#].+?)(\n(?!\s#))|\s*$)', flags=re.S | re.M)
+            r'\s*#[# \t\v]*(?P<name>[^\n]+)(\n|\s*$)'
+            r'\s*((?P<value>[^#].+?)(?=\s*$|[\r\n]+\s*#))?', flags=re.S)
 
         common = regex.finditer(markdown)
         fields = list()
@@ -436,8 +503,9 @@ class NotifyDiscord(NotifyBase):
             d = el.groupdict()
 
             fields.append({
-                'name': d.get('name', '').strip(),
-                'value': '```md\n' + d.get('value', '').strip() + '\n```'
+                'name': d.get('name', '').strip('# \r\n\t\v'),
+                'value': '```md\n' +
+                (d.get('value').strip() if d.get('value') else '') + '\n```'
             })
 
         return fields

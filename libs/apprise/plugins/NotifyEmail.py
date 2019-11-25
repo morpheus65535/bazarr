@@ -27,14 +27,19 @@ import re
 import six
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+
 from socket import error as SocketError
 from datetime import datetime
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyFormat
 from ..common import NotifyType
 from ..utils import is_email
 from ..utils import parse_list
+from ..utils import GET_EMAIL_RE
 from ..AppriseLocale import gettext_lazy as _
 
 
@@ -195,6 +200,23 @@ EMAIL_TEMPLATES = (
         },
     ),
 
+    # SendGrid (Email Server)
+    # You must specify an authenticated sender address in the from= settings
+    # and a valid email in the to= to deliver your emails to
+    (
+        'SendGrid',
+        re.compile(
+            r'^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@'
+            r'(?P<domain>(\.smtp)?sendgrid\.(com|net))$', re.I),
+        {
+            'port': 465,
+            'smtp_host': 'smtp.sendgrid.net',
+            'secure': True,
+            'secure_mode': SecureMailMode.SSL,
+            'login_type': (WebBaseLogin.USERID, )
+        },
+    ),
+
     # Catch All
     (
         'Custom',
@@ -303,6 +325,14 @@ class NotifyEmail(NotifyBase):
             'name': _('SMTP Server'),
             'type': 'string',
         },
+        'cc': {
+            'name': _('Carbon Copy'),
+            'type': 'list:string',
+        },
+        'bcc': {
+            'name': _('Blind Carbon Copy'),
+            'type': 'list:string',
+        },
         'mode': {
             'name': _('Secure Mode'),
             'type': 'choice:string',
@@ -319,7 +349,8 @@ class NotifyEmail(NotifyBase):
     })
 
     def __init__(self, timeout=15, smtp_host=None, from_name=None,
-                 from_addr=None, secure_mode=None, targets=None, **kwargs):
+                 from_addr=None, secure_mode=None, targets=None, cc=None,
+                 bcc=None, **kwargs):
         """
         Initialize Email Object
 
@@ -345,6 +376,12 @@ class NotifyEmail(NotifyBase):
 
         # Acquire targets
         self.targets = parse_list(targets)
+
+        # Acquire Carbon Copies
+        self.cc = set()
+
+        # Acquire Blind Carbon Copies
+        self.bcc = set()
 
         # Now we want to construct the To and From email
         # addresses from the URL provided
@@ -382,6 +419,30 @@ class NotifyEmail(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        # Validate recipients (cc:) and drop bad ones:
+        for recipient in parse_list(cc):
+
+            if GET_EMAIL_RE.match(recipient):
+                self.cc.add(recipient)
+                continue
+
+            self.logger.warning(
+                'Dropped invalid Carbon Copy email '
+                '({}) specified.'.format(recipient),
+            )
+
+        # Validate recipients (bcc:) and drop bad ones:
+        for recipient in parse_list(bcc):
+
+            if GET_EMAIL_RE.match(recipient):
+                self.bcc.add(recipient)
+                continue
+
+            self.logger.warning(
+                'Dropped invalid Blind Carbon Copy email '
+                '({}) specified.'.format(recipient),
+            )
+
         # Apply any defaults based on certain known configurations
         self.NotifyEmailDefaults()
 
@@ -399,11 +460,17 @@ class NotifyEmail(NotifyBase):
             # over-riding any smarts to be applied
             return
 
+        # detect our email address using our user/host combo
+        from_addr = '{}@{}'.format(
+            re.split(r'[\s@]+', self.user)[0],
+            self.host,
+        )
+
         for i in range(len(EMAIL_TEMPLATES)):  # pragma: no branch
-            self.logger.debug('Scanning %s against %s' % (
-                self.from_addr, EMAIL_TEMPLATES[i][0]
+            self.logger.trace('Scanning %s against %s' % (
+                from_addr, EMAIL_TEMPLATES[i][0]
             ))
-            match = EMAIL_TEMPLATES[i][1].match(self.from_addr)
+            match = EMAIL_TEMPLATES[i][1].match(from_addr)
             if match:
                 self.logger.info(
                     'Applying %s Defaults' %
@@ -445,7 +512,8 @@ class NotifyEmail(NotifyBase):
 
                 break
 
-    def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
+    def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
+             **kwargs):
         """
         Perform Email Notification
         """
@@ -469,26 +537,73 @@ class NotifyEmail(NotifyBase):
                 has_error = True
                 continue
 
+            # Strip target out of cc list if in To or Bcc
+            cc = (self.cc - self.bcc - set([to_addr]))
+            # Strip target out of bcc list if in To
+            bcc = (self.bcc - set([to_addr]))
+
             self.logger.debug(
                 'Email From: {} <{}>'.format(from_name, self.from_addr))
             self.logger.debug('Email To: {}'.format(to_addr))
+            if len(cc):
+                self.logger.debug('Email Cc: {}'.format(', '.join(cc)))
+            if len(bcc):
+                self.logger.debug('Email Bcc: {}'.format(', '.join(bcc)))
             self.logger.debug('Login ID: {}'.format(self.user))
             self.logger.debug(
                 'Delivery: {}:{}'.format(self.smtp_host, self.port))
 
             # Prepare Email Message
             if self.notify_format == NotifyFormat.HTML:
-                email = MIMEText(body, 'html')
+                content = MIMEText(body, 'html')
 
             else:
-                email = MIMEText(body, 'plain')
+                content = MIMEText(body, 'plain')
 
-            email['Subject'] = title
-            email['From'] = '{} <{}>'.format(from_name, self.from_addr)
-            email['To'] = to_addr
-            email['Date'] = \
+            base = MIMEMultipart() if attach else content
+            base['Subject'] = title
+            base['From'] = '{} <{}>'.format(from_name, self.from_addr)
+            base['To'] = to_addr
+            base['Cc'] = ','.join(cc)
+            base['Date'] = \
                 datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
-            email['X-Application'] = self.app_id
+            base['X-Application'] = self.app_id
+
+            if attach:
+                # First attach our body to our content as the first element
+                base.attach(content)
+
+                attach_error = False
+
+                # Now store our attachments
+                for attachment in attach:
+                    if not attachment:
+                        # We could not load the attachment; take an early
+                        # exit since this isn't what the end user wanted
+
+                        self.logger.warning(
+                            'The specified attachment could not be referenced:'
+                            ' {}.'.format(attachment.url(privacy=True)))
+
+                        # Mark our failure
+                        attach_error = True
+                        break
+
+                    with open(attachment.path, "rb") as abody:
+                        app = MIMEApplication(
+                            abody.read(), attachment.mimetype)
+
+                        app.add_header(
+                            'Content-Disposition',
+                            'attachment; filename="{}"'.format(
+                                attachment.name))
+
+                        base.attach(app)
+
+                if attach_error:
+                    # Mark our error and quit early
+                    has_error = True
+                    break
 
             # bind the socket variable to the current namespace
             socket = None
@@ -522,7 +637,9 @@ class NotifyEmail(NotifyBase):
 
                 # Send the email
                 socket.sendmail(
-                    self.from_addr, to_addr, email.as_string())
+                    self.from_addr,
+                    [to_addr] + list(cc) + list(bcc),
+                    base.as_string())
 
                 self.logger.info(
                     'Sent Email notification to "{}".'.format(to_addr))
@@ -543,7 +660,7 @@ class NotifyEmail(NotifyBase):
 
         return not has_error
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -561,6 +678,14 @@ class NotifyEmail(NotifyBase):
             'verify': 'yes' if self.verify_certificate else 'no',
         }
 
+        if len(self.cc) > 0:
+            # Handle our Carbon Copy Addresses
+            args['cc'] = ','.join(self.cc)
+
+        if len(self.bcc) > 0:
+            # Handle our Blind Carbon Copy Addresses
+            args['bcc'] = ','.join(self.bcc)
+
         # pull email suffix from username (if present)
         user = self.user.split('@')[0]
 
@@ -569,7 +694,8 @@ class NotifyEmail(NotifyBase):
         if self.user and self.password:
             auth = '{user}:{password}@'.format(
                 user=NotifyEmail.quote(user, safe=''),
-                password=NotifyEmail.quote(self.password, safe=''),
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
         else:
             # user url
@@ -592,7 +718,7 @@ class NotifyEmail(NotifyBase):
             hostname=NotifyEmail.quote(self.host, safe=''),
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
-            targets='' if has_targets else '/'.join(
+            targets='' if not has_targets else '/'.join(
                 [NotifyEmail.quote(x, safe='') for x in self.targets]),
             args=NotifyEmail.urlencode(args),
         )
@@ -647,6 +773,16 @@ class NotifyEmail(NotifyBase):
         if 'mode' in results['qsd'] and len(results['qsd']['mode']):
             # Extract the secure mode to over-ride the default
             results['secure_mode'] = results['qsd']['mode'].lower()
+
+        # Handle Carbon Copy Addresses
+        if 'cc' in results['qsd'] and len(results['qsd']['cc']):
+            results['cc'] = \
+                NotifyEmail.parse_list(results['qsd']['cc'])
+
+        # Handle Blind Carbon Copy Addresses
+        if 'bcc' in results['qsd'] and len(results['qsd']['bcc']):
+            results['bcc'] = \
+                NotifyEmail.parse_list(results['qsd']['bcc'])
 
         results['from_addr'] = from_addr
         results['smtp_host'] = smtp_host

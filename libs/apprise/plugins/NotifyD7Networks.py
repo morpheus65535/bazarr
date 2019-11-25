@@ -38,6 +38,7 @@ from json import dumps
 from json import loads
 
 from .NotifyBase import NotifyBase
+from ..URLBase import PrivacyMode
 from ..common import NotifyType
 from ..utils import parse_list
 from ..utils import parse_bool
@@ -130,7 +131,7 @@ class NotifyD7Networks(NotifyBase):
             'name': _('Target Phone No'),
             'type': 'string',
             'prefix': '+',
-            'regex': (r'[0-9\s)(+-]+', 'i'),
+            'regex': (r'^[0-9\s)(+-]+$', 'i'),
             'map_to': 'targets',
         },
         'targets': {
@@ -226,6 +227,8 @@ class NotifyD7Networks(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        return
+
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Depending on whether we are set to batch mode or single mode this
@@ -315,11 +318,13 @@ class NotifyD7Networks(NotifyBase):
                         json_response = loads(r.content)
                         status_str = json_response.get('message', status_str)
 
-                    except (AttributeError, ValueError):
-                        # could not parse JSON response... just use the status
-                        # we already have.
+                    except (AttributeError, TypeError, ValueError):
+                        # ValueError = r.content is Unparsable
+                        # TypeError = r.content is None
+                        # AttributeError = r is None
 
-                        # AttributeError means r.content was None
+                        # We could not parse JSON response.
+                        # We will just use the status we already have.
                         pass
 
                     self.logger.warning(
@@ -347,9 +352,13 @@ class NotifyD7Networks(NotifyBase):
                             count = int(json_response.get(
                                 'data', {}).get('messageCount', -1))
 
-                        except (AttributeError, ValueError, TypeError):
-                            # could not parse JSON response... just assume
-                            # that our delivery is okay for now
+                        except (AttributeError, TypeError, ValueError):
+                            # ValueError = r.content is Unparsable
+                            # TypeError = r.content is None
+                            # AttributeError = r is None
+
+                            # We could not parse JSON response. Assume that
+                            # our delivery is okay for now.
                             pass
 
                         if count != len(self.targets):
@@ -380,7 +389,7 @@ class NotifyD7Networks(NotifyBase):
 
         return not has_error
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -402,7 +411,8 @@ class NotifyD7Networks(NotifyBase):
         return '{schema}://{user}:{password}@{targets}/?{args}'.format(
             schema=self.secure_protocol,
             user=NotifyD7Networks.quote(self.user, safe=''),
-            password=NotifyD7Networks.quote(self.password, safe=''),
+            password=self.pprint(
+                self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             targets='/'.join(
                 [NotifyD7Networks.quote(x, safe='') for x in self.targets]),
             args=NotifyD7Networks.urlencode(args))

@@ -54,6 +54,7 @@ try:
     from dbus import Interface
     from dbus import Byte
     from dbus import ByteArray
+    from dbus import DBusException
 
     #
     # now we try to determine which mainloop(s) we can access
@@ -88,7 +89,7 @@ try:
         from gi.repository import GdkPixbuf
         NOTIFY_DBUS_IMAGE_SUPPORT = True
 
-    except (ImportError, ValueError):
+    except (ImportError, ValueError, AttributeError):
         # No problem; this will get caught in outer try/catch
 
         # A ValueError will get thrown upon calling gi.require_version() if
@@ -158,10 +159,6 @@ class NotifyDBus(NotifyBase):
     # Limit results to just the first 10 line otherwise there is just to much
     # content to display
     body_max_line_count = 10
-
-    # A title can not be used for SMS Messages.  Setting this to zero will
-    # cause any title (if defined) to get placed into the message body.
-    title_maxlen = 0
 
     # This entry is a bit hacky, but it allows us to unit-test this library
     # in an environment that simply doesn't have the gnome packages
@@ -240,6 +237,8 @@ class NotifyDBus(NotifyBase):
         # or not.
         self.include_image = include_image
 
+        return
+
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
         Perform DBus Notification
@@ -251,7 +250,20 @@ class NotifyDBus(NotifyBase):
             return False
 
         # Acquire our session
-        session = SessionBus(mainloop=MAINLOOP_MAP[self.schema])
+        try:
+            session = SessionBus(mainloop=MAINLOOP_MAP[self.schema])
+
+        except DBusException:
+            # Handle exception
+            self.logger.warning('Failed to send DBus notification.')
+            self.logger.exception('DBus Exception')
+            return False
+
+        # If there is no title, but there is a body, swap the two to get rid
+        # of the weird whitespace
+        if not title:
+            title = body
+            body = ''
 
         # acquire our dbus object
         dbus_obj = session.get_object(
@@ -332,7 +344,7 @@ class NotifyDBus(NotifyBase):
 
         return True
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -362,7 +374,7 @@ class NotifyDBus(NotifyBase):
             args['y'] = str(self.y_axis)
 
         return '{schema}://_/?{args}'.format(
-            schema=self.protocol,
+            schema=self.schema,
             args=NotifyDBus.urlencode(args),
         )
 

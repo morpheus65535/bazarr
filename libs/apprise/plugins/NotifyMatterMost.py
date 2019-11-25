@@ -23,7 +23,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import re
 import six
 import requests
 from json import dumps
@@ -33,14 +32,12 @@ from ..common import NotifyImageSize
 from ..common import NotifyType
 from ..utils import parse_bool
 from ..utils import parse_list
+from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
 # Some Reference Locations:
 # - https://docs.mattermost.com/developer/webhooks-incoming.html
 # - https://docs.mattermost.com/administration/config-settings.html
-
-# Used to validate Authorization Token
-VALIDATE_AUTHTOKEN = re.compile(r'[a-z0-9]{24,32}', re.I)
 
 
 class NotifyMatterMost(NotifyBase):
@@ -97,7 +94,7 @@ class NotifyMatterMost(NotifyBase):
         'authtoken': {
             'name': _('Access Key'),
             'type': 'string',
-            'regex': (r'[a-z0-9]{24,32}', 'i'),
+            'regex': (r'^[a-z0-9]{24,32}$', 'i'),
             'private': True,
             'required': True,
         },
@@ -152,17 +149,12 @@ class NotifyMatterMost(NotifyBase):
         self.fullpath = '' if not isinstance(
             fullpath, six.string_types) else fullpath.strip()
 
-        # Our Authorization Token
-        self.authtoken = authtoken
-
-        # Validate authtoken
-        if not authtoken:
-            msg = 'Missing MatterMost Authorization Token.'
-            self.logger.warning(msg)
-            raise TypeError(msg)
-
-        if not VALIDATE_AUTHTOKEN.match(authtoken):
-            msg = 'Invalid MatterMost Authorization Token Specified.'
+        # Authorization Token (associated with project)
+        self.authtoken = validate_regex(
+            authtoken, *self.template_tokens['authtoken']['regex'])
+        if not self.authtoken:
+            msg = 'An invalid MatterMost Authorization Token ' \
+                  '({}) was specified.'.format(authtoken)
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -280,7 +272,7 @@ class NotifyMatterMost(NotifyBase):
         # Return our overall status
         return not has_error
 
-    def url(self):
+    def url(self, privacy=False, *args, **kwargs):
         """
         Returns the URL built dynamically based on specified arguments.
         """
@@ -302,15 +294,24 @@ class NotifyMatterMost(NotifyBase):
         default_port = 443 if self.secure else self.default_port
         default_schema = self.secure_protocol if self.secure else self.protocol
 
+        # Determine if there is a botname present
+        botname = ''
+        if self.user:
+            botname = '{botname}@'.format(
+                botname=NotifyMatterMost.quote(self.user, safe=''),
+            )
+
         return \
-            '{schema}://{hostname}{port}{fullpath}{authtoken}/?{args}'.format(
+            '{schema}://{botname}{hostname}{port}{fullpath}{authtoken}' \
+            '/?{args}'.format(
                 schema=default_schema,
+                botname=botname,
                 hostname=NotifyMatterMost.quote(self.host, safe=''),
                 port='' if not self.port or self.port == default_port
                      else ':{}'.format(self.port),
                 fullpath='/' if not self.fullpath else '{}/'.format(
                     NotifyMatterMost.quote(self.fullpath, safe='/')),
-                authtoken=NotifyMatterMost.quote(self.authtoken, safe=''),
+                authtoken=self.pprint(self.authtoken, privacy, safe=''),
                 args=NotifyMatterMost.urlencode(args),
             )
 
@@ -331,7 +332,6 @@ class NotifyMatterMost(NotifyBase):
         # all entries before it will be our path
         tokens = NotifyMatterMost.split_path(results['fullpath'])
 
-        # Apply our settings now
         results['authtoken'] = None if not tokens else tokens.pop()
 
         # Store our path

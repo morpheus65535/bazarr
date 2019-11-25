@@ -33,9 +33,6 @@ from os.path import abspath
 
 # Used for testing
 from . import NotifyEmail as NotifyEmailBase
-
-# Required until re-factored into base code
-from .NotifyPushjet import pushjet
 from .NotifyGrowl import gntp
 
 # NotifyBase object is passed in as a module not class
@@ -46,6 +43,7 @@ from ..common import NOTIFY_IMAGE_SIZES
 from ..common import NotifyType
 from ..common import NOTIFY_TYPES
 from ..utils import parse_list
+from ..utils import GET_SCHEMA_RE
 from ..AppriseLocale import gettext_lazy as _
 from ..AppriseLocale import LazyTranslation
 
@@ -60,11 +58,11 @@ __all__ = [
     # NotifyEmail Base Module (used for NotifyEmail testing)
     'NotifyEmailBase',
 
+    # Tokenizer
+    'url_to_dict',
+
     # gntp (used for NotifyGrowl Testing)
     'gntp',
-
-    # pushjet (used for NotifyPushjet Testing)
-    'pushjet',
 ]
 
 # we mirror our base purely for the ability to reset everything; this
@@ -384,6 +382,16 @@ def details(plugin):
     # Argument/Option Handling
     for key in list(template_args.keys()):
 
+        if 'alias_of' in template_args[key]:
+            # Check if the mapped reference is a list; if it is, then
+            # we need to store a different delimiter
+            alias_of = template_tokens.get(template_args[key]['alias_of'], {})
+            if alias_of.get('type', '').startswith('list') \
+                    and 'delim' not in template_args[key]:
+                # Set a default delimiter of a comma and/or space if one
+                # hasn't already been specified
+                template_args[key]['delim'] = (',', ' ')
+
         # _lookup_default looks up what the default value
         if '_lookup_default' in template_args[key]:
             template_args[key]['default'] = getattr(
@@ -410,3 +418,47 @@ def details(plugin):
         'args': template_args,
         'kwargs': template_kwargs,
     }
+
+
+def url_to_dict(url):
+    """
+    Takes an apprise URL and returns the tokens associated with it
+    if they can be acquired based on the plugins available.
+
+    None is returned if the URL could not be parsed, otherwise the
+    tokens are returned.
+
+    These tokens can be loaded into apprise through it's add()
+    function.
+    """
+
+    # swap hash (#) tag values with their html version
+    _url = url.replace('/#', '/%23')
+
+    # Attempt to acquire the schema at the very least to allow our plugins to
+    # determine if they can make a better interpretation of a URL geared for
+    # them.
+    schema = GET_SCHEMA_RE.match(_url)
+    if schema is None:
+        # Not a valid URL; take an early exit
+        return None
+
+    # Ensure our schema is always in lower case
+    schema = schema.group('schema').lower()
+    if schema not in SCHEMA_MAP:
+        # Give the user the benefit of the doubt that the user may be using
+        # one of the URLs provided to them by their notification service.
+        # Before we fail for good, just scan all the plugins that support the
+        # native_url() parse function
+        results = \
+            next((r['plugin'].parse_native_url(_url)
+                  for r in MODULE_MAP.values()
+                  if r['plugin'].parse_native_url(_url) is not None),
+                 None)
+    else:
+        # Parse our url details of the server object as dictionary
+        # containing all of the information parsed from our URL
+        results = SCHEMA_MAP[schema].parse_url(_url)
+
+    # Return our results
+    return results
