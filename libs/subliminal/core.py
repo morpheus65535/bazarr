@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from collections import defaultdict
 
 import platform
+from six.moves import range
 is_windows_special_path = False
 
 if platform.system() == "Windows":
     try:
-        __file__.decode("ascii")
+        __file__
     except UnicodeDecodeError:
         is_windows_special_path = True
 

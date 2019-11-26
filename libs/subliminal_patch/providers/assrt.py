@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import json
 import logging
 import os
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 language_converters.register('assrt = subliminal_patch.converters.assrt:AssrtConverter')
 
 server_url = 'https://api.assrt.net/v1'
-supported_languages = language_converters['assrt'].to_assrt.keys()
+supported_languages = list(language_converters['assrt'].to_assrt.keys())
 
 
 class AssrtSubtitle(Subtitle):
@@ -139,7 +140,7 @@ class AssrtProvider(Provider):
             logger.debug('No subtitle found')
 
         # parse the subtitles
-        pattern = re.compile(ur'lang(?P<code>\w+)')
+        pattern = re.compile(r'lang(?P<code>\w+)')
         subtitles = []
         for sub in result['sub']['subs']:
             if 'lang' not in sub:

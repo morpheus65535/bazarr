@@ -1,12 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import sys
 import ast
 import logging
 import subprocess
 import time
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import codecs
 import types
 import re
@@ -36,6 +37,9 @@ from pyprobe.pyprobe import VideoFileParser
 from database import database, dict_mapper
 
 from analytics import track_event
+import six
+from six.moves import range
+from functools import reduce
 
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
@@ -90,11 +94,11 @@ def get_scores(video, media_type, min_score_movie_perc=60 * 100 / 120.0, min_sco
     """
     max_score = 120.0
     min_score = max_score * min_score_movie_perc / 100.0
-    scores = subliminal_scores.movie_scores.keys()
+    scores = list(subliminal_scores.movie_scores.keys())
     if media_type == "series":
         max_score = 360.0
         min_score = max_score * min_score_series_perc / 100.0
-        scores = subliminal_scores.episode_scores.keys()
+        scores = list(subliminal_scores.episode_scores.keys())
         if video.is_special:
             min_score = max_score * min_score_special_ep / 100.0
     
@@ -118,7 +122,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         hi = "force non-HI"
     language_set = set()
     
-    if not isinstance(language, types.ListType):
+    if not isinstance(language, list):
         language = [language]
     
     if forced == "True":
@@ -184,7 +188,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         
         saved_any = False
         if downloaded_subtitles:
-            for video, subtitles in downloaded_subtitles.iteritems():
+            for video, subtitles in six.iteritems(downloaded_subtitles):
                 if not subtitles:
                     continue
                 
@@ -220,10 +224,10 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                         else:
                             action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + unicode(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
@@ -420,7 +424,6 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
             if not subtitle.is_valid():
                 logging.exception('BAZARR No valid Subtitles file found for this file: ' + path)
                 return
-            logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             try:
                 score = round(subtitle.score / max_score * 100, 2)
                 fld = get_target_folder(path)
@@ -449,7 +452,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " Subtitles downloaded from " + downloaded_provider + " with a score of " + unicode(
+                        message = downloaded_language + is_forced_string + " Subtitles downloaded from " + downloaded_provider + " with a score of " + six.text_type(
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
@@ -595,7 +598,7 @@ def series_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode['path']))
+                        store_subtitles(episode['path'], path_replace(episode['path']))
                         history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score)
                         send_notifications(no, episode['sonarrEpisodeId'], message)
         else:
@@ -651,7 +654,7 @@ def episode_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode['path']))
+                        store_subtitles(episode['path'], path_replace(episode['path']))
                         history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path, language_code, provider, score)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
         else:
@@ -702,7 +705,7 @@ def movies_download_subtitles(no):
                     language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
-                    store_subtitles_movie(path_replace_movie(movie['path']))
+                    store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
                     history_log_movie(1, no, message, path, language_code, provider, score)
                     send_notifications_movie(no, message)
         else:
@@ -730,19 +733,19 @@ def wanted_download_subtitles(path, l, count_episodes):
     
     for episode in episodes_details:
         attempt = episode['failedAttempts']
-        if type(attempt) == unicode:
+        if type(attempt) == six.text_type:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode['missing_subtitles']):
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
             else:
-                att = zip(*attempt)[0]
+                att = list(zip(*attempt))[0]
                 if language not in att:
                     attempt.append([language, time.time()])
 
             database.execute("UPDATE table_episodes SET failedAttempts=? WHERE sonarrEpisodeId=?",
-                             (unicode(attempt), episode['sonarrEpisodeId']))
+                             (six.text_type(attempt), episode['sonarrEpisodeId']))
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -765,7 +768,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles(path_replace(episode['path']))
+                            store_subtitles(episode['path'], path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path, language_code, provider, score)
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
@@ -783,19 +786,19 @@ def wanted_download_subtitles_movie(path, l, count_movies):
     
     for movie in movies_details:
         attempt = movie['failedAttempts']
-        if type(attempt) == unicode:
+        if type(attempt) == six.text_type:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie['missing_subtitles']):
             if attempt is None:
                 attempt = []
                 attempt.append([language, time.time()])
             else:
-                att = zip(*attempt)[0]
+                att = list(zip(*attempt))[0]
                 if language not in att:
                     attempt.append([language, time.time()])
             
             database.execute("UPDATE table_movies SET failedAttempts=? WHERE radarrId=?",
-                             (unicode(attempt), movie['radarrId']))
+                             (six.text_type(attempt), movie['radarrId']))
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -818,7 +821,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
-                            store_subtitles_movie(path_replace_movie(movie['path']))
+                            store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
                             history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score)
                             send_notifications_movie(movie['radarrId'], message)
                     else:
@@ -902,7 +905,7 @@ def refine_from_db(path, video):
                                 "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
                                 "FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                                "WHERE table_episodes.path = ?", (unicode(path_replace_reverse(path)),), only_one=True)
+                                "WHERE table_episodes.path = ?", (path_replace_reverse(path),), only_one=True)
 
         if data:
             video.series, year, country = series_re.match(data['seriesTitle']).groups()
@@ -924,7 +927,7 @@ def refine_from_db(path, video):
     elif isinstance(video, Movie):
         data = database.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, "
                                 "imdbId FROM table_movies WHERE path = ?",
-                                (unicode(path_replace_reverse_movie(path)),), only_one=True)
+                                (path_replace_reverse_movie(path),), only_one=True)
 
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
@@ -1118,7 +1121,7 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles(path_replace(episode['video_path']))
+                        store_subtitles(episode['video_path'], path_replace(episode['video_path']))
                         history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path, language_code, provider, score)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
     
@@ -1167,6 +1170,6 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
-                        store_subtitles_movie(path_replace_movie(movie['video_path']))
+                        store_subtitles_movie(movie['video_path'], path_replace_movie(movie['video_path']))
                         history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score)
                         send_notifications_movie(movie['radarrId'], message)

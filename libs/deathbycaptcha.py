@@ -80,7 +80,6 @@ import sys
 import threading
 import time
 import urllib
-import urllib2
 try:
     from json import read as json_decode, write as json_encode
 except ImportError:
@@ -146,7 +145,7 @@ class Client(object):
 
     def _log(self, cmd, msg=''):
         if self.is_verbose:
-            print '%d %s %s' % (time.time(), cmd, msg.rstrip())
+            print('%d %s %s' % (time.time(), cmd, msg.rstrip()))
         return self
 
     def close(self):
@@ -251,7 +250,7 @@ class HttpClient(Client):
                 data=payload,
                 headers=headers
             )).read()
-        except urllib2.HTTPError, err:
+        except urllib2.HTTPError as err:
             if 403 == err.code:
                 raise AccessDeniedException('Access denied, please check'
                                             ' your credentials and/or balance')
@@ -357,7 +356,7 @@ class SocketClient(Client):
             self.socket.settimeout(0)
             try:
                 self.socket.connect(host)
-            except socket.error, err:
+            except socket.error as err:
                 if (err.args[0] not in
                         (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS)):
                     self.close()
@@ -392,7 +391,7 @@ class SocketClient(Client):
                             raise IOError('recv(): connection lost')
                         else:
                             response += s
-            except socket.error, err:
+            except socket.error as err:
                 if (err.args[0] not in
                         (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS)):
                     raise err
@@ -416,10 +415,10 @@ class SocketClient(Client):
             try:
                 sock = self.connect()
                 response = self._sendrecv(sock, request)
-            except IOError, err:
+            except IOError as err:
                 sys.stderr.write(str(err) + "\n")
                 self.close()
-            except socket.error, err:
+            except socket.error as err:
                 sys.stderr.write(str(err) + "\n")
                 self.close()
                 raise IOError('Connection refused')
@@ -493,20 +492,20 @@ if '__main__' == __name__:
     client = SocketClient(sys.argv[1], sys.argv[2])
     client.is_verbose = True
 
-    print 'Your balance is %s US cents' % client.get_balance()
+    print('Your balance is %s US cents' % client.get_balance())
 
     for fn in sys.argv[3:]:
         try:
             # Put your CAPTCHA image file name or file-like object, and optional
             # solving timeout (in seconds) here:
             captcha = client.decode(fn, DEFAULT_TIMEOUT)
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write('Failed uploading CAPTCHA: %s\n' % (e, ))
             captcha = None
 
         if captcha:
-            print 'CAPTCHA %d solved: %s' % \
-                  (captcha['captcha'], captcha['text'])
+            print('CAPTCHA %d solved: %s' % \
+                  (captcha['captcha'], captcha['text']))
 
             # Report as incorrectly solved if needed.  Make sure the CAPTCHA was
             # in fact incorrectly solved!

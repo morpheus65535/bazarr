@@ -1,3 +1,4 @@
+import six
 # coding=utf-8
 
 
@@ -19,11 +20,10 @@ class DictProxy(object):
         return getattr(super(DictProxy, self), name)
 
     def __setattr__(self, name, value):
-        if not self.__dict__.has_key(
-                '_DictProxy__initialized'):  # this test allows attributes to be set in the __init__ method
+        if '_DictProxy__initialized' not in self.__dict__:  # this test allows attributes to be set in the __init__ method
             return object.__setattr__(self, name, value)
 
-        elif self.__dict__.has_key(name):  # any normal attributes are handled normally
+        elif name in self.__dict__:  # any normal attributes are handled normally
             object.__setattr__(self, name, value)
 
         else:
@@ -56,7 +56,7 @@ class DictProxy(object):
         return str(self.Dict[self.store])
 
     def __len__(self):
-        return len(self.Dict[self.store].keys())
+        return len(list(self.Dict[self.store].keys()))
 
     def __delitem__(self, key):
         del self.Dict[self.store][key]
@@ -81,16 +81,16 @@ class DictProxy(object):
         return self.Dict[self.store].update(*args, **kwargs)
 
     def keys(self):
-        return self.Dict[self.store].keys()
+        return list(self.Dict[self.store].keys())
 
     def values(self):
-        return self.Dict[self.store].values()
+        return list(self.Dict[self.store].values())
 
     def items(self):
-        return self.Dict[self.store].items()
+        return list(self.Dict[self.store].items())
 
     def __unicode__(self):
-        return unicode(repr(self.Dict[self.store]))
+        return six.text_type(repr(self.Dict[self.store]))
 
     def setup_defaults(self):
         raise NotImplementedError
@@ -104,7 +104,7 @@ class Dicked(object):
 
     def __init__(self, **entries):
         self._entries = entries or None
-        for key, value in entries.iteritems():
+        for key, value in six.iteritems(entries):
             self.__dict__[key] = (Dicked(**value) if isinstance(value, dict) else value)
 
     def has(self, key):
@@ -117,7 +117,7 @@ class Dicked(object):
         return str(self)
 
     def __unicode__(self):
-        return unicode(self.__digged__)
+        return six.text_type(self.__digged__)
 
     def __str__(self):
         return str(self.__digged__)
@@ -149,7 +149,7 @@ class Dicked(object):
 
     @property
     def __digged__(self):
-        return {key: value for key, value in self.__dict__.iteritems() if key != "_entries"}
+        return {key: value for key, value in six.iteritems(self.__dict__) if key != "_entries"}
 
     def __len__(self):
         return len(self.__digged__)

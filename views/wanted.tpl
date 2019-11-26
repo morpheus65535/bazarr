@@ -47,6 +47,7 @@
 		% from database import database
 		% import operator
         % from config import settings
+		% from functools import reduce
 
         %if settings.sonarr.getboolean('only_monitored'):
         %    episodes_missing_subtitles_clause = " AND monitored='True'"

@@ -25,7 +25,6 @@ this script that does the job by parsing the website"s pages.
 
 # imports
 import re
-
 import enum
 import sys
 import requests
@@ -38,7 +37,7 @@ if is_PY2:
     from urllib2 import Request, urlopen
 else:
     from contextlib import suppress
-    from urllib2.request import Request, urlopen
+    from urllib.request import Request, urlopen
 
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
@@ -56,7 +55,7 @@ DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWeb"\
                      "Kit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 
 
-ENDPOINT_RE = re.compile(ur'(?uis)<form.+?action="/subtitles/(.+)">.*?<input type="text"')
+ENDPOINT_RE = re.compile(r'(?uis)<form.+?action="/subtitles/(.+)">.*?<input type="text"')
 
 
 class NewEndpoint(Exception):

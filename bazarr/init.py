@@ -1,11 +1,12 @@
 # coding=utf-8
 
+from __future__ import absolute_import, print_function
 import os
 import time
 import rarfile
 
 from cork import Cork
-from ConfigParser2 import ConfigParser
+from backports import configparser2
 from config import settings
 from get_args import args
 from logger import configure_logging
@@ -34,7 +35,7 @@ if not os.path.exists(args.config_dir):
     try:
         os.mkdir(os.path.join(args.config_dir))
     except OSError:
-        print "BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?)."
+        print("BAZARR The configuration directory doesn't exist and Bazarr cannot create it (permission issue?).")
         exit(2)
 
 if not os.path.exists(os.path.join(args.config_dir, 'config')):
@@ -83,7 +84,7 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-cfg = ConfigParser()
+cfg = configparser2.ConfigParser()
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)

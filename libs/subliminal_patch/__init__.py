@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import subliminal
 
 # patch subliminal's subtitle and provider base
@@ -12,8 +13,8 @@ from .core import scan_video, search_external_subtitles, list_all_subtitles, sav
     download_best_subtitles
 from .score import compute_score
 from .video import Video
-import extensions
-import http
+from . import extensions
+from . import http
 
 # patch subliminal's core functions
 subliminal.scan_video = subliminal.core.scan_video = scan_video

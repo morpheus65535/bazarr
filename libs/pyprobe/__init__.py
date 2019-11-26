@@ -1,2 +1,2 @@
 
-from pyprobe import VideoFileParser
+from .pyprobe import VideoFileParser

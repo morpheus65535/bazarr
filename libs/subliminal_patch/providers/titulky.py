@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import io
 import logging
 import os
@@ -184,7 +185,7 @@ class TitulkyProvider(Provider):
                     'Password': self.password}
             r = self.session.post(self.server_url, data, allow_redirects=False, timeout=10)
             
-            if 'BadLogin' in r.content:
+            if 'BadLogin' in r.text:
                 raise AuthenticationError(self.username)
             
             logger.debug('Logged in')
@@ -258,9 +259,9 @@ class TitulkyProvider(Provider):
                     langs = 'CZ'
                 name = '%s (%s)' % (version, langs)
                 
-                if ('CZ' in langs):
+                if b'CZ' in langs:
                     language = Language('ces')
-                elif ('SK' in langs):
+                elif b'SK' in langs:
                     language = Language('slk')
                 # read the item
                 # subtitle = self.subtitle_class(language, page_link, year, version, page_link.replace("detail", "dld"))

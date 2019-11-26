@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import logging
 
 from babelfish import Language
@@ -7,6 +8,7 @@ from requests import Session
 from . import Provider
 from .. import __short_version__
 from ..subtitle import Subtitle
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

@@ -1,10 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
 import logging
 import re
 import types
 import platform
+import warnings
+import six
 
 from logging.handlers import TimedRotatingFileHandler
 from get_args import args
@@ -39,6 +42,9 @@ class NoExceptionFormatter(logging.Formatter):
 
 
 def configure_logging(debug=False):
+    if six.PY3:
+        warnings.simplefilter('ignore', category=ResourceWarning)
+
     if not debug:
         log_level = "INFO"
     else:
@@ -61,7 +67,7 @@ def configure_logging(debug=False):
     # File Logging
     global fh
     fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
-                                  backupCount=7)
+                                  backupCount=7, delay=True)
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
@@ -108,10 +114,10 @@ class MyFilter(logging.Filter):
 
 class ArgsFilteringFilter(logging.Filter):
     def filter_args(self, record, func):
-        if isinstance(record.args, (types.ListType, types.TupleType)):
+        if isinstance(record.args, (list, tuple)):
             final_args = []
             for arg in record.args:
-                if not isinstance(arg, basestring):
+                if not isinstance(arg, six.string_types):
                     final_args.append(arg)
                     continue
                 
@@ -119,7 +125,7 @@ class ArgsFilteringFilter(logging.Filter):
             record.args = type(record.args)(final_args)
         elif isinstance(record.args, dict):
             for key, arg in record.args.items():
-                if not isinstance(arg, basestring):
+                if not isinstance(arg, six.string_types):
                     continue
                 
                 record.args[key] = func(arg)

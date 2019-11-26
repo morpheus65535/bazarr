@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import base64
 import logging
 import os
@@ -13,7 +14,7 @@ from subliminal.exceptions import ConfigurationError, ServiceUnavailable
 from subliminal.providers.opensubtitles import OpenSubtitlesProvider as _OpenSubtitlesProvider,\
     OpenSubtitlesSubtitle as _OpenSubtitlesSubtitle, Episode, Movie, ServerProxy, Unauthorized, NoSession, \
     DownloadLimitReached, InvalidImdbid, UnknownUserAgent, DisabledUserAgent, OpenSubtitlesError
-from mixins import ProviderRetryMixin
+from .mixins import ProviderRetryMixin
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.http import SubZeroRequestsTransport
 from subliminal_patch.utils import sanitize
@@ -153,7 +154,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         self.token = response['token']
         logger.debug('Logged in with token %r', self.token[:10]+"X"*(len(self.token)-10))
 
-        region.set("os_token", self.token)
+        region.set("os_token", bytearray(self.token, encoding='utf-8'))
 
     def use_token_or_login(self, func):
         if not self.token:
@@ -174,7 +175,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
         logger.info('Logging in')
 
-        token = region.get("os_token")
+        token = str(region.get("os_token"))
         if token is not NO_VALUE:
             try:
                 logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))

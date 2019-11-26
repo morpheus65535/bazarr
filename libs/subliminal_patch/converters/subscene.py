@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 from babelfish import LanguageReverseConverter
 from subliminal.exceptions import ConfigurationError
 from subzero.language import Language

@@ -1,6 +1,7 @@
 # coding=utf-8
+from __future__ import absolute_import
 import traceback
-from constants import PLUGIN_IDENTIFIER
+from .constants import PLUGIN_IDENTIFIER
 
 
 def get_user_prefs(Prefs, Logger):

@@ -81,7 +81,7 @@
             	$('.ui.accordion').accordion();
             	const first_season_acc_title = document.getElementsByClassName("title")[0];
             	first_season_acc_title.className += " active";
-            	const first_season_acc_content = document.getElementsByClassName("content")[0];
+            	const first_season_acc_content = document.getElementsByClassName("content season")[0];
             	first_season_acc_content.className += " active";
             });
 		</script>
@@ -189,7 +189,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="content">
+						<div class="content season">
 							<table class="ui very basic single line selectable table">
 								<thead>
 									<tr>
@@ -222,7 +222,7 @@
 										<td>
 										%if episode['subtitles'] is not None:
 										%	actual_languages = ast.literal_eval(episode['subtitles'])
-										%   actual_languages = sorted(actual_languages, key=lambda x: (x is None, x))
+										%   actual_languages.sort(key=lambda x: x[0])
 										%else:
 										%	actual_languages = '[]'
 										%end
@@ -731,7 +731,7 @@
 				render: function ( data, type, row ) {
                     const array_release_info = data.release_info;
                     let i;
-                    let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content">';
+                    let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content season">';
                     for (i = 0; i < array_release_info.length; i++) {
                         text += '<div class="ui tiny label" style="margin-bottom: 2px;">' + array_release_info[i] + '</div>';
                     }

@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import apprise
 import os
 import logging
@@ -22,23 +23,20 @@ def update_notifier():
 
     notifiers_current = []
     for notifier in notifiers_current_db:
-        notifiers_current.append(notifier['name'])
+        notifiers_current.append([notifier['name']])
 
     for x in results['schemas']:
-        if x['service_name'] not in notifiers_current:
-            notifiers_new.append(x['service_name'])
+        if [x['service_name']] not in notifiers_current:
+            notifiers_new.append([x['service_name'], 0])
             logging.debug('Adding new notifier agent: ' + x['service_name'])
         else:
-            notifiers_old.append(x['service_name'])
-    notifier_current = [i for i in notifiers_current]
+            notifiers_old.append([x['service_name']])
     
-    notifiers_to_delete = list(set(notifier_current) - set(notifiers_old))
+    notifiers_to_delete = [item for item in notifiers_current if item not in notifiers_old]
+
+    database.execute("INSERT INTO table_settings_notifier (name, enabled) VALUES (?, ?)", notifiers_new, execute_many=True)
     
-    for notifier_new in notifiers_new:
-        database.execute("INSERT INTO table_settings_notifier (name, enabled) VALUES (?, ?)", (notifier_new, 0))
-    
-    for notifier_to_delete in notifiers_to_delete:
-        database.execute("DELETE FROM table_settings_notifier WHERE name=?", (notifier_to_delete,))
+    database.execute("DELETE FROM table_settings_notifier WHERE name=?", notifiers_to_delete, execute_many=True)
 
 
 def get_notifier_providers():

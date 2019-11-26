@@ -1,6 +1,8 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import os
+import six
 import requests
 import logging
 from queueconfig import notifications
@@ -75,7 +77,7 @@ def update_movies():
 
                         if movie["path"] != None and movie['movieFile']['relativePath'] != None:
                             try:
-                                overview = unicode(movie['overview'])
+                                overview = six.text_type(movie['overview'])
                             except:
                                 overview = ""
                             try:
@@ -129,27 +131,27 @@ def update_movies():
                                 audioCodec = None
 
                             # Add movies in radarr to current movies list
-                            current_movies_radarr.append(unicode(movie['tmdbId']))
+                            current_movies_radarr.append(six.text_type(movie['tmdbId']))
                             
-                            if unicode(movie['tmdbId']) in current_movies_db_list:
+                            if six.text_type(movie['tmdbId']) in current_movies_db_list:
                                 movies_to_update.append({'radarrId': movie["id"],
-                                                         'title': unicode(movie["title"]),
-                                                         'path': unicode(movie["path"] + separator + movie['movieFile']['relativePath']),
-                                                         'tmdbId': unicode(movie["tmdbId"]),
-                                                         'poster': unicode(poster),
-                                                         'fanart': unicode(fanart),
-                                                         'audio_language': unicode(profile_id_to_language(movie['qualityProfileId'], audio_profiles)),
+                                                         'title': six.text_type(movie["title"]),
+                                                         'path': six.text_type(movie["path"] + separator + movie['movieFile']['relativePath']),
+                                                         'tmdbId': six.text_type(movie["tmdbId"]),
+                                                         'poster': six.text_type(poster),
+                                                         'fanart': six.text_type(fanart),
+                                                         'audio_language': six.text_type(profile_id_to_language(movie['qualityProfileId'], audio_profiles)),
                                                          'sceneName': sceneName,
-                                                         'monitored': unicode(bool(movie['monitored'])),
-                                                         'year': unicode(movie['year']),
-                                                         'sortTitle': unicode(movie['sortTitle']),
-                                                         'alternativeTitles': unicode(alternativeTitles),
-                                                         'format': unicode(format),
-                                                         'resolution': unicode(resolution),
-                                                         'video_codec': unicode(videoCodec),
-                                                         'audio_codec': unicode(audioCodec),
-                                                         'overview': unicode(overview),
-                                                         'imdbId': unicode(imdbId),
+                                                         'monitored': six.text_type(bool(movie['monitored'])),
+                                                         'year': six.text_type(movie['year']),
+                                                         'sortTitle': six.text_type(movie['sortTitle']),
+                                                         'alternativeTitles': six.text_type(alternativeTitles),
+                                                         'format': six.text_type(format),
+                                                         'resolution': six.text_type(resolution),
+                                                         'video_codec': six.text_type(videoCodec),
+                                                         'audio_codec': six.text_type(audioCodec),
+                                                         'overview': six.text_type(overview),
+                                                         'imdbId': six.text_type(imdbId),
                                                          'movie_file_id': movie['movieFile']['id']})
                             else:
                                 if movie_default_enabled is True:
@@ -165,7 +167,7 @@ def update_movies():
                                                           'fanart': fanart,
                                                           'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
                                                           'sceneName': sceneName,
-                                                          'monitored': unicode(bool(movie['monitored'])),
+                                                          'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
                                                           'year': movie['year'],
                                                           'alternativeTitles': alternativeTitles,
@@ -189,7 +191,7 @@ def update_movies():
                                                           'fanart': fanart,
                                                           'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
                                                           'sceneName': sceneName,
-                                                          'monitored': unicode(bool(movie['monitored'])),
+                                                          'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
                                                           'year': movie['year'],
                                                           'alternativeTitles': alternativeTitles,
@@ -251,7 +253,7 @@ def update_movies():
             for i, altered_movie in enumerate(altered_movies, 1):
                 notifications.write(msg='Indexing movies embedded subtitles...', queue='get_movies', item=i,
                                     length=len(altered_movies))
-                store_subtitles_movie(path_replace_movie(altered_movie[1]))
+                store_subtitles_movie(altered_movie[1], path_replace_movie(altered_movie[1]))
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 

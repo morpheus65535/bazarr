@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import datetime
 import logging
 import traceback
@@ -7,7 +8,8 @@ import types
 
 from subzero.language import Language
 
-from constants import mode_map
+from .constants import mode_map
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +56,10 @@ class SubtitleHistoryItem(object):
         return mode_map.get(self.mode, "Unknown")
 
     def __repr__(self):
-        return unicode(self)
+        return six.text_type(self)
 
     def __unicode__(self):
-        return u"%s (Score: %s)" % (unicode(self.item_title), self.score)
+        return u"%s (Score: %s)" % (six.text_type(self.item_title), self.score)
 
     def __str__(self):
         return str(self.rating_key)
@@ -108,7 +110,7 @@ class SubtitleHistory(object):
             items = []
             logger.error("Failed to load history storage: %s" % traceback.format_exc())
 
-        if not isinstance(items, types.ListType):
+        if not isinstance(items, list):
             items = []
         else:
             items = items[:]

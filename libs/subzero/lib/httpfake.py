@@ -1,3 +1,4 @@
+import six
 # coding=utf-8
 
 
@@ -37,7 +38,7 @@ class PlexPyNativeResponseProxy(object):
         return str(self.data)
 
     def __unicode__(self):
-        return unicode(self.data)
+        return six.text_type(self.data)
 
     def __repr__(self):
         return repr(self.data)

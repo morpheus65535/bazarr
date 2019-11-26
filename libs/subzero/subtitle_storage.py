@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import datetime
 import gzip
 import hashlib
@@ -13,7 +14,8 @@ import sys
 from json_tricks.nonp import loads
 from subzero.lib.json import dumps
 from scandir import scandir, scandir_generic as _scandir_generic
-from constants import mode_map
+from .constants import mode_map
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ class JSONStoredSubtitle(object):
     def deserialize(self, data):
         if data["content"]:
             # legacy: storage was unicode; content is always present in encoded form
-            if isinstance(data["content"], types.UnicodeType):
+            if isinstance(data["content"], str):
                 data["content"] = data["content"].encode(data["encoding"])
 
         self.initialize(**data)
@@ -103,18 +105,18 @@ class JSONStoredVideoSubtitles(object):
         self.__dict__.update(data)
 
         if parts:
-            for part_id, part in parts.iteritems():
+            for part_id, part in six.iteritems(parts):
                 self.parts[part_id] = {}
-                for language, sub_data in part.iteritems():
+                for language, sub_data in six.iteritems(part):
                     self.parts[part_id][language] = {}
 
-                    for sub_key, subtitle_data in sub_data.iteritems():
+                    for sub_key, subtitle_data in six.iteritems(sub_data):
                         if sub_key == "current":
                             if not isinstance(subtitle_data, tuple):
                                 subtitle_data = tuple(subtitle_data.split("__"))
                             self.parts[part_id][language]["current"] = subtitle_data
                         elif sub_key == "blacklist":
-                            bl = dict((tuple([str(a) for a in k.split("__")]), v) for k, v in subtitle_data.iteritems())
+                            bl = dict((tuple([str(a) for a in k.split("__")]), v) for k, v in six.iteritems(subtitle_data))
                             self.parts[part_id][language]["blacklist"] = bl
                         else:
                             sub = JSONStoredSubtitle()
@@ -127,21 +129,21 @@ class JSONStoredVideoSubtitles(object):
 
     def serialize(self):
         data = {"parts": {}}
-        for key, value in self.__dict__.iteritems():
+        for key, value in six.iteritems(self.__dict__):
             if key != "parts":
                 data[key] = value
 
-        for part_id, part in self.parts.iteritems():
+        for part_id, part in six.iteritems(self.parts):
             data["parts"][part_id] = {}
-            for language, sub_data in part.iteritems():
+            for language, sub_data in six.iteritems(part):
                 data["parts"][part_id][language] = {}
 
-                for sub_key, stored_subtitle in sub_data.iteritems():
+                for sub_key, stored_subtitle in six.iteritems(sub_data):
                     if sub_key == "current":
                         data["parts"][part_id][language]["current"] = "__".join(stored_subtitle)
                     elif sub_key == "blacklist":
                         data["parts"][part_id][language]["blacklist"] = dict(("__".join(k), v) for k, v in
-                                                                             stored_subtitle.iteritems())
+                                                                             six.iteritems(stored_subtitle))
                     else:
                         if stored_subtitle.content and not stored_subtitle.encoding:
                             continue
@@ -223,7 +225,7 @@ class JSONStoredVideoSubtitles(object):
         if not all_subs:
             return out
 
-        for key, subtitle in all_subs.iteritems():
+        for key, subtitle in six.iteritems(all_subs):
             if key in ("current", "blacklist"):
                 continue
 
@@ -238,7 +240,7 @@ class JSONStoredVideoSubtitles(object):
             return 0
 
         subs = part.get(str(lang))
-        return len(filter(lambda key: key not in ("current", "blacklist"), subs.keys()))
+        return len([key for key in list(subs.keys()) if key not in ("current", "blacklist")])
 
     def get_sub_key(self, provider_name, id):
         return provider_name, str(id)
@@ -275,7 +277,7 @@ class JSONStoredVideoSubtitles(object):
         subs["blacklist"] = current_bl
 
     def __repr__(self):
-        return unicode(self)
+        return six.text_type(self)
 
     def __unicode__(self):
         return u"%s (%s)" % (self.title, self.video_id)
@@ -399,7 +401,7 @@ class StoredSubtitlesManager(object):
                                 pass
 
                 # remove known info about non-existing languages
-                for part_id, part in stored_subs.parts.iteritems():
+                for part_id, part in six.iteritems(stored_subs.parts):
                     missing_languages = set(part).difference(wanted_languages)
                     if missing_languages:
                         logger.debug("Languages removed: %s:%s:%s, removing data", video_id, part_id, missing_languages)

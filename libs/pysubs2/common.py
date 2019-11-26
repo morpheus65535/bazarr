@@ -17,7 +17,7 @@ class Color(_Color):
         return _Color.__new__(cls, r, g, b, a)
 
 #: Version of the pysubs2 library.
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 
 PY3 = sys.version_info.major == 3

@@ -1,12 +1,13 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import re
 import time
 import logging
 import traceback
 import types
 import os
-from httplib import ResponseNotReady
+from six.moves.http_client import ResponseNotReady
 
 from guessit import guessit
 from subliminal import ProviderError
@@ -107,7 +108,7 @@ class ProviderSubtitleArchiveMixin(object):
 
                     if "format" in subtitle.matches:
                         format_matches = False
-                        if isinstance(subtitle.releases, types.ListType):
+                        if isinstance(subtitle.releases, list):
                             releases = ",".join(subtitle.releases).lower()
                         else:
                             releases = subtitle.releases.lower()
@@ -117,7 +118,7 @@ class ProviderSubtitleArchiveMixin(object):
 
                         else:
                             formats = guess["format"]
-                            if not isinstance(formats, types.ListType):
+                            if not isinstance(formats, list):
                                 formats = [formats]
 
                             for f in formats:
@@ -157,13 +158,5 @@ class ProviderSubtitleArchiveMixin(object):
         elif subs_fallback:
             matching_sub = subs_fallback[0]
 
-        try:
-            matching_sub_unicode = matching_sub.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                matching_sub_unicode = matching_sub.decode("cp437")
-            except UnicodeDecodeError:
-                matching_sub_unicode = matching_sub.decode("utf-8", errors='replace')
-
-        logger.info(u"Using %s from the archive", matching_sub_unicode)
+        logger.info(u"Using %s from the archive", matching_sub)
         return fix_line_ending(archive.read(matching_sub))

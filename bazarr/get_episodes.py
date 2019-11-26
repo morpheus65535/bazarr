@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import os
 import requests
 import logging
@@ -164,7 +165,7 @@ def sync_episodes():
     for i, altered_episode in enumerate(altered_episodes, 1):
         notifications.write(msg='Indexing episodes embedded subtitles...', queue='get_episodes', item=i,
                             length=len(altered_episodes))
-        store_subtitles(path_replace(altered_episode[1]))
+        store_subtitles(altered_episode[1], path_replace(altered_episode[1]))
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')
 

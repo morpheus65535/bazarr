@@ -61,6 +61,7 @@
 		% from database import database
 		% import operator
         % from config import settings
+		% from functools import reduce
 
         %if settings.sonarr.getboolean('only_monitored'):
         %    monitored_only_query_string_sonarr = ' AND monitored = "True"'
@@ -225,6 +226,31 @@
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To The Last Update. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
 			% elif restart_required['configured'] == '1':
 				<div class='ui center aligned grid'><div class='fifteen wide column'><div class="ui red message">Bazarr Needs To Be Restarted To Apply Changes To General Settings. Click <a href=# id="restart_link">Here</a> To Restart.</div></div></div>
+			% end
+
+			% from six import PY2
+			% import datetime
+			% if PY2:
+			<div class='ui left aligned grid'>
+				<div class='fluid column'>
+					<div class="ui yellow icon message">
+						<i class="python icon"></i>
+						<div class="content">
+							<div class="header">Python deprecation warning</div>
+							Bazarr is now compatible with Python 3.6 and newer. You should upgrade Python as we'll drop support for Python 2.7.x by the end of 2019.
+							<div class="ui bulleted list">
+							    % if os.name == 'posix':
+								<div class="item">If you are running under Docker, don't worry, we'll take care of this for you. Just pull the new image.</div>
+							    % end
+								% if os.name == 'nt':
+								<div class="item">If you have installed using the Windows Installer, we'll provide a new installer soon.</div>
+								% end
+							    <div class="item">If you are running from source, it's up to you to install Python 3 and use it to run Bazarr.</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 			% end
         </div>
     </body>

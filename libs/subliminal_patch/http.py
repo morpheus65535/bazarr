@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import json
 from collections import OrderedDict
 
@@ -8,19 +9,21 @@ import os
 import socket
 import logging
 import requests
-import xmlrpclib
+import six.moves.xmlrpc_client
 import dns.resolver
 import ipaddress
 import re
+from six import PY3
 
 from requests import exceptions
 from urllib3.util import connection
 from retry.api import retry_call
-from exceptions import APIThrottled
+from .exceptions import APIThrottled
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
 from subliminal_patch.pitcher import pitchers
 from cloudscraper import CloudScraper
+import six
 
 try:
     import brotli
@@ -28,14 +31,14 @@ except:
     pass
 
 try:
-    from urlparse import urlparse
+    from six.moves.urllib.parse import urlparse
 except ImportError:
     from urllib.parse import urlparse
 
 from subzero.lib.io import get_viable_encoding
 
 logger = logging.getLogger(__name__)
-pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(unicode(__file__, get_viable_encoding()))), "..", certifi.where()))
+pem_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", certifi.where()))
 try:
     default_ssl_context = ssl.create_default_context(cafile=pem_file)
 except AttributeError:
@@ -99,14 +102,18 @@ class CFSession(CloudScraper):
                     # Solve Challenge
                     resp = self.sendChallengeResponse(resp, **kwargs)
 
-        except ValueError, e:
-            if e.message == "Captcha":
+        except ValueError as e:
+            if PY3:
+                error = str(e)
+            else:
+                error = e.message
+            if error == "Captcha":
                 parsed_url = urlparse(url)
                 domain = parsed_url.netloc
                 # solve the captcha
-                site_key = re.search(r'data-sitekey="(.+?)"', resp.content).group(1)
-                challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.content).group(1)
-                challenge_ray = re.search(r'data-ray="(.+?)"', resp.content).group(1)
+                site_key = re.search(r'data-sitekey="(.+?)"', resp.text).group(1)
+                challenge_s = re.search(r'type="hidden" name="s" value="(.+?)"', resp.text).group(1)
+                challenge_ray = re.search(r'data-ray="(.+?)"', resp.text).group(1)
                 if not all([site_key, challenge_s, challenge_ray]):
                     raise Exception("cf: Captcha site-key not found!")
 
@@ -150,7 +157,7 @@ class CFSession(CloudScraper):
             if cf_data is not NO_VALUE:
                 cf_cookies, hdrs = cf_data
                 logger.debug("Trying to use old cf data for %s: %s", domain, cf_data)
-                for cookie, value in cf_cookies.iteritems():
+                for cookie, value in six.iteritems(cf_cookies):
                     self.cookies.set(cookie, value, domain=domain)
 
                 self.headers = hdrs
@@ -181,10 +188,10 @@ class CFSession(CloudScraper):
                 "Unable to find Cloudflare cookies. Does the site actually have "
                 "Cloudflare IUAM (\"I'm Under Attack Mode\") enabled?")
 
-        return (OrderedDict(filter(lambda x: x[1], [
+        return (OrderedDict([x for x in [
                     ("__cfduid", self.cookies.get("__cfduid", "", domain=cookie_domain)),
                     ("cf_clearance", self.cookies.get("cf_clearance", "", domain=cookie_domain))
-                ])),
+                ] if x[1]]),
                 self.headers
         )
 
@@ -231,7 +238,7 @@ class RetryingCFSession(RetryingSession, CFSession):
     pass
 
 
-class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
+class SubZeroRequestsTransport(six.moves.xmlrpc_client.SafeTransport):
     """
     Drop in Transport for xmlrpclib that uses Requests instead of httplib
 
@@ -254,7 +261,7 @@ class SubZeroRequestsTransport(xmlrpclib.SafeTransport):
                 "https": proxy
             }
 
-        xmlrpclib.SafeTransport.__init__(self, *args, **kwargs)
+        six.moves.xmlrpc_client.SafeTransport.__init__(self, *args, **kwargs)
 
     def request(self, host, handler, request_body, verbose=0):
         """
@@ -317,7 +324,7 @@ def patch_create_connection():
         host, port = address
 
         try:
-            ipaddress.ip_address(unicode(host))
+            ipaddress.ip_address(six.text_type(host))
         except (ipaddress.AddressValueError, ValueError):
             __custom_resolver_ips = os.environ.get("dns_resolvers", None)
 

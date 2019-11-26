@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import io
 import logging
 import re
@@ -28,6 +29,7 @@ from subliminal.subtitle import fix_line_ending
 from subzero.language import Language
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
+from six.moves import map
 
 # parsing regex definitions
 title_re = re.compile(r'(?P<title>(?:.+(?= [Aa][Kk][Aa] ))|.+)(?:(?:.+)(?P<altitle>(?<= [Aa][Kk][Aa] ).+))?')
@@ -201,7 +203,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         # handle possible duplicate use of Serbian Latin
         if "sr" in lang_strings and "sr-Latn" in lang_strings:
             logger.info('Duplicate entries <Language [sr]> and <Language [sr-Latn]> found, filtering languages')
-            used_languages = filter(lambda l: l != Language.fromietf('sr-Latn'), used_languages)
+            used_languages = [l for l in used_languages if l != Language.fromietf('sr-Latn')]
             logger.info('Filtered language list %r', used_languages)
 
         # convert list of languages into search string

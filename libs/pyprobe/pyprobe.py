@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+from six import PY3
 import json
 import subprocess
 from os import path
 from sys import getfilesystemencoding
 
-import ffprobeparsers
+from . import ffprobeparsers
 
 
 class VideoFileParser:
@@ -174,16 +176,27 @@ class VideoFileParser:
             IOError: ffprobe execution failed
 
         """
-        command = [parser] + commandArgs + [inputFile.encode(getfilesystemencoding())]
-        try:
-            completedProcess = subprocess.check_output(
-                command, stderr=subprocess.STDOUT
+        if PY3:
+            command = [parser] + commandArgs + [inputFile]
+            completedProcess = subprocess.run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8"
             )
-        except subprocess.CalledProcessError as e:
-            raise IOError(
-                "Error occurred during execution - " + e.output
-            )
-        return completedProcess
+            if completedProcess.returncode != 0:
+                raise IOError(
+                    "Error occurred during execution - " + completedProcess.stderr
+                )
+            return completedProcess.stdout
+        else:
+            command = [parser] + commandArgs + [inputFile.encode(getfilesystemencoding())]
+            try:
+                completedProcess = subprocess.check_output(
+                    command, stderr=subprocess.STDOUT
+                )
+            except subprocess.CalledProcessError as e:
+                raise IOError(
+                    "Error occurred during execution - " + e.output
+                )
+            return completedProcess
 
     @staticmethod
     def _checkExecutable(executable):

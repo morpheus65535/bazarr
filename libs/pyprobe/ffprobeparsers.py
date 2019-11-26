@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 from os import path
 
-from baseparser import BaseParser
+from .baseparser import BaseParser
 
 
 class StreamParser(BaseParser):

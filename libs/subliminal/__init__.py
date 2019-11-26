@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 __title__ = 'subliminal'
 __version__ = '2.1.0.dev'
 __short_version__ = '.'.join(__version__.split('.')[:2])

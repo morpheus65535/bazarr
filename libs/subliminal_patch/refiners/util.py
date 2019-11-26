@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import types
 from subliminal_patch.http import TimeoutSession
 

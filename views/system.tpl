@@ -154,7 +154,7 @@
 							<tr>
 								<td>{{provider[0]}}</td>
 								<td>{{provider[1] if provider[1] is not None else "Good"}}</td>
-								<td>{{provider[2] if provider[2] is not "now" else "-"}}</td>
+								<td>{{provider[2] if provider[2] != "now" else "-"}}</td>
 							</tr>
 						%end
 						</tbody>

@@ -51,10 +51,32 @@ else:
     import thread  # noqa
 
 
+if py3k:
+    import collections
+    ArgSpec = collections.namedtuple(
+        "ArgSpec",
+        ["args", "varargs", "keywords", "defaults"])
+
+    from inspect import getfullargspec as inspect_getfullargspec
+
+    def inspect_getargspec(func):
+        return ArgSpec(
+            *inspect_getfullargspec(func)[0:4]
+        )
+else:
+    from inspect import getargspec as inspect_getargspec  # noqa
+
 if py3k or jython:
     import pickle
 else:
     import cPickle as pickle  # noqa
+
+if py3k:
+    def read_config_file(config, fileobj):
+        return config.read_file(fileobj)
+else:
+    def read_config_file(config, fileobj):
+        return config.readfp(fileobj)
 
 
 def timedelta_total_seconds(td):

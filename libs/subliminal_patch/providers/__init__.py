@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from __future__ import absolute_import
 import importlib
 import os
 import subliminal
@@ -10,6 +11,7 @@ from subliminal_patch.http import RetryingSession
 from subliminal_patch.subtitle import Subtitle, guess_matches
 
 from subzero.lib.io import get_viable_encoding
+import six
 
 
 class Provider(_Provider):
@@ -20,7 +22,7 @@ class Provider(_Provider):
 
 # register providers
 # fixme: this is bad
-for name in os.listdir(os.path.dirname(unicode(__file__, get_viable_encoding()))):
+for name in os.listdir(os.path.dirname(__file__)):
     if name in ("__init__.py", "mixins.py", "utils.py") or not name.endswith(".py"):
         continue
 

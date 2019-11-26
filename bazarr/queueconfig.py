@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from collections import deque
 import json
 
@@ -36,7 +37,7 @@ class Notify:
             :rtype: str
         """
         
-        if self.queue:
+        if self.queue and (len(self.queue) > 0):
             return self.queue.popleft()
 
 

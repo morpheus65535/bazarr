@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import bisect
 from collections import defaultdict
 import io
@@ -121,7 +122,7 @@ class SubsCenterProvider(Provider):
 
         self.session.close()
 
-    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
+    @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME, should_cache_fn=lambda value: value)
     def _search_url_titles(self, title):
         """Search the URL titles by kind for the given `title`.
 
@@ -209,7 +210,7 @@ class SubsCenterProvider(Provider):
                         logger.debug('Found subtitle %r', subtitle)
                         subtitles[subtitle_id] = subtitle
 
-        return subtitles.values()
+        return list(subtitles.values())
 
     def list_subtitles(self, video, languages):
         season = episode = None

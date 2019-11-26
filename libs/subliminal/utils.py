@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from datetime import datetime
 import hashlib
 import os
 import re
 import struct
+from six.moves import range
 
 
 def hash_opensubtitles(video_path):

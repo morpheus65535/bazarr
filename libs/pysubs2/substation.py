@@ -145,7 +145,12 @@ class SubstationFormat(FormatBase):
 
         def string_to_field(f, v):
             if f in {"start", "end"}:
-                return timestamp_to_ms(TIMESTAMP.match(v).groups())
+                if v.startswith("-"):
+                    # handle negative timestamps
+                    v = v[1:]
+                    return -timestamp_to_ms(TIMESTAMP.match(v).groups())
+                else:
+                    return timestamp_to_ms(TIMESTAMP.match(v).groups())
             elif "color" in f:
                 if format_ == "ass":
                     return ass_rgba_to_color(v)
@@ -184,22 +189,22 @@ class SubstationFormat(FormatBase):
             elif inside_info_section or inside_aegisub_section:
                 if line.startswith(";"): continue # skip comments
                 try:
-                    k, v = line.split(": ", 1)
+                    k, v = line.split(":", 1)
                     if inside_info_section:
-                        subs.info[k] = v
+                        subs.info[k] = v.strip()
                     elif inside_aegisub_section:
-                        subs.aegisub_project[k] = v
+                        subs.aegisub_project[k] = v.strip()
                 except ValueError:
                     pass
             elif line.startswith("Style:"):
-                _, rest = line.split(": ", 1)
+                _, rest = line.split(":", 1)
                 buf = rest.strip().split(",")
                 name, raw_fields = buf[0], buf[1:] # splat workaround for Python 2.7
                 field_dict = {f: string_to_field(f, v) for f, v in zip(STYLE_FIELDS[format_], raw_fields)}
                 sty = SSAStyle(**field_dict)
                 subs.styles[name] = sty
             elif line.startswith("Dialogue:") or line.startswith("Comment:"):
-                ev_type, rest = line.split(": ", 1)
+                ev_type, rest = line.split(":", 1)
                 raw_fields = rest.strip().split(",", len(EVENT_FIELDS[format_])-1)
                 field_dict = {f: string_to_field(f, v) for f, v in zip(EVENT_FIELDS[format_], raw_fields)}
                 field_dict["type"] = ev_type

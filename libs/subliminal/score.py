@@ -28,6 +28,7 @@ Available matches:
 
 """
 from __future__ import division, print_function
+from __future__ import absolute_import
 import logging
 
 from .video import Episode, Movie

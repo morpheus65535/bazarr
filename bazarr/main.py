@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.3.4'
+bazarr_version = '0.8.4'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -9,6 +9,11 @@ os.environ["BAZARR_VERSION"] = bazarr_version
 import gc
 import sys
 import libs
+
+import six
+from six.moves import zip
+from functools import reduce
+
 import bottle
 import itertools
 import operator
@@ -16,7 +21,7 @@ import pretty
 import math
 import ast
 import hashlib
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import warnings
 import queueconfig
 import platform
@@ -54,13 +59,15 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
     manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
+from helper import path_replace_reverse, path_replace_reverse_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+if six.PY2:
+    reload(sys)
+    sys.setdefaultencoding('utf8')
 gc.enable()
 
 # Check and install update on startup when running on Windows from installer
@@ -1289,12 +1296,12 @@ def save_settings():
     settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
     settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
     
-    before = (unicode(settings.general.ip), int(settings.general.port), unicode(settings.general.base_url),
-              unicode(settings.general.path_mappings), unicode(settings.general.getboolean('use_sonarr')),
-              unicode(settings.general.getboolean('use_radarr')), unicode(settings.general.path_mappings_movie))
-    after = (unicode(settings_general_ip), int(settings_general_port), unicode(settings_general_baseurl),
-             unicode(settings_general_pathmapping), unicode(settings_general_use_sonarr),
-             unicode(settings_general_use_radarr), unicode(settings_general_pathmapping_movie))
+    before = (six.text_type(settings.general.ip), int(settings.general.port), six.text_type(settings.general.base_url),
+              six.text_type(settings.general.path_mappings), six.text_type(settings.general.getboolean('use_sonarr')),
+              six.text_type(settings.general.getboolean('use_radarr')), six.text_type(settings.general.path_mappings_movie))
+    after = (six.text_type(settings_general_ip), int(settings_general_port), six.text_type(settings_general_baseurl),
+             six.text_type(settings_general_pathmapping), six.text_type(settings_general_use_sonarr),
+             six.text_type(settings_general_use_radarr), six.text_type(settings_general_pathmapping_movie))
     
     settings.general.ip = text_type(settings_general_ip)
     settings.general.port = text_type(settings_general_port)
@@ -1359,7 +1366,7 @@ def save_settings():
     settings_proxy_password = request.forms.get('settings_proxy_password')
     settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
     
-    before_proxy_password = (unicode(settings.proxy.type), unicode(settings.proxy.exclude))
+    before_proxy_password = (six.text_type(settings.proxy.type), six.text_type(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
@@ -1698,10 +1705,12 @@ def system():
 def get_logs():
     authorize()
     logs = []
-    for line in reversed(open(os.path.join(args.config_dir, 'log', 'bazarr.log')).readlines()):
-        lin = []
-        lin = line.split('|')
-        logs.append(lin)
+    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as file:
+        for line in file.readlines():
+            lin = []
+            lin = line.split('|')
+            logs.append(lin)
+        logs.reverse()
     
     return dict(data=logs)
 
@@ -1733,7 +1742,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(unicode(episodePath))
+    store_subtitles(path_replace_reverse(episodePath), episodePath)
 
 
 @route(base_url + 'remove_subtitles_movie', method='POST')
@@ -1751,7 +1760,7 @@ def remove_subtitles_movie():
         history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles_movie(unicode(moviePath))
+    store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
 
 
 @route(base_url + 'get_subtitle', method='POST')
@@ -1784,7 +1793,7 @@ def get_subtitle():
             score = result[4]
             history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(path, episodePath)
         redirect(ref)
     except OSError:
         pass
@@ -1841,7 +1850,7 @@ def manual_get_subtitle():
             score = result[4]
             history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(path, episodePath)
         redirect(ref)
     except OSError:
         pass
@@ -1884,7 +1893,7 @@ def perform_manual_upload_subtitle():
             score = 360
             history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
             send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-            store_subtitles(unicode(episodePath))
+            store_subtitles(path, episodePath)
 
         redirect(ref)
     except OSError:
@@ -1920,7 +1929,7 @@ def get_subtitle_movie():
             score = result[4]
             history_log_movie(1, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(path, moviePath)
         redirect(ref)
     except OSError:
         pass
@@ -1975,7 +1984,7 @@ def manual_get_subtitle_movie():
             score = result[4]
             history_log_movie(2, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(path, moviePath)
         redirect(ref)
     except OSError:
         pass
@@ -2017,7 +2026,7 @@ def perform_manual_upload_subtitle_movie():
             score = 120
             history_log_movie(4, radarrId, message, path, language_code, provider, score)
             send_notifications_movie(radarrId, message)
-            store_subtitles_movie(unicode(moviePath))
+            store_subtitles_movie(path, moviePath)
 
         redirect(ref)
     except OSError:
@@ -2091,7 +2100,7 @@ def api_history():
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
-    url = urllib.unquote(url)
+    url = six.moves.urllib.parse.unquote(url)
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
     except:
@@ -2103,7 +2112,7 @@ def test_url(protocol, url):
 @route(base_url + 'test_notification/<protocol>/<provider:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_notification(protocol, provider):
-    provider = urllib.unquote(provider)
+    provider = six.moves.urllib.parse.unquote(provider)
     apobj = apprise.Apprise()
     apobj.add(protocol + "://" + provider)
     
