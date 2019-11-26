@@ -167,8 +167,9 @@ def provider_throttle(name, exception):
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
                 settings.write(handle)
 
-            logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name, throttle_description,
-                         throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0])
+            logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
+                         throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
+                         if exception.args else None)
 
 
 def throttled_count(name):
