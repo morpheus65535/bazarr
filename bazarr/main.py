@@ -45,7 +45,7 @@ from io import BytesIO
 from six import text_type
 from beaker.middleware import SessionMiddleware
 from cork import Cork
-from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook
+from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 
@@ -173,7 +173,12 @@ def login():
 
 @route(base_url + 'logout')
 def logout():
-    aaa.logout(success_redirect=(base_url + 'login'))
+    if settings.auth.type == 'form':
+        aaa.logout(success_redirect=(base_url + 'login'))
+    elif settings.auth.type == 'basic':
+        abort(401)
+    else:
+        aaa.logout(success_redirect=(base_url))
 
 
 @route('/')
@@ -184,7 +189,9 @@ def redirect_root():
 
 
 @route(base_url + 'shutdown')
+@custom_auth_basic(check_credentials)
 def shutdown():
+    authorize()
     try:
         server.stop()
     except:
@@ -202,7 +209,9 @@ def shutdown():
 
 
 @route(base_url + 'restart')
+@custom_auth_basic(check_credentials)
 def restart():
+    authorize()
     try:
         server.stop()
     except:
@@ -454,6 +463,7 @@ def save_wizard():
 @route(base_url + 'static/:path#.+#', name='static')
 @custom_auth_basic(check_credentials)
 def static(path):
+    authorize()
     return static_file(path, root=os.path.join(os.path.dirname(__file__), '../static'))
 
 
@@ -2100,6 +2110,7 @@ def api_history():
 @route(base_url + 'test_url/<protocol>/<url:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
+    authorize()
     url = six.moves.urllib.parse.unquote(url)
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
@@ -2112,6 +2123,7 @@ def test_url(protocol, url):
 @route(base_url + 'test_notification/<protocol>/<provider:path>', method='GET')
 @custom_auth_basic(check_credentials)
 def test_notification(protocol, provider):
+    authorize()
     provider = six.moves.urllib.parse.unquote(provider)
     apobj = apprise.Apprise()
     apobj.add(protocol + "://" + provider)
@@ -2125,6 +2137,7 @@ def test_notification(protocol, provider):
 @route(base_url + 'notifications')
 @custom_auth_basic(check_credentials)
 def notifications():
+    authorize()
     if queueconfig.notifications:
         return queueconfig.notifications.read()
     else:
@@ -2134,6 +2147,7 @@ def notifications():
 @route(base_url + 'running_tasks')
 @custom_auth_basic(check_credentials)
 def running_tasks_list():
+    authorize()
     return dict(tasks=running_tasks)
 
 
