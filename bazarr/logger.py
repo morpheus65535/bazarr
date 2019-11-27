@@ -67,7 +67,7 @@ def configure_logging(debug=False):
     # File Logging
     global fh
     fh = TimedRotatingFileHandler(os.path.join(args.config_dir, 'log/bazarr.log'), when="midnight", interval=1,
-                                  backupCount=7, delay=True)
+                                  backupCount=7, delay=True, encoding='utf-8')
     f = OneLineExceptionFormatter('%(asctime)s|%(levelname)-8s|%(name)-32s|%(message)s|',
                                   '%d/%m/%Y %H:%M:%S')
     fh.setFormatter(f)
