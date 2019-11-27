@@ -328,6 +328,22 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>API Key</label>
+                            </div>
+                            <div class="six wide column">
+                                <div class='field'>
+                                    <div class="ui action input">
+                                        <input id="settings_auth_apikey" name="settings_auth_apikey" type="text" readonly value="{{settings.auth.apikey}}">
+                                        <button class="no_loader ui red icon button" type="button" onclick="generate_apikey()">
+                                            <i class="sync icon"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -865,4 +881,16 @@
                     });
 
 
+                </script>
+
+                <script>
+                    function generate_apikey() {
+                        var result           = '';
+                        var characters       = 'abcdef0123456789';
+                        var charactersLength = characters.length;
+                        for ( var i = 0; i < 32; i++ ) {
+                            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                        }
+                        $( "#settings_auth_apikey" ).val( result );
+                    }
                 </script>

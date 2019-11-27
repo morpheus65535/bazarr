@@ -147,6 +147,16 @@ def authorize():
         aaa.require(fail_redirect=(base_url + 'login'))
 
 
+def api_authorize():
+    if 'apikey' in request.GET.dict:
+        if request.GET.dict['apikey'][0] == settings.auth.apikey:
+            return
+        else:
+            abort(401, 'Unauthorized')
+    else:
+        abort(401, 'Unauthorized')
+
+
 def post_get(name, default=''):
     return request.POST.get(name, default).strip()
 
@@ -1429,7 +1439,8 @@ def save_settings():
                 pass
             else:
                 aaa._beaker_session.delete()
-    
+    settings.auth.apikey = request.forms.get('settings_auth_apikey')
+
     settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
     settings_sonarr_port = request.forms.get('settings_sonarr_port')
     settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
@@ -2228,6 +2239,17 @@ def movie_history(no):
             item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
 
     return dict(data=movie_history)
+
+
+# Don't put any route under this one
+@route(base_url + 'api/help')
+def api_help():
+    endpoints = []
+    for route in app.app.routes:
+        if '/api/' in route.rule:
+            endpoints.append(route.rule)
+
+    return dict(endpoints=endpoints)
 
 
 # Mute DeprecationWarning

@@ -50,6 +50,14 @@ if not os.path.exists(os.path.join(args.config_dir, 'cache')):
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging
 
+# create random api_key if there's none in config.ini
+if not settings.auth.apikey:
+    from binascii import hexlify
+    from six import text_type
+    settings.auth.apikey = text_type(hexlify(os.urandom(16)))
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
 # create database file
 if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
     import sqlite3

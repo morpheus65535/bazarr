@@ -116,7 +116,7 @@
         .tab()
     ;
 
-    $('a:not(.tabs), button:not(.cancel, .test)').on('click', function(){
+    $('a:not(.tabs), button:not(.cancel, .test, .no_loader)').on('click', function(){
         $('#loader').addClass('active');
     });
 
