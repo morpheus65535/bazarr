@@ -6,7 +6,6 @@ import time
 import rarfile
 
 from cork import Cork
-from backports import configparser2
 from config import settings
 from get_args import args
 from logger import configure_logging
@@ -91,8 +90,6 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
     logging.debug("BAZARR Created releases file")
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
-
-cfg = configparser2.ConfigParser()
 
 if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
     cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
