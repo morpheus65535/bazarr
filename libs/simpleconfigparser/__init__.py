@@ -24,7 +24,7 @@ THE SOFTWARE.
 """
 
 try:
-    from backports.configparser2 import ConfigParser as configparser, NoOptionError, NoSectionError
+    from configparser import ConfigParser as configparser, NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
 
@@ -123,7 +123,7 @@ class simpleconfigparser(configparser):
         except NoSectionError:
             return None
 
-    def get(self, section, option, raw=False, vars=None):
+    def get(self, section, option, raw=False, vars=None, fallback=None):
         try:
             # Strip out quotes from the edges
             return configparser.get(self, section, option, raw=raw, vars=vars).strip('"\'')
