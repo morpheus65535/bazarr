@@ -313,10 +313,10 @@ class TitulkyProvider(Provider):
             if not r.content:
                 logger.debug('Unable to download subtitle. No data returned from provider')
                 return
-            elif 'Limit vyčerpán' in r.content:
+            elif 'Limit vyčerpán' in r.text:
                 raise DownloadLimitExceeded
             
-            soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+            soup = ParserBeautifulSoup(r.text.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
             # links = soup.find("a", {"id": "downlink"}).find_all('a')
             link = soup.find(id="downlink")
             # TODO: add settings for choice
