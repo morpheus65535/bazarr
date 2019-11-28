@@ -256,7 +256,7 @@ class FileCache(MutableMapping):
                 return self._loads(f.read())
         except (IOError, OSError):
             logger.warning('Error opening file: {}'.format(filename))
-            return None
+            raise
 
     def __setitem__(self, key, value):
         ekey = self._encode_key(key)

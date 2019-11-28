@@ -46,15 +46,7 @@ if os.name == 'nt':  # pragma: no cover
                 dst = unicode(dst, sys.getfilesystemencoding())
             if _rename_atomic(src, dst):
                 return True
-            retry = 0
-            rv = False
-            while not rv and retry < 100:
-                rv = _MoveFileEx(src, dst, _MOVEFILE_REPLACE_EXISTING |
-                                 _MOVEFILE_WRITE_THROUGH)
-                if not rv:
-                    time.sleep(0.001)
-                    retry += 1
-            return rv
+            return _MoveFileEx(src, dst, _MOVEFILE_REPLACE_EXISTING | _MOVEFILE_WRITE_THROUGH)
 
         # new in Vista and Windows Server 2008
         _CreateTransaction = ctypes.windll.ktmw32.CreateTransaction
@@ -68,18 +60,11 @@ if os.name == 'nt':  # pragma: no cover
             if ta == -1:
                 return False
             try:
-                retry = 0
-                rv = False
-                while not rv and retry < 100:
-                    rv = _MoveFileTransacted(src, dst, None, None,
-                                             _MOVEFILE_REPLACE_EXISTING |
-                                             _MOVEFILE_WRITE_THROUGH, ta)
-                    if rv:
-                        rv = _CommitTransaction(ta)
-                        break
-                    else:
-                        time.sleep(0.001)
-                        retry += 1
+                rv = _MoveFileTransacted(src, dst, None, None,
+                                         _MOVEFILE_REPLACE_EXISTING |
+                                         _MOVEFILE_WRITE_THROUGH, ta)
+                if rv:
+                    rv = _CommitTransaction(ta)
                 return rv
             finally:
                 _CloseHandle(ta)
@@ -92,7 +77,7 @@ if os.name == 'nt':  # pragma: no cover
             return
         # Fall back to "move away and replace"
         try:
-            os.rename(src, dst)
+            shutil.move(src, dst)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
