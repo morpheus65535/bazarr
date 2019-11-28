@@ -71,7 +71,7 @@
                     </div>
                 </div>
 
-                % include('providers.tpl')
+{% include('providers.html') %}
 
                 <div class="ui dividing header">Subtitles languages</div>
                 <div class="twelve wide column">
@@ -103,13 +103,13 @@
                                 <div class='field'>
                                     <select name="settings_subliminal_languages" id="settings_languages" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Languages</option>
-                                        %enabled_languages = []
-                                        %for language in settings_languages:
+                                        {% set enabled_languages = [] %}
+                                        {% for language in settings_languages %}
                                         <option value="{{language['code2']}}">{{language['name']}}</option>
-                                        %if language['enabled'] == True:
-                                        %	enabled_languages.append(str(language['code2']))
-                                        %end
-                                        %end
+                                        {% if language['enabled'] == True %}
+                                            {{ enabled_languages.append(str(language['code2'])) }}
+                                        {% endif %}
+                                        {% endfor %}
                                     </select>
                                 </div>
                             </div>
@@ -148,11 +148,11 @@
                             <div class="eleven wide column">
                                 <div class='field'>
                                     <select name="settings_serie_default_languages" id="settings_serie_default_languages" multiple="" class="ui fluid search selection dropdown">
-                                        %if not settings.general.getboolean('single_language'):
+                                        {% if not settings.general.getboolean('single_language') %}
                                         <option value="">Languages</option>
-                                        %else:
+                                        {% else %}
                                         <option value="None">None</option>
-                                        %end
+                                        {% endif %}
                                     </select>
                                 </div>
                             </div>
@@ -396,19 +396,19 @@
                     });
 
                     $('#settings_languages').dropdown('clear');
-                    $('#settings_languages').dropdown('set selected',{{!enabled_languages}});
+                    $('#settings_languages').dropdown('set selected',{{ enabled_languages }});
                     $('#settings_subfolder').dropdown('clear');
-                    $('#settings_subfolder').dropdown('set selected', '{{!settings.general.subfolder}}');
+                    $('#settings_subfolder').dropdown('set selected', '{{ settings.general.subfolder }}');
 
-                    %if settings.general.serie_default_language != 'None':
-                    $('#settings_serie_default_languages').dropdown('set selected',{{!settings.general.serie_default_language}});
-                    %end
-                    %if settings.general.movie_default_language != 'None':
-                    $('#settings_movie_default_languages').dropdown('set selected',{{!settings.general.movie_default_language}});
-                    %end
+                    {% if settings.general.serie_default_language != 'None' %}
+                    $('#settings_serie_default_languages').dropdown('set selected',{{ settings.general.serie_default_language }});
+                    {% endif %}
+                    {% if settings.general.movie_default_language != 'None' %}
+                    $('#settings_movie_default_languages').dropdown('set selected',{{ settings.general.movie_default_language }});
+                    {% endif %}
 
-                    $('#settings_serie_default_forced').dropdown('set selected','{{!settings.general.serie_default_forced}}');
-                    $('#settings_movie_default_forced').dropdown('set selected','{{!settings.general.movie_default_forced}}');
+                    $('#settings_serie_default_forced').dropdown('set selected','{{ settings.general.serie_default_forced }}');
+                    $('#settings_movie_default_forced').dropdown('set selected','{{ settings.general.movie_default_forced }}');
 
                     $('#settings_languages').dropdown('setting', 'onChange', function(){
                         $('.form').form('validate field', 'settings_subliminal_languages');

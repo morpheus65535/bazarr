@@ -42,7 +42,7 @@
         <div id='loader' class="ui page dimmer">
             <div id="loader_text" class="ui indeterminate text loader">Saving settings...</div>
         </div>
-        % include('menu.tpl')
+{% include 'menu.html'  %}
 
         <div id="fondblanc" class="ui container">
             <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form" autocomplete="off">
@@ -58,27 +58,27 @@
             </div>
             <div class="ui bottom attached tab segment active" data-tab="general">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                % include('settings_general.tpl')
+                {% include 'settings_general.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="sonarr">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                % include('settings_sonarr.tpl')
+                {% include 'settings_sonarr.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="radarr">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                % include('settings_radarr.tpl')
+                {% include 'settings_radarr.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="subtitles">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                % include('settings_subtitles.tpl')
+                {% include 'settings_subtitles.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="notifier">
                 <div class="ui container"><button class="submit ui blue right floated button" type="submit" value="Submit" form="settings_form">Save</button></div>
-                % include('settings_notifications.tpl')
+                {% include 'settings_notifications.html' %}
             </div>
             </form>
         </div>
-        % include('footer.tpl')
+        {% include 'footer.tpl' %}
     </body>
 </html>
 

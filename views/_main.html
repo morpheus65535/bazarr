@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>{% block title %} {% endblock %}</title>
+
+    {% block head_meta %}
+        <script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
+        <script src="{{base_url}}static/semantic/semantic.min.js"></script>
+        <script src="{{base_url}}static/jquery/tablesort.js"></script>
+        <link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+
+        <link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
+        <link rel="manifest" href="{{base_url}}static/manifest.json">
+        <link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
+        <link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
+
+        <meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
+        <meta name="theme-color" content="#ffffff">
+    {% endblock head_meta %}
+
+
+
+    {% block head_css %}
+        <!-- Bootstrap Core CSS -->
+        <link href="{{ url_for('static',filename='plugins/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href={{ url_for("static", filename="iron.css") }}>
+        <!--This page css - Morris CSS -->
+        <link href="{{ url_for('static',filename='plugins/c3-master/c3.min.css') }}" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="{{ url_for('static',filename='css/style.css') }}" rel="stylesheet">
+        <!-- You can change the theme colors from here -->
+        <link href="{{ url_for('static',filename='css/colors/blue.css') }}" rel="stylesheet">
+        <!-- SweetAlert2 -->
+        <link href="{{ url_for('static',filename='plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet">
+
+        <!--[if lt IE 9]> -->
+        <script src="{{ url_for('static',filename='js/html5shiv.min.js') }}"></script>
+        <script src="{{ url_for('static',filename='js/respond.min.js') }}"></script>
+        <script src="{{ url_for('static',filename='js/polyfill.min.js') }}"></script>
+        <script type="text/javascript"
+                src="https://agile.ironmountain.com/jira/s/d41d8cd98f00b204e9800998ecf8427e-CDN/eaeik7/800007/23de5049e29b4e5a8a9d712986eca8ec/2.2.4.6/_/download/batch/com.atlassian.plugins.jquery:jquery/com.atlassian.plugins.jquery:jquery.js?collectorId=c0cc47fb"></script>
+        <script type="text/javascript"
+                src="https://agile.ironmountain.com/jira/s/05b27ac9d3a09aa46f6a60b42dc992c6-T/eaeik7/800007/23de5049e29b4e5a8a9d712986eca8ec/3.0.7/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?locale=en-US&collectorId=c0cc47fb"></script>
+
+
+    {% endblock head_css %}
+
+    {% block head %}
+    {% endblock head %}
+
+    {% block head_tail %}
+    {% endblock head_tail %}
+
+</head>
+<body class="fix-header card-no-border fix-sidebar">
+
+{% if password %}
+    {% include "password_change.html" %}
+{% endif %}
+
+{% block page_body %}
+
+
+        {% block body %}
+
+        {% endblock body %}
+    </div>
+{% endblock page_body %}
+
+{% block tail_js %}
+    <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
+    <!-- Bootstrap tether Core JavaScript -->
+    <script src="{{ url_for('static',filename='plugins/popper/popper.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
+    <!--Wave Effects -->
+    <script src="{{ url_for('static',filename='js/waves.js') }}"></script>
+    <!--Menu sidebar -->
+    <script src="{{ url_for('static',filename='js/sidebarmenu.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/validation.js') }}"></script>
+    <!-- Sweet-Alert  -->
+    <script src="{{ url_for('static',filename='plugins/sweetalert2/sweetalert2.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/session-timeout/idle/jquery.idletimeout.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/session-timeout/idle/jquery.idletimer.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/session-timeout/idle/session-timeout-idle-init.js') }}"></script>
+    <!--c3 JavaScript -->
+    <script src="{{ url_for('static',filename='plugins/d3/d3.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/c3-master/c3.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/moment/moment.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/moment/locale/sk.js') }}"></script>
+
+    <!--Custom JavaScript -->
+    <script src="{{ url_for('static',filename='plugins/dff/dff.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/jquery.slimscroll.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/sparkline/jquery.sparkline.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
+
+    <script>
+        $(document).ready(function () {
+            {% with messages = get_flashed_messages(with_categories=true, category_filter=('success', 'warning', 'error', 'info')) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        var msg = "{{ message }}";
+                        var type = "{{ category }}";
+                    {% endfor %}
+                    Swal.fire({
+                        title: msg,
+                        type: type,
+                        timer: 5000,
+                        allowEnterKey: true,
+                        showConfirmButton: false
+                    });
+                {% endif %}
+            {% endwith %}
+            {% if password %}
+                $("#passchange").modal('show');
+                $('#passchange').on('shown.bs.modal', function () {
+                    $('#password1').focus();
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock tail_js %}
+{% block tail %}
+{% endblock tail %}
+</body>
+
+</html>

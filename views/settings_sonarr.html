@@ -187,13 +187,13 @@
                     });
 
                     $('#settings_sonarr_sync').dropdown('clear');
-                    $('#settings_sonarr_sync').dropdown('set selected','{{!settings.sonarr.full_update}}');
+                    $('#settings_sonarr_sync').dropdown('set selected','{{settings.sonarr.full_update|safe}}');
                     $('#settings_sonarr_sync').dropdown('refresh');
                     $('#settings_sonarr_sync_day').dropdown('clear');
-                    $('#settings_sonarr_sync_day').dropdown('set selected','{{!settings.sonarr.full_update_day}}');
+                    $('#settings_sonarr_sync_day').dropdown('set selected','{{settings.sonarr.full_update_day|safe}}');
                     $('#settings_sonarr_sync_day').dropdown('refresh');
                     $('#settings_sonarr_sync_hour').dropdown('clear');
-                    $('#settings_sonarr_sync_hour').dropdown('set selected','{{!settings.sonarr.full_update_hour}}');
+                    $('#settings_sonarr_sync_hour').dropdown('set selected','{{settings.sonarr.full_update_hour|safe}}');
                     $('#settings_sonarr_sync_hour').dropdown('refresh');
 
                     $('#sonarr_validate').on('click', function() {

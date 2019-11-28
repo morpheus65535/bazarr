@@ -187,13 +187,13 @@
                     });
 
                     $('#settings_radarr_sync').dropdown('clear');
-                    $('#settings_radarr_sync').dropdown('set selected','{{!settings.radarr.full_update}}');
+                    $('#settings_radarr_sync').dropdown('set selected','{{settings.radarr.full_update|safe}}');
                     $('#settings_radarr_sync').dropdown('refresh');
                     $('#settings_radarr_sync_day').dropdown('clear');
-                    $('#settings_radarr_sync_day').dropdown('set selected','{{!settings.radarr.full_update_day}}');
+                    $('#settings_radarr_sync_day').dropdown('set selected','{{settings.radarr.full_update_day|safe}}');
                     $('#settings_radarr_sync_day').dropdown('refresh');
                     $('#settings_radarr_sync_hour').dropdown('clear');
-                    $('#settings_radarr_sync_hour').dropdown('set selected','{{!settings.radarr.full_update_hour}}');
+                    $('#settings_radarr_sync_hour').dropdown('set selected','{{settings.radarr.full_update_hour|safe}}');
                     $('#settings_radarr_sync_hour').dropdown('refresh');
 
                     $('#radarr_validate').on('click', function() {

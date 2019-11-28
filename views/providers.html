@@ -782,14 +782,14 @@
                                 <div class='field' hidden>
                                     <select name="settings_subliminal_providers" id="settings_providers" multiple="" class="ui fluid search selection dropdown">
                                         <option value="">Providers</option>
-                                        %enabled_providers = []
-                                        %providers = settings.general.enabled_providers.lower().split(',')
-                                        %for provider in settings_providers:
+                                        {% set enabled_providers = [] %}
+                                        {% set providers = settings.general.enabled_providers.lower().split(',') %}
+                                        {% for provider in settings_providers %}
                                         <option value="{{provider}}">{{provider}}</option>
-                                        %end
-                                        %for provider in providers:
-                                        %enabled_providers.append(str(provider))
-                                        %end
+                                        {% endfor %}
+                                        {% for provider in providers %}
+                                        {{ enabled_providers.append(provider) }}
+                                        {% endfor %}
                                     </select>
                                 </div>
                             </div>
@@ -823,7 +823,7 @@
                     }
 
                     $('#settings_providers').dropdown('clear');
-                    $('#settings_providers').dropdown('set selected',{{!enabled_providers}});
+                    $('#settings_providers').dropdown('set selected',{{ enabled_providers|safe }});
                     $('#settings_providers').dropdown();
 
                     $('#settings_providers').dropdown('setting', 'onChange', function(){

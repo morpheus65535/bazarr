@@ -96,7 +96,7 @@
                     Next
                 </button></div>
 
-                % include('wizard_general.tpl')
+                {% include 'wizard_general.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="subtitles" id="subtitles">
 
@@ -111,7 +111,7 @@
                 </button>
                     </div>
 
-            % include('wizard_subtitles')
+            {% include 'wizard_subtitles.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="sonarr" id="sonarr">
                 <div class="ui container"><button class="submit ui blue right floated right labeled icon button next3">
@@ -123,7 +123,7 @@
                     Prev
                 </button></div>
 
-                % include('wizard_sonarr.tpl')
+                {% include 'wizard_sonarr.html' %}
             </div>
             <div class="ui bottom attached tab segment" data-tab="radarr" id="radarr">
 
@@ -133,11 +133,11 @@
                     Prev
                 </button></div>
 
-                % include('wizard_radarr')
+                {% include 'wizard_radarr.html' %}
             </div>
             </form>
         </div>
-        % include('footer.tpl')
+        {% include 'footer.tpl' %}
     </body>
 </html>
 
