@@ -15,6 +15,7 @@ from subliminal_patch import search_external_subtitles
 from subzero.language import Language
 from bs4 import UnicodeDammit
 import six
+from binaryornot.check import is_binary
 
 from get_args import args
 from database import database
@@ -86,27 +87,6 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
                         [str(language), path_replace_reverse(subtitle_path)])
-                else:
-                    if os.path.splitext(subtitle)[1] != ".sub":
-                        logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(os.path.join(os.path.dirname(reversed_path), subtitle), 'r') as f:
-                            text = f.read()
-                            try:
-                                encoding = UnicodeDammit(text)
-                                if six.PY2:
-                                    text = text.decode(encoding.original_encoding)
-                                detected_language = langdetect.detect(text)
-                            except Exception as e:
-                                logging.exception(
-                                    'BAZARR Error trying to detect language for this subtitles file: ' +
-                                    os.path.join(os.path.dirname(reversed_path), subtitle) +
-                                    ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
-                            else:
-                                if len(detected_language) > 0:
-                                    logging.debug(
-                                        "BAZARR external subtitles detected and analysis guessed this language: " + str(
-                                            detected_language))
-                                    actual_subtitles.append([str(detected_language), path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -178,27 +158,6 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append([str(language), path_replace_reverse_movie(subtitle_path)])
-                else:
-                    if os.path.splitext(subtitle)[1] != ".sub":
-                        logging.debug("BAZARR falling back to file content analysis to detect language.")
-                        with open(os.path.join(os.path.dirname(reversed_path), dest_folder, subtitle), 'r') as f:
-                            text = f.read()
-                            try:
-                                encoding = UnicodeDammit(text)
-                                if six.PY2:
-                                    text = text.decode(encoding.original_encoding)
-                                detected_language = langdetect.detect(text)
-                            except Exception as e:
-                                logging.exception(
-                                    'BAZARR Error trying to detect language for this subtitles file: ' +
-                                    os.path.join(os.path.dirname(reversed_path), subtitle) +
-                                    ' You should try to delete this subtitles file manually and ask Bazarr to download it again.')
-                            else:
-                                if len(detected_language) > 0:
-                                    logging.debug(
-                                        "BAZARR external subtitles detected and analysis guessed this language: " +
-                                        str(detected_language))
-                                    actual_subtitles.append([str(detected_language), path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -400,6 +359,10 @@ def guess_external_subtitles(dest_folder, subtitles):
             subtitle_path = os.path.join(dest_folder, subtitle)
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
                 logging.debug("BAZARR falling back to file content analysis to detect language.")
+                if is_binary(subtitle_path):
+                    logging.debug("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                                  subtitle_path)
+                    continue
                 detected_language = None
                 with open(subtitle_path, 'r') as f:
                     text = f.read()
