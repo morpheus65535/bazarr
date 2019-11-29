@@ -40,20 +40,21 @@ def track_event(category=None, action=None, label=None):
 
     session = Session()
     event = Event(category=category, action=action, label=label, value=1)
-    path = u"/" + u"/".join([category, action, label])
-    page = Page(path.lower())
 
     tracker.add_custom_variable(CustomVariable(index=1, name='BazarrVersion', value=os.environ["BAZARR_VERSION"], scope=1))
     tracker.add_custom_variable(CustomVariable(index=2, name='PythonVersion', value=platform.python_version(), scope=1))
     if settings.general.getboolean('use_sonarr'):
         tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value=sonarr_version, scope=1))
+    else:
+        tracker.add_custom_variable(CustomVariable(index=3, name='SonarrVersion', value='unused', scope=1))
     if settings.general.getboolean('use_radarr'):
         tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value=radarr_version, scope=1))
+    else:
+        tracker.add_custom_variable(CustomVariable(index=4, name='RadarrVersion', value='unused', scope=1))
     tracker.add_custom_variable(CustomVariable(index=5, name='OSVersion', value=platform.platform(), scope=1))
 
     try:
         tracker.track_event(event, session, visitor)
-        # tracker.track_pageview(page, session, visitor) ## Commented because we were having too much hits on GA.
     except:
         pass
     else:
