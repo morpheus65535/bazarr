@@ -108,12 +108,12 @@
 							<a class="item" href="{{base_url}}wanted">
 								<i class="warning sign icon">
 									% if settings.general.getboolean('use_sonarr') and wanted_series > 0:
-									<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
+									<div id="wanted_series" class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">
 										{{wanted_series}}
 									</div>
 									% end
 									% if settings.general.getboolean('use_radarr') and wanted_movies > 0:
-									<div class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
+									<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">
 										{{wanted_movies}}
 									</div>
 									% end
@@ -301,7 +301,7 @@
     $('#restart_link').on('click', function(){
 		$('#loader_text').text("Bazarr is restarting. Please Wait...");
 		$.ajax({
-			url: "{{base_url}}restart",
+			url: {{url_for('restart')}},
 			async: true,
 			error: (function(){
     			setTimeout(function(){ setInterval(ping, 2000); },8000);
@@ -309,31 +309,11 @@
 		})
 	});
 
-	% from config import settings
-    % from get_args import args
-	% ip = settings.general.ip
-	% port = args.port if args.port else settings.general.port
-	% base_url = settings.general.base_url
-
-	if ("{{ip}}" === "0.0.0.0") {
-		public_ip = window.location.hostname;
-	} else {
-		public_ip = "{{ip}}";
-	}
-
-	protocol = window.location.protocol;
-
-	if (window.location.port === '{{current_port}}') {
-	    public_port = '{{port}}';
-    } else {
-        public_port = window.location.port;
-    }
-
 	function ping() {
 		$.ajax({
-			url: protocol + '//' + public_ip + ':' + public_port + '{{base_url}}',
+			url: {{url_for('redirect_root')}},
 			success: function(result) {
-				window.location.href= protocol + '//' + public_ip + ':' + public_port + '{{base_url}}';
+				window.location.href= {{url_for('redirect_root')}};
 			}
 		});
 	}
@@ -349,9 +329,7 @@
 	    	$('#search_column').addClass('ten wide');
 		}
 	  }).resize();
-</script>
 
-<script type="text/javascript">
 	var url_notifications = location.protocol +"//" + window.location.host + "{{base_url}}notifications";
 	var notificationTimeout;
 	var timeout;
@@ -360,7 +338,7 @@
 	var length = {};
 	function doNotificationsAjax() {
         $.ajax({
-            url: url_notifications,
+            url: {{url_for('notifications')}},
             success: function (data) {
             	if (data !== "") {
 					data = JSON.parse(data);
@@ -440,18 +418,10 @@
     }
     notificationTimeout = setTimeout(doNotificationsAjax, 1000);
 
-	$(window).bind('beforeunload', function(){
-		clearTimeout(notificationTimeout);
-	});
-</script>
-
-
-<script type="text/javascript">
-	var url_tasks = location.protocol +"//" + window.location.host + "{{base_url}}running_tasks";
 	var tasksTimeout;
 	function doTasksAjax() {
         $.ajax({
-            url: url_tasks,
+            url: {{url_for('running_tasks_list')}},
             dataType: 'json',
             success: function (data) {
             	$('#tasks > tbody  > tr').each(function() {
@@ -504,5 +474,6 @@
 
 	$(window).bind('beforeunload', function(){
 		clearTimeout(tasksTimeout);
+		clearTimeout(notificationTimeout);
 	});
 </script>

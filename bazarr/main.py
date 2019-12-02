@@ -152,8 +152,8 @@ def authorize():
 
 
 def api_authorize():
-    if 'apikey' in request.GET.dict:
-        if request.GET.dict['apikey'][0] == settings.auth.apikey:
+    if 'apikey' in request.args.dict:
+        if request.args.dict['apikey'][0] == settings.auth.apikey:
             return
         else:
             abort(401, 'Unauthorized')
@@ -552,8 +552,8 @@ def series():
     authorize()
 
     series_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
-    page = request.GET.page
-    if page == "":
+    page = request.data
+    if not page:
         page = "1"
     page_size = int(settings.general.page_size)
     offset = (int(page) - 1) * page_size
@@ -759,7 +759,7 @@ def movies():
     authorize()
 
     missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
-    page = request.GET.page
+    page = request.data
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
@@ -947,7 +947,7 @@ def historyseries():
     row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_shows on "
                                  "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
                                  "table_shows.title is not NULL", only_one=True)['count']
-    page = request.GET.page
+    page = request.args.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
@@ -1026,7 +1026,7 @@ def historymovies():
     row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies ON "
                                  "table_history_movie.radarrId=table_movies.radarrId "
                                  "WHERE table_movies.title is not NULL", only_one=True)['count']
-    page = request.GET.page
+    page = request.args.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
@@ -1114,7 +1114,7 @@ def wantedseries():
 
     missing_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
                                      monitored_only_query_string, only_one=True)['count']
-    page = request.GET.page
+    page = request.args.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
@@ -1148,7 +1148,7 @@ def wantedmovies():
 
     missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
                                      monitored_only_query_string, only_one=True)['count']
-    page = request.GET.page
+    page = request.args.page
     if page == "":
         page = "1"
     page_size = int(settings.general.page_size)
