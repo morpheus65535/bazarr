@@ -6,6 +6,8 @@ import base64
 import random
 import platform
 import os
+import logging
+import codecs
 
 from pyga.requests import Event, Page, Tracker, Session, Visitor, Config
 from pyga.entities import CustomVariable
@@ -29,11 +31,11 @@ def track_event(category=None, action=None, label=None):
 
     try:
         if settings.analytics.visitor:
-            visitor = pickle.loads(base64.b64decode(settings.analytics.visitor), encoding='utf-8')
-        if visitor.user_agent is None:
-            visitor.user_agent = os.environ.get("SZ_USER_AGENT")
-        if visitor.unique_id > int(0x7fffffff):
-            visitor.unique_id = random.randint(0, 0x7fffffff)
+            visitor = pickle.loads(codecs.decode(settings.analytics.visitor.encode(), "base64"))
+            if visitor.user_agent is None:
+                visitor.user_agent = os.environ.get("SZ_USER_AGENT")
+            if visitor.unique_id > int(0x7fffffff):
+                visitor.unique_id = random.randint(0, 0x7fffffff)
     except:
         visitor = Visitor()
         visitor.unique_id = random.randint(0, 0x7fffffff)
@@ -56,8 +58,9 @@ def track_event(category=None, action=None, label=None):
     try:
         tracker.track_event(event, session, visitor)
     except:
+        logging.debug("BAZARR unable to track event.")
         pass
     else:
-        settings.analytics.visitor = base64.b64encode(pickle.dumps(visitor))
+        settings.analytics.visitor = codecs.encode(pickle.dumps(visitor), "base64").decode()
         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
             settings.write(handle)
