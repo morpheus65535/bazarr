@@ -382,7 +382,7 @@
 		<div class="episode_dialog ui modal">
 			<i class="close icon"></i>
 			<div class="header">
-				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
+				<span class="series_title_span"></span> - <span class="season_span"></span>x<span class="episode_span"></span> - <span class="episode_title_span"></span>
 			</div>
 			<div class="scrolling content">
 				<table id="episode_result" class="display" style="width:100%">
@@ -405,7 +405,7 @@
 		<div class="search_dialog ui modal">
 			<i class="close icon"></i>
 			<div class="header">
-				<span id="series_title_span"></span> - <span id="season"></span>x<span id="episode"></span> - <span id="episode_title"></span>
+				<span class="series_title_span"></span> - <span class="season_span"></span>x<span class="episode_span"></span> - <span class="episode_title_span"></span>
 				<br><h5>Episode path is: <div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="episode_path_span"></span></div>
 				<br>Scenename is: <div class="ui tiny inverted label" style="background-color: orange;"><span id="episode_scenename_span"></span></div></h5>
 			</div>
@@ -588,10 +588,10 @@
 	});
 
 	$('.episode_history').on('click', function(){
-		$("#series_title_span").html($(this).data("series_title"));
-		$("#season").html($(this).data("season"));
-		$("#episode").html($(this).data("episode"));
-		$("#episode_title").html($(this).data("episode_title"));
+		$(".series_title_span").html($(this).data("series_title"));
+		$(".season_span").html($(this).data("season"));
+		$(".episode_span").html($(this).data("episode"));
+		$(".episode_title_span").html($(this).data("episode_title"));
 
 		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
 
@@ -633,10 +633,10 @@
 	});
 
 	$('.manual_search').on('click', function(){
-		$("#series_title_span").html($(this).data("series_title"));
-		$("#season").html($(this).data("season"));
-		$("#episode").html($(this).data("episode"));
-		$("#episode_title").html($(this).data("episode_title"));
+		$(".series_title_span").html($(this).data("series_title"));
+		$(".season_span").html($(this).data("season"));
+		$(".episode_span").html($(this).data("episode"));
+		$(".episode_title_span").html($(this).data("episode_title"));
 		$("#episode_path_span").html($(this).attr("data-episodePath"));
 		$("#episode_scenename_span").html($(this).attr("data-sceneName"));
 
