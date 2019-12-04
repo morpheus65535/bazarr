@@ -136,7 +136,7 @@ def custom_auth_basic(check):
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
-    if hashlib.md5(pw).hexdigest() == password and user == username:
+    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
         return True
     return False
 
