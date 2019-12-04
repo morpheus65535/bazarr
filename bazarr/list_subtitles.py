@@ -90,14 +90,15 @@ def store_subtitles(original_path, reversed_path):
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
-                                   (original_path,), only_one=True)
+        matching_episodes = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
+                                   (original_path,))
 
-        if episode:
-            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles(epno=episode['sonarrEpisodeId'])
-        else:
-            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+        for episode in matching_episodes:
+            if episode:
+                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                list_missing_subtitles(epno=episode['sonarrEpisodeId'])
+            else:
+                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
@@ -161,13 +162,14 @@ def store_subtitles_movie(original_path, reversed_path):
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,), only_one=True)
+        matching_movies = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
 
-        if movie:
-            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles_movies(no=movie['radarrId'])
-        else:
-            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+        for movie in matching_movies:
+            if movie:
+                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                list_missing_subtitles_movies(no=movie['radarrId'])
+            else:
+                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
