@@ -1,0 +1,98 @@
+interactions:
+- request:
+    body: null
+    headers:
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://api.assrt.net/v1/sub/search?q=%5B%27Man+of+Steel+2013%27%5D&token=SECRET&is_file=%5B%271%27%5D
+  response:
+    body:
+      string: "{\"status\":0,\"sub\":{\"keyword\":\"Man of Steel 2013\",\"result\"\
+        :\"succeed\",\"subs\":[{\"subtype\":\"SSA\",\"id\":618185,\"lang\":{\"desc\"\
+        :\"\u82F1 \u7B80 \u7E41 \u53CC\u8BED\",\"langlist\":{\"langchs\":true,\"langeng\"\
+        :true,\"langdou\":true,\"langcht\":true}},\"vote_score\":0,\"upload_time\"\
+        :\"2018-01-26 12:19:27\",\"release_site\":\"CMCT\",\"native_name\":\"\u8D85\
+        \u4EBA\uFF1A\u94A2\u94C1\u4E4B\u8EAF.Man.Of.Steel.2013.BluRay.720p.x264.AC3.2Audios-CMCT.\u7B80\
+        \u7E41\u82F1\u53CC\u8BED\u5B57\u5E55\",\"videoname\":\"Man.Of.Steel.2013.BluRay.720p.x264.AC3.2Audios-CMCT\"\
+        ,\"revision\":0},{\"subtype\":\"SSA\",\"id\":316973,\"vote_score\":0,\"upload_time\"\
+        :\"2014-12-06 04:13:44\",\"native_name\":\"\u8D85\u4EBA\uFF1A\u94A2\u94C1\u4E4B\
+        \u8EAF\\/\u8D85\u4EBA\uFF1A\u94A2\u94C1\u82F1\u96C4\",\"videoname\":\"Man\
+        \ of Steel 2013 720p BluRay x264 DTS-WiKi\",\"revision\":0},{\"subtype\":\"\
+        Subrip(srt)\",\"id\":253629,\"lang\":{\"desc\":\"\u7E41\",\"langlist\":{\"\
+        langcht\":true}},\"vote_score\":0,\"upload_time\":\"2014-03-17 15:30:19\"\
+        ,\"native_name\":\"\",\"videoname\":\"[\u8D85\u4EBA \u92FC\u9435\u82F1\u96C4\
+        ]Man.of.Steel.(2013).BDRip.720p.DTS.X264-Felony\",\"revision\":0},{\"subtype\"\
+        :\"SSA\",\"id\":252930,\"lang\":{\"desc\":\"\u82F1 \u7E41 \u53CC\u8BED\",\"\
+        langlist\":{\"langeng\":true,\"langdou\":true,\"langcht\":true}},\"vote_score\"\
+        :45,\"upload_time\":\"2014-03-05 18:10:39\",\"native_name\":\"\u8D85\u4EBA\
+        \uFF1A\u92FC\u9435\u82F1\u96C4\",\"videoname\":\"Man of Steel\",\"revision\"\
+        :0},{\"subtype\":\"Subrip(srt)\",\"id\":246016,\"lang\":{\"desc\":\"\u82F1\
+        \ \u7B80 \u7E41\",\"langlist\":{\"langeng\":true,\"langcht\":true,\"langchs\"\
+        :true}},\"vote_score\":0,\"upload_time\":\"2013-11-09 10:43:13\",\"native_name\"\
+        :\"\u8D85\u4EBA\uFF1A\u94A2\u94C1\u4E4B\u8EAF\\/\u8D85\u4EBA\uFF1A\u94A2\u94C1\
+        \u82F1\u96C4\\/\u3010TLF\u5B57\u5E55\u7EC4\u3011Man of Steel\",\"videoname\"\
+        :\"Man.of.Steel.2013.720p.BluRay.x264.YIFY\",\"revision\":0},{\"subtype\"\
+        :\"SSA\",\"id\":245602,\"lang\":{\"desc\":\"\u7B80 \u7E41 \u53CC\u8BED\",\"\
+        langlist\":{\"langchs\":true,\"langdou\":true,\"langcht\":true}},\"vote_score\"\
+        :0,\"upload_time\":\"2013-11-02 05:56:40\",\"native_name\":\"\u8D85\u4EBA\uFF1A\
+        \u94A2\u94C1\u4E4B\u8EAF\\/\u8D85\u4EBA\uFF1A\u94A2\u94C1\u82F1\u96C4\\/\u7279\
+        \u6548\u53CC\u8BED\\/\u84DD\u5149\u5B57\u5E55\",\"videoname\":\"Man of Steel\
+        \ 1080p.bluray.x264-sector7\",\"revision\":0},{\"subtype\":\"\u5176\u4ED6\"\
+        ,\"id\":245568,\"lang\":{\"desc\":\"\u7B80\",\"langlist\":{\"langchs\":true}},\"\
+        vote_score\":0,\"upload_time\":\"2013-10-31 23:41:07\",\"native_name\":\"\u8D85\
+        \u4EBA: \u94A2\u94C1\u4E4B\u8EAF\\/\u8D85\u4EBA: \u94A2\u94C1\u82F1\u96C4\"\
+        ,\"videoname\":\"Man.of.Steel.2013\",\"revision\":0},{\"subtype\":\"VobSub\"\
+        ,\"id\":245259,\"vote_score\":100,\"upload_time\":\"2013-10-27 07:04:18\"\
+        ,\"native_name\":\"\",\"videoname\":\"Man.Of.Steel.3D.2013.1080p.BluRay.Half-SBS.DTS.x264-PublicHD\"\
+        ,\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":245131,\"lang\":{\"desc\"\
+        :\"\u7B80\",\"langlist\":{\"langchs\":true}},\"vote_score\":80,\"upload_time\"\
+        :\"2013-10-25 04:50:37\",\"native_name\":\"\u8D85\u4EBA-\u94A2\u94C1\u4E4B\
+        \u8EAF\",\"videoname\":\"Man.Of.Steel\",\"revision\":0},{\"subtype\":\"SSA\"\
+        ,\"id\":245056,\"lang\":{\"desc\":\"\u7E41\",\"langlist\":{\"langcht\":true}},\"\
+        vote_score\":0,\"upload_time\":\"2013-10-24 07:52:31\",\"native_name\":\"\"\
+        ,\"videoname\":\"\u8D85\u4EBA \u92FC\u9435\u82F1\u96C4 Man of Steel (2013)\
+        \ 1080p.cht\",\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":244971,\"\
+        lang\":{\"desc\":\"\u7B80 \u7E41\",\"langlist\":{\"langchs\":true,\"langcht\"\
+        :true}},\"vote_score\":10,\"upload_time\":\"2013-10-23 00:46:40\",\"native_name\"\
+        :\"\u84DD\u5149\u539F\u76D8\u5B57\u5E55\",\"videoname\":\"\u8D85\u4EBA: \u94A2\
+        \u94C1\u4E4B\u8EAF\\/\u8D85\u4EBA: \u94A2\u94C1\u82F1\u96C4(\u6E2F\\/\u53F0\
+        ).Man.of.Steel.2013.BluRay CEE\u7248\u84DD\u5149\u539F\u76D8\",\"revision\"\
+        :0},{\"subtype\":\"Subrip(srt)\",\"id\":244969,\"lang\":{\"desc\":\"\",\"\
+        langlist\":{}},\"vote_score\":0,\"upload_time\":\"2013-10-22 23:39:00\",\"\
+        native_name\":\"\u8D85\u4EBA\uFF1A\u94A2\u94C1\u4E4B\u8EAF 3D\\/\u8D85\u4EBA\
+        \uFF1A\u94A2\u94C1\u82F1\u96C4\\/Man of Steel 3D\",\"videoname\":\"Man.Of.Steel.3D.2013.1080p.BluRay.Half-SBS.DTS.x264-PublicHD\"\
+        ,\"revision\":0},{\"subtype\":\"SSA\",\"id\":244960,\"lang\":{\"desc\":\"\u82F1\
+        \ \u7B80\",\"langlist\":{\"langeng\":true,\"langchs\":true}},\"vote_score\"\
+        :0,\"upload_time\":\"2013-10-22 22:06:42\",\"native_name\":\"\u8D85\u4EBA\
+        :\u94A2\u94C1\u4E4B\u8EAF\",\"videoname\":\"Superman: Man of Steel BD\",\"\
+        revision\":0},{\"subtype\":\"\u5176\u4ED6\",\"id\":244939,\"lang\":{\"desc\"\
+        :\"\",\"langlist\":{}},\"vote_score\":0,\"upload_time\":\"2013-10-22 17:42:45\"\
+        ,\"native_name\":\"\",\"videoname\":\"\u8D85\u4EBA\uFF1A\u94A2\u94C1\u4E4B\
+        \u8EAF.Man.of.Steel.2013.1080p-PublicHD 2D.1080p\u62163D.1080p.HSBS-PublicHD\"\
+        ,\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":244863,\"lang\":{\"desc\"\
+        :\"\u82F1 \u7B80 \u7E41\",\"langlist\":{\"langeng\":true,\"langcht\":true,\"\
+        langchs\":true}},\"vote_score\":0,\"upload_time\":\"2013-10-21 16:52:23\"\
+        ,\"native_name\":\"\\/Man of Steel \\/\u8D85\u4EBA:\u94A2\u94C1\u4E4B\u8EAF\
+        \\/\u94A2\u94C1\u4E4B\u8EAF\\/\u8D85\u4EBA:\u94A2\u94C1\u82F1\u96C4\",\"videoname\"\
+        :\"man.of.steel.2013.720p.bluray.x264-felony.mkv\",\"revision\":0}],\"action\"\
+        :\"search\"}}\n"
+    headers:
+      access-control-allow-origin:
+      - '*'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Sat, 30 Nov 2019 08:28:00 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+    status:
+      code: 200
+      message: OK
+version: 1
