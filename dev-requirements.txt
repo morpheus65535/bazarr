@@ -1,0 +1,6 @@
+sympy
+vcrpy>=1.6.1
+pytest
+pytest-pep8
+pytest-flakes
+pytest-cov
