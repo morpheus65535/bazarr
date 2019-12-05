@@ -471,9 +471,7 @@ def save_wizard():
 
 
 @route(base_url + 'static/:path#.+#', name='static')
-@custom_auth_basic(check_credentials)
 def static(path):
-    authorize()
     return static_file(path, root=os.path.join(os.path.dirname(__file__), '../static'))
 
 
@@ -1415,7 +1413,7 @@ def save_settings():
     else:
         settings.auth.type = text_type(settings_auth_type)
         settings.auth.username = text_type(settings_auth_username)
-        settings.auth.password = hashlib.md5(settings_auth_password).hexdigest()
+        settings.auth.password = hashlib.md5(settings_auth_password.encode('utf-8')).hexdigest()
     if settings_auth_username not in aaa._store.users:
         cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
         cork._store.roles[''] = 100
