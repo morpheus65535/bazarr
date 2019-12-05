@@ -366,7 +366,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                                   subtitle_path)
                     continue
                 detected_language = None
-                with open(subtitle_path, 'r') as f:
+                with open(subtitle_path, 'r', errors='ignore') as f:
                     text = f.read()
                     try:
                         encoding = UnicodeDammit(text)
