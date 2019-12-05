@@ -420,7 +420,7 @@ def save_wizard():
     database.execute("UPDATE table_settings_languages SET enabled=0")
     for item in settings_subliminal_languages:
         # Enable each desired language in DB
-        database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", item)
+        database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
     
     settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
