@@ -2122,7 +2122,7 @@ def test_url(protocol, url):
     authorize()
     url = six.moves.urllib.parse.unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
+        result = requests.get(protocol + "://" + url + "?apiKey=" + request.query.apikey, allow_redirects=False, verify=False).json()['version']
     except:
         return dict(status=False)
     else:
