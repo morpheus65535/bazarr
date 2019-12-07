@@ -74,6 +74,8 @@
 				background-color: #ffcccc !important;
 				line-height: 0 !important;
 			}
+
+			.episode_history { cursor: pointer; }
 		</style>
 
 		<script>
