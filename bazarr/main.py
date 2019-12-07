@@ -2251,7 +2251,9 @@ def api_help():
 
 
 # Mute DeprecationWarning
-warnings.simplefilter("ignore", (DeprecationWarning, BrokenPipeError))
+warnings.simplefilter("ignore", DeprecationWarning)
+if six.PY3:
+    warnings.simplefilter("ignore", BrokenPipeError)
 server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
