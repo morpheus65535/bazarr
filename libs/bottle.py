@@ -41,7 +41,11 @@ import base64, cgi, email.utils, functools, hmac, imp, itertools, mimetypes,\
 from datetime import date as datedate, datetime, timedelta
 from tempfile import TemporaryFile
 from traceback import format_exc, print_exc
-from inspect import getargspec
+from six import PY2
+if PY2:
+    from inspect import getargspec
+else:
+    from inspect import getfullargspec as getargspec
 from unicodedata import normalize
 
 

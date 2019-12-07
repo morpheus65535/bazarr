@@ -45,7 +45,10 @@ def start_bazarr():
     ep = sp.Popen(script, stdout=sp.PIPE, stderr=sp.STDOUT, stdin=sp.PIPE)
     print("Bazarr starting...")
     try:
-        for line in iter(ep.stdout.readline, ''):
+        while True:
+            line = ep.stdout.readline()
+            if line == '' or not line:
+                break
             if PY3:
                 sys.stdout.buffer.write(line)
             else:
