@@ -42,6 +42,8 @@
             .dataTables_filter{
                display:none;
             }
+
+			#logs > tbody > tr { cursor: pointer; }
 		</style>
 	</head>
 	<body>
