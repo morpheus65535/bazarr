@@ -16,6 +16,8 @@ def path_replace(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings):
+        if '' in path_mapping:
+            continue
         if path_mapping[0] in path:
             path = path.replace(path_mapping[0], path_mapping[1])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -31,6 +33,8 @@ def path_replace_reverse(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings):
+        if '' in path_mapping:
+            continue
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -46,6 +50,8 @@ def path_replace_movie(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+        if '' in path_mapping:
+            continue
         if path_mapping[0] in path:
             path = path.replace(path_mapping[0], path_mapping[1])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
@@ -61,6 +67,8 @@ def path_replace_reverse_movie(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+        if '' in path_mapping:
+            continue
         if path_mapping[1] in path:
             path = path.replace(path_mapping[1], path_mapping[0])
             if path.startswith('\\\\') or re.match(r'^[a-zA-Z]:\\', path):
