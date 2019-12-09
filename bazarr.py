@@ -51,6 +51,7 @@ def start_bazarr():
                 break
             if PY3:
                 sys.stdout.buffer.write(line)
+                sys.stdout.flush()
             else:
                 sys.stdout.write(line)
     except KeyboardInterrupt:
