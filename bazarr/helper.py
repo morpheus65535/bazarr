@@ -16,6 +16,8 @@ def path_replace(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings):
+        if path_mapping[0] == path_mapping[1]:
+            continue
         if '' in path_mapping:
             continue
         if path_mapping[0] in path:
@@ -33,6 +35,8 @@ def path_replace_reverse(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings):
+        if path_mapping[0] == path_mapping[1]:
+            continue
         if '' in path_mapping:
             continue
         if path_mapping[1] in path:
@@ -50,6 +54,8 @@ def path_replace_movie(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+        if path_mapping[0] == path_mapping[1]:
+            continue
         if '' in path_mapping:
             continue
         if path_mapping[0] in path:
@@ -67,6 +73,8 @@ def path_replace_reverse_movie(path):
         return None
 
     for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+        if path_mapping[0] == path_mapping[1]:
+            continue
         if '' in path_mapping:
             continue
         if path_mapping[1] in path:
