@@ -395,11 +395,16 @@
                                     <label></label>
                                 </div>
                             </div>
-                            <div class="collapsed column">
+                            <div class="one wide column">
                                 <div class="collapsed center aligned column">
                                     <div class="ui basic icon" data-tooltip="Download a single Subtitles file without adding the language code to the filename." data-inverted="">
                                         <i class="help circle large icon"></i>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="ten wide column">
+                                <div class="fluid column">
+                                    <div style="color: red;">We don't recommend enabling this option unless absolutely required (ie: media player not supporting language code in subtitles filename). Results may vary.</div>
                                 </div>
                             </div>
                         </div>
