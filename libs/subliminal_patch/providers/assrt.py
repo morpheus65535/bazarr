@@ -23,6 +23,20 @@ language_converters.register('assrt = subliminal_patch.converters.assrt:AssrtCon
 server_url = 'https://api.assrt.net/v1'
 supported_languages = list(language_converters['assrt'].to_assrt.keys())
 
+def language_contains(subset, superset):
+    if subset.alpha3 != superset.alpha3:
+        return False
+    if superset.country != None and subset.country != superset.country:
+        return False
+    if superset.script != None and subset.script != superset.script:
+        return False
+    return True
+
+def search_language_in_list(lang, langlist):
+    for l in langlist:
+        if language_contains(lang, l):
+            return l
+    return None
 
 class AssrtSubtitle(Subtitle):
     """Assrt Sbutitle."""
@@ -46,6 +60,7 @@ class AssrtSubtitle(Subtitle):
         if self._detail:
             return self._detail
         params = {'token': self.token, 'id': self.id}
+        logger.info('Get subtitle detail: GET /sub/detail %r', params)
         r = self.session.get(server_url + '/sub/detail', params=params, timeout=10)
         r.raise_for_status()
 
@@ -55,9 +70,7 @@ class AssrtSubtitle(Subtitle):
 
         # first pass: guessit
         for f in files:
-            logger.info('File %r', f)
             guess = guessit(f['f'], self.guessit_options)
-            logger.info('GuessIt %r', guess)
             langs = set()
             if 'language' in guess:
                 langs.update(guess['language'])
@@ -71,7 +84,6 @@ class AssrtSubtitle(Subtitle):
         codes = language_converters['assrt'].codes
         for f in files:
             langs = set([ Language.fromassrt(k) for k in codes if k in f['f'] ])
-            logger.info('%s: %r', f['f'], langs)
             if self.language in langs:
                 self._defail = f
                 return f
@@ -127,17 +139,14 @@ class AssrtProvider(Provider):
         query = ' '.join(keywords)
 
         params = {'token': self.token, 'q': query, 'is_file': 1}
-        logger.debug('Searching subtitles %r', params)
+        logger.debug('Searching subtitles: GET /sub/search %r', params)
         res = self.session.get(server_url + '/sub/search', params=params, timeout=10)
         res.raise_for_status()
         result = res.json()
 
         if result['status'] != 0:
-            logger.error('status error: %r', r)
+            logger.error('status error: %r', result['status'])
             return []
-
-        if not result['sub']['subs']:
-            logger.debug('No subtitle found')
 
         # parse the subtitles
         pattern = re.compile(r'lang(?P<code>\w+)')
@@ -149,8 +158,9 @@ class AssrtProvider(Provider):
                 match = pattern.match(key)
                 try:
                     language = Language.fromassrt(match.group('code'))
-                    if language in languages:
-                        subtitles.append(AssrtSubtitle(language, sub['id'], sub['videoname'], self.session, self.token))
+                    output_language = search_language_in_list(language, languages)
+                    if output_language:
+                        subtitles.append(AssrtSubtitle(output_language, sub['id'], sub['videoname'], self.session, self.token))
                 except:
                     pass
 
@@ -160,7 +170,6 @@ class AssrtProvider(Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
-        logger.info('Downloading subtitle %r', subtitle)
         r = self.session.get(subtitle.download_link, timeout=10)
         r.raise_for_status()
 

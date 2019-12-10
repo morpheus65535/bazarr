@@ -5,6 +5,7 @@ import calendar
 from math import floor
 from pyga.entities import Campaign, CustomVariable, Event, Item, Page, Session, SocialInteraction, Transaction, Visitor
 import pyga.utils as utils
+from six import itervalues
 try:
     from urllib import urlencode
     from urllib2 import Request as urllib_request
@@ -210,7 +211,7 @@ class Request(GIFRequest):
             x10.clear_key(self.X10_CUSTOMVAR_VALUE_PROJCT_ID)
             x10.clear_key(self.X10_CUSTOMVAR_SCOPE_PROJECT_ID)
 
-            for cvar in custom_vars.itervalues():
+            for cvar in itervalues(custom_vars):
                 name = utils.encode_uri_components(cvar.name)
                 value = utils.encode_uri_components(cvar.value)
                 x10.set_key(

@@ -1,0 +1,83 @@
+interactions:
+- request:
+    body: null
+    headers:
+      User-Agent:
+      - Sub-Zero/2
+    method: GET
+    uri: https://api.assrt.net/v1/sub/search?q=%5B%27The+Big+Bang+Theory+S07E05%27%5D&token=SECRET&is_file=%5B%271%27%5D
+  response:
+    body:
+      string: "{\"status\":0,\"sub\":{\"keyword\":\"The Big Bang Theory S07E05\",\"\
+        result\":\"succeed\",\"subs\":[{\"subtype\":\"Subrip(srt)\",\"id\":618200,\"\
+        lang\":{\"desc\":\"\u7B80\",\"langlist\":{\"langchs\":true}},\"vote_score\"\
+        :0,\"upload_time\":\"2018-01-26 19:23:52\",\"release_site\":\"\u4F0A\u7538\
+        \u56ED\",\"native_name\":\"\u5929\u624D\u7406\u8BBA\u4F20\u7B2C7\u5B63\u5168\
+        24\u96C6The.Big.Bang.Theory.S07.1080p.WEB-DL.DD5.1.H.264\",\"videoname\":\"\
+        The.Big.Bang.Theory.S07.1080p.WEB-DL.DD5.1.H.264\",\"revision\":0},{\"subtype\"\
+        :\"Subrip(srt)\",\"id\":316965,\"vote_score\":0,\"upload_time\":\"2014-12-06\
+        \ 04:13:43\",\"native_name\":\"\u751F\u6D3B\u5927\u7206\u70B8 \u7B2C\u4E03\
+        \u5B63 \u7B2C 5 \u96C6\",\"videoname\":\"The Big Bang Theory S07E05 720p HDTV\
+        \ X264-DIMENSION\",\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":316966,\"\
+        vote_score\":0,\"upload_time\":\"2014-12-06 04:13:43\",\"native_name\":\"\u751F\
+        \u6D3B\u5927\u7206\u70B8 \u7B2C\u4E03\u5B63 \u7B2C 5 \u96C6\",\"videoname\"\
+        :\"The Big Bang Theory S07E05 720p HDTV X264-DIMENSION\",\"revision\":0},{\"\
+        subtype\":\"SSA\",\"id\":264973,\"lang\":{\"desc\":\"\u53CC\u8BED\",\"langlist\"\
+        :{\"langdou\":true}},\"vote_score\":80,\"upload_time\":\"2014-11-02 10:41:05\"\
+        ,\"native_name\":\"The Big Bang Theory S07\\/\u751F\u6D3B\u5927\u7206\u70B8\
+        \ \u7B2C\u4E03\u5B63\\/The Big Bang Theory Season 07\",\"videoname\":\"The.Big.Bang.Theory.S07E05.720p.BluRay.x264-DEMAND\"\
+        ,\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":261680,\"lang\":{\"desc\"\
+        :\"\u7B80\",\"langlist\":{\"langchs\":true}},\"vote_score\":0,\"upload_time\"\
+        :\"2014-08-30 05:11:21\",\"native_name\":\"\u751F\u6D3B\u5927\u7206\u70B8\
+        \ \u7B2C\u4E03\u5B63\\/\u5929\u624D\u7406\u8BBA\u4F20\",\"videoname\":\"The.Big.Bang.Theory.S07.720p.BluRay.x264-DEMAND\"\
+        ,\"revision\":0},{\"subtype\":\"Subrip(srt)\",\"id\":244659,\"lang\":{\"desc\"\
+        :\"\u82F1 \u7B80 \u7E41\",\"langlist\":{\"langeng\":true,\"langcht\":true,\"\
+        langchs\":true}},\"vote_score\":0,\"upload_time\":\"2013-10-19 03:34:04\"\
+        ,\"native_name\":\"\u5929\u624D\u7406\u8BBA\u4F20\\/\u751F\u6D3B\u5927\u7206\
+        \u70B8 \u7B2C\u4E03\u5B63\u7B2C\u4E94\u96C6\",\"videoname\":\"The Big Bang\
+        \ Theory S07E05 the.big.bang.theory.705.hdtv-lol\",\"revision\":0},{\"subtype\"\
+        :\"Subrip(srt)\",\"id\":244640,\"lang\":{\"desc\":\"\u82F1 \u7B80 \u7E41 \u53CC\
+        \u8BED\",\"langlist\":{\"langchs\":true,\"langeng\":true,\"langdou\":true,\"\
+        langcht\":true}},\"vote_score\":0,\"upload_time\":\"2013-10-18 23:33:24\"\
+        ,\"native_name\":\"\",\"videoname\":\"\u751F\u6D3B\u5927\u7206\u70B8\\/The\
+        \ Big Bang Theory S07E05\\/\u7B2C\u4E03\u5B63\u7B2C5\u96C6\\/\u5723\u57CE\u5BB6\
+        \u56ED\u53CC\u8BED\u5B57\u5E55 the.big.bang.theory.705.hdtv-lol\",\"revision\"\
+        :0},{\"subtype\":\"SSA\",\"id\":244632,\"lang\":{\"desc\":\"\u82F1 \u7B80\"\
+        ,\"langlist\":{\"langeng\":true,\"langchs\":true}},\"vote_score\":0,\"upload_time\"\
+        :\"2013-10-18 22:15:16\",\"native_name\":\"\u5929\u624D\u7406\u8BBA\u4F20\\\
+        /The Big Bang Theory S07E05\u751F\u6D3B\u5927\u7206\u70B8 \u7B2C\u4E03\u5B63\
+        \u7B2C\u4E94\u96C6\u3010\u8C22\u8033\u6735\u5B57\u5E55\u7EC4\u3011\",\"videoname\"\
+        :\"The.Big.Bang.Theory.S07E05.720p.HDTV.X264-DIMENSION\",\"revision\":0},{\"\
+        subtype\":\"\u5176\u4ED6\",\"id\":244630,\"lang\":{\"desc\":\"\",\"langlist\"\
+        :{}},\"vote_score\":0,\"upload_time\":\"2013-10-18 21:31:21\",\"native_name\"\
+        :\"\",\"videoname\":\"\u751F\u6D3B\u5927\u7206\u70B8 \u7B2C7\u96C6\u7B2C5\u96C6\
+        \ 720P\",\"revision\":0},{\"subtype\":\"\u5176\u4ED6\",\"id\":244624,\"lang\"\
+        :{\"desc\":\"\u82F1 \u7B80 \u7E41\",\"langlist\":{\"langeng\":true,\"langcht\"\
+        :true,\"langchs\":true}},\"vote_score\":0,\"upload_time\":\"2013-10-18 20:46:57\"\
+        ,\"native_name\":\"The Big Bang Theory S07E05\",\"videoname\":\"\u751F\u6D3B\
+        \u5927\u7206\u70B8\u7B2C\u4E03\u5B63\u7B2C5\u96C6\",\"revision\":0},{\"subtype\"\
+        :\"Subrip(srt)\",\"id\":585062,\"lang\":{\"desc\":\"\u82F1 \u7B80 \u7E41 \u53CC\
+        \u8BED\",\"langlist\":{\"langchs\":true,\"langeng\":true,\"langdou\":true,\"\
+        langcht\":true}},\"vote_score\":0,\"upload_time\":\"2013-10-17 17:31:00\"\
+        ,\"release_site\":\"\u4EBA\u4EBA\u5F71\u89C6YYeTs\",\"native_name\":\"\u751F\
+        \u6D3B\u5927\u7206\u70B8   \u7B2C7\u96C6\u7B2C5\u96C6\",\"videoname\":\"The\
+        \ Big Bang Theory   S07E05\",\"revision\":0}],\"action\":\"search\"}}\n"
+    headers:
+      access-control-allow-origin:
+      - '*'
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Sat, 30 Nov 2019 07:14:39 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+    status:
+      code: 200
+      message: OK
+version: 1

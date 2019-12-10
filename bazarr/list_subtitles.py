@@ -90,14 +90,15 @@ def store_subtitles(original_path, reversed_path):
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        episode = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
-                                   (original_path,), only_one=True)
+        matching_episodes = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
+                                   (original_path,))
 
-        if episode:
-            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles(epno=episode['sonarrEpisodeId'])
-        else:
-            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+        for episode in matching_episodes:
+            if episode:
+                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                list_missing_subtitles(epno=episode['sonarrEpisodeId'])
+            else:
+                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
@@ -161,13 +162,14 @@ def store_subtitles_movie(original_path, reversed_path):
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        movie = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,), only_one=True)
+        matching_movies = database.execute("SELECT radarrId FROM table_movies WHERE path=?", (original_path,))
 
-        if movie:
-            logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
-            list_missing_subtitles_movies(no=movie['radarrId'])
-        else:
-            logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
+        for movie in matching_movies:
+            if movie:
+                logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                list_missing_subtitles_movies(no=movie['radarrId'])
+            else:
+                logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
     else:
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
@@ -364,23 +366,29 @@ def guess_external_subtitles(dest_folder, subtitles):
                                   subtitle_path)
                     continue
                 detected_language = None
-                with open(subtitle_path, 'r') as f:
-                    text = f.read()
-                    try:
-                        encoding = UnicodeDammit(text)
-                        if six.PY2:
-                            text = text.decode(encoding.original_encoding)
-                        detected_language = langdetect.detect(text)
-                    except Exception as e:
-                        logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
-                                          subtitle_path + ' You should try to delete this subtitles file manually and ask '
-                                                          'Bazarr to download it again.')
-                    else:
-                        if detected_language:
-                            logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
-                                detected_language))
-                            try:
-                                subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
-                            except:
-                                pass
+
+                if six.PY3:
+                    with open(subtitle_path, 'r', errors='ignore') as f:
+                        text = f.read()
+                else:
+                    with open(subtitle_path, 'r') as f:
+                        text = f.read()
+
+                try:
+                    encoding = UnicodeDammit(text)
+                    if six.PY2:
+                        text = text.decode(encoding.original_encoding)
+                    detected_language = langdetect.detect(text)
+                except Exception as e:
+                    logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
+                                      subtitle_path + ' You should try to delete this subtitles file manually and ask '
+                                                      'Bazarr to download it again.')
+                else:
+                    if detected_language:
+                        logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
+                            detected_language))
+                        try:
+                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
+                        except:
+                            pass
     return subtitles

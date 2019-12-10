@@ -51,9 +51,9 @@ def update_series():
             return
         else:
             # Get current shows in DB
-            current_shows_db = database.execute("SELECT tvdbId FROM table_shows")
+            current_shows_db = database.execute("SELECT sonarrSeriesId FROM table_shows")
             
-            current_shows_db_list = [x['tvdbId'] for x in current_shows_db]
+            current_shows_db_list = [x['sonarrSeriesId'] for x in current_shows_db]
             current_shows_sonarr = []
             series_to_update = []
             series_to_add = []
@@ -82,7 +82,7 @@ def update_series():
                     alternateTitles = None
 
                 # Add shows in Sonarr to current shows list
-                current_shows_sonarr.append(show['tvdbId'])
+                current_shows_sonarr.append(show['id'])
                 
                 if show['tvdbId'] in current_shows_db_list:
                     series_to_update.append({'title': six.text_type(show["title"]),
@@ -129,7 +129,7 @@ def update_series():
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
             for series in removed_series:
-                database.execute("DELETE FROM table_shows WHERE tvdbId=?",(series,))
+                database.execute("DELETE FROM table_shows WHERE sonarrSEriesId=?",(series,))
 
             # Update existing series in DB
             series_in_db_list = []

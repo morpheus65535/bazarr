@@ -140,7 +140,7 @@ def custom_auth_basic(check):
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
-    if hashlib.md5(pw).hexdigest() == password and user == username:
+    if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
         return True
     return False
 
@@ -152,8 +152,8 @@ def authorize():
 
 
 def api_authorize():
-    if 'apikey' in request.args.dict:
-        if request.args.dict['apikey'][0] == settings.auth.apikey:
+    if 'apikey' in request.GET.dict:
+        if request.GET.dict['apikey'][0] == settings.auth.apikey:
             return
         else:
             abort(401, 'Unauthorized')
@@ -262,7 +262,6 @@ def wizard():
 # @custom_auth_basic(check_credentials)
 def save_wizard():
     authorize()
-    test = request.form
 
     settings_general_ip = request.form.get('settings_general_ip')
     settings_general_port = request.form.get('settings_general_port')
@@ -425,7 +424,7 @@ def save_wizard():
     database.execute("UPDATE table_settings_languages SET enabled=0")
     for item in settings_subliminal_languages:
         # Enable each desired language in DB
-        database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", item)
+        database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
 
     settings_serie_default_enabled = request.form.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
@@ -1412,7 +1411,7 @@ def save_settings():
     else:
         settings.auth.type = text_type(settings_auth_type)
         settings.auth.username = text_type(settings_auth_username)
-        settings.auth.password = hashlib.md5(settings_auth_password).hexdigest()
+        settings.auth.password = hashlib.md5(settings_auth_password.encode('utf-8')).hexdigest()
     if settings_auth_username not in aaa._store.users:
         cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
         cork._store.roles[''] = 100
@@ -2251,6 +2250,8 @@ def api_help():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
+if six.PY3:
+    warnings.simplefilter("ignore", BrokenPipeError)
 if args.debug:
     server = app.run(
         host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)), debug=True)
