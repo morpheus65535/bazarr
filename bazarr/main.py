@@ -14,7 +14,6 @@ import six
 from six.moves import zip
 from functools import reduce
 
-# import bottle
 import itertools
 import operator
 import pretty
@@ -43,12 +42,10 @@ from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from io import BytesIO
 from six import text_type
-from beaker.middleware import SessionMiddleware
-from cork import Cork
-# from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import Flask, make_response, request, redirect, abort, render_template
+from flask_cors import CORS
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
@@ -74,6 +71,9 @@ gc.enable()
 # Flask Setup
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'), static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
 
+# Add Cors
+CORS(app)
+
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
     check_and_apply_update()
@@ -88,20 +88,12 @@ if settings.proxy.type != 'None':
     os.environ['HTTPS_PROXY'] = str(proxy)
     os.environ['NO_PROXY'] = str(settings.proxy.exclude)
 
-# bottle.TEMPLATE_PATH.insert(0, os.path.join(os.path.dirname(__file__), '../views/'))
-# if "PYCHARM_HOSTED" in os.environ:
-#     bottle.debug(True)
-#     bottle.TEMPLATES.clear()
-# else:
-#     bottle.ERROR_PAGE_TEMPLATE = bottle.ERROR_PAGE_TEMPLATE.replace('if DEBUG and', 'if')
-
 # Reset restart required warning on start
 database.execute("UPDATE system SET configured='0', updated='0'")
 
 # Load languages in database
 load_language_in_db()
 
-aaa = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')))
 
 # app = app()
 # session_opts = {
@@ -114,7 +106,6 @@ aaa = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')))
 # }
 # app = SessionMiddleware(app, session_opts)
 login_auth = settings.auth.type
-
 
 update_notifier()
 
@@ -159,12 +150,6 @@ def post_get(name, default=''):
     return request.POST.get(name, default).strip()
 
 
-# @app.before_request
-# def enable_cors():
-#     if request:
-#         request.headers['Access-Control-Allow-Origin'] = '*'
-## todo: add cors lib
-
 @app.route(base_url + 'login/')
 def login_form():
     msg = request.query.get('msg', '')
@@ -173,27 +158,17 @@ def login_form():
 
 @app.route(base_url + 'login/', methods=['POST'])
 def login():
-    aaa = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')))
     username = post_get('username')
     password = post_get('password')
-    aaa.login(username, password, success_redirect=base_url, fail_redirect=(base_url + 'login?msg=fail'))
+    if check_credentials(username, password):
+        return redirect(base_url)
+    else:
+        return redirect(base_url + 'login?msg=fail')
 
 
 @app.route(base_url + 'logout/')
 def logout():
-    if settings.auth.type == 'form':
-        aaa.logout(success_redirect=(base_url + 'login'))
-    elif settings.auth.type == 'basic':
-        abort(401)
-    else:
-        aaa.logout(success_redirect=(base_url))
-
-
-# @app.route('/')
-# # @custom_auth_basic(check_credentials)
-# def redirect_root():
-#     
-#     redirect(base_url)
+    abort(401)
 
 
 @app.route(base_url + 'shutdown/')
@@ -238,7 +213,7 @@ def restart():
 
 
 @app.route(base_url + 'wizard/')
-# @custom_auth_basic(check_credentials)
+@custom_auth_basic(check_credentials)
 def wizard():
     
 
