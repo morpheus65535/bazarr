@@ -433,6 +433,13 @@
                     </div>
                 </div>
             </div>
+            <div class="ten wide column">
+                <div class="fluid column">
+                    <div style="color: red;">We don't recommend enabling this option unless absolutely required (ie:
+                        media player not supporting language code in subtitles filename). Results may vary.
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="middle aligned row">
@@ -445,12 +452,12 @@
                             class="ui fluid search selection dropdown">
                         <option value="">Languages</option>
                         {% set enabled_languages = [] %}
-                        {%for language in settings_languages%}
-                        <option value="{{ language['code2'] }}">{{ language['name'] }}</option>
-                        {%if language['enabled'] == True%}
-                        {{ enabled_languages.append(language['code2']|string)}}
-                        {%endif%}
-                        {%endfor%}
+                        {% for language in settings_languages %}
+                            <option value="{{ language['code2'] }}">{{ language['name'] }}</option>
+                            {% if language['enabled'] == True %}
+                                {{ enabled_languages.append(language['code2']|string) }}
+                            {% endif %}
+                        {% endfor %}
                     </select>
                 </div>
             </div>
