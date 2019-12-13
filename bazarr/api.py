@@ -15,7 +15,9 @@ from init import *
 import logging
 from database import database, dict_mapper
 from helper import path_replace, path_replace_reverse, path_replace_movie, path_replace_reverse_movie
-from get_languages import alpha2_from_language, alpha3_from_language
+from get_languages import load_language_in_db, alpha2_from_language, alpha3_from_language
+
+load_language_in_db()
 
 class Series(Resource):
     def get(self):
