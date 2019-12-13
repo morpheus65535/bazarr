@@ -29,35 +29,37 @@ def load_language_in_db():
     # Update languages in database table
     database.execute("UPDATE table_settings_languages SET code3b=? WHERE code3=?", langs, execute_many=True)
 
+    # Create languages dictionary for faster conversion than calling database
+    create_languages_dict()
+
+
+def create_languages_dict():
+    global languages_dict
+    languages_dict = database.execute("SELECT name, code2, code3, code3b FROM table_settings_languages")
+
 
 def language_from_alpha2(lang):
-    result = database.execute("SELECT name FROM table_settings_languages WHERE code2=?", (lang,))
-    return result[0]['name'] or None
+    return next((item["name"] for item in languages_dict if item["code2"] == lang), None)
 
 
 def language_from_alpha3(lang):
-    result = database.execute("SELECT name FROM table_settings_languages WHERE code3=? or code3b=?", (lang, lang))
-    return result[0]['name'] or None
+    return next((item["name"] for item in languages_dict if item["code3"] == lang or item["code3b"] == lang), None)
 
 
 def alpha2_from_alpha3(lang):
-    result = database.execute("SELECT code2 FROM table_settings_languages WHERE code3=? or code3b=?", (lang, lang))
-    return result[0]['code2'] or None
+    return next((item["code2"] for item in languages_dict if item["code3"] == lang or item["code3b"] == lang), None)
 
 
 def alpha2_from_language(lang):
-    result = database.execute("SELECT code2 FROM table_settings_languages WHERE name=?", (lang,))
-    return result[0]['code2'] or None
+    return next((item["code2"] for item in languages_dict if item["name"] == lang), None)
 
 
 def alpha3_from_alpha2(lang):
-    result = database.execute("SELECT code3 FROM table_settings_languages WHERE code2=?", (lang,))
-    return result[0]['code3'] or None
+    return next((item["code3"] for item in languages_dict if item["code2"] == lang), None)
 
 
 def alpha3_from_language(lang):
-    result = database.execute("SELECT code3 FROM table_settings_languages WHERE name=?", (lang,))
-    return result[0]['code3'] or None
+    return next((item["code3"] for item in languages_dict if item["name"] == lang), None)
 
 
 def get_language_set():
