@@ -11,11 +11,19 @@ from bs4 import UnicodeDammit
 from config import settings
 
 
+def create_path_mapping_dict():
+    global path_mapping_series
+    path_mapping_series = ast.literal_eval(settings.general.path_mappings)
+
+    global path_mapping_movies
+    path_mapping_movies = ast.literal_eval(settings.general.path_mappings_movie)
+
+
 def path_replace(path):
     if path is None:
         return None
 
-    for path_mapping in ast.literal_eval(settings.general.path_mappings):
+    for path_mapping in path_mapping_series:
         if path_mapping[0] == path_mapping[1]:
             continue
         if '' in path_mapping:
@@ -34,7 +42,7 @@ def path_replace_reverse(path):
     if path is None:
         return None
 
-    for path_mapping in ast.literal_eval(settings.general.path_mappings):
+    for path_mapping in path_mapping_series:
         if path_mapping[0] == path_mapping[1]:
             continue
         if '' in path_mapping:
@@ -53,7 +61,7 @@ def path_replace_movie(path):
     if path is None:
         return None
 
-    for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+    for path_mapping in path_mapping_movies:
         if path_mapping[0] == path_mapping[1]:
             continue
         if '' in path_mapping:
@@ -72,7 +80,7 @@ def path_replace_reverse_movie(path):
     if path is None:
         return None
 
-    for path_mapping in ast.literal_eval(settings.general.path_mappings_movie):
+    for path_mapping in path_mapping_movies:
         if path_mapping[0] == path_mapping[1]:
             continue
         if '' in path_mapping:
