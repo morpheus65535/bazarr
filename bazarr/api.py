@@ -47,7 +47,25 @@ class Series(Resource):
         return jsonify(result)
 
 
+class Episodes(Resource):
+    def get(self):
+        seriesId = request.args.get('id')
+        if seriesId:
+            result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=?", (seriesId,))
+        else:
+            result = database.execute("SELECT * FROM table_episodes")
+        for item in result:
+            # Provide mapped path
+            mapped_path = path_replace(item['path'])
+            item.update({"mapped_path": mapped_path})
+
+            # Confirm if path exist
+            item.update({"exist": os.path.isfile(mapped_path)})
+        return jsonify(result)
+
+
 api.add_resource(Series, '/api/series')
+api.add_resource(Episodes, '/api/episodes')
 
 if __name__ == '__main__':
     app.run(debug=True)
