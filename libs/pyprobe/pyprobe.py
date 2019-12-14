@@ -179,9 +179,9 @@ class VideoFileParser:
         if PY3:
             command = [parser] + commandArgs + [inputFile]
             completedProcess = subprocess.run(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8"
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-            if completedProcess.returncode != 0:
+            if completedProcess.returncode:
                 raise IOError(
                     "Error occurred during execution - " + completedProcess.stderr
                 )
