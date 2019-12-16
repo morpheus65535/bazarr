@@ -15,13 +15,17 @@ from helper import path_replace, path_replace_reverse, path_replace_movie, path_
 from get_languages import load_language_in_db, alpha2_from_language, alpha3_from_language, language_from_alpha2, \
     alpha3_from_alpha2
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_restful import Resource, Api
 
 app = Flask(__name__)
 api = Api(app)
 
 load_language_in_db()
+
+@app.route('/')
+def test():
+    return render_template('test.html')
 
 
 class Badges(Resource):
@@ -247,6 +251,10 @@ class HistorySeries(Resource):
 
 class HistoryMovies(Resource):
     def get(self):
+        start = request.args.get('start')
+        length = request.args.get('length')
+        draw = int(request.args.get('draw'))
+
         upgradable_movies = []
         upgradable_movies_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
@@ -280,11 +288,13 @@ class HistoryMovies(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
                                 "table_history_movie.description, table_history_movie.radarrId, "
                                 "table_history_movie.video_path, table_history_movie.language, "
                                 "table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on "
-                                "table_movies.radarrId = table_history_movie.radarrId ORDER BY timestamp DESC")
+                                "table_movies.radarrId = table_history_movie.radarrId ORDER BY timestamp DESC LIMIT ? "
+                                "OFFSET ?", (length, start))
 
         for item in data:
             # Mark movies as upgradable or not
@@ -316,7 +326,7 @@ class HistoryMovies(Resource):
                 item.update({"mapped_path": None})
                 item.update({"exist": False})
 
-        return jsonify(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
 class WantedSeries(Resource):
@@ -399,4 +409,4 @@ api.add_resource(WantedSeries, '/api/wanted_series')
 api.add_resource(WantedMovies, '/api/wanted_movies')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=6767, debug=True)

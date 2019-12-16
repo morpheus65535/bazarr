@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Server-side processing datatables test</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.js" type="text/javascript"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+</head>
+<body>
+    <table id="example" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>action</th>
+                <th>title</th>
+                <th>timestamp</th>
+                <th>description</th>
+            </tr>
+        </thead>
+    </table>
+</body>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#example').DataTable( {
+            "processing": true,
+            "serverSide": true,
+            "ajax": "http://localhost:6767/api/history_movies",
+            "columns": [
+            { "data": "action" },
+            { "data": "title" },
+            { "data": "timestamp" },
+            { "data": "description" }
+            ]
+        } );
+    } );
+</script>
+</html>
