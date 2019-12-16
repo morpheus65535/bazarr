@@ -22,6 +22,8 @@ def get_args():
                         help="Enable console debugging (default: False)")
     parser.add_argument('--release-update', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                         help="Enable file based updater (default: False)")
+    parser.add_argument('--dev', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Enable developer mode (default: False)")
     
     return parser.parse_args()
 

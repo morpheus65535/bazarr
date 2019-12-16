@@ -408,7 +408,7 @@
     </div>
 </div>
 
-% include('providers.tpl')
+{% include('providers.html') %}
 
 <div class="ui dividing header">Subtitles languages</div>
 <div class="twelve wide column">
@@ -623,6 +623,7 @@
     </div>
 </div>
 
+{% macro settings_subtitles() %}
 <script>
     $('#settings_general_wanted_search_frequency').dropdown('clear');
     $('#settings_general_wanted_search_frequency').dropdown('set selected', '{{settings.general.wanted_search_frequency|safe}}');
@@ -881,3 +882,4 @@
 
 
 </script>
+{% endmacro %}

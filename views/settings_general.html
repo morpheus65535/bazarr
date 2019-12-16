@@ -1,3 +1,4 @@
+
 <div class="ui dividing header">Start-Up</div>
 <div class="twelve wide column">
     <div class="ui grid">
@@ -751,6 +752,7 @@
     </div>
 </div>
 
+{% macro settings_general() %}
 <script>
     {% if args.no_update %}
         $("#div_update").hide();
@@ -919,10 +921,6 @@
         $('#loader').removeClass('active');
     });
 
-
-</script>
-
-<script>
     function generate_apikey() {
         var result = '';
         var characters = 'abcdef0123456789';
@@ -933,3 +931,5 @@
         $("#settings_auth_apikey").val(result);
     }
 </script>
+
+{% endmacro %}

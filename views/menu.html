@@ -5,8 +5,9 @@
     <meta name="mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
 
-    <link href="{{ base_url }}static/noty/noty.css" rel="stylesheet">
-    <script src="{{ base_url }}static/noty/noty.min.js" type="text/javascript"></script>
+
+    <link href="{{ url_for('static',filename='noty/noty.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static',filename='noty/noty.min.js') }}" type="text/javascript"></script>
     <style>
         #divmenu {
             padding-top: 1em;
@@ -63,63 +64,35 @@
     </style>
 </head>
 <body>
-% from get_args import args
-% from get_providers import update_throttled_provider
-% update_throttled_provider()
-
-% import ast
-% import datetime
-% import os
-% from database import database
-% import operator
-% from config import settings
-% from functools import reduce
-
-%if settings.sonarr.getboolean('only_monitored'):
-% monitored_only_query_string_sonarr = ' AND monitored = "True"'
-%else:
-% monitored_only_query_string_sonarr = ""
-%end
-
-%if settings.radarr.getboolean('only_monitored'):
-% monitored_only_query_string_radarr = ' AND monitored = "True"'
-%else:
-% monitored_only_query_string_radarr = ""
-%end
-
-% wanted_series = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
-monitored_only_query_string_sonarr, only_one=True)['count']
-% wanted_movies = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
-monitored_only_query_string_radarr, only_one=True)['count']
-% from get_providers import list_throttled_providers
 {% set throttled_providers_count = settings.general.throtteled_providers|length %}
 <div id="divmenu" class="ui container">
     <div class="ui grid">
         <div class="three wide column">
             <div class="ui compact segment menu_segment">
-                <a href="{{ base_url }}"><img class="logo" src="{{ base_url }}static/logo128.png"></a>
+                <a href="{{ url_for('redirect_root') }}"><img class="logo"
+                                                              src="{{ url_for('static',filename='logo128.png') }}"></a>
             </div>
         </div>
         <div class="ten wide right aligned compact column">
             <div id="button_menu" class="ui center aligned segment menu_segment" hidden="hidden">
                 <div class="ui inverted compact borderless labeled icon massive menu menu_segment">
                     {% if settings.general.getboolean('use_sonarr') %}
-                        <a class="item" href="{{ base_url }}series">
+                        <a class="item" href="{{ url_for('series') }}">
                             <i class="play icon"></i>
                             Series
                         </a>
                     {% endif %}
                     {% if settings.general.getboolean('use_radarr') %}
-                        <a class="item" href="{{ base_url }}movies">
+                        <a class="item" href="{{ url_for('movies') }}">
                             <i class="film icon"></i>
                             Movies
                         </a>
                     {% endif %}
-                    <a class="item" href="{{ base_url }}history">
+                    <a class="item" href="{{ url_for('history') }}">
                         <i class="wait icon"></i>
                         History
                     </a>
-                    <a class="item" href="{{ base_url }}wanted">
+                    <a class="item" href="{{ url_for('wanted') }}">
                         <i class="warning sign icon">
                             {% if settings.general.getboolean('use_sonarr') and wanted_series > 0 %}
                                 <div id="wanted_series" class="floating ui tiny yellow label"
@@ -136,11 +109,11 @@ monitored_only_query_string_radarr, only_one=True)['count']
                         </i>
                         Wanted
                     </a>
-                    <a class="item" href="{{ base_url }}settings">
+                    <a class="item" href="{{ url_for('_settings') }}">
                         <i class="settings icon"></i>
                         Settings
                     </a>
-                    <a class="item" href="{{ base_url }}system">
+                    <a class="item" href="{{ url_for('system') }}">
                         <i class="laptop icon">
                             {% if throttled_providers_count %}
                                 <div class="floating ui tiny yellow label"
@@ -177,22 +150,22 @@ monitored_only_query_string_radarr, only_one=True)['count']
                         <i class="inverted bars icon"></i>
                         <div class="ui menu">
                             {% if settings.general.getboolean('use_sonarr') %}
-                                <a class="item" href="{{ base_url }}series">
+                                <a class="item" href="{{ url_for('series') }}">
                                     <i class="play icon"></i>
                                     Series
                                 </a>
                             {% endif %}
                             {% if settings.general.getboolean('use_radarr') %}
-                                <a class="item" href="{{ base_url }}movies">
+                                <a class="item" href="{{ url_for('movies') }}">
                                     <i class="film icon"></i>
                                     Movies
                                 </a>
                             {% endif %}
-                            <a class="item" href="{{ base_url }}history">
+                            <a class="item" href="{{ url_for('history') }}">
                                 <i class="wait icon"></i>
                                 History
                             </a>
-                            <a class="item" href="{{ base_url }}wanted">
+                            <a class="item" href="{{ url_for('wanted') }}">
                                 <i class="warning sign icon"></i>
                                 <span style="margin-right: 1em;">Wanted</span>
                                 {% if settings.general.getboolean('use_sonarr') and wanted_series > 0 %}
@@ -206,11 +179,11 @@ monitored_only_query_string_radarr, only_one=True)['count']
                                     </div>
                                 {% endif %}
                             </a>
-                            <a class="item" href="{{ base_url }}settings">
+                            <a class="item" href="{{ url_for('_settings') }}">
                                 <i class="settings icon"></i>
                                 Settings
                             </a>
-                            <a class="item" href="{{ base_url }}system">
+                            <a class="item" href="{{ url_for('system') }}">
                                 <i class="laptop icon">
                                     {% if throttled_providers_count %}
                                         <div class="floating ui tiny yellow label"
@@ -491,25 +464,23 @@ monitored_only_query_string_radarr, only_one=True)['count']
                     $('#wanted_search_missing_subtitles_movies').find('i:first').removeClass('loading');
                 }
 
-            %
-                if 'no' in locals():
-                if ($.inArray('search_missing_subtitles_{{no}}', data['tasks']) > -1) {
-                    $('#search_missing_subtitles').addClass('disabled');
-                    $('#search_missing_subtitles').find('i:first').addClass('loading');
-                } else {
-                    $('#search_missing_subtitles').removeClass('disabled');
-                    $('#search_missing_subtitles').find('i:first').removeClass('loading');
-                }
+                {% if 'no' in locals %}
+                    if ($.inArray('search_missing_subtitles_{{no}}', data['tasks']) > -1) {
+                        $('#search_missing_subtitles').addClass('disabled');
+                        $('#search_missing_subtitles').find('i:first').addClass('loading');
+                    } else {
+                        $('#search_missing_subtitles').removeClass('disabled');
+                        $('#search_missing_subtitles').find('i:first').removeClass('loading');
+                    }
 
-                if ($.inArray('search_missing_subtitles_movie_{{no}}', data['tasks']) > -1) {
-                    $('#search_missing_subtitles_movie').addClass('disabled');
-                    $('#search_missing_subtitles_movie').find('i:first').addClass('loading');
-                } else {
-                    $('#search_missing_subtitles_movie').removeClass('disabled');
-                    $('#search_missing_subtitles_movie').find('i:first').removeClass('loading');
-                }
-            %
-                end
+                    if ($.inArray('search_missing_subtitles_movie_{{no}}', data['tasks']) > -1) {
+                        $('#search_missing_subtitles_movie').addClass('disabled');
+                        $('#search_missing_subtitles_movie').find('i:first').addClass('loading');
+                    } else {
+                        $('#search_missing_subtitles_movie').removeClass('disabled');
+                        $('#search_missing_subtitles_movie').find('i:first').removeClass('loading');
+                    }
+                {% endif %}
             },
             complete: function (data) {
                 // Schedule the next

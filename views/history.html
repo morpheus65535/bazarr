@@ -45,9 +45,7 @@
 		<div id='loader' class="ui page dimmer">
 		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
 		</div>
-		% include('menu.tpl')
-
-		% from config import settings
+{% include('menu.html') %}
 
 		<div id="fondblanc" class="ui container">
 			<div class="ui top attached tabular menu">
@@ -65,7 +63,7 @@
 				</div>
 			</div>
 		</div>
-		% include('footer.tpl')
+{% include('footer.html') %}
 	</body>
 </html>
 

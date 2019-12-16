@@ -38,7 +38,7 @@
         {% endfor %}
     </div>
 </div>
-
+{% macro settings_notifications() %}
 <script>
     $('.test_notification').on('click', function () {
         const url_field = $(this).prev().val();
@@ -76,3 +76,4 @@
     });
 
 </script>
+{% endmacro %}

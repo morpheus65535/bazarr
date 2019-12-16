@@ -50,28 +50,26 @@
 		<div id='loader' class="ui page dimmer">
 		   	<div id='loader_text' class="ui indeterminate text loader">Loading...</div>
 		</div>
-		% include('menu.tpl')
+        {% include('menu.html') %}
 			
 		<div id="fondblanc" class="ui container">
 			<div class="ui basic icon buttons" style="float: right;">
 				<div id="shutdown" class="ui icon button" data-tooltip="Shutdown" data-inverted=""><i class="red power off icon"></i></div>
 				<div id="restart" class="ui icon button" data-tooltip="Restart" data-inverted=""><i class="redo alternate icon"></i></div>
-                % from config import settings
-                % if settings.auth.type != "None":
+                {% if settings.auth.type != "None" %}
                     <div id="logout" class="ui icon button" data-tooltip="Logout" data-inverted=""><i class="sign-out icon"></i></div>
-                % end
+                {% endif %}
 			</div>
-			% import datetime
-            % throttled_providers_count = len(eval(str(settings.general.throtteled_providers)))
+            {% set throttled_providers_count = settings.general.throtteled_providers|length %}
             <div class="ui top attached tabular menu">
 				<a class="tabs item active" data-tab="tasks">Tasks</a>
 				<a class="tabs item" data-tab="logs">Logs</a>
                 <a class="tabs item" data-tab="providers">Providers
-                    % if throttled_providers_count:
+                    {% if throttled_providers_count %}
                     <div class="ui tiny yellow label">
                         {{throttled_providers_count}}
                     </div>
-                    % end
+                    {% endif %}
                 </a>
                 <a class="tabs item" data-tab="status">Status</a>
 				<a class="tabs item" data-tab="releases">Releases</a>
@@ -88,7 +86,7 @@
 							</tr>
 						</thead>
 						<tbody>
-						%for task in task_list:
+                        {% for task in task_list %}
 							<tr id="{{task[3]}}">
 								<td>{{task[0]}}</td>
 								<td>{{task[1]}}</td>
@@ -99,7 +97,7 @@
 									</div>
 								</td>
 							</tr>
-						%end
+                        {% endfor %}
 						</tbody>
 					</table>
 				</div>
@@ -152,13 +150,13 @@
 							</tr>
 						</thead>
 						<tbody>
-						%for provider in throttled_providers:
+                        {% for provider in throttled_providers %}
 							<tr>
 								<td>{{provider[0]}}</td>
 								<td>{{provider[1] if provider[1] is not None else "Good"}}</td>
 								<td>{{provider[2] if provider[2] != "now" else "-"}}</td>
 							</tr>
-						%end
+                        {% endfor %}
 						</tbody>
 					</table>
 				</div>
@@ -179,7 +177,7 @@
                                 </div>
                             </div>
                         </div>
-                        % if settings.general.getboolean('use_sonarr'):
+                        {% if settings.general.getboolean('use_sonarr') %}
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Sonarr Version:</label>
@@ -192,8 +190,8 @@
                                 </div>
                             </div>
                         </div>
-                        % end
-                        % if settings.general.getboolean('use_radarr'):
+                        {% endif %}
+                        {% if settings.general.getboolean('use_radarr') %}
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Radarr Version:</label>
@@ -206,7 +204,7 @@
                                 </div>
                             </div>
                         </div>
-                        % end
+                        {% endif %}
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
                                 <label>Operating System:</label>
@@ -314,29 +312,29 @@
 			</div>
 
 			<div class="ui bottom attached tab segment" data-tab="releases">
-				%for release in releases:
+                {% for release in releases %}
 				<h2 class="ui header">
-					%if release[0][1:] == bazarr_version:
+                    {% if release[0][1:] == bazarr_version %}
 					{{release[0]}} <div class="ui green label">Current Version</div>
-					%else:
+                    {% else %}
 					{{release[0]}}
-					%end
+                    {% endif %}
 				</h2>
 				<div class="ui list">
-					%release_lines = release[1].split('\r\n')
-					%for i, release_line in enumerate(release_lines):
-					%if i == 0:
+                    {% set release_lines = release[1].split('\r\n') %}
+                    {% for i, release_line in enumerate(release_lines) %}
+                    {% if i == 0 %}
 					<div class="item">
 						<div><h4>{{release_line}}</h4></div>
 						<div class="list">
-					%else:
+                            {% else %}
 							<div class="item">{{release_line}}</div>
-					%end
-					%end
+                            {% endif %}
+                    {% endfor %}
 						</div>
 					</div>
 				</div>
-				%end
+                {% endfor %}
 			</div>
 		</div>
 
@@ -360,7 +358,7 @@
 			</div>
 		</div>
 
-		% include('footer.tpl')
+        {% include('footer.html') %}
 	</body>
 </html>
 
@@ -429,11 +427,10 @@
         });
 	});
 
-    % from config import settings
-    % from get_args import args
-	% ip = settings.general.ip
-	% port = args.port if args.port else settings.general.port
-	% base_url = settings.general.base_url
+
+        {% set ip = settings.general.ip %}
+    {% set port = args.port if args.port else settings.general.port %}
+    {% set base_url = settings.general.base_url %}
 
 	if ("{{ip}}" === "0.0.0.0") {
 		public_ip = window.location.hostname;
