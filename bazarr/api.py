@@ -42,11 +42,17 @@ class Badges(Resource):
 
 class Series(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         seriesId = request.args.get('id')
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
         if seriesId:
-            result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=?", (seriesId,))
+            result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? LIMIT ? OFFSET ?",
+                                      (length, start), (seriesId,))
         else:
-            result = database.execute("SELECT * FROM table_shows")
+            result = database.execute("SELECT * FROM table_shows LIMIT ? OFFSET ?", (length, start))
         for item in result:
             # Parse audio language
             if item['audio_language']:
@@ -83,7 +89,7 @@ class Series(Resource):
             item.update({"episodeFileCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
                                                               "sonarrSeriesId=?", (seriesId,),
                                                               only_one=True)['count']})
-        return jsonify(result)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 
 class Episodes(Resource):
@@ -92,7 +98,7 @@ class Episodes(Resource):
         if seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=?", (seriesId,))
         else:
-            result = database.execute("SELECT * FROM table_episodes")
+            return "Series ID not provided", 400
         for item in result:
             # Parse subtitles
             if item['subtitles']:
@@ -121,11 +127,17 @@ class Episodes(Resource):
 
 class Movies(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         moviesId = request.args.get('id')
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         if moviesId:
-            result = database.execute("SELECT * FROM table_movies WHERE radarrId=?", (moviesId,))
+            result = database.execute("SELECT * FROM table_movies WHERE radarrId=? LIMIT ? OFFSET ?", (length, start),
+                                      (moviesId,))
         else:
-            result = database.execute("SELECT * FROM table_movies")
+            result = database.execute("SELECT * FROM table_movies LIMIT ? OFFSET ?", (length, start))
         for item in result:
             # Parse audio language
             if item['audio_language']:
@@ -171,11 +183,15 @@ class Movies(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
-        return jsonify(result)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 
 class HistorySeries(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
             days_to_upgrade_subs = settings.general.days_to_upgrade_subs
@@ -211,6 +227,7 @@ class HistorySeries(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_history", only_one=True)['count']
         data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_history.timestamp, "
@@ -218,7 +235,8 @@ class HistorySeries(Resource):
                                 "table_history.language, table_history.score FROM table_history LEFT JOIN table_shows "
                                 "on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes "
                                 "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                "table_episodes.title is not NULL ORDER BY timestamp DESC")
+                                "table_episodes.title is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+                                (length, start))
 
         for item in data:
             # Mark episode as upgradable or not
@@ -246,14 +264,14 @@ class HistorySeries(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
 
-        return jsonify(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
 class HistoryMovies(Resource):
     def get(self):
-        start = request.args.get('start')
-        length = request.args.get('length')
-        draw = int(request.args.get('draw'))
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
 
         upgradable_movies = []
         upgradable_movies_not_perfect = []
@@ -331,11 +349,16 @@ class HistoryMovies(Resource):
 
 class WantedSeries(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         if settings.sonarr.getboolean('only_monitored'):
             monitored_only_query_string = " AND monitored='True'"
         else:
             monitored_only_query_string = ''
 
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes", only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -344,7 +367,7 @@ class WantedSeries(Resource):
                                 "table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + monitored_only_query_string +
-                                " ORDER BY table_episodes._rowid_ DESC")
+                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Parse missing subtitles
@@ -364,19 +387,25 @@ class WantedSeries(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
 
-        return jsonify(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
 class WantedMovies(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         if settings.radarr.getboolean('only_monitored'):
             monitored_only_query_string = " AND monitored='True'"
         else:
             monitored_only_query_string = ''
 
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
                                 "failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" +
-                                monitored_only_query_string + " ORDER BY _rowid_ DESC")
+                                monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
+                                (length, start))
 
         for item in data:
             # Parse missing subtitles
@@ -396,7 +425,7 @@ class WantedMovies(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
 
-        return jsonify(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
 api.add_resource(Badges, '/api/badges')
