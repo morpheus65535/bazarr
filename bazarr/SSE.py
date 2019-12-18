@@ -26,8 +26,10 @@ class EventStream:
             :rtype: str
         """
 
-        if self.queue or (len(self.queue) > 0):
-            return self.queue.popleft()
+        while True:
+            if self.queue or (len(self.queue) > 0):
+                yield self.queue.popleft()
+            time.sleep(0.1)
 
 
 event_stream = EventStream()
