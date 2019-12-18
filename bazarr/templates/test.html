@@ -23,7 +23,7 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-        $('#example').DataTable( {
+        var table = $('#example').DataTable( {
             "processing": true,
             "serverSide": true,
             "ajax": "http://localhost:6767/api/history_movies",
@@ -34,6 +34,11 @@
             { "data": "description" }
             ]
         } );
+
+        var source = new EventSource('/event');
+        source.onmessage = function (event) {
+             table.ajax.reload(null, false);
+        };
     } );
 </script>
 </html>

@@ -14,11 +14,14 @@ from database import database
 from helper import path_replace, path_replace_reverse, path_replace_movie, path_replace_reverse_movie
 from get_languages import load_language_in_db, alpha2_from_language, alpha3_from_language, language_from_alpha2, \
     alpha3_from_alpha2
+from SSE import event_stream
 
 from flask import Flask, jsonify, request, render_template
+import flask
 from flask_restful import Resource, Api
 
 app = Flask(__name__)
+app.debug = True
 api = Api(app)
 
 load_language_in_db()
@@ -26,6 +29,17 @@ load_language_in_db()
 @app.route('/')
 def test():
     return render_template('test.html')
+
+
+@app.route('/event')
+def event():
+    return flask.Response(event_stream.read(), mimetype="text/event-stream")
+
+
+@app.route('/write')
+def write():
+    event_stream.write('fake message')
+    return "", 200
 
 
 class Badges(Resource):
@@ -438,4 +452,4 @@ api.add_resource(WantedSeries, '/api/wanted_series')
 api.add_resource(WantedMovies, '/api/wanted_movies')
 
 if __name__ == '__main__':
-    app.run(port=6767, debug=True)
+    app.run(port=6767, threaded=True)
