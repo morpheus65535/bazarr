@@ -16,8 +16,7 @@ from get_languages import load_language_in_db, alpha2_from_language, alpha3_from
     alpha3_from_alpha2
 from SSE import event_stream
 
-from flask import Flask, jsonify, request, render_template
-import flask
+from flask import Flask, jsonify, request, render_template, Response
 from flask_restful import Resource, Api
 
 app = Flask(__name__)
@@ -33,7 +32,7 @@ def test():
 
 @app.route('/event')
 def event():
-    return flask.Response(event_stream.read(), mimetype="text/event-stream")
+    return Response(event_stream.read(), mimetype="text/event-stream")
 
 
 @app.route('/write')
