@@ -20,6 +20,15 @@ from subliminal import Subtitle as Subtitle_
 from subliminal.subtitle import Episode, Movie, sanitize_release_group, get_equivalent_release_groups
 from subliminal_patch.utils import sanitize
 from ftfy import fix_text
+from codecs import BOM_UTF8, BOM_UTF16_BE, BOM_UTF16_LE, BOM_UTF32_BE, BOM_UTF32_LE
+
+BOMS = (
+    (BOM_UTF8, "UTF-8"),
+    (BOM_UTF32_BE, "UTF-32-BE"),
+    (BOM_UTF32_LE, "UTF-32-LE"),
+    (BOM_UTF16_BE, "UTF-16-BE"),
+    (BOM_UTF16_LE, "UTF-16-LE"),
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +115,9 @@ class Subtitle(Subtitle_):
         # normalize line endings
         self.content = self.content.replace(b"\r\n", b"\n").replace(b'\r', b'\n')
 
+    def _check_bom(self, data):
+        return [encoding for bom, encoding in BOMS if data.startswith(bom)]
+
     def guess_encoding(self):
         """Guess encoding using the language, falling back on chardet.
 
@@ -119,6 +131,11 @@ class Subtitle(Subtitle_):
         logger.info('Guessing encoding for language %s', self.language)
 
         encodings = ['utf-8']
+
+        # check UTF BOMs
+        bom_encodings = self._check_bom(self.content)
+        if bom_encodings:
+            encodings = list(set(enc.lower() for enc in bom_encodings + encodings))
 
         # add language-specific encodings
         # http://scratchpad.wikia.com/wiki/Character_Encoding_Recommendation_for_Languages
