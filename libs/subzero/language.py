@@ -4,7 +4,7 @@ import types
 import re
 
 from babelfish.exceptions import LanguageError
-from babelfish import Language as Language_, basestr
+from babelfish import Language as Language_, basestr, LANGUAGE_MATRIX
 from six.moves import zip
 
 repl_map = {
@@ -31,6 +31,12 @@ repl_map = {
     "slo": "sk",
     "tib": "bo",
 }
+
+
+ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)) + repl_map.values()))
+ALPHA3b_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha3, LANGUAGE_MATRIX)) +
+                        filter(lambda x: len(x) == 3, repl_map.keys())))
+FULL_LANGUAGE_LIST = ALPHA2_LIST + ALPHA3b_LIST
 
 
 def language_from_stream(l):

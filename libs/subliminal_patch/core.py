@@ -31,7 +31,7 @@ from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, 
     ThreadPoolExecutor, check_video
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
-from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE
+from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST
 from scandir import scandir, scandir_generic as _scandir_generic
 import six
 
@@ -610,7 +610,8 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             forced = "forced" in adv_tag
 
         # remove possible language code for matching
-        p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub("", p_root)
+        p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub(
+            lambda m: "" if str(m.group(1)).lower() in FULL_LANGUAGE_LIST else m.group(0), p_root)
 
         p_root_lower = p_root_bare.lower()
 
