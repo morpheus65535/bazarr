@@ -464,11 +464,11 @@ elif sys.platform.startswith(('linux', 'darwin', 'sunos5')) or 'bsd' in sys.plat
                 if self._path is None:
                     # Make sure both attributes are string
                     try:
-                        self._scandir_path = self._scandir_path.decode(encoding="utf-8")
+                        self._scandir_path = self._scandir_path.decode('unicode_escape')
                     except (UnicodeDecodeError, AttributeError):
                         pass
                     try:
-                        self.name = self.name.decode(encoding="utf-8")
+                        self.name = self.name.decode('unicode_escape')
                     except (UnicodeDecodeError, AttributeError):
                         pass
                     self._path = join(self._scandir_path, self.name)
