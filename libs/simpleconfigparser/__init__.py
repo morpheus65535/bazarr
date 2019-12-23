@@ -26,7 +26,7 @@ THE SOFTWARE.
 try:
     from configparser import ConfigParser as configparser, NoOptionError, NoSectionError
 except ImportError:
-    from ConfigParser import SafeConfigParser as configparser, NoOptionError, NoSectionError
+    from ConfigParser import RawConfigParser as configparser, NoOptionError, NoSectionError
 
 
 class simpleconfigparser(configparser):
@@ -126,6 +126,6 @@ class simpleconfigparser(configparser):
     def get(self, section, option, raw=False, vars=None, fallback=None):
         try:
             # Strip out quotes from the edges
-            return configparser.get(self, section, option, raw=raw, vars=vars).strip('"\'')
+            return configparser.get(self, section, option).strip('"\'')
         except NoOptionError:
             return None
