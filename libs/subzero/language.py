@@ -32,10 +32,9 @@ repl_map = {
     "tib": "bo",
 }
 
-
-ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)) + list(repl_map.values())))
-ALPHA3b_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha3, LANGUAGE_MATRIX)) +
-                        filter(lambda x: len(x) == 3, list(repl_map.keys()))))
+ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)))) + list(repl_map.values())
+ALPHA3b_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha3, LANGUAGE_MATRIX)))) + \
+               list(set(filter(lambda x: len(x) == 3, list(repl_map.keys()))))
 FULL_LANGUAGE_LIST = ALPHA2_LIST + ALPHA3b_LIST
 
 
