@@ -27,8 +27,8 @@ class EventStream:
         """
 
         while True:
-            if self.queue or (len(self.queue) > 0):
-                yield self.queue.popleft()
+            if self.queue:
+                return self.queue.popleft()
             time.sleep(0.1)
 
 
