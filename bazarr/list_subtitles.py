@@ -191,7 +191,7 @@ def list_missing_subtitles(no=None, epno=None):
                                           "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
                                           episodes_subtitles_clause)
     if isinstance(episodes_subtitles, six.string_types):
-        logging.debug("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
+        logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
         return
 
     missing_subtitles_global = []
