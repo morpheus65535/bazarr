@@ -243,7 +243,7 @@
 								<div class="item">If you are running under Docker, don't worry, we'll take care of this for you. Just pull the new image that should be available within a couple of days.</div>
 							    % end
 								% if os.name == 'nt':
-								<div class="item">If you have installed using the Windows Installer, we'll provide a new installer soon that will upgrade your current installation (make sure to not change installation directory).</div>
+								<div class="item">If you have installed using the Windows Installer, just download the new installer that will upgrade your current installation (make sure to not change installation directory).</div>
 								% end
 							    <div class="item">If you are running from source, it's up to you to install Python 3 (don't forget requirements.txt) and use it to run Bazarr.</div>
 							</div>
