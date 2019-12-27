@@ -190,6 +190,9 @@ def list_missing_subtitles(no=None, epno=None):
                                           "FROM table_episodes LEFT JOIN table_shows "
                                           "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
                                           episodes_subtitles_clause)
+    if isinstance(episodes_subtitles, six.string_types):
+        logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
+        return
 
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
@@ -244,6 +247,9 @@ def list_missing_subtitles_movies(no=None):
 
     movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" +
                                         movies_subtitles_clause)
+    if isinstance(movies_subtitles, six.string_types):
+        logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
+        return
     
     missing_subtitles_global = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')

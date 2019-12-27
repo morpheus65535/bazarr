@@ -75,6 +75,7 @@ class BetaSeriesProvider(Provider):
     def query(self, languages, video):
         # query the server
         result = None
+        self.video = video
         matches = set()
         if video.tvdb_id:
             params = {'key': self.token,
@@ -137,8 +138,13 @@ class BetaSeriesProvider(Provider):
         r.raise_for_status()
 
         archive = _get_archive(r.content)
-        subtitle_content = _get_subtitle_from_archive(
-            archive) if archive else r.content
+        if archive:
+            subtitle_names = _get_subtitle_names_from_archive(archive)
+            subtitle_to_download = _choose_subtitle_with_release_group(subtitle_names, self.video.release_group)
+            logger.debug('Subtitle to download: ' + subtitle_to_download)
+            subtitle_content = archive.read(subtitle_to_download)
+        else:
+            subtitle_content = r.content
 
         if subtitle_content:
             subtitle.content = fix_line_ending(subtitle_content)
@@ -160,7 +166,8 @@ def _get_archive(content):
     return archive
 
 
-def _get_subtitle_from_archive(archive):
+def _get_subtitle_names_from_archive(archive):
+    subtitlesToConsider = []
     for name in archive.namelist():
         # discard hidden files
         if os.path.split(name)[-1].startswith('.'):
@@ -170,9 +177,13 @@ def _get_subtitle_from_archive(archive):
         if not name.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
-        return archive.read(name)
+        subtitlesToConsider.append(name)
 
-    return None
+    if len(subtitlesToConsider)>0:
+        logger.debug('Subtitles in archive: ' + ' '.join(subtitlesToConsider))
+        return subtitlesToConsider
+    else:
+        return None
 
 
 def _translateLanguageCodeToLanguage(languageCode):
@@ -180,3 +191,11 @@ def _translateLanguageCodeToLanguage(languageCode):
         return Language.fromalpha2('en')
     elif languageCode.lower() == 'vf':
         return Language.fromalpha2('fr')
+
+
+def _choose_subtitle_with_release_group(subtitle_names, release_group):
+    if release_group:
+        for subtitle in subtitle_names:
+            if release_group in subtitle:
+                return subtitle
+    return subtitle_names[0]
