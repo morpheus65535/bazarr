@@ -1,0 +1,90 @@
+﻿/* jTable light color theme - Red
+ * Created by Halil İbrahim Kalkan
+ * http://www.jtable.org
+ */
+
+@import "../jtable_lightcolor_base.less";
+
+@theme-folder: 'red';
+
+.jtable_lightcolor_base(@theme-folder);
+
+div.jtable-main-container
+{
+    div.jtable-title
+    {
+        .vertical-gradient(#eb6565,#9d0d0d);
+        border-color: #772b2b;
+
+        div.jtable-title-text
+        {
+            .text-shadow(0 1px 0 #666);
+            color: #fff;
+        }
+								
+		div.jtable-toolbar
+		{
+			span.jtable-toolbar-item
+			{
+				color: white;
+
+				&.jtable-toolbar-item-hover
+				{
+					background-color: #9a1414;
+				}
+			}
+		}
+    }
+
+    table.jtable
+    {
+        tbody
+        {
+            > tr
+            {
+				@highlight-color:#ea2a2a;
+
+                &.jtable-row-selected,
+                &.jtable-row-selected:hover
+                {
+                    background-color: @highlight-color;
+                }
+
+                &.jtable-row-created,
+                &.jtable-row-updated,
+                &.jtable-row-deleting
+                {
+                    background-color: @highlight-color;
+                }
+            }
+        }
+    }
+
+    div.jtable-bottom-panel
+    {
+        .jtable-page-list
+        {
+            .jtable-page-number-active,.jtable-page-number-active:hover
+            {
+				@bgcolor: #b11515;
+
+                background-color: @bgcolor;
+                border-color: @bgcolor - #222;
+            }
+        }
+
+        span.jtable-add-record
+        {
+            a
+            {
+                color: #772b2b;
+            }
+        }
+    }
+}
+
+div.jtable-busy-message
+{
+    border-color: #772b2b;
+    background-color: #ea2a2a;
+}

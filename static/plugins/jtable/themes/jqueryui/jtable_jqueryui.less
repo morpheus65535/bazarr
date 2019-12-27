@@ -1,0 +1,296 @@
+﻿@import "../jtable_theme_base.less";
+
+.jtable_jqueryui_base()
+{
+    .jtable_theme_base;
+
+    div.jtable-main-container
+    {
+        div.jtable-title
+        {
+            position: relative;
+            line-height: 34px;
+            padding-left: 10px;
+
+            .jtable-close-button
+            {
+                .dock(right, 6px);
+                .opacity(0.8);
+                background: url('close.png') no-repeat;
+                width: 22px;
+                height: 22px;
+
+                &:hover
+                {
+                    .opacity(1);
+                }
+            }
+
+			// Toolbar -------------------------------------------------------------
+
+			div.jtable-toolbar
+			{
+				.dock(bottom-right);
+
+				line-height:20px;
+				margin-right:2px;
+				margin-bottom:2px;
+
+				span.jtable-toolbar-item
+				{
+					&.jtable-toolbar-item-add-record
+					{
+						span.jtable-toolbar-item-icon
+						{
+							background-image: url('add.png');
+						}
+					}
+				}
+			}
+        }
+
+        table.jtable
+        {
+            border-collapse: collapse;
+            border-spacing: 0;
+
+            thead
+            {
+                th
+                {
+                    padding: 4px 3px 4px 6px;
+
+                    &:first-child
+                    {
+                    }
+
+                    &th:last-child
+                    {
+                    }
+
+                    &.jtable-column-header
+                    {
+                        div.jtable-column-header-container
+                        {
+                            height: 20px;
+
+                            div.jtable-column-resize-handler
+                            {
+                            }
+                        }
+
+                        span.jtable-column-header-text
+                        {
+                            margin-top: 3px;
+                        }
+                    }
+
+                    &.jtable-column-header-selecting
+                    {
+						padding: 5px;
+                    }
+
+                    &.jtable-column-header-sortable div.jtable-column-header-container
+                    {
+                        background: url('column-sortable.png') no-repeat right;
+                    }
+
+                    &.jtable-column-header-sorted-asc div.jtable-column-header-container
+                    {
+                        background: url('column-asc.png') no-repeat right;
+                    }
+
+                    &.jtable-column-header-sorted-desc div.jtable-column-header-container
+                    {
+                        background: url('column-desc.png') no-repeat right;
+                    }
+                }
+            }
+
+            tbody
+            {
+                > tr
+                {
+                    padding: 2px;
+                    height: 30px;
+
+					> td
+                    {
+                        padding: 5px;
+                        border: 1px solid #ddd; //TODO
+
+                        &:first-child
+                        {
+                            border-left: none;
+                        }
+
+                        .jtable-edit-command-button
+                        {
+                            background: url('edit.png') no-repeat;
+                            width: 16px;
+                            height: 16px;
+                        }
+
+                        .jtable-delete-command-button
+                        {
+                            background: url('delete.png') no-repeat;
+                            width: 16px;
+                            height: 16px;
+                        }
+                    }
+
+                    &.jtable-row-even
+                    {
+                    }
+
+                    &:hover
+                    {
+                    }
+
+                    &.jtable-row-selected
+                    {
+
+                    }
+
+                    &.jtable-child-row
+                    {
+                        > td
+                        {
+							padding: 2px 1px 2px 2px;
+
+							div.jtable-toolbar
+							{
+								margin-right: 33px;
+							}
+
+                            .jtable
+                            {
+                                border: none;
+                            }
+
+                            .jtable-title,
+                            .jtable-bottom-panel
+                            {
+                                .border-radius(0px);
+                                border: none;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        div.jtable-bottom-panel
+        {
+            padding: 1px;
+            min-height: 24px;
+            line-height: 16px;
+            font-size: 0.9em;
+
+            div.jtable-right-area
+            {
+                padding: 2px;
+            }
+
+            .jtable-page-list
+            {
+                margin: 3px;
+
+                .jtable-page-number,
+                .jtable-page-number-space,
+                .jtable-page-number-first,
+                .jtable-page-number-last,
+                .jtable-page-number-previous,
+                .jtable-page-number-next,
+                .jtable-page-number-active
+                {
+                    padding: 2px 5px;
+                }
+
+                    .jtable-page-number:hover,
+                    .jtable-page-number-first:hover,
+                    .jtable-page-number-last:hover,
+                    .jtable-page-number-previous:hover,
+                    .jtable-page-number-next:hover
+                    {
+                    }
+
+                .jtable-page-number-active
+                {
+                }
+
+				.jtable-page-number-disabled
+				{
+					//.opacity(0.5);
+
+					&.jtable-page-number-active
+					{
+						//.opacity(1);
+					}
+
+					&:hover
+					{
+					}
+				}
+            }
+
+            span.jtable-page-size-change
+			{
+				vertical-align: middle;
+            }
+
+			span.jtable-goto-page
+			{
+				vertical-align: middle;
+			}
+
+			.jtable-page-info
+            {
+				display: inline-block;
+                padding: 4px;
+            }
+
+            span.jtable-add-record
+            {
+                margin: 3px;
+
+                a
+                {
+                    font-weight: bold;
+                    text-decoration: none;
+
+                    &:hover
+                    {
+                        text-decoration: underline;
+                    }
+                }
+            }
+        }
+
+        div.jtable-column-selection-container
+        {
+            .border-radius(3px);
+            .box-shadow(2px 2px 4px rgba(50, 51, 50, 0.75));
+        }
+    }
+
+    form.jtable-dialog-form
+    {
+        div.jtable-input-label
+        {
+            font-weight: bold;
+        }
+    }
+
+    div.jtable-busy-message
+    {
+        .border-radius(3px);
+        .box-shadow(2px 2px 4px rgba(50, 51, 50, 0.75));
+		padding: 5px;
+		color:none;
+    }
+}
+
+////////////////////////////////////////////////////////////////
+
+.jtable_jqueryui_base();

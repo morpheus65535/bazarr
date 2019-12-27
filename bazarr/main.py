@@ -64,11 +64,6 @@ from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from flask_debugtoolbar import DebugToolbarExtension
 
-if six.PY2:
-    reload(sys)
-    sys.setdefaultencoding('utf8')
-gc.enable()
-
 # Flask Setup
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
@@ -152,7 +147,7 @@ def restart_processor():
     def restart_required():
         restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
         return restart_required
-    return dict(restart_required=restart_required()['configured'], update_required=restart_required()['updated'], ast=ast, settings=settings, locals=locals(), args=args, PY2=PY2, os=os)
+    return dict(restart_required=restart_required()['configured'], update_required=restart_required()['updated'], ast=ast, settings=settings, locals=locals(), args=args, os=os)
 
 
 def api_authorize():

@@ -1,0 +1,459 @@
+/*
+Template Name: Material Pro Admin
+Author: Themedesigner
+Email: niravjoshi87@gmail.com
+File: scss
+*/
+
+@media (min-width:1600px) {
+    .col-xlg-1,
+    .col-xlg-10,
+    .col-xlg-11,
+    .col-xlg-12,
+    .col-xlg-2,
+    .col-xlg-3,
+    .col-xlg-4,
+    .col-xlg-5,
+    .col-xlg-6,
+    .col-xlg-7,
+    .col-xlg-8,
+    .col-xlg-9 {
+        float: left;
+    }
+
+    .col-xlg-12 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 100%;
+        -ms-flex: 0 0 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .col-xlg-11 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 91.66666667%;
+        -ms-flex: 0 0 91.66666667%;
+        flex: 0 0 91.66666667%;
+        max-width: 91.66666667%;
+    }
+
+    .col-xlg-10 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 83.33333333%;
+        -ms-flex: 0 0 83.33333333%;
+        flex: 0 0 83.33333333%;
+        max-width: 83.33333333%;
+    }
+
+    .col-xlg-9 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 75%;
+        -ms-flex: 0 0 75%;
+        flex: 0 0 75%;
+        max-width: 75%;
+    }
+
+    .col-xlg-8 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 66.66666667%;
+        -ms-flex: 0 0 66.66666667%;
+        flex: 0 0 66.66666667%;
+        max-width: 66.66666667%;
+    }
+
+    .col-xlg-7 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 58.33333333%;
+        -ms-flex: 0 0 58.33333333%;
+        flex: 0 0 58.33333333%;
+        max-width: 58.33333333%;
+    }
+
+    .col-xlg-6 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 50%;
+        -ms-flex: 0 0 50%;
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .col-xlg-5 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 41.66666667%;
+        -ms-flex: 0 0 41.66666667%;
+        flex: 0 0 41.66666667%;
+        max-width: 41.66666667%;
+    }
+
+    .col-xlg-4 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 33.33333333%;
+        -ms-flex: 0 0 33.33333333%;
+        flex: 0 0 33.33333333%;
+        max-width: 33.33333333%;
+    }
+
+    .col-xlg-3 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 25%;
+        -ms-flex: 0 0 25%;
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+
+    .col-xlg-2 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 16.66666667%;
+        -ms-flex: 0 0 16.66666667%;
+        flex: 0 0 16.66666667%;
+        max-width: 16.66666667%;
+    }
+
+    .col-xlg-1 {
+        -webkit-box-flex: 0;
+        -webkit-flex: 0 0 8.33333333%;
+        -ms-flex: 0 0 8.33333333%;
+        flex: 0 0 8.33333333%;
+        max-width: 8.33333333%;
+    }
+
+    .col-xlg-pull-12 {
+        right: 100%;
+    }
+
+    .col-xlg-pull-11 {
+        right: 91.66666667%;
+    }
+
+    .col-xlg-pull-10 {
+        right: 83.33333333%;
+    }
+
+    .col-xlg-pull-9 {
+        right: 75%;
+    }
+
+    .col-xlg-pull-8 {
+        right: 66.66666667%;
+    }
+
+    .col-xlg-pull-7 {
+        right: 58.33333333%;
+    }
+
+    .col-xlg-pull-6 {
+        right: 50%;
+    }
+
+    .col-xlg-pull-5 {
+        right: 41.66666667%;
+    }
+
+    .col-xlg-pull-4 {
+        right: 33.33333333%;
+    }
+
+    .col-xlg-pull-3 {
+        right: 25%;
+    }
+
+    .col-xlg-pull-2 {
+        right: 16.66666667%;
+    }
+
+    .col-xlg-pull-1 {
+        right: 8.33333333%;
+    }
+
+    .col-xlg-pull-0 {
+        right: auto;
+    }
+
+    .col-xlg-push-12 {
+        left: 100%;
+    }
+
+    .col-xlg-push-11 {
+        left: 91.66666667%;
+    }
+
+    .col-xlg-push-10 {
+        left: 83.33333333%;
+    }
+
+    .col-xlg-push-9 {
+        left: 75%;
+    }
+
+    .col-xlg-push-8 {
+        left: 66.66666667%;
+    }
+
+    .col-xlg-push-7 {
+        left: 58.33333333%;
+    }
+
+    .col-xlg-push-6 {
+        left: 50%;
+    }
+
+    .col-xlg-push-5 {
+        left: 41.66666667%;
+    }
+
+    .col-xlg-push-4 {
+        left: 33.33333333%;
+    }
+
+    .col-xlg-push-3 {
+        left: 25%;
+    }
+
+    .col-xlg-push-2 {
+        left: 16.66666667%;
+    }
+
+    .col-xlg-push-1 {
+        left: 8.33333333%;
+    }
+
+    .col-xlg-push-0 {
+        left: auto;
+    }
+
+    .offset-xlg-12 {
+        margin-left: 100%;
+    }
+
+    .offset-xlg-11 {
+        margin-left: 91.66666667%;
+    }
+
+    .offset-xlg-10 {
+        margin-left: 83.33333333%;
+    }
+
+    .offset-xlg-9 {
+        margin-left: 75%;
+    }
+
+    .offset-xlg-8 {
+        margin-left: 66.66666667%;
+    }
+
+    .offset-xlg-7 {
+        margin-left: 58.33333333%;
+    }
+
+    .offset-xlg-6 {
+        margin-left: 50%;
+    }
+
+    .offset-xlg-5 {
+        margin-left: 41.66666667%;
+    }
+
+    .offset-xlg-4 {
+        margin-left: 33.33333333%;
+    }
+
+    .offset-xlg-3 {
+        margin-left: 25%;
+    }
+
+    .offset-xlg-2 {
+        margin-left: 16.66666667%;
+    }
+
+    .offset-xlg-1 {
+        margin-left: 8.33333333%;
+    }
+
+    .offset-xlg-0 {
+        margin-left: 0;
+    }
+}
+
+.col-xlg-1,
+.col-xlg-10,
+.col-xlg-11,
+.col-xlg-12,
+.col-xlg-2,
+.col-xlg-3,
+.col-xlg-4,
+.col-xlg-5,
+.col-xlg-6,
+.col-xlg-7,
+.col-xlg-8,
+.col-xlg-9 {
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+
+/*-------------------*/
+
+
+/*Bootstrap 4 hack*/
+
+
+/*-------------------*/
+
+.bootstrap-touchspin {
+    .input-group-btn {
+        align-items: normal;
+    }
+}
+
+.form-control-line {
+    .form-control.form-control-success:focus {
+        border-bottom: 1px solid $success;
+    }
+    .form-control.form-control-warning:focus {
+        border-bottom: 1px solid $warning;
+    }
+    .form-control.form-control-danger:focus {
+        border-bottom: 1px solid $danger;
+    }
+}
+
+.form-control-danger,
+.form-control-success,
+.form-control-warning {
+    padding-right: 2.25rem;
+    background-repeat: no-repeat;
+    background-position: center right .5625rem;
+    -webkit-background-size: 1.125rem 1.125rem;
+    background-size: 1.125rem 1.125rem;
+}
+
+.has-success .col-form-label,
+.has-success .custom-control,
+.has-success .form-check-label,
+.has-success .form-control-feedback,
+.has-success .form-control-label {
+    color: $success;
+}
+
+.has-success .form-control-success {
+    background-image: url(../../assets/images/icon/success.svg);
+}
+
+.has-success .form-control {
+    border-color: $success;
+}
+
+.has-warning .col-form-label,
+.has-warning .custom-control,
+.has-warning .form-check-label,
+.has-warning .form-control-feedback,
+.has-warning .form-control-label {
+    color: $warning;
+}
+
+.has-warning .form-control-warning {
+    background-image: url(../../assets/images/icon/warning.svg);
+}
+
+.has-warning .form-control {
+    border-color: $warning;
+}
+
+.has-danger .col-form-label,
+.has-danger .custom-control,
+.has-danger .form-check-label,
+.has-danger .form-control-feedback,
+.has-danger .form-control-label {
+    color: $danger;
+}
+
+.has-danger .form-control-danger {
+    background-image: url(../../assets/images/icon/danger.svg);
+}
+
+.has-danger .form-control {
+    border-color: $danger;
+}
+
+.input-group-addon {
+    [type="radio"]:not(:checked),
+    [type="radio"]:checked,
+    [type="checkbox"]:not(:checked),
+    [type="checkbox"]:checked {
+        position: initial;
+        opacity: 1;
+    }
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.hidden-xs-up {
+    display: none !important;
+}
+
+@media (max-width: 575px) {
+    .hidden-xs-down {
+        display: none !important;
+    }
+}
+
+@media (min-width: 576px) {
+    .hidden-sm-up {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .hidden-sm-down {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .hidden-md-up {
+        display: none !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .hidden-md-down {
+        display: none !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .hidden-lg-up {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1199px) {
+    .hidden-lg-down {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    .hidden-xl-up {
+        display: none !important;
+    }
+}
+
+.hidden-xl-down {
+    display: none !important;
+}
+
+
+//* card -inverse-font-white
+.card-inverse {
+    .card-blockquote,
+    .card-footer,
+    .card-header,
+    .card-title {
+        color: $white;
+    }
+}

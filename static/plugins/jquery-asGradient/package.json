@@ -1,0 +1,144 @@
+{
+  "_from": "jquery-asGradient@^0.3.2",
+  "_id": "jquery-asGradient@0.3.3",
+  "_inBundle": false,
+  "_integrity": "sha512-puoCFLfe98dwCCketwVsk/aBAEyOq0/BqW07PV71GvmwpKwYX7L0GC1THa2/tkMuST/2mmxHmGWJkxQDzNSiAA==",
+  "_location": "/jquery-asGradient",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "jquery-asGradient@^0.3.2",
+    "name": "jquery-asGradient",
+    "escapedName": "jquery-asGradient",
+    "rawSpec": "^0.3.2",
+    "saveSpec": null,
+    "fetchSpec": "^0.3.2"
+  },
+  "_requiredBy": [
+    "/jquery-asColorPicker"
+  ],
+  "_resolved": "https://registry.npmjs.org/jquery-asGradient/-/jquery-asGradient-0.3.3.tgz",
+  "_shasum": "89e69eae0242b53c8fe08563ae7bf47aa624f4f3",
+  "_spec": "jquery-asGradient@^0.3.2",
+  "_where": "D:\\themeforest\\adminX\\adminX\\node_modules\\jquery-asColorPicker",
+  "author": {
+    "name": "amazingSurge",
+    "email": "amazingSurge@gmail.com",
+    "url": "amazingSurge.com"
+  },
+  "bugs": {
+    "url": "https://github.com/amazingSurge/jquery-asGradient/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "jquery": ">=2.2.0",
+    "jquery-asColor": "^0.3.3"
+  },
+  "deprecated": false,
+  "description": "A jquery plugin used to manipulate css image gradient.",
+  "devDependencies": {
+    "assets-manager": "*",
+    "babel-core": "*",
+    "babel-eslint": "*",
+    "babel-istanbul": "*",
+    "babel-plugin-transform-es2015-modules-umd": "*",
+    "babel-preset-es2015": "*",
+    "babel-preset-es2015-rollup": "*",
+    "babelify": "*",
+    "browserify": "*",
+    "browserify-babel-istanbul": "*",
+    "chai": "*",
+    "del": "*",
+    "graceful-fs": "*",
+    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp-autoprefixer": "*",
+    "gulp-babel": "*",
+    "gulp-changed": "*",
+    "gulp-eslint": "*",
+    "gulp-extname": "*",
+    "gulp-filter": "*",
+    "gulp-header": "*",
+    "gulp-iconfont-css": "*",
+    "gulp-if": "*",
+    "gulp-nf-prettier": "*",
+    "gulp-notify": "*",
+    "gulp-plumber": "*",
+    "gulp-rename": "*",
+    "gulp-replace": "*",
+    "gulp-rollup": "*",
+    "gulp-size": "*",
+    "gulp-sourcemaps": "*",
+    "gulp-uglify": "*",
+    "gulp-util": "*",
+    "gulp-zip": "*",
+    "inquirer": "*",
+    "isparta": "*",
+    "karma": "*",
+    "karma-babel-preprocessor": "*",
+    "karma-browserify": "*",
+    "karma-chrome-launcher": "*",
+    "karma-coverage": "*",
+    "karma-firefox-launcher": "*",
+    "karma-mocha": "*",
+    "karma-mocha-reporter": "*",
+    "karma-phantomjs-launcher": "*",
+    "karma-sinon-chai": "*",
+    "merge-stream": "*",
+    "mkdirp": "*",
+    "mocha": "*",
+    "node-notifier": "*",
+    "path-exists": "*",
+    "phantomjs-prebuilt": "*",
+    "prettier": "*",
+    "release-it": "*",
+    "rollup-plugin-babel": "*",
+    "semver": "*",
+    "sinon": "*",
+    "sinon-chai": "*",
+    "through2": "*",
+    "yargs": "*"
+  },
+  "engines": {
+    "node": ">= 6.2.2",
+    "npm": ">= 3"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "homepage": "https://github.com/amazingSurge/jquery-asGradient",
+  "keywords": [
+    "jquery",
+    "jquery-plugin",
+    "ecosystem:jquery",
+    "ui",
+    "es6",
+    "Gradient"
+  ],
+  "license": "LGPL-3.0",
+  "licenses": [
+    {
+      "type": "LGPL-3.0",
+      "url": "https://github.com/amazingSurge/jquery-asGradient/blob/master/LICENSE"
+    }
+  ],
+  "main": "dist/jquery-asGradient.js",
+  "module": "dist/jquery-asGradient.es.js",
+  "name": "jquery-asGradient",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/amazingSurge/jquery-asGradient.git"
+  },
+  "scripts": {
+    "build": "npm run prestart && gulp build",
+    "deploy": "gulp deploy",
+    "deploy:prepare": "gulp deploy:prepare",
+    "prestart": "npm install",
+    "release": "gulp release",
+    "start": "gulp serve",
+    "test": "gulp test"
+  },
+  "title": "jQuery asGradient",
+  "version": "0.3.3"
+}

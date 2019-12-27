@@ -1,0 +1,60 @@
+##################################
+# project-specific.gitattributes #
+##################################
+
+
+###########################
+# documents.gitattributes #
+###########################
+*.doc  diff=astextplain
+*.docx diff=astextplain
+*.dot  diff=astextplain
+*.pdf  diff=astextplain
+*.rtf  diff=astextplain
+*.css      text eol=lf
+*.scss     text eol=lf
+*.less     text eol=lf
+*.html     text eol=lf
+*.js       text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.hbs      text eol=lf
+*.mustache text eol=lf
+*.xml      text eol=lf
+*.csv      text eol=lf
+*.tab      text eol=lf
+*.tsv      text eol=lf
+*.sql      text eol=lf
+
+############################
+### graphics.gitattributes #
+############################
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.tif binary
+*.tiff binary
+*.ico binary
+*.svg binary
+*.eps binary
+*.psd binary
+*.ai binary
+
+###########################
+# git-crypt.gitattributes #
+###########################
+vault_* binary filter=git-crypt diff=git-crypt
+vault.* binary filter=git-crypt diff=git-crypt
+
+#######################
+# shell.gitattributes #
+#######################
+# Linux
+*.sh text eol=lf
+
+# Windows
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

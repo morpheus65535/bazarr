@@ -1,0 +1,329 @@
+﻿@import "../jtable_theme_base.less";
+
+.jtable_lightcolor_base( @theme-folder )
+{
+    @defaultFontFamily: Verdana, Arial, Helvetica, sans-serif;
+    @defaultFontSize: 11px;
+
+    .default-font(@size: @defaultFontSize)
+    {
+        font-family: @defaultFontFamily;
+        font-size: @defaultFontSize;
+        font-weight: 400;
+    }
+
+    .jtable_theme_base;
+
+    div.jtable-main-container
+    {
+        .default-font;
+        color: #222;
+
+        div.jtable-title
+        {
+            .border-radius(3px 3px 0 0);
+            position: relative;
+            line-height: 34px;
+            box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.5);
+            padding-left: 10px;
+            border: 1px solid;
+
+            div.jtable-title-text
+            {
+                font-weight: bold;
+            }
+
+            .jtable-close-button
+            {
+                .dock(right, 6px);
+                .opacity(0.8);
+                background: url('lightcolor/close.png') no-repeat;
+                width: 22px;
+                height: 22px;
+
+                &:hover
+                {
+                    .opacity(1);
+                }
+            }
+
+			// Toolbar -------------------------------------------------------------
+
+			div.jtable-toolbar
+			{
+				.dock(bottom-right);
+				line-height:26px;
+
+				span.jtable-toolbar-item
+				{
+					&.jtable-toolbar-item-add-record
+					{
+						span.jtable-toolbar-item-icon
+						{
+							background-image: url('lightcolor/add.png');
+						}
+					}
+				}
+			}
+        }
+
+        table.jtable
+        {
+            border-collapse: collapse;
+            border-spacing: 0;
+            border: 1px solid #C8C8C8;
+
+            thead
+            {
+                background: url('lightcolor/bg-thead.png') repeat-x scroll top left #dddddd;
+                border-top: 1px solid #fff;
+                border-bottom: 1px solid #C8C8C8;
+
+                th
+                {
+                    padding: 4px 3px 4px 6px;
+                    border-left: 1px solid #fff;
+                    border-right: 1px solid #C8C8C8;
+
+                    &:first-child
+                    {
+                        border-left: none;
+                    }
+
+                    &th:last-child
+                    {
+                        border-right: none;
+                    }
+
+                    &.jtable-column-header
+                    {
+                        div.jtable-column-header-container
+                        {
+                            height: 20px;
+
+                            div.jtable-column-resize-handler
+                            {
+                            }
+                        }
+
+                        span.jtable-column-header-text
+                        {
+                            margin-top: 3px;
+                        }
+                    }
+
+                    &.jtable-column-header-selecting
+                    {
+						padding: 5px;
+                    }
+
+                    &.jtable-column-header-sortable div.jtable-column-header-container
+                    {
+                        background: url('lightcolor/column-sortable.png') no-repeat right;
+                    }
+
+                    &.jtable-column-header-sorted-asc div.jtable-column-header-container
+                    {
+                        background: url('lightcolor/column-asc.png') no-repeat right;
+                    }
+
+                    &.jtable-column-header-sorted-desc div.jtable-column-header-container
+                    {
+                        background: url('lightcolor/column-desc.png') no-repeat right;
+                    }
+                }
+            }
+
+            tbody
+            {
+                > tr
+                {
+                    padding: 2px;
+                    background: #f8f8f8;
+                    height: 30px;
+
+					> td
+                    {
+                        padding: 5px;
+                        border-left: 1px dotted #bebebe;
+
+                        &:first-child
+                        {
+                            border-left: none;
+                        }
+
+                        .jtable-edit-command-button
+                        {
+                            background: url('lightcolor/edit.png') no-repeat;
+                            width: 16px;
+                            height: 16px;
+                        }
+
+                        .jtable-delete-command-button
+                        {
+                            background: url('lightcolor/delete.png') no-repeat;
+                            width: 16px;
+                            height: 16px;
+                        }
+                    }
+
+                    &.jtable-row-even
+                    {
+                        background: #f0f0f0;
+                    }
+
+                    &:hover
+                    {
+                        background: #e8eaef;
+                    }
+
+                    &.jtable-row-selected
+                    {
+                        .text-shadow(0 1px 0 #333);
+                        color: #FCFCFC;
+                    }
+
+                    &.jtable-child-row
+                    {
+                        > td
+                        {
+							background-color: #bbb;
+							padding: 2px 1px 2px 2px;
+
+                            .jtable
+                            {
+                                border: none;
+                                border-bottom: 1px solid #C8C8C8;
+                            }
+
+                            .jtable-title,
+                            .jtable-bottom-panel
+                            {
+                                .border-radius(0px);
+                                border: none;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        div.jtable-bottom-panel
+        {
+            .border-radius(0px 0px 3px 3px);
+            padding: 1px;
+            background: #fff;
+            border: 1px solid #C8C8C8;
+            border-top: none;
+            min-height: 24px;
+            line-height: 16px;
+            font-size: 0.9em;
+
+            div.jtable-right-area
+            {
+                padding: 2px;
+            }
+
+            .jtable-page-list
+            {
+                margin: 2px;
+
+                .jtable-page-number,
+                .jtable-page-number-space,
+                .jtable-page-number-first,
+                .jtable-page-number-last,
+                .jtable-page-number-previous,
+                .jtable-page-number-next,
+                .jtable-page-number-active
+                {
+                    .text-shadow(0 1px 0 white);
+                    background-color: #ebebeb;
+                    border-style: solid;
+                    border-width: 1px;
+                    border-color: #ffffff #b5b5b5 #b5b5b5 #ffffff;
+                    padding: 2px 5px;
+                }
+
+                    .jtable-page-number:hover,
+                    .jtable-page-number-first:hover,
+                    .jtable-page-number-last:hover,
+                    .jtable-page-number-previous:hover,
+                    .jtable-page-number-next:hover
+                    {
+                        background-color: #ddd;
+                    }
+
+                .jtable-page-number-active
+                {
+                    .text-shadow(0 1px 0 #666);
+                    color: #FCFCFC;
+                }
+
+				.jtable-page-number-disabled
+				{
+					.opacity(0.5);
+
+					&.jtable-page-number-active
+					{
+						.opacity(1);
+					}
+
+					&:hover
+					{
+						background-color: #ebebeb;
+					}
+				}
+            }
+
+			.jtable-page-info
+            {
+				display: inline-block;
+                padding: 4px;
+            }
+
+            span.jtable-add-record
+            {
+                margin: 3px;
+
+                a
+                {
+                    font-weight: bold;
+                    text-decoration: none;
+
+                    &:hover
+                    {
+                        text-decoration: underline;
+                    }
+                }
+            }
+        }
+
+        div.jtable-column-selection-container
+        {
+            .border-radius(3px);
+            .box-shadow(2px 2px 4px rgba(50, 51, 50, 0.75));
+        }
+    }
+
+    form.jtable-dialog-form
+    {
+        .default-font(@defaultFontSize - 1px);
+
+        div.jtable-input-label
+        {
+            font-weight: bold;
+        }
+    }
+
+    div.jtable-busy-message
+    {
+        .text-shadow(0 1px 0 #333);
+        .border-radius(3px);
+        .box-shadow(2px 2px 4px rgba(50, 51, 50, 0.75));
+        color: #fff;
+        border: 1px solid;
+        padding: 3px 5px 5px 27px;
+        background: url('lightcolor/@{theme-folder}/loading.gif') no-repeat;
+        background-position: 5px;
+    }
+}

@@ -1,0 +1,45 @@
+.twitter-typeahead {
+    width: 100% 
+}
+
+.twitter-typeahead .tt-menu {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: .75rem 0
+}
+
+.twitter-typeahead .tt-menu .tt-suggestion {
+    padding: .25rem .75rem;
+    cursor: pointer
+}
+
+.twitter-typeahead .tt-menu .tt-suggestion:hover {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.twitter-typeahead .empty-message {
+    padding: 5px 10px;
+    text-align: center
+}
+
+.twitter-typeahead .rtl-typeahead .tt-menu {
+    text-align: right
+}
+
+.twitter-typeahead .league-name {
+    margin: 0 10px 5px;
+    padding: 7px 5px 10px;
+    border-bottom: 1px solid #ced4da;
+}
+
+.scrollable-dropdown .twitter-typeahead .tt-menu {
+    max-height: 80px;
+    overflow-y: auto
+}
+
+.bootstrap-maxlength {
+    margin-top: .5rem
+}

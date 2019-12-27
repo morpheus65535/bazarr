@@ -1,0 +1,81 @@
+$transition-duration: .2s;
+.hide {
+  display: none;
+}
+
+// core
+.wizard-pane {
+  position: absolute;
+  top: 0;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity $transition-duration ease;
+  &.active {
+    position: relative;
+    visibility: visible;
+    opacity: 1;
+  }
+  &.activing {
+    visibility: visible;
+  }
+}
+
+.wizard-content {
+  position: relative;
+  padding: 0;
+  transition: height $transition-duration ease;
+}
+
+// styles
+.current {
+  color: #00f !important;
+}
+
+.done {
+  color: #008000 !important;
+}
+
+.error {
+  color: #f00 !important;
+}
+
+.disabled {
+  cursor: not-allowed !important;
+}
+
+.wizard-pane {
+  padding: 10px;
+}
+
+.wizard-content {
+  border: 1px solid #aaa;
+}
+
+.wizard-steps {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  > li {
+    display: inline-block;
+    padding: 5px 10px;
+    color: #666;
+    cursor: pointer;
+    &:hover {
+      color: #333;
+    }
+  }
+}
+
+.wizard-buttons {
+  margin-top: 10px;
+  > a {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+    &.disabled {
+      color: #aaa;
+      border-color: #aaa;
+    }
+  }
+}

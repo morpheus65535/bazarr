@@ -1,0 +1,34 @@
+{
+  "name": "bootstrap-material-datetimepicker",
+  "description": ".",
+  "version": "2.7.1",
+  "keywords": [
+    "css",
+    "js",
+    "mobile-first",
+    "responsive",
+    "front-end",
+    "web"
+  ],
+  "homepage": "https://github.com/t00rk/bootstrap-material-datetimepicker",
+  "main": [
+    "js/bootstrap-material-datetimepicker.js",
+    "css/bootstrap-material-datetimepicker.css"
+  ],
+  "ignore": [
+    "/.*",
+    "_config.yml",
+    "CNAME",
+    "composer.json",
+    "CONTRIBUTING.md",
+    "docs",
+    "js/tests",
+    "test-infra"
+  ],
+  "dependencies": {
+    "momentjs": "~2.10.2",
+    "bootstrap": "~3.3.4",
+    "jquery": "1.12.3",
+    "bootstrap-material-design": "~0.3.0"
+  }
+}

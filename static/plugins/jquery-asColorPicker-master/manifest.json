@@ -1,0 +1,9 @@
+{
+  "dest": "examples",
+  "packages": {
+    "npm:jquery": true,
+    "npm:normalize.css": true,
+    "npm:jquery-asColor": true,
+    "npm:jquery-asGradient": true
+  }
+}

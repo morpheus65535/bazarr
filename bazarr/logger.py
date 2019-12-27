@@ -77,7 +77,7 @@ def configure_logging(debug=False):
     logger.addHandler(fh)
     
     if debug:
-        logging.getLogger("sqlite3worker").setLevel(logging.DEBUG)
+        logging.getLogger("sqlite3worker").setLevel(logging.ERROR)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)

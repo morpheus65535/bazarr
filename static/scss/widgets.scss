@@ -1,0 +1,917 @@
+/*
+Template Name: Material Pro Admin
+Author: Themedesigner
+Email: niravjoshi87@gmail.com
+File: scss
+*/
+
+
+/*******************
+/*User mail widgets*/
+/*******************/
+
+.topbar {
+    .top-navbar {
+        .mailbox {
+            width: 300px;
+            ul {
+                padding: 0px;
+                li {
+                    list-style: none;
+                }
+            }
+        }
+    }
+}
+
+.mailbox {
+    ul li {
+        .drop-title {
+            font-weight: 500;
+            padding: 11px 20px 15px;
+            border-bottom: 1px solid $border;
+        }
+        .nav-link {
+            border-top: 1px solid $border;
+            padding-top: 15px;
+        }
+    }
+    .message-center {
+        height: 200px;
+        overflow: auto;
+        position: relative;
+        a {
+            border-bottom: 1px solid $border;
+            display: block;
+            text-decoration: none;
+            padding: 9px 15px;
+            &:hover {
+                background: $light;
+            }
+            div {
+                white-space: normal;
+            }
+            .user-img {
+                width: 40px;
+                position: relative;
+                display: inline-block;
+                margin: 0 10px 15px 0;
+                img {
+                    width: 100%;
+                }
+                .profile-status {
+                    border: 2px solid $white;
+                    border-radius: 50%;
+                    display: inline-block;
+                    height: 10px;
+                    left: 30px;
+                    position: absolute;
+                    top: 1px;
+                    width: 10px;
+                }
+                .online {
+                    background: $success;
+                }
+                .busy {
+                    background: $danger;
+                }
+                .away {
+                    background: $warning;
+                }
+                .offline {
+                    background: $warning;
+                }
+            }
+            .mail-contnet {
+                display: inline-block;
+                width: 75%;
+                vertical-align: middle;
+                h5 {
+                    margin: 5px 0px 0;
+                }
+                .mail-desc,
+                .time {
+                    font-size: 12px;
+                    display: block;
+                    margin: 1px 0;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    color: $bodytext;
+                    white-space: nowrap;
+                }
+            }
+        }
+    }
+}
+
+
+/*******************
+/*Analytic info sparkline chart page*/
+/*******************/
+
+.analytics-info {
+    li span {
+        font-size: 24px;
+        vertical-align: middle;
+    }
+}
+
+
+/*******************
+/*States row*/
+/*******************/
+
+.stats-row {
+    margin-bottom: 20px;
+    .stat-item {
+        display: inline-block;
+        padding-right: 15px;
+        &+.stat-item {
+            padding-left: 15px;
+            border-left: 1px solid $border;
+        }
+    }
+}
+
+
+/*******************/
+/*Dashboard1 Weather*/
+/*******************/
+
+.city-weather-days {
+    margin: 0px;
+    li {
+        text-align: center;
+        padding: 15px 0;
+        span {
+            display: block;
+            padding: 10px 0 0;
+            color: $muted;
+        }
+        i {
+            display: block;
+            font-size: 20px;
+            color: $themecolor;
+        }
+        h3 {
+            font-weight: 300;
+            margin-top: 5px;
+        }
+    }
+}
+
+
+/*******************/
+/*Comment widgets*/
+/*******************/
+
+.comment-widgets {
+    position: relative;
+    margin-bottom: 10px;
+    .comment-row {
+        border-left: 3px solid $white;
+        padding: 15px;
+        &:hover,
+        &.active {
+            border-color: $themecolor;
+        }
+    }
+}
+
+.comment-text {
+    padding: 15px 15px 15px 20px;
+    &:hover .comment-footer,
+    &.active .comment-footer {
+        .action-icons {
+            visibility: visible;
+        }
+    }
+    p {
+        max-height: 50px;
+        overflow: hidden;
+    }
+}
+
+.comment-footer {
+    .action-icons {
+        visibility: hidden;
+        a {
+            padding-left: 15px;
+            vertical-align: middle;
+            color: $muted;
+            &:hover,
+            &.active {
+                color: $info;
+            }
+        }
+    }
+}
+
+
+/*******************/
+/*To do widgets*/
+/*******************/
+
+.todo-list {
+    li {
+        border: 0px;
+        margin-bottom: 0px;
+        padding: 20px 15px 15px 0px;
+        .checkbox {
+            width: 100%;
+            label {
+                font-weight: 400;
+                color:$headingtext;
+            }
+        }
+        &:last-child {
+            border-bottom: 0px;
+        }
+        .assignedto {
+            padding: 0px 0 0 27px;
+            margin: 0px;
+            li {
+                list-style: none;
+                padding: 0px;
+                display: inline-block;
+                border: 0px;
+                margin-right: 2px;
+                img {
+                    width: 30px;
+                    border-radius: 100%;
+                }
+            }
+        }
+        .item-date {
+            padding-left: 25px;
+            font-size: 12px;
+            display: inline-block;
+        }
+    }
+}
+
+.list-task .task-done span {
+    text-decoration: line-through;
+}
+
+
+/*******************/
+/*Chat widget*/
+/*******************/
+
+.chat-list {
+    margin: 0px;
+    padding: 0px;
+    li {
+        list-style: none;
+        margin-top: 30px;
+        .chat-img {
+            display: inline-block;
+            width: 45px;
+            vertical-align: top;
+            img {
+                width: 45px;
+                border-radius: 100%;
+            }
+        }
+        .chat-content {
+            width: calc(100% - 140px);
+            display: inline-block;
+            padding-left: 15px;
+            h5 {
+                color: $muted;
+            }
+            .box {
+                display: inline-block;
+                margin-bottom: 10px;
+                color:$dark;
+            }
+        }
+        .chat-time {
+            display: inline-block;
+            text-align: right;
+            width: 80px;
+            font-size: 13px;
+            color: $muted;
+        }
+        &.odd {
+            .chat-content {
+                text-align: right;
+                width: calc(100% - 90px);
+            }
+            .box {
+                clear: both;
+            }
+        }
+        &.odd + .odd {
+            margin-top: 0px;
+        }
+        &.reverse {
+            text-align: right;
+            .chat-time {
+                text-align: left;
+            }
+            .chat-content {
+                padding-left: 0px;
+                padding-right: 15px;
+            }
+        }
+    }
+}
+
+
+/*******************/
+/*Chat widget*/
+/*******************/
+
+.message-box {
+    ul li {
+        .drop-title {
+            font-weight: 500;
+            padding: 11px 20px 15px;
+            border-bottom: 1px solid $border;
+        }
+        .nav-link {
+            border-top: 1px solid $border;
+            padding-top: 15px;
+        }
+    }
+    .message-widget {
+        position: relative;
+        a {
+            border-bottom: 1px solid $border;
+            display: block;
+            text-decoration: none;
+            padding: 9px 15px;
+            &:hover {
+                background: $light;
+            }
+            &:last-child {
+                border-bottom: 0px;
+            }
+            div {
+                white-space: normal;
+            }
+            .user-img {
+                width: 45px;
+                position: relative;
+                display: inline-block;
+                margin: 0 10px 15px 0;
+                img {
+                    width: 100%;
+                }
+                .profile-status {
+                    border: 2px solid $white;
+                    border-radius: 50%;
+                    display: inline-block;
+                    height: 10px;
+                    left: 33px;
+                    position: absolute;
+                    top: -1px;
+                    width: 10px;
+                }
+                .online {
+                    background: $success;
+                }
+                .busy {
+                    background: $danger;
+                }
+                .away {
+                    background: $warning;
+                }
+                .offline {
+                    background: $warning;
+                }
+            }
+            .mail-contnet {
+                display: inline-block;
+                width: 75%;
+                vertical-align: middle;
+                h5 {
+                    margin: 5px 0px 0;
+                }
+                .mail-desc,
+                .time {
+                    font-size: 12px;
+                    display: block;
+                    margin: 1px 0;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    color: $bodytext;
+                    white-space: nowrap;
+                }
+            }
+        }
+    }
+}
+
+
+/*******************/
+/*Calendar widget*/
+/*******************/
+
+.calendar {
+    float: $lft;
+    margin-bottom: 0px;
+}
+
+.fc-view {
+    margin-top: 30px;
+}
+
+.none-border {
+    .modal-footer {
+        border-top: none;
+    }
+}
+
+.fc-toolbar {
+    margin-bottom: 5px;
+    margin-top: 15px;
+    h2 {
+        font-size: 18px;
+        font-weight: 500;
+        line-height: 30px;
+        text-transform: uppercase;
+    }
+}
+
+.fc-day {
+    background: $white;
+}
+
+.fc-toolbar .fc-state-active,
+.fc-toolbar .ui-state-active,
+.fc-toolbar button:focus,
+.fc-toolbar button:hover,
+.fc-toolbar .ui-state-hover {
+    z-index: 0;
+}
+
+.fc-widget-header {
+    border: 0px !important;
+}
+
+.fc-widget-content {
+    border-color: rgba(120, 130, 140, 0.13)!important;
+}
+
+.fc {
+    th.fc-widget-header {
+        color: $bodytext;
+        font-size: 13px;
+        font-weight: 300;
+        line-height: 20px;
+        padding: 7px 0px;
+        text-transform: uppercase;
+    }
+    th.fc-sun,
+    th.fc-tue,
+    th.fc-thu,
+    th.fc-sat {
+        background: #f2f7f8;
+    }
+    th.fc-mon,
+    th.fc-wed,
+    th.fc-fri {
+        background: #f2f7f8;
+    }
+}
+
+.fc-view {
+    margin-top: 0px;
+}
+
+.fc-toolbar {
+    margin: 0px;
+    padding: 24px 0px;
+}
+
+.fc-button {
+    background: $white;
+    border: 1px solid $border;
+    color: $bodytext;
+    text-transform: capitalize;
+    &:hover {
+        background: $light;
+        opacity: 0.8;
+    }
+}
+
+.fc-text-arrow {
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.fc-state-hover {
+    background: #F5F5F5;
+}
+
+.fc-unthemed .fc-today {
+    border: 1px solid $danger;
+    background: $light!important;
+}
+
+.fc-state-highlight {
+    background: #f0f0f0;
+}
+
+.fc-cell-overlay {
+    background: #f0f0f0;
+}
+
+.fc-unthemed {
+    .fc-today {
+        background: $white;
+    }
+}
+
+.fc-event {
+    border-radius: 0px;
+    border: none;
+    cursor: move;
+    color: $white!important;
+    font-size: 13px;
+    margin: 1px -1px 0 -1px;
+    padding: 5px 5px;
+    text-align: center;
+    background: $info;
+}
+
+.calendar-event {
+    cursor: move;
+    margin: 10px 5px 0 0;
+    padding: 6px 10px;
+    display: inline-block;
+    color: $white;
+    min-width: 140px;
+    text-align: center;
+    background: $info;
+    a {
+        float: $rgt;
+        opacity: 0.6;
+        font-size: 10px;
+        margin: 4px 0 0 10px;
+        color: $white;
+    }
+}
+
+.fc-basic-view {
+    td.fc-week-number {
+        span {
+            padding-right: 5px;
+        }
+    }
+    .fc-day-number {
+        padding: 10px 15px;
+        display: inline-block;
+    }
+}
+/*******************/
+/*Steam line widget*/
+/*******************/
+.steamline {
+    position: relative;
+    border-left: 1px solid $border;
+    margin-left: 20px;
+    .sl-left {
+        float: $lft;
+        margin-left: -20px;
+        z-index: 1;
+        width: 40px;
+        line-height: 40px;
+        text-align: center;
+        height: 40px;
+        border-radius: 100%;
+        color: $white;
+        background: $dark;
+        margin-right: 15px;
+        img {
+            max-width: 40px;
+        }
+    }
+}
+
+.steamline .sl-right {
+    padding-left: 50px;
+    .desc,
+    .inline-photos {
+        margin-bottom: 30px;
+    }
+    
+}
+
+.steamline .sl-item {
+    border-bottom: 1px solid $border;
+    margin: 20px 0;
+}
+
+.sl-date {
+    font-size: 10px;
+    color: $muted;
+}
+
+.time-item {
+    border-color: $border;
+    padding-bottom: 1px;
+    position: relative;
+    &:before {
+        content: " ";
+        display: table;
+    }
+    &:after {
+        background-color: $white;
+        border-color: $border;
+        border-radius: 10px;
+        border-style: solid;
+        border-width: 2px;
+        bottom: 0;
+        content: '';
+        height: 14px;
+        left: 0;
+        margin-left: -8px;
+        position: absolute;
+        top: 5px;
+        width: 14px;
+    }
+}
+
+.time-item-item {
+    &:after {
+        content: " ";
+        display: table;
+    }
+}
+
+.item-info {
+    margin-bottom: 15px;
+    margin-left: 15px;
+    p {
+        margin-bottom: 10px !important;
+    }
+}
+
+/*******************/
+/*Feed widget*/
+/*******************/
+
+.feeds {
+    margin: 0px;
+    padding: 0px;
+    li {
+        list-style: none;
+        padding: 10px;
+        display: block;
+        &:hover {
+            background: $extra-light;
+        }
+        > div {
+            width: 40px;
+            height: 40px;
+            margin-right: 5px;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            border-radius: 100%;
+            i {
+                line-height: 40px;
+            }
+        }
+        span {
+            float: right;
+            width: auto;
+            font-size: 12px;
+        }
+    }
+}
+
+
+/*******************/
+/*Vertical carousel*/
+/*******************/
+
+.vert .carousel-item-next.carousel-item-left,
+.vert .carousel-item-prev.carousel-item-right {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+}
+
+.vert .carousel-item-next,
+.vert .active.carousel-item-right {
+    -webkit-transform: translate3d(0, 100%, 0);
+    transform: translate3d(0, 100% 0);
+}
+
+.vert .carousel-item-prev,
+.vert .active.carousel-item-left {
+    -webkit-transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, -100%, 0);
+}
+
+
+/*******************/
+/*social-widgets*/
+/*******************/
+
+.social-widget {
+    .soc-header {
+        padding: 15px;
+        text-align: center;
+        font-size: 36px;
+        color: #fff;
+        &.box-facebook {
+            background: #3b5998;
+        }
+        &.box-twitter {
+            background: #00aced;
+        }
+        &.box-google {
+            background: #f86c6b;
+        }
+        &.box-linkedin {
+            background: #4875b4;
+        }
+    }
+    .soc-content {
+        display: flex;
+        text-align: center;
+        div {
+            padding: 10px;
+            h3 {
+                margin-bottom: 0px;
+            }
+        }
+    }
+}
+
+
+/*******************/
+/*Guage chart*/
+/*******************/
+
+.gaugejs-box {
+    position: relative;
+    margin: 0 auto;
+}
+
+.gaugejs-box canvas.gaugejs {
+    width: 100% !important;
+    height: auto !important;
+}
+
+
+/*******************/
+/*social-profile-first*/
+/*******************/
+
+.social-profile-first {
+    text-align: center;
+    padding-top: 22%;
+    margin-bottom: 96px;
+    &.bg-over {
+        background: rgba(56, 83, 161, 0.7);
+    }
+    .middle {
+        vertical-align: middle;
+    }
+}
+
+
+/*******************/
+/*country-state*/
+/*******************/
+
+.country-state {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 10px;
+    li {
+        margin-top: 30px;
+        margin-bottom: 10px;
+    }
+    h2 {
+        margin-bottom: 0px;
+        font-weight: 400;
+    }
+}
+
+
+/*******************/
+/*profile timeline widget*/
+/*******************/
+
+.profiletimeline {
+    position: relative;
+    margin-left: 70px;
+    margin-right: 10px;
+    .sl-left {
+        float: left;
+        margin-left: -60px;
+        z-index: 1;
+        margin-right: 15px;
+        img {
+            max-width: 40px;
+        }
+    }
+}
+.profiletimeline .sl-item {
+    margin-top: 8px;
+    margin-bottom: 30px;
+}
+
+.profiletimeline .sl-date {
+    font-size: 12px;
+    color: $muted;
+}
+
+.profiletimeline .time-item {
+    border-color: $border;
+    padding-bottom: 1px;
+    position: relative;
+    &:before {
+        content: " ";
+        display: table;
+    }
+    &:after {
+        background-color: $white;
+        border-color: $border;
+        border-radius: 10px;
+        border-style: solid;
+        border-width: 2px;
+        bottom: 0;
+        content: '';
+        height: 14px;
+        left: 0;
+        margin-left: -8px;
+        position: absolute;
+        top: 5px;
+        width: 14px;
+    }
+}
+
+.profiletimeline .time-item-item {
+    &:after {
+        content: " ";
+        display: table;
+    }
+}
+
+.profiletimeline .item-info {
+    margin-bottom: 15px;
+    margin-left: 15px;
+    p {
+        margin-bottom: 10px !important;
+    }
+}
+
+/*Blog widgets*/
+
+.blog-widget{
+    margin-top: 30px;
+    .blog-image img{
+        border-radius: $radius;
+        margin-top: -45px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0, 0, 0,0.2);
+    }
+}
+
+/*Weather smal;*/
+.weather-small{
+    h1{
+        line-height: 30px;
+    }
+    sup{
+        font-size:60%;
+    }
+}
+
+/*little-profile*/
+.little-profile{
+    .pro-img{
+        margin-top: -80px;
+        margin-bottom: 20px;
+        img{
+            width:128px;
+            height: 128px;
+            box-shadow: 0 0 15px rgba(0, 0, 0,0.2);
+            border-radius: 100%;
+        }
+    }
+}
+.contact-box {
+    position: relative;
+    .add-ct-btn{
+        position: absolute;
+        right: 4px;
+        top:-46px;
+    }
+    .contact-widget{
+    > a{
+        padding: 15px 10px;
+        .user-img{
+            margin-bottom: 0px!important;
+        }
+    }
+}
+}    

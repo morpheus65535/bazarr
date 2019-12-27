@@ -1,0 +1,6 @@
+{
+  "dest": "examples",
+  "packages": {
+    "npm:jquery": true
+  }
+}

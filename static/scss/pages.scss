@@ -1,0 +1,4157 @@
+/*
+Template Name: Material Pro Admin
+Author: Themedesigner
+Email: niravjoshi87@gmail.com
+File: scss
+*/
+
+
+/*============================================================== 
+ For all pages 
+ ============================================================== */
+
+#main-wrapper {
+    width: 100%;
+}
+.boxed #main-wrapper {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.1);
+    .sidebar-footer{
+        position: absolute;
+    }
+    .footer{
+        display: none;
+    }
+}
+.page-wrapper {
+    background: $bodycolor;
+    padding-bottom: 60px;
+}
+
+.container-fluid {
+    padding: 0 30px 25px 30px;
+}
+
+
+/*******************
+ Topbar
+*******************/
+
+.topbar {
+    position: relative;
+    z-index: 50;
+    box-shadow: 5px 0px 10px rgba(0, 0, 0, 0.5);
+    .top-navbar {
+        min-height: 70px;
+        padding: 0px 15px 0 0;
+        .dropdown-toggle::after {
+            display: none;
+        }
+        .navbar-header {
+            line-height: 65px;
+            text-align: center;
+            .navbar-brand {
+                margin-right: 0px;
+                padding-bottom: 0px;
+                padding-top: 0px;
+                .light-logo {
+                    display: none;
+                }
+                b {
+                   
+                    line-height: 70px;
+                    display: inline-block;
+                }
+            }
+        }
+        .navbar-nav > .nav-item > .nav-link {
+            padding-left: .75rem;
+            padding-right: .75rem;
+            font-size: 19px;
+            line-height: 50px;
+        }
+        .navbar-nav > .nav-item.show {
+            background: $dark-transparent;
+        }
+        
+    }
+    .profile-pic {
+        width: 30px;
+        border-radius: 100%;
+    }
+    .dropdown-menu {
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+        -webkit-box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+        -moz-box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+        border-color: $border;
+        .dropdown-item {
+            padding: 7px 1.5rem;
+        }
+    }
+    ul.dropdown-user {
+        padding: 0px;
+        width: 270px;
+        li {
+            list-style: none;
+            padding: 0px;
+            margin: 0px;
+            &.divider {
+                height: 1px;
+                margin: 9px 0;
+                overflow: hidden;
+                background-color: $border;
+            }
+            .dw-user-box {
+                padding: 10px 15px;
+                .u-img {
+                    width: 80px;
+                    display: inline-block;
+                    vertical-align: top;
+                    img {
+                        width: 100%;
+                        border-radius: 5px;
+                    }
+                }
+                .u-text {
+                    display: inline-block;
+                    padding-left: 10px;
+                    h4 {
+                        margin: 0px;
+                    }
+                    p {
+                        margin-bottom: 2px;
+                        font-size: 14px;
+                    }
+                    .btn {
+                        color: $white;
+                        padding: 5px 10px;
+                        display: inline-block;
+                        &:hover {
+                            background: $danger-dark;
+                        }
+                    }
+                }
+            }
+            a {
+                padding: 9px 15px;
+                display: block;
+                color: $bodytext;
+                &:hover {
+                    background: $light;
+                    color: $themecolor;
+                    text-decoration: none;
+                }
+            }
+        }
+    }
+}
+.search-box{
+    .app-search {
+                position: absolute;
+                margin:0px;
+                display: block;
+                z-index: 110;
+                width: 100%;
+                top:-1px;
+                box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.2);
+                display: none;
+                left:0px;
+                input {
+                    width: 100%;
+                    padding: 25px 40px 25px 20px;
+                    border-radius: 0px;
+                    font-size: 17px;
+                    transition: 0.5s ease-in;
+                    height: 70px;
+                }
+                .srh-btn {
+                    position: absolute;
+                    top: 23px;
+                    cursor: pointer;
+                    background: $white;
+                    width: 15px;
+                    height: 15px;
+                    right: 20px;
+                    font-size: 14px;
+                }
+            }
+}    
+.mini-sidebar .top-navbar {
+    .navbar-header {
+        width: 60px;
+        text-align: center;
+    }
+}
+.logo-center{
+    .top-navbar {
+    .navbar-header {
+        position: absolute;
+        left: 0;
+        right: 0;
+        margin: 0 auto;  
+        }
+    }
+}
+/*******************
+ Breadcrumb and page title
+*******************/
+
+.page-titles {
+    background: $white;
+    margin: 0 -30px 30px;
+    padding: 15px;
+    box-shadow: 1px 0 5px rgba(0, 0, 0, 0.1);
+    h3{
+        margin-bottom: 0px;
+        margin-top: 8px;
+    }
+    .breadcrumb {
+        padding: 0px;
+        background: transparent;
+        font-size: 14px;
+        li{
+            margin-top: 0px;
+            margin-bottom: 0px; 
+        }
+        .breadcrumb-item+.breadcrumb-item::before {
+            content: "\e649";
+           
+            font-family: themify;
+            color: $light-text;
+            font-size: 11px;
+        }
+        .breadcrumb-item.active{
+            color:$muted;
+        }
+    }
+}
+
+
+/*******************
+ Right side toggle
+*******************/
+
+@-webkit-keyframes rotate {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@-moz-keyframes rotate {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.right-side-toggle {
+    position: relative;
+}
+    
+.right-side-toggle i {
+    -webkit-transition-property: -webkit-transform;
+    -webkit-transition-duration: 1s;
+    -moz-transition-property: -moz-transform;
+    -moz-transition-duration: 1s;
+    transition-property: transform;
+    transition-duration: 1s;
+    -webkit-animation-name: rotate;
+    -webkit-animation-duration: 2s;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: linear;
+    -moz-animation-name: rotate;
+    -moz-animation-duration: 2s;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-timing-function: linear;
+    animation-name: rotate;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    position: absolute;
+    top: 18px;
+    left: 18px;
+}
+
+.right-sidebar {
+    position: fixed;
+    right: -240px;
+    width: 240px;
+    display: none;
+    z-index: 1100;
+    background: $white;
+    top: 0px;
+    padding-bottom: 20px;
+    height: 100%;
+    box-shadow: 5px 1px 40px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    .rpanel-title {
+        display: block;
+        padding: 24px 20px;
+        color: $white;
+        text-transform: uppercase;
+        font-size: 15px;
+        background: $themecolor; 
+        span {
+            float: right;
+            cursor: pointer;
+            font-size: 11px;
+            &:hover {
+                color: $white;
+            }
+        }
+    }
+    .r-panel-body {
+        padding: 20px;
+        ul {
+            margin: 0px;
+            padding: 0px;
+            li {
+                list-style: none;
+                padding: 5px 0;
+            }
+        }
+    }
+}
+
+.shw-rside {
+    right: 0px;
+    width: 240px;
+    display: block;
+}
+
+.chatonline {
+    img {
+        margin-right: 10px;
+        float: left;
+        width: 30px;
+    }
+    li a {
+        padding: 13px 0;
+        float: left;
+        width: 100%;
+        span {
+            color: $bodytext;
+            small {
+                display: block;
+                font-size: 10px;
+            }
+        }
+    }
+}
+
+
+/*******************
+ Right side toggle
+*******************/
+
+ul#themecolors {
+    display: block;
+    li {
+        display: inline-block;
+        &:first-child {
+            display: block;
+        }
+        a {
+            width: 50px;
+            height: 50px;
+            display: inline-block;
+            margin: 5px;
+            color: transparent;
+            position: relative;
+            &.working:before {
+                content: "\f00c";
+                font-family: "Font Awesome 5 Free";
+                font-weight: 900;
+                font-size: 18px;
+                line-height: 50px;
+                width: 50px;
+                height: 50px;
+                position: absolute;
+                top: 0;
+                left: 0;
+                color: $white;
+                text-align: center;
+            }
+        }
+    }
+}
+
+.default-theme {
+    background: $muted;
+}
+
+.green-theme {
+    background: $success;
+}
+
+.yellow-theme {
+    background: $warning;
+}
+.red-theme {
+    background: $danger;
+}
+.blue-theme {
+    background: $info;
+}
+
+.purple-theme {
+    background: $purple;
+}
+
+.megna-theme {
+    background: $megna;
+}
+
+.default-dark-theme {
+    background: $dark;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $muted 23%, $muted 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $muted 23%, $muted 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $muted 23%, $muted 99%);
+}
+
+.green-dark-theme {
+    background: $dark;
+    ;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $success 23%, $success 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, #00c292 23%, $success 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $success 23%, $success 99%);
+}
+
+.yellow-dark-theme {
+    background: $dark;
+    ;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+}
+
+.blue-dark-theme {
+    background: $dark;
+    ;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $info 23%, $info 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $info 23%, $info 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $info 23%, $info 99%);
+}
+
+.purple-dark-theme {
+    background: $dark;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $purple 23%, $purple 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $purple 23%, $purple 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $purple 23%, $purple 99%);
+}
+
+.megna-dark-theme {
+    background: $dark;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $megna 23%, $megna 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $megna 23%, $megna 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $megna 23%, $megna 99%);
+}
+
+.red-dark-theme {
+    background: $dark;
+    /* Old browsers */
+    background: -moz-linear-gradient(left, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+    /* FF3.6-15 */
+    background: -webkit-linear-gradient(left, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+    /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to right, $dark 0%, $dark 23%, $danger 23%, $danger 99%);
+}
+
+
+/*******************
+ page title
+*******************/
+
+.page-titles {
+    padding-bottom: 20px;
+}
+
+
+/*******************
+ Footer
+*******************/
+
+.footer {
+    bottom: 0;
+    color: $bodytext;
+    left: 0px;
+    padding: 17px 15px;
+    position: absolute;
+    right: 0;
+    border-top: 1px solid $border;
+    background: $white;
+}
+
+
+/*******************
+ Card title
+*******************/
+
+.card {
+    margin-bottom: 30px;
+    .card-subtitle {
+        font-weight: 300;
+        margin-bottom: 15px;
+        color: $muted;
+    }
+}
+
+.card-inverse .card-blockquote .blockquote-footer,
+.card-inverse .card-link,
+.card-inverse .card-subtitle,
+.card-inverse .card-text {
+    color: rgba(255, 255, 255, .65);
+}
+
+.card-success {
+    background: $success;
+    border-color: $success;
+}
+
+.card-danger {
+    background: $danger;
+    border-color: $danger;
+}
+
+.card-warning {
+    background: $warning;
+    border-color: $warning;
+}
+
+.card-info {
+    background: $info;
+    border-color: $info;
+}
+
+.card-primary {
+    background: $primary;
+    border-color: $primary;
+}
+
+.card-dark {
+    background: $inverse;
+    border-color: $inverse;
+}
+
+.card-megna {
+    background: $megna;
+    border-color: $megna;
+}
+
+
+/*============================================================== 
+ Buttons page
+ ============================================================== */
+
+.button-group {
+    .btn {
+        margin-bottom: 5px;
+        margin-right: 5px;
+    }
+}
+
+.no-button-group {
+    .btn {
+        margin-bottom: 5px;
+        margin-right: 0px;
+    }
+}
+
+.btn {
+    .text-active {
+        display: none;
+    }
+    &.active .text-active {
+        display: inline-block;
+    }
+    &.active .text {
+        display: none;
+    }
+}
+
+
+/*============================================================== 
+ Cards page
+ ============================================================== */
+
+.card-actions {
+    float: $rgt;
+    a {
+        cursor: pointer;
+        color: $bodytext;
+        opacity: 0.7;
+        padding-left: 7px;
+        font-size: 13px;
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+.card-columns .card {
+    margin-bottom: 20px;
+}
+
+.collapsing {
+    -webkit-transition: height .08s ease;
+    transition: height .08s ease;
+}
+
+.card-info {
+    background: $info;
+    border-color: $info;
+}
+
+.card-primary {
+    background: $primary;
+    border-color: $primary;
+}
+
+.card-outline-info {
+    border-color: $info;
+    .card-header {
+        background: $info;
+        border-color: $info;
+    }
+}
+
+.card-outline-inverse {
+    border-color: $inverse;
+    .card-header {
+        background: $inverse;
+        border-color: $inverse;
+    }
+}
+
+.card-outline-warning {
+    border-color: $warning;
+    .card-header {
+        background: $warning;
+        border-color: $warning;
+    }
+}
+
+.card-outline-success {
+    border-color: $success;
+    .card-header {
+        background: $success;
+        border-color: $success;
+    }
+}
+
+.card-outline-danger {
+    border-color: $danger;
+    .card-header {
+        background: $danger;
+        border-color: $danger;
+    }
+}
+
+.card-outline-primary {
+    border-color: $primary;
+    .card-header {
+        background: $primary;
+        border-color: $primary;
+    }
+}
+
+
+/*============================================================== 
+Breadcrumb
+ ============================================================== */
+
+.bc-colored {
+    .breadcrumb-item,
+    .breadcrumb-item a {
+        color: $white;
+        &.active {
+            opacity: 0.7;
+        }
+    }
+    .breadcrumb-item+.breadcrumb-item::before {
+        color: rgba(255, 255, 255, 0.4);
+    }
+}
+
+.breadcrumb {
+    margin-bottom: 0px;
+}
+
+
+/*============================================================== 
+ Ui-bootstrap
+ ============================================================== */
+
+ul.list-icons {
+    margin: 0px;
+    padding: 0px;
+    li {
+        list-style: none;
+        line-height: 30px;
+        margin: 5px 0;
+        transition: 0.2s ease-in;
+        a {
+            color: $bodytext;
+            &:hover {
+                color: $themecolor;
+            }
+        }
+        i {
+            font-size: 13px;
+            padding-right: 8px;
+        }
+    }
+}
+
+ul.list-inline {
+    li {
+        display: inline-block;
+        padding: 0 8px;
+    }
+}
+
+ul.two-part {
+    margin: 0px;
+    li {
+        width: 48.8%;
+    }
+}
+
+
+/*Accordion*/
+
+html body .accordion {
+    .card {
+        margin-bottom: 0px;
+    }
+}
+
+
+/*============================================================== 
+ flot chart
+ ============================================================== */
+
+.flot-chart {
+    display: block;
+    height: 400px;
+}
+
+.flot-chart-content {
+    width: 100%;
+    height: 100%;
+}
+html body{
+.jqstooltip,
+.flotTip {
+    width: auto!important;
+    height: auto!important;
+    background: $dark;
+    color: $white;
+    padding: 5px 10px;
+}
+}
+
+/*============================================================== 
+Easy pie chart 
+ ============================================================== */
+
+.chart {
+    position: relative;
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
+
+.chart.chart-widget-pie {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.pie-chart > span {
+    left: 0;
+    margin-top: -2px;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.chart > span > img {
+    left: 0;
+    margin-top: -2px;
+    position: absolute;
+    right: 0;
+    text-align: center;
+    top: 50%;
+    width: 60%;
+    height: 60%;
+    transform: translateY(-50%);
+    margin: 0 auto;
+}
+
+.percent {
+    display: inline-block;
+    line-height: 100px;
+    z-index: 2;
+    font-weight: 600;
+    font-size: 18px;
+    color: $dark;
+    &:after {
+        content: '%';
+        margin-left: 0.1em;
+        font-size: .8em;
+    }
+}
+
+
+/*============================================================== 
+Dashboard1 chart
+ ============================================================== */
+.ct-charts{
+    position: relative;
+}
+.amp-pxl {
+    position: relative;
+    .ct-series-a .ct-bar {
+        stroke: $info;
+        
+    }
+    .ct-series-b .ct-bar {
+        stroke: $success;
+        
+    }
+}
+.c3-chart-arcs-title, .c3-legend-item{
+    font-family: $bodyfont;
+    fill:$bodytext;
+}
+html body #visitor .c3-chart-arcs-title{
+    font-size:18px;
+    fill:$muted;
+}
+
+.stylish-table {
+    thead th {
+        font-weight: 400;
+        color: $muted;
+        border: 0px;
+        border-bottom: 1px;
+    }
+    tbody tr {
+        border-left: 4px solid $white;
+        &:hover,
+        &.active {
+            border-left: 4px solid $themecolor;
+        }
+    }
+    tbody td {
+        vertical-align: middle;
+        h6 {
+            font-weight: 500;
+            margin-bottom: 0px;
+            white-space: nowrap;
+        }
+        small {
+            line-height: 12px;
+            white-space: nowrap;
+        }
+    }
+}
+
+
+/*============================================================== 
+Dashboard2 chart
+ ============================================================== */
+
+.campaign {
+    height: 280px;
+    .ct-series-a .ct-area {
+        fill-opacity:0.2;
+        fill: url(#gradient);
+    }
+    .ct-series-a .ct-line, .ct-series-a .ct-point{
+        stroke: $success;
+        stroke-width:2px;
+    }
+    .ct-series-b .ct-area{
+        fill: $info;
+        fill-opacity:0.1;
+        
+    }
+    .ct-series-b .ct-line, .ct-series-b .ct-point {
+        stroke: $info;
+        stroke-width:2px;
+    }
+    .ct-series-a .ct-point, .ct-series-b .ct-point{
+        stroke-width:6px;
+    }
+}
+ .campaign2{
+    
+    .ct-series-a .ct-area {
+        fill-opacity:0.2;
+        fill: url(#gradient);
+    }
+    .ct-series-a .ct-line, .ct-series-a .ct-point{
+        stroke: $success;
+        stroke-width:2px;
+    }
+    .ct-series-b .ct-area{
+        fill: $info;
+        fill-opacity:0.1;
+        
+    }
+    .ct-series-b .ct-line, .ct-series-b .ct-point {
+        stroke: $info;
+        stroke-width:2px;
+    }
+    .ct-series-a .ct-point, .ct-series-b .ct-point{
+        stroke-width:6px;
+    }
+}
+.usage .ct-series-a .ct-line{
+    stroke-width:3px;
+    stroke:rgba(255, 255, 255, 0.5);
+}
+
+/*============================================================== 
+Dashboard3 chart
+ ============================================================== */
+
+.total-sales {
+    position: relative;
+    .chartist-tooltip {
+        background: $inverse;
+    }
+    .ct-series-a .ct-bar {
+        stroke: $info;
+    }
+    .ct-series-b .ct-bar {
+        stroke: $success;
+    }
+    .ct-series-c .ct-bar {
+        stroke: $danger;
+    }
+}
+
+.ct-chart {
+    position: relative;
+    .ct-series-a .ct-slice-donut {
+        stroke: $success;
+    }
+    .ct-series-b .ct-slice-donut {
+        stroke: $light;
+    }
+    .ct-series-c .ct-slice-donut {
+        stroke: $info;
+    }
+}
+
+#visitfromworld {
+    path.jvectormap-region.jvectormap-element {
+        stroke-width: 1px;
+        stroke: $muted;
+    }
+}
+
+.jvectormap-zoomin,
+.jvectormap-zoomout,
+.jvectormap-goback {
+    background: $muted;
+}
+
+.browser {
+    td {
+        vertical-align: middle;
+        padding-left: 0px;
+    }
+}
+
+#calendar .fc-today-button {
+    display: none;
+}
+
+.calendar-events {
+    padding: 8px 10px;
+    border: 1px solid $white;
+    cursor: move;
+    &:hover {
+        border: 1px dashed $border;
+    }
+    i {
+        margin-right: 8px;
+    }
+}
+
+/*============================================================== 
+Dashboard4 chart
+ ============================================================== */
+
+.total-revenue4 {
+    position: relative;
+    .ct-series-a .ct-line {
+        stroke: $info;
+        stroke-width: 1px;
+    }
+    .ct-series-a .ct-point {
+        stroke: $info;
+        stroke-width: 5px;
+    }
+    .ct-series-b .ct-line {
+        stroke: $success;
+        stroke-width: 1px;
+    }
+    .ct-series-b .ct-point {
+        stroke: $success;
+        stroke-width: 5px;
+    }
+    .ct-series-a .ct-area {
+        fill: $info;
+        fill-opacity: 0.2;
+    }
+    .ct-series-b .ct-area {
+        fill: $success;
+        fill-opacity: 0.2;
+    }
+}
+
+/*============================================================== 
+Dashboard6 chart
+ ============================================================== */
+.product-overview.table tbody tr td {
+    vertical-align: middle;
+}
+
+/*============================================================== 
+Widget-data
+ ============================================================== */
+
+.sparkchart {
+    margin-bottom: -2px;
+}
+
+
+/*============================================================== 
+File upload
+ ============================================================== */
+
+.btn-file {
+    overflow: hidden;
+    position: relative;
+    vertical-align: middle;
+    > input {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        opacity: 0;
+        filter: alpha(opacity=0);
+        font-size: 23px;
+        height: 100%;
+        width: 100%;
+        direction: ltr;
+        cursor: pointer;
+        border-radius: 0px;
+    }
+}
+
+.fileinput {
+    .input-group-addon {
+        border: none;
+        border-bottom: 1px solid $form-brd;
+        background: $white;
+        margin-bottom: 1px;
+    }
+}
+
+.fileinput .form-control {
+    padding-top: 7px;
+    padding-bottom: 5px;
+    display: inline-block;
+    margin-bottom: 0px;
+    vertical-align: middle;
+    cursor: text;
+}
+
+.fileinput .thumbnail {
+    overflow: hidden;
+    display: inline-block;
+    margin-bottom: 5px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.fileinput .thumbnail > img {
+    max-height: 100%;
+}
+
+.fileinput .btn {
+    vertical-align: middle;
+}
+
+.fileinput-exists .fileinput-new,
+.fileinput-new .fileinput-exists {
+    display: none;
+}
+
+.fileinput-inline .fileinput-controls {
+    display: inline;
+}
+
+.fileinput-filename {
+    vertical-align: middle;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.form-control .fileinput-filename {
+    vertical-align: bottom;
+}
+
+.fileinput.input-group > * {
+    position: relative;
+    z-index: 2;
+}
+
+.fileinput.input-group > .btn-file {
+    z-index: 1;
+}
+
+
+/*============================================================== 
+widget-chart-page product review
+ ============================================================== */
+
+.product-review {
+    margin: 0px;
+    padding: 25px;
+    li {
+        display: block;
+        padding: 20px 0;
+        list-style: none;
+        .font,
+        span {
+            display: inline-block;
+            margin-left: 10px;
+        }
+    }
+}
+
+.social-profile {
+    text-align: center;
+    background: rgba(7, 10, 43, 0.8);
+}
+
+.profile-tab, .customtab {
+    li {
+        a.nav-link {
+            border: 0px;
+            padding: 15px 20px;
+            color: $bodytext;
+            &.active {
+                border-bottom: 2px solid $themecolor;
+                color: $themecolor;
+            }
+            &:hover {
+                color: $themecolor;
+            }
+        }
+    }
+}
+
+
+/*============================================================== 
+Form addons page
+============================================================== */
+
+/*Bootstrap select*/
+.bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn){
+  width:100%;
+}
+
+.select2-container--default .select2-selection--single{
+    border-color:$form-brd;
+    height:38px;
+    
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered{
+    line-height:38px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow{
+    height:33px; 
+}
+.input-form .btn {
+    padding: 10px 12px;
+}
+
+
+
+/*============================================================== 
+Form Material page
+ ============================================================== */
+/*Material inputs*/
+.form-material .form-group{ overflow:hidden;}
+.form-material .form-control {
+    background-color: rgba(0, 0, 0, 0);
+    background-position: center bottom, center calc(100% - 1px);
+    background-repeat: no-repeat;
+    background-size: 0 2px, 100% 1px;
+    padding: 0;
+    transition: background 0s ease-out 0s;
+}
+.form-material .form-control, .form-material .form-control.focus, .form-material .form-control:focus {
+    background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+    border: 0 none;
+    border-radius: 0;
+    box-shadow: none;
+    float: none;
+}
+.form-material .form-control.focus, .form-material .form-control:focus {
+    background-size: 100% 2px, 100% 1px;
+    outline: 0 none;
+    transition-duration: 0.3s;
+}
+
+.form-control-line .form-group{ overflow:hidden;}
+.form-control-line .form-control {
+    border:0px;
+    border-radius:0px;
+    padding-left: 0px;
+    border-bottom: 1px solid $form-brd;
+    &:focus{
+        border-bottom: 1px solid $themecolor;
+    }
+}
+/*******************/
+/*Floating Label*/
+/*******************/
+
+.floating-labels .form-group {
+    position: relative;
+}
+
+.floating-labels .form-control {
+    
+    padding: 10px 10px 10px 0;
+    display: block;
+    border: none;
+    font-family: $bodyfont;
+    border-radius: 0px;
+    border-bottom: 1px solid $form-brd;
+     &:focus {
+       
+        box-shadow:none;
+    }
+}
+
+.floating-labels select.form-control>option {
+    font-size: 14px;
+}
+
+.floating-labels .has-error .form-control {
+    border-bottom: 1px solid $danger;
+}
+
+.floating-labels .has-warning .form-control {
+    border-bottom: 1px solid $warning;
+}
+
+.floating-labels .has-success .form-control {
+    border-bottom: 1px solid $success;
+}
+
+.floating-labels .form-control:focus {
+    outline: none;
+    border: none;
+}
+
+.floating-labels label {
+    color: $bodytext;
+    
+    position: absolute;
+    cursor: auto;
+    top: 5px;
+    transition: 0.2s ease all;
+    -moz-transition: 0.2s ease all;
+    -webkit-transition: 0.2s ease all;
+}
+
+.floating-labels .focused label {
+    top: -20px;
+    font-size: 12px;
+    color: $dark;
+}
+
+.floating-labels .bar {
+    position: relative;
+    display: block;
+}
+
+.floating-labels .bar:before,
+.floating-labels .bar:after {
+    content: '';
+    height: 2px;
+    width: 0;
+    bottom: 1px;
+    position: absolute;
+    background: $themecolor;
+    transition: 0.2s ease all;
+    -moz-transition: 0.2s ease all;
+    -webkit-transition: 0.2s ease all;
+}
+
+.floating-labels .bar:before {
+    left: 50%;
+}
+
+.floating-labels .bar:after {
+    right: 50%;
+}
+
+.floating-labels .form-control:focus~.bar:before,
+.floating-labels .form-control:focus~.bar:after {
+    width: 50%;
+}
+
+.floating-labels .highlight {
+    position: absolute;
+    height: 60%;
+    width: 100px;
+    top: 25%;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.floating-labels .input-lg~label,
+.floating-labels .input-lg {
+    font-size: 24px;
+}
+
+.floating-labels .input-sm~label,
+.floating-labels .input-sm {
+    font-size: 16px;
+}
+
+.has-warning .bar:before,
+.has-warning .bar:after {
+    background: $warning;
+}
+
+.has-success .bar:before,
+.has-success .bar:after {
+    background: $success;
+}
+
+.has-error .bar:before,
+.has-error .bar:after {
+    background: $danger;
+}
+
+.has-warning .form-control:focus~label,
+.has-warning .form-control:valid~label {
+    color: $warning;
+}
+
+.has-success .form-control:focus~label,
+.has-success .form-control:valid~label {
+    color: $success;
+}
+
+.has-error .form-control:focus~label,
+.has-error .form-control:valid~label {
+    color: $danger;
+}
+
+.has-feedback label~.t-0 {
+    top: 0;
+}
+.form-group.error input, .form-group.error select, .form-group.error textarea {
+    border: 1px solid $danger;
+}
+.form-group.validate input, .form-group.validate select, .form-group.validate textarea{
+    border:1px solid $success;
+}
+.form-group.error .help-block{
+    ul{
+        padding: 0px;
+        color:$danger;
+            li{
+                list-style:none;
+                }
+    }
+}
+.form-group.issue .help-block{
+    ul{
+        padding: 0px;
+        color:$warning;
+            li{
+                list-style:none;
+                }
+    }
+}
+
+/*******************
+Pagination
+******************/
+.pagination-circle{
+    li.active a{
+        background: $success;
+    }
+    li a{
+        width:40px;
+        height:40px;
+        background: $light;
+        border:0px;
+        text-align: center;
+        border-radius: 100%;
+        &:first-child, &:last-child{
+            border-radius: 100%;
+        }
+        &:hover{
+            background: $success;
+            color:$white;
+        }
+    }
+    li.disabled a{
+            background: $light;
+            color:$border;
+        
+        }
+}
+/*******************
+Form Dropzone
+******************/
+.dropzone{
+    border:1px dashed $form-brd;
+   
+    .dz-message{
+        padding: 5% 0;
+        margin: 0px;
+    }
+}
+/*******************
+Form Pickers
+******************/
+.asColorPicker-dropdown {
+    max-width: 260px;
+}
+.asColorPicker-trigger {
+    position: absolute;
+    top: 0;
+    right: -35px;
+    height: 38px;
+    width: 37px;
+    border: 0;
+}
+.asColorPicker-clear {
+    display: none;
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    text-decoration: none;
+}
+
+table th{
+    font-weight: 400;
+}
+.daterangepicker td.active, .daterangepicker td.active:hover{
+    background-color: $themecolor;
+}
+.datepicker table tr td.today, .datepicker table tr td.today.disabled, .datepicker table tr td.today.disabled:hover, .datepicker table tr td.today:hover{
+    background: $themecolor;
+    color:$white;
+}
+.datepicker td, .datepicker th{
+    padding: 5px 10px;
+}
+
+/*******************
+Form icheck
+******************/
+
+.icolors,
+.icheck-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.icolors>li {
+    padding: 0;
+    margin: 2px;
+    float: left;
+    display: inline-block;
+    height: 30px;
+    width: 30px;
+    background: $dark;
+    text-align: center;
+}
+
+.icolors>li.active:after {
+    content: "\2713 ";
+    color: $white;
+    line-height: 30px;
+}
+
+.icolors>li:first-child {
+    margin-left: 0;
+}
+
+.icolors>li.orange {
+    background: $danger;
+}
+
+.icolors>li.yellow {
+    background: $warning;
+}
+
+.icolors>li.info {
+    background: $info;
+}
+
+.icolors>li.green {
+    background: $success;
+}
+
+.icolors>li.red {
+    background: $red;
+}
+
+.icolors>li.purple {
+    background: $purple;
+}
+
+.icolors>li.blue {
+    background: $blue;
+}
+
+.icheck-list {
+    float: left;
+    padding-right: 50px;
+    padding-top: 10px;
+}
+
+.icheck-list li {
+    padding-bottom: 5px;
+}
+
+.icheck-list li label {
+    padding-left: 10px;
+}
+/*******************
+Form summernote
+******************/
+.note-popover, .note-icon-caret{
+    display: none;
+}
+.note-editor.note-frame {
+    border: 1px solid $form-brd;
+    .panel-heading {
+        padding: 6px 10px 10px;
+        border-bottom: 1px solid $border;
+    }
+}
+.label{
+    display: inline-block;
+}
+
+/*******************
+Table-Layout
+******************/
+.table thead th, .table th{
+    border: 0px;
+}
+.color-table.primary-table thead th {
+    background-color: $primary;
+    color: $white;
+    
+}
+.table-striped tbody tr:nth-of-type(odd){
+    background: $light;
+}
+.color-table.success-table thead th {
+    background-color: $success;
+    color: $white;
+}
+
+.color-table.info-table thead th {
+    background-color: $info;
+    color: $white;
+}
+
+.color-table.warning-table thead th {
+    background-color: $warning;
+    color: $white;
+}
+
+.color-table.danger-table thead th {
+    background-color: $danger;
+    color: $white;
+}
+
+.color-table.inverse-table thead th {
+    background-color:$inverse;
+    color: $white;
+}
+
+.color-table.dark-table thead th {
+    background-color: $dark;
+    color: $white;
+}
+
+.color-table.red-table thead th {
+    background-color: $red;
+    color:$white;
+}
+
+.color-table.purple-table thead th {
+    background-color: $purple;
+    color: $white;
+}
+
+.color-table.muted-table thead th {
+    background-color: $muted;
+    color: $white;
+}
+
+.color-bordered-table.primary-bordered-table {
+    border: 2px solid $primary;
+    thead th {
+        background-color: $primary;
+        color: $white;
+    }
+}
+
+.color-bordered-table.success-bordered-table {
+    border: 2px solid $success;
+    thead th {
+        background-color: $success;
+        color: $white;
+    }
+}
+
+.color-bordered-table.info-bordered-table {
+    border: 2px solid $info;
+    thead th {
+        background-color: $info;
+        color: $white;
+    }
+}
+
+.color-bordered-table.warning-bordered-table {
+    border: 2px solid $warning;
+    thead th {
+        background-color: $warning;
+        color: $white;
+    }
+}
+
+.color-bordered-table.danger-bordered-table {
+    border: 2px solid $danger;
+    thead th {
+        background-color: $danger;
+        color: $white;
+    }
+}
+
+.color-bordered-table.inverse-bordered-table {
+    border: 2px solid $inverse;
+    thead th {
+        background-color: $inverse;
+        color: $white;
+    }
+}
+
+.color-bordered-table.dark-bordered-table {
+    border: 2px solid $dark;
+    thead th {
+        background-color: $dark;
+        color: $white;
+    }
+}
+
+.color-bordered-table.red-bordered-table {
+    border: 2px solid $red;
+    thead th {
+        background-color: $red;
+        color: $white;
+    }
+}
+
+.color-bordered-table.purple-bordered-table {
+    border: 2px solid $purple;
+    thead th {
+        background-color: $purple;
+        color: $white;
+    }
+}
+
+.color-bordered-table.muted-bordered-table {
+    border: 2px solid $muted;
+    thead th {
+        background-color: $muted;
+        color: $white;
+    }
+}
+
+.full-color-table.full-primary-table {
+    background-color: $light-primary;
+    thead th {
+        background-color: $primary;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $primary;
+        color: $white;
+    }
+}
+
+.full-color-table.full-success-table {
+    background-color: $light-success;
+    thead th {
+        background-color: $success;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $success;
+        color: $white;
+    }
+}
+
+.full-color-table.full-info-table {
+    background-color: $light-info;
+    thead th {
+        background-color: $info;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $info;
+        color: $white;
+    }
+}
+
+.full-color-table.full-warning-table {
+    background-color: $light-warning;
+    thead th {
+        background-color: $warning;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $warning;
+        color: $white;
+    }
+}
+
+.full-color-table.full-danger-table {
+    background-color: $light-danger;
+    thead th {
+        background-color: $danger;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $danger;
+        color: $white;
+    }
+}
+
+.full-color-table.full-inverse-table {
+    background-color: $light-inverse;
+    thead th {
+        background-color: $inverse;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $inverse;
+        color: $white;
+    }
+}
+
+.full-color-table.full-dark-table {
+    background-color: rgba(43, 43, 43, .8);
+    thead th {
+        background-color: $dark;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+         color: $white;
+    }
+    tr:hover {
+        background-color: $dark;
+        color: $white;
+    }
+}
+
+.full-color-table.full-red-table {
+    background-color: $light-danger;
+    thead th {
+        background-color: $red;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $red;
+        color: $white;
+    }
+}
+
+.full-color-table.full-purple-table {
+    background-color: $light-primary;
+    thead th {
+        background-color: $purple;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $purple;
+        color: $white;
+    }
+}
+
+.full-color-table.full-muted-table {
+    background-color: rgba(152, 166, 173, .2);
+    thead th {
+        background-color: $muted;
+        border: 0;
+        color: $white;
+    }
+    tbody td {
+        border: 0;
+        
+    }
+    tr:hover {
+        background-color: $muted;
+        color: $white;
+    }
+}
+/*******************
+Table-Data Table
+******************/
+
+.dataTables_wrapper {
+    padding-top: 10px
+}
+.dt-buttons{
+    display: inline-block;
+    padding-top: 5px;
+    margin-bottom: 15px;
+    .dt-button{
+        padding: 5px 15px;
+        border-radius: $radius;
+        background: $themecolor;
+        color:$white;
+        margin-right: 3px;
+        &:hover{
+            background: $inverse;
+        }
+    }
+}
+.dataTables_info, .dataTables_length{
+    display: inline-block;
+}
+.dataTables_length {
+    margin-top: 10px;
+    select {
+        border: 0;
+        background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+        background-size: 0 2px, 100% 1px;
+        background-repeat: no-repeat;
+        background-position: center bottom, center calc(100% - 1px);
+        background-color: transparent;
+        transition: background 0s ease-out;
+        padding-bottom: 5px;
+        &:focus {
+            outline: none;
+            background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+            background-size: 100% 2px, 100% 1px;
+            box-shadow: none;
+            transition-duration: 0.3s;
+        }
+    }
+}
+.dataTables_filter{
+    float:right;
+    margin-top: 10px;
+    input{
+        border: 0;
+        background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+        background-size: 0 2px, 100% 1px;
+        background-repeat: no-repeat;
+        background-position: center bottom, center calc(100% - 1px);
+        background-color: transparent;
+        transition: background 0s ease-out;
+        float: none;
+        box-shadow: none;
+        border-radius: 0;
+        margin-left: 10px;
+        &:focus {
+            outline: none;
+            background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+            background-size: 100% 2px, 100% 1px;
+            box-shadow: none;
+            transition-duration: 0.3s;
+        }
+    }
+}
+
+table.dataTable thead .sorting,
+table.dataTable thead .sorting_asc,
+table.dataTable thead .sorting_desc,
+table.dataTable thead .sorting_asc_disabled,
+table.dataTable thead .sorting_desc_disabled {
+    background: transparent;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    float: right;
+    text-align: right;
+    padding-top: 0.25em
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    box-sizing: border-box;
+    display: inline-block;
+    min-width: 1.5em;
+    /*padding: 0.5em 1em;*/
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    *cursor: hand;
+    color: $bodytext;
+    border: 1px solid #ddd;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: $white !important;
+    border: 1px solid $themecolor;
+    background-color: $themecolor;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
+    cursor: default;
+    color: $bodytext;
+    border: 1px solid #ddd;
+    background: transparent;
+    box-shadow: none
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    color: white;
+    border: 1px solid $themecolor;
+    background-color: $themecolor;
+    
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:active {
+    outline: none;
+    background-color: $bodytext;
+    
+}
+.dataTables_wrapper .dataTables_paginate .ellipsis {
+    padding: 0 1em
+}
+
+
+/*******************
+Table- responsive
+******************/
+.tablesaw-bar .btn-group label{
+    color:$bodytext!important;
+}
+
+/*******************
+Table- editable table
+******************/
+.dt-bootstrap{
+    display: block;
+}
+#editable-datatable_wrapper{
+    .paging_simple_numbers{
+        .pagination{
+            .paginate_button{
+                padding: 0px;
+                background: $white;
+                &:hover{
+                    background: $white;
+                }
+                a{
+                  padding: 5px 10px;
+                    border-radius: $radius;
+                    border:0px;
+                }
+                &.active a, &:hover a{
+                        background: $info;
+                        color:$white;
+                     
+                    }
+            }
+        } 
+    }
+}
+/*******************
+Table- Footable
+******************/
+#demo-show-entries {
+    border: 0;
+    background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+    background-size: 0 2px, 100% 1px;
+    background-repeat: no-repeat;
+    background-position: center bottom, center calc(100% - 1px);
+    background-color: transparent;
+    transition: background 0s ease-out;
+    padding-bottom: 5px;
+    color: $bodytext;
+    &:focus {
+        outline: none;
+        background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+        background-size: 100% 2px, 100% 1px;
+        box-shadow: none;
+        transition-duration: 0.3s;
+    }
+}
+#demo-input-search2 {
+    border: 0;
+    background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+    background-size: 0 2px, 100% 1px;
+    background-repeat: no-repeat;
+    background-position: center bottom, center calc(100% - 1px);
+    background-color: transparent;
+    transition: background 0s ease-out;
+    float: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin-left: 10px;
+    color: $bodytext;
+    &:focus {
+        outline: none;
+        background-image: linear-gradient($themecolor, $themecolor), linear-gradient($form-brd, $form-brd);
+        background-size: 100% 2px, 100% 1px;
+        box-shadow: none;
+        transition-duration: 0.3s;
+    }
+}    
+.footable .pagination{
+    li{
+        a {
+            position: relative;
+            display: block;
+            padding: .5rem .75rem;
+            margin-left: -1px;
+            line-height: 1.25;
+            color: #0275d8;
+            background-color: $white;
+            border: 1px solid #ddd;    
+        }
+        &.active a{
+            z-index: 2;
+            color: #fff;
+            background-color: #0275d8;
+            border-color: #0275d8;
+        }
+    }
+    li.disabled {
+        a {
+            color: #636c72;
+            pointer-events: none;
+            cursor: not-allowed;
+            background-color: $white;
+            border-color: #ddd;
+        }
+    }
+    li:first-child {
+        a {
+            margin-left: 0;
+            border-bottom-left-radius: .25rem;
+            border-top-left-radius: .25rem;
+        }
+    }
+}
+.footable-odd{
+    background: $light;
+}
+/*******************
+Icon list fontawesom
+******************/
+.icon-list-demo {
+  div {
+    cursor: pointer;
+    line-height: 60px;
+    white-space: nowrap;
+    color: $bodytext;
+
+    &:hover {
+      color: $dark;
+    }
+
+    p{
+      margin:10px 0;
+      padding:5px 0;
+    }
+  }
+  i {
+    -webkit-transition: all 0.2s;
+    -webkit-transition: font-size .2s;
+    display: inline-block;
+    font-size: 18px;
+    margin: 0 15px 0 10px;
+    text-align: left;
+    transition: all 0.2s;
+    transition: font-size .2s;
+    vertical-align: middle;
+    
+    
+    transition: all 0.3s ease 0s;
+  }
+  .col-md-4, .col-3 {
+    border-radius:$radius;
+    &:hover {
+      background-color: $extra-light;
+    }
+
+  }
+}
+.icon-list-demo .div:hover i {
+      font-size:2em;
+      
+    }
+/*******************
+Icon list material icon
+******************/
+.material-icon-list-demo .mdi{
+    font-size:21px;
+}
+/*******************
+Gridstack Dragable portlet
+******************/
+.grid-stack-item-content {
+    background: #fff;
+    color: #2b2b2b;
+   
+    text-align: center;
+    font-size: 20px;
+}
+.grid-stack > .grid-stack-item > .grid-stack-item-content{
+    border: 1px solid $border;
+}
+
+/*******************
+Bootstrap Switch
+******************/
+.bootstrap-switch,
+.bootstrap-switch .bootstrap-switch-container {
+    border-radius: 2px;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-on {
+    border-bottom-left-radius: 2px;
+    border-top-left-radius: 2px;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off {
+    border-bottom-right-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-primary,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-primary {
+    color: $white;
+    background: $primary;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-info,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-info {
+    color: $white;
+    background: $info;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-success,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-success {
+    color: $white;
+    background: $success;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-warning,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-warning {
+    color: $white;
+    background: $warning;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-danger,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-danger {
+    color: $white;
+    background: $danger;
+}
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-default,
+.bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-default {
+    color: $dark;
+    background: $light;
+}
+.onoffswitch {
+    position: relative; width: 90px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+    
+}
+.onoffswitch-checkbox {
+    display: none;
+}
+.onoffswitch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid $success; border-radius: 20px;
+}
+.onoffswitch-inner {
+    display: block; width: 200%; margin-left: -100%;
+    transition: margin 0.3s ease-in 0s;
+}
+.onoffswitch-inner:before, .onoffswitch-inner:after {
+    display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
+    font-size: 14px; color: white; 
+    box-sizing: border-box;
+}
+.onoffswitch-inner:before {
+    content: "ON";
+    padding-left: 27px;
+    background-color: $success; color: #FFFFFF;
+}
+.onoffswitch-inner:after {
+    content: "OFF";
+    padding-right: 24px;
+    background-color: #EEEEEE; color: #999999;
+    text-align: right;
+}
+.onoffswitch-switch {
+    display: block; width: 23px; margin: 6px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    right: 56px;
+    border: 2px solid $success; border-radius: 20px;
+    transition: all 0.3s ease-in 0s; 
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+    margin-left: 0;
+}
+.onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+    right: 0px; 
+}
+
+/*******************
+Date paginator page
+******************/
+.dp-selected[style] {
+    background-color: $themecolor!important;
+}
+.datepaginator-sm, .datepaginator-lg, .datepaginator {
+    
+    .pagination{
+        li{
+           a{
+                padding: 0 5px;
+                height:60px;
+                border: 1px solid $border;
+                float: left;
+                position: relative; 
+            }
+        }
+    }
+}
+/*******************
+sweet alert page
+******************/
+.model_img{
+    cursor: pointer;
+}
+/*******************
+Grid page
+******************/
+.show-grid{
+    margin-bottom: 10px;
+    padding: 0 15px
+}
+.show-grid [class^=col-] {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border: 1px solid $form-brd;
+    background-color: $light;
+}
+
+/*******************
+Vertical tabs
+******************/
+.vtabs{
+    display:table;
+    .tabs-vertical{
+      width:150px;
+      border-bottom: 0px;
+      border-right:1px solid $border;
+      display:table-cell;
+      vertical-align:top;
+      li .nav-link{
+          color:$dark;
+          margin-bottom:10px;
+          border:0px;
+          
+          border-radius: $radius 0 0 $radius;
+        }
+      }
+    .tab-content{
+      display:table-cell;
+      padding:20px;
+      vertical-align:top;
+    }  
+}
+.tabs-vertical li .nav-link.active, .tabs-vertical li .nav-link:hover,  .tabs-vertical li .nav-link.active:focus{
+  background:$themecolor;
+  border:0px;
+  color:$white;
+}
+
+/*Custom vertical tab*/
+
+.customvtab .tabs-vertical li .nav-link.active, .customvtab .tabs-vertical li .nav-link:hover,  .customvtab .tabs-vertical li .nav-link:focus{
+  background:$white;
+  border:0px;
+  border-right:2px solid $themecolor;
+  margin-right:-1px;
+  color:$themecolor;
+}
+.tabcontent-border{
+    border:1px solid #ddd;
+    border-top:0px;
+}
+.customtab2 {
+    li {
+        a.nav-link {
+            border: 0px;
+            margin-right: 3px;
+            color: $bodytext;
+            &.active {
+                background: $themecolor;
+                color: $white;
+            }
+            &:hover {
+                color: $white;
+                background: $themecolor;
+            }
+        }
+    }
+}
+/*******************
+Progress bar
+******************/
+.progress.active .progress-bar,
+.progress-bar.active {
+  -webkit-animation: progress-bar-stripes 2s linear infinite;
+  -o-animation: progress-bar-stripes 2s linear infinite;
+  animation: progress-bar-stripes 2s linear infinite;
+}
+.progress-vertical {
+    min-height: 250px;
+    height: 250px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+.progress-vertical-bottom {
+    min-height: 250px;
+    height: 250px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-right: 20px;
+    transform: rotate(180deg);
+}
+.progress-animated {
+    -webkit-animation-duration: 5s;
+    -webkit-animation-name: myanimation;
+    -webkit-transition: 5s all;
+    animation-duration: 5s;
+    animation-name: myanimation;
+    transition: 5s all;
+}
+@-webkit-keyframes myanimation {
+  from {
+    width:0;
+  }
+}
+@keyframes myanimation {
+  from {
+    width:0;
+  }
+}
+
+
+/*******************
+Notification page Jquery toaster
+******************/
+.jq-icon-info {background-color: $info; color:$white;}
+.jq-icon-success {background-color: $success; color:$white;}
+.jq-icon-error {background-color: $danger; color:$white;}
+.jq-icon-warning{ background-color:$warning; color:$white;}
+
+.alert-rounded{
+    border-radius: 60px;
+}
+/*******************
+list and media
+******************/
+
+.list-group a.list-group-item:hover{
+    background: $light;
+}
+.list-group-item.active, .list-group .list-group-item.active:hover{
+    background: $themecolor;
+    border-color:$themecolor;
+}
+.list-group-item.disabled{
+    color:$muted;
+    background: $light;
+}
+
+.media {
+    border: 1px solid $border;
+    margin-bottom: 10px;
+    padding: 15px;
+}
+/*******************
+User card page
+******************/
+
+.el-element-overlay .white-box {
+    padding: 0px;
+}
+
+.el-element-overlay .el-card-item {
+    position: relative;
+    padding-bottom: 25px;
+    .el-card-avatar {
+        margin-bottom: 15px;
+    }
+    .el-card-content {
+        text-align: center;
+        h3 {
+            margin: 0px;
+        }
+        a {
+            color: $bodytext;
+            &:hover {
+                color: $themecolor;
+            }
+        }
+    }
+    .el-overlay-1 {
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+        text-align: center;
+        cursor: default;
+        img {
+            display: block;
+            position: relative;
+            -webkit-transition: all .4s linear;
+            transition: all .4s linear;
+            width: 100%;
+            height: auto;
+        }
+        &:hover img {
+            -ms-transform: scale(1.2) translateZ(0);
+            -webkit-transform: scale(1.2) translateZ(0);
+            /* transform: scale(1.2) translateZ(0); */
+        }
+        .el-info {
+            text-decoration: none;
+            display: inline-block;
+            text-transform: uppercase;
+            color: $white;
+            background-color: transparent;
+            filter: alpha(opacity=0);
+            -webkit-transition: all .2s ease-in-out;
+            transition: all .2s ease-in-out;
+            padding: 0;
+            margin: auto;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%) translateZ(0);
+            -webkit-transform: translateY(-50%) translateZ(0);
+            -ms-transform: translateY(-50%) translateZ(0);
+            >li {
+                list-style: none;
+                display: inline-block;
+                margin: 0 3px;
+                a {
+                    border-color: $white;
+                    color: $white;
+                    padding: 12px 15px 10px;
+                    &:hover {
+                        background: $themecolor;
+                        border-color: $themecolor;
+                    }
+                }
+            }
+        }
+    }
+    .el-overlay {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        overflow: hidden;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        background-color: rgba(0, 0, 0, .7);
+        -webkit-transition: all .4s ease-in-out;
+        transition: all .4s ease-in-out;
+    }
+    .el-overlay-1:hover .el-overlay {
+        opacity: 1;
+        filter: alpha(opacity=100);
+        -webkit-transform: translateZ(0);
+        -ms-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    .el-overlay-1 .scrl-dwn {
+        top: -100%;
+    }
+    .el-overlay-1 .scrl-up {
+        top: 100%;
+        height: 0px;
+    }
+    .el-overlay-1:hover .scrl-dwn {
+        top: 0px;
+    }
+    .el-overlay-1:hover .scrl-up {
+        top: 0px;
+        height: 100%;
+    }
+}
+
+/*******************
+Timeline page
+******************/
+.timeline {
+    position: relative;
+    padding: 20px 0 20px;
+    list-style: none;
+    max-width:1200px;
+    margin:0 auto;
+}
+
+.timeline:before {
+    content: " ";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 3px;
+    margin-left: -1.5px;
+    background-color: $light;
+}
+
+.timeline > li {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline > li:before,
+.timeline > li:after {
+    content: " ";
+    display: table;
+}
+
+.timeline > li:after {
+    clear: both;
+}
+
+.timeline > li:before,
+.timeline > li:after {
+    content: " ";
+    display: table;
+}
+
+.timeline > li:after {
+    clear: both;
+}
+
+.timeline > li > .timeline-panel {
+    float: left;
+    position: relative;
+    width: 46%;
+    padding: 20px;
+    border: 1px solid $border;
+    border-radius: $radius;
+    -webkit-box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+
+.timeline > li > .timeline-panel:before {
+    content: " ";
+    display: inline-block;
+    position: absolute;
+    top: 26px;
+    right: -8px;
+    border-top: 8px solid transparent;
+    border-right: 0 solid $border;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid $border;
+}
+
+.timeline > li > .timeline-panel:after {
+    content: " ";
+    display: inline-block;
+    position: absolute;
+    top: 27px;
+    right: -7px;
+    border-top: 7px solid transparent;
+    border-right: 0 solid $white;
+    border-bottom: 7px solid transparent;
+    border-left: 7px solid $white;
+}
+
+.timeline > li > .timeline-badge {
+    z-index: 10;
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin-left: -25px;
+    border-radius: 50% 50% 50% 50%;
+    text-align: center;
+    font-size: 1.4em;
+    line-height: 50px;
+    color: #fff;
+    overflow:hidden;
+    
+}
+
+.timeline > li.timeline-inverted > .timeline-panel {
+    float: right;
+}
+
+.timeline > li.timeline-inverted > .timeline-panel:before {
+    right: auto;
+    left: -8px;
+    border-right-width: 8px;
+    border-left-width: 0;
+}
+
+.timeline > li.timeline-inverted > .timeline-panel:after {
+    right: auto;
+    left: -7px;
+    border-right-width: 7px;
+    border-left-width: 0;
+}
+
+.timeline-badge.primary {
+    background-color: $primary;
+}
+
+.timeline-badge.success {
+    background-color: $success;
+}
+
+.timeline-badge.warning {
+    background-color: $warning;
+}
+
+.timeline-badge.danger {
+    background-color: $danger;
+}
+
+.timeline-badge.info {
+    background-color: $info;
+}
+
+.timeline-title {
+    margin-top: 0;
+    color: inherit;
+    font-weight:400;
+}
+
+.timeline-body > p,
+.timeline-body > ul {
+    margin-bottom: 0;
+}
+
+.timeline-body > p + p {
+    margin-top: 5px;
+}
+/*******************
+Horizontal Timeline page
+******************/
+.cd-horizontal-timeline .events a{
+    padding-bottom: 6px;
+    color:$themecolor;
+}
+.cd-horizontal-timeline .filling-line, .cd-horizontal-timeline .events a.selected::after{
+    background: $themecolor;
+}
+.cd-horizontal-timeline .events a.selected::after{
+    border-color:$themecolor;
+}
+
+.myadmin-dd .dd-list .dd-item .dd-handle {
+    background: $white;
+    border: 1px solid rgba(120,130,140,.13);
+    padding: 8px 16px;
+    height: auto;
+    font-family: $bodyfont;
+    font-weight: 400;
+    border-radius: 0;
+}
+.myadmin-dd-empty .dd-list .dd3-content {
+    height: auto;
+    border: 1px solid rgba(120,130,140,.13);
+    padding: 8px 16px 8px 46px;
+    background: $white;
+    font-weight: 400;
+}
+.myadmin-dd-empty .dd-list .dd3-handle {
+    border: 1px solid rgba(120,130,140,.13);
+    border-bottom: 0;
+    background:$white;
+    height: 36px;
+    width: 36px;
+}
+.dd3-handle:before{
+    color:$bodytext;
+    top:7px;
+}
+
+/*******************
+ribbons page
+******************/
+.ribbon-wrapper,
+.ribbon-wrapper-reverse,
+.ribbon-wrapper-bottom,
+.ribbon-wrapper-right-bottom {
+    position: relative;
+    
+    padding: 50px 15px 15px 15px;
+}
+.ribbon-vwrapper{
+    padding: 15px 15px 15px 50px;
+    position: relative;
+   
+}
+.ribbon-overflow {
+    overflow: hidden;
+}
+
+.ribbon-vwrapper-reverse {
+    padding: 15px 50px 15px 15px;
+    
+}
+
+.ribbon-wrapper-bottom {
+    padding: 15px 15px 50px 50px;
+}
+
+.ribbon-wrapper-right-bottom {
+    padding: 15px 50px 50px 15px;
+}
+.ribbon-content{
+    margin-bottom: 0px;
+}
+.ribbon {
+    padding: 0 20px;
+    height: 30px;
+    line-height: 30px;
+    clear: left;
+    position: absolute;
+    top: 12px;
+    left: -2px;
+    color: $white;
+}
+
+.ribbon-bookmark:before {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    display: block;
+    width: 0;
+    height: 0;
+    content: '';
+    border: 15px solid $dark;
+    border-right: 10px solid transparent;
+}
+
+.ribbon-right {
+    left: auto;
+    right: -2px;
+}
+
+.ribbon-bookmark.ribbon-right:before {
+    right: 100%;
+    left: auto;
+    border-right: 15px solid $dark;
+    border-left: 10px solid transparent;
+}
+
+.ribbon-vertical-l,
+.ribbon-vertical-r {
+    clear: none;
+    padding: 0 5px;
+    height: 70px;
+    width: 30px;
+    line-height: 70px;
+    text-align: center;
+    left: 12px;
+    top: -2px;
+}
+
+.ribbon-vertical-r {
+    left: auto;
+    right: 12px;
+}
+
+.ribbon-bookmark.ribbon-vertical-l:before,
+.ribbon-bookmark.ribbon-vertical-r:before {
+    top: 100%;
+    left: 0;
+    margin-top: -14px;
+    border-right: 15px solid $dark;
+    border-bottom: 10px solid transparent;
+}
+
+.ribbon-badge {
+    top: 15px;
+    overflow: hidden;
+    left: -90px;
+    width: 100%;
+    text-align: center;
+    -webkit-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.ribbon-badge.ribbon-right {
+    left: auto;
+    right: -90px;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+.ribbon-badge.ribbon-bottom {
+    top: auto;
+    bottom: 15px;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -o-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+.ribbon-badge.ribbon-right.ribbon-bottom {
+    -webkit-transform: rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+.ribbon-corner {
+    top: 0;
+    left: 0;
+    background-color: transparent!important;
+    padding: 6px 0 0 10px;
+}
+
+.ribbon-corner i {
+    position: relative;
+}
+
+.ribbon-corner:before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    content: '';
+    border: 30px solid transparent;
+    border-top-color: $themecolor;
+    border-left-color: $themecolor;
+    ;
+}
+
+.ribbon-corner.ribbon-right:before {
+    right: 0;
+    left: auto;
+    border-right-color: #526069;
+    border-left-color: transparent;
+}
+
+.ribbon-corner.ribbon-right {
+    right: 0;
+    left: auto;
+    padding: 6px 10px 0 0;
+}
+
+.ribbon-corner.ribbon-bottom:before {
+    top: auto;
+    bottom: 0;
+    border-top-color: transparent;
+    border-bottom-color: #526069;
+}
+
+.ribbon-corner.ribbon-bottom {
+    bottom: 0;
+    top: auto;
+    padding: 0 10px 6px 10px;
+}
+
+.ribbon-custom {
+    background: $themecolor;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-custom:before {
+    border-right-color: $themecolor;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-custom:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-custom:before {
+    border-right-color: $themecolor;
+    border-bottom-color: transparent;
+}
+
+.ribbon-primary {
+    background: $primary;
+}
+
+.ribbon-bookmark.ribbon-primary:before {
+    border-color: $primary;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-primary:before {
+    border-right-color: $primary;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-primary:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-primary:before {
+    border-right-color: $primary;
+    border-bottom-color: transparent;
+}
+
+.ribbon-primary.ribbon-corner:before {
+    border-top-color: $primary;
+    border-left-color: $primary;
+}
+
+.ribbon-primary.ribbon-corner.ribbon-right:before {
+    border-right-color: $primary;
+    border-left-color: transparent;
+}
+
+.ribbon-primary.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $primary;
+}
+
+.ribbon-success {
+    background: $success;
+}
+
+.ribbon-bookmark.ribbon-success:before {
+    border-color: $success;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-success:before {
+    border-right-color: $success;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-success:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-success:before {
+    border-right-color: $success;
+    border-bottom-color: transparent;
+}
+
+.ribbon-success.ribbon-corner:before {
+    border-top-color: $success;
+    border-left-color: $success;
+}
+
+.ribbon-success.ribbon-corner.ribbon-right:before {
+    border-right-color: $success;
+    border-left-color: transparent;
+}
+
+.ribbon-success.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $success;
+}
+
+.ribbon-info {
+    background: $info;
+}
+
+.ribbon-bookmark.ribbon-info:before {
+    border-color: $info;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-info:before {
+    border-right-color: $info;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-info:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-info:before {
+    border-right-color: $info;
+    border-bottom-color: transparent;
+}
+
+.ribbon-info.ribbon-corner:before {
+    border-top-color: $info;
+    border-left-color: $info;
+}
+
+.ribbon-info.ribbon-corner.ribbon-right:before {
+    border-right-color: $info;
+    border-left-color: transparent;
+}
+
+.ribbon-info.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $info;
+}
+
+.ribbon-warning {
+    background: $warning;
+}
+
+.ribbon-bookmark.ribbon-warning:before {
+    border-color: $warning;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-warning:before {
+    border-right-color: $warning;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-warning:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-warning:before {
+    border-right-color: $warning;
+    border-bottom-color: transparent;
+}
+
+.ribbon-warning.ribbon-corner:before {
+    border-top-color: $warning;
+    border-left-color: $warning;
+}
+
+.ribbon-warning.ribbon-corner.ribbon-right:before {
+    border-right-color: $warning;
+    border-left-color: transparent;
+}
+
+.ribbon-warning.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $warning;
+}
+
+.ribbon-danger {
+    background: $danger;
+} 
+
+.ribbon-bookmark.ribbon-danger:before {
+    border-color: $danger;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-danger:before {
+    border-right-color: $danger;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-danger:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-danger:before {
+    border-right-color:$danger;
+    border-bottom-color: transparent;
+}
+
+.ribbon-danger.ribbon-corner:before {
+    border-top-color: $danger;
+    border-left-color: $danger;
+}
+
+.ribbon-danger.ribbon-corner.ribbon-right:before {
+    border-right-color: $danger;
+    border-left-color: transparent;
+}
+
+.ribbon-danger.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $danger;
+}
+
+.ribbon-default {
+    background: $dark;
+}
+
+.ribbon-bookmark.ribbon-default:before {
+    border-color: $dark;
+    border-right-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-right.ribbon-default:before {
+    border-right-color: $dark;
+    border-left-color: transparent;
+}
+
+.ribbon-bookmark.ribbon-vertical-l.ribbon-default:before,
+.ribbon-bookmark.ribbon-vertical-r.ribbon-default:before {
+    border-right-color: $dark;
+    border-bottom-color: transparent;
+}
+
+.ribbon-default.ribbon-corner:before {
+    border-top-color: $dark;
+    border-left-color: $dark;
+}
+
+.ribbon-default.ribbon-corner.ribbon-right:before {
+    border-right-color: $dark;
+    border-left-color: transparent;
+}
+
+.ribbon-default.ribbon-corner.ribbon-bottom:before {
+    border-top-color: transparent;
+    border-bottom-color: $dark;
+}
+
+/*******************
+session ideal timeout page
+******************/
+#idletimeout {
+        background: $themecolor;
+        border: 3px solid $themecolor;
+        color: #fff;
+        font-family: arial, sans-serif;
+        text-align: center;
+        font-size: 12px;
+        padding: 10px;
+        position: relative;
+        top: 0px;
+        left: 0;
+        right: 0;
+        z-index: 100000;
+        display: none;
+    }
+    
+    #idletimeout a {
+        color: $white;
+        font-weight: bold
+    }
+    
+    #idletimeout span {
+        font-weight: bold
+    }
+/*******************
+Stylish tooltip
+******************/
+//colors for tooltips
+$black_10: rgba(0, 0, 0, 0.1);
+$color_outer_space_20_approx: rgba(48, 54, 61, 0.2);
+$color_baltic_sea_approx: #2b2b2b;
+$color_charade_approx: #2a3035;
+$color_vivid_tangerine_approx: $themecolor;
+$color_cerulean_approx: #00aeef;
+
+//urls
+$url_0: url(../../assets/images/tooltip/tooltip1.svg);
+$url_1: url(../../assets/images/tooltip/shape1.svg);
+
+//@extend-elements
+//original selectors
+//.mytooltip:hover .tooltip-content2, .mytooltip:hover .tooltip-content2 i
+%extend_1 {
+	opacity: 1;
+	font-size: 18px;
+	pointer-events: auto;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+}
+
+//original selectors
+//.mytooltip:hover .tooltip-content4, .mytooltip:hover .tooltip-text2
+%extend_2 {
+	pointer-events: auto;
+	opacity: 1;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 0, 0);
+}
+
+
+.mytooltip {
+	display: inline;
+	position: relative;
+	z-index: 10;
+	&:hover {
+		.tooltip-item::after {
+			pointer-events: auto;
+		}
+		.tooltip-content {
+			pointer-events: auto;
+			opacity: 1;
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: translate3d(0, 0, 0) rotate3d(0, 0, 0, 0);
+		}
+		.tooltip-content2 {
+			@extend %extend_1;
+			i {
+				@extend %extend_1;
+			}
+		}
+		.tooltip-content3 {
+			opacity: 1;
+			pointer-events: auto;
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: scale3d(1, 1, 1);
+		}
+		.tooltip-item2 {
+			color: $white;
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: translate3d(0, -0.5em, 0);
+		}
+		.tooltip-content4 {
+			@extend %extend_2;
+		}
+		.tooltip-text2 {
+			@extend %extend_2;
+		}
+		.tooltip-content5 {
+			opacity: 1;
+			pointer-events: auto;
+			//Instead of the line below you could use @include transition-delay($delay-1, $delay-2, $delay-3, $delay-4, $delay-5, $delay-6, $delay-7, $delay-8, $delay-9, $delay-10)
+			transition-delay: 0s;
+		}
+		.tooltip-text3 {
+			//Instead of the line below you could use @include transition-delay($delay-1, $delay-2, $delay-3, $delay-4, $delay-5, $delay-6, $delay-7, $delay-8, $delay-9, $delay-10)
+			transition-delay: 0s;
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: scale3d(1, 1, 1);
+		}
+		.tooltip-inner2 {
+			//Instead of the line below you could use @include transition-delay($delay-1, $delay-2, $delay-3, $delay-4, $delay-5, $delay-6, $delay-7, $delay-8, $delay-9, $delay-10)
+			transition-delay: 0.3s;
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: translate3d(0, 0, 0);
+		}
+	}
+}
+.tooltip-item {
+	background: $black_10;
+	cursor: pointer;
+	display: inline-block;
+	font-weight: 500;
+	padding: 0 10px;
+}
+.tooltip-item::after {
+	content: '';
+	position: absolute;
+	width: 360px;
+	height: 20px;
+	bottom: 100%;
+	left: 50%;
+	pointer-events: none;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translateX(-50%);
+}
+.tooltip-content {
+	position: absolute;
+	z-index: 9999;
+	width: 360px;
+	left: 50%;
+	margin: 0 0 20px -180px;
+	bottom: 100%;
+	text-align: left;
+	font-size: 14px;
+	line-height: 30px;
+	//Instead of the line below you could use @include box-shadow($shadow-1, $shadow-2, $shadow-3, $shadow-4, $shadow-5, $shadow-6, $shadow-7, $shadow-8, $shadow-9, $shadow-10)
+	box-shadow: -5px -5px 15px $color_outer_space_20_approx;
+	background: $color_baltic_sea_approx;
+	opacity: 0;
+	cursor: default;
+	pointer-events: none;
+	img {
+		position: relative;
+		height: 140px;
+		display: block;
+		float: left;
+		margin-right: 1em;
+	}
+}
+.tooltip-effect-5 {
+	.tooltip-content {
+		width: 180px;
+		margin-left: -90px;
+		//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+		transform-origin: 50% calc(106%);
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: rotate3d(0, 0, 1, 15deg);
+		//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+		transition: opacity 0.2s, transform 0.2s;
+		//Instead of the line below you could use @include transition-timing-function($function-1, $function-2, $function-3, $function-4, $function-5, $function-6, $function-7, $function-8, $function-9, $function-10)
+		transition-timing-function: ease, cubic-bezier(0.17, 0.67, 0.4, 1.39);
+	}
+	.tooltip-text {
+		padding: 1.4em;
+	}
+}
+.tooltip-content::after {
+	content: '';
+	top: 100%;
+	left: 50%;
+	border: solid transparent;
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+	border-color: transparent;
+	border-top-color: $color_charade_approx;
+	border-width: 10px;
+	margin-left: -10px;
+}
+.tooltip-text {
+	font-size: 14px;
+	line-height: 24px;
+	display: block;
+	padding: 1.31em 1.21em 1.21em 0;
+	color: $white;
+}
+.tooltip-content2 {
+	position: absolute;
+	z-index: 9999;
+	width: 80px;
+	height: 80px;
+	padding-top: 25px;
+	left: 50%;
+	margin-left: -40px;
+	bottom: 100%;
+	//Instead of the line below you could use @include border-radius($radius, $vertical-radius)
+	border-radius: 50%;
+	text-align: center;
+	background: $color_vivid_tangerine_approx;
+	color: $white;
+	opacity: 0;
+	margin-bottom: 20px;
+	cursor: default;
+	pointer-events: none;
+	i {
+		opacity: 0;
+	}
+}
+.tooltip-effect-6 {
+	.tooltip-content2 {
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: translate3d(0, 10px, 0) rotate3d(1, 1, 1, 45deg);
+		//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+		transform-origin: 50% 100%;
+		//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+		transition: opacity 0.3s, transform 0.3s;
+		i {
+			//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+			transform: scale3d(0, 0, 1);
+			//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+			transition: opacity 0.3s, transform 0.3s;
+		}
+	}
+	&:hover .tooltip-content2 i {
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: rotate3d(1, 1, 1, 0);
+	}
+}
+.tooltip-content2::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin: -7px 0 0 -15px;
+	width: 30px;
+	height: 20px;
+	background: $url_0 no-repeat center center;
+	background-size: 100%;
+}
+.tooltip-content3 {
+	position: absolute;
+	background: $url_1 no-repeat center bottom;
+	background-size: 100% 100%;
+	z-index: 9999;
+	width: 200px;
+	bottom: 100%;
+	left: 50%;
+	margin-left: -100px;
+	padding: 50px 30px;
+	text-align: center;
+	color: $white;
+	opacity: 0;
+	cursor: default;
+	font-size: 14;
+	line-height: 27px;
+	pointer-events: none;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: scale3d(0.1, 0.2, 1);
+	//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+	transform-origin: 50% 120%;
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.4s, transform 0.4s;
+	//Instead of the line below you could use @include transition-timing-function($function-1, $function-2, $function-3, $function-4, $function-5, $function-6, $function-7, $function-8, $function-9, $function-10)
+	transition-timing-function: ease, cubic-bezier(0.6, 0, 0.4, 1);
+}
+.tooltip-content3::after {
+	content: '';
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: 50%;
+	margin-left: -8px;
+	top: 100%;
+	background: $color_cerulean_approx;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, -60%, 0) rotate3d(0, 0, 1, 45deg);
+}
+.tooltip-item2 {
+	color: $color_cerulean_approx;
+	cursor: pointer;
+	z-index: 100;
+	position: relative;
+	display: inline-block;
+	font-weight: 500;
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: background-color 0.3s, color 0.3s, transform 0.3s;
+}
+.tooltip-content4 {
+	position: absolute;
+	z-index: 99;
+	width: 360px;
+	left: 50%;
+	margin-left: -180px;
+	bottom: -5px;
+	text-align: left;
+	background: $color_cerulean_approx;
+	opacity: 0;
+	font-size: 14px;
+	line-height: 27px;
+	padding: 1.5em;
+	color: $white;
+	border-bottom: 55px solid $color_baltic_sea_approx;
+	cursor: default;
+	pointer-events: none;
+	//Instead of the line below you could use @include border-radius($radius, $vertical-radius)
+	border-radius: 5px;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, -0.5em, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+	a {
+		color: $color_baltic_sea_approx;
+	}
+}
+.tooltip-text2 {
+	opacity: 0;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 1.5em, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+}
+.tooltip-content5 {
+	position: absolute;
+	z-index: 9999;
+	width: 300px;
+	left: 50%;
+	bottom: 100%;
+	font-size: 20px;
+	line-height: 1.4;
+	text-align: center;
+	font-weight: 400;
+	color: $white;
+	background: transparent;
+	opacity: 0;
+	margin: 0 0 20px -150px;
+	cursor: default;
+	pointer-events: none;
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s 0.3s;
+	span {
+		display: block;
+	}
+}
+.tooltip-text3 {
+	border-bottom: 10px solid $color_vivid_tangerine_approx;
+	overflow: hidden;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: scale3d(0, 1, 1);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: transform 0.3s 0.3s;
+}
+.tooltip-inner2 {
+	background: $color_baltic_sea_approx;
+	padding: 40px;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 100%, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: transform 0.3s;
+}
+.tooltip-content5::after {
+	content: '';
+	bottom: -20px;
+	left: 50%;
+	border: solid transparent;
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+	border-color: transparent;
+	border-top-color: $color_vivid_tangerine_approx;
+	border-width: 10px;
+	margin-left: -10px;
+}
+.tooltip-effect-1 .tooltip-content {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, -10px, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+	color: $white;
+}
+.tooltip-effect-2 .tooltip-content {
+	//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+	transform-origin: 50% calc(110%);
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: perspective(1000px) rotate3d(1, 0, 0, 45deg);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.2s, transform 0.2s;
+}
+.tooltip-effect-3 .tooltip-content {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 10px, 0) rotate3d(1, 1, 0, 25deg);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+}
+.tooltip-effect-4 .tooltip-content {
+	//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+	transform-origin: 50% 100%;
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: scale3d(0.7, 0.3, 1);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.2s, transform 0.2s;
+}
+.tooltip.tooltip-effect-2:hover .tooltip-content {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: perspective(1000px) rotate3d(1, 0, 0, 0deg);
+}
+a.mytooltip {
+	font-weight: 500;
+	color: $color_vivid_tangerine_approx;
+}
+.tooltip-effect-7 .tooltip-content2 {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 10px, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+	i {
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: translate3d(0, 15px, 0);
+		//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+		transition: opacity 0.3s, transform 0.3s;
+	}
+}
+.tooltip-effect-8 .tooltip-content2 {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, 10px, 0) rotate3d(0, 1, 0, 90deg);
+	//Instead of the line below you could use @include transform-origin($origin-x, $origin-y, $origin-z, $only3d)
+	transform-origin: 50% 100%;
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+	i {
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: scale3d(0, 0, 1);
+		//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+		transition: opacity 0.3s, transform 0.3s;
+	}
+}
+.tooltip-effect-9 .tooltip-content2 {
+	//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+	transform: translate3d(0, -20px, 0);
+	//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+	transition: opacity 0.3s, transform 0.3s;
+	i {
+		//Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+		transform: translate3d(0, 20px, 0);
+		//Instead of the line below you could use @include transition($transition-1, $transition-2, $transition-3, $transition-4, $transition-5, $transition-6, $transition-7, $transition-8, $transition-9, $transition-10)
+		transition: opacity 0.3s, transform 0.3s;
+	}
+}
+/*******************
+Error Page
+******************/
+
+.error-box{
+  height:100%;
+  position:fixed;
+  background:url(../../assets/images/background/error-bg.jpg) no-repeat center center #fff;
+  width:100%;
+  .footer{
+    width:100%;
+    left:0px;
+    right:0px;
+  }
+}
+.error-body{
+   padding-top:5%;
+   h1{
+      font-size:210px;
+      font-weight:900;
+      line-height:210px;
+   }
+}
+
+/*******************
+google map Page
+******************/
+.gmaps, .gmaps-panaroma{
+  height: 300px;
+}
+.gmaps, .gmaps-panaroma {
+  height: 300px;
+  background: $light;
+  border-radius: 3px;
+}
+
+.gmaps-overlay {
+  display: block;
+  text-align: center;
+  color: $white;
+  font-size: 16px;
+  line-height: 40px;
+  background: $primary;
+  border-radius: 4px;
+  padding: 10px 20px;
+}
+
+.gmaps-overlay_arrow {
+  left: 50%;
+  margin-left: -16px;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.gmaps-overlay_arrow.above {
+  bottom: -15px;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 16px solid $primary;
+}
+
+.gmaps-overlay_arrow.below {
+  top: -15px;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-bottom: 16px solid $primary;
+}
+/*******************
+vector map Page
+******************/
+.jvectormap-zoomin, .jvectormap-zoomout {
+  width: 10px;
+  height: 10px;
+  line-height: 10px;
+}
+.jvectormap-zoomout {
+    top: 40px;
+}
+/*******************
+Seach listing Page
+******************/
+.search-listing {
+    padding: 0px;
+    margin: 0px;
+    li {
+        list-style: none;
+        padding: 15px 0;
+        border-bottom: 1px solid $border;
+        h3 {
+            margin: 0px;
+            font-size: 18px;
+            a {
+                color: $info;
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+        a {
+            color: $success;
+        }
+    }
+}
+/*******************
+Login register and recover password Page
+******************/
+.login-register{
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+  height:100%;
+  width: 100%;
+  padding:10% 0;  
+  position:fixed;
+}
+.login-box{
+  width:400px;
+  margin:0 auto;
+  
+  .footer{
+    width:100%;
+    left:0px;
+    right:0px;
+  }
+  .social {
+    display:block;
+    margin-bottom:30px;
+  }
+}
+#recoverform{
+   display:none; 
+}
+.login-sidebar {
+    padding: 0px;
+    
+    margin-top: 0px;
+    .login-box{
+        right: 0px;
+        position: absolute;
+        height: 100%;
+    }
+    
+}
+/*******************
+FAQs Page
+******************/
+.minimal-faq{
+    .card{
+        border:0px;
+        .card-header{
+            background: $white;
+            padding: 20px 0;
+            margin-top: 10px;
+        }
+        .card-block{
+            padding: 15px 0px;
+        }
+    }
+}
+/*******************
+Pricing Page
+******************/
+.pricing-box {
+  position: relative;
+  text-align: center;
+  margin-top:30px;
+}
+.featured-plan{
+    margin-top:0px;
+    .pricing-body {
+      padding:60px 0;
+      background:$extra-light;
+      border: 1px solid #ddd;
+    }
+    .price-table-content .price-row {
+      border-top:1px solid rgba(120, 130, 140, 0.13);
+    }
+  }
+
+.pricing-body {
+  border-radius: 0px;
+  border-top: 1px solid rgba(120, 130, 140, 0.13);
+  border-bottom: 5px solid rgba(120, 130, 140, 0.13);
+  vertical-align: middle;
+  padding:30px 0;
+  position:relative;
+
+}
+
+.pricing-body h2{
+  position:relative;
+  font-size:56px;
+  margin:20px 0 10px;
+  font-weight:500;
+  span{
+    position:absolute;
+    font-size:15px;
+    top:-10px;
+    margin-left:-10px
+  }
+}
+.price-table-content{
+  .price-row {
+    padding:20px 0;
+    border-top:1px solid rgba(120, 130, 140, 0.13);
+  }
+}
+.pricing-plan  { 
+  padding:0 15px;
+  .no-padding{ padding:0px;}
+}
+.price-lable{
+  position:absolute;
+  top:-10px;
+  padding:5px 10px;
+  margin:0 auto;
+  display:inline-block;
+  width:100px;
+  left:0px;
+  right:0px;
+ }
+
+/*******************
+chat application Page
+******************/
+
+.chat-main-box {
+    position: relative;
+    
+    overflow: hidden;
+    .chat-left-aside {
+        position: relative;
+        width: 250px;
+        float: left;
+        z-index: 9;
+        top: 0px;
+        border-right: 1px solid $border;
+        .open-panel {
+            display: none;
+            cursor: pointer;
+            position: absolute;
+            left: -webkit-calc(100% - 1px);
+            top: 50%;
+            z-index: 100;
+            background-color: #fff;
+            -webkit-box-shadow: 1px 0 3px rgba(0, 0, 0, .2);
+            box-shadow: 1px 0 3px rgba(0, 0, 0, .2);
+            border-radius: 0 100px 100px 0;
+            line-height: 1;
+            padding: 15px 8px 15px 4px;
+        }
+        .chat-left-inner {
+            position: relative;
+            .form-control {
+                height: 60px;
+                padding:15px;
+                background-image:linear-gradient($info, $info),linear-gradient($border, $border);
+            }
+            .style-none {
+                padding: 0px;
+                li {
+                    list-style: none;
+                    overflow: hidden;
+                    a {
+                        padding: 20px;
+                        &:hover,
+                        &.active {
+                            background: $extra-light;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .chat-right-aside {
+        width: calc(100% - 250px);
+        float:left;
+        .chat-list {
+            max-height: none;
+            height: 100%;
+            padding-top: 40px;
+            .chat-text {
+                border-radius: 6px;
+            }
+        }
+        .send-chat-box {
+            position: relative;
+            .form-control {
+                border: none;
+                border-top: 1px solid $border;
+                resize: none;
+                height: 80px;
+                padding-right: 180px;
+                &:focus {
+                    border-color: $border; 
+                }
+            }
+            .custom-send {
+                position: absolute;
+                right: 20px;
+                bottom: 10px;
+                .cst-icon {
+                    color: $bodytext;
+                    margin-right: 10px;
+                }
+            }
+        }
+    }
+}
+
+/*******************
+Email inbox Page
+******************/
+.inbox-panel{
+    .list-group{
+        .list-group-item{
+            border:0px;
+            border-radius: 0px;
+            border-left:3px solid transparent;
+            a{
+                color:$bodytext;
+            }
+            &.active, &:hover{
+                background: $light;
+                border-left:3px solid $themecolor;
+            }
+            &:hover{
+               
+            }
+        }
+         
+    }
+}
+.inbox-center{
+  .unread td{
+    font-weight:400;
+  }
+    td{
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .max-texts{
+       
+    }
+  a{
+    color:$bodytext;
+    padding:2px 0 3px 0;
+    overflow: hidden;
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+    .checkbox{
+        margin-top: -13px;
+        height: 20px;
+    }
+
+}
+
+
+
+/*******************
+Contact app Page
+******************/
+/*left-aside-column*/
+.contact-page-aside {
+    position: relative;
+}
+
+.left-aside {
+    position: absolute;
+    
+    border-right: 1px solid $border;
+    padding: 20px;
+    width: 250px;
+    height: 100%;
+}
+
+.right-aside {
+    padding: 20px;
+    margin-left: 250px;
+    
+}
+.contact-list {
+        td {
+            vertical-align: middle;
+            padding: 25px 10px;
+            img {
+                width: 30px;
+            }
+        }
+    }
+.list-style-none {
+    margin: 0px;
+    padding: 0px;
+    li {
+        list-style: none;
+        margin: 0px;
+        &.box-label a {
+            font-weight: 500;
+        }
+        &.divider {
+            margin: 10px 0;
+            height: 1px;
+            background: $border;
+        }
+        a {
+            padding: 15px 10px;
+            display: block;
+            color: $bodytext;
+            &:hover {
+                color: $themecolor;
+            }
+            span {
+                float: $rgt;
+            }
+        }
+    }
+}
+.slimScrollBar{
+    z-index: 10!important; 
+}
+.carousel-item-next, .carousel-item-prev, .carousel-item.active{
+    display: block;
+}
+
+/*Documentation page*/
+
+.plugin-details{
+    display:none;
+}
+.plugin-details-active{
+    display:block;
+}
+
+/*******************
+form material page
+******************/
+.form-control-line 
+{
+    .form-control{
+        box-shadow:none;
+    }
+}
+
+/*******************
+table footable page
+******************/
+#demo-foo-accordion{  
+    .open>.dropdown-menu {
+        display: block;
+    }
+}
+
+#demo-foo-accordion2{  
+    .open>.dropdown-menu {
+        display: block;
+    }
+}
+
+#footable-addrow{
+    .open > .dropdown-menu {
+        display: block;
+    }
+}
+
+/*******************
+/*Image Cropper Page
+******************/
+
+.docs-buttons .btn,
+.docs-data .input-group {
+  margin-bottom: 5px;
+}
+
+.fixed-table-container{
+    overflow:hidden;
+}
+
+.table-responsive>.table-bordered{
+    border: 1px solid #dee2e6;
+}

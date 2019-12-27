@@ -1,0 +1,90 @@
+﻿/* jTable light color theme - Orange
+ * Created by Halil İbrahim Kalkan
+ * http://www.jtable.org
+ */
+
+@import "../jtable_lightcolor_base.less";
+
+@theme-folder: 'orange';
+
+.jtable_lightcolor_base(@theme-folder);
+
+div.jtable-main-container
+{
+    div.jtable-title
+    {
+        .vertical-gradient(#ffa366,#da5700);
+        border-color: #804620;
+
+        div.jtable-title-text
+        {
+            .text-shadow(0 1px 0 #666);
+            color: #fff;
+        }
+						
+		div.jtable-toolbar
+		{
+			span.jtable-toolbar-item
+			{
+				color: white;
+
+				&.jtable-toolbar-item-hover
+				{
+					background-color: #c45206;
+				}
+			}
+		}
+    }
+
+    table.jtable
+    {
+        tbody
+        {
+            > tr
+            {
+				@highlight-color:#F36301;
+
+                &.jtable-row-selected,
+                &.jtable-row-selected:hover
+                {
+                    background-color: @highlight-color;
+                }
+
+                &.jtable-row-created,
+                &.jtable-row-updated,
+                &.jtable-row-deleting
+                {
+                    background-color: @highlight-color;
+                }
+            }
+        }
+    }
+
+    div.jtable-bottom-panel
+    {
+        .jtable-page-list
+        {
+            .jtable-page-number-active,.jtable-page-number-active:hover
+            {
+				@bgcolor: #f36301;
+
+                background-color: @bgcolor;
+                border-color: @bgcolor - #222;
+            }
+        }
+
+        span.jtable-add-record
+        {
+            a
+            {
+                color: #cc5200;
+            }
+        }
+    }
+}
+
+div.jtable-busy-message
+{
+    border-color: #a14100;
+    background-color: #f36301;
+}

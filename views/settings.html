@@ -7,38 +7,28 @@
 {%- from 'providers.html' import settings_providers1 with context %}
 
 {% block title %}Settings - Bazarr{% endblock %}
-{% block head %}
-    <style>
-        body {
-            background-color: #272727;
-        }
-
-        #fondblanc {
-            background-color: #ffffff;
-            border-radius: 0;
-            box-shadow: 0 0 5px 5px #ffffff;
-            margin-top: 32px;
-            margin-bottom: 3em;
-            padding: 1em;
-        }
-
-        .ui.tabular.menu > .disabled.item {
-            opacity: 0.45 !important;
-            pointer-events: none !important;
-        }
-
-        [data-tooltip]:after {
-            z-index: 2;
-        }
-    </style>
-{% endblock head %}
 {% block body %}
 
-    <div id='loader' class="ui page dimmer">
-        <div id="loader_text" class="ui indeterminate text loader">Saving settings...</div>
-    </div>
-
-    <div id="fondblanc" class="ui container">
+    <div class="container-fluid">
+    <!-- ============================================================== -->
+            <!-- Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
+            <div class="row page-titles">
+                <div class="col-md-5 col-8 align-self-center">
+                    <h3 class="text-themecolor m-b-0 m-t-0"><i class="fas fa-sync"></i></h3>
+                </div>
+                <div class="col-md-7 col-4 align-self-center">
+                    <div class="d-flex m-t-10 justify-content-end">
+                        <div class="d-flex m-r-20 m-l-10 hidden-md-down">
+                            <div class="chart-text m-r-10">
+                                <h5 class="m-t-0 text-white">Some page settings</h5></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ============================================================== -->
+            <!-- End Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
         <form name="settings_form" id="settings_form" action="{{ base_url }}save_settings" method="post" class="ui form"
               autocomplete="off">
             <div id="form_validation_error" class="ui error message">

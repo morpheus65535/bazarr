@@ -1,0 +1,35 @@
+{
+  "name": "jquery-asColorPicker",
+  "version": "0.4.4",
+  "description": "A jquery plugin that convent input into color picker.",
+  "main": "dist/jquery-asColorPicker.js",
+  "copyright": "amazingSurge",
+  "license": "LGPL-3.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "demo",
+    "gulp",
+    "CONTRIBUTING.md",
+    "manifest.json",
+    "karma.conf.js",
+    "config.js",
+    "package.json",
+    "gulpfile.babel.js",
+    "tests"
+  ],
+  "homepage": "https://github.com/amazingSurge/jquery-asColorPicker",
+  "authors": [
+    "amazingSurge <amazingSurge@gmail.com>"
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "dependencies": {
+    "jquery": ">=1.11.0",
+    "jquery-asColor": "^0.3.3",
+    "jquery-asGradient": "^0.3.1"
+  }
+}
