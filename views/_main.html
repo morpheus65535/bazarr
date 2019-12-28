@@ -129,10 +129,13 @@
                         <li><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
                                 class="hide-menu"> Movies</span></a>
                         </li>
-                        <li><a href="{{ url_for('history') }}"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
+                        <li><a href="#"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
+                                <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
+                            </ul>
                         </li>
-                        <li><a href="#"><i
-                                class="fas fa-exclamation-triangle"></i><span class="hide-menu"> Wanted</span></a>
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span class="hide-menu"> Wanted</span></a>
                             <ul aria-expanded="false" class="collapse">
                                 <li><a href="/"> Missing</a></li>
                                 <li><a href="/"> Cutoff Unmet</a></li>

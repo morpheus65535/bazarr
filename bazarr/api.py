@@ -44,10 +44,10 @@ class Series(Resource):
         seriesId = request.args.get('id')
         row_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
         if seriesId:
-            result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? LIMIT ? OFFSET ?",
-                                      (length, start), (seriesId,))
+            result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
+                                      "OFFSET ?", (length, start), (seriesId,))
         else:
-            result = database.execute("SELECT * FROM table_shows LIMIT ? OFFSET ?", (length, start))
+            result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
             # Parse audio language
             if item['audio_language']:
@@ -129,10 +129,11 @@ class Movies(Resource):
         moviesId = request.args.get('id')
         row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         if moviesId:
-            result = database.execute("SELECT * FROM table_movies WHERE radarrId=? LIMIT ? OFFSET ?", (length, start),
-                                      (moviesId,))
+            result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
+                                      "OFFSET ?", (length, start), (moviesId,))
         else:
-            result = database.execute("SELECT * FROM table_movies LIMIT ? OFFSET ?", (length, start))
+            result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
+                                      (length, start))
         for item in result:
             # Parse audio language
             if item['audio_language']:

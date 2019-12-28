@@ -883,167 +883,16 @@ def search_missing_subtitles_movie(no):
     redirect(ref)
 
 
-@app.route('/history')
-# @custom_auth_basic(check_credentials)
-def history():
-
-    return render_template('history.html', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
-
-
 @app.route('/historyseries')
 # @custom_auth_basic(check_credentials)
 def historyseries():
-
-
-    row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_shows on "
-                                 "table_history.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
-                                 "table_shows.title is not NULL", only_one=True)['count']
-    page = request.data
-    if page == "":
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(row_count / (page_size + 0.0)))
-
-    now = datetime.now()
-    today = []
-    thisweek = []
-    thisyear = []
-    stats = database.execute("SELECT timestamp FROM table_history WHERE action != 0")
-    total = len(stats)
-    for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            today.append(datetime.fromtimestamp(stat['timestamp']).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            thisweek.append(datetime.fromtimestamp(stat['timestamp']).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            thisyear.append(datetime.fromtimestamp(stat['timestamp']).date())
-    stats = [len(today), len(thisweek), len(thisyear), total]
-
-    data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, "
-                            "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                            "table_episodes.title as episodeTitle, "
-                            "table_history.timestamp, table_history.description, table_history.sonarrSeriesId, "
-                            "table_episodes.path, table_shows.languages, table_history.language, table_history.score, "
-                            "table_shows.forced FROM table_history LEFT JOIN table_shows on "
-                            "table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on "
-                            "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE table_episodes.title "
-                            "is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?", (page_size, offset))
-
-    upgradable_episodes_not_perfect = []
-    if settings.general.getboolean('upgrade_subs'):
-        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                             datetime(1970, 1, 1)).total_seconds()
-
-        if settings.general.getboolean('upgrade_manual'):
-            query_actions = [1, 2, 3]
-        else:
-            query_actions = [1, 3]
-
-        if settings.sonarr.getboolean('only_monitored'):
-            series_monitored_only_query_string = " AND monitored='True'"
-        else:
-            series_monitored_only_query_string = ''
-
-        upgradable_episodes = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history "
-                                               "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                                               "table_history.sonarrEpisodeId WHERE action IN (" +
-                                               ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
-                                               "score is not null" + series_monitored_only_query_string + " GROUP BY "
-                                               "table_history.video_path, table_history.language",
-                                               (minimum_timestamp,))
-
-        for upgradable_episode in upgradable_episodes:
-            if upgradable_episode['timestamp'] > minimum_timestamp:
-                try:
-                    int(upgradable_episode['score'])
-                except ValueError:
-                    pass
-                else:
-                    if int(upgradable_episode['score']) < 360:
-                        upgradable_episodes_not_perfect.append(upgradable_episode)
-
-    return render_template('historyseries.html', bazarr_version=bazarr_version, rows=data, row_count=row_count,
-                    page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port, upgradable_episodes=upgradable_episodes_not_perfect)
+    return render_template('historyseries.html')
 
 
 @app.route('/historymovies')
 # @custom_auth_basic(check_credentials)
 def historymovies():
-
-
-    row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies ON "
-                                 "table_history_movie.radarrId=table_movies.radarrId "
-                                 "WHERE table_movies.title is not NULL", only_one=True)['count']
-    page = request.data
-    if page == "":
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(row_count / (page_size + 0.0)))
-
-    now = datetime.now()
-    today = []
-    thisweek = []
-    thisyear = []
-    stats = database.execute("SELECT timestamp FROM table_history_movie WHERE action != 0")
-    total = len(stats)
-    for stat in stats:
-        if now - timedelta(hours=24) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            today.append(datetime.fromtimestamp(stat['timestamp']).date())
-        if now - timedelta(weeks=1) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            thisweek.append(datetime.fromtimestamp(stat['timestamp']).date())
-        if now - timedelta(weeks=52) <= datetime.fromtimestamp(stat['timestamp']) <= now:
-            thisyear.append(datetime.fromtimestamp(stat['timestamp']).date())
-    stats = [len(today), len(thisweek), len(thisyear), total]
-
-    data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
-                            "table_history_movie.description, table_history_movie.radarrId, "
-                            "table_history_movie.video_path, table_movies.languages, table_history_movie.language, "
-                            "table_history_movie.score, table_movies.forced FROM table_history_movie "
-                            "LEFT JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
-                            "ORDER BY timestamp DESC LIMIT ? OFFSET ?", (page_size, offset,))
-
-    upgradable_movies = []
-    upgradable_movies_not_perfect = []
-    if settings.general.getboolean('upgrade_subs'):
-        days_to_upgrade_subs = settings.general.days_to_upgrade_subs
-        minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
-                             datetime(1970, 1, 1)).total_seconds()
-
-        if settings.radarr.getboolean('only_monitored'):
-            movies_monitored_only_query_string = ' AND table_movies.monitored = "True"'
-        else:
-            movies_monitored_only_query_string = ""
-
-        if settings.general.getboolean('upgrade_manual'):
-            query_actions = [1, 2, 3]
-        else:
-            query_actions = [1, 3]
-
-        upgradable_movies = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history_movie "
-                                             "INNER JOIN table_movies on table_movies.radarrId="
-                                             "table_history_movie.radarrId WHERE action IN (" +
-                                             ','.join(map(str, query_actions)) +
-                                             ") AND timestamp > ? AND score is not NULL" +
-                                             movies_monitored_only_query_string + " GROUP BY video_path, language",
-                                             (minimum_timestamp,))
-
-        for upgradable_movie in upgradable_movies:
-            if upgradable_movie['timestamp'] > minimum_timestamp:
-                try:
-                    int(upgradable_movie['score'])
-                except ValueError:
-                    pass
-                else:
-                    if int(upgradable_movie['score']) < 120:
-                        upgradable_movies_not_perfect.append(upgradable_movie)
-
-    return render_template('historymovies.html', bazarr_version=bazarr_version, rows=data, row_count=row_count,
-                    page=page, max_page=max_page, stats=stats, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port, upgradable_movies=upgradable_movies_not_perfect)
+    return render_template('historymovies.html')
 
 
 @app.route('/wanted')
