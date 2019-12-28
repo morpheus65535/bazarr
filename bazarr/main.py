@@ -44,7 +44,7 @@ from io import BytesIO
 from six import text_type, PY2
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
-from flask import Flask, make_response, request, redirect, abort, render_template
+from flask import Flask, make_response, request, redirect, abort, render_template, Response
 from flask_cors import CORS
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
@@ -87,6 +87,8 @@ toolbar = DebugToolbarExtension(app)
 
 from api import api_bp
 app.register_blueprint(api_bp)
+
+from SSE import event_stream
 
 # Add Cors
 CORS(app)
@@ -726,28 +728,7 @@ def episodes(no):
 @app.route('/movies')
 # @custom_auth_basic(check_credentials)
 def movies():
-
-
-    missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
-    page = request.data
-    if page == "":
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-
-    data = database.execute("SELECT tmdbId, title, path, languages, hearing_impaired, radarrId, poster, "
-                            "audio_language, monitored, scenename, forced FROM table_movies ORDER BY sortTitle ASC "
-                            "LIMIT ? OFFSET ?", (page_size, offset))
-    # path_replace
-    dict_mapper.path_replace_movie(data)
-
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    return render_template('movies.html', bazarr_version=bazarr_version, rows=data, languages=languages,
-                    missing_count=missing_count, page=page, max_page=max_page, base_url=base_url,
-                    single_language=settings.general.getboolean('single_language'), page_size=page_size,
-                    current_port=settings.general.port)
+    return render_template('movies.html')
 
 
 @app.route('/movieseditor')
@@ -2183,6 +2164,11 @@ def movie_history(no):
             item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
 
     return dict(data=movie_history)
+
+
+@app.route('/event')
+def event():
+    return Response(event_stream.read(), mimetype="text/event-stream")
 
 
 # Don't put any route under this one

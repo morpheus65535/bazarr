@@ -14,7 +14,6 @@ from database import database
 from helper import path_replace, path_replace_reverse, path_replace_movie, path_replace_reverse_movie
 from get_languages import load_language_in_db, alpha2_from_language, alpha3_from_language, language_from_alpha2, \
     alpha3_from_alpha2
-from SSE import event_stream
 
 from flask import Flask, jsonify, request, Response, Blueprint
 
@@ -22,17 +21,6 @@ from flask_restful import Resource, Api
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 api = Api(api_bp)
-
-
-@app.route('/event')
-def event():
-    return Response(event_stream.read(), mimetype="text/event-stream")
-
-
-@app.route('/write')
-def write():
-    event_stream.write('fake message')
-    return "", 200
 
 
 class Badges(Resource):
@@ -435,14 +423,11 @@ class WantedMovies(Resource):
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
-api.add_resource(Badges, '/api/badges')
-api.add_resource(Series, '/api/series')
-api.add_resource(Episodes, '/api/episodes')
-api.add_resource(Movies, '/api/movies')
-api.add_resource(HistorySeries, '/api/history_series')
-api.add_resource(HistoryMovies, '/api/history_movies')
-api.add_resource(WantedSeries, '/api/wanted_series')
-api.add_resource(WantedMovies, '/api/wanted_movies')
-
-if __name__ == '__main__':
-    app.run(debug=True)
+api.add_resource(Badges, '/badges')
+api.add_resource(Series, '/series')
+api.add_resource(Episodes, '/episodes')
+api.add_resource(Movies, '/movies')
+api.add_resource(HistorySeries, '/history_series')
+api.add_resource(HistoryMovies, '/history_movies')
+api.add_resource(WantedSeries, '/wanted_series')
+api.add_resource(WantedMovies, '/wanted_movies')

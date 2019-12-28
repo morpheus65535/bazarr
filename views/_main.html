@@ -29,6 +29,8 @@
         <!-- You can change the theme colors from here -->
         <link href="{{ url_for('static',filename='css/bazarr.css') }}" id="theme" rel="stylesheet">
 
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='datatables/datatables.min.css') }}">
+
     {% endblock head_css %}
 
     {% block head %}
@@ -189,6 +191,7 @@
     <!-- All Jquery -->
     <!-- ============================================================== -->
     <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
     <!-- Bootstrap tether Core JavaScript -->
     <script src="{{ url_for('static',filename='plugins/popper/popper.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
