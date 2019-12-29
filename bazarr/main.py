@@ -44,7 +44,7 @@ from io import BytesIO
 from six import text_type, PY2
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
-from flask import Flask, make_response, request, redirect, abort, render_template, Response
+from flask import Flask, make_response, request, redirect, abort, render_template, Response, session, flash, url_for, send_file
 from flask_cors import CORS
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
@@ -63,6 +63,7 @@ from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from flask_debugtoolbar import DebugToolbarExtension
+from functools import wraps
 
 # Flask Setup
 app = Flask(__name__,
@@ -118,30 +119,57 @@ login_auth = settings.auth.type
 update_notifier()
 
 
-def custom_auth_basic(check):
-    def decorator(func):
-        def wrapper(*a, **ka):
-            if settings.auth.type == 'basic':
-                user, password = request.auth or (None, None)
-                if user is None or not check(user, password):
-                    err = abort(401, "Access denied")
-                    err.add_header('WWW-Authenticate', 'Basic realm="Bazarr"')
-                    return err
-                return func(*a, **ka)
-            else:
-                return func(*a, **ka)
-        
-        return wrapper
-    
-    return decorator
-
-
 def check_credentials(user, pw):
     username = settings.auth.username
     password = settings.auth.password
     if hashlib.md5(pw.encode('utf-8')).hexdigest() == password and user == username:
         return True
     return False
+
+def login_required(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        test = request
+        if settings.auth.type == 'basic':
+            auth = request.authorization
+            if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
+                return ('Unauthorized', 401, {
+                    'WWW-Authenticate': 'Basic realm="Login Required"'
+                })
+
+            return f(*args, **kwargs)
+        elif _settings.auth.type == 'form':
+            if 'logged_in' in session:
+                return f(*args, **kwargs)
+            else:
+                flash("You need to login first")
+                return redirect(url_for('login_page'))
+        else:
+            return f(*args, **kwargs)
+    return wrap
+
+
+@app.route('/login/', methods=["GET", "POST"])
+def login_page():
+    error = ''
+    try:
+        if request.method == "POST":
+            if check_credentials(request.form['username'], request.form['password']):
+                session['logged_in'] = True
+                session['username'] = request.form['username']
+
+                flash("You are now logged in")
+                return redirect(url_for("redirect_root"))
+            else:
+                error = "Invalid credentials, try again."
+        gc.collect()
+
+        return render_template("login.html", error=error)
+
+    except Exception as e:
+        # flash(e)
+        error = "Invalid credentials, try again."
+        return render_template("login.html", error=error)
 
 
 @app.context_processor
@@ -166,29 +194,20 @@ def post_get(name, default=''):
     return request.POST.get(name, default).strip()
 
 
-@app.route('/login/')
-def login_form():
-    msg = request.query.get('msg', '')
-    return render_template('login.html', base_url=base_url, msg=msg)
-
-
-@app.route('/login/', methods=['POST'])
-def login():
-    username = post_get('username')
-    password = post_get('password')
-    if check_credentials(username, password):
-        return redirect(base_url)
-    else:
-        return redirect('/login?msg=fail')
-
-
-@app.route('/logout/')
+@app.route("/logout/")
+@login_required
 def logout():
-    return abort(401)
+    if settings.auth.type == 'basic':
+        return abort(401)
+    elif settings.auth.type == 'form':
+        session.clear()
+        flash("You have been logged out!")
+        gc.collect()
+        return redirect(url_for('redirect_root'))
 
 
 @app.route('/shutdown/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def shutdown():
     try:
         server.stop()
@@ -208,7 +227,7 @@ def shutdown():
 
 
 @app.route('/restart/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def restart():
     try:
         server.stop()
@@ -229,7 +248,7 @@ def restart():
 
 
 @app.route('/wizard/')
-@custom_auth_basic(check_credentials)
+@login_required
 def wizard():
     # Get languages list
     settings_languages = database.execute("SELECT * FROM table_settings_languages ORDER BY name")
@@ -242,7 +261,7 @@ def wizard():
 
 
 @app.route('/save_wizard', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def save_wizard():
     settings_general_ip = request.form.get('settings_general_ip')
     settings_general_port = request.form.get('settings_general_port')
@@ -456,7 +475,7 @@ def save_wizard():
 
 
 @app.route('/emptylog')
-# @custom_auth_basic(check_credentials)
+@login_required
 def emptylog():
     ref = request.environ['HTTP_REFERER']
 
@@ -467,13 +486,14 @@ def emptylog():
 
 
 @app.route('/bazarr.log')
-# @custom_auth_basic(check_credentials)
+@login_required
 def download_log():
-    return static_file('bazarr.log', root=os.path.join(args.config_dir, 'log/'), download='bazarr.log')
+    return send_file(os.path.join(args.config_dir, 'log/'),
+                     attachment_filename='bazarr.log')
 
 
 @app.route('/image_proxy/<path:url>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def image_proxy(url):
     apikey = settings.sonarr.apikey
     url_image = url_sonarr_short() + '/' + url + '?apikey=' + apikey
@@ -490,7 +510,7 @@ def image_proxy(url):
 
 
 @app.route('/image_proxy_movies/<path:url>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def image_proxy_movies(url):
     apikey = settings.radarr.apikey
     try:
@@ -508,8 +528,8 @@ def image_proxy_movies(url):
         return bytes
 
 
-@app.route(base_url)
-# @custom_auth_basic(check_credentials)
+@app.route("/")
+@login_required
 def redirect_root():
     if settings.general.getboolean('use_sonarr'):
         return redirect('/series')
@@ -522,7 +542,7 @@ def redirect_root():
 
 
 @app.route('/series/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def series():
     series_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
     page = request.data
@@ -577,7 +597,7 @@ def series():
 
 
 @app.route('/serieseditor/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def serieseditor():
 
     # Get missing count
@@ -598,7 +618,7 @@ def serieseditor():
 
 
 @app.route('/search_json/<query>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def search_json(query):
 
 
@@ -626,7 +646,7 @@ def search_json(query):
 
 
 @app.route('/edit_series/<int:no>', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def edit_series(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -664,7 +684,7 @@ def edit_series(no):
 
 
 @app.route('/edit_serieseditor', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def edit_serieseditor():
 
     ref = request.environ['HTTP_REFERER']
@@ -694,7 +714,7 @@ def edit_serieseditor():
 
 
 @app.route('/episodes/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def episodes(no):
 
 
@@ -726,13 +746,13 @@ def episodes(no):
 
 
 @app.route('/movies')
-# @custom_auth_basic(check_credentials)
+@login_required
 def movies():
     return render_template('movies.html')
 
 
 @app.route('/movieseditor')
-# @custom_auth_basic(check_credentials)
+@login_required
 def movieseditor():
 
 
@@ -751,7 +771,7 @@ def movieseditor():
 
 
 @app.route('/edit_movieseditor', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def edit_movieseditor():
 
     ref = request.environ['HTTP_REFERER']
@@ -781,7 +801,7 @@ def edit_movieseditor():
 
 
 @app.route('/edit_movie/<int:no>', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def edit_movie(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -819,7 +839,7 @@ def edit_movie(no):
 
 
 @app.route('/movie/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def movie(no):
 
 
@@ -840,7 +860,7 @@ def movie(no):
 
 
 @app.route('/scan_disk/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def scan_disk(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -851,7 +871,7 @@ def scan_disk(no):
 
 
 @app.route('/scan_disk_movie/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def scan_disk_movie(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -862,7 +882,7 @@ def scan_disk_movie(no):
 
 
 @app.route('/search_missing_subtitles/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def search_missing_subtitles(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -873,7 +893,7 @@ def search_missing_subtitles(no):
 
 
 @app.route('/search_missing_subtitles_movie/<int:no>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def search_missing_subtitles_movie(no):
 
     ref = request.environ['HTTP_REFERER']
@@ -884,26 +904,26 @@ def search_missing_subtitles_movie(no):
 
 
 @app.route('/historyseries/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def historyseries():
     return render_template('historyseries.html')
 
 
 @app.route('/historymovies/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def historymovies():
     return render_template('historymovies.html')
 
 
 @app.route('/wanted')
-# @custom_auth_basic(check_credentials)
+@login_required
 def wanted():
 
     return render_template('wanted.html', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
 
 
 @app.route('/wantedseries')
-# @custom_auth_basic(check_credentials)
+@login_required
 def wantedseries():
 
 
@@ -937,7 +957,7 @@ def wantedseries():
 
 
 @app.route('/wantedmovies')
-# @custom_auth_basic(check_credentials)
+@login_required
 def wantedmovies():
 
 
@@ -968,7 +988,7 @@ def wantedmovies():
 
 
 @app.route('/wanted_search_missing_subtitles')
-# @custom_auth_basic(check_credentials)
+@login_required
 def wanted_search_missing_subtitles_list():
 
     ref = request.environ['HTTP_REFERER']
@@ -979,7 +999,7 @@ def wanted_search_missing_subtitles_list():
 
 
 @app.route('/settings/')
-# @custom_auth_basic(check_credentials)
+@login_required
 def _settings():
 
 
@@ -993,7 +1013,7 @@ def _settings():
 
 
 @app.route('/save_settings', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def save_settings():
 
     ref = request.environ['HTTP_REFERER']
@@ -1358,22 +1378,22 @@ def save_settings():
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
     settings.general.movie_default_language = text_type(settings_movie_default_languages)
-    
+
     settings_movie_default_hi = request.form.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
-    
+
     settings_movie_default_forced = str(request.form.get('settings_movie_default_forced'))
     settings.general.movie_default_forced = text_type(settings_movie_default_forced)
-    
+
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
-    
+
     configure_logging(settings.general.getboolean('debug') or args.debug)
-    
+
     notifiers = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
     for notifier in notifiers:
         enabled = request.form.get('settings_notifier_' + notifier['name'] + '_enabled')
@@ -1384,15 +1404,15 @@ def save_settings():
         notifier_url = request.form.get('settings_notifier_' + notifier['name'] + '_url')
         database.execute("UPDATE table_settings_notifier SET enabled=?, url=? WHERE name=?",
                          (enabled,notifier_url,notifier['name']))
-    
+
     schedule_update_job()
     sonarr_full_update()
     radarr_full_update()
     schedule_wanted_search()
     schedule_upgrade_subs()
-    
+
     logging.info('BAZARR Settings saved succesfully.')
-    
+
     if ref.find('saved=true') > 0:
         return redirect(ref)
     else:
@@ -1400,19 +1420,19 @@ def save_settings():
 
 
 @app.route('/check_update')
-# @custom_auth_basic(check_credentials)
+@login_required
 def check_update():
 
     ref = request.environ['HTTP_REFERER']
-    
+
     if not args.no_update:
         check_and_apply_update()
-    
+
     redirect(ref)
 
 
 @app.route('/system')
-# @custom_auth_basic(check_credentials)
+@login_required
 def system():
 
 
@@ -1426,14 +1446,14 @@ def system():
             ('minute', 60),
             ('second', 1)
         ]
-        
+
         strings = []
         for period_name, period_seconds in periods:
             if seconds > period_seconds:
                 period_value, seconds = divmod(seconds, period_seconds)
                 has_s = 's' if period_value > 1 else ''
                 strings.append("%s %s%s" % (period_value, period_name, has_s))
-        
+
         return ", ".join(strings)
 
     def get_time_from_cron(cron):
@@ -1464,15 +1484,15 @@ def system():
                 next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
         else:
             next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
-        
+
         if isinstance(job.trigger, IntervalTrigger):
             interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
             task_list.append([job.name, interval, next_run, job.id])
         elif isinstance(job.trigger, CronTrigger):
             task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
-    
+
     throttled_providers = list_throttled_providers()
-    
+
     try:
         with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
             releases = ast.literal_eval(f.read())
@@ -1480,13 +1500,13 @@ def system():
         releases = []
         logging.exception(
             'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-    
+
     sonarr_version = get_sonarr_version()
-    
+
     radarr_version = get_radarr_version()
-    
+
     page_size = int(settings.general.page_size)
-    
+
     return render_template('system.html', bazarr_version=bazarr_version,
                     sonarr_version=sonarr_version, radarr_version=radarr_version,
                     operating_system=platform.platform(), python_version=platform.python_version(),
@@ -1496,7 +1516,7 @@ def system():
 
 
 @app.route('/logs')
-# @custom_auth_basic(check_credentials)
+@login_required
 def get_logs():
 
     logs = []
@@ -1506,23 +1526,23 @@ def get_logs():
             lin = line.split('|')
             logs.append(lin)
         logs.reverse()
-    
+
     return dict(data=logs)
 
 
 @app.route('/execute/<taskid>')
-# @custom_auth_basic(check_credentials)
+@login_required
 def execute_task(taskid):
 
     ref = request.environ['HTTP_REFERER']
-    
+
     execute_now(taskid)
-    
+
     redirect(ref)
 
 
 @app.route('/remove_subtitles', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def remove_subtitles():
 
     episodePath = request.form.get('episodePath')
@@ -1530,7 +1550,7 @@ def remove_subtitles():
     subtitlesPath = request.form.get('subtitlesPath')
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-    
+
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
@@ -1541,14 +1561,14 @@ def remove_subtitles():
 
 
 @app.route('/remove_subtitles_movie', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def remove_subtitles_movie():
 
     moviePath = request.form.get('moviePath')
     language = request.form.get('language')
     subtitlesPath = request.form.get('subtitlesPath')
     radarrId = request.form.get('radarrId')
-    
+
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
@@ -1559,11 +1579,11 @@ def remove_subtitles_movie():
 
 
 @app.route('/get_subtitle', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def get_subtitle():
 
     ref = request.environ['HTTP_REFERER']
-    
+
     episodePath = request.form.get('episodePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
@@ -1572,10 +1592,10 @@ def get_subtitle():
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
     title = request.form.get('title')
-    
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
+
     try:
         result = download_subtitle(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
                                    'series')
@@ -1595,30 +1615,30 @@ def get_subtitle():
 
 
 @app.route('/manual_search', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def manual_search_json():
 
-    
+
     episodePath = request.form.get('episodePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
     hi = request.form.get('hi')
     forced = request.form.get('forced')
     title = request.form.get('title')
-    
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
+
     data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'series')
     return dict(data=data)
 
 
 @app.route('/manual_get_subtitle', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def manual_get_subtitle():
 
     ref = request.environ['HTTP_REFERER']
-    
+
     episodePath = request.form.get('episodePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
@@ -1629,9 +1649,9 @@ def manual_get_subtitle():
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
     title = request.form.get('title')
-    
+
     providers_auth = get_providers_auth()
-    
+
     try:
         result = manual_download_subtitle(episodePath, language, hi, forced, subtitle, selected_provider,
                                           providers_auth,
@@ -1652,7 +1672,7 @@ def manual_get_subtitle():
 
 
 @app.route('/manual_upload_subtitle', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def perform_manual_upload_subtitle():
 
     ref = request.environ['HTTP_REFERER']
@@ -1696,11 +1716,11 @@ def perform_manual_upload_subtitle():
 
 
 @app.route('/get_subtitle_movie', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def get_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
-    
+
     moviePath = request.form.get('moviePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
@@ -1708,10 +1728,10 @@ def get_subtitle_movie():
     forced = request.form.get('forced')
     radarrId = request.form.get('radarrId')
     title = request.form.get('title')
-    
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
+
     try:
         result = download_subtitle(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
                                    'movie')
@@ -1731,30 +1751,30 @@ def get_subtitle_movie():
 
 
 @app.route('/manual_search_movie', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def manual_search_movie_json():
 
-    
+
     moviePath = request.form.get('moviePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
     hi = request.form.get('hi')
     forced = request.form.get('forced')
     title = request.form.get('title')
-    
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
-    
+
     data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'movie')
     return dict(data=data)
 
 
 @app.route('/manual_get_subtitle_movie', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def manual_get_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
-    
+
     moviePath = request.form.get('moviePath')
     sceneName = request.form.get('sceneName')
     language = request.form.get('language')
@@ -1764,9 +1784,9 @@ def manual_get_subtitle_movie():
     subtitle = request.form.get('subtitle')
     radarrId = request.form.get('radarrId')
     title = request.form.get('title')
-    
+
     providers_auth = get_providers_auth()
-    
+
     try:
         result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
@@ -1786,7 +1806,7 @@ def manual_get_subtitle_movie():
 
 
 @app.route('/manual_upload_subtitle_movie', methods=['POST'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def perform_manual_upload_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
@@ -1893,7 +1913,7 @@ def api_movies_history():
 
 
 @app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def test_url(protocol, url):
 
     url = six.moves.urllib.parse.unquote(url)
@@ -1906,13 +1926,13 @@ def test_url(protocol, url):
 
 
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
-# @custom_auth_basic(check_credentials)
+@login_required
 def test_notification(protocol, provider):
 
     provider = six.moves.urllib.parse.unquote(provider)
     apobj = apprise.Apprise()
     apobj.add(protocol + "://" + provider)
-    
+
     apobj.notify(
         title='Bazarr test notification',
         body=('Test notification')
@@ -1920,7 +1940,7 @@ def test_notification(protocol, provider):
 
 
 @app.route('/notifications')
-# @custom_auth_basic(check_credentials)
+@login_required
 def notifications():
     if queueconfig.notifications:
         test = queueconfig.notifications
@@ -1930,14 +1950,14 @@ def notifications():
 
 
 @app.route('/running_tasks')
-# @custom_auth_basic(check_credentials)
+@login_required
 def running_tasks_list():
 
     return dict(tasks=running_tasks)
 
 
 @app.route('/episode_history/<int:no>')
-# @custom_auth_basic(check_credentials)
+@login_required
 def episode_history(no):
 
     episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
@@ -1976,7 +1996,7 @@ def episode_history(no):
 
 
 @app.route('/movie_history/<int:no>')
-# @custom_auth_basic(check_credentials)
+@login_required
 def movie_history(no):
 
     movie_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history_movie "
