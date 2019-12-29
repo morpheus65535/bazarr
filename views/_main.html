@@ -123,18 +123,33 @@
                 <!-- Sidebar navigation-->
                 <nav class="sidebar-nav">
                     <ul id="sidebarnav">
-                        <li><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
-                                class="hide-menu"> Series</span></a>
-                        </li>
-                        <li><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
-                                class="hide-menu"> Movies</span></a>
-                        </li>
-                        <li><a href="#"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
-                            <ul aria-expanded="false" class="collapse">
-                                <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
-                                <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
-                            </ul>
-                        </li>
+                        {% if settings.general.getboolean('use_sonarr') %}
+                            <li><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
+                                    class="hide-menu"> Series</span></a>
+                            </li>
+                        {% endif %}
+                        {% if settings.general.getboolean('use_radarr') %}
+                            <li><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
+                                    class="hide-menu"> Movies</span></a>
+                            </li>
+                        {% endif %}
+                        {% if settings.general.getboolean('use_sonarr') and settings.general.getboolean('use_radarr') %}
+                            <li><a href="#"><i class="fas fa-clock"></i><span
+                                    class="hide-menu"> History</span></a>
+                                <ul aria-expanded="false" class="collapse">
+                                    <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
+                                    <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
+                                </ul>
+                            </li>
+                        {% elif settings.general.getboolean('use_sonarr') and not settings.general.getboolean('use_radarr') %}
+                            <li><a href="{{ url_for('historyseries') }}"><i class="fas fa-play"></i><span
+                                    class="hide-menu"> History</span></a>
+                            </li>
+                        {% elif settings.general.getboolean('use_radarr') and not settings.general.getboolean('use_sonarr') %}
+                            <li><a href="{{ url_for('historymovies') }}"><i class="fas fa-play"></i><span
+                                    class="hide-menu"> History</span></a>
+                            </li>
+                        {% endif %}
                         <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
                                 class="hide-menu"> Wanted</span></a>
                             <ul aria-expanded="false" class="collapse">
@@ -199,9 +214,9 @@
     <script src="{{ url_for('static',filename='js/jquery.slimscroll.js') }}"></script>
     <!--Menu sidebar -->
     <script src="{{ url_for('static',filename='js/sidebarmenu.js') }}"></script>
+
     <!--stickey kit -->
     <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='plugins/sparkline/jquery.sparkline.min.js') }}"></script>
     <!--Custom JavaScript -->
     <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
@@ -234,11 +249,7 @@
         }
 
         BadgesAjax()
-    </script>
 
-
-
-    <script>
         $(function () {
             $('[data-toggle="tooltip"]').tooltip()
         })

@@ -4,12 +4,6 @@ Author: Themedesigner
 Email: niravjoshi87@gmail.com
 File: scss
 */
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 @import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700");
 /*Theme Colors*/
 /*bootstrap Color*/
@@ -82,7 +76,7 @@ a.link:hover, a.link:focus {
   position: absolute;
   width: 240px;
   height: 100%;
-  top: 0px;
+  top: 0;
   z-index: 20;
   padding-top: 70px;
   background: #3a3f51;
@@ -99,7 +93,7 @@ a.link:hover, a.link:focus {
       list-style: none; }
       .sidebar-nav ul li a {
         color: #e1e2e3;
-        font-weight: 500;
+        font-weight: 400;
         padding: 8px 35px 8px 40px;
         display: block;
         font-size: 14px;
@@ -112,11 +106,11 @@ a.link:hover, a.link:focus {
           color: #ce2829;
           cursor: pointer; }
         .sidebar-nav ul li a.active {
-          font-weight: 500;
+          font-weight: 400;
           color: #ce2829; }
       .sidebar-nav ul li ul {
         padding-left: 60px;
-        padding-top: 10px;
+        padding-top: 0;
         transition-delay: inherit;
         border-left: 3px solid #ce2829; }
         .sidebar-nav ul li ul li a {
@@ -125,22 +119,18 @@ a.link:hover, a.link:focus {
           padding-left: 35px; }
       .sidebar-nav ul li.nav-small-cap {
         font-size: 12px;
-        margin-bottom: 0px;
+        margin-bottom: 0;
         padding: 14px 14px 14px 20px;
         color: #263238;
-        font-weight: 500; }
-      .sidebar-nav ul li.nav-devider {
-        height: 1px;
-        background: rgba(120, 130, 140, 0.13);
-        display: block;
-        margin: 20px 0; }
+        font-weight: 400; }
   .sidebar-nav > ul > li {
     margin-bottom: 0px; }
     .sidebar-nav > ul > li.active > a {
       color: #ce2829;
-      font-weight: 500;
+      font-weight: 400;
       border-left: 3px solid #ce2829;
-      background: #252833; }
+      background: #252833;
+      padding: 8px 35px 8px 37px; }
       .sidebar-nav > ul > li.active > a i {
         color: #ce2829;
         font-size: 14px; }
@@ -157,7 +147,7 @@ a.link:hover, a.link:focus {
     float: right;
     margin-top: 6px; }
   .sidebar-nav > ul > li > a.active {
-    font-weight: 500;
+    font-weight: 400;
     background: #242933;
     color: #ce2829; }
 

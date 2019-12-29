@@ -1,27 +1,3 @@
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
-/**
- * Table Of Content
- *
- * 	1. Globals
- *	2. Headers
- *	3. Navigations
- *	4. Banners
- *	5. Footers
- *	6. app
- *	7. Widgets
- *	8. Custom Templates
- */
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 @import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700");
 /*Theme Colors*/
 /*bootstrap Color*/
@@ -30,12 +6,6 @@ File: scss
 /*Extra Variable*/
 /*Preloader*/
 @import url(../css/icons/font-awesome/css/fontawesome-all.css);
-@import url(../css/icons/simple-line-icons/css/simple-line-icons.css);
-@import url(../css/icons/weather-icons/css/weather-icons.min.css);
-@import url(../css/icons/linea-icons/linea.css);
-@import url(../css/icons/themify-icons/themify-icons.css);
-@import url(../css/icons/flag-icon-css/flag-icon.min.css);
-@import url(../css/icons/material-design-iconic-font/css/materialdesignicons.min.css);
 @import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700");
 @import url(../css/spinners.css);
 @import url(../css/animate.css);
@@ -51,25 +21,7 @@ File: scss
     top: calc(50% - 3.5px);
     left: calc(50% - 3.5px); }
 
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
-/**
- * Table Of Content
- *
- * 	1. Globals
- *	2. Headers
- *	3. Navigations
- *	4. Banners
- *	5. Footers
- *	6. Posts
- *	7. Widgets
- *	8. Custom Templates
- */
-/******************* 
+/*******************
 Global Styles 
 *******************/
 * {
@@ -1515,13 +1467,7 @@ Layouts
   left: 0;
   opacity: 1; }
 
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
-/*============================================================== 
+/*==============================================================
  For all pages 
  ============================================================== */
 #main-wrapper {
@@ -4840,12 +4786,6 @@ table footable page
 .table-responsive > .table-bordered {
   border: 1px solid #dee2e6; }
 
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 /*******************
 Main sidebar
 ******************/
@@ -5142,12 +5082,6 @@ When click on sidebar toggler and also for tablet
     left: -240px; }
   .mini-sidebar.show-sidebar .left-sidebar, .mini-sidebar.show-sidebar .sidebar-footer {
     left: 0px; } }
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 /*******************
 /*User mail widgets*/
 /*******************/
@@ -5819,12 +5753,6 @@ File: scss
     .contact-box .contact-widget > a .user-img {
       margin-bottom: 0px !important; }
 
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 @media (min-width: 1600px) {
   .col-xlg-1,
   .col-xlg-10,
@@ -6164,13 +6092,7 @@ File: scss
 .card-inverse .card-title {
   color: #ffffff; }
 
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
-/*============================================================== 
+/*==============================================================
  For Laptop & above all (1650px) 
  ============================================================== */
 @media (min-width: 1650px) {
@@ -6369,18 +6291,6 @@ File: scss
 
   .chat-list li .chat-content {
     width: calc(100% - 80px); } }
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
-/*
-Template Name: Material Pro Admin
-Author: Themedesigner
-Email: niravjoshi87@gmail.com
-File: scss
-*/
 /*Theme Colors*/
 /*bootstrap Color*/
 /*Light colors*/

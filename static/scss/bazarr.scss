@@ -111,7 +111,7 @@ a.link {
   position: absolute;
   width: 240px;
   height: 100%;
-  top: 0px;
+  top: 0;
   z-index: 20;
   padding-top: 70px;
   background: $sidebar;
@@ -134,7 +134,7 @@ a.link {
 
       a {
         color: $swhite;
-        font-weight: 500;
+        font-weight: 400;
         padding: 8px 35px 8px 40px;
         display: block;
         font-size: 14px;
@@ -153,14 +153,14 @@ a.link {
         }
 
         &.active {
-          font-weight: 500;
+          font-weight: 400;
           color: $topbar;
         }
       }
 
       ul {
         padding-left: 60px;
-        padding-top: 10px;
+        padding-top: 0;
         transition-delay: inherit;
         border-left: 3px solid $topbar;
 
@@ -176,17 +176,10 @@ a.link {
 
       &.nav-small-cap {
         font-size: 12px;
-        margin-bottom: 0px;
+        margin-bottom: 0;
         padding: 14px 14px 14px 20px;
         color: $dark;
-        font-weight: 500;
-      }
-
-      &.nav-devider {
-        height: 1px;
-        background: $border;
-        display: block;
-        margin: 20px 0;
+        font-weight: 400;
       }
     }
   }
@@ -196,9 +189,10 @@ a.link {
 
     &.active > a {
       color: $topbar;
-      font-weight: 500;
+      font-weight: 400;
       border-left: 3px solid $topbar;
       background: $themecolor-alt;
+      padding: 8px 35px 8px 37px;
 
       i {
         color: $topbar;
@@ -232,7 +226,7 @@ a.link {
     }
 
     &.active {
-      font-weight: 500;
+      font-weight: 400;
       background: #242933;
       color: $topbar;
     }
