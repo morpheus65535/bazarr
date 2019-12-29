@@ -265,4 +265,8 @@ a.link:hover, a.link:focus {
   /* Microsoft Edge */
   color: #ce2829; }
 
+.page-wrapper {
+  background: white;
+  padding-bottom: 60px; }
+
 /*# sourceMappingURL=bazarr.css.map */

@@ -1,8 +1,0 @@
-/**
-* jQuery wizard v0.4.3
-* https://github.com/amazingSurge/jquery-wizard
-*
-* Copyright (c) amazingSurge
-* Released under the LGPL-3.0 license
-*/
-.hide{display:none}.wizard-pane{position:absolute;top:0;visibility:hidden;opacity:0;-webkit-transition:opacity .2s ease;transition:opacity .2s ease}.wizard-pane.active{position:relative;visibility:visible;opacity:1}.wizard-pane.activing{visibility:visible}.wizard-content{position:relative;padding:0;-webkit-transition:height .2s ease;transition:height .2s ease}.current{color:#00f!important}.done{color:green!important}.error{color:red!important}.disabled{cursor:not-allowed!important}.wizard-pane{padding:10px}.wizard-content{border:1px solid #aaa}.wizard-steps{padding:0;margin:0;list-style:none}.wizard-steps>li{display:inline-block;padding:5px 10px;color:#666;cursor:pointer}.wizard-steps>li:hover{color:#333}.wizard-buttons{margin-top:10px}.wizard-buttons>a{padding:5px 10px;margin-right:5px;border:1px solid #aaa;border-radius:20px}.wizard-buttons>a.disabled{color:#aaa;border-color:#aaa}

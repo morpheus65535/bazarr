@@ -17,6 +17,7 @@ $topbar: #ce2829;
 $themecolor-alt: #252833;
 $sidebar: #3a3f51;
 $swhite: #e1e2e3;
+$bodycolor: white;
 
 
 /*******************
@@ -380,4 +381,9 @@ a.link {
   &::-ms-input-placeholder { /* Microsoft Edge */
     color: $topbar;
   }
+}
+
+.page-wrapper {
+    background: $bodycolor;
+    padding-bottom: 60px;
 }
