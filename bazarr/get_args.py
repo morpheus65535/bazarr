@@ -24,6 +24,8 @@ def get_args():
                         help="Enable file based updater (default: False)")
     parser.add_argument('--dev', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                         help="Enable developer mode (default: False)")
+    parser.add_argument('--no-tasks', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
+                        help="Disable all tasks (default: False)")
     
     return parser.parse_args()
 

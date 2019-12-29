@@ -142,6 +142,8 @@ radarr_full_update()
 schedule_wanted_search()
 schedule_upgrade_subs()
 scheduler.start()
+if args.no_tasks:
+    scheduler.pause()
 
 
 def add_job(job, name=None, max_instances=1, coalesce=True, args=None):
