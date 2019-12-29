@@ -11,11 +11,12 @@
 	<thead>
 		<tr>
 			<th>Name</th>
-			<th>Path exist</th>
+			<th>Exist</th>
 			<th>Audio Language</th>
 			<th>Subtitles Languages</th>
 			<th>Hearing-Impaired</th>
 			<th>Forced</th>
+			<th>Subtitles</th>
 		</tr>
 	</thead>
 </table>
@@ -33,11 +34,46 @@
             "ajax": "/api/series",
             "columns": [
             { "data": "title" },
-            { "data": "exist" },
+            { "data": "exist",
+				"render": function ( data ) {
+				    if (data === false) {
+				    	return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid."></i>';
+					} else if (data === true) {
+				    	return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid."></i>';
+					}
+				}
+			},
             { "data": "audio_language.name" },
-            { "data": "languages[, ].code2" },
+            { "data": "languages",
+				"render": function ( data ) {
+            		if (data !== 'None') {
+						var languages = '';
+						data.forEach(appendFunc);
+						return languages;
+					} else {
+            			return null;
+					}
+
+            		function appendFunc(value) {
+            			languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="'+value.name+'">'+value.code2+'</span> ';
+					}
+				}
+			},
             { "data": "hearing_impaired" },
-            { "data": "forced" }
+            { "data": "forced" },
+            { "data": null,
+				"render": function ( data ) {
+            		var total = data.episodeFileCount;
+            		var completed = data.episodeFileCount - data.episodeMissingCount;
+            		var completed_style = '';
+					var completed_text = '';
+					if (completed/total*100 > 0 && data.languages !== 'None') {
+						completed_style = ' style="width: '+completed/total*100+'%;"';
+						completed_text = completed+'/'+total;
+					}
+            		return '<div class="progress"><div class="progress-bar" role="progressbar"'+completed_style+' aria-valuenow="'+completed+'" aria-valuemin="0" aria-valuemax="'+total+'">'+completed_text+'</div></div>'
+				}
+			}
             ]
         } );
     } );

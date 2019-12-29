@@ -10,9 +10,9 @@
 <table id="movies" class="mdl-data-table" style="width:100%">
 	<thead>
 		<tr>
-			<th>Monitored</th>
+			<th></th>
 			<th>Name</th>
-			<th>Path exist</th>
+			<th>Exist</th>
 			<th>Audio Language</th>
 			<th>Subtitles Languages</th>
 			<th>Hearing-Impaired</th>
@@ -33,11 +33,49 @@
 			"lengthChange": false,
             "ajax": "/api/movies",
             "columns": [
-            { "data": "monitored" },
-            { "data": "title" },
-            { "data": "exist" },
+            { "data": "monitored",
+				"render": function ( data, type, row ) {
+				    if (data === 'False') {
+				    	return '<i class="far fa-bookmark" data-toggle="tooltip" data-placement="right" title="Movie unmonitored in Radarr"></i>';
+					} else if (data === 'True') {
+				    	return '<i class="fas fa-bookmark" data-toggle="tooltip" data-placement="right" title="Movie monitored in Radarr"></i>';
+					}
+				}
+			},
+            { "data": null,
+				"render": function ( data ) {
+				    if (data.sceneName) {
+				    	return '<i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="' + data.sceneName + '"></i> ' + data.title;
+					} else {
+				    	return data.title;
+					}
+				}
+			},
+            { "data": "exist",
+				"render": function ( data ) {
+				    if (data === false) {
+				    	return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid."></i>';
+					} else if (data === true) {
+				    	return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid."></i>';
+					}
+				}
+			},
             { "data": "audio_language.name" },
-            { "data": "languages[, ].code2" },
+            { "data": "languages",
+				"render": function ( data ) {
+            		if (data !== 'None') {
+            			var languages = '';
+						data.forEach(appendFunc);
+						return languages;
+					} else {
+            			return null
+					}
+
+            		function appendFunc(value) {
+            			languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="'+value.name+'">'+value.code2+'</span> ';
+					}
+				}
+			},
             { "data": "hearing_impaired" },
             { "data": "forced" }
             ]

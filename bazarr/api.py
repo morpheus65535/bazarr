@@ -77,12 +77,12 @@ class Series(Resource):
             # Add missing subtitles episode count
             item.update({"episodeMissingCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
                                                                  "sonarrSeriesId=? AND missing_subtitles is not null "
-                                                                 "AND missing_subtitles != '[]'", (seriesId,),
-                                                                 only_one=True)['count']})
+                                                                 "AND missing_subtitles != '[]'",
+                                                                 (item['sonarrSeriesId'],), only_one=True)['count']})
 
             # Add episode count
             item.update({"episodeFileCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
-                                                              "sonarrSeriesId=?", (seriesId,),
+                                                              "sonarrSeriesId=?", (item['sonarrSeriesId'],),
                                                               only_one=True)['count']})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
