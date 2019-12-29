@@ -31,7 +31,7 @@
             <tr>
                 <th></th>
                 <th>Name</th>
-                <th>Exist</th>
+                <th>Path Exist</th>
                 <th>Audio Language</th>
                 <th>Subtitles Languages</th>
                 <th>Hearing-Impaired</th>
@@ -46,7 +46,7 @@
     <script>
         $(document).ready(function () {
             var table = $('#movies').DataTable({
-                "processing": true,
+                "processing": false,
                 "serverSide": true,
                 "searching": false,
                 "ordering": false,
@@ -74,12 +74,13 @@
                         }
                     },
                     {
-                        "data": "exist",
+                        "data": null,
+                        "className": "dt-center",
                         "render": function (data) {
-                            if (data === false) {
-                                return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid."></i>';
-                            } else if (data === true) {
-                                return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid."></i>';
+                            if (data.exist === false) {
+                                return '<i class="far fa-square" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid: '+data.mapped_path+'"></i>';
+                            } else if (data.exist === true) {
+                                return '<i class="far fa-check-square" data-toggle="tooltip" data-placement="right" title="This path seems to be valid: '+data.mapped_path+'"></i>';
                             }
                         }
                     },
@@ -100,8 +101,26 @@
                             }
                         }
                     },
-                    {"data": "hearing_impaired"},
-                    {"data": "forced"}
+                    {"data": "hearing_impaired",
+                        "className": "dt-center",
+                        "render": function (data) {
+                            if (data === 'False') {
+                                return '<i class="far fa-square"></i>';
+                            } else if (data === 'True') {
+                                return '<i class="far fa-check-square"></i>';
+                            }
+                        }
+                    },
+                    {"data": "forced",
+                        "className": "dt-center",
+                        "render": function (data) {
+                            if (data === 'False') {
+                                return '<i class="far fa-square"></i>';
+                            } else if (data === 'True') {
+                                return '<i class="far fa-check-square"></i>';
+                            }
+                        }
+                    }
                 ]
             });
         });
