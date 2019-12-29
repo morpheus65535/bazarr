@@ -113,8 +113,7 @@ a.link:hover, a.link:focus {
           cursor: pointer; }
         .sidebar-nav ul li a.active {
           font-weight: 500;
-          color: #263238;
-          border-left: 3px solid #ce2829; }
+          color: #ce2829; }
       .sidebar-nav ul li ul {
         padding-left: 60px;
         padding-top: 10px;
@@ -136,7 +135,7 @@ a.link:hover, a.link:focus {
         display: block;
         margin: 20px 0; }
   .sidebar-nav > ul > li {
-    margin-bottom: 10px; }
+    margin-bottom: 0px; }
     .sidebar-nav > ul > li.active > a {
       color: #ce2829;
       font-weight: 500;

@@ -883,13 +883,13 @@ def search_missing_subtitles_movie(no):
     redirect(ref)
 
 
-@app.route('/historyseries')
+@app.route('/historyseries/')
 # @custom_auth_basic(check_credentials)
 def historyseries():
     return render_template('historyseries.html')
 
 
-@app.route('/historymovies')
+@app.route('/historymovies/')
 # @custom_auth_basic(check_credentials)
 def historymovies():
     return render_template('historymovies.html')

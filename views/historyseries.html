@@ -7,39 +7,59 @@
 {% endblock head %}
 
 {% block body %}
-<table id="history_series" class="mdl-data-table" style="width:100%">
-	<thead>
-		<tr>
-			<th>Action</th>
-			<th>Name</th>
-			<th>Episode</th>
-			<th>Episode Title</th>
-			<th>Date</th>
-			<th>Description</th>
-		</tr>
-	</thead>
-</table>
+    <div class="container-fluid">
+        <!-- Bread crumb and right sidebar toggle -->
+        <!-- ============================================================== -->
+        <div class="row page-titles">
+            <div class="col-md-5 col-8 align-self-center">
+                <h3 class="text-themecolor m-b-0 m-t-0"><i class="fas fa-sync"></i></h3>
+            </div>
+            <div class="col-md-7 col-4 align-self-center">
+                <div class="d-flex m-t-10 justify-content-end">
+                    <div class="d-flex m-r-20 m-l-10 hidden-md-down">
+                        <div class="chart-text m-r-10">
+                            <h5 class="m-t-0 text-white">Some page settings</h5></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ============================================================== -->
+        <!-- End Bread crumb and right sidebar toggle -->
+        <!-- ============================================================== -->
+        <table id="history_series" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Action</th>
+                <th>Name</th>
+                <th>Episode</th>
+                <th>Episode Title</th>
+                <th>Date</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
 {% endblock body %}
 
 {% block tail %}
-<script>
-	$(document).ready(function() {
-        var table = $('#history_series').DataTable( {
-            "processing": true,
-            "serverSide": true,
-			"searching": false,
-			"ordering": false,
-			"lengthChange": false,
-            "ajax": "/api/history_series",
-            "columns": [
-            { "data": "action" },
-            { "data": "seriesTitle" },
-            { "data": "episode_number" },
-            { "data": "episodeTitle" },
-            { "data": "timestamp" },
-            { "data": "description" }
-            ]
-        } );
-    } );
-</script>
+    <script>
+        $(document).ready(function () {
+            var table = $('#history_series').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "searching": false,
+                "ordering": false,
+                "lengthChange": false,
+                "ajax": "{{ url_for('api.historyseries') }}",
+                "columns": [
+                    {"data": "action"},
+                    {"data": "seriesTitle"},
+                    {"data": "episode_number"},
+                    {"data": "episodeTitle"},
+                    {"data": "timestamp"},
+                    {"data": "description"}
+                ]
+            });
+        });
+    </script>
 {% endblock tail %}

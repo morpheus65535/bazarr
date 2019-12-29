@@ -7,75 +7,95 @@
 {% endblock head %}
 
 {% block body %}
-<table id="series" class="mdl-data-table" style="width:100%">
-	<thead>
-		<tr>
-			<th>Name</th>
-			<th>Exist</th>
-			<th>Audio Language</th>
-			<th>Subtitles Languages</th>
-			<th>Hearing-Impaired</th>
-			<th>Forced</th>
-			<th>Subtitles</th>
-		</tr>
-	</thead>
-</table>
+    <div class="container-fluid">
+        <!-- Bread crumb and right sidebar toggle -->
+        <!-- ============================================================== -->
+        <div class="row page-titles">
+            <div class="col-md-5 col-8 align-self-center">
+                <h3 class="text-themecolor m-b-0 m-t-0"><i class="fas fa-sync"></i></h3>
+            </div>
+            <div class="col-md-7 col-4 align-self-center">
+                <div class="d-flex m-t-10 justify-content-end">
+                    <div class="d-flex m-r-20 m-l-10 hidden-md-down">
+                        <div class="chart-text m-r-10">
+                            <h5 class="m-t-0 text-white">Some page settings</h5></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table id="series" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Exist</th>
+                <th>Audio Language</th>
+                <th>Subtitles Languages</th>
+                <th>Hearing-Impaired</th>
+                <th>Forced</th>
+                <th>Subtitles</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
 {% endblock body %}
 
 {% block tail %}
-<script>
-	$(document).ready(function() {
-        var table = $('#series').DataTable( {
-            "processing": true,
-            "serverSide": true,
-			"searching": false,
-			"ordering": false,
-			"lengthChange": false,
-            "ajax": "/api/series",
-            "columns": [
-            { "data": "title" },
-            { "data": "exist",
-				"render": function ( data ) {
-				    if (data === false) {
-				    	return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid."></i>';
-					} else if (data === true) {
-				    	return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid."></i>';
-					}
-				}
-			},
-            { "data": "audio_language.name" },
-            { "data": "languages",
-				"render": function ( data ) {
-            		if (data !== 'None') {
-						var languages = '';
-						data.forEach(appendFunc);
-						return languages;
-					} else {
-            			return null;
-					}
+    <script>
+        $(document).ready(function () {
+            var table = $('#series').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "searching": false,
+                "ordering": false,
+                "lengthChange": false,
+                "ajax": "{{ url_for('api.series') }}",
+                "columns": [
+                    {"data": "title"},
+                    {
+                        "data": "exist",
+                        "render": function (data) {
+                            if (data === false) {
+                                return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid."></i>';
+                            } else if (data === true) {
+                                return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid."></i>';
+                            }
+                        }
+                    },
+                    {"data": "audio_language.name"},
+                    {
+                        "data": "languages",
+                        "render": function (data) {
+                            if (data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
 
-            		function appendFunc(value) {
-            			languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="'+value.name+'">'+value.code2+'</span> ';
-					}
-				}
-			},
-            { "data": "hearing_impaired" },
-            { "data": "forced" },
-            { "data": null,
-				"render": function ( data ) {
-            		var total = data.episodeFileCount;
-            		var completed = data.episodeFileCount - data.episodeMissingCount;
-            		var completed_style = '';
-					var completed_text = '';
-					if (completed/total*100 > 0 && data.languages !== 'None') {
-						completed_style = ' style="width: '+completed/total*100+'%;"';
-						completed_text = completed+'/'+total;
-					}
-            		return '<div class="progress"><div class="progress-bar" role="progressbar"'+completed_style+' aria-valuenow="'+completed+'" aria-valuemin="0" aria-valuemax="'+total+'">'+completed_text+'</div></div>'
-				}
-			}
-            ]
-        } );
-    } );
-</script>
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
+                    },
+                    {"data": "hearing_impaired"},
+                    {"data": "forced"},
+                    {
+                        "data": null,
+                        "render": function (data) {
+                            var total = data.episodeFileCount;
+                            var completed = data.episodeFileCount - data.episodeMissingCount;
+                            var completed_style = '';
+                            var completed_text = '';
+                            if (completed / total * 100 > 0 && data.languages !== 'None') {
+                                completed_style = ' style="width: ' + completed / total * 100 + '%;"';
+                                completed_text = completed + '/' + total;
+                            }
+                            return '<div class="progress"><div class="progress-bar" role="progressbar"' + completed_style + ' aria-valuenow="' + completed + '" aria-valuemin="0" aria-valuemax="' + total + '">' + completed_text + '</div></div>'
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
 {% endblock tail %}

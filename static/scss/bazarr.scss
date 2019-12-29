@@ -153,8 +153,7 @@ a.link {
 
         &.active {
           font-weight: 500;
-          color: $dark;
-          border-left: 3px solid $topbar;
+          color: $topbar;
         }
       }
 
@@ -192,7 +191,7 @@ a.link {
   }
 
   > ul > li {
-    margin-bottom: 10px;
+    margin-bottom: 0px;
 
     &.active > a {
       color: $topbar;

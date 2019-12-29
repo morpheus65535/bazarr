@@ -30,7 +30,8 @@
         <link href="{{ url_for('static',filename='css/bazarr.css') }}" id="theme" rel="stylesheet">
 
         <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='datatables/datatables.min.css') }}">
-
+        <link rel="stylesheet" type="text/css"
+              href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
     {% endblock head_css %}
 
     {% block head %}
@@ -102,8 +103,10 @@
                             <div class="dropdown-menu dropdown-menu-right scale-up">
                                 <ul class="dropdown-user">
                                     <li><a href="{{ url_for('restart') }}"><i class="fas fa-redo"></i> Restart</a></li>
-                                    <li><a href="{{ url_for('shutdown') }}"><i class="fas fa-power-off"></i> Shutdown</a></li>
-                                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                                    <li><a href="{{ url_for('shutdown') }}"><i class="fas fa-power-off"></i>
+                                        Shutdown</a></li>
+                                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>
@@ -123,7 +126,7 @@
                 <!-- Sidebar navigation-->
                 <nav class="sidebar-nav">
                     <ul id="sidebarnav">
-                        <li><a class="active" href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
+                        <li><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
                                 class="hide-menu"> Series</span></a>
                         </li>
                         <li><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
@@ -135,7 +138,8 @@
                                 <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
                             </ul>
                         </li>
-                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span class="hide-menu"> Wanted</span></a>
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
+                                class="hide-menu"> Wanted</span></a>
                             <ul aria-expanded="false" class="collapse">
                                 <li><a href="/"> Missing</a></li>
                                 <li><a href="/"> Cutoff Unmet</a></li>
@@ -191,7 +195,6 @@
     <!-- All Jquery -->
     <!-- ============================================================== -->
     <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
     <!-- Bootstrap tether Core JavaScript -->
     <script src="{{ url_for('static',filename='plugins/popper/popper.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
@@ -203,6 +206,7 @@
     <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/sparkline/jquery.sparkline.min.js') }}"></script>
     <!--Custom JavaScript -->
+    <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
 
     <script>
