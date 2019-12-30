@@ -48,17 +48,19 @@
                 "searching": false,
                 "ordering": false,
                 "lengthChange": false,
+                "responsive": true,
                 "ajax": "{{ url_for('api.series') }}",
                 "columns": [
                     {"data": "title"},
                     {
                         "data": null,
                         "className": "dt-center",
+                        "responsivePriority": 1,
                         "render": function (data) {
                             if (data.exist === false) {
-                                return '<i class="far fa-square" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid: '+data.mapped_path+'"></i>';
+                                return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid: '+data.mapped_path+'"></i>';
                             } else if (data.exist === true) {
-                                return '<i class="far fa-check-square" data-toggle="tooltip" data-placement="right" title="This path seems to be valid: '+data.mapped_path+'"></i>';
+                                return '<i class="fas fa-check" data-toggle="tooltip" data-placement="right" title="This path seems to be valid: '+data.mapped_path+'"></i>';
                             }
                         }
                     },
@@ -101,6 +103,7 @@
                     },
                     {
                         "data": null,
+                        "responsivePriority": 2,
                         "render": function (data) {
                             var total = data.episodeFileCount;
                             var completed = data.episodeFileCount - data.episodeMissingCount;
