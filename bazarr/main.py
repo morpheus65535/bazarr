@@ -138,7 +138,7 @@ def login_required(f):
                 })
 
             return f(*args, **kwargs)
-        elif _settings.auth.type == 'form':
+        elif settings.auth.type == 'form':
             if 'logged_in' in session:
                 return f(*args, **kwargs)
             else:
