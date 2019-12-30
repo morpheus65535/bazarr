@@ -151,6 +151,76 @@ a.link:hover, a.link:focus {
     background: #242933;
     color: #ce2829; }
 
+@media (min-width: 768px) {
+  .mini-sidebar .sidebar-nav #sidebarnav li {
+    position: relative; }
+
+  .mini-sidebar .sidebar-nav #sidebarnav > li > ul {
+    position: absolute;
+    left: 60px;
+    top: 45px;
+    width: 200px;
+    z-index: 1001;
+    background: #f2f6f8;
+    display: none;
+    padding-left: 1px; }
+
+  .mini-sidebar .sidebar-nav {
+    padding: 0; }
+
+  .mini-sidebar.fix-sidebar .left-sidebar {
+    position: absolute; }
+
+  .mini-sidebar .sidebar-nav #sidebarnav > li:hover > ul {
+    height: auto !important;
+    overflow: auto; }
+
+  .mini-sidebar .sidebar-nav #sidebarnav > li:hover > ul,
+  .mini-sidebar .sidebar-nav #sidebarnav > li:hover > ul.collapse {
+    display: block; }
+
+  .mini-sidebar .sidebar-nav #sidebarnav > li > a.has-arrow:after {
+    display: none; }
+
+  .mini-sidebar .left-sidebar {
+    width: 60px; }
+  .mini-sidebar .user-profile {
+    padding-bottom: 15px;
+    width: 60px;
+    margin-bottom: 7px; }
+    .mini-sidebar .user-profile .profile-img {
+      padding: 15px 0 0 0;
+      margin: 0px 0 0 6px; }
+      .mini-sidebar .user-profile .profile-img:before {
+        top: 15px; }
+  .mini-sidebar .scroll-sidebar {
+    padding-bottom: 0px;
+    position: absolute; }
+  .mini-sidebar .hide-menu,
+  .mini-sidebar .nav-small-cap,
+  .mini-sidebar .sidebar-footer,
+  .mini-sidebar .user-profile .profile-text {
+    display: none; }
+  .mini-sidebar .nav-devider {
+    width: 50px; }
+  .mini-sidebar .sidebar-nav {
+    background: transparent; }
+  .mini-sidebar .sidebar-nav #sidebarnav > li > a {
+    padding: 9px 20px;
+    width: 60px; }
+  .mini-sidebar .sidebar-nav #sidebarnav > li:hover > a {
+    width: 260px;
+    background: #252833;
+    color: #ffffff;
+    border-color: #3a3f51; }
+    .mini-sidebar .sidebar-nav #sidebarnav > li:hover > a i {
+      color: #ffffff; }
+    .mini-sidebar .sidebar-nav #sidebarnav > li:hover > a .hide-menu {
+      display: inline; }
+  .mini-sidebar .sidebar-nav #sidebarnav > li.active > a {
+    border-color: transparent; }
+    .mini-sidebar .sidebar-nav #sidebarnav > li.active > a.active {
+      border-color: #ce2829; } }
 /*******************
 /*Buttons
 *******************/
@@ -185,7 +255,7 @@ a.link:hover, a.link:focus {
         margin-right: 0;
         padding-bottom: 0;
         padding-top: 0;
-        padding-left: 20px; }
+        padding-left: 10px; }
         .topbar .top-navbar .navbar-header .navbar-brand .light-logo {
           display: none; }
   .topbar .dropdown-menu {
