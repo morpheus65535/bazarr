@@ -45,7 +45,6 @@ from six import text_type, PY2
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import Flask, make_response, request, redirect, abort, render_template, Response, session, flash, url_for, send_file
-from flask_cors import CORS
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
@@ -65,13 +64,31 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from flask_debugtoolbar import DebugToolbarExtension
 from functools import wraps
 
+
+class PrefixMiddleware(object):
+
+    def __init__(self, app, prefix=''):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+
+        if environ['PATH_INFO'].startswith(self.prefix):
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+            environ['SCRIPT_NAME'] = self.prefix
+            return self.app(environ, start_response)
+        else:
+            start_response('404', [('Content-Type', 'text/plain')])
+            return ["This url does not belong to the app.".encode()]
+
 # Flask Setup
 app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
             static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=base_url)
 
-app.config["APPLICATION_ROOT"] = base_url
 app.config["SECRET_KEY"] = 'test'
+
 if args.dev:
     app.config["DEBUG"] = True
     # Flask-Debuger
@@ -91,8 +108,6 @@ app.register_blueprint(api_bp)
 
 from SSE import event_stream
 
-# Add Cors
-CORS(app)
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
@@ -532,9 +547,9 @@ def image_proxy_movies(url):
 @login_required
 def redirect_root():
     if settings.general.getboolean('use_sonarr'):
-        return redirect('/series')
+        return redirect(url_for('series'))
     elif settings.general.getboolean('use_radarr'):
-        return redirect('/movies')
+        return redirect(url_for('movies'))
     elif not settings.general.enabled_providers:
         return redirect('/wizard')
     else:

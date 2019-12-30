@@ -11,7 +11,7 @@ defaults = {
     'general': {
         'ip': '0.0.0.0',
         'port': '6767',
-        'base_url': '/',
+        'base_url': '',
         'path_mappings': '[]',
         'debug': 'False',
         'branch': 'master',
