@@ -44,7 +44,8 @@ from io import BytesIO
 from six import text_type, PY2
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
-from flask import Flask, make_response, request, redirect, abort, render_template, Response, session, flash, url_for, send_file
+from flask import Flask, make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
+    send_file, stream_with_context
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
@@ -507,17 +508,13 @@ def download_log():
 @login_required
 def image_proxy(url):
     apikey = settings.sonarr.apikey
-    url_image = url_sonarr_short() + '/' + url + '?apikey=' + apikey
+    url_image = (url_sonarr_short() + '/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
-        image_buffer = BytesIO(
-            requests.get(url_sonarr() + '/api' + url_image.split(url_sonarr())[1], timeout=15, verify=False).content)
+        req = requests.get(url_sonarr() + '/api' + url_image.split(url_sonarr())[1], stream=True, timeout=15, verify=False)
     except:
         return None
     else:
-        image_buffer.seek(0)
-        bytes = image_buffer.read()
-        request.set_header('Content-type', 'image/jpeg')
-        return bytes
+        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
 @app.route('/image_proxy_movies/<path:url>', methods=['GET'])
@@ -526,17 +523,12 @@ def image_proxy_movies(url):
     apikey = settings.radarr.apikey
     try:
         url_image = (url_radarr_short() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
-        image_buffer = BytesIO(
-            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
+        req = requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], stream=True, timeout=15, verify=False)
     except:
         url_image = url_radarr_short() + '/' + url + '?apikey=' + apikey
-        image_buffer = BytesIO(
-            requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], timeout=15, verify=False).content)
+        req = requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], stream=True, timeout=15, verify=False)
     else:
-        image_buffer.seek(0)
-        bytes = image_buffer.read()
-        request.set_header('Content-type', 'image/jpeg')
-        return bytes
+        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
 @app.route("/")
