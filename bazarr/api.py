@@ -6,7 +6,7 @@ import datetime
 import pretty
 
 from get_args import args
-from config import settings
+from config import settings, base_url
 
 from init import *
 import logging
@@ -19,7 +19,7 @@ from flask import Flask, jsonify, request, Response, Blueprint
 
 from flask_restful import Resource, Api
 
-api_bp = Blueprint('api', __name__, url_prefix='/api')
+api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
 
 
