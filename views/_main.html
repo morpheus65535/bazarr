@@ -80,13 +80,13 @@
                     <!-- toggle and nav items -->
                     <!-- ============================================================== -->
                     <ul class="navbar-nav mr-auto mt-md-0">
-                    <!-- This is  -->
-                        <li class="nav-item"> <a
+                        <!-- This is  -->
+                        <li class="nav-item"><a
                                 class="nav-link nav-toggler d-block d-md-none text-muted hidden-xl-up"
-                                href="javascript:void(0)"><i class="mdi mdi-menu"></i></a> </li>
-                        <li class="nav-item"> <a
+                                href="javascript:void(0)"><i class="mdi mdi-menu"></i></a></li>
+                        <li class="nav-item"><a
                                 class="nav-link sidebartoggler d-none d-md-block text-muted hidden-xl-up"
-                                href="javascript:void(0)"><i class="ti-menu"></i></a> </li>
+                                href="javascript:void(0)"><i class="ti-menu"></i></a></li>
                         <!-- ============================================================== -->
                         <!-- Search -->
                         <!-- ============================================================== -->
@@ -196,9 +196,27 @@
         <!-- End Left Sidebar - style you can find in sidebar.scss  -->
         <!-- ============================================================== -->
         <div class="page-wrapper">
-            {% block body %}
+            <div class="container-fluid">
+                {% block breadcrumb %}
+                    <!-- ============================================================== -->
+                    <!-- Bread crumb and right sidebar toggle -->
+                    <!-- ============================================================== -->
+                    <div class="row page-titles">
+                        <div class="col-md-5 col-8 align-self-center">
+                            {% block bcleft %}
+                            {% endblock bcleft %}
+                            </span>
+                        </div>
+                        <div class="col-md-7 col-4 align-self-center">
+                            {% block bcright %}
+                            {% endblock bcright %}
+                        </div>
+                    </div>
+                {% endblock breadcrumb %}
+                {% block body %}
 
-            {% endblock body %}
+                {% endblock body %}
+            </div>
         </div>
         <!-- ============================================================== -->
         <!-- footer -->
@@ -238,7 +256,6 @@
                 url: "{{url_for('api.badges')}}",
                 async: true,
                 success: function (data) {
-                    console.log(data);
                     if (data['throttled_providers']) {
                         $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>')
                     }

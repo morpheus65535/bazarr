@@ -24,6 +24,9 @@ File: scss
     top: calc(50% - 3.5px);
     left: calc(50% - 3.5px); }
 
+body {
+  font-family: "Roboto", "open sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif; }
+
 /*******************
 /*Top bar
 *******************/
@@ -258,6 +261,9 @@ a.link:hover, a.link:focus {
         padding-left: 10px; }
         .topbar .top-navbar .navbar-header .navbar-brand .light-logo {
           display: none; }
+        .topbar .top-navbar .navbar-header .navbar-brand b {
+          line-height: 60px;
+          display: inline-block; }
   .topbar .dropdown-menu {
     box-shadow: 0 0 0 rgba(0, 0, 0, 0.05);
     -webkit-box-shadow: 0 0 0 rgba(0, 0, 0, 0.05);
