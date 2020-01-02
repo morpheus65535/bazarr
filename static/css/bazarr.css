@@ -294,8 +294,12 @@ a.link:hover, a.link:focus {
 .page-titles {
   background: #4f566f;
   margin: 0 -30px 30px;
-  padding: 10px;
+  min-height: 50px;
+  padding: 0;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.1); }
+  .page-titles .btn {
+    min-height: 50px;
+    width: 80px; }
 
 .card-no-border .sidebar-nav > ul > li > a.active {
   background: #252833; }
