@@ -45,7 +45,7 @@ class Series(Resource):
         row_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
-                                      "OFFSET ?", (length, start), (seriesId,))
+                                      "OFFSET ?", (seriesId, length, start))
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:

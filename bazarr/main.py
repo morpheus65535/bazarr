@@ -508,9 +508,9 @@ def download_log():
 @login_required
 def image_proxy(url):
     apikey = settings.sonarr.apikey
-    url_image = (url_sonarr_short() + '/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    url_image = (url_sonarr() + '/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
-        req = requests.get(url_sonarr() + '/api' + url_image.split(url_sonarr())[1], stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
         return None
     else:
@@ -547,56 +547,7 @@ def redirect_root():
 @app.route('/series/')
 @login_required
 def series():
-    series_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
-    page = request.data
-    if not page:
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(series_count / (page_size + 0.0)))
-
-    # Get list of series
-    data = database.execute("SELECT tvdbId, title, path, languages, hearing_impaired, sonarrSeriesId, poster, "
-                            "audio_language, forced FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
-                            (page_size, offset))
-    # path_replace
-    dict_mapper.path_replace(data)
-
-    # Get languages list
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    # Build missing subtitles clause depending on only_monitored
-    if settings.sonarr.getboolean('only_monitored'):
-        missing_subtitles_clause = " AND table_episodes.monitored='True'"
-    else:
-        missing_subtitles_clause = ''
-
-    # Get missing subtitles count by series
-    missing_subtitles_list = database.execute("SELECT table_shows.sonarrSeriesId, "
-                                              "COUNT(table_episodes.missing_subtitles) as missing_subtitles FROM table_shows LEFT JOIN "
-                                              "table_episodes ON table_shows.sonarrSeriesId="
-                                              "table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None' "
-                                              "AND table_episodes.missing_subtitles IS NOT '[]'" +
-                                              missing_subtitles_clause + " GROUP BY table_shows.sonarrSeriesId")
-
-    # Build total subtitles clause depending on only_monitored
-    if settings.sonarr.getboolean('only_monitored'):
-        total_subtitles_clause = " AND table_episodes.monitored == 'True'"
-    else:
-        total_subtitles_clause = ''
-
-    # Get total subtitles count by series
-    total_subtitles_list = database.execute("SELECT table_shows.sonarrSeriesId, "
-                                            "COUNT(table_episodes.missing_subtitles) as missing_subtitles FROM table_shows LEFT JOIN "
-                                            "table_episodes ON table_shows.sonarrSeriesId="
-                                            "table_episodes.sonarrSeriesId WHERE table_shows.languages IS NOT 'None'"
-                                            + total_subtitles_clause + " GROUP BY table_shows.sonarrSeriesId")
-
-    return render_template('series.html', bazarr_version=bazarr_version, rows=data, missing_subtitles_list=missing_subtitles_list,
-                    total_subtitles_list=total_subtitles_list, languages=languages, missing_count=series_count,
-                    page=page, max_page=max_page, base_url=base_url,
-                    single_language=settings.general.getboolean('single_language'), page_size=page_size,
-                    current_port=settings.general.port)
+    return render_template('series.html')
 
 
 @app.route('/serieseditor/')
@@ -717,35 +668,10 @@ def edit_serieseditor():
 
 
 @app.route('/episodes/<int:no>', methods=['GET'])
+@app.route('/episodes/')
 @login_required
 def episodes(no):
-
-
-    series_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tvdbId, "
-                                      "audio_language, languages, path, forced FROM table_shows WHERE "
-                                      "sonarrSeriesId=?", (no,), only_one=True)
-    # path_replace
-    dict_mapper.path_replace(series_details)
-
-    tvdbid = series_details['tvdbId']
-
-    episodes = database.execute("SELECT title, path, season, episode, subtitles, sonarrSeriesId, missing_subtitles, "
-                                "sonarrEpisodeId, scene_name, monitored, failedAttempts FROM table_episodes WHERE "
-                                "sonarrSeriesId=? ORDER BY season DESC, episode DESC", (no,))
-    # path_replace
-    dict_mapper.path_replace(episodes)
-
-    number = len(episodes)
-
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    seasons_list = []
-    for key, season in itertools.groupby(episodes, lambda x: x['season']):
-        seasons_list.append(list(season))
-
-    return render_template('episodes.html', bazarr_version=bazarr_version, no=no, details=series_details,
-                    languages=languages, seasons=seasons_list, url_sonarr_short=url_sonarr_short(), base_url=base_url,
-                    tvdbid=tvdbid, number=number, current_port=settings.general.port)
+    return render_template('episodes.html', id=str(no))
 
 
 @app.route('/movies')

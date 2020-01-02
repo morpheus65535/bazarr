@@ -1,821 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
-		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.css">
-		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
-		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
-		
-		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
-		<link rel="manifest" href="{{base_url}}static/manifest.json">
-		<link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
-		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
-		<meta name="theme-color" content="#ffffff">
-		
-		<title>{{details['title']}} - Bazarr</title>
-		<style>
-			body {
-				background-color: #1b1c1d;
-				background-image: url("{{base_url}}image_proxy{{details['fanart']}}");
-				background-repeat: no-repeat;
-				background-attachment: fixed;
-				background-size: cover;
-				background-position:center center;
-			}
-			#divdetails {
-				background-color: rgba(0, 0, 0, 0.9);
-				color: #ffffff;
-				margin-top: 6em;
-				margin-bottom: 3em;
-				padding: 2em;
-				border-radius: 1px;
-				box-shadow: 0 0 5px 5px #000000;
-				min-height: calc(250px + 4em);
-			}
-			#fondblanc {
-				background-color: #ffffff;
-				opacity: 0.9;
-				border-radius: 1px;
-				box-shadow: 0 0 3px 3px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding-top: 2em;
-				padding-left: 2em;
-				padding-right: 2em;
-				padding-bottom: 1em;
-				overflow-x: auto;
-			}
-			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
-				background: transparent !important;
-			}
-			.ui.basic.button:active, .ui.basic.buttons .button:active {
-				background: transparent !important;
-			}
-			.ui.basic.button:focus, .ui.basic.buttons .button:focus {
-				background: transparent !important;
-			}
-			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
-				background: transparent !important;
-			}
+{% extends '_main.html' %}
 
-			.criteria_matched {
-				background-color: #e6ffe6 !important;
-				line-height: 0 !important;
-			}
+{% block title %}Series - Bazarr{% endblock %}
 
-			.criteria_not_matched {
-				background-color: #ffcccc !important;
-				line-height: 0 !important;
-			}
-
-			.episode_history { cursor: pointer; }
-		</style>
-
-		<script>
-           	$(function(){
-            	$('.ui.accordion').accordion();
-            	const first_season_acc_title = document.getElementsByClassName("title")[0];
-            	first_season_acc_title.className += " active";
-            	const first_season_acc_content = document.getElementsByClassName("content season")[0];
-            	first_season_acc_content.className += " active";
-            });
-		</script>
-	</head>
-	<body>
-		%import ast
-		%from get_languages import *
-        %from config import settings
-        %from helper import path_replace
-		%single_language = settings.general.getboolean('single_language')
-		<div style="display: none;"><img src="{{base_url}}image_proxy{{details['fanart']}}"></div>
-		<div id='loader' class="ui page dimmer">
-		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
-		</div>
-		% include('menu.tpl')
-		
-		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>	
-			<div id="divdetails" class="ui container">
-				<div class="ui stackable grid">
-					<div class="three wide column">
-						<img class="ui image" style="max-height:250px;" src="{{base_url}}image_proxy{{details['poster']}}">
-					</div>
-
-					<div class="thirteen wide column">
-						<div class="ui stackable grid">
-							<div class="ui row">
-								<div class="twelve wide left aligned column">
-									<h2>{{details['title']}}</h2>
-								</div>
-
-								<div class="four wide right aligned column">
-									<div class="ui basic icon buttons">
-										<button id="scan_disk" class="ui button" data-tooltip="Scan Disk For Subtitles"><i class="ui inverted large compact refresh icon"></i></button>
-										<button id="search_missing_subtitles" class="ui button" data-tooltip="Download Missing Subtitles"><i class="ui inverted huge compact search icon"></i></button>
-										<%
-										subs_languages = ast.literal_eval(str(details['languages']))
-										subs_languages_list = []
-										if subs_languages is not None:
-											for subs_language in subs_languages:
-												subs_languages_list.append(subs_language)
-											end
-										end
-										%>
-										<button id="config" class="ui button" data-tooltip="Edit series" data-tvdbid="{{details['tvdbId']}}" data-title="{{details['title']}}" data-poster="{{details['poster']}}" data-audio="{{details['audio_language']}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}"><i class="ui inverted large compact configure icon"></i></button>
-									</div>
-								</div>
-							</div>
-
-							<div class="ui row">
-								<p>{{details['overview']}}</p>
-							</div>
-
-							<div class="ui row">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details['audio_language']}}</div>
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details['path']}}</div>
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{number}} files</div>
-							</div>
-
-							<div class="ui row" style="padding-bottom: 0.5em;">
-								%for language in subs_languages_list:
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
-								%end
-							</div>
-
-							<div class="ui row" style="padding-top: 0em;">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details['hearing_impaired']}}</div>
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details['forced']}}</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			%if len(seasons) == 0:
-				<div id="fondblanc" class="ui container">
-					<h3 class="ui header">No episode files available for this Series or Bazarr is still synchronizing with Sonarr. Please come back later.</h3>
-				</div>
-			%else:
-				%for season in seasons:
-				<div id="fondblanc" class="ui container">
-					%missing_subs = len([i for i in season if i['missing_subtitles'] != "[]"])
-					%total_subs = len(season)
-					%subs_label = ''
-					%if subs_languages is not None:
-					%	subs_label = '<div class="ui tiny '
-					%	if missing_subs == 0:
-					%		subs_label = subs_label + 'green'
-					%	else:
-					%		subs_label = subs_label + 'yellow'
-					%	end
-					%	subs_label = subs_label + ' circular label">' + str(total_subs - missing_subs) + ' / ' + str(total_subs) + '</div>'
-					%end
-					% season_number = None
-					% for season_temp in season:
-					%     season_number = season_temp['season']
-                    %     break
-					% end
-					<h1 class="ui header">Season {{season_number}}{{!subs_label}}</h1>
-					<div class="ui accordion">
-						<div class="title">
-							<div class="ui one column stackable center aligned page grid">
-								<div class="column twelve wide">
-						    	   	<h3 class="ui header"><i class="dropdown icon"></i>
-							    	Show/Hide Episodes</h3>
-								</div>
-							</div>
-						</div>
-						<div class="content season">
-							<table class="ui very basic single line selectable table">
-								<thead>
-									<tr>
-										<th class="collapsing"></th>
-										<th class="collapsing">Episode</th>
-                                       <th>Title</th>
-										<th class="collapsing">Existing<br>Subtitles</th>
-										<th class="collapsing">Missing<br>Subtitles</th>
-										<th class="collapsing">Manual<br>Search</th>
-										<th class="collapsing">Manual<br>Upload</th>
-									</tr>
-								</thead>
-								<tbody>
-								%for episode in season:
-									<tr>
-										<td class="collapsing">
-                                            %if episode['monitored'] == 'True':
-                                            <span data-tooltip="Episode monitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark icon"></i></span>
-                                            %else:
-                                            <span data-tooltip="Episode unmonitored in Sonarr" data-inverted='' data-position="top left"><i class="bookmark outline icon"></i></span>
-                                            %end
-                                        </td>
-										<td>{{episode['episode']}}</td>
-										<td>
-											% if episode['scene_name'] is not None:
-											<span data-tooltip="Scenename is: {{episode['scene_name']}}" data-inverted='' data-position="top left"><i class="info circle icon"></i></span>
-                                       	% end
-											<span data-tooltip="Path is: {{episode['path']}}" data-inverted='' data-position="top left"><a data-series_title="{{details['title']}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="episode_history">{{episode['title']}}</a></span>
-										</td>
-										<td>
-										%if episode['subtitles'] is not None:
-										%	actual_languages = ast.literal_eval(episode['subtitles'])
-										%   actual_languages.sort(key=lambda x: x[0])
-										%else:
-										%	actual_languages = '[]'
-										%end
-										%try:
-											%for language in actual_languages:
-												%if language[0].endswith(':forced'):
-												%	forced = True
-												%else:
-												%	forced = False
-												%end
-												%if language[1] is not None:
-												<a data-episodePath="{{episode['path']}}" data-subtitlesPath="{{path_replace(language[1])}}" data-language="{{alpha3_from_alpha2(str(language[0]))}}" data-sonarrSeriesId={{episode['sonarrSeriesId']}} data-sonarrEpisodeId={{episode['sonarrEpisodeId']}} class="remove_subtitles ui tiny label">
-                                                    {{!'<span class="ui" data-tooltip="Forced" data-inverted=""><i class="exclamation icon"></i></span>' if forced else ''}}{{language[0].split(':')[0]}}
-													<i class="delete icon"></i>
-												</a>
-												%else:
-												<div class="ui tiny label">
-													{{language[0]}}
-												</div>
-												%end
-											%end
-										%except:
-											%pass
-										%end
-										</td>
-										<td>
-                                        %try:
-                                        <%
-                                            if episode['missing_subtitles'] is not None:
-                                                missing_languages = ast.literal_eval(episode['missing_subtitles'])
-                                                missing_languages.sort()
-											end
-											if missing_languages is not None:
-                                                from get_subtitle import search_active
-                                                for language in missing_languages:
-													if episode['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and language in episode['failedAttempts']:
-                                                        for lang in ast.literal_eval(episode['failedAttempts']):
-                                                            if language in lang:
-																if search_active(lang[1]):
-                                        %>
-                                                                    <a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="get_subtitle ui tiny label">
-													                {{language}}
-                                                                    <i style="margin-left:3px; margin-right:0" class="search icon"></i>
-                                                                    </a>
-                                                                %else:
-                                                                    <a data-tooltip="Automatic searching delayed (adaptive search)" data-position="top right" data-inverted="" data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="get_subtitle ui tiny label">
-													                {{language}}
-                                                                    <i style="margin-left:3px; margin-right:0" class="search red icon"></i>
-                                                                    </a>
-                                                                %end
-                                                            %end
-                                                        %end
-                                                    %else:
-														<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{alpha3_from_alpha2(str(language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{"True" if len(language.split(':')) > 1 else "False"}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="get_subtitle ui tiny label">
-                                                            {{language}}
-                                                        <i style="margin-left:3px; margin-right:0" class="search icon"></i>
-                                                        </a>
-                                                    %end
-                                                %end
-											%end
-                                        %except:
-                                            %pass
-										%end
-										</td>
-										<td>
-											%if subs_languages is not None:
-											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-series_title="{{details['title']}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="manual_search ui tiny label"><i class="ui user icon" style="margin-right:0px" ></i></a>
-											%end
-										</td>
-										<td>
-											%if subs_languages is not None:
-											<a data-episodePath="{{episode['path']}}" data-scenename="{{episode['scene_name']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-series_title="{{details['title']}}" data-season="{{episode['season']}}" data-episode="{{episode['episode']}}" data-episode_title="{{episode['title']}}" data-sonarrSeriesId="{{episode['sonarrSeriesId']}}" data-sonarrEpisodeId="{{episode['sonarrEpisodeId']}}" class="manual_upload ui tiny label"><i class="ui cloud upload icon" style="margin-right:0px" ></i></a>
-											%end
-										</td>
-									</tr>
-								%end
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-				%end
-			%end
-		</div>
-
-		<div class="config_dialog ui small modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<div id="series_title"></div>
-			</div>
-			<div class="content">
-				<form name="series_form" id="series_form" action="" method="post" class="ui form">
-					<div class="ui grid">
-						<div class="four wide column">
-							<img id="series_poster" class="ui image" src="">
-						</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Audio Language</label>
-									</div>
-									<div class="nine wide column">
-										<div id="series_audio_language"></div>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Subtitles Language(s)</label>
-									</div>
-									<div class="nine wide column">
-										<select name="languages" id="series_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
-											<option value="">Languages</option>
-										    %if single_language is True:
-                                            <option value="None">None</option>
-                                            %end
-											%for language in languages:
-											<option value="{{language['code2']}}">{{language['name']}}</option>
-											%end
-										</select>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Hearing-Impaired</label>
-									</div>
-									<div class="nine wide column">
-										<div id="series_hearing-impaired_div" class="ui toggle checkbox">
-											<input name="hearing_impaired" id="series_hearing-impaired" type="checkbox">
-											<label></label>
-										</div>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Forced</label>
-									</div>
-									<div class="nine wide column">
-										<select name="forced" id="series_forced" class="ui fluid selection dropdown">
-											<option value="False">False</option>
-											<option value="True">True</option>
-											<option value="Both">Both</option>
-										</select>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</form>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-				<button type="submit" name="save" value="save" form="series_form" class="ui blue approve button">Save</button>
-			</div>
-		</div>
-
-		<div class="episode_dialog ui modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<span class="series_title_span"></span> - <span class="season_span"></span>x<span class="episode_span"></span> - <span class="episode_title_span"></span>
-			</div>
-			<div class="scrolling content">
-				<table id="episode_result" class="display" style="width:100%">
-					<thead>
-						<tr>
-							<th></th>
-							<th style="text-align: left;">Language.:</th>
-							<th style="text-align: left;">Provider:</th>
-							<th style="text-align: left;">Score:</th>
-							<th style="text-align: left;">Date:</th>
-						</tr>
-					</thead>
-				</table>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-			</div>
-		</div>
-
-		<div class="search_dialog ui modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<span class="series_title_span"></span> - <span class="season_span"></span>x<span class="episode_span"></span> - <span class="episode_title_span"></span>
-				<br><h5>Episode path is: <div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="episode_path_span"></span></div>
-				<br>Scenename is: <div class="ui tiny inverted label" style="background-color: orange;"><span id="episode_scenename_span"></span></div></h5>
-			</div>
-			<div class="scrolling content">
-				<table id="search_result" class="display" style="width:100%">
-					<thead>
-						<tr>
-							<th style="text-align: left;">Score:</th>
-							<th style="text-align: left;">Lang.:</th>
-							<th style="text-align: left;">HI:</th>
-							<th style="text-align: left;">Provider:</th>
-							<th style="text-align: left;">Matching:</th>
-							<th style="text-align: left;">Releases:</th>
-							<th></th>
-						</tr>
-					</thead>
-				</table>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-			</div>
-		</div>
-
-		<div class="upload_dialog ui small modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<span id="series_title_span_u"></span> - <span id="season_u"></span>x<span id="episode_u"></span> - <span id="episode_title_u"></span>
-			</div>
-			<div class="content">
-				<form class="ui form" name="upload_form" id="upload_form" action="{{base_url}}manual_upload_subtitle" method="post" enctype="multipart/form-data">
-					<div class="ui grid">
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>Language</label>
-							</div>
-							<div class="thirteen wide column">
-								<select class="ui search dropdown" id="language" name="language">
-									%for language in subs_languages_list:
-									<option value="{{language}}">{{language_from_alpha2(language)}}</option>
-									%end
-								</select>
-							</div>
-						</div>
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>Forced</label>
-							</div>
-							<div class="thirteen wide column">
-								<div class="ui toggle checkbox">
-									<input name="forced" type="checkbox" value="1">
-									<label></label>
-								</div>
-							</div>
-						</div>
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>File</label>
-							</div>
-							<div class="thirteen wide column">
-								<input type="file" name="upload">
-							</div>
-						</div>
-					</div>
-					<input type="hidden" id="upload_episodePath" name="episodePath" value="" />
-					<input type="hidden" id="upload_sceneName" name="sceneName" value="" />
-					<input type="hidden" id="upload_sonarrSeriesId" name="sonarrSeriesId" value="" />
-					<input type="hidden" id="upload_sonarrEpisodeId" name="sonarrEpisodeId" value="" />
-					<input type="hidden" id="upload_title" name="title" value="" />
-				</form>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-				<button type="submit" name="save" value="save" form="upload_form" class="ui blue approve button">Save</button>
-			</div>
-		</div>
-
-		% include('footer.tpl')
-	</body>
-</html>
-
-<script>
-	$('#scan_disk').on('click', function(){
-		$('#loader_text').text("Scanning Disk For Existing Subtitles...");
-		window.location = '{{base_url}}scan_disk/{{no}}';
-	});
-
-	$('#search_missing_subtitles').on('click', function(){
-		$(this).addClass('disabled');
-		$(this).find('i:first').addClass('loading');
-	    $.ajax({
-            url: '{{base_url}}search_missing_subtitles/{{no}}'
-        })
-	});
-
-	$('.remove_subtitles').on('click', function(){
-		const values = {
-			episodePath: $(this).attr("data-episodePath"),
-			language: $(this).attr("data-language"),
-			subtitlesPath: $(this).attr("data-subtitlesPath"),
-			sonarrSeriesId: $(this).attr("data-sonarrSeriesId"),
-			sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-			tvdbid: {{tvdbid}}
-		};
-
-		$('#loader_text').text("Deleting subtitle from disk...");
-
-		$.ajax({
-			url: "{{base_url}}remove_subtitles",
-			type: "POST",
-			dataType: "json",
-			data: values
-		});
-		$(document).ajaxStart(function(){
-			$('#loader').addClass('active');
-		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
-		});
-	});
-
-	$('.get_subtitle').on('click', function(){
-		const values = {
-			episodePath: $(this).attr("data-episodePath"),
-			sceneName: $(this).attr("data-sceneName"),
-			language: $(this).attr("data-language"),
-			hi: $(this).attr("data-hi"),
-			forced: $(this).attr("data-forced"),
-			sonarrSeriesId: $(this).attr('data-sonarrSeriesId'),
-			sonarrEpisodeId: $(this).attr('data-sonarrEpisodeId'),
-			title: "{{!str(details['title']).replace("'", "\\'")}}"
-		};
-
-		$('#loader_text').text("Downloading Subtitle...");
-
-		$.ajax({
-			url: "{{base_url}}get_subtitle",
-			type: "POST",
-			dataType: "json",
-			data: values
-		});
-		$(document).ajaxStart(function(){
-			$('#loader').addClass('active');
-		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
-		});
-	});
-
-	$('a:not(.manual_search, .manual_upload, .episode_history), .menu .item, button:not(#config, .cancel, #search_missing_subtitles)').on('click', function(){
-		$('#loader').addClass('active');
-	});
-
-	$('#config').on('click', function(){
-		$('#series_form').attr('action', '{{base_url}}edit_series/{{no}}');
-
-		$("#series_title").html($(this).data("title"));
-		$("#series_poster").attr("src", "{{base_url}}image_proxy" + $(this).data("poster"));
-
-		$("#series_audio_language").html($(this).data("audio"));
-
-		$('#series_languages').dropdown('clear');
-		const languages_array = eval($(this).data("languages"));
-		$('#series_languages').dropdown('set selected',languages_array);
-
-		$('#series_forced').dropdown('clear');
-		$('#series_forced').dropdown('set selected',$(this).data("forced"));
-
-		if ($(this).data("hearing-impaired") === "True") {
-			$("#series_hearing-impaired_div").checkbox('check');
-		} else {
-			$("#series_hearing-impaired_div").checkbox('uncheck');
+{% block head %}
+	<style>
+		#seriesFanart {
+			background-repeat: no-repeat;
+			background-size: cover;
+			background-position: top center;
+			box-sizing: initial;
+			margin-left: -32px;
+			margin-top: -16px;
+			padding: 2em;
 		}
 
-		$('.config_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show');
-	});
+		#seriesDetails {
+			padding: 30px;
+			background: rgba(0, 0, 0, 0.7);
+			color: white;
+			margin: -32px;
+		}
 
-	$('.episode_history').on('click', function(){
-		$(".series_title_span").html($(this).data("series_title"));
-		$(".season_span").html($(this).data("season"));
-		$(".episode_span").html($(this).data("episode"));
-		$(".episode_title_span").html($(this).data("episode_title"));
+		#seriesPoster {
+			width: 250px;
+		}
 
-		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+		h1 {
+			color: white;
+		}
 
-		$('#episode_result').DataTable( {
-		    destroy: true,
-		    language: {
-				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
-				zeroRecords: 'No History Records Found For This Episode'
-		    },
-		    paging: true,
-    		lengthChange: false,
-			pageLength: 5,
-    		searching: true,
-    		ordering: true,
-    		processing: false,
-        	serverSide: false,
-        	ajax: {
-				url: '{{base_url}}episode_history/' + sonarrEpisodeId
-			},
-			drawCallback: function(settings) {
-                $('.inline.dropdown').dropdown();
-                $('.ui.accordion').accordion();
-			},
-			columns: [
-				{ data: 'action'},
-				{ data: 'language' },
-				{ data: 'provider' },
-				{ data: 'score'},
-				{ data: 'timestamp' }
-			]
-		} );
+		span {
+			margin-right: 0.5em;
+		}
+	</style>
+{% endblock head %}
 
-		$('.episode_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show');
-	});
+{% block body %}
+	<div class="container-fluid" id="seriesFanart">
+		<div class="row justify-content-md-center" id="seriesDetails">
+			<div class="col-sm-auto" id="seriesPosterColumn">
+				<img id="seriesPoster" src="">
+			</div>
+			<div class="col">
+				<div class="container-fluid">
+					<div class="row">
+						<h1><span id="seriesTitle"></span></h1>
+						<i class="far fa-clone" id="seriesAlternateTitles" data-toggle="tooltip" data-placement="right"></i>
+					</div>
+					<div class="row">
+						<h5><span id="seriesAudioLanguage" class="badge badge-secondary"></span></h5>
+						<h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
+						<h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
+					</div>
+					<div class="row">
+						<h5><span id="seriesSubtitlesLanguages"></span></h5>
+					</div>
+					<div class="row">
+						<h5><span id="seriesHearingImpaired" class="badge badge-secondary"></span></h5>
+						<h5><span id="seriesForced" class="badge badge-secondary"></span></h5>
+					</div>
+					<div class="row">
+						<span id="seriesDescription"></span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+    <div class="container-fluid">
+        <!-- Bread crumb and right sidebar toggle -->
+        <!-- ============================================================== -->
+		<table id="episodes" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th></th>
+                <th>Episode</th>
+                <th>Title</th>
+                <th>Existing Subtitles</th>
+                <th>Missing Subtitles</th>
+                <th>Manual Search</th>
+                <th>Manual Upload</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock body %}
 
-	$('.manual_search').on('click', function(){
-		$(".series_title_span").html($(this).data("series_title"));
-		$(".season_span").html($(this).data("season"));
-		$(".episode_span").html($(this).data("episode"));
-		$(".episode_title_span").html($(this).data("episode_title"));
-		$("#episode_path_span").html($(this).attr("data-episodePath"));
-		$("#episode_scenename_span").html($(this).attr("data-sceneName"));
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+        	$.ajax({
+				url: "{{ url_for('api.series') }}?id={{id}}",
+				})
+			  	.done(function( data ) {
+					var seriesDetails = data.data[0];
+					$('#seriesFanart').css('background-image', "url('{{ url_for('image_proxy', url='MediaCover/'+id+'/fanart.jpg') }}')");
+					$('#seriesPoster').attr("src","{{ url_for('image_proxy', url='MediaCover/'+id+'/poster-250.jpg') }}");
+					$('#seriesTitle').text(seriesDetails['title']);
 
-		episodePath = $(this).attr("data-episodePath");
-		sceneName = $(this).attr("data-sceneName");
-		language = $(this).attr("data-language");
-        hi = $(this).attr("data-hi");
-        forced = $(this).attr("data-forced");
-		sonarrSeriesId = $(this).attr("data-sonarrSeriesId");
-		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
-		var languages = Array.from({{!subs_languages_list}});
-		var is_pb = languages.includes('pb');
-		var is_pt = languages.includes('pt');
-
-		const values = {
-			episodePath: episodePath,
-			sceneName: sceneName,
-			language: language,
-			hi: hi,
-			forced: forced,
-			sonarrSeriesId: sonarrSeriesId,
-			sonarrEpisodeId: sonarrEpisodeId,
-			title: "{{!str(details['title']).replace("'", "\'")}}"
-		};
-
-		$('#search_result').DataTable( {
-		    destroy: true,
-		    language: {
-				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
-				zeroRecords: 'No Subtitles Found For This Episode'
-		    },
-		    paging: true,
-    		lengthChange: false,
-			pageLength: 5,
-    		searching: false,
-    		ordering: false,
-    		processing: false,
-        	serverSide: false,
-        	ajax: {
-				url: '{{base_url}}manual_search',
-				type: 'POST',
-                data: values
-			},
-			drawCallback: function(settings) {
-                $('.inline.dropdown').dropdown();
-                $('.ui.accordion').accordion();
-			},
-			columns: [
-				{ data: 'score',
-				render: function ( data, type, row ) {
-        			return data +'%';
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
-		    			return 'pb'
+					if (seriesDetails['alternateTitles'].length > 0) {
+						$('#seriesAlternateTitles').attr("title", "Alternative Titles:<br>"+seriesDetails['alternateTitles']);
+						$('#seriesAlternateTitles').tooltip({html:true});
 					} else {
-		    			return data.language
+						$('#seriesAlternateTitles').hide();
 					}
+
+					$('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
+					$('#seriesMappedPath').text(seriesDetails['mapped_path']);
+					$('#seriesFileCount').text(seriesDetails['episodeFileCount']+' files');
+
+					var languages = '';
+					if (seriesDetails['languages'] !== 'None') {
+						seriesDetails['languages'].forEach(appendFunc);
 					}
-				},
-				{ data: 'hearing_impaired' },
-				{ data: null,
-				render: function ( data, type, row ) {
-        			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-					const array_matches = data.matches;
-					const array_dont_matches = data.dont_matches;
-					let i;
-					let text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">';
-					text += array_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">';
-					for (i = 0; i < array_matches.length; i++) {
-						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
+
+					function appendFunc(value) {
+						languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
 					}
-					text += '</div></div>';
-					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">';
-					text += array_dont_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">';
-					for (i = 0; i < array_dont_matches.length; i++) {
-						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
-					}
-					text += '</div></div>';
-        			return text;
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-                    const array_release_info = data.release_info;
-                    let i;
-                    let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content season">';
-                    for (i = 0; i < array_release_info.length; i++) {
-                        text += '<div class="ui tiny label" style="margin-bottom: 2px;">' + array_release_info[i] + '</div>';
-                    }
-                    text += '</div></div>';
-                    return text;
-                    }
-				},
-                { data: null,
-				render: function ( data, type, row ) {
-        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId)" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
-    				}
-				}
-			]
-		} );
 
-		$('.search_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show');
-	});
+					$('#seriesSubtitlesLanguages').html(languages);
+					$('#seriesHearingImpaired').text('Hearing-Impaired: '+seriesDetails['hearing_impaired']);
+					$('#seriesForced').text('Forced: '+seriesDetails['forced']);
+					$('#seriesDescription').text(seriesDetails['overview']);
+			  	});
 
-	$('.manual_upload').on('click', function(){
-		$("#series_title_span_u").html($(this).data("series_title"));
-		$("#season_u").html($(this).data("season"));
-		$("#episode_u").html($(this).data("episode"));
-		$("#episode_title_u").html($(this).data("episode_title"));
-
-		episodePath = $(this).attr("data-episodePath");
-		sceneName = $(this).attr("data-sceneName");
-		language = $(this).attr("data-language");
-        hi = $(this).attr("data-hi");
-		sonarrSeriesId = $(this).attr("data-sonarrSeriesId");
-		sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
-		var languages = Array.from({{!subs_languages_list}});
-		var is_pb = languages.includes('pb');
-		var is_pt = languages.includes('pt');
-		var title = "{{!details['title'].replace("'", "\'")}}";
-
-		$('#language').dropdown();
-
-		$('#upload_episodePath').val(episodePath);
-		$('#upload_sceneName').val(sceneName);
-		$('#upload_sonarrSeriesId').val(sonarrSeriesId);
-		$('#upload_sonarrEpisodeId').val(sonarrEpisodeId);
-		$('#upload_title').val(title);
-
-		$('.upload_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show');
-	});
-
-	function manual_get(button, episodePath, sceneName, hi, sonarrSeriesId, sonarrEpisodeId){
-		const values = {
-				subtitle: $(button).attr("data-subtitle"),
-				provider: $(button).attr("data-provider"),
-				episodePath: episodePath,
-				sceneName: sceneName,
-				language: $(button).attr("data-language"),
-				hi: hi,
-				sonarrSeriesId: sonarrSeriesId,
-				sonarrEpisodeId: sonarrEpisodeId,
-				title: "{{!str(details['title']).replace("'", "\\'")}}"
-		};
-
-		$('#loader_text').text("Downloading Subtitle...");
-		$('#loader').addClass('active');
-
-		$('.search_dialog').modal('hide');
-
-		$.ajax({
-			url: "{{base_url}}manual_get_subtitle",
-			type: "POST",
-			dataType: "json",
-			data: values
-		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
-		});
-	}
-</script>
+            var table = $('#episodes').DataTable({
+                "processing": false,
+                "serverSide": true,
+                "searching": false,
+                "ordering": false,
+                "lengthChange": false,
+                "responsive": true,
+                "ajax": "{{ url_for('api.episodes') }}?id=160",
+                "columns": [
+                    {"data": "monitored"},
+                    {"data": "episode"},
+                    {"data": "title"},
+                    {"data": "subtitles"},
+                    {"data": "missing_subtitles"},
+                    {"data": "title"},
+                    {"data": "title"}
+                ]
+            });
+        });
+    </script>
+{% endblock tail %}

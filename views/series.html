@@ -50,7 +50,11 @@
                 "pageLength": {{ settings.general.page_size }},
                 "ajax": "{{ url_for('api.series') }}",
                 "columns": [
-                    {"data": "title"},
+                    {"data": null,
+                        "render": function (data) {
+                            return '<a href="{{ url_for( 'episodes' ) }}' + data.sonarrSeriesId + '">' + data.title + '</a>'
+                        }
+                    },
                     {
                         "data": null,
                         "className": "dt-center",
