@@ -388,6 +388,7 @@ a.link {
         .light-logo {
           display: none;
         }
+
         b {
           line-height: 60px;
           display: inline-block;
@@ -438,8 +439,14 @@ a.link {
 .page-titles {
   background: #4f566f;
   margin: 0 -30px 30px;
-  padding: 10px;
+  min-height: 50px;
+  padding: 0;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
+
+  .btn {
+    min-height: 50px;
+    width: 80px;
+  }
 }
 
 .card-no-border {
