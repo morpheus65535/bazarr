@@ -130,13 +130,22 @@
                 "ordering": false,
                 "lengthChange": false,
                 "responsive": true,
-                "ajax": "{{ url_for('api.episodes') }}?id=160",
+				"pageLength": 250,
+                "ajax": "{{ url_for('api.episodes') }}?id={{id}}",
                 "columns": [
-                    {"data": "monitored"},
+                    {"data": "monitored",
+                        "render": function (data, type, row) {
+                            if (data === 'False') {
+                                return '<i class="far fa-bookmark" data-toggle="tooltip" data-placement="right" title="Episode unmonitored in Sonarr"></i>';
+                            } else if (data === 'True') {
+                                return '<i class="fas fa-bookmark" data-toggle="tooltip" data-placement="right" title="Episode monitored in Sonarr"></i>';
+                            }
+                        }
+					},
                     {"data": "episode"},
                     {"data": "title"},
-                    {"data": "subtitles"},
-                    {"data": "missing_subtitles"},
+                    {"data": "subtitles[, ]"},
+                    {"data": "missing_subtitles[, ]"},
                     {"data": "title"},
                     {"data": "title"}
                 ]

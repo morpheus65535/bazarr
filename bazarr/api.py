@@ -89,7 +89,13 @@ class Series(Resource):
 
 class Episodes(Resource):
     def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
         seriesId = request.args.get('id')
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE sonarrSeriesId=?",
+                                     (seriesId,), only_one=True)['count']
         if seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=?", (seriesId,))
         else:
@@ -117,7 +123,7 @@ class Episodes(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
-        return jsonify(result)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 
 class Movies(Resource):
