@@ -1513,8 +1513,8 @@ def get_subtitle():
 
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.form.episodePath
-    sceneName = request.form.sceneName
+    episodePath = request.form.get('episodePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
@@ -1522,7 +1522,7 @@ def get_subtitle():
     forced = request.form.get('forced').capitalize()
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-    title = request.form.title
+    title = request.form.get('title')
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
