@@ -171,26 +171,26 @@
 
                             function appendFunc(value) {
                             	if (value[1] === null) {
-									languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '">' + value[0].code2 + '</span> ';
+									languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced':'') + '">' + value[0].code2 + ((value[0].forced) ? ':forced':'') + '</span> ';
 								} else {
-                            		languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '" data-episodePath="'+data.path+'" data-language="'+value[0].code3+'" data-subtitlesPath="'+value[1]+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'>' + value[0].code2 + ' <i class="far fa-trash-alt"></i></a> ';
+                            		languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced':'') + '" data-episodePath="'+data.path+'" data-language="'+value[0].code3+'" data-subtitlesPath="'+value[1]+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'>' + value[0].code2 + ((value[0].forced) ? ':forced':'') + ' <i class="far fa-trash-alt"></i></a> ';
 								}
                             }
                         }
 					},
-                    {"data": "missing_subtitles",
+                    {"data": null,
                         "render": function (data) {
-                            if (data !== 'None') {
+                            if (data.missing_subtitles !== 'None') {
                                 var languages = '';
-                                data.forEach(appendFunc);
+                                data.missing_subtitles.forEach(appendFunc);
                                 return languages;
                             } else {
                                 return null;
                             }
 
                             function appendFunc(value) {
-                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-                            }
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced':'') + '" data-episodepath="'+data.path+'" data-scenename="'+data.scene_name+'" data-title="'+data.title+'" data-language="'+value.code3+'" data-hi="'+seriesDetails.hearing_impaired+'" data-forced="'+value.forced+'" data-sonarrepisodeid='+data.sonarrEpisodeId+'>' + value.code2 + ((value.forced) ? ':forced':'') + ' <i class="fas fa-search"></i></a> ';
+							}
                         }
 					},
                     {"data": "title"},
@@ -211,6 +211,33 @@
 				var cell = $(this).closest('td');
 				$.ajax({
 					url: "{{ url_for('remove_subtitles') }}",
+					type: "POST",
+					dataType: "json",
+					data: values,
+					beforeSend: function() {
+						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+					},
+					complete: function() {
+						$('#episodes').DataTable().ajax.reload(null, false);
+					}
+				});
+			});
+
+			$('#episodes').on('click', '.get_subtitle', function(e){
+				e.preventDefault()
+				const values = {
+					episodePath: $(this).attr("data-episodepath"),
+					sceneName: $(this).attr("data-scenename"),
+					language: $(this).attr("data-language"),
+					hi: $(this).attr("data-hi"),
+					forced: $(this).attr("data-forced"),
+					sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+					sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
+					title: seriesDetails['title']
+				};
+				var cell = $(this).closest('td');
+				$.ajax({
+					url: "{{ url_for('get_subtitle') }}",
 					type: "POST",
 					dataType: "json",
 					data: values,

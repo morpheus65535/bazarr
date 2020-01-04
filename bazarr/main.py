@@ -1473,13 +1473,12 @@ def execute_task(taskid):
 @app.route('/remove_subtitles', methods=['POST'])
 @login_required
 def remove_subtitles():
-    authorize()
     episodePath = request.forms.episodePath
     language = request.forms.get('language')
     subtitlesPath = request.forms.subtitlesPath
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    
+
     try:
         os.remove(path_replace(subtitlesPath))
         result = language_from_alpha3(language) + " subtitles deleted from disk."
@@ -1498,7 +1497,7 @@ def remove_subtitles_movie():
     language = request.forms.get('language')
     subtitlesPath = request.forms.subtitlesPath
     radarrId = request.forms.get('radarrId')
-    
+
     try:
         os.remove(subtitlesPath)
         result = language_from_alpha3(language) + " subtitles deleted from disk."
@@ -1516,9 +1515,11 @@ def get_subtitle():
 
     episodePath = request.form.episodePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
     title = request.form.title
@@ -1542,6 +1543,8 @@ def get_subtitle():
     except OSError:
         pass
 
+    return ''
+
 
 @app.route('/manual_search', methods=['POST'])
 @login_required
@@ -1550,9 +1553,11 @@ def manual_search_json():
 
     episodePath = request.form.episodePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     title = request.form.title
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1569,9 +1574,11 @@ def manual_get_subtitle():
 
     episodePath = request.form.episodePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     selected_provider = request.form.get('provider')
     subtitle = request.form.subtitle
     sonarrSeriesId = request.form.get('sonarrSeriesId')
@@ -1606,6 +1613,8 @@ def perform_manual_upload_subtitle():
 
     episodePath = request.form.episodePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
     forced = True if request.form.get('forced') == '1' else False
     upload = request.files.get('upload')
@@ -1650,9 +1659,11 @@ def get_subtitle_movie():
 
     moviePath = request.form.moviePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     radarrId = request.form.get('radarrId')
     title = request.form.title
     providers_list = get_providers()
@@ -1683,9 +1694,11 @@ def manual_search_movie_json():
 
     moviePath = request.form.moviePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     title = request.form.title
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1702,9 +1715,11 @@ def manual_get_subtitle_movie():
 
     moviePath = request.form.moviePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
-    hi = request.form.get('hi')
-    forced = request.form.get('forced')
+    hi = request.form.get('hi').capitalize()
+    forced = request.form.get('forced').capitalize()
     selected_provider = request.form.provider
     subtitle = request.form.subtitle
     radarrId = request.form.get('radarrId')
@@ -1737,6 +1752,8 @@ def perform_manual_upload_subtitle_movie():
 
     moviePath = request.form.moviePath
     sceneName = request.form.sceneName
+    if sceneName == "null":
+        sceneName = "None"
     language = request.form.get('language')
     forced = True if request.form.get('forced') == '1' else False
     upload = request.files.get('upload')

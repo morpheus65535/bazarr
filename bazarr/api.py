@@ -106,17 +106,21 @@ class Episodes(Resource):
             if item['subtitles']:
                 item.update({"subtitles": ast.literal_eval(item['subtitles'])})
                 for subs in item['subtitles']:
-                    subs[0] = {"name": language_from_alpha2(subs[0]),
-                               "code2": subs[0],
-                               "code3": alpha3_from_alpha2(subs[0])}
+                    subtitle = subs[0].split(':')
+                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
+                               "code2": subtitle[0],
+                               "code3": alpha3_from_alpha2(subtitle[0]),
+                               "forced": True if len(subtitle) > 1 else False}
 
             # Parse missing subtitles
             if item['missing_subtitles']:
                 item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
                 for i, subs in enumerate(item['missing_subtitles']):
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(subs),
-                                                    "code2": subs,
-                                                    "code3": alpha3_from_alpha2(subs)}
+                    subtitle = subs.split(':')
+                    item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
+                                                    "code2": subtitle[0],
+                                                    "code3": alpha3_from_alpha2(subtitle[0]),
+                                                    "forced": True if len(subtitle) > 1 else False}
 
             # Provide mapped path
             mapped_path = path_replace(item['path'])
