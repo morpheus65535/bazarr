@@ -159,8 +159,36 @@
 					},
                     {"data": "episode"},
                     {"data": "title"},
-                    {"data": "subtitles[, ]"},
-                    {"data": "missing_subtitles[, ]"},
+                    {"data": "subtitles",
+                        "render": function (data) {
+                            if (data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '">' + value[0].code2 + '</span> ';
+                            }
+                        }
+					},
+                    {"data": "missing_subtitles",
+                        "render": function (data) {
+                            if (data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
+					},
                     {"data": "title"},
                     {"data": "title"}
                 ]
