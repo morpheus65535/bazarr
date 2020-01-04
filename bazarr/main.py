@@ -1551,14 +1551,14 @@ def get_subtitle():
 def manual_search_json():
 
 
-    episodePath = request.form.episodePath
-    sceneName = request.form.sceneName
+    episodePath = request.form.get('episodePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     hi = request.form.get('hi').capitalize()
     forced = request.form.get('forced').capitalize()
-    title = request.form.title
+    title = request.form.get('title')
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
@@ -1572,18 +1572,18 @@ def manual_get_subtitle():
 
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.form.episodePath
-    sceneName = request.form.sceneName
+    episodePath = request.form.get('episodePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     hi = request.form.get('hi').capitalize()
     forced = request.form.get('forced').capitalize()
     selected_provider = request.form.get('provider')
-    subtitle = request.form.subtitle
+    subtitle = request.form.get('subtitle')
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-    title = request.form.title
+    title = request.form.get('title')
     providers_auth = get_providers_auth()
 
     try:
@@ -1611,8 +1611,8 @@ def perform_manual_upload_subtitle():
 
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.form.episodePath
-    sceneName = request.form.sceneName
+    episodePath = request.form.get('episodePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
@@ -1620,7 +1620,7 @@ def perform_manual_upload_subtitle():
     upload = request.files.get('upload')
     sonarrSeriesId = request.form.get('sonarrSeriesId')
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-    title = request.form.title
+    title = request.form.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1657,15 +1657,15 @@ def get_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.form.moviePath
-    sceneName = request.form.sceneName
+    moviePath = request.form.get('moviePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     hi = request.form.get('hi').capitalize()
     forced = request.form.get('forced').capitalize()
     radarrId = request.form.get('radarrId')
-    title = request.form.title
+    title = request.form.get('title')
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
@@ -1692,14 +1692,14 @@ def get_subtitle_movie():
 def manual_search_movie_json():
 
 
-    moviePath = request.form.moviePath
-    sceneName = request.form.sceneName
+    moviePath = request.form.get('moviePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     hi = request.form.get('hi').capitalize()
     forced = request.form.get('forced').capitalize()
-    title = request.form.title
+    title = request.form.get('title')
     providers_list = get_providers()
     providers_auth = get_providers_auth()
 
@@ -1713,17 +1713,17 @@ def manual_get_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.form.moviePath
-    sceneName = request.form.sceneName
+    moviePath = request.form.get('moviePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     hi = request.form.get('hi').capitalize()
     forced = request.form.get('forced').capitalize()
-    selected_provider = request.form.provider
-    subtitle = request.form.subtitle
+    selected_provider = request.form.get('provider')
+    subtitle = request.form.get('subtitle')
     radarrId = request.form.get('radarrId')
-    title = request.form.title
+    title = request.form.get('title')
     providers_auth = get_providers_auth()
 
     try:
@@ -1750,15 +1750,15 @@ def perform_manual_upload_subtitle_movie():
 
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.form.moviePath
-    sceneName = request.form.sceneName
+    moviePath = request.form.get('moviePath')
+    sceneName = request.form.get('sceneName')
     if sceneName == "null":
         sceneName = "None"
     language = request.form.get('language')
     forced = True if request.form.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.form.get('radarrId')
-    title = request.form.title
+    title = request.form.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
