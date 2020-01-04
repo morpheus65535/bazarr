@@ -396,7 +396,7 @@ def save_wizard():
     
     settings.addic7ed.username = request.forms.settings_addic7ed_username
     settings.addic7ed.password = request.forms.settings_addic7ed_password
-    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agent)
+    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.settings_assrt_token
     settings.legendastv.username = request.forms.settings_legendastv_username
     settings.legendastv.password = request.forms.settings_legendastv_password
@@ -1925,7 +1925,7 @@ def get_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    moviePath = request.forms.moviePat
+    moviePath = request.forms.moviePath
     sceneName = request.forms.sceneName
     language = request.forms.language
     hi = request.forms.hi
