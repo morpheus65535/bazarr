@@ -259,9 +259,9 @@ def wizard():
 def save_wizard():
     authorize()
 
-    settings_general_ip = request.forms.settings_general_ip
-    settings_general_port = request.forms.settings_general_port
-    settings_general_baseurl = request.forms.settings_general_baseurl
+    settings_general_ip = request.forms.get('settings_general_ip')
+    settings_general_port = request.forms.get('settings_general_port')
+    settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if not settings_general_baseurl.endswith('/'):
         settings_general_baseurl += '/'
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
@@ -273,35 +273,35 @@ def save_wizard():
     settings_general_pathmapping_movie = []
     settings_general_pathmapping_movie.extend(
         [list(a) for a in zip(settings_general_sourcepath_movie, settings_general_destpath_movie)])
-    settings_general_single_language = request.forms.settings_general_single_language
+    settings_general_single_language = request.forms.get('settings_general_single_language')
     if settings_general_single_language is None:
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
-    settings_general_use_sonarr = request.forms.settings_general_use_sonarr
+    settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
     if settings_general_use_sonarr is None:
         settings_general_use_sonarr = 'False'
     else:
         settings_general_use_sonarr = 'True'
-    settings_general_use_radarr = request.forms.settings_general_use_radarr
+    settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
     if settings_general_use_radarr is None:
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
-    settings_general_embedded = request.forms.settings_general_embedded
+    settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
-    settings_subfolder = request.forms.settings_subfolder
-    settings_subfolder_custom = request.forms.settings_subfolder_custom
-    settings_upgrade_subs = request.forms.settings_upgrade_subs
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
     if settings_upgrade_subs is None:
         settings_upgrade_subs = 'False'
     else:
         settings_upgrade_subs = 'True'
-    settings_days_to_upgrade_subs = request.forms.settings_days_to_upgrade_subs
-    settings_upgrade_manual = request.forms.settings_upgrade_manual
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
     if settings_upgrade_manual is None:
         settings_upgrade_manual = 'False'
     else:
@@ -322,16 +322,16 @@ def save_wizard():
     settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
     settings.general.upgrade_manual = text_type(settings_upgrade_manual)
     
-    settings_sonarr_ip = request.forms.settings_sonarr_ip
-    settings_sonarr_port = request.forms.settings_sonarr_port
-    settings_sonarr_baseurl = request.forms.settings_sonarr_baseurl
-    settings_sonarr_ssl = request.forms.settings_sonarr_ssl
+    settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
+    settings_sonarr_port = request.forms.get('settings_sonarr_port')
+    settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
+    settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
     if settings_sonarr_ssl is None:
         settings_sonarr_ssl = 'False'
     else:
         settings_sonarr_ssl = 'True'
-    settings_sonarr_apikey = request.forms.settings_sonarr_apikey
-    settings_sonarr_only_monitored = request.forms.settings_sonarr_only_monitored
+    settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    settings_sonarr_only_monitored = request.forms.get('settings_sonarr_only_monitored')
     if settings_sonarr_only_monitored is None:
         settings_sonarr_only_monitored = 'False'
     else:
@@ -344,16 +344,16 @@ def save_wizard():
     settings.sonarr.apikey = text_type(settings_sonarr_apikey)
     settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
     
-    settings_radarr_ip = request.forms.settings_radarr_ip
-    settings_radarr_port = request.forms.settings_radarr_port
-    settings_radarr_baseurl = request.forms.settings_radarr_baseurl
-    settings_radarr_ssl = request.forms.settings_radarr_ssl
+    settings_radarr_ip = request.forms.get('settings_radarr_ip')
+    settings_radarr_port = request.forms.get('settings_radarr_port')
+    settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
+    settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
     if settings_radarr_ssl is None:
         settings_radarr_ssl = 'False'
     else:
         settings_radarr_ssl = 'True'
-    settings_radarr_apikey = request.forms.settings_radarr_apikey
-    settings_radarr_only_monitored = request.forms.settings_radarr_only_monitored
+    settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    settings_radarr_only_monitored = request.forms.get('settings_radarr_only_monitored')
     if settings_radarr_only_monitored is None:
         settings_radarr_only_monitored = 'False'
     else:
@@ -370,50 +370,50 @@ def save_wizard():
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
         settings_subliminal_providers)
     
-    settings_addic7ed_random_agents = request.forms.settings_addic7ed_random_agents
+    settings_addic7ed_random_agents = request.forms.get('settings_addic7ed_random_agents')
     if settings_addic7ed_random_agents is None:
         settings_addic7ed_random_agents = 'False'
     else:
         settings_addic7ed_random_agents = 'True'
     
-    settings_opensubtitles_vip = request.forms.settings_opensubtitles_vip
+    settings_opensubtitles_vip = request.forms.get('settings_opensubtitles_vip')
     if settings_opensubtitles_vip is None:
         settings_opensubtitles_vip = 'False'
     else:
         settings_opensubtitles_vip = 'True'
     
-    settings_opensubtitles_ssl = request.forms.settings_opensubtitles_ssl
+    settings_opensubtitles_ssl = request.forms.get('settings_opensubtitles_ssl')
     if settings_opensubtitles_ssl is None:
         settings_opensubtitles_ssl = 'False'
     else:
         settings_opensubtitles_ssl = 'True'
     
-    settings_opensubtitles_skip_wrong_fps = request.forms.settings_opensubtitles_skip_wrong_fps
+    settings_opensubtitles_skip_wrong_fps = request.forms.get('settings_opensubtitles_skip_wrong_fps')
     if settings_opensubtitles_skip_wrong_fps is None:
         settings_opensubtitles_skip_wrong_fps = 'False'
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
     
-    settings.addic7ed.username = request.forms.settings_addic7ed_username
-    settings.addic7ed.password = request.forms.settings_addic7ed_password
-    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agent)
-    settings.assrt.token = request.forms.settings_assrt_token
-    settings.legendastv.username = request.forms.settings_legendastv_username
-    settings.legendastv.password = request.forms.settings_legendastv_password
-    settings.opensubtitles.username = request.forms.settings_opensubtitles_username
-    settings.opensubtitles.password = request.forms.settings_opensubtitles_password
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
+    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
+    settings.assrt.token = request.forms.get('settings_assrt_token')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
-    settings.xsubs.username = request.forms.settings_xsubs_username
-    settings.xsubs.password = request.forms.settings_xsubs_password
-    settings.napisy24.username = request.forms.settings_napisy24_username
-    settings.napisy24.password = request.forms.settings_napisy24_password
-    settings.subscene.username = request.forms.settings_subscene_username
-    settings.subscene.password = request.forms.settings_subscene_password
-    settings.titlovi.username = request.forms.settings_titlovi_username
-    settings.titlovi.password = request.forms.settings_titlovi_password
-    settings.betaseries.token = request.forms.settings_betaseries_token
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
+    settings.napisy24.username = request.forms.get('settings_napisy24_username')
+    settings.napisy24.password = request.forms.get('settings_napisy24_password')
+    settings.subscene.username = request.forms.get('settings_subscene_username')
+    settings.subscene.password = request.forms.get('settings_subscene_password')
+    settings.titlovi.username = request.forms.get('settings_titlovi_username')
+    settings.titlovi.password = request.forms.get('settings_titlovi_password')
+    settings.betaseries.token = request.forms.get('settings_betaseries_token')
     
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     # Disable all languages in DB
@@ -422,7 +422,7 @@ def save_wizard():
         # Enable each desired language in DB
         database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
     
-    settings_serie_default_enabled = request.forms.settings_serie_default_enabled
+    settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
         settings_serie_default_enabled = 'False'
     else:
@@ -434,14 +434,14 @@ def save_wizard():
         settings_serie_default_languages = 'None'
     settings.general.serie_default_language = text_type(settings_serie_default_languages)
     
-    settings_serie_default_hi = request.forms.settings_serie_default_hi
+    settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
     settings.general.serie_default_hi = text_type(settings_serie_default_hi)
     
-    settings_movie_default_enabled = request.forms.settings_movie_default_enabled
+    settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
@@ -453,14 +453,14 @@ def save_wizard():
         settings_movie_default_languages = 'None'
     settings.general.movie_default_language = text_type(settings_movie_default_languages)
     
-    settings_movie_default_hi = request.forms.settings_movie_default_hi
+    settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
     
-    settings_movie_default_forced = str(request.forms.settings_movie_default_forced)
+    settings_movie_default_forced = str(request.forms.get('settings_movie_default_forced'))
     settings.general.movie_default_forced = text_type(settings_movie_default_forced)
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -676,8 +676,8 @@ def edit_series(no):
         if str(lang) == "['']":
             lang = '[]'
     
-    hi = request.forms.hearing_impaired
-    forced = request.forms.forced
+    hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
     
     if hi == "on":
         hi = "True"
@@ -698,11 +698,11 @@ def edit_serieseditor():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    series = request.forms.series
+    series = request.forms.get('series')
     series = ast.literal_eval(str('[' + series + ']'))
     lang = request.forms.getall('languages')
-    hi = request.forms.hearing_impaired
-    forced = request.forms.forced
+    hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     for serie in series:
         if str(lang) != "[]" and str(lang) != "['']":
@@ -806,11 +806,11 @@ def edit_movieseditor():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    movies = request.forms.movies
+    movies = request.forms.get('movies')
     movies = ast.literal_eval(str('[' + movies + ']'))
     lang = request.forms.getall('languages')
-    hi = request.forms.hearing_impaired
-    forced = request.forms.forced
+    hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
 
     for movie in movies:
         if str(lang) != "[]" and str(lang) != "['']":
@@ -852,8 +852,8 @@ def edit_movie(no):
         if str(lang) == "['']":
             lang = '[]'
     
-    hi = request.forms.hearing_impaired
-    forced = request.forms.forced
+    hi = request.forms.get('hearing_impaired')
+    forced = request.forms.get('forced')
     
     if hi == "on":
         hi = "True"
@@ -1199,22 +1199,22 @@ def save_settings():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    settings_general_ip = request.forms.settings_general_ip
-    settings_general_port = request.forms.settings_general_port
-    settings_general_baseurl = request.forms.settings_general_baseurl
+    settings_general_ip = request.forms.get('settings_general_ip')
+    settings_general_port = request.forms.get('settings_general_port')
+    settings_general_baseurl = request.forms.get('settings_general_baseurl')
     if not settings_general_baseurl.endswith('/'):
         settings_general_baseurl += '/'
-    settings_general_debug = request.forms.settings_general_debug
+    settings_general_debug = request.forms.get('settings_general_debug')
     if settings_general_debug is None:
         settings_general_debug = 'False'
     else:
         settings_general_debug = 'True'
-    settings_general_chmod_enabled = request.forms.settings_general_chmod_enabled
+    settings_general_chmod_enabled = request.forms.get('settings_general_chmod_enabled')
     if settings_general_chmod_enabled is None:
         settings_general_chmod_enabled = 'False'
     else:
         settings_general_chmod_enabled = 'True'
-    settings_general_chmod = request.forms.settings_general_chmod
+    settings_general_chmod = request.forms.get('settings_general_chmod')
     settings_general_sourcepath = request.forms.getall('settings_general_sourcepath')
     settings_general_destpath = request.forms.getall('settings_general_destpath')
     settings_general_pathmapping = []
@@ -1224,95 +1224,95 @@ def save_settings():
     settings_general_pathmapping_movie = []
     settings_general_pathmapping_movie.extend(
         [list(a) for a in zip(settings_general_sourcepath_movie, settings_general_destpath_movie)])
-    settings_general_branch = request.forms.settings_general_branch
-    settings_general_automatic = request.forms.settings_general_automatic
+    settings_general_branch = request.forms.get('settings_general_branch')
+    settings_general_automatic = request.forms.get('settings_general_automatic')
     if settings_general_automatic is None:
         settings_general_automatic = 'False'
     else:
         settings_general_automatic = 'True'
-    settings_general_update_restart = request.forms.settings_general_update_restart
+    settings_general_update_restart = request.forms.get('settings_general_update_restart')
     if settings_general_update_restart is None:
         settings_general_update_restart = 'False'
     else:
         settings_general_update_restart = 'True'
-    settings_analytics_enabled = request.forms.settings_analytics_enabled
+    settings_analytics_enabled = request.forms.get('settings_analytics_enabled')
     if settings_analytics_enabled is None:
         settings_analytics_enabled = 'False'
     else:
         settings_analytics_enabled = 'True'
-    settings_general_single_language = request.forms.settings_general_single_language
+    settings_general_single_language = request.forms.get('settings_general_single_language')
     if settings_general_single_language is None:
         settings_general_single_language = 'False'
     else:
         settings_general_single_language = 'True'
-    settings_general_wanted_search_frequency = request.forms.settings_general_wanted_search_frequency
-    settings_general_scenename = request.forms.settings_general_scenename
+    settings_general_wanted_search_frequency = request.forms.get('settings_general_wanted_search_frequency')
+    settings_general_scenename = request.forms.get('settings_general_scenename')
     if settings_general_scenename is None:
         settings_general_scenename = 'False'
     else:
         settings_general_scenename = 'True'
-    settings_general_embedded = request.forms.settings_general_embedded
+    settings_general_embedded = request.forms.get('settings_general_embedded')
     if settings_general_embedded is None:
         settings_general_embedded = 'False'
     else:
         settings_general_embedded = 'True'
-    settings_general_utf8_encode = request.forms.settings_general_utf8_encode
+    settings_general_utf8_encode = request.forms.get('settings_general_utf8_encode')
     if settings_general_utf8_encode is None:
         settings_general_utf8_encode = 'False'
     else:
         settings_general_utf8_encode = 'True'
-    settings_general_ignore_pgs = request.forms.settings_general_ignore_pgs
+    settings_general_ignore_pgs = request.forms.get('settings_general_ignore_pgs')
     if settings_general_ignore_pgs is None:
         settings_general_ignore_pgs = 'False'
     else:
         settings_general_ignore_pgs = 'True'
-    settings_general_adaptive_searching = request.forms.settings_general_adaptive_searching
+    settings_general_adaptive_searching = request.forms.get('settings_general_adaptive_searching')
     if settings_general_adaptive_searching is None:
         settings_general_adaptive_searching = 'False'
     else:
         settings_general_adaptive_searching = 'True'
-    settings_general_multithreading = request.forms.settings_general_multithreading
+    settings_general_multithreading = request.forms.get('settings_general_multithreading')
     if settings_general_multithreading is None:
         settings_general_multithreading = 'False'
     else:
         settings_general_multithreading = 'True'
-    settings_general_minimum_score = request.forms.settings_general_minimum_score
-    settings_general_minimum_score_movies = request.forms.settings_general_minimum_score_movies
-    settings_general_use_postprocessing = request.forms.settings_general_use_postprocessing
+    settings_general_minimum_score = request.forms.get('settings_general_minimum_score')
+    settings_general_minimum_score_movies = request.forms.get('settings_general_minimum_score_movies')
+    settings_general_use_postprocessing = request.forms.get('settings_general_use_postprocessing')
     if settings_general_use_postprocessing is None:
         settings_general_use_postprocessing = 'False'
     else:
         settings_general_use_postprocessing = 'True'
-    settings_general_postprocessing_cmd = request.forms.settings_general_postprocessing_cmd
-    settings_general_use_sonarr = request.forms.settings_general_use_sonarr
+    settings_general_postprocessing_cmd = request.forms.get('settings_general_postprocessing_cmd')
+    settings_general_use_sonarr = request.forms.get('settings_general_use_sonarr')
     if settings_general_use_sonarr is None:
         settings_general_use_sonarr = 'False'
     else:
         settings_general_use_sonarr = 'True'
-    settings_general_use_radarr = request.forms.settings_general_use_radarr
+    settings_general_use_radarr = request.forms.get('settings_general_use_radarr')
     if settings_general_use_radarr is None:
         settings_general_use_radarr = 'False'
     else:
         settings_general_use_radarr = 'True'
-    settings_page_size = request.forms.settings_page_size
-    settings_subfolder = request.forms.settings_subfolder
-    settings_subfolder_custom = request.forms.settings_subfolder_custom
-    settings_upgrade_subs = request.forms.settings_upgrade_subs
+    settings_page_size = request.forms.get('settings_page_size')
+    settings_subfolder = request.forms.get('settings_subfolder')
+    settings_subfolder_custom = request.forms.get('settings_subfolder_custom')
+    settings_upgrade_subs = request.forms.get('settings_upgrade_subs')
     if settings_upgrade_subs is None:
         settings_upgrade_subs = 'False'
     else:
         settings_upgrade_subs = 'True'
-    settings_upgrade_subs_frequency = request.forms.settings_upgrade_subs_frequency
-    settings_days_to_upgrade_subs = request.forms.settings_days_to_upgrade_subs
-    settings_upgrade_manual = request.forms.settings_upgrade_manual
+    settings_upgrade_subs_frequency = request.forms.get('settings_upgrade_subs_frequency')
+    settings_days_to_upgrade_subs = request.forms.get('settings_days_to_upgrade_subs')
+    settings_upgrade_manual = request.forms.get('settings_upgrade_manual')
     if settings_upgrade_manual is None:
         settings_upgrade_manual = 'False'
     else:
         settings_upgrade_manual = 'True'
-    settings_anti_captcha_provider = request.forms.settings_anti_captcha_provider
-    settings_anti_captcha_key = request.forms.settings_anti_captcha_key
-    settings_death_by_captcha_username = request.forms.settings_death_by_captcha_username
-    settings_death_by_captcha_password = request.forms.settings_death_by_captcha_password
+    settings_anti_captcha_provider = request.forms.get('settings_anti_captcha_provider')
+    settings_anti_captcha_key = request.forms.get('settings_anti_captcha_key')
+    settings_death_by_captcha_username = request.forms.get('settings_death_by_captcha_username')
+    settings_death_by_captcha_password = request.forms.get('settings_death_by_captcha_password')
     
     before = (six.text_type(settings.general.ip), int(settings.general.port), six.text_type(settings.general.base_url),
               six.text_type(settings.general.path_mappings), six.text_type(settings.general.getboolean('use_sonarr')),
@@ -1377,12 +1377,12 @@ def save_settings():
     if after != before:
         configured()
     
-    settings_proxy_type = request.forms.settings_proxy_type
-    settings_proxy_url = request.forms.settings_proxy_url
-    settings_proxy_port = request.forms.settings_proxy_port
-    settings_proxy_username = request.forms.settings_proxy_username
-    settings_proxy_password = request.forms.settings_proxy_password
-    settings_proxy_exclude = request.forms.settings_proxy_exclude
+    settings_proxy_type = request.forms.get('settings_proxy_type')
+    settings_proxy_url = request.forms.get('settings_proxy_url')
+    settings_proxy_port = request.forms.get('settings_proxy_port')
+    settings_proxy_username = request.forms.get('settings_proxy_username')
+    settings_proxy_password = request.forms.get('settings_proxy_password')
+    settings_proxy_exclude = request.forms.get('settings_proxy_exclude')
     
     before_proxy_password = (six.text_type(settings.proxy.type), six.text_type(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
@@ -1401,9 +1401,9 @@ def save_settings():
         settings.proxy.password = text_type(settings_proxy_password)
         settings.proxy.exclude = text_type(settings_proxy_exclude)
     
-    settings_auth_type = request.forms.settings_auth_type
-    settings_auth_username = request.forms.settings_auth_username
-    settings_auth_password = request.forms.settings_auth_password
+    settings_auth_type = request.forms.get('settings_auth_type')
+    settings_auth_username = request.forms.get('settings_auth_username')
+    settings_auth_password = request.forms.get('settings_auth_password')
     
     if settings.auth.type != settings_auth_type:
         configured()
@@ -1437,25 +1437,25 @@ def save_settings():
                 pass
             else:
                 aaa._beaker_session.delete()
-    settings.auth.apikey = request.forms.settings_auth_apikey
+    settings.auth.apikey = request.forms.get('settings_auth_apikey')
 
-    settings_sonarr_ip = request.forms.settings_sonarr_ip
-    settings_sonarr_port = request.forms.settings_sonarr_port
-    settings_sonarr_baseurl = request.forms.settings_sonarr_baseurl
-    settings_sonarr_ssl = request.forms.settings_sonarr_ssl
+    settings_sonarr_ip = request.forms.get('settings_sonarr_ip')
+    settings_sonarr_port = request.forms.get('settings_sonarr_port')
+    settings_sonarr_baseurl = request.forms.get('settings_sonarr_baseurl')
+    settings_sonarr_ssl = request.forms.get('settings_sonarr_ssl')
     if settings_sonarr_ssl is None:
         settings_sonarr_ssl = 'False'
     else:
         settings_sonarr_ssl = 'True'
-    settings_sonarr_apikey = request.forms.settings_sonarr_apikey
-    settings_sonarr_only_monitored = request.forms.settings_sonarr_only_monitored
+    settings_sonarr_apikey = request.forms.get('settings_sonarr_apikey')
+    settings_sonarr_only_monitored = request.forms.get('settings_sonarr_only_monitored')
     if settings_sonarr_only_monitored is None:
         settings_sonarr_only_monitored = 'False'
     else:
         settings_sonarr_only_monitored = 'True'
-    settings_sonarr_sync = request.forms.settings_sonarr_sync
-    settings_sonarr_sync_day = request.forms.settings_sonarr_sync_day
-    settings_sonarr_sync_hour = request.forms.settings_sonarr_sync_hour
+    settings_sonarr_sync = request.forms.get('settings_sonarr_sync')
+    settings_sonarr_sync_day = request.forms.get('settings_sonarr_sync_day')
+    settings_sonarr_sync_hour = request.forms.get('settings_sonarr_sync_hour')
 
     settings.sonarr.ip = text_type(settings_sonarr_ip)
     settings.sonarr.port = text_type(settings_sonarr_port)
@@ -1467,23 +1467,23 @@ def save_settings():
     settings.sonarr.full_update_day = text_type(settings_sonarr_sync_day)
     settings.sonarr.full_update_hour = text_type(settings_sonarr_sync_hour)
 
-    settings_radarr_ip = request.forms.settings_radarr_ip
-    settings_radarr_port = request.forms.settings_radarr_port
-    settings_radarr_baseurl = request.forms.settings_radarr_baseurl
-    settings_radarr_ssl = request.forms.settings_radarr_ssl
+    settings_radarr_ip = request.forms.get('settings_radarr_ip')
+    settings_radarr_port = request.forms.get('settings_radarr_port')
+    settings_radarr_baseurl = request.forms.get('settings_radarr_baseurl')
+    settings_radarr_ssl = request.forms.get('settings_radarr_ssl')
     if settings_radarr_ssl is None:
         settings_radarr_ssl = 'False'
     else:
         settings_radarr_ssl = 'True'
-    settings_radarr_apikey = request.forms.settings_radarr_apikey
-    settings_radarr_only_monitored = request.forms.settings_radarr_only_monitored
+    settings_radarr_apikey = request.forms.get('settings_radarr_apikey')
+    settings_radarr_only_monitored = request.forms.get('settings_radarr_only_monitored')
     if settings_radarr_only_monitored is None:
         settings_radarr_only_monitored = 'False'
     else:
         settings_radarr_only_monitored = 'True'
-    settings_radarr_sync = request.forms.settings_radarr_sync
-    settings_radarr_sync_day = request.forms.settings_radarr_sync_day
-    settings_radarr_sync_hour = request.forms.settings_radarr_sync_hour
+    settings_radarr_sync = request.forms.get('settings_radarr_sync')
+    settings_radarr_sync_day = request.forms.get('settings_radarr_sync_day')
+    settings_radarr_sync_hour = request.forms.get('settings_radarr_sync_hour')
 
     settings.radarr.ip = text_type(settings_radarr_ip)
     settings.radarr.port = text_type(settings_radarr_port)
@@ -1499,57 +1499,57 @@ def save_settings():
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
         settings_subliminal_providers)
     
-    settings_addic7ed_random_agents = request.forms.settings_addic7ed_random_agents
+    settings_addic7ed_random_agents = request.forms.get('settings_addic7ed_random_agents')
     if settings_addic7ed_random_agents is None:
         settings_addic7ed_random_agents = 'False'
     else:
         settings_addic7ed_random_agents = 'True'
     
-    settings_opensubtitles_vip = request.forms.settings_opensubtitles_vip
+    settings_opensubtitles_vip = request.forms.get('settings_opensubtitles_vip')
     if settings_opensubtitles_vip is None:
         settings_opensubtitles_vip = 'False'
     else:
         settings_opensubtitles_vip = 'True'
     
-    settings_opensubtitles_ssl = request.forms.settings_opensubtitles_ssl
+    settings_opensubtitles_ssl = request.forms.get('settings_opensubtitles_ssl')
     if settings_opensubtitles_ssl is None:
         settings_opensubtitles_ssl = 'False'
     else:
         settings_opensubtitles_ssl = 'True'
     
-    settings_opensubtitles_skip_wrong_fps = request.forms.settings_opensubtitles_skip_wrong_fps
+    settings_opensubtitles_skip_wrong_fps = request.forms.get('settings_opensubtitles_skip_wrong_fps')
     if settings_opensubtitles_skip_wrong_fps is None:
         settings_opensubtitles_skip_wrong_fps = 'False'
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
     
-    settings.addic7ed.username = request.forms.settings_addic7ed_username
-    settings.addic7ed.password = request.forms.settings_addic7ed_password
+    settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
+    settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
-    settings.assrt.token = request.forms.settings_assrt_token
-    settings.legendastv.username = request.forms.settings_legendastv_username
-    settings.legendastv.password = request.forms.settings_legendastv_password
-    settings.opensubtitles.username = request.forms.settings_opensubtitles_username
-    settings.opensubtitles.password = request.forms.settings_opensubtitles_password
+    settings.assrt.token = request.forms.get('settings_assrt_token')
+    settings.legendastv.username = request.forms.get('settings_legendastv_username')
+    settings.legendastv.password = request.forms.get('settings_legendastv_password')
+    settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
+    settings.opensubtitles.password = request.forms.get('settings_opensubtitles_password')
     settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
     settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
     settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
-    settings.xsubs.username = request.forms.settings_xsubs_username
-    settings.xsubs.password = request.forms.settings_xsubs_password
-    settings.napisy24.username = request.forms.settings_napisy24_username
-    settings.napisy24.password = request.forms.settings_napisy24_password
-    settings.subscene.username = request.forms.settings_subscene_username
-    settings.subscene.password = request.forms.settings_subscene_password
-    settings.titlovi.username = request.forms.settings_titlovi_username
-    settings.titlovi.password = request.forms.settings_titlovi_password
-    settings.betaseries.token = request.forms.settings_betaseries_token
+    settings.xsubs.username = request.forms.get('settings_xsubs_username')
+    settings.xsubs.password = request.forms.get('settings_xsubs_password')
+    settings.napisy24.username = request.forms.get('settings_napisy24_username')
+    settings.napisy24.password = request.forms.get('settings_napisy24_password')
+    settings.subscene.username = request.forms.get('settings_subscene_username')
+    settings.subscene.password = request.forms.get('settings_subscene_password')
+    settings.titlovi.username = request.forms.get('settings_titlovi_username')
+    settings.titlovi.password = request.forms.get('settings_titlovi_password')
+    settings.betaseries.token = request.forms.get('settings_betaseries_token')
 
     settings_subliminal_languages = request.forms.getall('settings_subliminal_languages')
     database.execute("UPDATE table_settings_languages SET enabled=0")
     for item in settings_subliminal_languages:
         database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
     
-    settings_serie_default_enabled = request.forms.settings_serie_default_enabled
+    settings_serie_default_enabled = request.forms.get('settings_serie_default_enabled')
     if settings_serie_default_enabled is None:
         settings_serie_default_enabled = 'False'
     else:
@@ -1561,17 +1561,17 @@ def save_settings():
         settings_serie_default_languages = 'None'
     settings.general.serie_default_language = text_type(settings_serie_default_languages)
     
-    settings_serie_default_hi = request.forms.settings_serie_default_hi
+    settings_serie_default_hi = request.forms.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
     settings.general.serie_default_hi = text_type(settings_serie_default_hi)
     
-    settings_serie_default_forced = str(request.forms.settings_serie_default_forced)
+    settings_serie_default_forced = str(request.forms.get('settings_serie_default_forced'))
     settings.general.serie_default_forced = text_type(settings_serie_default_forced)
     
-    settings_movie_default_enabled = request.forms.settings_movie_default_enabled
+    settings_movie_default_enabled = request.forms.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
@@ -1583,14 +1583,14 @@ def save_settings():
         settings_movie_default_languages = 'None'
     settings.general.movie_default_language = text_type(settings_movie_default_languages)
     
-    settings_movie_default_hi = request.forms.settings_movie_default_hi
+    settings_movie_default_hi = request.forms.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
     settings.general.movie_default_hi = text_type(settings_movie_default_hi)
     
-    settings_movie_default_forced = str(request.forms.settings_movie_default_forced)
+    settings_movie_default_forced = str(request.forms.get('settings_movie_default_forced'))
     settings.general.movie_default_forced = text_type(settings_movie_default_forced)
     
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
@@ -1749,11 +1749,11 @@ def execute_task(taskid):
 @custom_auth_basic(check_credentials)
 def remove_subtitles():
     authorize()
-    episodePath = request.forms.episodePath
-    language = request.forms.language
-    subtitlesPath = request.forms.subtitlesPath
-    sonarrSeriesId = request.forms.sonarrSeriesId
-    sonarrEpisodeId = request.forms.sonarrEpisodeId
+    episodePath = request.forms.get('episodePath')
+    language = request.forms.get('language')
+    subtitlesPath = request.forms.get('subtitlesPath')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     
     try:
         os.remove(subtitlesPath)
@@ -1768,10 +1768,10 @@ def remove_subtitles():
 @custom_auth_basic(check_credentials)
 def remove_subtitles_movie():
     authorize()
-    moviePath = request.forms.moviePath
-    language = request.forms.language
-    subtitlesPath = request.forms.subtitlesPath
-    radarrId = request.forms.radarrId
+    moviePath = request.forms.get('moviePath')
+    language = request.forms.get('language')
+    subtitlesPath = request.forms.get('subtitlesPath')
+    radarrId = request.forms.get('radarrId')
     
     try:
         os.remove(subtitlesPath)
@@ -1788,14 +1788,14 @@ def get_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    sonarrSeriesId = request.forms.sonarrSeriesId
-    sonarrEpisodeId = request.forms.sonarrEpisodeId
-    title = request.forms.title
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1823,12 +1823,12 @@ def get_subtitle():
 def manual_search_json():
     authorize()
     
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    title = request.forms.title
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    title = request.forms.get('title')
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1843,16 +1843,16 @@ def manual_get_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    selected_provider = request.forms.provider
-    subtitle = request.forms.subtitle
-    sonarrSeriesId = request.forms.sonarrSeriesId
-    sonarrEpisodeId = request.forms.sonarrEpisodeId
-    title = request.forms.title
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    selected_provider = request.forms.get('provider')
+    subtitle = request.forms.get('subtitle')
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
     
     providers_auth = get_providers_auth()
     
@@ -1881,14 +1881,14 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    forced = True if request.forms.forced == '1' else False
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
-    sonarrSeriesId = request.forms.sonarrSeriesId
-    sonarrEpisodeId = request.forms.sonarrEpisodeId
-    title = request.forms.title
+    sonarrSeriesId = request.forms.get('sonarrSeriesId')
+    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    title = request.forms.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1925,13 +1925,13 @@ def get_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    moviePath = request.forms.moviePat
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    radarrId = request.forms.radarrId
-    title = request.forms.title
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1959,12 +1959,12 @@ def get_subtitle_movie():
 def manual_search_movie_json():
     authorize()
     
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    title = request.forms.title
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    title = request.forms.get('title')
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1979,15 +1979,15 @@ def manual_get_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    hi = request.forms.hi
-    forced = request.forms.forced
-    selected_provider = request.forms.provider
-    subtitle = request.forms.subtitle
-    radarrId = request.forms.radarrId
-    title = request.forms.title
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    hi = request.forms.get('hi')
+    forced = request.forms.get('forced')
+    selected_provider = request.forms.get('provider')
+    subtitle = request.forms.get('subtitle')
+    radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
     
     providers_auth = get_providers_auth()
     
@@ -2015,13 +2015,13 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
-    language = request.forms.language
-    forced = True if request.forms.forced == '1' else False
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
+    language = request.forms.get('language')
+    forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
-    radarrId = request.forms.radarrId
-    title = request.forms.title
+    radarrId = request.forms.get('radarrId')
+    title = request.forms.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
