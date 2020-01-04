@@ -1473,11 +1473,11 @@ def execute_task(taskid):
 @app.route('/remove_subtitles', methods=['POST'])
 @login_required
 def remove_subtitles():
-    episodePath = request.forms.episodePath
-    language = request.forms.get('language')
-    subtitlesPath = request.forms.subtitlesPath
-    sonarrSeriesId = request.forms.get('sonarrSeriesId')
-    sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
+    episodePath = request.form.get('episodePath')
+    language = request.form.get('language')
+    subtitlesPath = request.form.get('subtitlesPath')
+    sonarrSeriesId = request.form.get('sonarrSeriesId')
+    sonarrEpisodeId = request.form.get('sonarrEpisodeId')
 
     try:
         os.remove(path_replace(subtitlesPath))
@@ -1485,7 +1485,7 @@ def remove_subtitles():
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(episodePath, path_replace(episodePath))
+    store_subtitles(path_replace_reverse(episodePath), episodePath)
 
     return ''
 
@@ -1493,10 +1493,10 @@ def remove_subtitles():
 @app.route('/remove_subtitles_movie', methods=['POST'])
 @login_required
 def remove_subtitles_movie():
-    moviePath = request.forms.moviePath
-    language = request.forms.get('language')
-    subtitlesPath = request.forms.subtitlesPath
-    radarrId = request.forms.get('radarrId')
+    moviePath = request.form.get('moviePath')
+    language = request.form.get('language')
+    subtitlesPath = request.form.get('subtitlesPath')
+    radarrId = request.form.get('radarrId')
 
     try:
         os.remove(subtitlesPath)

@@ -173,7 +173,7 @@
                             	if (value[1] === null) {
 									languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced':'') + '">' + value[0].code2 + ((value[0].forced) ? ':forced':'') + '</span> ';
 								} else {
-                            		languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced':'') + '" data-episodePath="'+data.path+'" data-language="'+value[0].code3+'" data-subtitlesPath="'+value[1]+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'>' + value[0].code2 + ((value[0].forced) ? ':forced':'') + ' <i class="far fa-trash-alt"></i></a> ';
+                            		languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced':'') + '" data-episodePath="'+data.mapped_path+'" data-language="'+value[0].code3+'" data-subtitlesPath="'+value[1]+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'>' + value[0].code2 + ((value[0].forced) ? ':forced':'') + ' <i class="far fa-trash-alt"></i></a> ';
 								}
                             }
                         }
@@ -189,7 +189,7 @@
                             }
 
                             function appendFunc(value) {
-                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced':'') + '" data-episodepath="'+data.path+'" data-scenename="'+data.scene_name+'" data-title="'+data.title+'" data-language="'+value.code3+'" data-hi="'+seriesDetails.hearing_impaired+'" data-forced="'+value.forced+'" data-sonarrepisodeid='+data.sonarrEpisodeId+'>' + value.code2 + ((value.forced) ? ':forced':'') + ' <i class="fas fa-search"></i></a> ';
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced':'') + '" data-episodepath="'+data.mapped_path+'" data-scenename="'+data.scene_name+'" data-title="'+data.title+'" data-language="'+value.code3+'" data-hi="'+seriesDetails.hearing_impaired+'" data-forced="'+value.forced+'" data-sonarrepisodeid='+data.sonarrEpisodeId+'>' + value.code2 + ((value.forced) ? ':forced':'') + ' <i class="fas fa-search"></i></a> ';
 							}
                         }
 					},
