@@ -107,7 +107,7 @@
 				url: "{{ url_for('api.series') }}?id={{id}}",
 				})
 			  	.done(function( data ) {
-					var seriesDetails = data.data[0];
+					seriesDetails = data.data[0];
 					$('#seriesFanart').css('background-image', "url('{{ url_for('image_proxy', url='MediaCover/'+id+'/fanart.jpg') }}')");
 					$('#seriesPoster').attr("src","{{ url_for('image_proxy', url='MediaCover/'+id+'/poster-250.jpg') }}");
 					$('#seriesTitle').text(seriesDetails['title']);
@@ -159,18 +159,22 @@
 					},
                     {"data": "episode"},
                     {"data": "title"},
-                    {"data": "subtitles",
+                    {"data": null,
                         "render": function (data) {
-                            if (data !== 'None') {
+                            if (data.subtitles !== 'None') {
                                 var languages = '';
-                                data.forEach(appendFunc);
+                                data.subtitles.forEach(appendFunc);
                                 return languages;
                             } else {
                                 return null;
                             }
 
                             function appendFunc(value) {
-                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '">' + value[0].code2 + '</span> ';
+                            	if (value[1] === null) {
+									languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '">' + value[0].code2 + '</span> ';
+								} else {
+                            		languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + '" data-episodePath="'+data.path+'" data-language="'+value[0].code3+'" data-subtitlesPath="'+value[1]+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'>' + value[0].code2 + ' <i class="far fa-trash-alt"></i></a> ';
+								}
                             }
                         }
 					},
@@ -193,6 +197,34 @@
                     {"data": "title"}
                 ]
             });
+
+            $('#episodes').on('click', '.remove_subtitles', function(e){
+            	e.preventDefault()
+				const values = {
+					episodePath: $(this).attr("data-episodePath"),
+					language: $(this).attr("data-language"),
+					subtitlesPath: $(this).attr("data-subtitlesPath"),
+					sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+					sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+					tvdbid: seriesDetails['tvdbId']
+				};
+				var cell = $(this).closest('td');
+				$.ajax({
+					url: "{{ url_for('remove_subtitles') }}",
+					type: "POST",
+					dataType: "json",
+					data: values,
+					beforeSend: function() {
+						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+					},
+					complete: function() {
+						$('#episodes').DataTable().ajax.reload(null, false);
+						alert("test");
+					}
+				});
+			});
         });
+
+
     </script>
 {% endblock tail %}

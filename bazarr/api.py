@@ -97,7 +97,8 @@ class Episodes(Resource):
         row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE sonarrSeriesId=?",
                                      (seriesId,), only_one=True)['count']
         if seriesId:
-            result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=?", (seriesId,))
+            result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
+                                      "episode DESC", (seriesId,))
         else:
             return "Series ID not provided", 400
         for item in result:

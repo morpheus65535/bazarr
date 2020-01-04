@@ -57,7 +57,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
     manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
-from helper import path_replace_reverse, path_replace_reverse_movie
+from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
@@ -1481,12 +1481,14 @@ def remove_subtitles():
     sonarrEpisodeId = request.form.get('sonarrEpisodeId')
 
     try:
-        os.remove(subtitlesPath)
+        os.remove(path_replace(subtitlesPath))
         result = language_from_alpha3(language) + " subtitles deleted from disk."
         history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
     except OSError as e:
         logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles(path_replace_reverse(episodePath), episodePath)
+    store_subtitles(episodePath, path_replace(episodePath))
+
+    return ''
 
 
 @app.route('/remove_subtitles_movie', methods=['POST'])
