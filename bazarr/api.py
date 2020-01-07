@@ -12,8 +12,17 @@ from init import *
 import logging
 from database import database
 from helper import path_replace, path_replace_reverse, path_replace_movie, path_replace_reverse_movie
-from get_languages import load_language_in_db, alpha2_from_language, alpha3_from_language, language_from_alpha2, \
-    alpha3_from_alpha2
+from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
+    alpha3_from_language, alpha3_from_alpha2
+from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
+    manual_search, manual_download_subtitle, manual_upload_subtitle
+from notifier import send_notifications, send_notifications_movie
+from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
+    list_missing_subtitles, list_missing_subtitles_movies
+from utils import history_log, history_log_movie
+from get_providers import get_providers, get_providers_auth, list_throttled_providers
+
+from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from flask import Flask, jsonify, request, Response, Blueprint
 
@@ -129,6 +138,163 @@ class Episodes(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+class EpisodesSubtitlesDelete(Resource):
+    def delete(self):
+        episodePath = request.form.get('episodePath')
+        language = request.form.get('language')
+        subtitlesPath = request.form.get('subtitlesPath')
+        sonarrSeriesId = request.form.get('sonarrSeriesId')
+        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+
+        try:
+            os.remove(path_replace(subtitlesPath))
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
+            history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
+        except OSError as e:
+            logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
+        store_subtitles(path_replace_reverse(episodePath), episodePath)
+
+        return '', 202
+
+class EpisodesSubtitlesDownload(Resource):
+    def post(self):
+        episodePath = request.form.get('episodePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        sonarrSeriesId = request.form.get('sonarrSeriesId')
+        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+        title = request.form.get('title')
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        try:
+            result = download_subtitle(episodePath, language, hi, forced, providers_list, providers_auth, sceneName,
+                                       title,
+                                       'series')
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else result[2]
+                provider = result[3]
+                score = result[4]
+                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                store_subtitles(path, episodePath)
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
+
+class EpisodesSubtitlesManualSearch(Resource):
+    def post(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
+        episodePath = request.form.get('episodePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        title = request.form.get('title')
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+                             'series')
+        row_count = len(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+
+
+class EpisodesSubtitlesManualDownload(Resource):
+    def post(self):
+        episodePath = request.form.get('episodePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        selected_provider = request.form.get('provider')
+        subtitle = request.form.get('subtitle')
+        sonarrSeriesId = request.form.get('sonarrSeriesId')
+        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+        title = request.form.get('title')
+        providers_auth = get_providers_auth()
+
+        try:
+            result = manual_download_subtitle(episodePath, language, hi, forced, subtitle, selected_provider,
+                                              providers_auth,
+                                              sceneName, title, 'series')
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else result[2]
+                provider = result[3]
+                score = result[4]
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                store_subtitles(path, episodePath)
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
+
+class EpisodesSubtitlesUpload(Resource):
+    def post(self):
+        episodePath = request.form.get('episodePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        forced = True if request.form.get('forced') == '1' else False
+        upload = request.files.get('upload')
+        sonarrSeriesId = request.form.get('sonarrSeriesId')
+        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+        title = request.form.get('title')
+
+        _, ext = os.path.splitext(upload.filename)
+
+        if ext not in SUBTITLE_EXTENSIONS:
+            raise ValueError('A subtitle of an invalid format was uploaded.')
+
+        try:
+            result = manual_upload_subtitle(path=episodePath,
+                                            language=language,
+                                            forced=forced,
+                                            title=title,
+                                            scene_name=sceneName,
+                                            media_type='series',
+                                            subtitle=upload)
+
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = language + ":forced" if forced else language
+                provider = "manual"
+                score = 360
+                history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                store_subtitles(path, episodePath)
+
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
 
 
 class Movies(Resource):
@@ -438,6 +604,11 @@ class WantedMovies(Resource):
 api.add_resource(Badges, '/badges')
 api.add_resource(Series, '/series')
 api.add_resource(Episodes, '/episodes')
+api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
+api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
+api.add_resource(EpisodesSubtitlesManualSearch, '/episodes_subtitles_manual_search')
+api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_download')
+api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 api.add_resource(Movies, '/movies')
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')

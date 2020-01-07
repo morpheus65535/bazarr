@@ -210,8 +210,8 @@
 				};
 				var cell = $(this).closest('td');
 				$.ajax({
-					url: "{{ url_for('remove_subtitles') }}",
-					type: "POST",
+					url: "{{ url_for('api.episodessubtitlesdelete') }}",
+					type: "DELETE",
 					dataType: "json",
 					data: values,
 					beforeSend: function() {
@@ -237,7 +237,7 @@
 				};
 				var cell = $(this).closest('td');
 				$.ajax({
-					url: "{{ url_for('get_subtitle') }}",
+					url: "{{ url_for('api.episodessubtitlesdownload') }}",
 					type: "POST",
 					dataType: "json",
 					data: values,
