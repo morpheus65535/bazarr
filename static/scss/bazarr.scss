@@ -117,7 +117,7 @@ a.link {
   height: 100%;
   top: 0;
   z-index: 20;
-  padding-top: 70px;
+  padding-top: 60px;
   background: $sidebar;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.08);
 }
@@ -369,6 +369,7 @@ a.link {
 
   .top-navbar {
     min-height: 60px;
+    height: 60px;
     padding: 0 15px 0 0;
 
     .dropdown-toggle::after {
@@ -440,11 +441,12 @@ a.link {
   background: #4f566f;
   margin: 0 -30px 30px;
   min-height: 50px;
+  height: 50px;
   padding: 0;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
 
   .btn {
-    min-height: 50px;
+    height: 50px;
     width: 80px;
   }
 }

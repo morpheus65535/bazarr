@@ -123,6 +123,10 @@
                     }
                 ]
             });
+
+            $('#series').on('draw.dt', function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
         });
     </script>
 {% endblock tail %}

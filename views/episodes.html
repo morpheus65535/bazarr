@@ -218,10 +218,14 @@
 						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 					},
 					complete: function() {
-						$('#episodes').DataTable().ajax.reload(null, false);
+						table.ajax.reload(null, false);
 					}
 				});
 			});
+
+            $('#episodes').on('draw.dt', function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
 
 			$('#episodes').on('click', '.get_subtitle', function(e){
 				e.preventDefault()
@@ -245,7 +249,7 @@
 						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 					},
 					complete: function() {
-						$('#episodes').DataTable().ajax.reload(null, false);
+						table.ajax.reload(null, false);
 					}
 				});
 			});
