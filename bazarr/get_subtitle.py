@@ -40,6 +40,7 @@ from analytics import track_event
 import six
 from six.moves import range
 from functools import reduce
+from locale import getpreferredencoding
 
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
@@ -234,34 +235,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3,
                                                  subtitle.language.forced)
-                            try:
-                                if os.name == 'nt':
-                                    codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                                                stderr=subprocess.PIPE)
-                                    # wait for the process to terminate
-                                    out_codepage, err_codepage = codepage.communicate()
-                                    encoding = out_codepage.split(':')[-1].strip()
-                                
-                                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                           stderr=subprocess.PIPE)
-                                # wait for the process to terminate
-                                out, err = process.communicate()
-                                
-                                if os.name == 'nt':
-                                    out = out.decode(encoding)
-                            
-                            except:
-                                if out == "":
-                                    logging.error(
-                                        'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                else:
-                                    logging.error('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                            else:
-                                if out == "":
-                                    logging.info(
-                                        'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                else:
-                                    logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+                            postprocessing(command, path)
                         
                         # fixme: support multiple languages at once
                         if media_type == 'series':
@@ -459,34 +433,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3,
                                                  subtitle.language.forced)
-                            try:
-                                if os.name == 'nt':
-                                    codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                                                stderr=subprocess.PIPE)
-                                    # wait for the process to terminate
-                                    out_codepage, err_codepage = codepage.communicate()
-                                    encoding = out_codepage.split(':')[-1].strip()
-                                
-                                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                                           stderr=subprocess.PIPE)
-                                # wait for the process to terminate
-                                out, err = process.communicate()
-                                
-                                if os.name == 'nt':
-                                    out = out.decode(encoding)
-                            
-                            except:
-                                if out == "":
-                                    logging.error(
-                                        'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                else:
-                                    logging.error('BAZARR Post-processing result for file ' + path + ' : ' + out)
-                            else:
-                                if out == "":
-                                    logging.info(
-                                        'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
-                                else:
-                                    logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+                            postprocessing(command, path)
                         
                         if media_type == 'series':
                             reversed_path = path_replace_reverse(path)
@@ -1173,3 +1120,41 @@ def upgrade_subtitles():
                         store_subtitles_movie(movie['video_path'], path_replace_movie(movie['video_path']))
                         history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score)
                         send_notifications_movie(movie['radarrId'], message)
+
+
+def postprocessing(command, path):
+    try:
+        encoding = getpreferredencoding()
+        if os.name == 'nt':
+            if six.PY3:
+                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE, encoding=getpreferredencoding())
+            else:
+                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+            # wait for the process to terminate
+            out_codepage, err_codepage = codepage.communicate()
+            encoding = out_codepage.split(':')[-1].strip()
+
+        if six.PY3:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE, encoding=encoding)
+        else:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+        # wait for the process to terminate
+        out, err = process.communicate()
+
+        if six.PY2:
+            out = out.decode(encoding)
+
+        out = out.replace('\n', ' ').replace('\r', ' ')
+
+    except Exception as e:
+        logging.error('BAZARR Post-processing failed for file ' + path + ' : ' + repr(e))
+    else:
+        if out == "":
+            logging.info(
+                'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
+        else:
+            logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
