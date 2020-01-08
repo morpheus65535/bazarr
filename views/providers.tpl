@@ -146,6 +146,22 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>BSplayer</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="bsplayer" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="bsplayer_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>GreekSubtitles</label>
                             </div>
                             <div class="one wide column">
