@@ -108,6 +108,10 @@ class Episodes(Resource):
         if seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
                                       "episode DESC", (seriesId,))
+            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
+                                                 (seriesId,), only_one=True)['languages']
+            if desired_languages == "None":
+                desired_languages = '[]'
         else:
             return "Series ID not provided", 400
         for item in result:
@@ -137,6 +141,9 @@ class Episodes(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+
+            # Add the series desired subtitles language code2
+            item.update({"desired_languages": desired_languages})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 class EpisodesSubtitlesDelete(Resource):
@@ -151,11 +158,14 @@ class EpisodesSubtitlesDelete(Resource):
             os.remove(path_replace(subtitlesPath))
             result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
+            store_subtitles(path_replace_reverse(episodePath), episodePath)
+            return result, 202
         except OSError as e:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-        store_subtitles(path_replace_reverse(episodePath), episodePath)
 
-        return '', 202
+        store_subtitles(path_replace_reverse(episodePath), episodePath)
+        return '', 204
+
 
 class EpisodesSubtitlesDownload(Resource):
     def post(self):

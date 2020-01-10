@@ -98,16 +98,112 @@
             </thead>
         </table>
     </div>
+
+	<div id="manualSearchModal" class="modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><span id="series_title_span"></span></h5><br>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<h6>Episode path is: <span id="episode_path_span" class="badge badge-secondary"></span>
+					<br>Scenename is: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
+					<div class="container-fluid">
+						<table id="search_result" class="table table-striped">
+							<thead>
+								<tr>
+									<th style="text-align: left;">Score:</th>
+									<th style="text-align: left;">Lang.:</th>
+									<th style="text-align: left;">HI:</th>
+									<th style="text-align: left;">Provider:</th>
+									<th style="text-align: left;">Matching:</th>
+									<th style="text-align: left;">Releases:</th>
+									<th></th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="uploadModal" class="modal" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><span id="upload_series_title_span"></span></h5><br>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<form class="form" name="upload_form" id="upload_form" method="post" enctype="multipart/form-data">
+						<div class="container-fluid">
+							<div class="row">
+								<div class="col-sm-2 text-right">
+									Language
+								</div>
+								<div class="form-group col-sm-8 pl-sm-0">
+									<select class="custom-select" id="manual_language_select" name="language"></select>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-2 text-right">
+									Forced
+								</div>
+								<div class="form-group col-sm-8 pl-sm-0">
+									<div class="custom-control custom-checkbox pl-sm-0">
+										<input type="checkbox" class="custom-control-input" id="forced_checkbox" name="forced">
+										<label class="custom-control-label" for="forced_checkbox">test</label>
+									</div>
+								</div>
+							</div>
+							<div class="row">
+								<div class="col-sm-2 text-right">
+									File
+								</div>
+								<div class="form-group col-sm-7 pl-sm-0">
+									<div class="custom-file">
+										<input type="file" class="custom-file-input" id="upload" name="upload">
+										<label class="custom-file-label" for="upload">Choose file</label>
+									</div>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="upload_save_button" class="btn btn-primary">Save</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock body %}
 
 {% block tail %}
     <script>
+		// make the filename appear in upload file dialog once a file have been selected.
         $(document).ready(function () {
+			document.querySelector('.custom-file-input').addEventListener('change',function(e){
+				var fileName = document.getElementById("upload").files[0].name;
+				var nextSibling = e.target.nextElementSibling;
+				nextSibling.innerText = fileName;
+			});
+
         	$.ajax({
-				url: "{{ url_for('api.series') }}?id={{id}}",
+				url: "{{ url_for('api.series') }}?id={{id}}"
 				})
 			  	.done(function( data ) {
-					seriesDetails = data.data[0];
+			  		seriesDetails = data.data[0];
+					$(document).prop('title', seriesDetails['title'] + ' - Bazarr');
 					$('#seriesFanart').css('background-image', "url('{{ url_for('image_proxy', url='MediaCover/'+id+'/fanart.jpg') }}')");
 					$('#seriesPoster').attr("src","{{ url_for('image_proxy', url='MediaCover/'+id+'/poster-250.jpg') }}");
 					$('#seriesTitle').text(seriesDetails['title']);
@@ -146,7 +242,7 @@
                 "lengthChange": false,
                 "responsive": true,
 				"pageLength": 250,
-                "ajax": "{{ url_for('api.episodes') }}?id={{id}}",
+				"ajax": "{{ url_for('api.episodes') }}?id={{id}}",
                 "columns": [
                     {"data": "monitored",
                         "render": function (data, type, row) {
@@ -193,13 +289,22 @@
 							}
                         }
 					},
-                    {"data": "title"},
-                    {"data": "title"}
+                    {"data": null,
+						"render": function (data) {
+                    		return '<a href="" class="manual_search badge badge-secondary" data-season='+data.season+' data-episode='+data.episode+' data-episode_title="'+data.title+'" data-episodePath="'+data.mapped_path+'" data-sceneName="'+data.scene_name+'" data-language="'+data.desired_languages+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+'><i class="fas fa-user"></i></a>';
+						}
+					},
+                    {"data": null,
+						"render": function (data) {
+                    		return '<a href="" class="upload_subtitle badge badge-secondary" data-episodePath="'+data.path+'" data-sceneName"'+data.scene_name+'" data-sonarrEpisodeId="'+data.sonarrEpisodeId+'" data-season="'+data.season+'" data-episode="'+data.episode+'" data-episode_title="'+data.title+'"><i class="fas fa-cloud-upload-alt"></i></a>';
+						}
+					}
                 ]
             });
 
             $('#episodes').on('click', '.remove_subtitles', function(e){
-            	e.preventDefault()
+            	$(this).tooltip('hide');
+				e.preventDefault();
 				const values = {
 					episodePath: $(this).attr("data-episodePath"),
 					language: $(this).attr("data-language"),
@@ -217,18 +322,20 @@
 					beforeSend: function() {
 						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 					},
-					complete: function() {
+					complete: function(data) {
 						table.ajax.reload(null, false);
+						if (data['responseJSON']) {
+							console.log(data['responseJSON']);
+						} else {
+							console.log("Unable to delete subtitle.");
+						}
 					}
 				});
 			});
 
-            $('#episodes').on('draw.dt', function () {
-                $('[data-toggle="tooltip"]').tooltip();
-            });
-
-			$('#episodes').on('click', '.get_subtitle', function(e){
-				e.preventDefault()
+            $('#episodes').on('click', '.get_subtitle', function(e){
+				$(this).tooltip('hide');
+				e.preventDefault();
 				const values = {
 					episodePath: $(this).attr("data-episodepath"),
 					sceneName: $(this).attr("data-scenename"),
@@ -248,13 +355,165 @@
 					beforeSend: function() {
 						cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 					},
-					complete: function() {
+					complete: function(data) {
 						table.ajax.reload(null, false);
+						if (data['responseJSON']) {
+							console.log(data['responseJSON'][0]);
+						} else {
+							console.log("No subtitle found.");
+						}
 					}
 				});
 			});
+
+			$('#episodes').on('click', '.manual_search', function(e){
+				e.preventDefault();
+				$("#series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
+				$("#episode_path_span").html($(this).attr("data-episodePath"));
+				$("#episode_scenename_span").html($(this).attr("data-sceneName"));
+
+				episodePath = $(this).attr("data-episodePath");
+				sceneName = $(this).attr("data-sceneName");
+				language = $(this).attr("data-language");
+				hi = seriesDetails['hearing_impaired'];
+				forced = seriesDetails['forced'];
+				sonarrSeriesId = seriesDetails['sonarrSeriesId'];
+				sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+				var languages = Array.from(seriesDetails['languages']);
+				var is_pb = languages.includes('pb');
+				var is_pt = languages.includes('pt');
+
+				const values = {
+					episodePath: episodePath,
+					sceneName: sceneName,
+					language: language,
+					hi: hi,
+					forced: forced,
+					sonarrSeriesId: sonarrSeriesId,
+					sonarrEpisodeId: sonarrEpisodeId,
+					title: seriesDetails['title']
+				};
+
+				$('#search_result').DataTable( {
+					destroy: true,
+					language: {
+						zeroRecords: 'No Subtitles Found For This Episode'
+					},
+					paging: true,
+					lengthChange: false,
+					pageLength: 5,
+					searching: false,
+					ordering: false,
+					processing: true,
+					serverSide: false,
+					ajax: {
+						url: '{{ url_for('api.episodessubtitlesmanualsearch') }}',
+						type: 'POST',
+						data: values
+					},
+					columns: [
+						{ data: 'score',
+						render: function ( data ) {
+							return data +'%';
+							}
+						},
+						{ data: null,
+						render: function ( data ) {
+							if ( data.language === "pt" && is_pb === true && is_pt === false) {
+								return 'pb'
+							} else {
+								return data.language
+							}
+							}
+						},
+						{ data: 'hearing_impaired' },
+						{ data: null,
+						render: function ( data ) {
+							return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+							}
+						},
+						{ data: null,
+						render: function ( data ) {
+							const array_matches = data.matches;
+							const array_dont_matches = data.dont_matches;
+							let i;
+							let text = '<div class="dropdown"><div class="btn-group dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-check-circle" style="color: green;"></i> '+array_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_matches.length; i++) {
+								text += '<a class="dropdown-item" href="#">' + array_matches[i] + '</a>';
+							}
+							text += '</div>';
+							text += '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-times-circle" style="color: red;"></i> '+array_dont_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_dont_matches.length; i++) {
+								text += '<a class="dropdown-item" href="#">' + array_dont_matches[i] + '</a>';
+							}
+							text += '</div></div></div>';
+							return text;
+							}
+						},
+						{ data: null,
+						render: function ( data ) {
+							const array_release_info = data.release_info;
+							let i;
+							let text = '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="\tfas fa-comment-dots"></i> '+array_release_info.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_release_info.length; i++) {
+								text += '<a class="dropdown-item" href="#">' + array_release_info[i] + '</a>';
+							}
+							text += '</div></div>';
+							return text;
+							}
+						},
+						{ data: null,
+						render: function ( data ) {
+							return '<a href="" class="manual_download badge badge-secondary" data-episodePath="'+episodePath+'" data-sceneName="'+sceneName+'" data-sonarrEpisodeId='+sonarrEpisodeId+' data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+							}
+						}
+					]
+				} );
+
+				$('#manualSearchModal')
+					.modal({
+						focus: false
+					});
+			});
+
+			$('#episodes').on('click', '.upload_subtitle', function(e){
+				e.preventDefault();
+				$("#upload_series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
+
+				var languages = Array.from(seriesDetails['languages']);
+				var is_pb = languages.includes('pb');
+				var is_pt = languages.includes('pt');
+
+				$.each(languages, function (i, item) {
+					$('#manual_language_select').append($('<option>', {
+						value: item.code2,
+						text : item.name
+					}));
+				});
+	/*
+				const values = {
+					episodePath: $(this).data("episodePath"),
+					sceneName: $(this).data("sceneName"),
+					language: seriesDetails['languages'],
+					forced: "valeur du checkbox (0 ou 1)",
+					hi: seriesDetails['hearing_impaired'],
+					sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+					sonarrEpisodeId: $(this).data("sonarrEpisodeId"),
+					title: seriesDetails['title']
+				};
+
+				$.ajax({
+					url: "{{ url_for('api.episodessubtitlesupload') }}",
+					type: "POST",
+					dataType: "json",
+					data: values
+				});
+	*/
+				$('#uploadModal')
+					.modal({
+						focus: false
+					});
+			});
         });
-
-
     </script>
 {% endblock tail %}
