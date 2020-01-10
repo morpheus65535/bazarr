@@ -45,6 +45,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Argenteam
 * Assrt
 * BetaSeries
+* BSPlayer
 * GreekSubtitles
 * Hosszupuska
 * LegendasTV
