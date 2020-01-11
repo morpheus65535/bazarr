@@ -270,7 +270,7 @@ class EpisodesSubtitlesUpload(Resource):
         if sceneName == "null":
             sceneName = "None"
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == '1' else False
+        forced = True if request.form.get('forced') == 'on' else False
         upload = request.files.get('upload')
         sonarrSeriesId = request.form.get('sonarrSeriesId')
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
