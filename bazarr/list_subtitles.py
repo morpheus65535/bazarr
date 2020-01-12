@@ -26,6 +26,7 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
 
 from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
+from SSE import event_stream
 import six
 
 gc.enable()
@@ -90,7 +91,7 @@ def store_subtitles(original_path, reversed_path):
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
-        matching_episodes = database.execute("SELECT sonarrEpisodeId FROM table_episodes WHERE path=?",
+        matching_episodes = database.execute("SELECT sonarrEpisodeId, sonarrSeriesId FROM table_episodes WHERE path=?",
                                    (original_path,))
 
         for episode in matching_episodes:
@@ -103,6 +104,8 @@ def store_subtitles(original_path, reversed_path):
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
+
+    event_stream.write(type='episode', series=episode['sonarrSeriesId'], episode=episode['sonarrEpisodeId'])
 
     return actual_subtitles
 

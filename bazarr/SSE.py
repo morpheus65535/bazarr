@@ -10,15 +10,21 @@ class EventStream:
     """
     
     def __init__(self):
-        self.queue = deque(maxlen=10)
+        self.queue = deque(maxlen=100)
     
-    def write(self, msg):
+    def write(self, type=None, series=None, episode=None, movie=None):
         """
-            :param msg: The message to display.
-            :type msg: str
+            :param type: The type of element.
+            :type type: str
+            :param type: The series id.
+            :type type: str
+            :param type: The episode id.
+            :type type: str
+            :param type: The movie id.
+            :type type: str
         """
-        
-        self.queue.append("data:" + msg + "\n\n")
+        msg = {"type": type, "series": series, "episode": episode, "movie": movie}
+        self.queue.append("data:" + json.dumps(msg) + "\n\n")
     
     def read(self):
         """
@@ -29,6 +35,8 @@ class EventStream:
         while True:
             if self.queue:
                 return self.queue.popleft()
+            else:
+                return ':'
             time.sleep(0.1)
 
 

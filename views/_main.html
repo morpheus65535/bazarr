@@ -254,38 +254,54 @@
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
 
     <script>
-        function BadgesAjax() {
-            $.ajax({
-                url: "{{url_for('api.badges')}}",
-                async: true,
-                success: function (data) {
-                    if (data['throttled_providers']) {
-                        $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>')
-                    }
-                    if (data['missing_episodes']) {
-                        $('#wanted').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['missing_episodes'] + '</div>')
-                    }
-                    if (data['missing_movies']) {
-                        $('#wanted').append('<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">' + data['missing_movies'] + '</div>')
-                    }
+        $(document).ready(function () {
+            BadgesAjax();
 
-                },
-                error: (function () {
-                    setTimeout(function () {
-                        setInterval(ping, 2000);
-                    }, 8000);
+            $('.table').on('draw.dt', function () {
+                $('[data-toggle="tooltip"]').tooltip({html: true});
+            });
+
+            var events = new EventSource('{{ url_for('api.events') }}');
+            events.onmessage = function (event) {
+                var event_json = JSON.parse(event.data);
+                if (event_json.type === 'episode') {
+                    rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
+                    if (rowId.length) {
+                        $.ajax({
+                            url: "{{ url_for('api.episodes') }}?seriesid="+event_json.series+"&episodeid="+event_json.episode,
+                            async: true,
+                            success: function (data) {
+                                $('#episodes').DataTable().row(rowId).data(data.data[0]);
+                                $('[data-toggle="tooltip"]').tooltip({html: true});
+                            }
+                        })
+                    }
+                }
+            };
+
+            function BadgesAjax() {
+                $.ajax({
+                    url: "{{url_for('api.badges')}}",
+                    async: true,
+                    success: function (data) {
+                        if (data['throttled_providers']) {
+                            $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>');
+                        }
+                        if (data['missing_episodes']) {
+                            $('#wanted').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['missing_episodes'] + '</div>');
+                        }
+                        if (data['missing_movies']) {
+                            $('#wanted').append('<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">' + data['missing_movies'] + '</div>');
+                        }
+
+                    },
+                    error: (function () {
+                        setTimeout(function () {
+                            setInterval(ping, 2000);
+                        }, 8000);
+                    })
                 })
-            })
-        }
-
-        BadgesAjax()
-
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip({html: true})
-        })
-
-        $('.table').on('draw.dt', function () {
-            $('[data-toggle="tooltip"]').tooltip();
+            }
         });
     </script>
 {% endblock tail_js %}

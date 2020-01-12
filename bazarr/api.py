@@ -21,6 +21,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
+from SSE import event_stream
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -42,6 +43,11 @@ class Badges(Resource):
             "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
+
+
+class Events(Resource):
+    def get(self):
+        return Response(event_stream.read(), mimetype="text/event-stream")
 
 
 class Series(Resource):
@@ -102,10 +108,17 @@ class Episodes(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        seriesId = request.args.get('id')
+        seriesId = request.args.get('seriesid')
+        episodeId = request.args.get('episodeid')
         row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE sonarrSeriesId=?",
                                      (seriesId,), only_one=True)['count']
-        if seriesId:
+        if episodeId:
+            result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
+            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
+                                                 (seriesId,), only_one=True)['languages']
+            if desired_languages == "None":
+                desired_languages = '[]'
+        elif seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
                                       "episode DESC", (seriesId,))
             desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
@@ -115,6 +128,9 @@ class Episodes(Resource):
         else:
             return "Series ID not provided", 400
         for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
+
             # Parse subtitles
             if item['subtitles']:
                 item.update({"subtitles": ast.literal_eval(item['subtitles'])})
@@ -612,6 +628,7 @@ class WantedMovies(Resource):
 
 
 api.add_resource(Badges, '/badges')
+api.add_resource(Events, '/events')
 api.add_resource(Series, '/series')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')

@@ -38,15 +38,22 @@
 {% block bcleft %}
 <div class="">
 	<button class="btn btn-outline">
-		<i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i>
-		<span class="align-bottom text-themecolor small text-center">Update</span>
+		<div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Scan Disk</div>
+	</button>
+	<button class="btn btn-outline">
+		<div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Search</div>
 	</button>
 </div>
 {% endblock bcleft %}
 
 {% block bcright %}
 <div class="d-flex m-t-5 justify-content-end">
-	<h5 class="m-t-0 text-themecolor">Some page settings</h5>
+	<button class="btn btn-outline">
+		<div><i class="fas fa-wrench align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Edit Series</div>
+	</button>
 </div>
 {% endblock bcright %}
 
@@ -241,14 +248,18 @@
 				});
 
 		var table = $('#episodes').DataTable({
-			"processing": false,
+			"processing": true,
 			"serverSide": true,
+			language: {
+				zeroRecords: 'No Episodes Found For This Series',
+				processing: "Loading Episodes..."
+			},
 			"searching": false,
 			"ordering": false,
 			"lengthChange": false,
 			"responsive": true,
 			"pageLength": 100,
-			"ajax": "{{ url_for('api.episodes') }}?id={{id}}",
+			"ajax": "{{ url_for('api.episodes') }}?seriesid={{id}}",
 			rowGroup: {
 				dataSrc: function(data) {
 					return 'Season ' + data.season;
@@ -340,14 +351,6 @@
 				data: values,
 				beforeSend: function() {
 					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
-				},
-				complete: function(data) {
-					table.ajax.reload(null, false);
-					if (data['responseJSON']) {
-						console.log(data['responseJSON']);
-					} else {
-						console.log("Unable to delete subtitle.");
-					}
 				}
 			});
 		});
@@ -373,14 +376,6 @@
 				data: values,
 				beforeSend: function() {
 					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
-				},
-				complete: function(data) {
-					table.ajax.reload(null, false);
-					if (data['responseJSON']) {
-						console.log(data['responseJSON'][0]);
-					} else {
-						console.log("No subtitle found.");
-					}
 				}
 			});
 		});
@@ -520,13 +515,7 @@
 					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 				},
 				complete: function(data) {
-					$('#episodes').DataTable().ajax.reload(null, false);
 					$('#manualSearchModal').modal('hide');
-					if (data['responseJSON']) {
-						console.log(data['responseJSON'][0]);
-					} else {
-						console.log("No subtitle downloaded.");
-					}
 				}
 			});
 		});
@@ -568,7 +557,6 @@
 				contentType: false,
 				type: 'POST',
 				success: function(){
-					$('#episodes').DataTable().ajax.reload(null, false);
 					$('#uploadModal').modal('hide');
 				}
 			});
