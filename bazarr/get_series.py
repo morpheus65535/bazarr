@@ -16,6 +16,7 @@ from database import database, dict_converter
 from utils import get_sonarr_version
 import six
 from helper import path_replace
+from SSE import event_stream
 
 
 def update_series():
@@ -96,7 +97,7 @@ def update_series():
                                              'fanart': fanart,
                                              'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
                                              'sortTitle': show['sortTitle'],
-                                             'year': show['year'],
+                                             'year': str(show['year']),
                                              'alternateTitles': alternateTitles})
                 else:
                     if serie_default_enabled is True:
@@ -148,6 +149,8 @@ def update_series():
                 database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                                  query.values + (updated_series['sonarrSeriesId'],))
 
+                event_stream.write(type='series', series=updated_series['sonarrSeriesId'])
+
             # Insert new series in DB
             for added_series in series_to_add:
                 query = dict_converter.convert(added_series)
@@ -159,6 +162,8 @@ def update_series():
                 else:
                     logging.debug('BAZARR unable to insert this series into the database:',
                                   path_replace(added_series['path']))
+
+                event_stream.write(type='series', series=added_series['sonarrSeriesId'])
 
             logging.debug('BAZARR All series synced from Sonarr into database.')
 

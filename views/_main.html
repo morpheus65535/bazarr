@@ -265,7 +265,7 @@
             events.onmessage = function (event) {
                 var event_json = JSON.parse(event.data);
                 if (event_json.type === 'episode') {
-                    rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
+                    var rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
                     if (rowId.length) {
                         $.ajax({
                             url: "{{ url_for('api.episodes') }}?seriesid="+event_json.series+"&episodeid="+event_json.episode,
@@ -276,6 +276,25 @@
                             }
                         })
                     }
+                }
+                if (event_json.type === 'series') {
+                    if (event_json.series === {{id}}) {
+                        seriesDetailsRefresh();
+                    }
+                    /*
+                    var rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
+                    if (rowId.length) {
+                        $.ajax({
+                            url: "{{ url_for('api.episodes') }}?seriesid="+event_json.series+"&episodeid="+event_json.episode,
+                            async: true,
+                            success: function (data) {
+                                $('#episodes').DataTable().row(rowId).data(data.data[0]);
+                                $('[data-toggle="tooltip"]').tooltip({html: true});
+                            }
+                        })
+                    }
+
+                     */
                 }
             };
 

@@ -12,7 +12,7 @@ class EventStream:
     def __init__(self):
         self.queue = deque(maxlen=100)
     
-    def write(self, type=None, series=None, episode=None, movie=None):
+    def write(self, type=None, action=None, series=None, episode=None, movie=None):
         """
             :param type: The type of element.
             :type type: str
@@ -23,7 +23,7 @@ class EventStream:
             :param type: The movie id.
             :type type: str
         """
-        msg = {"type": type, "series": series, "episode": episode, "movie": movie}
+        msg = {"type": type, "action": action, "series": series, "episode": episode, "movie": movie}
         self.queue.append("data:" + json.dumps(msg) + "\n\n")
     
     def read(self):

@@ -178,6 +178,8 @@ def store_subtitles_movie(original_path, reversed_path):
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
 
+    event_stream.write(type='movie', movie=movie['radarrId'])
+
     return actual_subtitles
 
 

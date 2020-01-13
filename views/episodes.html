@@ -211,41 +211,7 @@
 			nextSibling.innerText = fileName;
 		});
 
-		$.ajax({
-			url: "{{ url_for('api.series') }}?id={{id}}"
-		})
-				.done(function( data ) {
-					seriesDetails = data.data[0];
-					$(document).prop('title', seriesDetails['title'] + ' - Bazarr');
-					$('#seriesFanart').css('background-image', "url('{{ url_for('image_proxy', url='MediaCover/'+id+'/fanart.jpg') }}')");
-					$('#seriesPoster').attr("src","{{ url_for('image_proxy', url='MediaCover/'+id+'/poster-250.jpg') }}");
-					$('#seriesTitle').text(seriesDetails['title']);
-
-					if (seriesDetails['alternateTitles'].length > 0) {
-						$('#seriesAlternateTitles').attr("title", "Alternative Titles:<br>"+seriesDetails['alternateTitles']);
-						$('#seriesAlternateTitles').tooltip({html:true});
-					} else {
-						$('#seriesAlternateTitles').hide();
-					}
-
-					$('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
-					$('#seriesMappedPath').text(seriesDetails['mapped_path']);
-					$('#seriesFileCount').text(seriesDetails['episodeFileCount']+' files');
-
-					var languages = '';
-					if (seriesDetails['languages'] !== 'None') {
-						seriesDetails['languages'].forEach(appendFunc);
-					}
-
-					function appendFunc(value) {
-						languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-					}
-
-					$('#seriesSubtitlesLanguages').html(languages);
-					$('#seriesHearingImpaired').text('Hearing-Impaired: '+seriesDetails['hearing_impaired']);
-					$('#seriesForced').text('Forced: '+seriesDetails['forced']);
-					$('#seriesDescription').text(seriesDetails['overview']);
-				});
+		seriesDetailsRefresh();
 
 		var table = $('#episodes').DataTable({
 			"processing": true,
@@ -566,5 +532,42 @@
 			$(this).find('form')[0].reset();
 		});
 	});
+
+	function seriesDetailsRefresh() {
+		$.ajax({
+			url: "{{ url_for('api.series') }}?id={{id}}"
+		}).done(function (data) {
+			seriesDetails = data.data[0];
+			$(document).prop('title', seriesDetails['title'] + ' - Bazarr');
+			$('#seriesFanart').css('background-image', "url('{{ url_for('image_proxy', url='MediaCover/'+id+'/fanart.jpg') }}')");
+			$('#seriesPoster').attr("src", "{{ url_for('image_proxy', url='MediaCover/'+id+'/poster-250.jpg') }}");
+			$('#seriesTitle').text(seriesDetails['title']);
+
+			if (seriesDetails['alternateTitles'].length > 0) {
+				$('#seriesAlternateTitles').attr("title", "Alternative Titles:<br>" + seriesDetails['alternateTitles']);
+				$('#seriesAlternateTitles').tooltip({html: true});
+			} else {
+				$('#seriesAlternateTitles').hide();
+			}
+
+			$('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
+			$('#seriesMappedPath').text(seriesDetails['mapped_path']);
+			$('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
+
+			var languages = '';
+			if (seriesDetails['languages'] !== 'None') {
+				seriesDetails['languages'].forEach(appendFunc);
+			}
+
+			function appendFunc(value) {
+				languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+			}
+
+			$('#seriesSubtitlesLanguages').html(languages);
+			$('#seriesHearingImpaired').text('Hearing-Impaired: ' + seriesDetails['hearing_impaired']);
+			$('#seriesForced').text('Forced: ' + seriesDetails['forced']);
+			$('#seriesDescription').text(seriesDetails['overview']);
+		});
+	}
 </script>
 {% endblock tail %}
