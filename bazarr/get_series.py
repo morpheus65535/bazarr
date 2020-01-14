@@ -149,7 +149,7 @@ def update_series():
                 database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                                  query.values + (updated_series['sonarrSeriesId'],))
 
-                event_stream.write(type='series', series=updated_series['sonarrSeriesId'])
+                event_stream.write(type='series', action='update', series=updated_series['sonarrSeriesId'])
 
             # Insert new series in DB
             for added_series in series_to_add:
@@ -163,7 +163,7 @@ def update_series():
                     logging.debug('BAZARR unable to insert this series into the database:',
                                   path_replace(added_series['path']))
 
-                event_stream.write(type='series', series=added_series['sonarrSeriesId'])
+                event_stream.write(type='series', action='insert', series=added_series['sonarrSeriesId'])
 
             logging.debug('BAZARR All series synced from Sonarr into database.')
 

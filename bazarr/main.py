@@ -791,23 +791,15 @@ def movie(no):
 @app.route('/scan_disk/<int:no>', methods=['GET'])
 @login_required
 def scan_disk(no):
-
-    ref = request.environ['HTTP_REFERER']
-
     series_scan_subtitles(no)
-
-    redirect(ref)
+    return '', 200
 
 
 @app.route('/scan_disk_movie/<int:no>', methods=['GET'])
 @login_required
 def scan_disk_movie(no):
-
-    ref = request.environ['HTTP_REFERER']
-
     movies_scan_subtitles(no)
-
-    redirect(ref)
+    return '', 200
 
 
 @app.route('/search_missing_subtitles/<int:no>', methods=['GET'])
@@ -1810,11 +1802,6 @@ def movie_history(no):
             item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
 
     return dict(data=movie_history)
-
-
-@app.route('/event')
-def event():
-    return Response(event_stream.read(), mimetype="text/event-stream")
 
 
 # Don't put any route under this one

@@ -264,37 +264,43 @@
             var events = new EventSource('{{ url_for('api.events') }}');
             events.onmessage = function (event) {
                 var event_json = JSON.parse(event.data);
-                if (event_json.type === 'episode') {
-                    var rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
-                    if (rowId.length) {
-                        $.ajax({
-                            url: "{{ url_for('api.episodes') }}?seriesid="+event_json.series+"&episodeid="+event_json.episode,
-                            async: true,
-                            success: function (data) {
-                                $('#episodes').DataTable().row(rowId).data(data.data[0]);
-                                $('[data-toggle="tooltip"]').tooltip({html: true});
-                            }
-                        })
-                    }
-                }
-                if (event_json.type === 'series') {
-                    if (event_json.series === {{id}}) {
+                if (event_json.series === {{id}}) {
+                    if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
                         seriesDetailsRefresh();
                     }
-                    /*
-                    var rowId = $('#episodes').DataTable().row('#row_'+event_json.episode);
-                    if (rowId.length) {
-                        $.ajax({
-                            url: "{{ url_for('api.episodes') }}?seriesid="+event_json.series+"&episodeid="+event_json.episode,
-                            async: true,
-                            success: function (data) {
-                                $('#episodes').DataTable().row(rowId).data(data.data[0]);
-                                $('[data-toggle="tooltip"]').tooltip({html: true});
-                            }
-                        })
-                    }
 
-                     */
+                    if (event_json.type === 'episode' && event_json.action === 'insert') {
+                        $.ajax({
+                                url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
+                                async: true,
+                                success: function (data) {
+                                    if (data.data.length) {
+                                        $('#episodes').DataTable().row.add(data.data[0]).draw();
+                                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                                    }
+                                }
+                            })
+                    } else if (event_json.type === 'episode' && event_json.action === 'update') {
+                        var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
+                        if (rowId.length) {
+                            $.ajax({
+                                url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
+                                async: true,
+                                success: function (data) {
+                                    if (data.data.length) {
+                                        $('#episodes').DataTable().row(rowId).data(data.data[0]);
+                                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                                    }
+                                }
+                            })
+                        }
+                    } else if (event_json.type === 'episode' && event_json.action === 'delete') {
+                        var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
+                        if (rowId.length) {
+                            $('#episodes').DataTable().row(rowId).remove().draw();
+                            $('[data-toggle="tooltip"]').tooltip({html: true});
+                        }
+                    }
                 }
             };
 
