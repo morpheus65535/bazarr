@@ -102,6 +102,10 @@ defaults = {
         'password': '',
         'random_agents': 'True'
     },
+    'legendasdivx': {
+        'username': '',
+        'password': ''
+    },
     'legendastv': {
         'username': '',
         'password': ''

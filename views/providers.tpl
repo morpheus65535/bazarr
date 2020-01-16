@@ -228,6 +228,47 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>LegendasDivx</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="legendasdivx" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Brazilian & Portuguese Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="legendasdivx_option" class="ui grid container">
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Username</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_legendasdivx_username" type="text" value="{{settings.legendasdivx.username if settings.legendasdivx.username != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Password</label>
+                                </div>
+                                <div class="six wide column">
+                                    <div class="ui fluid input">
+                                        <input name="settings_legendasdivx_password" type="password" value="{{settings.legendasdivx.password if settings.legendasdivx.password != None else ''}}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>LegendasTV</label>
                             </div>
                             <div class="one wide column">
