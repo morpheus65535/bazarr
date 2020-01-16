@@ -49,9 +49,6 @@ class LegendasdivxSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
 
-        logger.info('got %s' % self.videoname)
-        logger.info('got %s' % self.description)
-        logger.info('title %s' % video.title)
         if self.videoname.lower() in self.description:
             matches.update(['title'])
             matches.update(['season'])
@@ -59,33 +56,26 @@ class LegendasdivxSubtitle(Subtitle):
 
         # episode
         if video.title and video.title.lower() in self.description:
-            logger.info('title matched')
             matches.update(['title'])
         if video.year and '{:04d}'.format(video.year) in self.description:
-            logger.info('year matched')
             matches.update(['year'])
 
         if isinstance(video, Episode):
             # already matched in search query
             if video.season and 's{:02d}'.format(video.season) in self.description:
-                logger.info('season matched')
                 matches.update(['season'])
             if video.episode and 'e{:02d}'.format(video.episode) in self.description:
-                logger.info('episode matched')
                 matches.update(['episode'])
             if video.episode and video.season and video.series:
                 if '{}.s{:02d}e{:02d}'.format(video.series.lower(),video.season,video.episode) in self.description:
-                        logger.info('series matched')
                         matches.update(['series'])
                         matches.update(['season'])
                         matches.update(['episode'])
                 if '{} s{:02d}e{:02d}'.format(video.series.lower(),video.season,video.episode) in self.description:
-                    logger.info('series matched')
                     matches.update(['series'])
                     matches.update(['season'])
                     matches.update(['episode'])
 
-        logger.info('matches: %s' % matches)
         # release_group
         if video.release_group  and video.release_group.lower() in self.description:
             matches.update(['release_group'])
@@ -157,7 +147,7 @@ class LegendasdivxProvider(Provider):
         self.session.close()
 
     def login(self):
-        logger.info('Starting login')
+        logger.info('Logging in')
         self.headers['Referer'] = self.site + '/index.php'
         self.session.headers.update(self.headers.items())
         res = self.session.get(self.loginpage)
@@ -167,7 +157,6 @@ class LegendasdivxProvider(Provider):
         fields = {}
         for field in _allinputs:
             fields[field.get('name')] = field.get('value')
-            logger.debug('%s: %s' % (field.get('name'), field.get('value')))
 
         fields['username'] = self.username
         fields['password'] = self.password
@@ -204,10 +193,8 @@ class LegendasdivxProvider(Provider):
 
         language_ids = '0'
         if isinstance(language, (tuple, list, set)):
-            logger.error('language %s' % language)
             if len(language) == 1:
                 language_ids = ','.join(sorted(l.opensubtitles for l in language))
-                logger.error('language_ids %s' % language_ids)
                 if language_ids == 'por':
                     language_ids = '&form_cat=28'
                 else:
@@ -230,21 +217,18 @@ class LegendasdivxProvider(Provider):
         if "A legenda não foi encontrada" in res.text:
             logger.warning('%s not found', querytext)
             return []
-        logger.warning(self.searchurl.format(query=querytext))
 
         bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
         _allsubs = bsoup.findAll("div", {"class": "sub_box"})
         subtitles = []
         lang = Language.fromopensubtitles("pob")
         for _subbox in _allsubs:
-            logger.info("============================================")
             hits=0
             for th in _subbox.findAll("th", {"class": "color2"}):
                 if th.string == 'Hits:':
                     hits = int(th.parent.find("td").string)
                 if th.string == 'Idioma:':
                     lang = th.parent.find("td").find ("img").get ('src')
-                    logger.debug('lang img %s' % lang)
                     if 'brazil' in lang:
                         lang = Language.fromopensubtitles('pob')
                     else:
@@ -255,15 +239,12 @@ class LegendasdivxProvider(Provider):
             download = _subbox.find("a", {"class": "sub_download"})
             try:
                 # sometimes BSoup just doesn't get the link
-                logger.debug(download.get('href'))
             except Exception as e:
                 logger.warning('skipping subbox on %s' % self.searchurl.format(query=querytext))
                 continue
 
-            logger.info(hits)
             exact_match = False
             if video.name.lower() in description.get_text().lower():
-                logger.info("exact match!")
                 exact_match = True
             data = {'link': self.site + '/modules.php' + download.get('href'),
                     'exact_match': exact_match,
@@ -311,7 +292,6 @@ class LegendasdivxProvider(Provider):
         return archive
 
     def _get_subtitle_from_archive(self, archive):
-        logger.warning(archive.namelist())
         for name in archive.namelist():
             # discard hidden files
             if os.path.split(name)[-1].startswith('.'):
@@ -321,7 +301,6 @@ class LegendasdivxProvider(Provider):
             if not name.lower().endswith(SUBTITLE_EXTENSIONS):
                 continue
 
-            logger.warning(name)
             return archive.read(name)
 
         raise ParseResponseError('Can not find the subtitle in the compressed file')
