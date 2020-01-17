@@ -239,6 +239,7 @@ class LegendasdivxProvider(Provider):
             download = _subbox.find("a", {"class": "sub_download"})
             try:
                 # sometimes BSoup just doesn't get the link
+                logger.debug(download.get('href'))
             except Exception as e:
                 logger.warning('skipping subbox on %s' % self.searchurl.format(query=querytext))
                 continue
