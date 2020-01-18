@@ -287,15 +287,21 @@ class LegendasdivxProvider(Provider):
         return archive
 
     def _get_subtitle_from_archive(self, archive):
+        # some files have a non subtitle with .txt extension
+        _tmp = list(SUBTITLE_EXTENSIONS)
+        _tmp.remove('.txt')
+        _subtitle_extensions = tuple(_tmp)
+
         for name in archive.namelist():
             # discard hidden files
             if os.path.split(name)[-1].startswith('.'):
                 continue
 
             # discard non-subtitle files
-            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
+            if not name.lower().endswith(_subtitle_extensions):
                 continue
 
+            logger.debug("returning from archive: %s" % name)
             return archive.read(name)
 
         raise ParseResponseError('Can not find the subtitle in the compressed file')
