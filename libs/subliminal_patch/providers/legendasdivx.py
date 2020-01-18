@@ -3,24 +3,18 @@ from __future__ import absolute_import
 import logging
 import io
 import os
-import sys
 import rarfile
 import zipfile
 
 from requests import Session
 from guessit import guessit
+from subliminal_patch.exceptions import ParseResponseError
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
-from subliminal.exceptions import ProviderError
-from subliminal.utils import sanitize_release_group
-from subliminal.subtitle import guess_matches
-from subliminal.video import Episode, Movie
+from subliminal.video import Episode
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending,guess_matches
 from subzero.language import Language
-
-import gzip
 
 logger = logging.getLogger(__name__)
 
@@ -293,15 +287,21 @@ class LegendasdivxProvider(Provider):
         return archive
 
     def _get_subtitle_from_archive(self, archive):
+        # some files have a non subtitle with .txt extension
+        _tmp = list(SUBTITLE_EXTENSIONS)
+        _tmp.remove('.txt')
+        _subtitle_extensions = tuple(_tmp)
+
         for name in archive.namelist():
             # discard hidden files
             if os.path.split(name)[-1].startswith('.'):
                 continue
 
             # discard non-subtitle files
-            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
+            if not name.lower().endswith(_subtitle_extensions):
                 continue
 
+            logger.debug("returning from archive: %s" % name)
             return archive.read(name)
 
         raise ParseResponseError('Can not find the subtitle in the compressed file')
