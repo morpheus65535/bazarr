@@ -1,30 +1,21 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import logging
-import re
 import io
 import os
-import sys
 
 from requests import Session
 from guessit import guessit
-from babelfish import language_converters
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
-from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
-from subliminal.video import Episode, Movie
-from subliminal.subtitle import fix_line_ending
 from subzero.language import Language
-from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 import gzip
 import random
 from time import sleep
 from xml.etree import ElementTree
-import struct
 
 logger = logging.getLogger(__name__)
 

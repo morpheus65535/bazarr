@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import logging
 import io
 import os
-import sys
 import rarfile
 import zipfile
 
@@ -13,15 +12,9 @@ from subliminal_patch.exceptions import ParseResponseError
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
-from subliminal.exceptions import ProviderError
-from subliminal.utils import sanitize_release_group
-from subliminal.subtitle import guess_matches
-from subliminal.video import Episode, Movie
+from subliminal.video import Episode
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending,guess_matches
 from subzero.language import Language
-
-import gzip
 
 logger = logging.getLogger(__name__)
 
