@@ -9,6 +9,7 @@ import zipfile
 
 from requests import Session
 from guessit import guessit
+from subliminal_patch.exceptions import ParseResponseError
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
