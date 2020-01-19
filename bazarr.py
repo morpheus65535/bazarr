@@ -156,7 +156,7 @@ if __name__ == '__main__':
         pass
     
     
-    def daemon(daemonStatus):
+    def daemon(bazarr_runner = lambda: start_bazarr()):
         if os.path.exists(stopfile):
             try:
                 os.remove(stopfile)
@@ -172,21 +172,30 @@ if __name__ == '__main__':
             except:
                 print('Unable to delete restart file.')
             else:
-                start_bazarr(daemonStatus)
+                bazarr_runner()
     
     
-    daemonStatus = DaemonStatus()
+    bazarr_runner = lambda: start_bazarr()
     
-    def shutdown():
-        # indicates that everything should stop
-        daemonStatus.stop()
-        # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
-        os.kill(os.getpid(), signal.SIGINT)
+    should_stop = lambda: False
     
-    signal.signal(signal.SIGTERM, lambda signal_no, frame: shutdown())
-    start_bazarr(daemonStatus)
+    if PY3:
+        daemonStatus = DaemonStatus()
+        
+        def shutdown():
+            # indicates that everything should stop
+            daemonStatus.stop()
+            # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
+            os.kill(os.getpid(), signal.SIGINT)
+
+        signal.signal(signal.SIGTERM, lambda signal_no, frame: shutdown())
+        
+        should_stop = lambda: daemonStatus.should_stop()
+        bazarr_runner = lambda: start_bazarr(daemonStatus)
+    
+    bazarr_runner()
     
     # Keep the script running forever until stop is requested through term or keyboard interrupt
-    while not daemonStatus.should_stop():
-        daemon(daemonStatus)
+    while not should_stop():
+        daemon(bazarr_runner)
         time.sleep(1)
