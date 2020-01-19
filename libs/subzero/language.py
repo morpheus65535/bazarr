@@ -30,7 +30,6 @@ repl_map = {
     "rum": "ro",
     "slo": "sk",
     "tib": "bo",
-    "ron": "ro",
 }
 
 ALPHA2_LIST = list(set(filter(lambda x: x, map(lambda x: x.alpha2, LANGUAGE_MATRIX)))) + list(repl_map.values())
