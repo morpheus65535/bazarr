@@ -39,7 +39,7 @@ PROVIDER_THROTTLE_MAP = {
 }
 
 PROVIDERS_FORCED_OFF = ["addic7ed", "tvsubtitles", "legendastv", "napiprojekt", "shooter", "hosszupuska",
-                        "supersubtitles", "titlovi", "argenteam", "assrt", "subscene"]
+                        "supersubtitles", "titlovi", "titrari", "argenteam", "assrt", "subscene"]
 
 throttle_count = {}
 
