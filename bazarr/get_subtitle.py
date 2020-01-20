@@ -249,6 +249,11 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                                 
                                 if os.name == 'nt':
                                     out = out.decode(encoding)
+
+                                try:
+                                    out = out.decode(sys.stdout.encoding)
+                                except (UnicodeDecodeError, AttributeError):
+                                    pass
                             
                             except:
                                 if out == "":
@@ -474,6 +479,11 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                                 
                                 if os.name == 'nt':
                                     out = out.decode(encoding)
+
+                                try:
+                                    out = out.decode(sys.stdout.encoding)
+                                except (UnicodeDecodeError, AttributeError):
+                                    pass
                             
                             except:
                                 if out == "":

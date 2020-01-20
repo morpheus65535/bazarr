@@ -84,7 +84,7 @@ def update_series():
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['id'])
                 
-                if show['tvdbId'] in current_shows_db_list:
+                if show['id'] in current_shows_db_list:
                     series_to_update.append({'title': six.text_type(show["title"]),
                                              'path': six.text_type(show["path"]),
                                              'tvdbId': int(show["tvdbId"]),
