@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4'
+bazarr_version = '0.8.4.1'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -398,6 +398,8 @@ def save_wizard():
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
+    settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
+    settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
@@ -1527,6 +1529,8 @@ def save_settings():
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
+    settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
+    settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
@@ -1749,9 +1753,9 @@ def execute_task(taskid):
 @custom_auth_basic(check_credentials)
 def remove_subtitles():
     authorize()
-    episodePath = request.forms.get('episodePath')
+    episodePath = request.forms.episodePath
     language = request.forms.get('language')
-    subtitlesPath = request.forms.get('subtitlesPath')
+    subtitlesPath = request.forms.subtitlesPath
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     
@@ -1768,9 +1772,9 @@ def remove_subtitles():
 @custom_auth_basic(check_credentials)
 def remove_subtitles_movie():
     authorize()
-    moviePath = request.forms.get('moviePath')
+    moviePath = request.forms.moviePath
     language = request.forms.get('language')
-    subtitlesPath = request.forms.get('subtitlesPath')
+    subtitlesPath = request.forms.subtitlesPath
     radarrId = request.forms.get('radarrId')
     
     try:
@@ -1788,14 +1792,14 @@ def get_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    episodePath = request.forms.get('episodePath')
-    sceneName = request.forms.get('sceneName')
+    episodePath = request.forms.episodePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1823,12 +1827,12 @@ def get_subtitle():
 def manual_search_json():
     authorize()
     
-    episodePath = request.forms.get('episodePath')
-    sceneName = request.forms.get('sceneName')
+    episodePath = request.forms.episodePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1843,16 +1847,16 @@ def manual_get_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    episodePath = request.forms.get('episodePath')
-    sceneName = request.forms.get('sceneName')
+    episodePath = request.forms.episodePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
     selected_provider = request.forms.get('provider')
-    subtitle = request.forms.get('subtitle')
+    subtitle = request.forms.subtitle
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_auth = get_providers_auth()
     
@@ -1881,14 +1885,14 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.get('episodePath')
-    sceneName = request.forms.get('sceneName')
+    episodePath = request.forms.episodePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.get('title')
+    title = request.forms.title
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1925,13 +1929,13 @@ def get_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    moviePath = request.forms.get('moviePath')
-    sceneName = request.forms.get('sceneName')
+    moviePath = request.forms.moviePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1959,12 +1963,12 @@ def get_subtitle_movie():
 def manual_search_movie_json():
     authorize()
     
-    moviePath = request.forms.get('moviePath')
-    sceneName = request.forms.get('sceneName')
+    moviePath = request.forms.moviePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -1979,15 +1983,15 @@ def manual_get_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
     
-    moviePath = request.forms.get('moviePath')
-    sceneName = request.forms.get('sceneName')
+    moviePath = request.forms.moviePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     hi = request.forms.get('hi')
     forced = request.forms.get('forced')
-    selected_provider = request.forms.get('provider')
-    subtitle = request.forms.get('subtitle')
+    selected_provider = request.forms.provider
+    subtitle = request.forms.subtitle
     radarrId = request.forms.get('radarrId')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     providers_auth = get_providers_auth()
     
@@ -2015,13 +2019,13 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.get('moviePath')
-    sceneName = request.forms.get('sceneName')
+    moviePath = request.forms.moviePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.get('title')
+    title = request.forms.title
 
     _, ext = os.path.splitext(upload.filename)
 
