@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from collections import deque
 import json
-import time
 
 
 class EventStream:
@@ -26,7 +25,7 @@ class EventStream:
             :type movie: str
         """
         msg = {"type": type, "action": action, "series": series, "episode": episode, "movie": movie}
-        self.queue.append("retry: 1000\ndata:" + json.dumps(msg) + "\n\n")
+        self.queue.append("data:" + json.dumps(msg) + "\n\n")
     
     def read(self):
         """
@@ -35,11 +34,8 @@ class EventStream:
         """
 
         while True:
-            if self.queue:
-                return self.queue.popleft()
-            else:
-                return ':'
-            time.sleep(0.1)
+            while self.queue:
+                yield self.queue.popleft()
 
 
 event_stream = EventStream()

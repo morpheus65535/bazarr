@@ -252,6 +252,8 @@
     <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
+    <!-- Polyfill for older browsers without native support for the HTML5 EventSource API. -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=EventSource"></script>
 
     <script>
         $(document).ready(function () {
@@ -261,8 +263,15 @@
                 $('[data-toggle="tooltip"]').tooltip({html: true});
             });
 
-            var events = new EventSource('{{ url_for('api.events') }}');
-            events.onmessage = function (event) {
+            events = new EventSource('{{ url_for('api.events') }}');
+
+            // Handler for when the stream is opened (either the first time or after a reconnect).
+            events.addEventListener('open', function(event) {
+                console.log('Stream is open');
+            }, false);
+
+            // Handler for new messages.
+            events.addEventListener('message', event => {
                 var event_json = JSON.parse(event.data);
                 if (event_json.series === {{id}}) {
                     if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
@@ -302,7 +311,19 @@
                         }
                     }
                 }
-            };
+            }, false);
+
+            // Handler for a dropped connection or the server closing the connection.
+            events.addEventListener('error', function(event) {
+                switch (event.target.readyState) {
+                    case EventSource.CONNECTING:
+                        console.log('Reconnecting...');
+                        break;
+                    case EventSource.CLOSED:
+                        console.log('Connection failed, will not reconnect');
+                        break;
+                }
+            }, false);
 
             function BadgesAjax() {
                 $.ajax({
@@ -327,6 +348,10 @@
                     })
                 })
             }
+        });
+
+        $(window).on('beforeunload', function() {
+            events.close();
         });
     </script>
 {% endblock tail_js %}

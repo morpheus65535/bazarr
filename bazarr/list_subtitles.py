@@ -326,14 +326,15 @@ def movies_full_scan_subtitles():
 
 
 def series_scan_subtitles(no):
-    episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=?", (no,))
+    episodes = database.execute("SELECT path FROM table_episodes WHERE sonarrSeriesId=? ORDER BY sonarrEpisodeId",
+                                (no,))
     
     for episode in episodes:
         store_subtitles(episode['path'], path_replace(episode['path']))
 
 
 def movies_scan_subtitles(no):
-    movies = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (no,))
+    movies = database.execute("SELECT path FROM table_movies WHERE radarrId=? ORDER BY radarrId", (no,))
     
     for movie in movies:
         store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
