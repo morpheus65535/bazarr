@@ -16,7 +16,7 @@ from database import database, dict_converter
 from utils import get_sonarr_version
 import six
 from helper import path_replace
-from SSE import event_stream
+from websocket_handler import event_stream
 
 
 def update_series():

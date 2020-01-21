@@ -3,21 +3,16 @@
 from __future__ import absolute_import
 import gc
 import os
-import babelfish
 import logging
 import ast
 import langdetect
-import subliminal
 import subliminal_patch
-import operator
 from subliminal import core
 from subliminal_patch import search_external_subtitles
 from subzero.language import Language
 from bs4 import UnicodeDammit
-import six
 from binaryornot.check import is_binary
 
-from get_args import args
 from database import database
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
@@ -26,7 +21,7 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
 
 from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
-from SSE import event_stream
+from websocket_handler import event_stream
 import six
 
 gc.enable()

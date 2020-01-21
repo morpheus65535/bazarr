@@ -48,7 +48,7 @@
 <!-- ============================================================== -->
 <div class="preloader">
     <svg class="circular" viewBox="25 25 50 50">
-        <circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"/>
+        <circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle>
     </svg>
 </div>
 {% block page_body %}
@@ -207,7 +207,6 @@
                         <div class="col-md-5 col-8 align-self-center">
                             {% block bcleft %}
                             {% endblock bcleft %}
-                            </span>
                         </div>
                         <div class="col-md-7 col-4 align-self-center">
                             {% block bcright %}
@@ -252,8 +251,7 @@
     <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
-    <!-- Polyfill for older browsers without native support for the HTML5 EventSource API. -->
-    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=EventSource"></script>
+    <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
 
     <script>
         $(document).ready(function () {
@@ -263,16 +261,10 @@
                 $('[data-toggle="tooltip"]').tooltip({html: true});
             });
 
-            events = new EventSource('{{ url_for('api.events') }}');
+            var events = io.connect();
 
-            // Handler for when the stream is opened (either the first time or after a reconnect).
-            events.addEventListener('open', function(event) {
-                console.log('Stream is open');
-            }, false);
-
-            // Handler for new messages.
-            events.addEventListener('message', event => {
-                var event_json = JSON.parse(event.data);
+            events.on('event', function(event) {
+                var event_json = JSON.parse(event);
                 if (event_json.series === {{id}}) {
                     if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
                         seriesDetailsRefresh();
@@ -311,19 +303,7 @@
                         }
                     }
                 }
-            }, false);
-
-            // Handler for a dropped connection or the server closing the connection.
-            events.addEventListener('error', function(event) {
-                switch (event.target.readyState) {
-                    case EventSource.CONNECTING:
-                        console.log('Reconnecting...');
-                        break;
-                    case EventSource.CLOSED:
-                        console.log('Connection failed, will not reconnect');
-                        break;
-                }
-            }, false);
+            });
 
             function BadgesAjax() {
                 $.ajax({

@@ -44,7 +44,7 @@ from io import BytesIO
 from six import text_type, PY2
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
-from flask import Flask, make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
+from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
@@ -62,48 +62,13 @@ from scheduler import *
 from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
-from flask_debugtoolbar import DebugToolbarExtension
 from functools import wraps
 
-
-def prefix_route(route_function, prefix='', mask='{0}{1}'):
-    # Defines a new route function with a prefix.
-    # The mask argument is a `format string` formatted with, in that order: prefix, route
-    def newroute(route, *args, **kwargs):
-        # New function to prefix the route
-        return route_function(mask.format(prefix, route), *args, **kwargs)
-    return newroute
-
-# Flask Setup
-app = Flask(__name__,
-            template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
-            static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'))
-app.route = prefix_route(app.route, base_url.rstrip('/'))
-
-@app.errorhandler(404)
-def http_error_handler(error):
-    return redirect(base_url.rstrip('/')), 302
-
-app.config["SECRET_KEY"] = 'test'
-
-if args.dev:
-    app.config["DEBUG"] = True
-    # Flask-Debuger
-    app.config["DEBUG_TB_ENABLED"] = True
-    app.config["DEBUG_TB_PROFILER_ENABLED"] = True
-    app.config["DEBUG_TB_TEMPLATE_EDITOR_ENABLED"] = True
-    app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
-else:
-    app.config["DEBUG"] = False
-    # Flask-Debuger
-    app.config["DEBUG_TB_ENABLED"] = False
-
-toolbar = DebugToolbarExtension(app)
+from app import create_app, socketio
+app = create_app()
 
 from api import api_bp
 app.register_blueprint(api_bp)
-
-from SSE import event_stream
 
 
 # Check and install update on startup when running on Windows from installer
@@ -1802,17 +1767,6 @@ def movie_history(no):
             item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
 
     return dict(data=movie_history)
-
-
-# Don't put any route under this one
-@app.route('/api/help')
-def api_help():
-    endpoints = []
-    for route in app.app.routes:
-        if '/api/' in route.rule:
-            endpoints.append(route.rule)
-
-    return dict(endpoints=endpoints)
 
 
 # Mute DeprecationWarning

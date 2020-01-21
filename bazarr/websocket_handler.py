@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-from collections import deque
 import json
+from app import socketio
 
 
 class EventStream:
@@ -9,7 +8,7 @@ class EventStream:
     """
     
     def __init__(self):
-        self.queue = deque(maxlen=100)
+        pass
     
     def write(self, type=None, action=None, series=None, episode=None, movie=None):
         """
@@ -24,18 +23,7 @@ class EventStream:
             :param movie: The movie id.
             :type movie: str
         """
-        msg = {"type": type, "action": action, "series": series, "episode": episode, "movie": movie}
-        self.queue.append("data:" + json.dumps(msg) + "\n\n")
-    
-    def read(self):
-        """
-            :return: Return the oldest notification available.
-            :rtype: str
-        """
-
-        while True:
-            while self.queue:
-                yield self.queue.popleft()
+        socketio.emit('event', json.dumps({"type": type, "action": action, "series": series, "episode": episode, "movie": movie}), broadcast=True)
 
 
 event_stream = EventStream()
