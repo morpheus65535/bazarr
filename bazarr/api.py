@@ -44,6 +44,16 @@ class Badges(Resource):
         return jsonify(result)
 
 
+class Languages(Resource):
+    def get(self):
+        enabled = request.args.get('enabled')
+        if enabled.lower() in ['true', '1']:
+            result = database.execute("SELECT * FROM table_settings_languages WHERE enabled=1")
+        else:
+            result = database.execute("SELECT * FROM table_settings_languages")
+        return jsonify(result)
+
+
 class Series(Resource):
     def get(self):
         start = request.args.get('start') or 0
@@ -94,6 +104,41 @@ class Series(Resource):
                                                               "sonarrSeriesId=?", (item['sonarrSeriesId'],),
                                                               only_one=True)['count']})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+
+    def post(self):
+        seriesId = request.args.get('seriesid')
+
+        lang = request.form.getlist('languages')
+        if len(lang) > 0:
+            pass
+        else:
+            lang = 'None'
+
+        single_language = settings.general.getboolean('single_language')
+        if single_language:
+            if str(lang) == "['None']":
+                lang = 'None'
+            else:
+                lang = str(lang)
+        else:
+            if str(lang) == "['']":
+                lang = '[]'
+
+        hi = request.form.get('hearing_impaired')
+        forced = request.form.get('forced')
+
+        if hi == "on":
+            hi = "True"
+        else:
+            hi = "False"
+
+        result = database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
+                                  "sonarrSeriesId=?", (str(lang), hi, forced, seriesId))
+
+        list_missing_subtitles(no=seriesId)
+
+        return '', 204
 
 
 class Episodes(Resource):
@@ -315,6 +360,20 @@ class EpisodesSubtitlesUpload(Resource):
             pass
 
         return '', 204
+
+
+class EpisodesScanDisk(Resource):
+    def get(self):
+        seriesid = request.args.get('seriesid')
+        series_scan_subtitles(seriesid)
+        return '', 200
+
+
+class EpisodesSearchMissing(Resource):
+    def get(self):
+        seriesid = request.args.get('seriesid')
+        series_download_subtitles(seriesid)
+        return '', 200
 
 
 class Movies(Resource):
@@ -622,6 +681,7 @@ class WantedMovies(Resource):
 
 
 api.add_resource(Badges, '/badges')
+api.add_resource(Languages, '/languages')
 api.add_resource(Series, '/series')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
@@ -629,6 +689,8 @@ api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
 api.add_resource(EpisodesSubtitlesManualSearch, '/episodes_subtitles_manual_search')
 api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_download')
 api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
+api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
+api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(Movies, '/movies')
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')

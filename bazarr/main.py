@@ -564,44 +564,6 @@ def search_json(query):
     return dict(items=search_list)
 
 
-@app.route('/edit_series/<int:no>', methods=['POST'])
-@login_required
-def edit_series(no):
-
-    ref = request.environ['HTTP_REFERER']
-
-    lang = request.form.getlist('languages')
-    if len(lang) > 0:
-        pass
-    else:
-        lang = 'None'
-
-    single_language = settings.general.getboolean('single_language')
-    if single_language:
-        if str(lang) == "['None']":
-            lang = 'None'
-        else:
-            lang = str(lang)
-    else:
-        if str(lang) == "['']":
-            lang = '[]'
-
-    hi = request.form.get('hearing_impaired')
-    forced = request.form.get('forced')
-
-    if hi == "on":
-        hi = "True"
-    else:
-        hi = "False"
-
-    result = database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
-                              "sonarrSeriesId=?", (str(lang), hi, forced, no))
-
-    list_missing_subtitles(no=no)
-
-    redirect(ref)
-
-
 @app.route('/edit_serieseditor', methods=['POST'])
 @login_required
 def edit_serieseditor():
@@ -753,29 +715,11 @@ def movie(no):
                     current_port=settings.general.port)
 
 
-@app.route('/scan_disk/<int:no>', methods=['GET'])
-@login_required
-def scan_disk(no):
-    series_scan_subtitles(no)
-    return '', 200
-
-
 @app.route('/scan_disk_movie/<int:no>', methods=['GET'])
 @login_required
 def scan_disk_movie(no):
     movies_scan_subtitles(no)
     return '', 200
-
-
-@app.route('/search_missing_subtitles/<int:no>', methods=['GET'])
-@login_required
-def search_missing_subtitles(no):
-
-    ref = request.environ['HTTP_REFERER']
-
-    add_job(series_download_subtitles, args=[no], name=('search_missing_subtitles_' + str(no)))
-
-    redirect(ref)
 
 
 @app.route('/search_missing_subtitles_movie/<int:no>', methods=['GET'])
@@ -1419,12 +1363,8 @@ def get_logs():
 @app.route('/execute/<taskid>')
 @login_required
 def execute_task(taskid):
-
-    ref = request.environ['HTTP_REFERER']
-
     execute_now(taskid)
-
-    redirect(ref)
+    return '', 200
 
 
 @app.route('/remove_subtitles_movie', methods=['POST'])

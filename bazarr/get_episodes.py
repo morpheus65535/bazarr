@@ -12,6 +12,7 @@ from config import settings, url_sonarr
 from helper import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
+from websocket_handler import event_stream
 
 
 def update_all_episodes():
@@ -128,7 +129,11 @@ def sync_episodes():
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))
 
     for removed_episode in removed_episodes:
+        episode_to_delete = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE "
+                                             "sonarrEpisodeId=?", (removed_episode,), only_one=True)
         database.execute("DELETE FROM table_episodes WHERE sonarrEpisodeId=?", (removed_episode,))
+        event_stream.write(type='episode', action='delete', series=episode_to_delete['sonarrSeriesId'],
+                           episode=episode_to_delete['sonarrEpisodeId'])
 
     # Update existing episodes in DB
     episode_in_db_list = []
@@ -157,6 +162,8 @@ def sync_episodes():
             ''')''', query.values)
         if result > 0:
             altered_episodes.append([added_episode['sonarrEpisodeId'], added_episode['path']])
+            event_stream.write(type='episode', action='insert', series=added_episode['sonarrSeriesId'],
+                               episode=added_episode['sonarrEpisodeId'])
         else:
             logging.debug('BAZARR unable to insert this episode into the database:',
                           path_replace(added_episode['path']))

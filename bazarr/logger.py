@@ -84,6 +84,8 @@ def configure_logging(debug=False):
         logging.getLogger("subzero").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
         logging.getLogger("apprise").setLevel(logging.DEBUG)
+        logging.getLogger("engineio.server").setLevel(logging.DEBUG)
+        logging.getLogger("socketio.server").setLevel(logging.DEBUG)
         logging.debug('Bazarr version: %s', os.environ["BAZARR_VERSION"])
         logging.debug('Bazarr branch: %s', settings.general.branch)
         logging.debug('Operating system: %s', platform.platform())
@@ -94,7 +96,9 @@ def configure_logging(debug=False):
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
         logging.getLogger("subzero").setLevel(logging.ERROR)
-    
+        logging.getLogger("engineio.server").setLevel(logging.ERROR)
+        logging.getLogger("socketio.server").setLevel(logging.ERROR)
+
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)

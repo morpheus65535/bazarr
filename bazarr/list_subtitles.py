@@ -232,11 +232,15 @@ def list_missing_subtitles(no=None, epno=None):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId']]))
+            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
+                                                   episode_subtitles['sonarrSeriesId']]))
 
     for missing_subtitles_item in missing_subtitles_global:
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
+
+        event_stream.write(type='episode', action='update', series=missing_subtitles_item[2],
+                           episode=missing_subtitles_item[1])
 
 
 def list_missing_subtitles_movies(no=None):

@@ -33,6 +33,7 @@
               href="{{ url_for('static',filename='datatables/responsive.dataTables.min.css') }}">
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
     {% endblock head_css %}
 
     {% block head %}
@@ -252,6 +253,7 @@
     <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
 
     <script>
         $(document).ready(function () {
@@ -261,48 +263,11 @@
                 $('[data-toggle="tooltip"]').tooltip({html: true});
             });
 
-            var events = io.connect();
-
-            events.on('event', function(event) {
-                var event_json = JSON.parse(event);
-                if (event_json.series === {{id}}) {
-                    if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
-                        seriesDetailsRefresh();
-                    }
-
-                    if (event_json.type === 'episode' && event_json.action === 'insert') {
-                        $.ajax({
-                                url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
-                                async: true,
-                                success: function (data) {
-                                    if (data.data.length) {
-                                        $('#episodes').DataTable().row.add(data.data[0]).draw();
-                                        $('[data-toggle="tooltip"]').tooltip({html: true});
-                                    }
-                                }
-                            })
-                    } else if (event_json.type === 'episode' && event_json.action === 'update') {
-                        var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
-                        if (rowId.length) {
-                            $.ajax({
-                                url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
-                                async: true,
-                                success: function (data) {
-                                    if (data.data.length) {
-                                        $('#episodes').DataTable().row(rowId).data(data.data[0]);
-                                        $('[data-toggle="tooltip"]').tooltip({html: true});
-                                    }
-                                }
-                            })
-                        }
-                    } else if (event_json.type === 'episode' && event_json.action === 'delete') {
-                        var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
-                        if (rowId.length) {
-                            $('#episodes').DataTable().row(rowId).remove().draw();
-                            $('[data-toggle="tooltip"]').tooltip({html: true});
-                        }
-                    }
-                }
+            events = io.connect({
+                'reconnection': true,
+                'reconnectionDelay': 1000,
+                'reconnectionDelayMax' : 5000,
+                'reconnectionAttempts': 5
             });
 
             function BadgesAjax() {
