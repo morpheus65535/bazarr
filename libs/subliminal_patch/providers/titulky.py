@@ -244,7 +244,7 @@ class TitulkyProvider(Provider):
             for sub in subs:
                 page_link = '%s%s' % (self.server_url, sub.a.get('href').encode('utf-8'))
                 title = sub.find_all('td')[0:1]
-                title = [x.text.encode('utf-8') for x in title]
+                title = [x.text for x in title]
                 version = sub.find(class_="fixedTip")
                 if version is None:
                     version = ""
