@@ -4,6 +4,7 @@ import libs
 from datetime import timedelta
 import datetime
 import pretty
+import time
 
 from get_args import args
 from config import settings, base_url
@@ -376,6 +377,27 @@ class EpisodesSearchMissing(Resource):
         return '', 200
 
 
+class EpisodesHistory(Resource):
+    def get(self):
+        episodeid = request.args.get('episodeid')
+
+        episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
+                                           "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
+        for item in episode_history:
+            item['timestamp'] = "<div title='" + \
+                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
+                                "' data-toggle='tooltip' data-placement='left'>" + \
+                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            if item['language']:
+                item['language'] = language_from_alpha2(item['language'])
+            else:
+                item['language'] = "<i>undefined</i>"
+            if item['score']:
+                item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
+
+        return jsonify(data=episode_history)
+
+
 class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
@@ -691,6 +713,7 @@ api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_do
 api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
 api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
+api.add_resource(EpisodesHistory, '/episodes_history')
 api.add_resource(Movies, '/movies')
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')

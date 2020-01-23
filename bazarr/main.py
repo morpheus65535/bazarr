@@ -1637,25 +1637,6 @@ def episode_history(no):
     episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
                                        "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (no,))
     for item in episode_history:
-        if item['action'] == 0:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "erased.' data-inverted='' data-position='top left'><i class='ui trash icon'></i></div>"
-        elif item['action'] == 1:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "downloaded.' data-inverted='' data-position='top left'><i class='ui download " \
-                             "icon'></i></div>"
-        elif item['action'] == 2:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "manually downloaded.' data-inverted='' data-position='top left'><i class='ui user " \
-                             "icon'></i></div>"
-        elif item['action'] == 3:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "upgraded.' data-inverted='' data-position='top left'><i class='ui recycle " \
-                             "icon'></i></div>"
-        elif item['action'] == 4:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "manually uploaded.' data-inverted='' data-position='top left'><i class='ui cloud " \
-                             "upload icon'></i></div>"
         item['timestamp'] = "<div data-tooltip='" + \
                             time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + "'>" + \
                             pretty.date(datetime.fromtimestamp(item['timestamp'])) + "</div>"
