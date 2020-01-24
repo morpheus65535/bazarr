@@ -222,7 +222,8 @@ def list_missing_subtitles(no=None, epno=None):
                 desired_subtitles = desired_subtitles_temp
         actual_subtitles_list = []
         if desired_subtitles is None:
-            missing_subtitles_global.append(tuple(['[]', episode_subtitles['sonarrEpisodeId']]))
+            missing_subtitles_global.append(tuple(['[]', episode_subtitles['sonarrEpisodeId'],
+                                                   episode_subtitles['sonarrSeriesId']]))
         else:
             for item in actual_subtitles:
                 if item[0] == "pt-BR":

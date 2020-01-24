@@ -22,6 +22,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
+from websocket_handler import event_stream
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -138,6 +139,8 @@ class Series(Resource):
                                   "sonarrSeriesId=?", (str(lang), hi, forced, seriesId))
 
         list_missing_subtitles(no=seriesId)
+
+        event_stream.write(type='series', action='update', series=seriesId)
 
         return '', 204
 

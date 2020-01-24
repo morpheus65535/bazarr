@@ -346,7 +346,7 @@
 				},
 				{"data": null,
 					"render": function (data) {
-						if (data.subtitles !== null) {
+						if (data.subtitles !== 'None') {
 							var languages = '';
 							data.subtitles.forEach(appendFunc);
 							return languages;
@@ -365,7 +365,7 @@
 				},
 				{"data": null,
 					"render": function (data) {
-						if (data.missing_subtitles !== null) {
+						if (data.missing_subtitles !== 'None') {
 							var languages = '';
 							data.missing_subtitles.forEach(appendFunc);
 							return languages;
@@ -808,7 +808,7 @@
 			$('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
 
 			var languages = '';
-			if (seriesDetails['languages'] !== null) {
+			if (seriesDetails['languages'] !== 'None') {
 				seriesDetails['languages'].forEach(appendFunc);
 			}
 
