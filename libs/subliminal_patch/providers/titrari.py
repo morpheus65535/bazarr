@@ -196,7 +196,12 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def list_subtitles(self, video, languages):
         title = fix_inconsistent_naming(video.title)
-        imdb_id = video.imdb_id[2:]
+        imdb_id = None
+        try:
+            imdb_id = video.imdb_id[2:]
+        except:
+            logger.error("[#### Provider: titrari.ro] Error parsing video.imdb_id.")
+
         return [s for s in
                 self.query(languages, title, imdb_id, video)]
 
