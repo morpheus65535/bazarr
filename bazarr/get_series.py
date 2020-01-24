@@ -62,19 +62,21 @@ def update_series():
             seriesListLength = len(r.json())
             for i, show in enumerate(r.json(), 1):
                 notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i, length=seriesListLength)
-                try:
-                    overview = six.text_type(show['overview'])
-                except:
-                    overview = ""
-                try:
-                    poster_big = show['images'][2]['url'].split('?')[0]
-                    poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
-                except:
-                    poster = ""
-                try:
-                    fanart = show['images'][0]['url'].split('?')[0]
-                except:
-                    fanart = ""
+
+                if 'overview' in show:
+                    overview = show['overview']
+                else:
+                    overview = ''
+
+                poster = ''
+                fanart = ''
+                for image in show['images']:
+                    if image['coverType'] == 'poster':
+                        poster_big = image['url'].split('?')[0]
+                        poster = os.path.splitext(poster_big)[0] + '-250' + os.path.splitext(poster_big)[1]
+
+                    if image['coverType'] == 'fanart':
+                        fanart = image['url'].split('?')[0]
 
                 if show['alternateTitles'] != None:
                     alternateTitles = str([item['title'] for item in show['alternateTitles']])
@@ -84,18 +86,18 @@ def update_series():
                 # Add shows in Sonarr to current shows list
                 current_shows_sonarr.append(show['id'])
                 
-                if show['tvdbId'] in current_shows_db_list:
-                    series_to_update.append({'title': six.text_type(show["title"]),
-                                             'path': six.text_type(show["path"]),
+                if show['id'] in current_shows_db_list:
+                    series_to_update.append({'title': show["title"],
+                                             'path': show["path"],
                                              'tvdbId': int(show["tvdbId"]),
                                              'sonarrSeriesId': int(show["id"]),
-                                             'overview': six.text_type(overview),
-                                             'poster': six.text_type(poster),
-                                             'fanart': six.text_type(fanart),
-                                             'audio_language': six.text_type(profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles)),
-                                             'sortTitle': six.text_type(show['sortTitle']),
-                                             'year': six.text_type(show['year']),
-                                             'alternateTitles': six.text_type(alternateTitles)})
+                                             'overview': overview,
+                                             'poster': poster,
+                                             'fanart': fanart,
+                                             'audio_language': profile_id_to_language((show['qualityProfileId'] if get_sonarr_version().startswith('2') else show['languageProfileId']), audio_profiles),
+                                             'sortTitle': show['sortTitle'],
+                                             'year': show['year'],
+                                             'alternateTitles': alternateTitles})
                 else:
                     if serie_default_enabled is True:
                         series_to_add.append({'title': show["title"],
