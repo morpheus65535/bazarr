@@ -28,15 +28,119 @@
             <th>Hearing-Impaired</th>
             <th>Forced</th>
             <th>Subtitles</th>
+            <th></th>
         </tr>
         </thead>
     </table>
+
+    <div id="editModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="edit_series_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="edit_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Audio Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="edit_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Subtitles Language(s)
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Hearing-Impaired
+                                </div>
+                                <div class="form-group col-sm-1 pl-sm-0">
+                                    <label class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
+                                        <span class="custom-control-label" for="hi_checkbox"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Forced
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <select class="selectpicker" id="edit_forced_select" name="forced">
+                                        <option value="False">False</option>
+                                        <option value="True">True</option>
+                                        <option value="Both">Both</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value="" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="edit_save_button" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 {% endblock body %}
 
 {% block tail %}
     <script>
         $(document).ready(function () {
+            getLanguages();
+		    getEnabledLanguages();
+
+		    events.on('event', function(event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'series' && event_json.action === 'insert') {
+                    $.ajax({
+                        url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
+                        success: function (data) {
+                            if (data.data.length) {
+                                $('#series').DataTable().rows.add(data.data);
+                                $('#series').DataTable().columns.adjust().draw(false);
+                                $('[data-toggle="tooltip"]').tooltip({html: true});
+                            }
+                        }
+                    })
+                } else if (event_json.type === 'series' && event_json.action === 'update') {
+                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
+                    if (rowId.length) {
+                        $.ajax({
+                            url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
+                            success: function (data) {
+                                if (data.data.length) {
+                                    $('#series').DataTable().row(rowId).data(data.data[0]);
+                                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                                }
+                            }
+                        })
+                    }
+                } else if (event_json.type === 'series' && event_json.action === 'delete') {
+                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
+                    if (rowId.length) {
+                        $('#series').DataTable().row(rowId).remove();
+                        $('#series').DataTable().columns.adjust().draw(false);
+                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                    }
+                }
+            });
+
             var table = $('#series').DataTable({
                 "dom":
                     "<'row'<'col-sm-12'tr>>" +
@@ -100,15 +204,84 @@
                             var completed = data.episodeFileCount - data.episodeMissingCount;
                             var completed_style = '';
                             var completed_text = '';
-                            if (completed / total * 100 > 0 && data.languages !== 'None') {
+                            if (data.episodeFileCount && data.languages !== 'None') {
                                 completed_style = ' style="width: ' + completed / total * 100 + '%;"';
                                 completed_text = completed + '/' + total;
                             }
                             return '<div class="progress"><div class="progress-bar" role="progressbar"' + completed_style + ' aria-valuenow="' + completed + '" aria-valuemin="0" aria-valuemax="' + total + '">' + completed_text + '</div></div>'
                         }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data) {
+                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId='+data.sonarrSeriesId+' data-audiolanguage="'+data.audio_language.name+'" data-title="'+data.title+'" data-languages='+JSON.stringify(data.languages)+' data-hi="'+data.hearing_impaired+'" data-forced="'+data.forced+'"><i class="fas fa-wrench"></i></a>';
+                        }
                     }
                 ]
             });
         });
+
+        $('#series').on('click', '.edit_button', function(e){
+			e.preventDefault();
+			$("#edit_series_title_span").html($(this).data('title'));
+			$("#edit_audio_language_span").html($(this).data('audiolanguage'));
+			$('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
+
+
+			$('#edit_languages_select').empty();
+			$.each(enabledLanguages, function (i, item) {
+				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+			});
+			$("#edit_languages_select").selectpicker("refresh");
+			var selected_languages = Array();
+			$.each(Array.from($(this).data('languages')), function (i, item) {
+				selected_languages.push(item.code2);
+			});
+			$('#edit_languages_select').selectpicker('val', selected_languages);
+			$('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
+			$('#edit_forced_select').val($(this).data('forced')).change();
+
+			$('#editModal')
+					.modal({
+						focus: false
+					});
+		});
+
+        $('#edit_form').on('submit', function(e){
+			e.preventDefault();
+			var formdata = new FormData(document.getElementById("edit_form"));
+
+			$.ajax({
+				url: "{{ url_for('api.series') }}?seriesid=" + $('#edit_sonarrSeriesId').val(),
+				data: formdata,
+				processData: false,
+				contentType: false,
+				type: 'POST',
+				success: function(){
+					//seriesDetailsRefresh();
+					$('#editModal').modal('hide');
+				}
+			});
+		});
+
+        function getLanguages() {
+            $.ajax({
+                url: "{{ url_for('api.languages') }}?enabled=false",
+                async: false,
+                success:function(data) {
+                    availableLanguages = data;
+                }
+            });
+        }
+
+        function getEnabledLanguages() {
+            $.ajax({
+                url: "{{ url_for('api.languages') }}?enabled=true",
+                async: false,
+                success:function(data) {
+                    enabledLanguages = data;
+                }
+            });
+        }
     </script>
 {% endblock tail %}

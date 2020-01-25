@@ -62,7 +62,7 @@ class Series(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        seriesId = request.args.get('id')
+        seriesId = request.args.get('seriesid')
         row_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
@@ -70,6 +70,9 @@ class Series(Resource):
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
+
             # Parse audio language
             if item['audio_language']:
                 item.update({"audio_language": {"name": item['audio_language'],
@@ -127,7 +130,7 @@ class Series(Resource):
             if str(lang) == "['']":
                 lang = '[]'
 
-        hi = request.form.get('hearing_impaired')
+        hi = request.form.get('hi')
         forced = request.form.get('forced')
 
         if hi == "on":

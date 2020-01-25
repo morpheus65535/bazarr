@@ -321,7 +321,7 @@
 			"ordering": false,
 			"lengthChange": false,
 			"responsive": true,
-			"pageLength": 100,
+			"pageLength": {{ settings.general.page_size }},
 			"ajax": "{{ url_for('api.episodes') }}?seriesid={{id}}",
 			rowGroup: {
 				dataSrc: function(data) {
