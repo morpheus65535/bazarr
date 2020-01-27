@@ -146,7 +146,7 @@
                 <nav class="sidebar-nav">
                     <ul id="sidebarnav">
                         {% if settings.general.getboolean('use_sonarr') %}
-                            <li><a href="#"><i class="fas fa-play"></i><span
+                            <li id="series_nav"><a href="#"><i class="fas fa-play"></i><span
                                     class="hide-menu"> Series</span></a>
                                 <ul aria-expanded="false" class="collapse">
                                     <li><a href="{{ url_for('series') }}"> Series List</a></li>
