@@ -316,13 +316,12 @@ class TitulkyProvider(Provider):
             elif 'Limit vyčerpán' in r.text:
                 raise DownloadLimitExceeded
             
-            soup = ParserBeautifulSoup(r.text.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
+            soup = ParserBeautifulSoup(r.text, ['lxml', 'html.parser'])
             # links = soup.find("a", {"id": "downlink"}).find_all('a')
             link = soup.find(id="downlink")
             # TODO: add settings for choice
             
-            url = link.get('href')
-            url = self.dn_url + url
+            url = self.dn_url + link.get('href')
             time.sleep(0.5)
             r = self.session.get(url, headers={'Referer': subtitle.download_link},
                                  timeout=30)
