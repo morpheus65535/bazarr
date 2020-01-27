@@ -518,22 +518,7 @@ def series():
 @app.route('/serieseditor/')
 @login_required
 def serieseditor():
-
-    # Get missing count
-    missing_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
-
-    # Get series list
-    data = database.execute("SELECT tvdbId, title, path, languages, hearing_impaired, sonarrSeriesId, poster, "
-                            "audio_language, forced FROM table_shows ORDER BY sortTitle ASC")
-    # path_replace
-    dict_mapper.path_replace(data)
-
-    # Get languages list
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    return render_template('serieseditor.html', bazarr_version=bazarr_version, rows=data, languages=languages,
-                    missing_count=missing_count, base_url=base_url,
-                    single_language=settings.general.getboolean('single_language'), current_port=settings.general.port)
+    return render_template('serieseditor.html')
 
 
 @app.route('/search_json/<query>', methods=['GET'])

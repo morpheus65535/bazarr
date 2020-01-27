@@ -660,6 +660,9 @@
 
 
 			$('#edit_languages_select').empty();
+			if ('{{settings.general.single_language}}' === 'True') {
+				$('#edit_languages_select').selectpicker({maxOptions: 1});
+			}
 			$.each(enabledLanguages, function (i, item) {
 				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
 			});
@@ -789,7 +792,7 @@
 
 	function seriesDetailsRefresh() {
 		$.ajax({
-			url: "{{ url_for('api.series') }}?id={{id}}"
+			url: "{{ url_for('api.series') }}?seriesid={{id}}"
 		}).done(function (data) {
 			seriesDetails = data.data[0];
 			$(document).prop('title', seriesDetails['title'] + ' - Bazarr');
@@ -828,7 +831,6 @@
 	function getLanguages() {
 		$.ajax({
 			url: "{{ url_for('api.languages') }}?enabled=false",
-			async: false,
 			success:function(data) {
 				availableLanguages = data;
 			}
@@ -838,7 +840,6 @@
 	function getEnabledLanguages() {
 		$.ajax({
 			url: "{{ url_for('api.languages') }}?enabled=true",
-			async: false,
 			success:function(data) {
 				enabledLanguages = data;
 			}

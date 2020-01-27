@@ -1,188 +1,264 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+{% extends '_main.html' %}
 
-		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
-		<link rel="manifest" href="{{base_url}}static/manifest.json">
-		<link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
-		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
-		<meta name="theme-color" content="#ffffff">
+{% block title %}Series - Bazarr{% endblock %}
 
-		<title>Series Editor - Bazarr</title>
+{% block bcleft %}
+<div id="buttons"></div>
+{% endblock bcleft %}
 
-		<style>
-			body {
-				background-color: #272727;
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <table id="series" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Audio Language</th>
+            <th>Subtitles Languages</th>
+            <th>Hearing-Impaired</th>
+            <th>Forced</th>
+        </tr>
+        </thead>
+    </table>
+
+    <div id="editModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="edit_series_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="edit_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Audio Language
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <span id="edit_audio_language_span"></span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Subtitles Language(s)
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Hearing-Impaired
+                                </div>
+                                <div class="form-group col-sm-1 pl-sm-0">
+                                    <label class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
+                                        <span class="custom-control-label" for="hi_checkbox"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Forced
+                                </div>
+                                <div class="form-group col-sm-8 pl-sm-0">
+                                    <select class="selectpicker" id="edit_forced_select" name="forced">
+                                        <option value="False">False</option>
+                                        <option value="True">True</option>
+                                        <option value="Both">Both</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value="" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="edit_save_button" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            getLanguages();
+		    getEnabledLanguages();
+
+		    events.on('event', function(event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'series' && event_json.action === 'insert') {
+                    $.ajax({
+                        url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
+                        success: function (data) {
+                            if (data.data.length) {
+                                $('#series').DataTable().rows.add(data.data);
+                                $('#series').DataTable().columns.adjust().draw(false);
+                                $('[data-toggle="tooltip"]').tooltip({html: true});
+                            }
+                        }
+                    })
+                } else if (event_json.type === 'series' && event_json.action === 'update') {
+                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
+                    if (rowId.length) {
+                        $.ajax({
+                            url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
+                            success: function (data) {
+                                if (data.data.length) {
+                                    $('#series').DataTable().row(rowId).data(data.data[0]);
+                                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                                }
+                            }
+                        })
+                    }
+                } else if (event_json.type === 'series' && event_json.action === 'delete') {
+                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
+                    if (rowId.length) {
+                        $('#series').DataTable().row(rowId).remove();
+                        $('#series').DataTable().columns.adjust().draw(false);
+                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                    }
+                }
+            });
+
+            var table = $('#series').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "searching": false,
+                "ordering": true,
+                "order": [ 1, 'asc'],
+                "lengthChange": true,
+                "responsive": true,
+                "paging": false,
+                "ajax": "{{ url_for('api.series') }}",
+                "columnDefs": [ {
+                    "orderable": false,
+                    "className": 'select-checkbox',
+                    "targets":   0
+                } ],
+                "select": {
+                    "style":    'multi',
+                    "selector": 'td:first-child'
+                },
+                "columns": [
+                    {"defaultContent": ""},
+                    {"data": null,
+                        "render": function (data) {
+                            return '<a href="{{ url_for( 'episodes' ) }}' + data.sonarrSeriesId + '">' + data.title + '</a>'
+                        }
+                    },
+                    {"data": "audio_language.name"},
+                    {
+                        "data": "languages",
+                        "render": function (data) {
+                            if (data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
+                    },
+                    {
+                        "data": "hearing_impaired",
+                        "className": "dt-center"
+                    },
+                    {
+                        "data": "forced",
+                        "className": "dt-center"
+                    }
+                ]
+            });
+
+
+
+            new $.fn.dataTable.Buttons( table, {
+                "buttons": [
+                    'selectAll',
+                    'selectNone'
+                ]
+            } );
+
+            table.buttons().container().appendTo('#buttons');
+        });
+
+        $('#series').on('click', '.edit_button', function(e){
+			e.preventDefault();
+			$("#edit_series_title_span").html($(this).data('title'));
+			$("#edit_audio_language_span").html($(this).data('audiolanguage'));
+			$('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
+
+
+			$('#edit_languages_select').empty();
+			if ('{{settings.general.single_language}}' === 'True') {
+				$('#edit_languages_select').selectpicker({maxOptions: 1});
 			}
-			#fondblanc {
-				background-color: #ffffff;
-				border-radius: 0;
-				box-shadow: 0 0 5px 5px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding: 2em 3em 2em 3em;
-			}
-			#tableseries {
-				padding-top: 1em;
-			}
-			#bottommenu {
-				background-color: #333333;
-				box-shadow: 0 0 10px 1px #333;
-				padding: 10px;
-			}
-			#bottomform {
-				width: 100%;
-				padding-left: 8em;
-				margin-bottom: -1em !important;
-			}
-		</style>
-	</head>
-	<body>
-		<div id='loader' class="ui page dimmer">
-			<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
-		</div>
-		% include('menu.tpl')
+			$.each(enabledLanguages, function (i, item) {
+				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+			});
+			$("#edit_languages_select").selectpicker("refresh");
+			var selected_languages = Array();
+			$.each(Array.from($(this).data('languages')), function (i, item) {
+				selected_languages.push(item.code2);
+			});
+			$('#edit_languages_select').selectpicker('val', selected_languages);
+			$('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
+			$('#edit_forced_select').val($(this).data('forced')).change();
 
-		<div id="fondblanc" class="ui container">
-			<table id="tableseries" class="ui very basic selectable sortable table">
-				<thead>
-					<tr>
-						<th class="no-sort collapsing">
-							<div class="ui checkbox">
-								<input id='selectall' type="checkbox">
-								<label></label>
-							</div>
-						</th>
-						<th class="sorted ascending">Name</th>
-						<th>Audio Language</th>
-						<th>Subtitles Language(s)</th>
-						<th>Hearing-Impaired</th>
-						<th>Forced</th>
-					</tr>
-				</thead>
-				<tbody>
-				%import ast
-				%import os
-				%for row in rows:
-					<tr class="selectable">
-						<td class="collapsing">
-							<div class="ui checkbox">
-								<input id='{{row['sonarrSeriesId']}}' type="checkbox" class="selected">
-								<label></label>
-							</div>
-						</td>
-						<td><a href="{{base_url}}episodes/{{row['sonarrSeriesId']}}">{{row['title']}}</a></td>
-						<td>{{row['audio_language']}}</td>
-						<td>
-							%subs_languages = ast.literal_eval(str(row['languages']))
-							%if subs_languages is not None:
-								%for subs_language in subs_languages:
-									<div class="ui tiny label">{{subs_language}}</div>
-								%end
-							%end
-						</td>
-						<td>{{!"" if row['hearing_impaired'] is None else row['hearing_impaired']}}</td>
-						<td>{{!"" if row['forced'] is None else row['forced']}}</td>
-					</tr>
-				%end
-				</tbody>
-			</table>
-		</div>
-		<div id='bottommenu' class="ui inverted bottom fixed menu">
-			<form id='bottomform' action="{{base_url}}edit_serieseditor" method="POST" class="ui form">
-				<input type="hidden" name="series" id="checked" />
-				<div class="fields">
-			    	<div class="eight wide field">
-			      		<label style='color: white;'>Subtitles Language(s)</label>
-			      		<select name="languages" {{!'multiple="" ' if single_language is False else ''}}class="select ui disabled selection dropdown">
-			                <option value="">No Change</option>
-			                <option value="None">None</option>
-			                %for language in languages:
-							<option value="{{language['code2']}}">{{language['name']}}</option>
-							%end
-			            </select>
-			    	</div>
-			    	<div class="field">
-			    		<label style='color: white;'>Hearing-Impaired</label>
-			    		<select name="hearing_impaired" class="select ui disabled selection dropdown">
-			                <option value="">No Change</option>
-			                <option value="True">True</option>
-			                <option value="False">False</option>
-			            </select>
-			    	</div>
-			    	<div class="field">
-			    		<label style='color: white;'>Forced</label>
-			    		<select name="forced" class="select ui disabled selection dropdown">
-			                <option value="">No change</option>
-			                <option value="False">False</option>
-			                <option value="True">True</option>
-			                <option value="Both">Both</option>
-			            </select>
-			    	</div>
-			    	<div class='field'>
-						<label style='color: white;'><span id='count'>0</span> Series Selected</label>
-						<button type="submit" id="save" name="save" value="save" class="ui disabled blue approve button">Save</button>
-					</div>
-				</div>
-			</form>
-		</div>
-
-		% include('footer.tpl')
-		<br><br><br><br>
-	</body>
-</html>
-
-
-<script>
-	if (sessionStorage.scrolly) {
-		$(window).scrollTop(sessionStorage.scrolly);
-		sessionStorage.clear();
-	}
-
-	$('table').tablesort();
-
-	$('a, button').on('click', function(){
-		$('#loader').addClass('active');
-	});
-
-	$('.modal')
-		.modal({
-			autofocus: false
+			$('#editModal')
+					.modal({
+						focus: false
+					});
 		});
 
-	$('.selected').on('change', function() {
-		$("#count").text($('.selected:checked').length);
-		if ( $('.selected:checked').length > 0 ) {
-			$('.select').removeClass('disabled');
-			$('#save').removeClass('disabled');
-		}
-		else {
-			$('.select').addClass('disabled');
-			$('#save').addClass('disabled');
-		}
+        $('#edit_form').on('submit', function(e){
+			e.preventDefault();
+			var formdata = new FormData(document.getElementById("edit_form"));
 
-		const result = [];
-		$('.selected:checked').each(function(i){
-			result.push($(this).attr('id'));
+			$.ajax({
+				url: "{{ url_for('api.series') }}?seriesid=" + $('#edit_sonarrSeriesId').val(),
+				data: formdata,
+				processData: false,
+				contentType: false,
+				type: 'POST',
+				success: function(){
+					//seriesDetailsRefresh();
+					$('#editModal').modal('hide');
+				}
+			});
 		});
-		$("#checked").val(result);
-	});
 
-	$('#selectall').on('change', function() {
-		if ( $('#selectall').is(":checked") ) {
-			$('.selected').prop('checked', true).trigger('change');
-		}
-		else {
-			$('.selected').prop('checked', false).trigger('change');
-		}
-	});
+        function getLanguages() {
+            $.ajax({
+                url: "{{ url_for('api.languages') }}?enabled=false",
+                success:function(data) {
+                    availableLanguages = data;
+                }
+            });
+        }
 
-	$('.select').dropdown();
-</script>
+        function getEnabledLanguages() {
+            $.ajax({
+                url: "{{ url_for('api.languages') }}?enabled=true",
+                success:function(data) {
+                    enabledLanguages = data;
+                }
+            });
+        }
+    </script>
+{% endblock tail %}

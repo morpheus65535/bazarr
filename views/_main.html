@@ -32,8 +32,12 @@
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='datatables/responsive.dataTables.min.css') }}">
         <link rel="stylesheet" type="text/css"
+              href="{{ url_for('static',filename='datatables/select.bootstrap4.min.css') }}">
+        <link rel="stylesheet" type="text/css"
+              href="{{ url_for('static',filename='datatables/buttons.dataTables.min.css') }}">
+        <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}" />
 
         <style>
             table.dataTable tbody td {
@@ -142,8 +146,12 @@
                 <nav class="sidebar-nav">
                     <ul id="sidebarnav">
                         {% if settings.general.getboolean('use_sonarr') %}
-                            <li><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
+                            <li><a href="#"><i class="fas fa-play"></i><span
                                     class="hide-menu"> Series</span></a>
+                                <ul aria-expanded="false" class="collapse">
+                                    <li><a href="{{ url_for('series') }}"> Series List</a></li>
+                                    <li><a href="{{ url_for('serieseditor') }}"> Mass Editor</a></li>
+                                </ul>
                             </li>
                         {% endif %}
                         {% if settings.general.getboolean('use_radarr') %}
@@ -256,10 +264,12 @@
     <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ url_for('static',filename='datatables/dataTables.rowGroup.min.js') }}"></script>
     <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.buttons.min.js') }}"></script>
     <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
 
     <script>
         $(document).ready(function () {

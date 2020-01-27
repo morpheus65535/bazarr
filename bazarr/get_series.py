@@ -132,7 +132,8 @@ def update_series():
             removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
             for series in removed_series:
-                database.execute("DELETE FROM table_shows WHERE sonarrSEriesId=?",(series,))
+                database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
+                event_stream.write(type='series', action='delete', series=series)
 
             # Update existing series in DB
             series_in_db_list = []
@@ -148,7 +149,6 @@ def update_series():
                 query = dict_converter.convert(updated_series)
                 database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                                  query.values + (updated_series['sonarrSeriesId'],))
-
                 event_stream.write(type='series', action='update', series=updated_series['sonarrSeriesId'])
 
             # Insert new series in DB
