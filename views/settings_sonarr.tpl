@@ -207,7 +207,7 @@
                         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
                             if (data.status) {
                                 $('#sonarr_validated').checkbox('check');
-                                $('#sonarr_validation_result').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
+                                $('#sonarr_validation_result').text('Test successful: Sonarr v' + data.version).css('color', 'green');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             } else {
