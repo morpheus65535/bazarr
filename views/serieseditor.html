@@ -1,9 +1,9 @@
 {% extends '_main.html' %}
 
-{% block title %}Series - Bazarr{% endblock %}
+{% block title %}Series Editor - Bazarr{% endblock %}
 
 {% block bcleft %}
-<div id="buttons"></div>
+    <div id="buttons"></div>
 {% endblock bcleft %}
 
 {% block bcright %}
@@ -24,76 +24,42 @@
         </thead>
     </table>
 
-    <div id="editModal" class="modal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><span id="edit_series_title_span"></span></h5><br>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <form class="form" name="edit_form" id="edit_form">
-                    <div class="modal-body">
-                        <div class="container-fluid">
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Audio Language
-                                </div>
-                                <div class="form-group col-sm-8 pl-sm-0">
-                                    <span id="edit_audio_language_span"></span>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Subtitles Language(s)
-                                </div>
-                                <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Hearing-Impaired
-                                </div>
-                                <div class="form-group col-sm-1 pl-sm-0">
-                                    <label class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
-                                        <span class="custom-control-label" for="hi_checkbox"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Forced
-                                </div>
-                                <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_forced_select" name="forced">
-                                        <option value="False">False</option>
-                                        <option value="True">True</option>
-                                        <option value="Both">Both</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value="" />
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" id="edit_save_button" class="btn btn-primary">Save</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    </div>
-                </form>
+    <nav class="navbar fixed-bottom navbar-dark bg-dark" style="margin-left: 240px;">
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="languages_select">Language(s): </label>
+                <select class="selectpicker" id="languages_select" name="languages" multiple></select>
             </div>
         </div>
-    </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="hi_select">Hearing-Impaired: </label>
+                <select class="selectpicker show-tick" id="hi_select" name="hi" multiple>
+                    <option value="False">False</option>
+                    <option value="True">True</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="forced_select">Forced: </label>
+                <select class="selectpicker show-tick" id="forced_select" name="forced" multiple>
+                    <option value="False">False</option>
+                    <option value="True">True</option>
+                    <option value="Both">Both</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <button type="submit" class="btn btn-primary" id="save_button">Save</button>
+        </div>
+    </nav>
 {% endblock body %}
 
 {% block tail %}
     <script>
         $(document).ready(function () {
-            getLanguages();
-		    getEnabledLanguages();
+            getEnabledLanguages();
 
 		    events.on('event', function(event) {
                 var event_json = JSON.parse(event);
@@ -194,68 +160,45 @@
             } );
 
             table.buttons().container().appendTo('#buttons');
-        });
 
-        $('#series').on('click', '.edit_button', function(e){
-			e.preventDefault();
-			$("#edit_series_title_span").html($(this).data('title'));
-			$("#edit_audio_language_span").html($(this).data('audiolanguage'));
-			$('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
+            if ('{{settings.general.single_language}}' === 'True') {
+                $('#languages_select').selectpicker({maxOptions: 1});
+            }
+            $('#hi_select').selectpicker({maxOptions: 1});
+            $('#forced_select').selectpicker({maxOptions: 1});
 
+            $('#save_button').on('click', function(e){
+                e.preventDefault();
+                const values = {
+                    seriesid: table.rows( { selected: true } ).ids().toArray(),
+                    languages: $('#languages_select').val(),
+                    hi: $('#hi_select').val(),
+                    forced: $('#forced_select').val()
+                };
 
-			$('#edit_languages_select').empty();
-			if ('{{settings.general.single_language}}' === 'True') {
-				$('#edit_languages_select').selectpicker({maxOptions: 1});
-			}
-			$.each(enabledLanguages, function (i, item) {
-				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
-			});
-			$("#edit_languages_select").selectpicker("refresh");
-			var selected_languages = Array();
-			$.each(Array.from($(this).data('languages')), function (i, item) {
-				selected_languages.push(item.code2);
-			});
-			$('#edit_languages_select').selectpicker('val', selected_languages);
-			$('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
-			$('#edit_forced_select').val($(this).data('forced')).change();
-
-			$('#editModal')
-					.modal({
-						focus: false
-					});
-		});
-
-        $('#edit_form').on('submit', function(e){
-			e.preventDefault();
-			var formdata = new FormData(document.getElementById("edit_form"));
-
-			$.ajax({
-				url: "{{ url_for('api.series') }}?seriesid=" + $('#edit_sonarrSeriesId').val(),
-				data: formdata,
-				processData: false,
-				contentType: false,
-				type: 'POST',
-				success: function(){
-					//seriesDetailsRefresh();
-					$('#editModal').modal('hide');
-				}
-			});
-		});
-
-        function getLanguages() {
-            $.ajax({
-                url: "{{ url_for('api.languages') }}?enabled=false",
-                success:function(data) {
-                    availableLanguages = data;
-                }
+                $.ajax({
+                    url: "{{ url_for('api.serieseditsave') }}",
+                    method: "POST",
+			        data: JSON.stringify(values),
+                    contentType: 'application/json',
+                    success: function(){
+                        table.rows().deselect();
+                        $('#languages_select').selectpicker('val', '');
+                        $('#hi_select').selectpicker('val', '');
+                        $('#forced_select').selectpicker('val', '');
+                    }
+                });
             });
-        }
+        });
 
         function getEnabledLanguages() {
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=true",
                 success:function(data) {
-                    enabledLanguages = data;
+                    $.each(data, function (i, item) {
+                        $('#languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+                    });
+                    $("#languages_select").selectpicker("refresh");
                 }
             });
         }

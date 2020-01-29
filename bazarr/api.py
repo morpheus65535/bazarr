@@ -148,6 +148,25 @@ class Series(Resource):
         return '', 204
 
 
+class SeriesEditSave(Resource):
+    def post(self):
+        changed_series = request.json
+        for item in changed_series['seriesid']:
+            seriesid = item.lstrip('row_')
+            try:
+                database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
+                                 "sonarrSeriesId=?", (str(changed_series['languages']), changed_series['hi'][0],
+                                                      changed_series['forced'][0], seriesid))
+            except:
+                pass
+            else:
+                list_missing_subtitles(no=seriesid)
+
+                event_stream.write(type='series', action='update', series=seriesid)
+
+        return '', 204
+
+
 class Episodes(Resource):
     def get(self):
         start = request.args.get('start') or 0
@@ -711,6 +730,7 @@ class WantedMovies(Resource):
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
 api.add_resource(Series, '/series')
+api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
 api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')

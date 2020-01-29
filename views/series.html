@@ -3,18 +3,16 @@
 {% block title %}Series - Bazarr{% endblock %}
 
 {% block bcleft %}
-    <div class="d-flex">
-        <button class="btn btn-outline">
-            <i class="fas fa-sync align-top text-themecolor text-center" aria-hidden="true"></i>
-            <span class="align-bottom">Update</span>
+    <div class="">
+        <button class="btn btn-outline" id="mass_edit"  onclick="window.location.href = '{{ url_for('serieseditor') }}';">
+            <div><i class="fas fa-list align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Mass Edit</div>
         </button>
     </div>
 {% endblock bcleft %}
 
 {% block bcright %}
-    <div class="d-flex m-t-5 justify-content-end">
-        <h5 class="m-t-0 text-themecolor">Some page settings</h5>
-    </div>
+
 {% endblock bcright %}
 
 {% block body %}
@@ -142,11 +140,11 @@
             });
 
             var table = $('#series').DataTable({
-                "processing": false,
+                "processing": true,
                 "serverSide": true,
                 "searching": false,
                 "ordering": false,
-                "lengthChange": true,
+                "lengthChange": false,
                 "responsive": true,
                 "pageLength": {{ settings.general.page_size }},
                 "ajax": "{{ url_for('api.series') }}",
