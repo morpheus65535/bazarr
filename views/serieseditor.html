@@ -28,13 +28,13 @@
         <div class="form-check form-check-inline">
             <div class="form-group" style="margin-bottom: 0px;">
                 <label for="languages_select">Language(s): </label>
-                <select class="selectpicker" id="languages_select" name="languages" multiple></select>
+                <select class="selectpicker" id="languages_select" name="languages" title="No change" multiple></select>
             </div>
         </div>
         <div class="form-check form-check-inline">
             <div class="form-group" style="margin-bottom: 0px;">
                 <label for="hi_select">Hearing-Impaired: </label>
-                <select class="selectpicker show-tick" id="hi_select" name="hi" multiple>
+                <select class="selectpicker show-tick" id="hi_select" name="hi" title="No change" multiple>
                     <option value="False">False</option>
                     <option value="True">True</option>
                 </select>
@@ -43,7 +43,7 @@
         <div class="form-check form-check-inline">
             <div class="form-group" style="margin-bottom: 0px;">
                 <label for="forced_select">Forced: </label>
-                <select class="selectpicker show-tick" id="forced_select" name="forced" multiple>
+                <select class="selectpicker show-tick" id="forced_select" name="forced" title="No change" multiple>
                     <option value="False">False</option>
                     <option value="True">True</option>
                     <option value="Both">Both</option>
@@ -59,6 +59,8 @@
 {% block tail %}
     <script>
         $(document).ready(function () {
+            $('#series_nav').addClass("active");
+
             getEnabledLanguages();
 
 		    events.on('event', function(event) {
@@ -96,6 +98,12 @@
                     }
                 }
             });
+
+            $('.selectpicker').prop('disabled', true);
+            $('.selectpicker').selectpicker('refresh');
+            $('#save_button').prop('disabled', true);
+            $('#save_button').addClass('disabled');
+            $('#save_button').css('cursor', 'not-allowed');
 
             var table = $('#series').DataTable({
                 "processing": true,
@@ -150,8 +158,6 @@
                 ]
             });
 
-
-
             new $.fn.dataTable.Buttons( table, {
                 "buttons": [
                     'selectAll',
@@ -160,6 +166,24 @@
             } );
 
             table.buttons().container().appendTo('#buttons');
+
+            table.on( 'select', function () {
+                $('.selectpicker').prop('disabled', false);
+                $('.selectpicker').selectpicker('refresh');
+                $('#save_button').prop('disabled', false);
+                $('#save_button').removeClass('disabled');
+                $('#save_button').css('cursor', 'auto');
+            } );
+
+            table.on( 'deselect', function () {
+                if (table.rows( '.selected' ).count() === 0) {
+                    $('.selectpicker').prop('disabled', true);
+                    $('.selectpicker').selectpicker('refresh');
+                    $('#save_button').prop('disabled', true);
+                    $('#save_button').addClass('disabled');
+                    $('#save_button').css('cursor', 'not-allowed');
+                }
+            } );
 
             if ('{{settings.general.single_language}}' === 'True') {
                 $('#languages_select').selectpicker({maxOptions: 1});
@@ -195,6 +219,9 @@
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=true",
                 success:function(data) {
+                    if ('{{settings.general.single_language}}' === 'True') {
+                        $('#languages_select').append('<option value="None">None</option>');
+                    }
                     $.each(data, function (i, item) {
                         $('#languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
                     });

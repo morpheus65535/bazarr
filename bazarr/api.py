@@ -151,12 +151,22 @@ class Series(Resource):
 class SeriesEditSave(Resource):
     def post(self):
         changed_series = request.json
+        lang = changed_series['languages']
+        hi = changed_series['hi']
+        forced = changed_series['forced']
+
+        if lang == ['None']:
+            lang = 'None'
+
         for item in changed_series['seriesid']:
             seriesid = item.lstrip('row_')
             try:
-                database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
-                                 "sonarrSeriesId=?", (str(changed_series['languages']), changed_series['hi'][0],
-                                                      changed_series['forced'][0], seriesid))
+                if len(lang):
+                    database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", (str(lang), seriesid))
+                if len(hi):
+                    database.execute("UPDATE table_shows SET hearing_impaired=? WHERE  sonarrSeriesId=?", (hi[0], seriesid))
+                if len(forced):
+                    database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", (forced[0], seriesid))
             except:
                 pass
             else:

@@ -227,7 +227,10 @@
 			if ('{{settings.general.single_language}}' === 'True') {
 				$('#edit_languages_select').selectpicker({maxOptions: 1});
 			}
-			$.each(enabledLanguages, function (i, item) {
+			if ('{{settings.general.single_language}}' === 'True') {
+                $('#edit_languages_select').append('<option value="None">None</option>');
+            }
+            $.each(enabledLanguages, function (i, item) {
 				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
 			});
 			$("#edit_languages_select").selectpicker("refresh");

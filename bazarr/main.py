@@ -549,36 +549,6 @@ def search_json(query):
     return dict(items=search_list)
 
 
-@app.route('/edit_serieseditor', methods=['POST'])
-@login_required
-def edit_serieseditor():
-
-    ref = request.environ['HTTP_REFERER']
-
-    series = request.form.get('series')
-    series = ast.literal_eval(str('[' + series + ']'))
-    lang = request.form.getlist('languages')
-    hi = request.form.get('hearing_impaired')
-    forced = request.form.get('forced')
-
-    for serie in series:
-        if str(lang) != "[]" and str(lang) != "['']":
-            if str(lang) == "['None']":
-                lang = 'None'
-            else:
-                lang = str(lang)
-            database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", (lang,serie))
-        if hi != '':
-            database.execute("UPDATE table_shows SET hearing_impaired=? WHERE sonarrSeriesId=?", (hi, serie))
-        if forced != '':
-            database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", (forced, serie))
-
-    for serie in series:
-        list_missing_subtitles(no=serie)
-
-    redirect(ref)
-
-
 @app.route('/episodes/<int:no>', methods=['GET'])
 @app.route('/episodes/')
 @login_required
