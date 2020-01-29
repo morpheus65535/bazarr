@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4.1'
+bazarr_version = '0.9'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -41,7 +41,7 @@ from notifier import update_notifier
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from io import BytesIO
-from six import text_type, PY2
+from six import text_type
 from datetime import timedelta
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
@@ -1647,8 +1647,7 @@ def movie_history(no):
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
-if six.PY3:
-    warnings.simplefilter("ignore", BrokenPipeError)
+warnings.simplefilter("ignore", BrokenPipeError)
 if args.dev:
     server = app.run(
         host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)))

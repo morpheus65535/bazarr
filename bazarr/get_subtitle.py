@@ -1126,27 +1126,16 @@ def postprocessing(command, path):
     try:
         encoding = getpreferredencoding()
         if os.name == 'nt':
-            if six.PY3:
-                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE, encoding=getpreferredencoding())
-            else:
-                codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE)
+            codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, encoding=getpreferredencoding())
             # wait for the process to terminate
             out_codepage, err_codepage = codepage.communicate()
             encoding = out_codepage.split(':')[-1].strip()
 
-        if six.PY3:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, encoding=encoding)
-        else:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, encoding=encoding)
         # wait for the process to terminate
         out, err = process.communicate()
-
-        if six.PY2:
-            out = out.decode(encoding)
 
         out = out.replace('\n', ' ').replace('\r', ' ')
 

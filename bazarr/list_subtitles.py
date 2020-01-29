@@ -379,17 +379,11 @@ def guess_external_subtitles(dest_folder, subtitles):
                     continue
                 detected_language = None
 
-                if six.PY3:
-                    with open(subtitle_path, 'r', errors='ignore') as f:
-                        text = f.read()
-                else:
-                    with open(subtitle_path, 'r') as f:
-                        text = f.read()
+                with open(subtitle_path, 'r', errors='ignore') as f:
+                    text = f.read()
 
                 try:
                     encoding = UnicodeDammit(text)
-                    if six.PY2:
-                        text = text.decode(encoding.original_encoding)
                     detected_language = langdetect.detect(text)
                 except Exception as e:
                     logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +

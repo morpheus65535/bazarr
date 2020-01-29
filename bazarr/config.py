@@ -5,7 +5,6 @@ import os
 from simpleconfigparser import simpleconfigparser
 
 from get_args import args
-from six import PY3
 
 defaults = {
     'general': {
@@ -140,10 +139,7 @@ defaults = {
     }
 }
 
-if PY3:
-    settings = simpleconfigparser(defaults=defaults, interpolation=None)
-else:
-    settings = simpleconfigparser(defaults=defaults)
+settings = simpleconfigparser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
 base_url = settings.general.base_url
