@@ -45,7 +45,7 @@
         % include('menu.tpl')
 
         <div id="fondblanc" class="ui container">
-            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form" autocomplete="off">
+            <form name="settings_form" id="settings_form" action="{{base_url}}save_settings" method="post" class="ui form" autocomplete="off" enctype="multipart/form-data">
             <div id="form_validation_error" class="ui error message">
                 <p>Some fields are in error and you can't save settings until you have corrected them. Be sure to check in every tabs.</p>
             </div>
