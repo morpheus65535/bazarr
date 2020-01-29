@@ -207,12 +207,12 @@
                         $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(radarr_url), function (data) {
                             if (data.status) {
                                 $('#radarr_validated').checkbox('check');
-                                $('#radarr_validation_result').text('Test successful: Radarr v' + data.version).css('color', 'green');
+                                $('#radarr_validation_result').text('Test Successful: Radarr v' + data.version).css('color', 'green');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             } else {
                                 $('#radarr_validated').checkbox('uncheck');
-                                $('#radarr_validation_result').text('Test failed').css('color', 'red');
+                                $('#radarr_validation_result').text('Test Failed').css('color', 'red');
                                 $('.form').form('validate form');
                                 $('#loader').removeClass('active');
                             }

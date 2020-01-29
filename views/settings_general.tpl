@@ -538,7 +538,7 @@
                     </div>
                 </div>
 
-                <div class="ui dividing header">Post-processing</div>
+                <div class="ui dividing header">Post-Processing</div>
                 <div class="twelve wide column">
                     <div class="ui orange message">
                         <p>Be aware that the execution of post-processing command will prevent the user interface from being accessible until completion, when downloading subtitles in interactive mode (meaning you'll see a loader during post-processing).</p>
@@ -546,7 +546,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use post-processing</label>
+                                <label>Use Post-Processing</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_use_postprocessing" class="ui toggle checkbox" data-postprocessing={{settings.general.getboolean('use_postprocessing')}}>
