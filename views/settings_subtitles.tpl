@@ -3,7 +3,7 @@
                     <div class="ui grid">
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Search for missing Subtitles frequency (in hours)</label>
+                                <label>Search for Missing Subtitles Frequency (In Hours)</label>
                             </div>
                             <div class="five wide column">
                                 <div class='field'>
@@ -18,7 +18,7 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Use Scene name when available</label>
+                                <label>Use Scene Name When Available</label>
                             </div>
                             <div class="one wide column">
                                 <div id="settings_scenename" class="ui toggle checkbox" data-scenename={{settings.general.getboolean('use_scenename')}}>
