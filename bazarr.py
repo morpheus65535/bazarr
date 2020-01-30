@@ -4,33 +4,25 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import bazarr.libs
-from six import PY3
 import subprocess as sp
 import time
 import os
 import sys
-import platform
-import re
 
 from bazarr.get_args import args
 
 
 def check_python_version():
-    python_version = platform.python_version_tuple()
-    minimum_python_version_tuple = (2, 7, 13)
-    minimum_python3_version_tuple = (3, 6, 0)
-    minimum_python_version = ".".join(str(i) for i in minimum_python_version_tuple)
-    minimum_python3_version = ".".join(str(i) for i in minimum_python3_version_tuple)
+    python_version = (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    python_version_str = '.'.join(map(str, python_version))
+    minimum_python3_version = (3, 6, 0)
+    minimum_python3_version_str = '.'.join(map(str, minimum_python3_version))
 
-    if int(python_version[0]) == minimum_python3_version_tuple[0]:
-        if int(python_version[1]) >= minimum_python3_version_tuple[1]:
-            pass
-        else:
-            print("Python " + minimum_python3_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python.")
-            os._exit(0)
-
-    elif int(python_version[1]) < minimum_python_version_tuple[1] or int(re.search(r'\d+', python_version[2]).group()) < minimum_python_version_tuple[2]:
-        print("Python " + minimum_python_version + " or greater required. Current version is " + platform.python_version() + ". Please upgrade Python.")
+    if python_version >= minimum_python3_version:
+        pass
+    else:
+        print("Python " + minimum_python3_version_str + " or greater required. Current version is " +
+              python_version_str + ". Please upgrade Python.")
         os._exit(0)
 
 
@@ -49,10 +41,7 @@ def start_bazarr():
             line = ep.stdout.readline()
             if line == '' or not line:
                 break
-            if PY3:
-                sys.stdout.buffer.write(line)
-            else:
-                sys.stdout.write(line)
+            sys.stdout.buffer.write(line)
             sys.stdout.flush()
     except KeyboardInterrupt:
         pass
