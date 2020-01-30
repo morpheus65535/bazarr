@@ -358,6 +358,15 @@ class ModifiedSubtitle(Subtitle):
     id = None
 
 
+MERGED_FORMATS = {
+    "TV": ("HDTV", "SDTV", "AHDTV", "UHDTV"),
+    "Air": ("SATRip", "DVB", "PPV"),
+    "Disk": ("DVD", "HD-DVD", "BluRay")
+}
+
+MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
+
+
 def guess_matches(video, guess, partial=False):
     """Get matches between a `video` and a `guess`.
 
@@ -386,12 +395,15 @@ def guess_matches(video, guess, partial=False):
             for title in titles:
                 if sanitize(title) in (sanitize(name) for name in [video.series] + video.alternative_series):
                     matches.add('series')
+
         # title
         if video.title and 'episode_title' in guess and sanitize(guess['episode_title']) == sanitize(video.title):
             matches.add('title')
+
         # season
         if video.season and 'season' in guess and guess['season'] == video.season:
             matches.add('season')
+
         # episode
         # Currently we only have single-ep support (guessit returns a multi-ep as a list with int values)
         # Most providers only support single-ep, so make sure it contains only 1 episode
@@ -401,12 +413,15 @@ def guess_matches(video, guess, partial=False):
             episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
             if episode == video.episode:
                 matches.add('episode')
+
         # year
         if video.year and 'year' in guess and guess['year'] == video.year:
             matches.add('year')
+
         # count "no year" as an information
         if not partial and video.original_series and 'year' not in guess:
             matches.add('year')
+
     elif isinstance(video, Movie):
         # year
         if video.year and 'year' in guess and guess['year'] == video.year:
@@ -440,21 +455,25 @@ def guess_matches(video, guess, partial=False):
             formats = [formats]
 
         if video.format:
-            video_format = video.format
-            if video_format in ("HDTV", "SDTV", "TV"):
-                video_format = "TV"
-                logger.debug("Treating HDTV/SDTV the same")
+            video_format = video.format.lower()
+            _video_gen_format = MERGED_FORMATS_REV.get(video_format)
+            if _video_gen_format:
+                logger.debug("Treating %s as %s the same", video_format, _video_gen_format)
 
             for frmt in formats:
-                if frmt in ("HDTV", "SDTV"):
-                    frmt = "TV"
+                _guess_gen_frmt = MERGED_FORMATS_REV.get(frmt.lower())
 
-                if frmt.lower() == video_format.lower():
+                if _guess_gen_frmt == _video_gen_format:
                     matches.add('format')
                     break
+        if "release_group" in matches and "format" not in matches:
+            logger.info("Release group matched but format didn't. Remnoving release group match.")
+            matches.remove("release_group")
+
     # video_codec
     if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
         matches.add('video_codec')
+
     # audio_codec
     if video.audio_codec and 'audio_codec' in guess and guess['audio_codec'] == video.audio_codec:
         matches.add('audio_codec')

@@ -35,6 +35,10 @@ class SubdivxSubtitle(Subtitle):
     def id(self):
         return self.page_link
 
+    @property
+    def release_info(self):
+        return self.description
+
     def get_matches(self, video):
         matches = set()
 

@@ -45,8 +45,10 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Argenteam
 * Assrt
 * BetaSeries
+* BSPlayer
 * GreekSubtitles
 * Hosszupuska
+* LegendasDivx
 * LegendasTV
 * Napiprojekt
 * Napisy24
@@ -65,6 +67,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * SubZ
 * Supersubtitles
 * Titlovi
+* Titrari.ro
 * TVSubtitles
 * XSubs
 * Zimuku
