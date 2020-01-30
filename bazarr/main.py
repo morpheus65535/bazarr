@@ -9,6 +9,7 @@ os.environ["BAZARR_VERSION"] = bazarr_version
 import gc
 import sys
 import libs
+import io
 
 import six
 from six.moves import zip
@@ -209,11 +210,11 @@ def shutdown():
     else:
         database.close()
         try:
-            stop_file = open(os.path.join(args.config_dir, "bazarr.stop"), "w")
+            stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.stop file.')
         else:
-            stop_file.write('')
+            stop_file.write(six.text_type(''))
             stop_file.close()
             sys.exit(0)
 
@@ -229,12 +230,12 @@ def restart():
     else:
         database.close()
         try:
-            restart_file = open(os.path.join(args.config_dir, "bazarr.restart"), "w")
+            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
             logging.info('Bazarr is being restarted...')
-            restart_file.write('')
+            restart_file.write(six.text_type(''))
             restart_file.close()
             sys.exit(0)
 
@@ -1702,7 +1703,7 @@ def system():
     throttled_providers = list_throttled_providers()
     
     try:
-        with open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r') as f:
+        with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
             releases = ast.literal_eval(f.read())
     except Exception as e:
         releases = []
@@ -1728,7 +1729,7 @@ def system():
 def get_logs():
     authorize()
     logs = []
-    with open(os.path.join(args.config_dir, 'log', 'bazarr.log')) as file:
+    with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
         for line in file.readlines():
             lin = []
             lin = line.split('|')
