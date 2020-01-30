@@ -68,17 +68,11 @@ class DaemonStatus(ProcessRegistry):
                     remaining_processes.remove(ep)
                 else:
                     if remaining_time > 0:
-                        if PY3:
-                            try:
-                                ep.wait(remaining_time)
-                                remaining_processes.remove(ep)
-                            except sp.TimeoutExpired:
-                                pass
-                        else:
-                            '''
-                            In python 2 there is no such thing as some mechanism to wait with a timeout.
-                            '''
-                            time.sleep(1)
+                        try:
+                            ep.wait(remaining_time)
+                            remaining_processes.remove(ep)
+                        except sp.TimeoutExpired:
+                            pass
                         elapsed = time.time() - reference_ts
                         remaining_time = timeout - elapsed
         return remaining_processes
@@ -168,19 +162,18 @@ if __name__ == '__main__':
     
     should_stop = lambda: False
 
-    if PY3:
-        daemonStatus = DaemonStatus()
+    daemonStatus = DaemonStatus()
 
-        def shutdown():
-            # indicates that everything should stop
-            daemonStatus.stop()
-            # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
-            os.kill(os.getpid(), signal.SIGINT)
+    def shutdown():
+        # indicates that everything should stop
+        daemonStatus.stop()
+        # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
+        os.kill(os.getpid(), signal.SIGINT)
 
-        signal.signal(signal.SIGTERM, lambda signal_no, frame: shutdown())
+    signal.signal(signal.SIGTERM, lambda signal_no, frame: shutdown())
 
-        should_stop = lambda: daemonStatus.should_stop()
-        bazarr_runner = lambda: start_bazarr(daemonStatus)
+    should_stop = lambda: daemonStatus.should_stop()
+    bazarr_runner = lambda: start_bazarr(daemonStatus)
 
     bazarr_runner()
 
