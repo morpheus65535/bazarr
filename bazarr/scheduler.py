@@ -224,24 +224,3 @@ class Scheduler:
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade previously downloaded Subtitles', replace_existing=True)
-
-scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
-                  misfire_grace_time=15, id='cache_cleanup', name='Cache maintenance')
-
-schedule_update_job()
-sonarr_full_update()
-radarr_full_update()
-schedule_wanted_search()
-schedule_upgrade_subs()
-scheduler.start()
-if args.no_tasks:
-    scheduler.pause()
-
-
-def add_job(job, name=None, max_instances=1, coalesce=True, args=None):
-    scheduler.add_job(job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
-                      coalesce=coalesce, args=args)
-
-
-def shutdown_scheduler():
-    scheduler.shutdown(wait=True)

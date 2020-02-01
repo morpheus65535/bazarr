@@ -65,11 +65,11 @@ class DaemonStatus(ProcessRegistry):
                     remaining_processes.remove(ep)
                 else:
                     if remaining_time > 0:
-                            try:
-                                ep.wait(remaining_time)
-                                remaining_processes.remove(ep)
-                            except subprocess.TimeoutExpired:
-                                pass
+                        try:
+                            ep.wait(remaining_time)
+                            remaining_processes.remove(ep)
+                        except subprocess.TimeoutExpired:
+                            pass
                         elapsed = time.time() - reference_ts
                         remaining_time = timeout - elapsed
         return remaining_processes
