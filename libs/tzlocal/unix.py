@@ -84,10 +84,11 @@ def _get_localzone(_root='/'):
                     if not etctz:
                         continue
                     tz = pytz.timezone(etctz.replace(' ', '_'))
-                    if _root == '/':
+                    # Disabling this offset valdation due to issue with some timezone: https://github.com/regebro/tzlocal/issues/80
+                    # if _root == '/':
                         # We are using a file in etc to name the timezone.
                         # Verify that the timezone specified there is actually used:
-                        utils.assert_tz_offset(tz)
+                        # utils.assert_tz_offset(tz)
                     return tz
 
         except IOError:
@@ -138,7 +139,7 @@ def _get_localzone(_root='/'):
     if os.path.exists(tzpath) and os.path.islink(tzpath):
         tzpath = os.path.realpath(tzpath)
         start = tzpath.find("/")+1
-        while start is not 0:
+        while start != 0:
             tzpath = tzpath[start:]
             try:
                 return pytz.timezone(tzpath)

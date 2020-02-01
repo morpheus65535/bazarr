@@ -233,14 +233,14 @@
 			% if PY2:
 			<div class='ui left aligned grid'>
 				<div class='fluid column'>
-					<div class="ui yellow icon message">
+					<div class="ui red icon message">
 						<i class="python icon"></i>
 						<div class="content">
 							<div class="header">Python deprecation warning</div>
-							Bazarr is now compatible with Python 3.6 and newer. You should upgrade Python as we'll drop support for Python 2.7.x by the end of January 2020.
+							Bazarr is now compatible with Python 3.6 and newer. You must upgrade Python as we don't support Python 2.x anymore.
 							<div class="ui bulleted list">
 							    % if os.name == 'posix':
-								<div class="item">If you are running under Docker, don't worry, we'll take care of this for you. Just pull the new image that should be available within a couple of days.</div>
+								<div class="item">If you are running under Docker, don't worry, we'll take care of this for you. Just pull the new image.</div>
 							    % end
 								% if os.name == 'nt':
 								<div class="item">If you have installed using the Windows Installer, just download the new installer that will upgrade your current installation (make sure to not change installation directory).</div>

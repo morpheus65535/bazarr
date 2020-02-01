@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import os
 import time
 import platform
-import sys
 import logging
 import requests
 
@@ -17,22 +16,20 @@ import datetime
 import glob
 
 
-def history_log(action, sonarrSeriesId, sonarrEpisodeId, description, video_path=None, language=None, provider=None,
-                score=None, forced=False):
+def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
+                score=None):
     from database import database
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
-                     "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)", (action, sonarrSeriesId,
-                                                                                           sonarrEpisodeId, time.time(),
-                                                                                           description, video_path,
-                                                                                           language, provider, score))
+                     "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)",
+                     (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
+                      provider, score))
 
 
-def history_log_movie(action, radarrId, description, video_path=None, language=None, provider=None, score=None,
-                      forced=False):
+def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None):
     from database import database
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
-                     "provider, score) VALUES (?,?,?,?,?,?,?,?)", (action, radarrId, time.time(), description,
-                                                                   video_path, language, provider, score))
+                     "provider, score) VALUES (?,?,?,?,?,?,?,?)",
+                     (action, radarr_id, time.time(), description, video_path, language, provider, score))
 
 
 def get_binary(name):
@@ -46,10 +43,8 @@ def get_binary(name):
     else:
         if platform.system() == "Windows":  # Windows
             exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.exe" % name))
-
         elif platform.system() == "Darwin":  # MacOSX
             exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", name, name))
-
         elif platform.system() == "Linux":  # Linux
             exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), name, name))
 
@@ -82,62 +77,52 @@ def cache_maintenance():
 
 
 def get_sonarr_version():
-    use_sonarr = settings.general.getboolean('use_sonarr')
-    apikey_sonarr = settings.sonarr.apikey
-    sv = url_sonarr() + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_version = ''
-    if use_sonarr:
+    if settings.general.getboolean('use_sonarr'):
         try:
+            sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
             sonarr_version = requests.get(sv, timeout=60, verify=False).json()['version']
-        except Exception as e:
+        except Exception:
             logging.debug('BAZARR cannot get Sonarr version')
-
     return sonarr_version
 
 
 def get_sonarr_platform():
-    use_sonarr = settings.general.getboolean('use_sonarr')
-    apikey_sonarr = settings.sonarr.apikey
-    sv = url_sonarr() + "/api/system/status?apikey=" + apikey_sonarr
     sonarr_platform = ''
-    if use_sonarr:
+    if settings.general.getboolean('use_sonarr'):
         try:
-            if requests.get(sv, timeout=60, verify=False).json()['isLinux'] or requests.get(sv, timeout=60, verify=False).json()['isOsx']:
+            sv = url_sonarr() + "/api/system/status?apikey=" + settings.sonarr.apikey
+            response = requests.get(sv, timeout=60, verify=False).json()
+            if response['isLinux'] or response['isOsx']:
                 sonarr_platform = 'posix'
-            elif requests.get(sv, timeout=60, verify=False).json()['isWindows']:
+            elif response['isWindows']:
                 sonarr_platform = 'nt'
-        except Exception as e:
-            logging.DEBUG('BAZARR cannot get Sonarr platform')
-
+        except Exception:
+            logging.debug('BAZARR cannot get Sonarr platform')
     return sonarr_platform
 
 
 def get_radarr_version():
-    use_radarr = settings.general.getboolean('use_radarr')
-    apikey_radarr = settings.radarr.apikey
-    rv = url_radarr() + "/api/system/status?apikey=" + apikey_radarr
     radarr_version = ''
-    if use_radarr:
+    if settings.general.getboolean('use_radarr'):
         try:
+            rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
             radarr_version = requests.get(rv, timeout=60, verify=False).json()['version']
-        except Exception as e:
+        except Exception:
             logging.debug('BAZARR cannot get Radarr version')
-
     return radarr_version
 
 
 def get_radarr_platform():
-    use_radarr = settings.general.getboolean('use_radarr')
-    apikey_radarr = settings.radarr.apikey
-    rv = url_radarr() + "/api/system/status?apikey=" + apikey_radarr
     radarr_platform = ''
-    if use_radarr:
+    if settings.general.getboolean('use_radarr'):
         try:
-            if requests.get(rv, timeout=60, verify=False).json()['isLinux'] or requests.get(rv, timeout=60, verify=False).json()['isOsx']:
+            rv = url_radarr() + "/api/system/status?apikey=" + settings.radarr.apikey
+            response = requests.get(rv, timeout=60, verify=False).json()
+            if response['isLinux'] or response['isOsx']:
                 radarr_platform = 'posix'
-            elif requests.get(rv, timeout=60, verify=False).json()['isWindows']:
+            elif response['isWindows']:
                 radarr_platform = 'nt'
-        except Exception as e:
-            logging.DEBUG('BAZARR cannot get Radarr platform')
-
+        except Exception:
+            logging.debug('BAZARR cannot get Radarr platform')
     return radarr_platform
