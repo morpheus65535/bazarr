@@ -999,15 +999,18 @@ def historyseries():
         else:
             series_monitored_only_query_string = ''
 
-        upgradable_episodes = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history "
+        upgradable_episodes = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.languages FROM table_history "
                                                "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                                               "table_history.sonarrEpisodeId WHERE action IN (" +
+                                               "table_history.sonarrEpisodeId JOIN table_shows on table_shows.sonarrSeriesId = "
+                                               "table_history.sonarrSeriesId WHERE action IN (" +
                                                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
                                                "score is not null" + series_monitored_only_query_string + " GROUP BY "
                                                "table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
 
         for upgradable_episode in upgradable_episodes:
+            if upgradable_episode['languages'] in [None, 'None', '[]']:
+                continue
             if upgradable_episode['timestamp'] > minimum_timestamp:
                 try:
                     int(upgradable_episode['score'])
@@ -1076,15 +1079,17 @@ def historymovies():
         else:
             query_actions = [1, 3]
 
-        upgradable_movies = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history_movie "
-                                             "INNER JOIN table_movies on table_movies.radarrId="
-                                             "table_history_movie.radarrId WHERE action IN (" +
+        upgradable_movies = database.execute("SELECT video_path, MAX(timestamp) as timestamp, score, "
+                                             "table_movies.languages FROM  table_history_movie INNER JOIN table_movies "
+                                             "on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
                                              ','.join(map(str, query_actions)) +
                                              ") AND timestamp > ? AND score is not NULL" +
                                              movies_monitored_only_query_string + " GROUP BY video_path, language",
                                              (minimum_timestamp,))
 
         for upgradable_movie in upgradable_movies:
+            if upgradable_movie['languages'] in [None, 'None', '[]']:
+                continue
             if upgradable_movie['timestamp'] > minimum_timestamp:
                 try:
                     int(upgradable_movie['score'])

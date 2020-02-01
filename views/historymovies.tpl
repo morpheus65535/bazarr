@@ -89,7 +89,7 @@
 							</div>
 						</td>
 						<td>
-							% upgradable_criteria = dict([('timestamp', row['timestamp']), ('video_path', row['video_path']), ('score', row['score'])])
+							% upgradable_criteria = dict([('timestamp', row['timestamp']), ('video_path', row['video_path']), ('score', row['score']), ('languages', row['languages'])])
 							% if upgradable_criteria in upgradable_movies:
 							%     if row['languages'] != "None":
 							%         desired_languages = ast.literal_eval(str(row['languages']))

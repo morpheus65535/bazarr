@@ -1010,7 +1010,7 @@ def upgrade_subtitles():
                 except ValueError:
                     pass
                 else:
-                    if int(upgradable_movie['score']) < 360:
+                    if int(upgradable_movie['score']) < 120:
                         upgradable_movies_not_perfect.append(upgradable_movie)
 
         movies_to_upgrade = []
@@ -1025,6 +1025,8 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
+            if episode['languages'] in [None, 'None', '[]']:
+                continue
             providers = get_providers()
             if not providers:
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
@@ -1074,6 +1076,8 @@ def upgrade_subtitles():
     
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
+            if movie['languages'] in [None, 'None', '[]']:
+                continue
             providers = get_providers()
             if not providers:
                 notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
