@@ -423,18 +423,14 @@
                             ratio: '{value} / {total}'
                         }
 					});
-				}
-            },
-            complete: function (data) {
-                // Schedule the next
-				if (data.responseText !== "") {
-                	notificationTimeout = setTimeout(doNotificationsAjax, 100);
+
+					notificationTimeout = setTimeout(doNotificationsAjax, 100);
 				} else {
-                	notificationTimeout = setTimeout(doNotificationsAjax, 5000);
+					notificationTimeout = setTimeout(doNotificationsAjax, 5000);
 				}
             },
 			error: function () {
-                    notificationTimeout = setTimeout(doNotificationsAjax, 5000);
+				notificationTimeout = setTimeout(doNotificationsAjax, 5000);
 			}
         });
     }
