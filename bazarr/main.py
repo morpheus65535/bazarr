@@ -26,7 +26,7 @@ import warnings
 import queueconfig
 import platform
 import apprise
-from calendar import day_name
+import operator
 
 
 from get_args import args
@@ -59,7 +59,7 @@ from get_subtitle import download_subtitle, series_download_subtitles, movies_do
     manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
-from scheduler import *
+from scheduler import Scheduler
 from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
@@ -71,6 +71,7 @@ app = create_app()
 from api import api_bp
 app.register_blueprint(api_bp)
 
+scheduler = Scheduler()
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:
@@ -686,8 +687,7 @@ def search_missing_subtitles_movie(no):
 
     ref = request.environ['HTTP_REFERER']
 
-    add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
-
+    scheduler.add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
     redirect(ref)
 
 
@@ -781,8 +781,7 @@ def wanted_search_missing_subtitles_list():
 
     ref = request.environ['HTTP_REFERER']
 
-    add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
-
+    scheduler.add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
     redirect(ref)
 
 
@@ -1195,12 +1194,7 @@ def save_settings():
         database.execute("UPDATE table_settings_notifier SET enabled=?, url=? WHERE name=?",
                          (enabled,notifier_url,notifier['name']))
 
-    schedule_update_job()
-    sonarr_full_update()
-    radarr_full_update()
-    schedule_wanted_search()
-    schedule_upgrade_subs()
-
+    scheduler.update_configurable_tasks()
     logging.info('BAZARR Settings saved succesfully.')
 
     if ref.find('saved=true') > 0:
@@ -1226,60 +1220,7 @@ def check_update():
 def system():
 
 
-    def get_time_from_interval(td_object):
-        seconds = int(td_object.total_seconds())
-        periods = [
-            ('year', 60 * 60 * 24 * 365),
-            ('month', 60 * 60 * 24 * 30),
-            ('day', 60 * 60 * 24),
-            ('hour', 60 * 60),
-            ('minute', 60),
-            ('second', 1)
-        ]
-
-        strings = []
-        for period_name, period_seconds in periods:
-            if seconds > period_seconds:
-                period_value, seconds = divmod(seconds, period_seconds)
-                has_s = 's' if period_value > 1 else ''
-                strings.append("%s %s%s" % (period_value, period_name, has_s))
-
-        return ", ".join(strings)
-
-    def get_time_from_cron(cron):
-        year = str(cron[0])
-        if year == "2100":
-            return "Never"
-
-        day = str(cron[4])
-        hour = str(cron[5])
-        text = ""
-
-        if day == "*":
-            text = "everyday"
-        else:
-            text = "every " + day_name[int(day)]
-
-        if hour != "*":
-            text += " at " + hour + ":00"
-
-        return text
-
-    task_list = []
-    for job in scheduler.get_jobs():
-        if isinstance(job.trigger, CronTrigger):
-            if str(job.trigger.__getstate__()['fields'][0]) == "2100":
-                next_run = 'Never'
-            else:
-                next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
-        else:
-            next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
-
-        if isinstance(job.trigger, IntervalTrigger):
-            interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
-            task_list.append([job.name, interval, next_run, job.id])
-        elif isinstance(job.trigger, CronTrigger):
-            task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
+    task_list = scheduler.get_task_list()
 
     throttled_providers = list_throttled_providers()
 
@@ -1323,7 +1264,7 @@ def get_logs():
 @app.route('/execute/<taskid>')
 @login_required
 def execute_task(taskid):
-    execute_now(taskid)
+    scheduler.execute_now(taskid)
     return '', 200
 
 
@@ -1587,7 +1528,7 @@ def notifications():
 @login_required
 def running_tasks_list():
 
-    return dict(tasks=running_tasks)
+    return dict(tasks=scheduler.get_running_tasks())
 
 
 @app.route('/episode_history/<int:no>')
