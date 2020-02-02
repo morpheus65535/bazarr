@@ -219,9 +219,7 @@
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=true",
                 success:function(data) {
-                    if ('{{settings.general.single_language}}' === 'True') {
-                        $('#languages_select').append('<option value="None">None</option>');
-                    }
+                    $('#languages_select').append('<option value="None">None</option>');
                     $.each(data, function (i, item) {
                         $('#languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
                     });
