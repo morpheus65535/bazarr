@@ -343,7 +343,12 @@
 				{"data": "episode"},
 				{"data": null,
 					"render": function (data) {
-						return '<a href="" data-toggle="tooltip" title="Path is: '+data.mapped_path+'" data-season='+data.season+' data-episode='+data.episode+' data-episodeTitle="'+data.title+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+' class="episode_history">'+data.title+'</a>';
+						var title_path = '<a href="" data-toggle="tooltip" title="Path is: '+data.mapped_path+'" data-season='+data.season+' data-episode='+data.episode+' data-episodeTitle="'+data.title+'" data-sonarrEpisodeId='+data.sonarrEpisodeId+' class="episode_history">'+data.title+'</a>';
+						if (data.scene_name) {
+							return '<i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="' + data.scene_name + '"></i> ' + title_path;
+						} else {
+							return title_path;
+						}
 					}
 				},
 				{"data": null,

@@ -439,15 +439,18 @@ class Movies(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        moviesId = request.args.get('id')
+        moviesId = request.args.get('radarrid')
         row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         if moviesId:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
-                                      "OFFSET ?", (length, start), (moviesId,))
+                                      "OFFSET ?", (moviesId, length, start))
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
         for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
+
             # Parse audio language
             if item['audio_language']:
                 item.update({"audio_language": {"name": item['audio_language'],
@@ -493,6 +496,43 @@ class Movies(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+
+    def post(self):
+        radarrId = request.args.get('radarrid')
+
+        lang = request.form.getlist('languages')
+        if len(lang) > 0:
+            pass
+        else:
+            lang = 'None'
+
+        single_language = settings.general.getboolean('single_language')
+        if single_language:
+            if str(lang) == "['None']":
+                lang = 'None'
+            else:
+                lang = str(lang)
+        else:
+            if str(lang) == "['']":
+                lang = '[]'
+
+        hi = request.form.get('hi')
+        forced = request.form.get('forced')
+
+        if hi == "on":
+            hi = "True"
+        else:
+            hi = "False"
+
+        result = database.execute("UPDATE table_movies SET languages=?, hearing_impaired=?, forced=? WHERE "
+                                  "radarrId=?", (str(lang), hi, forced, radarrId))
+
+        list_missing_subtitles_movies(no=radarrId)
+
+        event_stream.write(type='movie', action='update', movie=radarrId)
+
+        return '', 204
 
 
 class HistorySeries(Resource):
@@ -739,6 +779,7 @@ class WantedMovies(Resource):
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
+
 api.add_resource(Series, '/series')
 api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
@@ -750,8 +791,12 @@ api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
 api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(EpisodesHistory, '/episodes_history')
+
 api.add_resource(Movies, '/movies')
+
+
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')
+
 api.add_resource(WantedSeries, '/wanted_series')
 api.add_resource(WantedMovies, '/wanted_movies')
