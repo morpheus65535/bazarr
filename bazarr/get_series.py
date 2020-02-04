@@ -91,7 +91,7 @@ def update_series():
                                      'fanart': fanart,
                                      'audio_language': audio_language,
                                      'sortTitle': show['sortTitle'],
-                                     'year': show['year'],
+                                     'year': str(show['year']),
                                      'alternateTitles': alternate_titles})
         else:
             if serie_default_enabled is True:
@@ -106,7 +106,7 @@ def update_series():
                                       'fanart': fanart,
                                       'audio_language': audio_language,
                                       'sortTitle': show['sortTitle'],
-                                      'year': show['year'],
+                                      'year': str(show['year']),
                                       'alternateTitles': alternate_titles,
                                       'forced': serie_default_forced})
             else:
@@ -119,7 +119,7 @@ def update_series():
                                       'fanart': fanart,
                                       'audio_language': audio_language,
                                       'sortTitle': show['sortTitle'],
-                                      'year': show['year'],
+                                      'year': str(show['year']),
                                       'alternateTitles': alternate_titles})
 
     # Remove old series from DB
