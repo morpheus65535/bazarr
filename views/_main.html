@@ -45,6 +45,27 @@
             }
 
             .tooltip { pointer-events: none; }
+
+            .overlay {
+                display: none;
+                height: 100%;
+                width: 100%;
+                position: fixed;
+                z-index: 2147483647;
+                left: 0;
+                top: 0;
+                background-color: rgb(0,0,0);
+                background-color: rgba(0,0,0, 0.8);
+                backdrop-filter: blur(6px);
+                overflow-x: hidden;
+            }
+
+            .overlay-content {
+                position: relative;
+                top: 50%;
+                width: 100%;
+                text-align: center;
+            }
         </style>
     {% endblock head_css %}
 
@@ -239,6 +260,12 @@
     <!-- ============================================================== -->
     <!-- End footer -->
     <!-- ============================================================== -->
+
+    <div id="reconnect_overlay" class="overlay">
+        <div class="overlay-content">
+            <button class="btn btn-primary" onclick="window.location.reload()">Reload</button>
+        </div>
+    </div>
 {% endblock page_body %}
 
 
@@ -280,8 +307,12 @@
             events = io.connect({
                 'reconnection': true,
                 'reconnectionDelay': 1000,
-                'reconnectionDelayMax' : 5000,
-                'reconnectionAttempts': 5
+                'reconnectionDelayMax' : 3000,
+                'reconnectionAttempts': 3
+            });
+
+            events.on('reconnect_failed', (reason) => {
+                $('#reconnect_overlay').show();
             });
 
             function BadgesAjax() {
