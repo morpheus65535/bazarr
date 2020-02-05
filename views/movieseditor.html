@@ -1,189 +1,231 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.min.css">
+{% extends '_main.html' %}
 
-		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
-		<link rel="manifest" href="{{base_url}}static/manifest.json">
-		<link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
-		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
-		<meta name="theme-color" content="#ffffff">
+{% block title %}Series Editor - Bazarr{% endblock %}
 
-		<title>Movies Editor - Bazarr</title>
+{% block bcleft %}
+    <div id="buttons"></div>
+{% endblock bcleft %}
 
-		<style>
-			body {
-				background-color: #272727;
-			}
-			#fondblanc {
-				background-color: #ffffff;
-				border-radius: 0;
-				box-shadow: 0 0 5px 5px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding: 2em 3em 2em 3em;
-			}
-			#tablemovies {
-				padding-top: 1em;
-			}
-			#bottommenu {
-				background-color: #333333;
-				box-shadow: 0 0 10px 1px #333;
-				padding: 10px;
-			}
-			#bottomform {
-				width: 100%;
-				padding-left: 8em;
-				margin-bottom: -1em !important;
-			}
-		</style>
-	</head>
-	<body>
-		<div id='loader' class="ui page dimmer">
-			<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
-		</div>
-		% include('menu.tpl')
+{% block bcright %}
 
-		<div id="fondblanc" class="ui container">
-			<table id="tablemovies" class="ui very basic selectable sortable table">
-				<thead>
-					<tr>
-						<th class="no-sort collapsing">
-							<div class="ui checkbox">
-								<input id='selectall' type="checkbox">
-								<label></label>
-							</div>
-						</th>
-						<th class="sorted ascending">Name</th>
-						<th>Audio Language</th>
-						<th>Subtitles Language(s)</th>
-						<th>Hearing-Impaired</th>
-						<th>Forced</th>
-					</tr>
-				</thead>
-				<tbody>
-				%import ast
-				%import os
-				%for row in rows:
-					<tr class="selectable">
-						<td class="collapsing">
-							<div class="ui checkbox">
-								<input id='{{row['radarrId']}}' type="checkbox" class="selected">
-								<label></label>
-							</div>
-						</td>
-						<td><a href="{{base_url}}movie/{{row['radarrId']}}">{{row['title']}}</a></td>
-						<td>{{row['audio_language']}}</td>
-						<td>
-							%subs_languages = ast.literal_eval(str(row['languages']))
-							%if subs_languages is not None:
-								%for subs_language in subs_languages:
-									<div class="ui tiny label">{{subs_language}}</div>
-								%end
-							%end
-						</td>
-						<td>{{!"" if row['hearing_impaired'] == None else row['hearing_impaired']}}</td>
-						<td>{{!"" if row['forced'] is None else row['forced']}}</td>
-					</tr>
-				%end
-				</tbody>
-			</table>
-		</div>
-		<div id='bottommenu' class="ui inverted bottom fixed menu">
-			<form id='bottomform' action="{{base_url}}edit_movieseditor" method="POST" class="ui form">
-				<input type="hidden" name="movies" id="checked" />
-				<div class="fields">
-			    	<div class="eight wide field">
-			      		<label style='color: white;'>Subtitles Language(s)</label>
-			      		<select name="languages" {{!'multiple="" ' if single_language is False else ''}}class="select ui disabled selection dropdown">
-			                <option value="">No Change</option>
-			                <option value="None">None</option>
-			                %for language in languages:
-							<option value="{{language['code2']}}">{{language['name']}}</option>
-							%end
-			            </select>
-			    	</div>
-			    	<div class="field">
-			    		<label style='color: white;'>Hearing-Impaired</label>
-			    		<select name="hearing_impaired" class="select ui disabled selection dropdown">
-			                <option value="">No change</option>
-			                <option value="True">True</option>
-			                <option value="False">False</option>
-			            </select>
-			    	</div>
-			    	<div class="field">
-			    		<label style='color: white;'>Forced</label>
-			    		<select name="forced" class="select ui disabled selection dropdown">
-			                <option value="">No change</option>
-			                <option value="False">False</option>
-			                <option value="True">True</option>
-			                <option value="Both">Both</option>
-			            </select>
-			    	</div>
-			    	<div class='field'>
-						<label style='color: white;'><span id='count'>0</span> Movies Selected</label>
-						<button type="submit" id="save" name="save" value="save" class="ui disabled blue approve button">Save</button>
-					</div>
-				</div>
-			</form>
-		</div>
+{% endblock bcright %}
 
-		% include('footer.tpl')
-		<br><br><br><br>
-	</body>
-</html>
+{% block body %}
+    <table id="movies" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Audio Language</th>
+            <th>Subtitles Languages</th>
+            <th>Hearing-Impaired</th>
+            <th>Forced</th>
+        </tr>
+        </thead>
+    </table>
 
+    <nav class="navbar fixed-bottom navbar-dark bg-dark" style="margin-left: 240px;">
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="languages_select">Language(s): </label>
+                <select class="selectpicker" id="languages_select" name="languages" title="No change" multiple></select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="hi_select">Hearing-Impaired: </label>
+                <select class="selectpicker show-tick" id="hi_select" name="hi" title="No change" multiple>
+                    <option value="False">False</option>
+                    <option value="True">True</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="forced_select">Forced: </label>
+                <select class="selectpicker show-tick" id="forced_select" name="forced" title="No change" multiple>
+                    <option value="False">False</option>
+                    <option value="True">True</option>
+                    <option value="Both">Both</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <button type="submit" class="btn btn-primary" id="save_button">Save</button>
+        </div>
+    </nav>
+{% endblock body %}
 
-<script>
-	if (sessionStorage.scrolly) {
-		$(window).scrollTop(sessionStorage.scrolly);
-		sessionStorage.clear();
-	}
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            $('#movies_nav').addClass("active");
 
-	$('table').tablesort();
+            getEnabledLanguages();
 
-	$('a, button').on('click', function(){
-		$('#loader').addClass('active');
-	});
+		    events.on('event', function(event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'movie' && event_json.action === 'insert') {
+                    $.ajax({
+                        url: "{{ url_for('api.movies') }}?radarrid=" + event_json.movie,
+                        success: function (data) {
+                            if (data.data.length) {
+                                $('#movies').DataTable().rows.add(data.data);
+                                $('#movies').DataTable().columns.adjust().draw(false);
+                                $('[data-toggle="tooltip"]').tooltip({html: true});
+                            }
+                        }
+                    })
+                } else if (event_json.type === 'movie' && event_json.action === 'update') {
+                    var rowId = $('#movies').DataTable().row('#row_' + event_json.movie);
+                    if (rowId.length) {
+                        $.ajax({
+                            url: "{{ url_for('api.movies') }}?radarrid=" + event_json.movie,
+                            success: function (data) {
+                                if (data.data.length) {
+                                    $('#movies').DataTable().row(rowId).data(data.data[0]);
+                                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                                }
+                            }
+                        })
+                    }
+                } else if (event_json.type === 'movie' && event_json.action === 'delete') {
+                    var rowId = $('#movies').DataTable().row('#row_' + event_json.movie);
+                    if (rowId.length) {
+                        $('#movies').DataTable().row(rowId).remove();
+                        $('#movies').DataTable().columns.adjust().draw(false);
+                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                    }
+                }
+            });
 
-	$('.modal')
-		.modal({
-			autofocus: false
-		})
-	;
+            $('.selectpicker').prop('disabled', true);
+            $('.selectpicker').selectpicker('refresh');
+            $('#save_button').prop('disabled', true);
+            $('#save_button').addClass('disabled');
+            $('#save_button').css('cursor', 'not-allowed');
 
-	$('.selected').on('change', function() {
-		$("#count").text($('.selected:checked').length);
-		if ( $('.selected:checked').length > 0 ) {
-			$('.select').removeClass('disabled');
-			$('#save').removeClass('disabled');
-		}
-		else {
-			$('.select').addClass('disabled');
-			$('#save').addClass('disabled');
-		}
+            var table = $('#movies').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "searching": false,
+                "ordering": false,
+                "lengthChange": true,
+                "responsive": true,
+                "paging": false,
+                "ajax": "{{ url_for('api.movies') }}",
+                "columnDefs": [ {
+                    "orderable": false,
+                    "className": 'select-checkbox',
+                    "targets":   0
+                } ],
+                "select": {
+                    "style":    'multi',
+                    "selector": 'td:first-child'
+                },
+                "columns": [
+                    {"defaultContent": ""},
+                    {"data": null,
+                        "render": function (data) {
+                            return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>'
+                        }
+                    },
+                    {"data": "audio_language.name"},
+                    {
+                        "data": "languages",
+                        "render": function (data) {
+                            if (data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
 
-		const result = [];
-		$('.selected:checked').each(function(i){
-			result.push($(this).attr('id'));
-		});
-		$("#checked").val(result);
-	});
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
+                    },
+                    {
+                        "data": "hearing_impaired",
+                        "className": "dt-center"
+                    },
+                    {
+                        "data": "forced",
+                        "className": "dt-center"
+                    }
+                ]
+            });
 
-	$('#selectall').on('change', function() {
-		if ( $('#selectall').is(":checked") ) {
-			$('.selected').prop('checked', true).trigger('change');
-		}
-		else {
-			$('.selected').prop('checked', false).trigger('change');
-		}
-	});
+            new $.fn.dataTable.Buttons( table, {
+                "buttons": [
+                    'selectAll',
+                    'selectNone'
+                ]
+            } );
 
-	$('.select').dropdown();
-</script>
+            table.buttons().container().appendTo('#buttons');
+
+            table.on( 'select', function () {
+                $('.selectpicker').prop('disabled', false);
+                $('.selectpicker').selectpicker('refresh');
+                $('#save_button').prop('disabled', false);
+                $('#save_button').removeClass('disabled');
+                $('#save_button').css('cursor', 'auto');
+            } );
+
+            table.on( 'deselect', function () {
+                if (table.rows( '.selected' ).count() === 0) {
+                    $('.selectpicker').prop('disabled', true);
+                    $('.selectpicker').selectpicker('refresh');
+                    $('#save_button').prop('disabled', true);
+                    $('#save_button').addClass('disabled');
+                    $('#save_button').css('cursor', 'not-allowed');
+                }
+            } );
+
+            if ('{{settings.general.single_language}}' === 'True') {
+                $('#languages_select').selectpicker({maxOptions: 1});
+            }
+            $('#hi_select').selectpicker({maxOptions: 1});
+            $('#forced_select').selectpicker({maxOptions: 1});
+
+            $('#save_button').on('click', function(e){
+                e.preventDefault();
+                const values = {
+                    radarrid: table.rows( { selected: true } ).ids().toArray(),
+                    languages: $('#languages_select').val(),
+                    hi: $('#hi_select').val(),
+                    forced: $('#forced_select').val()
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.movieseditsave') }}",
+                    method: "POST",
+			        data: JSON.stringify(values),
+                    contentType: 'application/json',
+                    success: function(){
+                        table.rows().deselect();
+                        $('#languages_select').selectpicker('val', '');
+                        $('#hi_select').selectpicker('val', '');
+                        $('#forced_select').selectpicker('val', '');
+                    }
+                });
+            });
+        });
+
+        function getEnabledLanguages() {
+            $.ajax({
+                url: "{{ url_for('api.languages') }}?enabled=true",
+                success:function(data) {
+                    $('#languages_select').append('<option value="None">None</option>');
+                    $.each(data, function (i, item) {
+                        $('#languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+                    });
+                    $("#languages_select").selectpicker("refresh");
+                }
+            });
+        }
+    </script>
+{% endblock tail %}

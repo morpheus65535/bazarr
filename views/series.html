@@ -151,7 +151,7 @@
                 "columns": [
                     {"data": null,
                         "render": function (data) {
-                            return '<a href="{{ url_for( 'episodes' ) }}' + data.sonarrSeriesId + '">' + data.title + '</a>'
+                            return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.title + '</a>';
                         }
                     },
                     {

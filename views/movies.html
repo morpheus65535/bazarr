@@ -3,18 +3,16 @@
 {% block title %}Movies - Bazarr{% endblock %}
 
 {% block bcleft %}
-    <div class="d-flex">
-        <button class="btn btn-outline">
-            <i class="fas fa-sync align-top text-themecolor text-center" aria-hidden="true"></i>
-            <span class="align-bottom">Update</span>
+    <div class="">
+        <button class="btn btn-outline" id="mass_edit"  onclick="window.location.href = '{{ url_for('movieseditor') }}';">
+            <div><i class="fas fa-list align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Mass Edit</div>
         </button>
     </div>
 {% endblock bcleft %}
 
 {% block bcright %}
-    <div class="d-flex m-t-5 justify-content-end">
-        <h5 class="m-t-0 text-themecolor">Some page settings</h5>
-    </div>
+
 {% endblock bcright %}
 
 {% block body %}
@@ -167,9 +165,9 @@
                         "data": null,
                         "render": function (data) {
                             if (data.sceneName) {
-                                return '<i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="' + data.sceneName + '"></i> ' + data.title;
+                                return '<i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="' + data.sceneName + '"></i> ' + '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>';
                             } else {
-                                return data.title;
+                                return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>';
                             }
                         }
                     },

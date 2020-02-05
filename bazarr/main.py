@@ -553,8 +553,7 @@ def search_json(query):
     return dict(items=search_list)
 
 
-@app.route('/episodes/<int:no>', methods=['GET'])
-@app.route('/episodes/')
+@app.route('/episodes/<no>')
 @login_required
 def episodes(no):
     return render_template('episodes.html', id=str(no))
@@ -569,20 +568,7 @@ def movies():
 @app.route('/movieseditor')
 @login_required
 def movieseditor():
-
-
-    missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
-
-    data = database.execute("SELECT tmdbId, title, path, languages, hearing_impaired, radarrId, poster, "
-                            "audio_language, forced FROM table_movies ORDER BY sortTitle ASC")
-    # path_replace
-    dict_mapper.path_replace_movie(data)
-
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    return render_template('movieseditor.html', bazarr_version=bazarr_version, rows=data, languages=languages,
-                    missing_count=missing_count, base_url=base_url, single_language=
-                    settings.general.getboolean('single_language'), current_port=settings.general.port)
+    return render_template('movieseditor.html')
 
 
 @app.route('/edit_movieseditor', methods=['POST'])
@@ -615,63 +601,10 @@ def edit_movieseditor():
     redirect(ref)
 
 
-@app.route('/edit_movie/<int:no>', methods=['POST'])
-@login_required
-def edit_movie(no):
-
-    ref = request.environ['HTTP_REFERER']
-
-    lang = request.form.getlist('languages')
-    if len(lang) > 0:
-        pass
-    else:
-        lang = 'None'
-
-    single_language = settings.general.getboolean('single_language')
-    if single_language:
-        if str(lang) == "['None']":
-            lang = 'None'
-        else:
-            lang = str(lang)
-    else:
-        if str(lang) == "['']":
-            lang = '[]'
-
-    hi = request.form.get('hearing_impaired')
-    forced = request.form.get('forced')
-
-    if hi == "on":
-        hi = "True"
-    else:
-        hi = "False"
-
-    database.execute("UPDATE table_movies SET languages=?, hearing_impaired=?, forced=? WHERE radarrId=?",
-                     (str(lang), hi, forced, no))
-
-    list_missing_subtitles_movies(no)
-
-    redirect(ref)
-
-
-@app.route('/movie/<int:no>', methods=['GET'])
+@app.route('/movie/<no>')
 @login_required
 def movie(no):
-
-
-    movies_details = database.execute("SELECT title, overview, poster, fanart, hearing_impaired, tmdbId, "
-                                      "audio_language, languages, path, subtitles, radarrId, missing_subtitles, "
-                                      "scenename, monitored, failedAttempts, forced FROM table_movies "
-                                      "WHERE radarrId=?", (no,), only_one=True)
-    # path_replace
-    dict_mapper.path_replace_movie(movies_details)
-
-    tmdbid = movies_details['tmdbId']
-
-    languages = database.execute("SELECT code2, name FROM table_settings_languages WHERE enabled=1")
-
-    return render_template('movie.html', bazarr_version=bazarr_version, no=no, details=movies_details,
-                    languages=languages, url_radarr_short=url_radarr_short(), base_url=base_url, tmdbid=tmdbid,
-                    current_port=settings.general.port)
+    return render_template('movie.html', id=str(no))
 
 
 @app.route('/scan_disk_movie/<int:no>', methods=['GET'])

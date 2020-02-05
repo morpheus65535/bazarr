@@ -535,6 +535,35 @@ class Movies(Resource):
         return '', 204
 
 
+class MoviesEditSave(Resource):
+    def post(self):
+        changed_movies = request.json
+        lang = changed_movies['languages']
+        hi = changed_movies['hi']
+        forced = changed_movies['forced']
+
+        if lang == ['None']:
+            lang = 'None'
+
+        for item in changed_movies['radarrid']:
+            radarrid = item.lstrip('row_')
+            try:
+                if len(lang):
+                    database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", (str(lang), radarrid))
+                if len(hi):
+                    database.execute("UPDATE table_movies SET hearing_impaired=? WHERE  radarrId=?", (hi[0], radarrid))
+                if len(forced):
+                    database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", (forced[0], radarrid))
+            except:
+                pass
+            else:
+                list_missing_subtitles_movies(no=radarrid)
+
+                event_stream.write(type='movie', action='update', movie=radarrid)
+
+        return '', 204
+
+
 class HistorySeries(Resource):
     def get(self):
         start = request.args.get('start') or 0
@@ -793,7 +822,7 @@ api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(EpisodesHistory, '/episodes_history')
 
 api.add_resource(Movies, '/movies')
-
+api.add_resource(MoviesEditSave, '/movies_edit_save')
 
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')
