@@ -1,375 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<script src="{{base_url}}static/jquery/jquery-latest.min.js"></script>
-		<script src="{{base_url}}static/semantic/semantic.min.js"></script>
-		<script src="{{base_url}}static/jquery/tablesort.js"></script>
-		<script src="{{base_url}}static/datatables/jquery.dataTables.min.js"></script>
-		<script src="{{base_url}}static/datatables/dataTables.semanticui.min.js"></script>
-		<link rel="stylesheet" href="{{base_url}}static/semantic/semantic.css">
-		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/datatables.min.css"/>
-		<link rel="stylesheet" type="text/css" href="{{base_url}}static/datatables/semanticui.min.css"/>
+{% extends '_main.html' %}
 
-		<link rel="apple-touch-icon" sizes="120x120" href="{{base_url}}static/apple-touch-icon.png">
-		<link rel="icon" type="image/png" sizes="32x32" href="{{base_url}}static/favicon-32x32.png">
-		<link rel="icon" type="image/png" sizes="16x16" href="{{base_url}}static/favicon-16x16.png">
-		<link rel="manifest" href="{{base_url}}static/manifest.json">
-		<link rel="mask-icon" href="{{base_url}}static/safari-pinned-tab.svg" color="#5bbad5">
-		<link rel="shortcut icon" href="{{base_url}}static/favicon.ico">
-		<meta name="msapplication-config" content="{{base_url}}static/browserconfig.xml">
-		<meta name="theme-color" content="#ffffff">
-		
-		<title>{{details['title']}} - Bazarr</title>
-		<style>
-			body {
-				background-color: #1b1c1d;
-				background-image: url("{{base_url}}image_proxy_movies{{details['fanart']}}");
-				background-repeat: no-repeat;
-				background-attachment: fixed;
-				background-size: cover;
-				background-position:center center;
-			}
-			#divdetails {
-				background-color: rgba(0, 0, 0, 0.9);
-				color: #ffffff;
-				margin-top: 6em;
-				margin-bottom: 3em;
-				padding: 2em;
-				border-radius: 1px;
-				box-shadow: 0 0 5px 5px #000000;
-				min-height: calc(250px + 4em);
-			}
-			#fondblanc {
-				background-color: #ffffff;
-				color: #000000;
-				opacity: 0.9;
-				border-radius: 1px;
-				box-shadow: 0 0 3px 3px #ffffff;
-				margin-top: 32px;
-				margin-bottom: 3em;
-				padding-top: 2em;
-				padding-left: 2em;
-				padding-right: 2em;
-				padding-bottom: 1em;
-				text-color: black;
-				overflow-x:auto;
-			}
-			.ui.basic.button:hover, .ui.basic.buttons .button:hover {
-				background: transparent !important;
-			}
-			.ui.basic.button:active, .ui.basic.buttons .button:active {
-				background: transparent !important;
-			}
-			.ui.basic.button:focus, .ui.basic.buttons .button:focus {
-				background: transparent !important;
-			}
-			.ui.basic.button:visited, .ui.basic.buttons .button:visited {
-				background: transparent !important;
-			}
+{% block title %}Movie - Bazarr{% endblock %}
 
-			.criteria_matched {
-				background-color: #e6ffe6 !important;
-				line-height: 0 !important;
-			}
+{% block head %}
+<style>
+	#movieFanart {
+		background-repeat: no-repeat;
+		background-size: cover;
+		background-position: top center;
+		box-sizing: initial;
+		margin-left: -32px;
+		margin-top: -30px;
+		padding: 2em;
+	}
 
-			.criteria_not_matched {
-				background-color: #ffcccc !important;
-				line-height: 0 !important;
-			}
-		</style>
-	</head>
-	<body>
-		%import ast
-		%from os import path
-		%from get_languages import *
-        %from config import settings
-        %from helper import path_replace_movie
-		%single_language = settings.general.getboolean('single_language')
-		<div style="display: none;"><img src="{{base_url}}image_proxy_movies{{details['fanart']}}"></div>
-		<div id='loader' class="ui page dimmer">
-		   	<div id="loader_text" class="ui indeterminate text loader">Loading...</div>
+	#movieDetails {
+		padding: 30px;
+		background: rgba(0, 0, 0, 0.7);
+		color: white;
+		margin: -32px;
+	}
+
+	#moviePoster {
+		width: 250px;
+	}
+
+	h1 {
+		color: white;
+	}
+
+	span {
+		margin-right: 0.5em;
+	}
+</style>
+{% endblock head %}
+
+{% block bcleft %}
+<div class="">
+	<button class="btn btn-outline" id="scan_button">
+		<div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Scan Disk</div>
+	</button>
+	<button class="btn btn-outline" id="search_button">
+		<div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Search</div>
+	</button>
+</div>
+{% endblock bcleft %}
+
+{% block bcright %}
+<div class="d-flex m-t-5 justify-content-end">
+	<button class="btn btn-outline" id="edit_button">
+		<div><i class="fas fa-wrench align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Edit Movie</div>
+	</button>
+</div>
+{% endblock bcright %}
+
+{% block body %}
+<div class="container-fluid" id="movieFanart">
+	<div class="row justify-content-md-center" id="movieDetails">
+		<div class="col-sm-auto" id="moviePosterColumn">
+			<img id="moviePoster" src="">
 		</div>
-		% include('menu.tpl')
-		
-		<div style='padding-left: 2em; padding-right: 2em;' class='ui container'>
-			<div id="divdetails" class="ui container">
-				<div class="ui stackable grid">
-					<div class="three wide column">
-						<img class="left floated ui image" style="max-height:250px;" src="{{base_url}}image_proxy_movies{{details['poster']}}">
-					</div>
-
-					<div class="thirteen wide column">
-						<div class="ui stackable grid">
-							<div class="ui row">
-								<div class="twelve wide left aligned column">
-									<h2>
-					                    %if details['monitored'] == 'True':
-					                    <span data-tooltip="Movie is Monitored in Radarr"><i class="bookmark icon"></i></span>
-					                    %else:
-					                    <span data-tooltip="Movie is not Monitored in Radarr"><i class="bookmark outline icon"></i></span>
-					                    %end
-										{{details['title']}}
-					                </h2>
-								</div>
-
-								<div class="four wide right aligned column">
-									<div class="ui right floated basic icon buttons">
-										<button id="scan_disk" class="ui button" data-tooltip="Scan Disk For Subtitles" data-inverted=""><i class="ui inverted large compact refresh icon"></i></button>
-										<button id="search_missing_subtitles_movie" class="ui button" data-tooltip="Download Missing Subtitles" data-inverted=""><i class="ui inverted huge compact search icon"></i></button>
-										<%
-										subs_languages = ast.literal_eval(str(details['languages']))
-										subs_languages_list = []
-										if subs_languages is not None:
-											for subs_language in subs_languages:
-												subs_languages_list.append(subs_language)
-											end
-										end
-										%>
-										%if subs_languages is not None:
-										<button class="manual_search ui button" data-tooltip="Manually Search For Subtitles" data-inverted="" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-movie_title="{{details['title']}}" data-radarrId="{{details['radarrId']}}"><i class="ui inverted large compact user icon"></i></button>
-										<button class="manual_upload ui button" data-tooltip="Upload Subtitle File" data-inverted="" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{subs_languages_list}}" data-hi="{{details['hearing_impaired']}}" data-movie_title="{{details['title']}}" data-radarrId="{{details['radarrId']}}"><i class="ui inverted large compact cloud upload icon"></i></button>
-										%end
-										<button id="config" class="ui button" data-tooltip="Edit Movie" data-inverted="" data-tmdbid="{{details['tmdbId']}}" data-title="{{details['title']}}" data-poster="{{details['poster']}}" data-audio="{{details['audio_language']}}" data-languages="{{!subs_languages_list}}" data-hearing-impaired="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}"><i class="ui inverted large compact configure icon"></i></button>
-									</div>
-								</div>
-							</div>
-
-							<div class="ui row">
-								{{details['overview']}}
-							</div>
-
-							<div class="ui row">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>{{details['audio_language']}}</div>
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{details['path']}}</div>
-								% if details['sceneName'] is not None:
-								<div class="ui tiny inverted label" style='background-color: orange;'>{{details['sceneName']}}</div>
-								% end
-							</div>
-
-							<div class="ui row" style="padding-bottom: 0.5em;">
-								%for language in subs_languages_list:
-								<div class="ui tiny inverted label" style='background-color: #35c5f4;'>{{language}}</div>
-								%end
-							</div>
-
-							<div class="ui row" style="padding-top: 0em;">
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Hearing-impaired: {{details['hearing_impaired']}}</div>
-								<div class="ui tiny inverted label" style='background-color: #777777;'>Forced: {{details['forced']}}</div>
-							</div>
-						</div>
-					</div>
+		<div class="col">
+			<div class="container-fluid">
+				<div class="row">
+					<h1><span id="movieTitle"></span></h1>
+					<i class="far fa-clone" id="moviealternativeTitles" data-toggle="tooltip" data-placement="right" title="None" data-html="true"></i>
 				</div>
-
-				<div id="fondblanc" class="ui container">
-					<div class="ui top attached tabular menu">
-						<a id="subtitles_tab" class="tabs item active" data-tab="subtitles">Subtitles</a>
-						<a id="history_tab" class="tabs item" data-tab="history">History</a>
-					</div>
-					<div class="ui bottom attached tab active segment" data-tab="subtitles">
-						<div class="content">
-							<table class="ui very basic single line selectable table">
-								<thead>
-									<tr>
-										<th>Subtitles Path</th>
-										<th>Language(s)</th>
-										<th></th>
-									</tr>
-								</thead>
-								<tbody>
-									<%
-									subtitles_files = ast.literal_eval(str(details['subtitles']))
-									subtitles_files.sort(key=lambda x: x[0])
-									if subtitles_files is not None:
-										for subtitles_file in subtitles_files:
-											if subtitles_file[0].endswith(':forced'):
-												forced = True
-											else:
-												forced = False
-											end
-									%>
-									<tr>
-										%if subtitles_file[1] is not None:
-										<td><span data-tooltip="Path is: {{path_replace_movie(subtitles_file[1])}}" data-inverted='' data-position="top left">{{path.basename(path_replace_movie(subtitles_file[1]))}}</span></td>
-										%else:
-										<td>Video File Subtitles Track</td>
-										%end
-										<td><div class="ui tiny inverted label" style='background-color: #777777;'>{{language_from_alpha2(subtitles_file[0].split(':')[0])}}{{' forced' if forced else ''}}</div></td>
-										<td>
-											%if subtitles_file[1] is not None:
-											<a class="remove_subtitles ui inverted basic compact icon" data-tooltip="Delete Subtitle File" data-inverted="" data-position="top right" data-moviePath="{{details['path']}}" data-subtitlesPath="{{path_replace_movie(subtitles_file[1])}}" data-language="{{alpha3_from_alpha2(subtitles_file[0].split(':')[0])}}" data-radarrId={{details['radarrId']}}>
-												<i class="ui black delete icon"></i>
-											</a>
-											%end
-										</td>
-									</tr>
-									<%
-										end
-										if len(subtitles_files) == 0:
-									%>
-									<tr><td colspan="3">No Subtitles Detected For This Movie.</td></tr>
-									<%
-										end
-									end
-									%>
-								</tbody>
-							</table>
-							<%
-							if details['missing_subtitles'] is not None:
-								missing_subs_languages = ast.literal_eval(details['missing_subtitles'])
-							else:
-								missing_subs_languages = []
-							end
-							from get_subtitle import search_active
-							if missing_subs_languages is not None:
-							%>
-							<table class="ui very basic single line selectable table">
-								<thead>
-									<tr>
-										<th>Missing Subtitles</th>
-									</tr>
-								</thead>
-							</table>
-							<%
-								for missing_subs_language in missing_subs_languages:
-									if len(missing_subs_language) > 2:
-										forced = missing_subs_language[2]
-										forced_bool = True
-									else:
-										forced = False
-										forced_bool = False
-									end
-
-									if details['failedAttempts'] is not None and settings.general.getboolean('adaptive_searching') and missing_subs_language in details['failedAttempts']:
-										for lang in ast.literal_eval(details['failedAttempts']):
-											if missing_subs_language in lang:
-												if search_active(lang[1]):
-							%>
-									<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-									</a>
-												%else:
-									<a data-tooltip="Automatic Searching Delayed (Adaptive Search)" data-position="top left" data-inverted="" class="get_subtitle ui small red label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-									</a>
-							<%
-												end
-											end
-										end
-									else:
-							%>
-									<a class="get_subtitle ui small blue label" data-moviePath="{{details['path']}}" data-scenename="{{details['sceneName']}}" data-language="{{alpha3_from_alpha2(str(missing_subs_language.split(':')[0]))}}" data-hi="{{details['hearing_impaired']}}" data-forced="{{details['forced']}}" data-radarrId={{details['radarrId']}}>
-										{{language_from_alpha2(str(missing_subs_language.split(':')[0]))}}{{' forced' if forced else ''}}
-										<i style="margin-left:3px; margin-right:0" class="search icon"></i>
-									</a>
-							<%
-									end
-								end
-							end
-							%>
-						</div>
-					</div>
-					<div class="ui bottom attached tab segment" data-tab="history">
-						<div class="content">
-							<table id="movie_result" class="display" style="width:100%">
-								<thead>
-									<tr>
-										<th></th>
-										<th style="text-align: left;">Language.:</th>
-										<th style="text-align: left;">Provider:</th>
-										<th style="text-align: left;">Score:</th>
-										<th style="text-align: left;">Date:</th>
-									</tr>
-								</thead>
-							</table>
-						</div>
-					</div>
+				<div class="row">
+					<h5><span id="movieAudioLanguage" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieMappedPath" class="badge badge-secondary"></span></h5>
+				</div>
+				<div class="row">
+					<h5><span id="movieSubtitlesLanguages"></span></h5>
+				</div>
+				<div class="row">
+					<h5><span id="movieHearingImpaired" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieForced" class="badge badge-secondary"></span></h5>
+				</div>
+				<div class="row">
+					<span id="movieDescription"></span>
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
+<div class="container-fluid">
+	<!-- Bread crumb and right sidebar toggle -->
+	<!-- ============================================================== -->
+	<table id="movieSubtitles" class="table table-striped" style="width:100%">
+		<thead>
+		<tr>
+			<th>Subtitles Path</th>
+			<th>Language(s)</th>
+		</tr>
+		</thead>
+	</table>
+</div>
 
-		<div class="config_dialog ui small modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<div id="movie_title"></div>
+<div id="manualSearchModal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="movie_title_span"></span></h5><br>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<div class="content">
-				<form name="movie_form" id="movie_form" action="" method="post" class="ui form">
-					<div class="ui grid">
-						<div class="four wide column">
-							<img id="movie_poster" class="ui image" src="">
-						</div>
-						<div class="twelve wide column">
-							<div class="ui grid">
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Audio Language</label>
-									</div>
-									<div class="nine wide column">
-										<div id="movie_audio_language"></div>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Subtitle Languages</label>
-									</div>
-									<div class="nine wide column">
-										<select name="languages" id="movie_languages" {{!'multiple="" ' if single_language is False else ''}} class="ui fluid selection dropdown">
-											<option value="">Languages</option>
-											%if single_language:
-                                        	<option value="None">None</option>
-                                        	%end
-											%for language in languages:
-											<option value="{{language['code2']}}">{{language['name']}}</option>
-											%end
-										</select>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Hearing-Impaired</label>
-									</div>
-									<div class="nine wide column">
-										<div id="movie_hearing-impaired_div" class="ui toggle checkbox">
-											<input name="hearing_impaired" id="movie_hearing-impaired" type="checkbox">
-											<label></label>
-										</div>
-									</div>
-								</div>
-								<div class="middle aligned row">
-									<div class="right aligned five wide column">
-										<label>Forced</label>
-									</div>
-									<div class="nine wide column">
-										<select name="forced" id="movie_forced" class="ui fluid selection dropdown">
-											<option value="False">False</option>
-											<option value="True">True</option>
-											<option value="Both">Both</option>
-										</select>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</form>
-			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-				<button type="submit" name="save" value="save" form="movie_form" class="ui blue approve button">Save</button>
-			</div>
-		</div>
-
-		<div class="search_dialog ui modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<span id="movie_title_span"></span>
-				<br><h5>Movie path is: <div class="ui tiny inverted label" style="background-color: #35c5f4;"><span id="movie_path_span"></span></div>
-				<br>Scenename is: <div class="ui tiny inverted label" style="background-color: orange;"><span id="movie_scenename_span"></span></div></h5>
-			</div>
-			<div class="scrolling content">
-				<table id="search_result" class="display" style="width:100%">
-					<thead>
+			<div class="modal-body">
+				<h6>Movie path is: <span id="movie_path_span" class="badge badge-secondary"></span>
+					<br>Scenename is: <span id="movie_scenename_span" class="badge badge-secondary"></span></h6>
+				<div class="container-fluid">
+					<table id="search_result" class="table table-striped">
+						<thead>
 						<tr>
 							<th style="text-align: left;">Score:</th>
 							<th style="text-align: left;">Lang.:</th>
@@ -377,377 +122,650 @@
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Matching:</th>
 							<th style="text-align: left;">Releases:</th>
-							<th></th>details
+							<th></th>
 						</tr>
-					</thead>
-				</table>
+						</thead>
+					</table>
+				</div>
 			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 			</div>
 		</div>
+	</div>
+</div>
 
-		<div class="upload_dialog ui small modal">
-			<i class="close icon"></i>
-			<div class="header">
-				<span id="movie_title_upload_span"></span>
+<div id="uploadModal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="upload_movie_title_span"></span></h5><br>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<div class="scrolling content">
-				<form class="ui form" name="upload_form" id="upload_form" action="{{base_url}}manual_upload_subtitle_movie" method="post" enctype="multipart/form-data">
-					<div class="ui grid">
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>Language</label>
+			<form class="form" name="upload_form" id="upload_form">
+				<div class="modal-body">
+					<div class="container-fluid">
+						<div class="row">
+							<div class="col-sm-2 text-right">
+								Language
 							</div>
-							<div class="thirteen wide column">
-								<select class="ui search dropdown" id="language" name="language">
-									%for language in subs_languages_list:
-									<option value="{{language}}">{{language_from_alpha2(language)}}</option>
-									%end
-								</select>
+							<div class="form-group col-sm-8 pl-sm-0">
+								<select class="selectpicker" id="manual_language_select" name="language"></select>
 							</div>
 						</div>
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>Forced</label>
+						<div class="row">
+							<div class="col-sm-2 text-right">
+								Forced
 							</div>
-							<div class="thirteen wide column">
-								<div class="ui toggle checkbox">
-									<input name="forced" type="checkbox" value="1">
-									<label></label>
+							<div class="form-group col-sm-1 pl-sm-0">
+								<label class="custom-control custom-checkbox">
+									<input type="checkbox" class="custom-control-input" id="forced_checkbox" name="forced">
+									<span class="custom-control-label" for="forced_checkbox"></span>
+								</label>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm-2 text-right">
+								File
+							</div>
+							<div class="form-group col-sm-7 pl-sm-0">
+								<div class="custom-file">
+									<input type="file" class="custom-file-input" id="upload" name="upload">
+									<label class="custom-file-label" for="upload">Choose file</label>
 								</div>
 							</div>
 						</div>
-						<div class="middle aligned row">
-							<div class="right aligned three wide column">
-								<label>File</label>
-							</div>
-							<div class="thirteen wide column">
-								<input type="file" name="upload">
-							</div>
-						</div>
 					</div>
+
 					<input type="hidden" id="upload_moviePath" name="moviePath" value="" />
 					<input type="hidden" id="upload_sceneName" name="sceneName" value="" />
 					<input type="hidden" id="upload_radarrId" name="radarrId" value="" />
 					<input type="hidden" id="upload_title" name="title" value="" />
-				</form>
+				</div>
+				<div class="modal-footer">
+					<button type="submit" id="upload_save_button" class="btn btn-primary">Save</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="editModal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="edit_movie_title_span"></span></h5><br>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<div class="actions">
-				<button class="ui cancel button" >Cancel</button>
-				<button type="submit" name="save" value="save" form="upload_form" class="ui blue approve button">Save</button>
+			<form class="form" name="edit_form" id="edit_form">
+				<div class="modal-body">
+					<div class="container-fluid">
+						<div class="row">
+							<div class="col-sm-3 text-right">
+								Audio Language
+							</div>
+							<div class="form-group col-sm-8 pl-sm-0">
+								<span id="edit_audio_language_span"></span>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm-3 text-right">
+								Subtitles Language(s)
+							</div>
+							<div class="form-group col-sm-8 pl-sm-0">
+								<select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm-3 text-right">
+								Hearing-Impaired
+							</div>
+							<div class="form-group col-sm-1 pl-sm-0">
+								<label class="custom-control custom-checkbox">
+									<input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
+									<span class="custom-control-label" for="hi_checkbox"></span>
+								</label>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-sm-3 text-right">
+								Forced
+							</div>
+							<div class="form-group col-sm-8 pl-sm-0">
+								<select class="selectpicker" id="edit_forced_select" name="forced">
+									<option value="False">False</option>
+									<option value="True">True</option>
+									<option value="Both">Both</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<input type="hidden" id="edit_radarrId" name="radarrId" value="" />
+				</div>
+				<div class="modal-footer">
+					<button type="submit" id="edit_save_button" class="btn btn-primary">Save</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div id="movieHistoryModal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="movie_history_title_span"></span></h5><br>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="container-fluid">
+					<table id="movie_history_result" class="table table-striped">
+						<thead>
+						<tr>
+							<th></th>
+							<th style="text-align: left;">Language.:</th>
+							<th style="text-align: left;">Provider:</th>
+							<th style="text-align: left;">Score:</th>
+							<th style="text-align: left;">Date:</th>
+						</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 			</div>
 		</div>
+	</div>
+</div>
+{% endblock body %}
 
-		% include('footer.tpl')
-	</body>
-</html>
-
+{% block tail %}
 <script>
-	$('.menu .item')
-		.tab();
-
-	$('#scan_disk').on('click', function(){
-		$('#loader_text').text("Scanning Disk For Existing Subtitles...");
-		window.location = '{{base_url}}scan_disk_movie/{{no}}';
-	});
-
-	$('#search_missing_subtitles_movie').on('click', function(){
-		$(this).addClass('disabled');
-		$(this).find('i:first').addClass('loading');
-	    $.ajax({
-            url: '{{base_url}}search_missing_subtitles_movie/{{no}}'
-        })
-	});
-
-	$('.remove_subtitles').on('click', function(){
-		const values = {
-			moviePath: $(this).attr("data-moviePath"),
-			language: $(this).attr("data-language"),
-			subtitlesPath: $(this).attr("data-subtitlesPath"),
-			radarrId: $(this).attr("data-radarrId"),
-			tmdbid: {{tmdbid}}
-		};
-
-		$('#loader_text').text("Deleting Subtitle...");
-
-		$.ajax({
-			url: "{{base_url}}remove_subtitles_movie",
-			type: "POST",
-			dataType: "json",
-			data: values
+	// make the filename appear in upload file dialog once a file have been selected.
+	$(document).ready(function () {
+		document.querySelector('.custom-file-input').addEventListener('change',function(e){
+			var fileName = document.getElementById("upload").files[0].name;
+			var nextSibling = e.target.nextElementSibling;
+			nextSibling.innerText = fileName;
 		});
-		$(document).ajaxStart(function(){
-			$('#loader').addClass('active');
-		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
-		});
-	});
 
-	$('.get_subtitle').on('click', function(){
-		const values = {
-			moviePath: $(this).attr("data-moviePath"),
-			sceneName: $(this).attr("data-sceneName"),
-			language: $(this).attr("data-language"),
-			hi: $(this).attr("data-hi"),
-			forced: $(this).attr("data-forced"),
-			radarrId: $(this).attr("data-radarrId"),
-			tmdbid: {{tmdbid}},
-			title: "{{!details['title'].replace("'", "\\'")}}"
-		};
+		$('#movies_nav').addClass("active");
 
-		$('#loader_text').text("Downloading Subtitle File...");
-
-		$.ajax({
-			url: "{{base_url}}get_subtitle_movie",
-			type: "POST",
-			dataType: "json",
-			data: values
-		});
-		$(document).ajaxStart(function(){
-			$('#loader').addClass('active');
-		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
-		});
-	});
-
-	$('a:not(.tabs), button:not(#config, .cancel, .manual_search, .manual_upload, #search_missing_subtitles_movie)').on('click', function(){
-		$('#loader').addClass('active');
-	});
-
-	$('#config').on('click', function(){
-		$('#movie_form').attr('action', '{{base_url}}edit_movie/{{no}}');
-
-		$("#movie_title").html($(this).data("title"));
-		$("#movie_poster").attr("src", "{{base_url}}image_proxy_movies" + $(this).data("poster"));
-
-		$("#movie_audio_language").html($(this).data("audio"));
-
-		$('#movie_languages').dropdown('clear');
-		const languages_array = eval($(this).data("languages"));
-		$('#movie_languages').dropdown('set selected',languages_array);
-
-		$('#movie_forced').dropdown('clear');
-		$('#movie_forced').dropdown('set selected',$(this).data("forced"));
-
-		if ($(this).data("hearing-impaired") === "True") {
-			$("#movie_hearing-impaired_div").checkbox('check');
-		} else {
-			$("#movie_hearing-impaired_div").checkbox('uncheck');
-		}
-
-		$('.config_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show');
-	});
-
-	$('#history_tab').on('click', function(){
-		$('#movie_result').DataTable( {
-		    destroy: true,
-		    language: {
-				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
-				zeroRecords: 'No History Records Found For This Movie'
-		    },
-		    paging: true,
-    		lengthChange: false,
-			pageLength: 5,
-    		searching: true,
-    		ordering: true,
-    		processing: false,
-        	serverSide: false,
-        	ajax: {
-				url: '{{base_url}}movie_history/{{no}}'
-			},
-			drawCallback: function(settings) {
-                $('.inline.dropdown').dropdown();
-                $('.ui.accordion').accordion();
-			},
-			columns: [
-				{ data: 'action'},
-				{ data: 'language' },
-				{ data: 'provider' },
-				{ data: 'score'},
-				{ data: 'timestamp' }
-			]
-		} );
-	});
-
-	$('.manual_search').on('click', function(){
-		$("#movie_title_span").html($(this).data("movie_title"));
-		$("#movie_path_span").html($(this).attr("data-moviePath"));
-		$("#movie_scenename_span").html($(this).attr("data-sceneName"));
-
-		moviePath = $(this).attr("data-moviePath");
-		sceneName = $(this).attr("data-sceneName");
-		language = $(this).attr("data-language");
-		hi = $(this).attr("data-hi");
-		forced = $(this).attr("data-forced");
-		radarrId = $(this).attr("data-radarrId");
-		var languages = Array.from({{!subs_languages_list}});
-		var is_pb = languages.includes('pb');
-		var is_pt = languages.includes('pt');
-
-		const values = {
-			moviePath: moviePath,
-			sceneName: sceneName,
-			language: language,
-			hi: hi,
-			forced: forced,
-			radarrId: radarrId,
-			title: "{{!details['title'].replace("'", "\'")}}"
-		};
-
-		$('#search_result').DataTable( {
-		    destroy: true,
-		    language: {
-				loadingRecords: '<br><div class="ui active inverted dimmer" style="width: 95%;"><div class="ui centered inline loader"></div></div><br>',
+		movieDetailsRefresh();
+		getLanguages();
+		getEnabledLanguages();
+		console.log(movieDetails['subtitles']);
+		var table = $('#movieSubtitles').DataTable({
+			language: {
 				zeroRecords: 'No Subtitles Found For This Movie'
-		    },
-		    paging: true,
-			lengthChange: false,
-			pageLength: 5,
-    		searching: false,
-    		ordering: false,
-    		processing: false,
-        	serverSide: false,
-        	ajax: {
-				url: '{{base_url}}manual_search_movie',
-				type: 'POST',
-                data: values
 			},
-			drawCallback: function(settings) {
-                $('.inline.dropdown').dropdown();
-                $('.ui.accordion').accordion();
-			},
-			columns: [
-				{ data: 'score',
-				render: function ( data, type, row ) {
-        			return data +'%';
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
-		    			return 'pb'
-					} else if ( data.language === "pt:forced" && is_pb === true && is_pt === false) {
-		    			return 'pb:forced'
-					} else {
-		    			return data.language
-					}
-					}
-				},
-				{ data: 'hearing_impaired' },
-				{ data: null,
-				render: function ( data, type, row ) {
-        			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-					const array_matches = data.matches;
-					const array_dont_matches = data.dont_matches;
-					let i;
-					let text = '<div class="ui inline dropdown"><i class="green check icon"></i><div class="text">';
-					text += array_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">';
-					for (i = 0; i < array_matches.length; i++) {
-						text += '<div class="criteria_matched disabled item">' + array_matches[i] + '</div>';
-					}
-					text += '</div></div>';
-					text += '<div class="ui inline dropdown"><i class="red times icon"></i><div class="text">';
-					text += array_dont_matches.length;
-					text += '</div><i class="dropdown icon"></i><div class="menu">';
-					for (i = 0; i < array_dont_matches.length; i++) {
-						text += '<div class="criteria_not_matched disabled item">' + array_dont_matches[i] + '</div>';
-					}
-					text += '</div></div>';
-        			return text;
-    				}
-				},
-				{ data: null,
-				render: function ( data, type, row ) {
-                    const array_release_info = data.release_info;
-                    let i;
-                    let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content">';
-                    for (i = 0; i < array_release_info.length; i++) {
-                        text += '<div class="ui tiny label" style="margin-bottom: 2px;">' + array_release_info[i] + '</div>';
-                    }
-                    text += '</div></div>';
-                    return text;
-                    }
-				},
-                { data: null,
-				render: function ( data, type, row ) {
-        			return '<a href="#" class="ui tiny label" onclick="manual_get(this, moviePath, sceneName, hi, radarrId)" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'"><i class="ui download icon" style="margin-right:0px" ></i></a>';
-    				}
-				}
+			"searching": false,
+			"ordering": false,
+			"paging": false,
+			"info": false,
+			"lengthChange": false,
+			"data" : movieDetails['subtitles'],
+			"columns" : [
+				{ "data" : 1 },
+				{ "data" : 0 }
 			]
-		} );
-
-		$('.search_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show')
-		;
-	});
-
-	$('.manual_upload').on('click', function() {
-		$("#movie_title_upload_span").html($(this).data("movie_title"));
-
-		moviePath = $(this).attr("data-moviePath");
-		sceneName = $(this).attr("data-sceneName");
-		language = $(this).attr("data-language");
-		radarrId = $(this).attr("data-radarrId");
-		var title = "{{!details['title'].replace("'", "\'")}}";
-
-		$('#language').dropdown();
-
-		$('#upload_moviePath').val(moviePath);
-		$('#upload_sceneName').val(sceneName);
-		$('#upload_radarrId').val(radarrId);
-		$('#upload_title').val(title);
-
-		$('.upload_dialog')
-			.modal({
-				centered: false,
-				autofocus: false
-			})
-			.modal('show')
-		;
-	});
-
-	function manual_get(button, episodePath, sceneName, hi){
-		const values = {
-				subtitle: $(button).attr("data-subtitle"),
-				provider: $(button).attr("data-provider"),
-				moviePath: moviePath,
-				sceneName: sceneName,
-				language: $(button).attr("data-language"),
-				hi: hi,
-				radarrId: radarrId,
-				title: "{{!details['title'].replace("'", "\\'")}}"
-		};
-
-		$('#loader_text').text("Downloading Subtitle File...");
-		$('#loader').addClass('active');
-
-		$('.search_dialog').modal('hide');
-
-		$.ajax({
-			url: "{{base_url}}manual_get_subtitle_movie",
-			type: "POST",
-			dataType: "json",
-			data: values
 		});
-		$(document).ajaxStop(function(){
-			window.location.reload();
+
+		$('#episodes').on('click', '.remove_subtitles', function(e){
+			$(this).tooltip('dispose');
+			e.preventDefault();
+			const values = {
+				episodePath: $(this).attr("data-episodePath"),
+				language: $(this).attr("data-language"),
+				subtitlesPath: $(this).attr("data-subtitlesPath"),
+				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+				sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
+				tvdbid: seriesDetails['tvdbId']
+			};
+			var cell = $(this).closest('td');
+			$.ajax({
+				url: "{{ url_for('api.episodessubtitlesdelete') }}",
+				type: "DELETE",
+				dataType: "json",
+				data: values,
+				beforeSend: function() {
+					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				}
+			});
+		});
+
+		$('#episodes').on('click', '.get_subtitle', function(e){
+			$(this).tooltip('dispose');
+			e.preventDefault();
+			const values = {
+				episodePath: $(this).attr("data-episodepath"),
+				sceneName: $(this).attr("data-scenename"),
+				language: $(this).attr("data-language"),
+				hi: $(this).attr("data-hi"),
+				forced: $(this).attr("data-forced"),
+				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
+				title: seriesDetails['title']
+			};
+			var cell = $(this).closest('td');
+			$.ajax({
+				url: "{{ url_for('api.episodessubtitlesdownload') }}",
+				type: "POST",
+				dataType: "json",
+				data: values,
+				beforeSend: function() {
+					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				}
+			});
+		});
+
+		$('#episodes').on('click', '.manual_search', function(e){
+			e.preventDefault();
+			$("#series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
+			$("#episode_path_span").html($(this).attr("data-episodePath"));
+			$("#episode_scenename_span").html($(this).attr("data-sceneName"));
+
+			episodePath = $(this).attr("data-episodePath");
+			sceneName = $(this).attr("data-sceneName");
+			language = $(this).attr("data-language");
+			hi = seriesDetails['hearing_impaired'];
+			forced = seriesDetails['forced'];
+			sonarrSeriesId = seriesDetails['sonarrSeriesId'];
+			sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
+			var languages = Array.from(seriesDetails['languages']);
+			var is_pb = languages.includes('pb');
+			var is_pt = languages.includes('pt');
+
+			const values = {
+				episodePath: episodePath,
+				sceneName: sceneName,
+				language: language,
+				hi: hi,
+				forced: forced,
+				sonarrSeriesId: sonarrSeriesId,
+				sonarrEpisodeId: sonarrEpisodeId,
+				title: seriesDetails['title']
+			};
+
+			$('#search_result').DataTable( {
+				destroy: true,
+				language: {
+					zeroRecords: 'No Subtitles Found For This Episode',
+					processing: "Searching (possibly solving captcha)..."
+				},
+				paging: true,
+				lengthChange: false,
+				pageLength: 5,
+				searching: false,
+				ordering: false,
+				processing: true,
+				serverSide: false,
+				ajax: {
+					url: '{{ url_for('api.episodessubtitlesmanualsearch') }}',
+					type: 'POST',
+					data: values
+				},
+				columns: [
+					{ data: 'score',
+						render: function ( data ) {
+							return data +'%';
+						}
+					},
+					{ data: null,
+						render: function ( data ) {
+							if ( data.language === "pt" && is_pb === true && is_pt === false) {
+								return 'pb'
+							} else {
+								return data.language
+							}
+						}
+					},
+					{ data: 'hearing_impaired' },
+					{ data: null,
+						render: function ( data ) {
+							return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
+						}
+					},
+					{ data: null,
+						render: function ( data ) {
+							const array_matches = data.matches;
+							const array_dont_matches = data.dont_matches;
+							let i;
+							let text = '<div class="dropdown"><div class="btn-group dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-check-circle" style="color: green;"></i> '+array_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_matches.length; i++) {
+								text += '<a class="dropdown-item disabled" href="#">' + array_matches[i] + '</a>';
+							}
+							text += '</div>';
+							text += '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-times-circle" style="color: red;"></i> '+array_dont_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_dont_matches.length; i++) {
+								text += '<a class="dropdown-item disabled" href="#">' + array_dont_matches[i] + '</a>';
+							}
+							text += '</div></div></div>';
+							return text;
+						}
+					},
+					{ data: null,
+						render: function ( data ) {
+							const array_release_info = data.release_info;
+							let i;
+							let text = '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="\tfas fa-comment-dots"></i> '+array_release_info.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							for (i = 0; i < array_release_info.length; i++) {
+								text += '<a class="dropdown-item" href="#">' + array_release_info[i] + '</a>';
+							}
+							text += '</div></div>';
+							return text;
+						}
+					},
+					{ data: null,
+						render: function ( data ) {
+							return '<a href="" class="manual_download badge badge-secondary" data-episodePath="'+episodePath+'" data-sceneName="'+sceneName+'" data-sonarrEpisodeId='+sonarrEpisodeId+' data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+						}
+					}
+				]
+			} );
+
+			$('#manualSearchModal')
+					.modal({
+						focus: false
+					});
+		});
+
+		$('#search_result').on('click', '.manual_download', function(e){
+			e.preventDefault();
+			const values = {
+				episodePath: $(this).attr("data-episodepath"),
+				sceneName: $(this).attr("data-scenename"),
+				language: $(this).attr("data-language"),
+				hi: seriesDetails['hearing_impaired'],
+				forced: $(this).attr("data-forced"),
+				provider: $(this).attr("data-provider"),
+				subtitle: $(this).attr("data-subtitle"),
+				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
+				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
+				title: seriesDetails['title']
+			};
+			var cell = $(this).closest('td');
+			$.ajax({
+				url: "{{ url_for('api.episodessubtitlesmanualdownload') }}",
+				type: "POST",
+				dataType: "json",
+				data: values,
+				beforeSend: function() {
+					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				},
+				complete: function(data) {
+					$('#manualSearchModal').modal('hide');
+				}
+			});
+		});
+
+		$('#episodes').on('click', '.upload_subtitle', function(e){
+			e.preventDefault();
+			$("#upload_series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
+			$('#upload_episodePath').val($(this).data("episodepath"));
+			$('#upload_sceneName').val($(this).data("scenename"));
+			$('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
+			$('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
+			$('#upload_title').val($(this).data("episode_title"));
+
+			$('#manual_language_select').empty();
+			$.each(enabledLanguages, function (i, item) {
+				$('#manual_language_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+			});
+			$("#manual_language_select").selectpicker("refresh");
+
+			$('#uploadModal')
+					.modal({
+						focus: false
+					});
+		});
+
+		$('#upload_form').on('submit', function(e){
+			e.preventDefault();
+			var formdata = new FormData(document.getElementById("upload_form"));
+
+			$.ajax({
+				url: "{{ url_for('api.episodessubtitlesupload') }}",
+				data: formdata,
+				processData: false,
+				contentType: false,
+				type: 'POST',
+				success: function(){
+					$('#uploadModal').modal('hide');
+				}
+			});
+		});
+
+		$('#scan_button').on('click', function(e){
+			e.preventDefault();
+			$.ajax({
+				url: "{{ url_for('api.episodesscandisk', seriesid=id) }}",
+				type: 'GET',
+				beforeSend: function() {
+					$('#scan_button').find("i").addClass('fa-spin');
+				},
+				complete: function() {
+					$('#scan_button').find("i").removeClass('fa-spin');
+				}
+			});
+		});
+
+		$('#search_button').on('click', function(e){
+			e.preventDefault();
+			$.ajax({
+				url: "{{ url_for('api.episodessearchmissing', seriesid=id) }}",
+				type: 'GET',
+				beforeSend: function() {
+					$('#search_button').find("i").addClass('fa-spin');
+				},
+				complete: function() {
+					$('#search_button').find("i").removeClass('fa-spin');
+				}
+			});
+		});
+
+		$('#edit_button').on('click', function(e){
+			e.preventDefault();
+			$("#edit_series_title_span").html(seriesDetails['title']);
+			$("#edit_audio_language_span").text(seriesDetails['audio_language']['name']);
+			$('#edit_sonarrSeriesId').val(seriesDetails['sonarrSeriesId']);
+
+
+			$('#edit_languages_select').empty();
+			if ('{{settings.general.single_language}}' === 'True') {
+				$('#edit_languages_select').selectpicker({maxOptions: 1});
+				$('#edit_languages_select').append('<option value="None">None</option>');
+			}
+			$.each(enabledLanguages, function (i, item) {
+				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+			});
+			$("#edit_languages_select").selectpicker("refresh");
+			var selected_languages = Array();
+			$.each(Array.from(seriesDetails['languages']), function (i, item) {
+				selected_languages.push(item.code2);
+			});
+			$('#edit_languages_select').selectpicker('val', selected_languages);
+			$('#hi_checkbox').prop('checked', (seriesDetails['hearing_impaired'] === 'True'));
+			$('#edit_forced_select').val(seriesDetails['forced']).change();
+
+			$('#editModal')
+					.modal({
+						focus: false
+					});
+		});
+
+		$('#edit_form').on('submit', function(e){
+			e.preventDefault();
+			var formdata = new FormData(document.getElementById("edit_form"));
+
+			$.ajax({
+				url: "{{ url_for('api.series') }}?seriesid={{id}}",
+				data: formdata,
+				processData: false,
+				contentType: false,
+				type: 'POST',
+				success: function(){
+					seriesDetailsRefresh();
+					$('#editModal').modal('hide');
+				}
+			});
+		});
+
+		$('#uploadModal').on('hidden.bs.modal', function () {
+			$(this).find('form')[0].reset();
+		});
+
+		events.on('event', function(event) {
+			var event_json = JSON.parse(event);
+			if (event_json.series === {{id}}) {
+				if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
+					seriesDetailsRefresh();
+				}
+
+				if (event_json.type === 'episode' && event_json.action === 'insert') {
+					$.ajax({
+						url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
+						success: function (data) {
+							if (data.data.length) {
+								$('#episodes').DataTable().rows.add(data.data);
+								$('#episodes').DataTable().columns.adjust().draw(false);
+								$('[data-toggle="tooltip"]').tooltip({html: true});
+							}
+						}
+					})
+				} else if (event_json.type === 'episode' && event_json.action === 'update') {
+					var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
+					if (rowId.length) {
+						$.ajax({
+							url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
+							success: function (data) {
+								if (data.data.length) {
+									$('#episodes').DataTable().row(rowId).data(data.data[0]);
+									$('[data-toggle="tooltip"]').tooltip({html: true});
+								}
+							}
+						})
+					}
+				} else if (event_json.type === 'episode' && event_json.action === 'delete') {
+					var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
+					if (rowId.length) {
+						$('#episodes').DataTable().row(rowId).remove();
+						$('#episodes').DataTable().columns.adjust().draw(false);
+						$('[data-toggle="tooltip"]').tooltip({html: true});
+					}
+				}
+			}
+		});
+
+		$('#episodes').on('click', '.episode_history', function(e){
+			$(this).tooltip('dispose');
+			e.preventDefault();
+
+			$("#episode_history_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episodetitle"));
+
+			sonarrEpisodeId = $(this).data("sonarrepisodeid");
+
+			$('#episode_history_result').DataTable( {
+				destroy: true,
+				language: {
+					zeroRecords: 'No History Records Found For This Episode'
+				},
+				paging: true,
+				lengthChange: false,
+				pageLength: 5,
+				searching: true,
+				ordering: false,
+				processing: false,
+				serverSide: false,
+				ajax: {
+					url: '{{ url_for( 'api.episodeshistory' )}}?episodeid=' + sonarrEpisodeId
+				},
+				columns: [
+					{ data: 'action',
+						"render": function(data) {
+							if (data === 0) {return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";}
+							else if (data === 1) {return "<i class='fas fa-download' title='Subtitle file has been downloaded.' data-toggle='tooltip' data-placement='right'></i>";}
+							else if (data === 2) {return "<i class='fas fa-user' title='Subtitle file has been manually downloaded.' data-toggle='tooltip' data-placement='right'></i>";}
+							else if (data === 3) {return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";}
+							else if (data === 4) {return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";}
+						}},
+					{ data: 'language' },
+					{ data: 'provider' },
+					{ data: 'score'},
+					{ data: 'timestamp' }
+				]
+			} );
+
+			$('#episodeHistoryModal')
+					.modal({
+						focus: false
+					});
+		});
+	});
+
+	function movieDetailsRefresh() {
+		$.ajax({
+			url: "{{ url_for('api.movies') }}?radarrid={{id}}"
+		}).done(function (data) {
+			movieDetails = data.data[0];
+			$(document).prop('title', movieDetails['title'] + ' - Bazarr');
+			$('#movieFanart').css('background-image', "url('{{ url_for('image_proxy_movies', url='MediaCover/'+id+'/fanart.jpg') }}')");
+			$('#moviePoster').attr("src", "{{ url_for('image_proxy_movies', url='MediaCover/'+id+'/poster-250.jpg') }}");
+			$('#movieTitle').text(movieDetails['title']);
+
+			if (movieDetails['alternativeTitles'].length > 0) {
+				$('#moviealternativeTitles').attr("data-original-title", "<b>Alternative Titles:</b><br>" + movieDetails['alternativeTitles']);
+			} else {
+				$('#moviealternativeTitles').hide();
+			}
+
+			$('#movieAudioLanguage').text(movieDetails['audio_language'].name);
+			$('#movieMappedPath').text(movieDetails['mapped_path']);
+
+			var languages = '';
+			if (movieDetails['languages'] !== 'None') {
+				movieDetails['languages'].forEach(appendFunc);
+			}
+
+			function appendFunc(value) {
+				languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+			}
+
+			$('#movieSubtitlesLanguages').html(languages);
+			$('#movieHearingImpaired').text('Hearing-Impaired: ' + movieDetails['hearing_impaired']);
+			$('#movieForced').text('Forced: ' + movieDetails['forced']);
+			$('#movieDescription').text(movieDetails['overview']);
+
+			$('[data-toggle="tooltip"]').tooltip({html: true});
+		});
+	}
+
+	function getLanguages() {
+		$.ajax({
+			url: "{{ url_for('api.languages') }}?enabled=false",
+			success:function(data) {
+				availableLanguages = data;
+			}
+		});
+	}
+
+	function getEnabledLanguages() {
+		$.ajax({
+			url: "{{ url_for('api.languages') }}?enabled=true",
+			success:function(data) {
+				enabledLanguages = data;
+			}
 		});
 	}
 </script>
+{% endblock tail %}

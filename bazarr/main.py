@@ -491,11 +491,11 @@ def image_proxy(url):
 def image_proxy_movies(url):
     apikey = settings.radarr.apikey
     try:
-        url_image = (url_radarr_short() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
-        req = requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], stream=True, timeout=15, verify=False)
+        url_image = (url_radarr() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
+        req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
         url_image = url_radarr_short() + '/' + url + '?apikey=' + apikey
-        req = requests.get(url_radarr() + '/api' + url_image.split(url_radarr())[1], stream=True, timeout=15, verify=False)
+        req = requests.get(url_image, stream=True, timeout=15, verify=False)
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
@@ -569,36 +569,6 @@ def movies():
 @login_required
 def movieseditor():
     return render_template('movieseditor.html')
-
-
-@app.route('/edit_movieseditor', methods=['POST'])
-@login_required
-def edit_movieseditor():
-
-    ref = request.environ['HTTP_REFERER']
-
-    movies = request.form.get('movies')
-    movies = ast.literal_eval(str('[' + movies + ']'))
-    lang = request.form.getlist('languages')
-    hi = request.form.get('hearing_impaired')
-    forced = request.form.get('forced')
-
-    for movie in movies:
-        if str(lang) != "[]" and str(lang) != "['']":
-            if str(lang) == "['None']":
-                lang = 'None'
-            else:
-                lang = str(lang)
-            database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", (lang, movie))
-        if hi != '':
-            database.execute("UPDATE table_movies SET hearing_impaired=? WHERE radarrId=?", (hi, movie))
-        if forced != '':
-            database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", (forced, movie))
-
-    for movie in movies:
-        list_missing_subtitles_movies(movie)
-
-    redirect(ref)
 
 
 @app.route('/movie/<no>')

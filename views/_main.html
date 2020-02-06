@@ -174,7 +174,7 @@
                             </li>
                         {% endif %}
                         {% if settings.general.getboolean('use_radarr') %}
-                            <li><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
+                            <li id="movies_nav"><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
                                     class="hide-menu"> Movies</span></a>
                             </li>
                         {% endif %}
