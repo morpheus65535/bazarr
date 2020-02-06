@@ -12,7 +12,7 @@ from subliminal_patch.exceptions import ParseResponseError
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
-from subliminal.video import Episode
+from subliminal.video import Episode, Movie
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending,guess_matches
 from subzero.language import Language
 
@@ -125,8 +125,8 @@ class LegendasdivxProvider(Provider):
     }
     loginpage = site + '/forum/ucp.php?mode=login'
     searchurl = site + '/modules.php?name=Downloads&file=jz&d_op=search&op=_jz00&query={query}'
+    imdbsearchurl = site + '/modules.php?name=Downloads&d_op=search&imdbid={query}'
     language_list = list(languages)
-
 
     def __init__(self, username, password):
         self.username = username
@@ -173,48 +173,14 @@ class LegendasdivxProvider(Provider):
             return False
 
         return True
+
     def logout(self):
         # need to figure this out
         return True
 
-    def query(self, video, language):
-        try:
-            logger.debug('Got session id %s' %
-                         self.session.cookies.get_dict()['PHPSESSID'])
-        except Exception as e:
-            self.login()
-            return []
-
-        language_ids = '0'
-        if isinstance(language, (tuple, list, set)):
-            if len(language) == 1:
-                language_ids = ','.join(sorted(l.opensubtitles for l in language))
-                if language_ids == 'por':
-                    language_ids = '&form_cat=28'
-                else:
-                    language_ids = '&form_cat=29'
-
-        querytext = video.name
-        querytext = os.path.basename(querytext)
-        querytext, _ = os.path.splitext(querytext)
-        videoname = querytext
-        querytext = querytext.lower()
-        querytext = querytext.replace(
-            ".", "+").replace("[", "").replace("]", "")
-        if language_ids != '0':
-            querytext = querytext + language_ids
-        self.headers['Referer'] = self.site + '/index.php'
-        self.session.headers.update(self.headers.items())
-        res = self.session.get(self.searchurl.format(query=querytext))
-        # form_cat=28 = br
-        # form_cat=29 = pt
-        if "A legenda não foi encontrada" in res.text:
-            logger.warning('%s not found', querytext)
-            return []
-
-        bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
-        _allsubs = bsoup.findAll("div", {"class": "sub_box"})
+    def _process_page(self, video, bsoup, querytext, videoname):
         subtitles = []
+        _allsubs = bsoup.findAll("div", {"class": "sub_box"})
         lang = Language.fromopensubtitles("pob")
         for _subbox in _allsubs:
             hits=0
@@ -227,7 +193,6 @@ class LegendasdivxProvider(Provider):
                         lang = Language.fromopensubtitles('pob')
                     else:
                         lang = Language.fromopensubtitles('por')
-
 
             description = _subbox.find("td", {"class": "td_desc brd_up"})
             download = _subbox.find("a", {"class": "sub_download"})
@@ -249,6 +214,55 @@ class LegendasdivxProvider(Provider):
             subtitles.append(
                 LegendasdivxSubtitle(lang, video, data)
             )
+        return subtitles
+
+    def query(self, video, language):
+        try:
+            logger.debug('Got session id %s' %
+                         self.session.cookies.get_dict()['PHPSESSID'])
+        except Exception as e:
+            self.login()
+
+        language_ids = '0'
+        if isinstance(language, (tuple, list, set)):
+            if len(language) == 1:
+                language_ids = ','.join(sorted(l.opensubtitles for l in language))
+                if language_ids == 'por':
+                    language_ids = '&form_cat=28'
+                else:
+                    language_ids = '&form_cat=29'
+
+        videoname = video.name
+        videoname = os.path.basename(videoname)
+        videoname, _ = os.path.splitext(videoname)
+        # querytext = videoname.lower()
+        _searchurl = self.searchurl
+        if video.imdb_id is None:
+            if isinstance(video, Episode):
+                querytext = "{} S{:02d}E{:02d}".format(video.series, video.season, video.episode)
+            elif isinstance(video, Movie):
+                querytext = video.title
+        else:
+            # _searchurl = self.imdbsearchurl
+            querytext = video.title
+            # querytext = video.imdb_id
+
+
+        # querytext = querytext.replace(
+        #     ".", "+").replace("[", "").replace("]", "")
+        if language_ids != '0':
+            querytext = querytext + language_ids
+        self.headers['Referer'] = self.site + '/index.php'
+        self.session.headers.update(self.headers.items())
+        res = self.session.get(_searchurl.format(query=querytext))
+        # form_cat=28 = br
+        # form_cat=29 = pt
+        if "A legenda não foi encontrada" in res.text:
+            logger.warning('%s not found', querytext)
+            return []
+
+        bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
+        subtitles = self._process_page(video, bsoup, querytext, videoname)
 
         return subtitles
 
