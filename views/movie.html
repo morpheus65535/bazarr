@@ -22,7 +22,7 @@
 	}
 
 	#moviePoster {
-		width: 250px;
+		max-height: 250px;
 	}
 
 	h1 {
@@ -31,6 +31,15 @@
 
 	span {
 		margin-right: 0.5em;
+	}
+
+	.badge {
+		display: inline-block;
+		max-width: 500px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
 	}
 </style>
 {% endblock head %}
@@ -63,7 +72,7 @@
 		<div class="col-sm-auto" id="moviePosterColumn">
 			<img id="moviePoster" src="">
 		</div>
-		<div class="col">
+		<div class="col" id="movieDetailsColumn">
 			<div class="container-fluid">
 				<div class="row">
 					<h1><span id="movieTitle"></span></h1>
@@ -71,7 +80,7 @@
 				</div>
 				<div class="row">
 					<h5><span id="movieAudioLanguage" class="badge badge-secondary"></span></h5>
-					<h5><span id="movieMappedPath" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieMappedPath" data-toggle="tooltip" data-placement="right" title="None" class="badge badge-secondary"></span></h5>
 				</div>
 				<div class="row">
 					<h5><span id="movieSubtitlesLanguages"></span></h5>
@@ -304,37 +313,21 @@
 		movieDetailsRefresh();
 		getLanguages();
 		getEnabledLanguages();
-		console.log(movieDetails['subtitles']);
-		var table = $('#movieSubtitles').DataTable({
-			language: {
-				zeroRecords: 'No Subtitles Found For This Movie'
-			},
-			"searching": false,
-			"ordering": false,
-			"paging": false,
-			"info": false,
-			"lengthChange": false,
-			"data" : movieDetails['subtitles'],
-			"columns" : [
-				{ "data" : 1 },
-				{ "data" : 0 }
-			]
-		});
 
-		$('#episodes').on('click', '.remove_subtitles', function(e){
+
+		$('#movieSubtitles').on('click', '.remove_subtitles', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 			const values = {
-				episodePath: $(this).attr("data-episodePath"),
+				moviePath: $(this).attr("data-moviePath"),
 				language: $(this).attr("data-language"),
 				subtitlesPath: $(this).attr("data-subtitlesPath"),
-				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
-				sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
-				tvdbid: seriesDetails['tvdbId']
+				radarrId: movieDetails['radarrId'],
+				tmdbid: movieDetails['tmdbId']
 			};
 			var cell = $(this).closest('td');
 			$.ajax({
-				url: "{{ url_for('api.episodessubtitlesdelete') }}",
+				url: "{{ url_for('api.moviesubtitlesdelete') }}",
 				type: "DELETE",
 				dataType: "json",
 				data: values,
@@ -344,63 +337,60 @@
 			});
 		});
 
-		$('#episodes').on('click', '.get_subtitle', function(e){
+		$('.get_subtitle').on('click', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 			const values = {
-				episodePath: $(this).attr("data-episodepath"),
+				moviePath: $(this).attr("data-moviepath"),
 				sceneName: $(this).attr("data-scenename"),
 				language: $(this).attr("data-language"),
 				hi: $(this).attr("data-hi"),
 				forced: $(this).attr("data-forced"),
-				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
-				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
-				title: seriesDetails['title']
+				radarrId: movieDetails['radarrId'],
+				title: movieDetails['title']
 			};
-			var cell = $(this).closest('td');
+			var button = $(this).closest('button');
 			$.ajax({
-				url: "{{ url_for('api.episodessubtitlesdownload') }}",
+				url: "{{ url_for('api.moviesubtitlesdownload') }}",
 				type: "POST",
 				dataType: "json",
 				data: values,
 				beforeSend: function() {
-					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+					button.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 				}
 			});
 		});
 
-		$('#episodes').on('click', '.manual_search', function(e){
+		$('#manual_search').on('click', function(e){
 			e.preventDefault();
-			$("#series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
-			$("#episode_path_span").html($(this).attr("data-episodePath"));
-			$("#episode_scenename_span").html($(this).attr("data-sceneName"));
+			$("#movie_title_span").html(movieDetails['title']);
+			$("#movie_path_span").html($(this).attr("data-moviePath"));
+			$("#movie_scenename_span").html($(this).attr("data-sceneName"));
 
-			episodePath = $(this).attr("data-episodePath");
+			moviePath = $(this).attr("data-moviePath");
 			sceneName = $(this).attr("data-sceneName");
 			language = $(this).attr("data-language");
-			hi = seriesDetails['hearing_impaired'];
-			forced = seriesDetails['forced'];
-			sonarrSeriesId = seriesDetails['sonarrSeriesId'];
-			sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
-			var languages = Array.from(seriesDetails['languages']);
+			hi = movieDetails['hearing_impaired'];
+			forced = movieDetails['forced'];
+			radarrId = movieDetails['radarrId'];
+			var languages = Array.from(movieDetails['languages']);
 			var is_pb = languages.includes('pb');
 			var is_pt = languages.includes('pt');
 
 			const values = {
-				episodePath: episodePath,
+				moviePath: moviePath,
 				sceneName: sceneName,
 				language: language,
 				hi: hi,
 				forced: forced,
-				sonarrSeriesId: sonarrSeriesId,
-				sonarrEpisodeId: sonarrEpisodeId,
-				title: seriesDetails['title']
+				radarrId: radarrId,
+				title: movieDetails['title']
 			};
 
 			$('#search_result').DataTable( {
 				destroy: true,
 				language: {
-					zeroRecords: 'No Subtitles Found For This Episode',
+					zeroRecords: 'No Subtitles Found For This Movie',
 					processing: "Searching (possibly solving captcha)..."
 				},
 				paging: true,
@@ -411,7 +401,7 @@
 				processing: true,
 				serverSide: false,
 				ajax: {
-					url: '{{ url_for('api.episodessubtitlesmanualsearch') }}',
+					url: '{{ url_for('api.moviesubtitlesmanualsearch') }}',
 					type: 'POST',
 					data: values
 				},
@@ -468,7 +458,7 @@
 					},
 					{ data: null,
 						render: function ( data ) {
-							return '<a href="" class="manual_download badge badge-secondary" data-episodePath="'+episodePath+'" data-sceneName="'+sceneName+'" data-sonarrEpisodeId='+sonarrEpisodeId+' data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
 						}
 					}
 				]
@@ -483,20 +473,19 @@
 		$('#search_result').on('click', '.manual_download', function(e){
 			e.preventDefault();
 			const values = {
-				episodePath: $(this).attr("data-episodepath"),
+				moviePath: $(this).attr("data-moviepath"),
 				sceneName: $(this).attr("data-scenename"),
 				language: $(this).attr("data-language"),
-				hi: seriesDetails['hearing_impaired'],
+				hi: movieDetails['hearing_impaired'],
 				forced: $(this).attr("data-forced"),
 				provider: $(this).attr("data-provider"),
 				subtitle: $(this).attr("data-subtitle"),
-				sonarrSeriesId: seriesDetails['sonarrSeriesId'],
-				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
-				title: seriesDetails['title']
+				radarrId: movieDetails['radarrId'],
+				title: movieDetails['title']
 			};
 			var cell = $(this).closest('td');
 			$.ajax({
-				url: "{{ url_for('api.episodessubtitlesmanualdownload') }}",
+				url: "{{ url_for('api.moviesubtitlesmanualdownload') }}",
 				type: "POST",
 				dataType: "json",
 				data: values,
@@ -509,14 +498,13 @@
 			});
 		});
 
-		$('#episodes').on('click', '.upload_subtitle', function(e){
+		$('#upload_subtitle').on('click', function(e){
 			e.preventDefault();
-			$("#upload_series_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
-			$('#upload_episodePath').val($(this).data("episodepath"));
+			$("#upload_movie_title_span").html(movieDetails['title']);
+			$('#upload_moviePath').val($(this).data("moviepath"));
 			$('#upload_sceneName').val($(this).data("scenename"));
-			$('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
-			$('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
-			$('#upload_title').val($(this).data("episode_title"));
+			$('#upload_radarrId').val($(this).data("radarrid"));
+			$('#upload_title').val($(this).data("movie_title"));
 
 			$('#manual_language_select').empty();
 			$.each(enabledLanguages, function (i, item) {
@@ -535,7 +523,7 @@
 			var formdata = new FormData(document.getElementById("upload_form"));
 
 			$.ajax({
-				url: "{{ url_for('api.episodessubtitlesupload') }}",
+				url: "{{ url_for('api.moviesubtitlesupload') }}",
 				data: formdata,
 				processData: false,
 				contentType: false,
@@ -549,7 +537,7 @@
 		$('#scan_button').on('click', function(e){
 			e.preventDefault();
 			$.ajax({
-				url: "{{ url_for('api.episodesscandisk', seriesid=id) }}",
+				url: "{{ url_for('api.moviescandisk', radarrid=id) }}",
 				type: 'GET',
 				beforeSend: function() {
 					$('#scan_button').find("i").addClass('fa-spin');
@@ -563,7 +551,7 @@
 		$('#search_button').on('click', function(e){
 			e.preventDefault();
 			$.ajax({
-				url: "{{ url_for('api.episodessearchmissing', seriesid=id) }}",
+				url: "{{ url_for('api.moviesearchmissing', radarrid=id) }}",
 				type: 'GET',
 				beforeSend: function() {
 					$('#search_button').find("i").addClass('fa-spin');
@@ -576,9 +564,9 @@
 
 		$('#edit_button').on('click', function(e){
 			e.preventDefault();
-			$("#edit_series_title_span").html(seriesDetails['title']);
-			$("#edit_audio_language_span").text(seriesDetails['audio_language']['name']);
-			$('#edit_sonarrSeriesId').val(seriesDetails['sonarrSeriesId']);
+			$("#edit_movie_title_span").html(movieDetails['title']);
+			$("#edit_audio_language_span").text(movieDetails['audio_language']['name']);
+			$('#edit_radarrId').val(movieDetails['radarrId']);
 
 
 			$('#edit_languages_select').empty();
@@ -591,12 +579,12 @@
 			});
 			$("#edit_languages_select").selectpicker("refresh");
 			var selected_languages = Array();
-			$.each(Array.from(seriesDetails['languages']), function (i, item) {
+			$.each(Array.from(movieDetails['languages']), function (i, item) {
 				selected_languages.push(item.code2);
 			});
 			$('#edit_languages_select').selectpicker('val', selected_languages);
-			$('#hi_checkbox').prop('checked', (seriesDetails['hearing_impaired'] === 'True'));
-			$('#edit_forced_select').val(seriesDetails['forced']).change();
+			$('#hi_checkbox').prop('checked', (movieDetails['hearing_impaired'] === 'True'));
+			$('#edit_forced_select').val(movieDetails['forced']).change();
 
 			$('#editModal')
 					.modal({
@@ -609,13 +597,13 @@
 			var formdata = new FormData(document.getElementById("edit_form"));
 
 			$.ajax({
-				url: "{{ url_for('api.series') }}?seriesid={{id}}",
+				url: "{{ url_for('api.movies') }}?radarrid={{id}}",
 				data: formdata,
 				processData: false,
 				contentType: false,
 				type: 'POST',
 				success: function(){
-					seriesDetailsRefresh();
+					movieDetailsRefresh();
 					$('#editModal').modal('hide');
 				}
 			});
@@ -627,58 +615,25 @@
 
 		events.on('event', function(event) {
 			var event_json = JSON.parse(event);
-			if (event_json.series === {{id}}) {
-				if (event_json.type === 'series' && event_json.action === 'update' && event_json.episode == null) {
-					seriesDetailsRefresh();
-				}
-
-				if (event_json.type === 'episode' && event_json.action === 'insert') {
-					$.ajax({
-						url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
-						success: function (data) {
-							if (data.data.length) {
-								$('#episodes').DataTable().rows.add(data.data);
-								$('#episodes').DataTable().columns.adjust().draw(false);
-								$('[data-toggle="tooltip"]').tooltip({html: true});
-							}
-						}
-					})
-				} else if (event_json.type === 'episode' && event_json.action === 'update') {
-					var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
-					if (rowId.length) {
-						$.ajax({
-							url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
-							success: function (data) {
-								if (data.data.length) {
-									$('#episodes').DataTable().row(rowId).data(data.data[0]);
-									$('[data-toggle="tooltip"]').tooltip({html: true});
-								}
-							}
-						})
-					}
-				} else if (event_json.type === 'episode' && event_json.action === 'delete') {
-					var rowId = $('#episodes').DataTable().row('#row_' + event_json.episode);
-					if (rowId.length) {
-						$('#episodes').DataTable().row(rowId).remove();
-						$('#episodes').DataTable().columns.adjust().draw(false);
-						$('[data-toggle="tooltip"]').tooltip({html: true});
-					}
+			if (event_json.movie === {{id}}) {
+				if (event_json.type === 'movie') {
+					movieDetailsRefresh();
 				}
 			}
 		});
 
-		$('#episodes').on('click', '.episode_history', function(e){
+		$('#movie_history').on('click', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 
-			$("#episode_history_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episodetitle"));
+			$("#movie_history_title_span").html(movieDetails['title']);
 
-			sonarrEpisodeId = $(this).data("sonarrepisodeid");
+			radarrId = $(this).data("radarrid");
 
-			$('#episode_history_result').DataTable( {
+			$('#movie_history_result').DataTable( {
 				destroy: true,
 				language: {
-					zeroRecords: 'No History Records Found For This Episode'
+					zeroRecords: 'No History Records Found For This Movie'
 				},
 				paging: true,
 				lengthChange: false,
@@ -688,7 +643,7 @@
 				processing: false,
 				serverSide: false,
 				ajax: {
-					url: '{{ url_for( 'api.episodeshistory' )}}?episodeid=' + sonarrEpisodeId
+					url: '{{ url_for( 'api.moviehistory' )}}?radarrid=' + radarrId
 				},
 				columns: [
 					{ data: 'action',
@@ -706,7 +661,7 @@
 				]
 			} );
 
-			$('#episodeHistoryModal')
+			$('#movieHistoryModal')
 					.modal({
 						focus: false
 					});
@@ -731,6 +686,7 @@
 
 			$('#movieAudioLanguage').text(movieDetails['audio_language'].name);
 			$('#movieMappedPath').text(movieDetails['mapped_path']);
+			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
 			var languages = '';
 			if (movieDetails['languages'] !== 'None') {
@@ -747,6 +703,39 @@
 			$('#movieDescription').text(movieDetails['overview']);
 
 			$('[data-toggle="tooltip"]').tooltip({html: true});
+
+			var table = $('#movieSubtitles').DataTable({
+				destroy: true,
+				language: {
+					zeroRecords: 'No Subtitles Found For This Movie'
+				},
+				"searching": false,
+				"ordering": false,
+				"paging": false,
+				"info": false,
+				"lengthChange": false,
+				"data" : movieDetails['subtitles'],
+				"columns" : [
+					{ "data" : null,
+						"render": function(data) {
+							if (data['path']) {
+								return data['path'];
+							} else {
+								return 'Video File Subtitles Track';
+							}
+						}
+					},
+					{ "data" : null,
+						"render": function(data) {
+							if (data['forced']) {
+								return '<span class="badge badge-secondary">' + data['name'] + ' forced</span>';
+							} else {
+								return '<span class="badge badge-secondary">' + data['name'] + '</span>';
+							}
+						}
+					}
+				]
+			});
 		});
 	}
 

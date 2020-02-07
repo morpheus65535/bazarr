@@ -22,7 +22,7 @@
 	}
 
 	#seriesPoster {
-		width: 250px;
+		max-height: 250px;
 	}
 
 	h1 {
@@ -31,6 +31,15 @@
 
 	span {
 		margin-right: 0.5em;
+	}
+
+	.badge {
+		display: inline-block;
+        max-width: 500px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
 	}
 </style>
 {% endblock head %}
@@ -816,6 +825,7 @@
 
 			$('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
 			$('#seriesMappedPath').text(seriesDetails['mapped_path']);
+			$('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
 			$('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
 
 			var languages = '';

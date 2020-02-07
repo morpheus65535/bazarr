@@ -5,6 +5,7 @@ from datetime import timedelta
 import datetime
 import pretty
 import time
+from operator import itemgetter
 
 from get_args import args
 from config import settings, base_url
@@ -476,18 +477,24 @@ class Movies(Resource):
             # Parse subtitles
             if item['subtitles']:
                 item.update({"subtitles": ast.literal_eval(item['subtitles'])})
-                for subs in item['subtitles']:
-                    subs[0] = {"name": language_from_alpha2(subs[0]),
-                               "code2": subs[0],
-                               "code3": alpha3_from_alpha2(subs[0])}
+                for i, subs in enumerate(item['subtitles']):
+                    language = subs[0].split(':')
+                    item['subtitles'][i] = {"path": subs[1],
+                                            "name": language_from_alpha2(language[0]),
+                                            "code2": language[0],
+                                            "code3": alpha3_from_alpha2(language[0]),
+                                            "forced": True if len(language) > 1 else False}
+                item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
 
             # Parse missing subtitles
             if item['missing_subtitles']:
                 item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
                 for i, subs in enumerate(item['missing_subtitles']):
-                    item['missing_subtitles'][i] = {"name": language_from_alpha2(subs),
-                                                    "code2": subs,
-                                                    "code3": alpha3_from_alpha2(subs)}
+                    language = subs[0].split(':')
+                    item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
+                                                    "code2": language[0],
+                                                    "code3": alpha3_from_alpha2(language[0]),
+                                                    "forced": True if len(language) > 1 else False}
 
             # Provide mapped path
             mapped_path = path_replace_movie(item['path'])
@@ -562,6 +569,196 @@ class MoviesEditSave(Resource):
                 event_stream.write(type='movie', action='update', movie=radarrid)
 
         return '', 204
+
+class MovieSubtitlesDelete(Resource):
+    def delete(self):
+        moviePath = request.form.get('moviePath')
+        language = request.form.get('language')
+        subtitlesPath = request.form.get('subtitlesPath')
+        radarrId = request.form.get('radarrId')
+
+        try:
+            os.remove(path_replace_movie(subtitlesPath))
+            result = language_from_alpha3(language) + " subtitles deleted from disk."
+            history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
+            store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
+            return result, 202
+        except OSError as e:
+            logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
+
+        store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
+        return '', 204
+
+
+class MovieSubtitlesDownload(Resource):
+    def post(self):
+        moviePath = request.form.get('moviePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        radarrId = request.form.get('radarrId')
+        title = request.form.get('title')
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        try:
+            result = download_subtitle(moviePath, language, hi, forced, providers_list, providers_auth, sceneName,
+                                       title, 'movie')
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else result[2]
+                provider = result[3]
+                score = result[4]
+                history_log_movie(1, radarrId, message, path, language_code, provider, score)
+                send_notifications_movie(radarrId, message)
+                store_subtitles_movie(path, moviePath)
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
+
+class MovieSubtitlesManualSearch(Resource):
+    def post(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
+        moviePath = request.form.get('moviePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        title = request.form.get('title')
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+                             'movie')
+        row_count = len(data)
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+
+
+class MovieSubtitlesManualDownload(Resource):
+    def post(self):
+        moviePath = request.form.get('moviePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        selected_provider = request.form.get('provider')
+        subtitle = request.form.get('subtitle')
+        radarrId = request.form.get('radarrId')
+        title = request.form.get('title')
+        providers_auth = get_providers_auth()
+
+        try:
+            result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider,
+                                              providers_auth, sceneName, title, 'movie')
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                language_code = result[2] + ":forced" if forced else result[2]
+                provider = result[3]
+                score = result[4]
+                history_log_movie(2, radarrId, message, path, language_code, provider, score)
+                send_notifications_movie(radarrId, message)
+                store_subtitles_movie(path, moviePath)
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
+
+class MovieSubtitlesUpload(Resource):
+    def post(self):
+        moviePath = request.form.get('moviePath')
+        sceneName = request.form.get('sceneName')
+        if sceneName == "null":
+            sceneName = "None"
+        language = request.form.get('language')
+        forced = True if request.form.get('forced') == 'on' else False
+        upload = request.files.get('upload')
+        radarrId = request.form.get('radarrId')
+        title = request.form.get('title')
+
+        _, ext = os.path.splitext(upload.filename)
+
+        if ext not in SUBTITLE_EXTENSIONS:
+            raise ValueError('A subtitle of an invalid format was uploaded.')
+
+        try:
+            result = manual_upload_subtitle(path=moviePath,
+                                            language=language,
+                                            forced=forced,
+                                            title=title,
+                                            scene_name=sceneName,
+                                            media_type='movie',
+                                            subtitle=upload)
+
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                language_code = language + ":forced" if forced else language
+                provider = "manual"
+                score = 120
+                history_log_movie(4, radarrId, message, path, language_code, provider, score)
+                send_notifications_movie(radarrId, message)
+                store_subtitles_movie(path, moviePath)
+
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
+
+class MovieScanDisk(Resource):
+    def get(self):
+        radarrid = request.args.get('radarrid')
+        movies_scan_subtitles(radarrid)
+        return '', 200
+
+
+class MovieSearchMissing(Resource):
+    def get(self):
+        radarrid = request.args.get('radarrid')
+        movies_download_subtitles(radarrid)
+        return '', 200
+
+
+class MovieHistory(Resource):
+    def get(self):
+        radarrid = request.args.get('radarrid')
+
+        movie_history = database.execute("SELECT action, timestamp, language, provider, score "
+                                           "FROM table_history_movie WHERE radarrId=? ORDER BY timestamp DESC",
+                                           (radarrid,))
+        for item in movie_history:
+            item['timestamp'] = "<div title='" + \
+                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
+                                "' data-toggle='tooltip' data-placement='left'>" + \
+                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            if item['language']:
+                item['language'] = language_from_alpha2(item['language'])
+            else:
+                item['language'] = "<i>undefined</i>"
+            if item['score']:
+                item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
+
+        return jsonify(data=movie_history)
 
 
 class HistorySeries(Resource):
@@ -823,6 +1020,14 @@ api.add_resource(EpisodesHistory, '/episodes_history')
 
 api.add_resource(Movies, '/movies')
 api.add_resource(MoviesEditSave, '/movies_edit_save')
+api.add_resource(MovieSubtitlesDelete, '/movie_subtitles_delete')
+api.add_resource(MovieSubtitlesDownload, '/movie_subtitles_download')
+api.add_resource(MovieSubtitlesManualSearch, '/movie_subtitles_manual_search')
+api.add_resource(MovieSubtitlesManualDownload, '/movie_subtitles_manual_download')
+api.add_resource(MovieSubtitlesUpload, '/movie_subtitles_upload')
+api.add_resource(MovieScanDisk, '/movie_scan_disk')
+api.add_resource(MovieSearchMissing, '/movie_search_missing')
+api.add_resource(MovieHistory, '/movie_history')
 
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')

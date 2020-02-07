@@ -92,6 +92,7 @@ def store_subtitles(original_path, reversed_path):
         for episode in matching_episodes:
             if episode:
                 logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                event_stream.write(type='episode', action='update', series=episode['sonarrSeriesId'], episode=episode['sonarrEpisodeId'])
                 list_missing_subtitles(epno=episode['sonarrEpisodeId'])
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
@@ -99,8 +100,6 @@ def store_subtitles(original_path, reversed_path):
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
-
-    event_stream.write(type='episode', action='update', series=episode['sonarrSeriesId'], episode=episode['sonarrEpisodeId'])
 
     return actual_subtitles
 
@@ -165,6 +164,7 @@ def store_subtitles_movie(original_path, reversed_path):
         for movie in matching_movies:
             if movie:
                 logging.debug("BAZARR storing those languages to DB: " + str(actual_subtitles))
+                event_stream.write(type='movie', action='update', movie=movie['radarrId'])
                 list_missing_subtitles_movies(no=movie['radarrId'])
             else:
                 logging.debug("BAZARR haven't been able to update existing subtitles to DB : " + str(actual_subtitles))
@@ -172,8 +172,6 @@ def store_subtitles_movie(original_path, reversed_path):
         logging.debug("BAZARR this file doesn't seems to exist or isn't accessible.")
     
     logging.debug('BAZARR ended subtitles indexing for this file: ' + reversed_path)
-
-    event_stream.write(type='movie', action='update', movie=movie['radarrId'])
 
     return actual_subtitles
 
