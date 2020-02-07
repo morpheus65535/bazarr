@@ -9,6 +9,7 @@ import zipfile
 import rarfile
 from subzero.language import Language
 from requests import Session
+from urllib.parse import urlparse
 
 from subliminal import __short_version__
 from subliminal.exceptions import ServiceUnavailable
@@ -221,6 +222,12 @@ class SubdivxSubtitlesProvider(Provider):
             for link_soup in links_soup:
                 if link_soup['href'].startswith('bajar'):
                     return self.server_url + link_soup['href']
+            links_soup = page_soup.find_all ("a", {'class': 'link1'})
+            for link_soup in links_soup:
+                if "bajar.php" in link_soup['href']:
+                    # not using link_soup['href'] directly because it's http://
+                    dl_link = urlparse(link_soup['href'])
+                    return self.server_url + dl_link.path + '?' + dl_link.query
         except Exception as e:
             raise APIThrottled('Error parsing download link: ' + str(e))
 
