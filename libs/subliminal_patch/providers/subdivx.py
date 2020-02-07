@@ -9,13 +9,14 @@ import zipfile
 import rarfile
 from subzero.language import Language
 from requests import Session
+from urllib.parse import urlparse
 
 from subliminal import __short_version__
 from subliminal.exceptions import ServiceUnavailable
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending,guess_matches
 from subliminal.video import Episode, Movie
-from subliminal_patch.exceptions import ParseResponseError
+from subliminal_patch.exceptions import APIThrottled
 from six.moves import range
 
 logger = logging.getLogger(__name__)
@@ -132,7 +133,8 @@ class SubdivxSubtitlesProvider(Provider):
             try:
                 page_subtitles = self._parse_subtitles_page(response, language)
             except Exception as e:
-                raise ParseResponseError('Error parsing subtitles list: ' + str(e))
+                logger.error('Error parsing subtitles list: ' + str(e))
+                break
 
             subtitles += page_subtitles
 
@@ -220,10 +222,16 @@ class SubdivxSubtitlesProvider(Provider):
             for link_soup in links_soup:
                 if link_soup['href'].startswith('bajar'):
                     return self.server_url + link_soup['href']
+            links_soup = page_soup.find_all ("a", {'class': 'link1'})
+            for link_soup in links_soup:
+                if "bajar.php" in link_soup['href']:
+                    # not using link_soup['href'] directly because it's http://
+                    dl_link = urlparse(link_soup['href'])
+                    return self.server_url + dl_link.path + '?' + dl_link.query
         except Exception as e:
-            raise ParseResponseError('Error parsing download link: ' + str(e))
+            raise APIThrottled('Error parsing download link: ' + str(e))
 
-        raise ParseResponseError('Download link not found')
+        raise APIThrottled('Download link not found')
 
     def _get_archive(self, content):
         # open the archive
@@ -235,7 +243,7 @@ class SubdivxSubtitlesProvider(Provider):
             logger.debug('Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
         else:
-            raise ParseResponseError('Unsupported compressed format')
+            raise APIThrottled('Unsupported compressed format')
 
         return archive
 
@@ -251,4 +259,4 @@ class SubdivxSubtitlesProvider(Provider):
 
             return archive.read(name)
 
-        raise ParseResponseError('Can not find the subtitle in the compressed file')
+        raise APIThrottled('Can not find the subtitle in the compressed file')
