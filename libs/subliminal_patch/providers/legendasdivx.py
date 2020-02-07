@@ -125,7 +125,6 @@ class LegendasdivxProvider(Provider):
     }
     loginpage = site + '/forum/ucp.php?mode=login'
     searchurl = site + '/modules.php?name=Downloads&file=jz&d_op=search&op=_jz00&query={query}'
-    imdbsearchurl = site + '/modules.php?name=Downloads&d_op=search&imdbid={query}'
     language_list = list(languages)
 
     def __init__(self, username, password):
@@ -243,9 +242,7 @@ class LegendasdivxProvider(Provider):
             elif isinstance(video, Movie):
                 querytext = video.title
         else:
-            # _searchurl = self.imdbsearchurl
-            querytext = video.title
-            # querytext = video.imdb_id
+            querytext = video.imdb_id
 
 
         # querytext = querytext.replace(
