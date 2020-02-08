@@ -842,6 +842,12 @@
 			$('#seriesForced').text('Forced: ' + seriesDetails['forced']);
 			$('#seriesDescription').text(seriesDetails['overview']);
 
+			if (seriesDetails['desired_languages'] == '[]') {
+				$('#search_button').hide();
+			} else {
+				$('#search_button').show();
+			}
+
 			$('[data-toggle="tooltip"]').tooltip({html: true});
 		});
 	}

@@ -68,6 +68,10 @@ class Series(Resource):
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (seriesId, length, start))
+            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
+                                                 (seriesId,), only_one=True)['languages']
+            if desired_languages == "None":
+                desired_languages = '[]'
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
@@ -109,6 +113,12 @@ class Series(Resource):
             item.update({"episodeFileCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
                                                               "sonarrSeriesId=?", (item['sonarrSeriesId'],),
                                                               only_one=True)['count']})
+
+            # Add the series desired subtitles language code2
+            try:
+                item.update({"desired_languages": desired_languages})
+            except NameError:
+                pass
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 
@@ -445,6 +455,10 @@ class Movies(Resource):
         if moviesId:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (moviesId, length, start))
+            desired_languages = database.execute("SELECT languages FROM table_movies WHERE radarrId=?",
+                                                 (moviesId,), only_one=True)['languages']
+            if desired_languages == "None":
+                desired_languages = '[]'
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
@@ -490,7 +504,7 @@ class Movies(Resource):
             if item['missing_subtitles']:
                 item.update({"missing_subtitles": ast.literal_eval(item['missing_subtitles'])})
                 for i, subs in enumerate(item['missing_subtitles']):
-                    language = subs[0].split(':')
+                    language = subs.split(':')
                     item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
                                                     "code2": language[0],
                                                     "code3": alpha3_from_alpha2(language[0]),
@@ -502,6 +516,12 @@ class Movies(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+
+            # Add the movie desired subtitles language code2
+            try:
+                item.update({"desired_languages": desired_languages})
+            except NameError:
+                pass
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 

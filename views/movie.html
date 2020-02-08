@@ -54,6 +54,18 @@
 		<div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
 		<div class="align-bottom text-themecolor small text-center">Search</div>
 	</button>
+	<button class="btn btn-outline" id="manual_button">
+		<div><i class="fas fa-user align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Manual</div>
+	</button>
+	<button class="btn btn-outline" id="upload_button">
+		<div><i class="	fas fa-cloud-upload-alt align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Upload</div>
+	</button>
+	<button class="btn btn-outline" id="history_button">
+		<div><i class="fas fa-history align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">History</div>
+	</button>
 </div>
 {% endblock bcleft %}
 
@@ -104,9 +116,13 @@
 		<tr>
 			<th>Subtitles Path</th>
 			<th>Language(s)</th>
+			<th></th>
 		</tr>
 		</thead>
 	</table>
+	<br>
+	<h5 style="font-weight: 500;">Missing Subtitles</h5>
+	<span id="missingSubtitles"></span>
 </div>
 
 <div id="manualSearchModal" class="modal" tabindex="-1" role="dialog">
@@ -314,14 +330,14 @@
 		getLanguages();
 		getEnabledLanguages();
 
-
+		//test
 		$('#movieSubtitles').on('click', '.remove_subtitles', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 			const values = {
-				moviePath: $(this).attr("data-moviePath"),
-				language: $(this).attr("data-language"),
-				subtitlesPath: $(this).attr("data-subtitlesPath"),
+				moviePath: movieDetails['mapped_path'],
+				language: $(this).data("language"),
+				subtitlesPath: $(this).data("subtitlespath"),
 				radarrId: movieDetails['radarrId'],
 				tmdbid: movieDetails['tmdbId']
 			};
@@ -337,19 +353,20 @@
 			});
 		});
 
-		$('.get_subtitle').on('click', function(e){
+		$(document).on('click', '.get_subtitle', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 			const values = {
-				moviePath: $(this).attr("data-moviepath"),
-				sceneName: $(this).attr("data-scenename"),
+				moviePath: movieDetails['mapped_path'],
+				sceneName: movieDetails['sceneName'],
 				language: $(this).attr("data-language"),
-				hi: $(this).attr("data-hi"),
-				forced: $(this).attr("data-forced"),
+				hi: movieDetails['hearing_impaired'],
+				forced: movieDetails['forced'],
 				radarrId: movieDetails['radarrId'],
 				title: movieDetails['title']
 			};
-			var button = $(this).closest('button');
+			var button = $(this).closest('button' +
+					'');
 			$.ajax({
 				url: "{{ url_for('api.moviesubtitlesdownload') }}",
 				type: "POST",
@@ -361,15 +378,15 @@
 			});
 		});
 
-		$('#manual_search').on('click', function(e){
+		$('#manual_button').on('click', function(e){
 			e.preventDefault();
 			$("#movie_title_span").html(movieDetails['title']);
-			$("#movie_path_span").html($(this).attr("data-moviePath"));
-			$("#movie_scenename_span").html($(this).attr("data-sceneName"));
+			$("#movie_path_span").html(movieDetails['mapped_path']);
+			$("#movie_scenename_span").html(movieDetails['sceneName']);
 
-			moviePath = $(this).attr("data-moviePath");
-			sceneName = $(this).attr("data-sceneName");
-			language = $(this).attr("data-language");
+			moviePath = movieDetails['mapped_path'];
+			sceneName = movieDetails['sceneName'];
+			language = movieDetails['desired_languages'];
 			hi = movieDetails['hearing_impaired'];
 			forced = movieDetails['forced'];
 			radarrId = movieDetails['radarrId'];
@@ -498,7 +515,7 @@
 			});
 		});
 
-		$('#upload_subtitle').on('click', function(e){
+		$('#upload_button').on('click', function(e){
 			e.preventDefault();
 			$("#upload_movie_title_span").html(movieDetails['title']);
 			$('#upload_moviePath').val($(this).data("moviepath"));
@@ -622,13 +639,13 @@
 			}
 		});
 
-		$('#movie_history').on('click', function(e){
+		$('#history_button').on('click', function(e){
 			$(this).tooltip('dispose');
 			e.preventDefault();
 
 			$("#movie_history_title_span").html(movieDetails['title']);
 
-			radarrId = $(this).data("radarrid");
+			radarrId = movieDetails['radarrId'];
 
 			$('#movie_history_result').DataTable( {
 				destroy: true,
@@ -688,13 +705,13 @@
 			$('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
-			var languages = '';
 			if (movieDetails['languages'] !== 'None') {
+				var languages = '';
 				movieDetails['languages'].forEach(appendFunc);
 			}
 
 			function appendFunc(value) {
-				languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+				languages += '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
 			}
 
 			$('#movieSubtitlesLanguages').html(languages);
@@ -702,7 +719,29 @@
 			$('#movieForced').text('Forced: ' + movieDetails['forced']);
 			$('#movieDescription').text(movieDetails['overview']);
 
+			if (movieDetails['missing_subtitles'] !== 'None') {
+				var missing_languages = '';
+				movieDetails['missing_subtitles'].forEach(missingAppendFunc);
+			}
+
+			function missingAppendFunc(value) {
+				missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '">' + value.code2 + ' <i class="fas fa-search"></i></button> ';
+			}
+
+			$('#missingSubtitles').html(missing_languages);
+
 			$('[data-toggle="tooltip"]').tooltip({html: true});
+
+			if (movieDetails['desired_languages'] == '[]') {
+				$('#search_button').hide();
+				$('#manual_button').hide();
+				$('#upload_button').hide();
+			} else {
+				$('#search_button').show();
+				$('#manual_button').show();
+				$('#upload_button').show();
+			}
+
 
 			var table = $('#movieSubtitles').DataTable({
 				destroy: true,
@@ -731,6 +770,15 @@
 								return '<span class="badge badge-secondary">' + data['name'] + ' forced</span>';
 							} else {
 								return '<span class="badge badge-secondary">' + data['name'] + '</span>';
+							}
+						}
+					},
+					{ "data" : null,
+						"render": function(data) {
+							if (data['path']) {
+								return '<button type="button" class="remove_subtitles close" aria-label="Close" data-toggle="tooltip" data-placement="right" title="Delete Subtitles File" data-language='+data['code3']+' data-subtitlesPath="'+data['path']+'"><span aria-hidden="true">&times;</span></button>';
+							} else {
+								return '';
 							}
 						}
 					}
