@@ -705,8 +705,8 @@
 			$('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
+			var languages = '';
 			if (movieDetails['languages'] !== 'None') {
-				var languages = '';
 				movieDetails['languages'].forEach(appendFunc);
 			}
 
@@ -719,8 +719,8 @@
 			$('#movieForced').text('Forced: ' + movieDetails['forced']);
 			$('#movieDescription').text(movieDetails['overview']);
 
+			var missing_languages = '';
 			if (movieDetails['missing_subtitles'] !== 'None') {
-				var missing_languages = '';
 				movieDetails['missing_subtitles'].forEach(missingAppendFunc);
 			}
 
