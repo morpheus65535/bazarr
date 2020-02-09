@@ -490,12 +490,11 @@ def image_proxy(url):
 @login_required
 def image_proxy_movies(url):
     apikey = settings.radarr.apikey
+    url_image = url_radarr() + '/' + url + '?apikey=' + apikey
     try:
-        url_image = (url_radarr() + '/' + url + '?apikey=' + apikey).replace('/fanart.jpg', '/banner.jpg')
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
-        url_image = url_radarr_short() + '/' + url + '?apikey=' + apikey
-        req = requests.get(url_image, stream=True, timeout=15, verify=False)
+        return None
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
