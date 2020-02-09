@@ -205,6 +205,9 @@ def redirect_root():
 @custom_auth_basic(check_credentials)
 def shutdown():
     authorize()
+    doShutdown()
+
+def doShutdown():
     try:
         server.stop()
     except:
@@ -2215,4 +2218,4 @@ try:
         args.port) if args.port else str(settings.general.port)) + str(base_url))
     server.start()
 except KeyboardInterrupt:
-    shutdown()
+    doShutdown()
