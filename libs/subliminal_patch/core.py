@@ -32,7 +32,11 @@ from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, 
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 
 from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST
-from scandir import scandir, scandir_generic as _scandir_generic
+try:
+    from os import scandir
+    _scandir_generic = scandir
+except ImportError:
+    from scandir import scandir, scandir_generic as _scandir_generic
 import six
 
 logger = logging.getLogger(__name__)
