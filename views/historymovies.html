@@ -1,20 +1,13 @@
 {% extends '_main.html' %}
 
-{% block title %}History (Series) - Bazarr{% endblock %}
+{% block title %}History (Movies) - Bazarr{% endblock %}
 
 {% block bcleft %}
-    <div class="d-flex">
-        <button class="btn btn-outline">
-            <i class="fas fa-sync align-top text-themecolor text-center" aria-hidden="true"></i>
-            <span class="align-bottom">Update</span>
-        </button>
-    </div>
+
 {% endblock bcleft %}
 
 {% block bcright %}
-    <div class="d-flex m-t-5 justify-content-end">
-        <h5 class="m-t-0 text-themecolor">Some page settings</h5>
-    </div>
+
 {% endblock bcright %}
 
 {% block body %}
@@ -34,21 +27,45 @@
     <script>
         $(document).ready(function () {
             var table = $('#history_movies').DataTable({
-                "dom":"<'row'<'col-sm-12'tr>>" +
-                    "<'row'<'col-sm-5'i><'col-sm-7'p>>",
                 "processing": false,
                 "serverSide": true,
                 "searching": false,
                 "ordering": false,
                 "responsive": true,
-                "lengthChange": true,
+                "lengthChange": false,
                 "pageLength": {{ settings.general.page_size }},
                 "ajax": "{{ url_for('api.historymovies') }}",
                 "columns": [
-                    {"data": "action"},
-                    {"data": "title"},
+                    {"data": "action",
+						"render": function(data) {
+                            if (data === 0) {
+                                return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 1) {
+                                return "<i class='fas fa-download' title='Subtitle file has been downloaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 2) {
+                                return "<i class='fas fa-user' title='Subtitle file has been manually downloaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 3) {
+                                return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 4) {
+                                return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            }
+                        }
+                    },
+                    {"data": null,
+                        "render": function (data) {
+                            return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>';
+                        }
+                    },
                     {"data": "timestamp"},
-                    {"data": "description"}
+                    {"data": null,
+                        "render": function (data) {
+                            if (data.upgradable) {
+                                return "<i class='fas fa-recycle' title='This Subtitles File Is Eligible For An Upgrade.' style='color: green;' data-toggle='tooltip' data-placement='right'></i> " + data.description;
+                            } else {
+                                return data.description;
+                            }
+                        }
+                    }
                 ]
             });
         });
