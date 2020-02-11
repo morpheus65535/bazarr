@@ -43,7 +43,7 @@ from cherrypy.wsgiserver import CherryPyWSGIServer
 
 from io import BytesIO
 from six import text_type
-from datetime import timedelta
+from datetime import timedelta, datetime
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
@@ -188,6 +188,9 @@ def logout():
 @app.route('/shutdown/')
 @login_required
 def shutdown():
+    doShutdown()
+
+def doShutdown():
     try:
         server.stop()
     except:
@@ -1507,4 +1510,4 @@ try:
     if not args.dev:
         server.start()
 except KeyboardInterrupt:
-    shutdown()
+    doShutdown()

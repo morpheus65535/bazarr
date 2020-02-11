@@ -107,18 +107,12 @@ class DaemonStatus(ProcessRegistry):
 def start_bazarr(process_registry=ProcessRegistry()):
     script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
 
-    ep = subprocess.Popen(script, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
-    process_registry.register(ep)
     print("Bazarr starting...")
+    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    process_registry.register(ep)
     try:
-        while True:
-            line = ep.stdout.readline()
-            if line == '' or not line:
-                # Process ended so let's unregister it
-                process_registry.unregister(ep)
-                break
-            sys.stdout.buffer.write(line)
-            sys.stdout.flush()
+        ep.wait()
+        process_registry.unregister(ep)
     except KeyboardInterrupt:
         pass
 

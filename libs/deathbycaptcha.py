@@ -80,6 +80,7 @@ import sys
 import threading
 import time
 import urllib
+from six import PY2
 try:
     from json import read as json_decode, write as json_encode
 except ImportError:
@@ -265,7 +266,10 @@ class HttpClient(Client):
         else:
             self._log('RECV', '%d %s' % (len(response), response))
             try:
-                return json_decode(response)
+                if PY2:
+                    return json_decode(response.decode('utf-8'))
+                else:
+                    return json_decode(response)
             except Exception:
                 raise RuntimeError('Invalid API response')
         return {}
@@ -369,8 +373,8 @@ class SocketClient(Client):
     def _sendrecv(self, sock, buf):
         self._log('SEND', buf)
         fds = [sock]
-        buf += self.TERMINATOR
-        response = ''
+        buf.extend(bytearray(self.TERMINATOR, encoding='utf-8'))
+        response = bytearray()
         intvl_idx = 0
         while True:
             intvl, intvl_idx = self._get_poll_interval(intvl_idx)
@@ -390,14 +394,14 @@ class SocketClient(Client):
                         if not s:
                             raise IOError('recv(): connection lost')
                         else:
-                            response += s
+                            response.extend(s)
             except socket.error as err:
                 if (err.args[0] not in
                         (errno.EAGAIN, errno.EWOULDBLOCK, errno.EINPROGRESS)):
                     raise err
-            if response.endswith(self.TERMINATOR):
+            if response.endswith(self.TERMINATOR.encode('utf-8')):
                 self._log('RECV', response)
-                return response.rstrip(self.TERMINATOR)
+                return response.rstrip(self.TERMINATOR.encode('utf-8'))
         raise IOError('send/recv timed out')
 
     def _call(self, cmd, data=None):
@@ -405,7 +409,7 @@ class SocketClient(Client):
             data = {}
         data['cmd'] = cmd
         data['version'] = API_VERSION
-        request = json_encode(data)
+        request = bytearray(json_encode(data), encoding='utf-8')
 
         response = None
         for _ in range(2):
@@ -431,7 +435,10 @@ class SocketClient(Client):
             raise IOError('Connection lost or timed out during API request')
 
         try:
-            response = json_decode(response)
+            if PY2:
+                return json_decode(response.decode('utf-8'))
+            else:
+                return json_decode(response)
         except Exception:
             raise RuntimeError('Invalid API response')
 

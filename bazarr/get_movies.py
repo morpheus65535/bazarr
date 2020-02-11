@@ -134,31 +134,31 @@ def update_movies():
                             current_movies_radarr.append(six.text_type(movie['tmdbId']))
                             
                             if six.text_type(movie['tmdbId']) in current_movies_db_list:
-                                movies_to_update.append({'radarrId': movie["id"],
-                                                         'title': six.text_type(movie["title"]),
-                                                         'path': six.text_type(movie["path"] + separator + movie['movieFile']['relativePath']),
+                                movies_to_update.append({'radarrId': int(movie["id"]),
+                                                         'title': movie["title"],
+                                                         'path': movie["path"] + separator + movie['movieFile']['relativePath'],
                                                          'tmdbId': six.text_type(movie["tmdbId"]),
-                                                         'poster': six.text_type(poster),
-                                                         'fanart': six.text_type(fanart),
-                                                         'audio_language': six.text_type(profile_id_to_language(movie['qualityProfileId'], audio_profiles)),
+                                                         'poster': poster,
+                                                         'fanart': fanart,
+                                                         'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
                                                          'sceneName': sceneName,
                                                          'monitored': six.text_type(bool(movie['monitored'])),
                                                          'year': six.text_type(movie['year']),
-                                                         'sortTitle': six.text_type(movie['sortTitle']),
-                                                         'alternativeTitles': six.text_type(alternativeTitles),
-                                                         'format': six.text_type(format),
-                                                         'resolution': six.text_type(resolution),
-                                                         'video_codec': six.text_type(videoCodec),
-                                                         'audio_codec': six.text_type(audioCodec),
-                                                         'overview': six.text_type(overview),
-                                                         'imdbId': six.text_type(imdbId),
-                                                         'movie_file_id': movie['movieFile']['id']})
+                                                         'sortTitle': movie['sortTitle'],
+                                                         'alternativeTitles': alternativeTitles,
+                                                         'format': format,
+                                                         'resolution': resolution,
+                                                         'video_codec': videoCodec,
+                                                         'audio_codec': audioCodec,
+                                                         'overview': overview,
+                                                         'imdbId': imdbId,
+                                                         'movie_file_id': int(movie['movieFile']['id'])})
                             else:
                                 if movie_default_enabled is True:
-                                    movies_to_add.append({'radarrId': movie["id"],
+                                    movies_to_add.append({'radarrId': int(movie["id"]),
                                                           'title': movie["title"],
                                                           'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdbId': movie["tmdbId"],
+                                                          'tmdbId': six.text_type(movie["tmdbId"]),
                                                           'languages': movie_default_language,
                                                           'subtitles': '[]',
                                                           'hearing_impaired': movie_default_hi,
@@ -169,7 +169,7 @@ def update_movies():
                                                           'sceneName': sceneName,
                                                           'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
-                                                          'year': movie['year'],
+                                                          'year': six.text_type(movie['year']),
                                                           'alternativeTitles': alternativeTitles,
                                                           'format': format,
                                                           'resolution': resolution,
@@ -177,12 +177,12 @@ def update_movies():
                                                           'audio_codec': audioCodec,
                                                           'imdbId': imdbId,
                                                           'forced': movie_default_forced,
-                                                          'movie_file_id': movie['movieFile']['id']})
+                                                          'movie_file_id': int(movie['movieFile']['id'])})
                                 else:
-                                    movies_to_add.append({'radarrId': movie["id"],
+                                    movies_to_add.append({'radarrId': int(movie["id"]),
                                                           'title': movie["title"],
                                                           'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdbId': movie["tmdbId"],
+                                                          'tmdbId': six.text_type(movie["tmdbId"]),
                                                           'languages': None,
                                                           'subtitles': '[]',
                                                           'hearing_impaired': None,
@@ -193,7 +193,7 @@ def update_movies():
                                                           'sceneName': sceneName,
                                                           'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
-                                                          'year': movie['year'],
+                                                          'year': six.text_type(movie['year']),
                                                           'alternativeTitles': alternativeTitles,
                                                           'format': format,
                                                           'resolution': resolution,
@@ -201,7 +201,7 @@ def update_movies():
                                                           'audio_codec': audioCodec,
                                                           'imdbId': imdbId,
                                                           'forced': None,
-                                                          'movie_file_id': movie['movieFile']['id']})
+                                                          'movie_file_id': int(movie['movieFile']['id'])})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +

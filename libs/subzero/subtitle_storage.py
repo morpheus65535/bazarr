@@ -13,7 +13,11 @@ import sys
 
 from json_tricks.nonp import loads
 from subzero.lib.json import dumps
-from scandir import scandir, scandir_generic as _scandir_generic
+try:
+    from os import scandir
+    _scandir_generic = scandir
+except ImportError:
+    from scandir import scandir, scandir_generic as _scandir_generic
 from .constants import mode_map
 import six
 

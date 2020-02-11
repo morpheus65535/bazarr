@@ -5,7 +5,8 @@ import gc
 import os
 import logging
 import ast
-import langdetect
+from guess_language import guess_language
+import subliminal
 import subliminal_patch
 from subliminal import core
 from subliminal_patch import search_external_subtitles
@@ -382,7 +383,7 @@ def guess_external_subtitles(dest_folder, subtitles):
 
                 try:
                     encoding = UnicodeDammit(text)
-                    detected_language = langdetect.detect(text)
+                    detected_language = guess_language(text)
                 except Exception as e:
                     logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
                                       subtitle_path + ' You should try to delete this subtitles file manually and ask '
