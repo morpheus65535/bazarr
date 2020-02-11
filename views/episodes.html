@@ -426,7 +426,7 @@
 				sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
 				tvdbid: seriesDetails['tvdbId']
 			};
-			var cell = $(this).closest('td');
+			var cell = $(this).parent();
 			$.ajax({
 				url: "{{ url_for('api.episodessubtitlesdelete') }}",
 				type: "DELETE",
@@ -451,7 +451,7 @@
 				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
 				title: seriesDetails['title']
 			};
-			var cell = $(this).closest('td');
+			var cell = $(this).parent();
 			$.ajax({
 				url: "{{ url_for('api.episodessubtitlesdownload') }}",
 				type: "POST",
@@ -588,7 +588,8 @@
 				sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
 				title: seriesDetails['title']
 			};
-			var cell = $(this).closest('td');
+			var cell = $(this).parent()
+			;
 			$.ajax({
 				url: "{{ url_for('api.episodessubtitlesmanualdownload') }}",
 				type: "POST",
@@ -745,6 +746,12 @@
 							success: function (data) {
 								if (data.data.length) {
 									$('#episodes').DataTable().row(rowId).data(data.data[0]);
+									if ($('#episodes').DataTable().row(rowId).child.isShown()) {
+										$('#episodes').DataTable().draw('page');
+										$('#episodes').DataTable().row(rowId).child.show();
+									} else {
+										$('#episodes').DataTable().draw('page');
+									}
 									$('[data-toggle="tooltip"]').tooltip({html: true});
 								}
 							}
