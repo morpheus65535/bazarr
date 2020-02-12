@@ -298,6 +298,8 @@ class EpisodesSubtitlesDownload(Resource):
                 history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
+            else:
+                event_stream.write(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
             return result, 201
         except OSError:
             pass
@@ -637,6 +639,8 @@ class MovieSubtitlesDownload(Resource):
                 history_log_movie(1, radarrId, message, path, language_code, provider, score)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
+            else:
+                event_stream.write(type='movie', action='update', movie=int(radarrId))
             return result, 201
         except OSError:
             pass
@@ -953,7 +957,8 @@ class WantedSeries(Resource):
         else:
             monitored_only_query_string = ''
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes", only_one=True)['count']
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
+                                     monitored_only_query_string, only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -996,7 +1001,8 @@ class WantedMovies(Resource):
         else:
             monitored_only_query_string = ''
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
+                                     monitored_only_query_string, only_one=True)['count']
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
                                 "failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" +
                                 monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",

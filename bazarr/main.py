@@ -608,76 +608,16 @@ def historymovies():
     return render_template('historymovies.html')
 
 
-@app.route('/wanted')
-@login_required
-def wanted():
-
-    return render_template('wanted.html', bazarr_version=bazarr_version, base_url=base_url, current_port=settings.general.port)
-
-
-@app.route('/wantedseries')
+@app.route('/wantedseries/')
 @login_required
 def wantedseries():
+    return render_template('wantedseries.html')
 
 
-    if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string = " AND monitored='True'"
-    else:
-        monitored_only_query_string = ''
-
-    missing_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string, only_one=True)['count']
-    page = request.data
-    if page == "":
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-
-    data = database.execute("SELECT table_shows.title as seriesTitle, "
-                            "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                            "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, table_episodes.sonarrSeriesId, "
-                            "table_episodes.path, table_shows.hearing_impaired, table_episodes.sonarrEpisodeId, "
-                            "table_episodes.scene_name, table_episodes.failedAttempts FROM table_episodes "
-                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                            "WHERE table_episodes.missing_subtitles != '[]'" + monitored_only_query_string +
-                            " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (page_size, offset))
-    # path_replace
-    dict_mapper.path_replace(data)
-
-    return render_template('wantedseries.html', bazarr_version=bazarr_version, rows=data, missing_count=missing_count, page=page,
-                    max_page=max_page, base_url=base_url, page_size=page_size, current_port=settings.general.port)
-
-
-@app.route('/wantedmovies')
+@app.route('/wantedmovies/')
 @login_required
 def wantedmovies():
-
-
-    if settings.radarr.getboolean('only_monitored'):
-        monitored_only_query_string = " AND monitored='True'"
-    else:
-        monitored_only_query_string = ''
-
-    missing_count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string, only_one=True)['count']
-    page = request.args.page
-    if page == "":
-        page = "1"
-    page_size = int(settings.general.page_size)
-    offset = (int(page) - 1) * page_size
-    max_page = int(math.ceil(missing_count / (page_size + 0.0)))
-
-    data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
-                            "failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" +
-                            monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
-                            (page_size, offset))
-    # path_replace
-    dict_mapper.path_replace_movie(data)
-
-    return render_template('wantedmovies.html', bazarr_version=bazarr_version, rows=data,
-                    missing_count=missing_count, page=page, max_page=max_page, base_url=base_url, page_size=page_size,
-                    current_port=settings.general.port)
+    return render_template('wantedmovies.html')
 
 
 @app.route('/wanted_search_missing_subtitles')

@@ -169,39 +169,39 @@
                 <nav class="sidebar-nav">
                     <ul id="sidebarnav">
                         {% if settings.general.getboolean('use_sonarr') %}
-                            <li id="series_nav"><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
-                                    class="hide-menu"> Series</span></a>
-                            </li>
+                        <li id="series_nav"><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
+                                class="hide-menu"> Series</span></a>
+                        </li>
                         {% endif %}
+
                         {% if settings.general.getboolean('use_radarr') %}
-                            <li id="movies_nav"><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
-                                    class="hide-menu"> Movies</span></a>
-                            </li>
+                        <li id="movies_nav"><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
+                                class="hide-menu"> Movies</span></a>
+                        </li>
                         {% endif %}
-                        {% if settings.general.getboolean('use_sonarr') and settings.general.getboolean('use_radarr') %}
-                            <li><a href="#"><i class="fas fa-clock"></i><span
-                                    class="hide-menu"> History</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
-                                    <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
-                                </ul>
-                            </li>
-                        {% elif settings.general.getboolean('use_sonarr') and not settings.general.getboolean('use_radarr') %}
-                            <li><a href="{{ url_for('historyseries') }}"><i class="fas fa-play"></i><span
-                                    class="hide-menu"> History</span></a>
-                            </li>
-                        {% elif settings.general.getboolean('use_radarr') and not settings.general.getboolean('use_sonarr') %}
-                            <li><a href="{{ url_for('historymovies') }}"><i class="fas fa-play"></i><span
-                                    class="hide-menu"> History</span></a>
-                            </li>
-                        {% endif %}
-                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
-                                class="hide-menu"> Wanted</span></a>
+
+                        <li><a href="#"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
                             <ul aria-expanded="false" class="collapse">
-                                <li><a href="/"> Missing</a></li>
-                                <li><a href="/"> Cutoff Unmet</a></li>
+                                {% if settings.general.getboolean('use_sonarr') %}
+                                <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
+                                {% endif %}
+                                {% if settings.general.getboolean('use_radarr') %}
+                                <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
+                                {% endif %}
                             </ul>
                         </li>
+
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span class="hide-menu"> Wanted</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                {% if settings.general.getboolean('use_sonarr') %}
+                                <li><a href="{{ url_for('wantedseries') }}"> Series</a></li>
+                                {% endif %}
+                                {% if settings.general.getboolean('use_radarr') %}
+                                <li><a href="{{ url_for('wantedmovies') }}"> Movies</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
                         <li><a href="#"><i
                                 class="fas fa-cogs"></i><span class="hide-menu"> Settings</span></a>
                             <ul aria-expanded="false" class="collapse">
@@ -212,6 +212,7 @@
                                 <li><a href="/"> Notifications</a></li>
                             </ul>
                         </li>
+
                         <li><a href="#"><i
                                 class="fas fa-laptop"></i><span class="hide-menu"> System</span></a>
                             <ul aria-expanded="false" class="collapse">
@@ -263,6 +264,7 @@
 
     <div id="reconnect_overlay" class="overlay">
         <div class="overlay-content">
+            <p style="color: white;">Connection to Backend Lost.</p>
             <button class="btn btn-primary" onclick="window.location.reload()">Reload</button>
         </div>
     </div>

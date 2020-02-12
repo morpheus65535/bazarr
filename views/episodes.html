@@ -745,13 +745,7 @@
 							url: "{{ url_for('api.episodes') }}?seriesid=" + event_json.series + "&episodeid=" + event_json.episode,
 							success: function (data) {
 								if (data.data.length) {
-									$('#episodes').DataTable().row(rowId).data(data.data[0]);
-									if ($('#episodes').DataTable().row(rowId).child.isShown()) {
-										$('#episodes').DataTable().draw('page');
-										$('#episodes').DataTable().row(rowId).child.show();
-									} else {
-										$('#episodes').DataTable().draw('page');
-									}
+									$('#episodes').DataTable().row(rowId).data(data.data[0]).draw('page');
 									$('[data-toggle="tooltip"]').tooltip({html: true});
 								}
 							}

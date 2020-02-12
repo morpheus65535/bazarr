@@ -29,6 +29,10 @@
             var table = $('#history_movies').DataTable({
                 "processing": false,
                 "serverSide": true,
+                language: {
+                    zeroRecords: 'Nothing Found In Movies History',
+                    processing: "Loading Movies History..."
+                },
                 "searching": false,
                 "ordering": false,
                 "responsive": true,
@@ -68,6 +72,14 @@
                     }
                 ]
             });
-        });
+
+            events.on('event', function(event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'movieHistory') {
+                    $('#history_movies').DataTable().ajax.reload(resetPaging=false);
+                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                }
+            });
+		});
     </script>
 {% endblock tail %}

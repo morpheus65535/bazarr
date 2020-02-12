@@ -122,7 +122,7 @@
                             url: "{{ url_for('api.movies') }}?radarrid=" + event_json.movie,
                             success: function (data) {
                                 if (data.data.length) {
-                                    $('#movies').DataTable().row(rowId).data(data.data[0]);
+                                    $('#movies').DataTable().row(rowId).data(data.data[0]).draw('page');
                                     $('[data-toggle="tooltip"]').tooltip({html: true});
                                 }
                             }

@@ -31,9 +31,14 @@
             var table = $('#history_series').DataTable({
                 "processing": true,
                 "serverSide": true,
+                language: {
+                    zeroRecords: 'Nothing Found In Series History',
+                    processing: "Loading Series History..."
+                },
                 "searching": false,
                 "ordering": false,
                 "lengthChange": false,
+                "responsive": true,
                 "pageLength": {{ settings.general.page_size }},
                 "ajax": "{{ url_for('api.historyseries') }}",
                 "columns": [
@@ -71,6 +76,14 @@
                     }
                 ]
             });
-        });
+
+            events.on('event', function(event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'episodeHistory') {
+                    $('#history_series').DataTable().ajax.reload(resetPaging=false);
+                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                }
+            });
+		});
     </script>
 {% endblock tail %}

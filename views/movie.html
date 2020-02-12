@@ -341,7 +341,7 @@
 				radarrId: movieDetails['radarrId'],
 				tmdbid: movieDetails['tmdbId']
 			};
-			var cell = $(this).closest('td');
+			var cell = $(this).parent();
 			$.ajax({
 				url: "{{ url_for('api.moviesubtitlesdelete') }}",
 				type: "DELETE",
@@ -361,12 +361,11 @@
 				sceneName: movieDetails['sceneName'],
 				language: $(this).attr("data-language"),
 				hi: movieDetails['hearing_impaired'],
-				forced: movieDetails['forced'],
+				forced:$(this).attr("data-forced"),
 				radarrId: movieDetails['radarrId'],
 				title: movieDetails['title']
 			};
-			var button = $(this).closest('button' +
-					'');
+			var button = $(this).closest('button' + '');
 			$.ajax({
 				url: "{{ url_for('api.moviesubtitlesdownload') }}",
 				type: "POST",
@@ -500,7 +499,7 @@
 				radarrId: movieDetails['radarrId'],
 				title: movieDetails['title']
 			};
-			var cell = $(this).closest('td');
+			var cell = $(this).parent();
 			$.ajax({
 				url: "{{ url_for('api.moviesubtitlesmanualdownload') }}",
 				type: "POST",
@@ -632,8 +631,8 @@
 
 		events.on('event', function(event) {
 			var event_json = JSON.parse(event);
-			if (event_json.movie === {{id}}) {
-				if (event_json.type === 'movie') {
+			if (event_json.type === 'movie') {
+				if (event_json.movie === {{id}}) {
 					movieDetailsRefresh();
 				}
 			}
@@ -725,7 +724,11 @@
 			}
 
 			function missingAppendFunc(value) {
-				missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '">' + value.code2 + ' <i class="fas fa-search"></i></button> ';
+				if (value.forced) {
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
+				} else {
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ' <i class="fas fa-search"></i></button> ';
+				}
 			}
 
 			$('#missingSubtitles').html(missing_languages);
@@ -753,6 +756,7 @@
 				"paging": false,
 				"info": false,
 				"lengthChange": false,
+				"responsive": true,
 				"data" : movieDetails['subtitles'],
 				"columns" : [
 					{ "data" : null,
