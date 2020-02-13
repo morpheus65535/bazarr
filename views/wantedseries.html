@@ -47,13 +47,52 @@
                     },
                     {"data": "episode_number"},
                     {"data": "episodeTitle"},
-                    {"data": "missing_subtitles"}
+                    {"data": null,
+                        "render": function (data) {
+                            if (data.missing_subtitles !== 'None') {
+                                var languages = '';
+                                data.missing_subtitles.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced':'') + '" data-episodepath="'+data.mapped_path+'" data-scenename="'+data.scene_name+'" data-seriestitle="'+data.seriesTitle+'" data-language="'+value.code3+'" data-hi="'+data.hearing_impaired+'" data-forced="'+value.forced+'" data-sonarrseriesid='+data.sonarrSeriesId+' data-sonarrepisodeid='+data.sonarrEpisodeId+'>' + value.code2 + ((value.forced) ? ':forced':'') + ' <i class="fas fa-search"></i></a> ';
+                            }
+                        }
+                    }
                 ]
+            });
+
+            $('#wanted_series').on('click', '.get_subtitle', function(e){
+                $(this).tooltip('dispose');
+                e.preventDefault();
+                const values = {
+                    episodePath: $(this).attr("data-episodepath"),
+                    sceneName: $(this).attr("data-scenename"),
+                    language: $(this).attr("data-language"),
+                    hi: $(this).attr("data-hi"),
+                    forced: $(this).attr("data-forced"),
+                    sonarrSeriesId: $(this).attr("data-sonarrseriesid"),
+                    sonarrEpisodeId: $(this).attr('data-sonarrepisodeid'),
+                    title: $(this).attr("data-seriestitle")
+                };
+                var cell = $(this).parent();
+                $.ajax({
+                    url: "{{ url_for('api.episodessubtitlesdownload') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function() {
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    }
+                });
             });
 
             events.on('event', function(event) {
                 var event_json = JSON.parse(event);
-                if (event_json.type === 'episodes') {
+                if (event_json.type === 'episode') {
                     $('#wanted_series').DataTable().ajax.reload(resetPaging=false);
                     $('[data-toggle="tooltip"]').tooltip({html: true});
                 }
