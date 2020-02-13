@@ -214,12 +214,12 @@ class Scheduler:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_series, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
                 max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_series',
-                name='Search for wanted Subtitles', replace_existing=True)
+                name='Search for wanted Series Subtitles', replace_existing=True)
         if settings.general.getboolean('use_radarr'):
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_movies, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
                 max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
-                name='Search for wanted Subtitles', replace_existing=True)
+                name='Search for wanted Movies Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):
         if settings.general.getboolean('upgrade_subs') and \
