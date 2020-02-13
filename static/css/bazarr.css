@@ -376,9 +376,6 @@ a.link:hover, a.link:focus {
 table.dataTable tbody td {
   vertical-align: middle; }
 
-.container-fluid {
-  padding: 0 5px 25px 30px; }
-
 @media (min-width: 1024px) {
   #edit_bar {
     margin-left: 240px;
