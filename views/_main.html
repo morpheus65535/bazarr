@@ -39,34 +39,6 @@
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}" />
 
-        <style>
-            table.dataTable tbody td {
-                vertical-align: middle;
-            }
-
-            .tooltip { pointer-events: none; }
-
-            .overlay {
-                display: none;
-                height: 100%;
-                width: 100%;
-                position: fixed;
-                z-index: 2147483647;
-                left: 0;
-                top: 0;
-                background-color: rgb(0,0,0);
-                background-color: rgba(0,0,0, 0.8);
-                backdrop-filter: blur(6px);
-                overflow-x: hidden;
-            }
-
-            .overlay-content {
-                position: relative;
-                top: 50%;
-                width: 100%;
-                text-align: center;
-            }
-        </style>
     {% endblock head_css %}
 
     {% block head %}

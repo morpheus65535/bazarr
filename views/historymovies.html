@@ -27,21 +27,22 @@
     <script>
         $(document).ready(function () {
             var table = $('#history_movies').DataTable({
-                "processing": false,
-                "serverSide": true,
+                processing: false,
+                serverSide: true,
                 language: {
                     zeroRecords: 'Nothing Found In Movies History',
                     processing: "Loading Movies History..."
                 },
-                "searching": false,
-                "ordering": false,
-                "responsive": true,
-                "lengthChange": false,
-                "pageLength": {{ settings.general.page_size }},
-                "ajax": "{{ url_for('api.historymovies') }}",
-                "columns": [
-                    {"data": "action",
-						"render": function(data) {
+                searching: false,
+                ordering: false,
+                responsive: true,
+                lengthChange: false,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.historymovies') }}",
+                columns: [
+                    {
+                        "data": "action",
+                        "render": function (data) {
                             if (data === 0) {
                                 return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";
                             } else if (data === 1) {
@@ -55,14 +56,16 @@
                             }
                         }
                     },
-                    {"data": null,
-                        "render": function (data) {
+                    {
+                        data: null,
+                        render: function (data) {
                             return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>';
                         }
                     },
-                    {"data": "timestamp"},
-                    {"data": null,
-                        "render": function (data) {
+                    {data: "timestamp"},
+                    {
+                        data: null,
+                        render: function (data) {
                             if (data.upgradable) {
                                 return "<i class='fas fa-recycle' title='This Subtitles File Is Eligible For An Upgrade.' style='color: green;' data-toggle='tooltip' data-placement='right'></i> " + data.description;
                             } else {
@@ -73,13 +76,13 @@
                 ]
             });
 
-            events.on('event', function(event) {
+            events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'movieHistory') {
-                    $('#history_movies').DataTable().ajax.reload(resetPaging=false);
+                    $('#history_movies').DataTable().ajax.reload(resetPaging = false);
                     $('[data-toggle="tooltip"]').tooltip({html: true});
                 }
             });
-		});
+        });
     </script>
 {% endblock tail %}

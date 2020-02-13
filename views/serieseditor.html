@@ -63,7 +63,7 @@
 
             getEnabledLanguages();
 
-		    events.on('event', function(event) {
+            events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'series' && event_json.action === 'insert') {
                     $.ajax({
@@ -106,38 +106,39 @@
             $('#save_button').css('cursor', 'not-allowed');
 
             var table = $('#series').DataTable({
-                "processing": true,
-                "serverSide": true,
+                processing: true,
+                serverSide: true,
                 language: {
                     zeroRecords: 'No Series Found',
                     processing: "Loading Series..."
                 },
-                "searching": false,
-                "ordering": false,
-                "lengthChange": true,
-                "responsive": true,
-                "paging": false,
-                "ajax": "{{ url_for('api.series') }}",
-                "columnDefs": [ {
-                    "orderable": false,
-                    "className": 'select-checkbox',
-                    "targets":   0
-                } ],
-                "select": {
-                    "style":    'multi',
-                    "selector": 'td:first-child'
+                searching: false,
+                ordering: false,
+                lengthChange: true,
+                responsive: true,
+                paging: false,
+                ajax: "{{ url_for('api.series') }}",
+                columnDefs: [{
+                    orderable: false,
+                    className: 'select-checkbox',
+                    targets: 0
+                }],
+                select: {
+                    style: 'multi',
+                    selector: 'td:first-child'
                 },
-                "columns": [
-                    {"defaultContent": ""},
-                    {"data": null,
-                        "render": function (data) {
+                columns: [
+                    {defaultContent: ""},
+                    {
+                        data: null,
+                        render: function (data) {
                             return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.title + '</a>'
                         }
                     },
-                    {"data": "audio_language.name"},
+                    {data: "audio_language.name"},
                     {
-                        "data": "languages",
-                        "render": function (data) {
+                        data: "languages",
+                        render: function (data) {
                             if (data !== 'None') {
                                 var languages = '';
                                 data.forEach(appendFunc);
@@ -151,43 +152,48 @@
                             }
                         }
                     },
-                    {
-                        "data": "hearing_impaired",
-                        "className": "dt-center"
-                    },
-                    {
-                        "data": "forced",
-                        "className": "dt-center"
-                    }
+                    {data: "hearing_impaired", className: "dt-center"},
+                    {data: "forced", className: "dt-center"}
                 ]
             });
 
-            new $.fn.dataTable.Buttons( table, {
-                "buttons": [
-                    'selectAll',
-                    'selectNone'
-                ]
-            } );
+            new $.fn.dataTable.Buttons(table, {
+                buttons: [
+                    {
+                        extend: 'selectAll',
+                        text: '<div><i class="far fa-check-square align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>\n' +
+                            '            <div class="align-bottom text-themecolor small text-center">Select ALL</div>'
+                    },
+                    {
+                        extend: 'selectNone',
+                        text: '<div><i class="far fa-square align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>\n' +
+                            '            <div class="align-bottom text-themecolor small text-center nowrap">Deselect ALL</div>'
+                    }]
+            });
 
             table.buttons().container().appendTo('#buttons');
 
-            table.on( 'select', function () {
+            var btns = $('.dt-button');
+            btns.addClass('btn btn-outline');
+            btns.removeClass('dt-button');
+
+            table.on('select', function () {
                 $('.selectpicker').prop('disabled', false);
                 $('.selectpicker').selectpicker('refresh');
                 $('#save_button').prop('disabled', false);
                 $('#save_button').removeClass('disabled');
                 $('#save_button').css('cursor', 'auto');
-            } );
+            });
 
-            table.on( 'deselect', function () {
-                if (table.rows( '.selected' ).count() === 0) {
+            table.on('deselect', function () {
+                if (table.rows('.selected').count() === 0) {
                     $('.selectpicker').prop('disabled', true);
                     $('.selectpicker').selectpicker('refresh');
                     $('#save_button').prop('disabled', true);
                     $('#save_button').addClass('disabled');
                     $('#save_button').css('cursor', 'not-allowed');
                 }
-            } );
+            });
 
             if ('{{settings.general.single_language}}' === 'True') {
                 $('#languages_select').selectpicker({maxOptions: 1});
@@ -195,10 +201,10 @@
             $('#hi_select').selectpicker({maxOptions: 1});
             $('#forced_select').selectpicker({maxOptions: 1});
 
-            $('#save_button').on('click', function(e){
+            $('#save_button').on('click', function (e) {
                 e.preventDefault();
                 const values = {
-                    seriesid: table.rows( { selected: true } ).ids().toArray(),
+                    seriesid: table.rows({selected: true}).ids().toArray(),
                     languages: $('#languages_select').val(),
                     hi: $('#hi_select').val(),
                     forced: $('#forced_select').val()
@@ -207,9 +213,9 @@
                 $.ajax({
                     url: "{{ url_for('api.serieseditsave') }}",
                     method: "POST",
-			        data: JSON.stringify(values),
+                    data: JSON.stringify(values),
                     contentType: 'application/json',
-                    success: function(){
+                    success: function () {
                         table.rows().deselect();
                         $('#languages_select').selectpicker('val', '');
                         $('#hi_select').selectpicker('val', '');
@@ -222,10 +228,10 @@
         function getEnabledLanguages() {
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=true",
-                success:function(data) {
+                success: function (data) {
                     $('#languages_select').append('<option value="None">None</option>');
                     $.each(data, function (i, item) {
-                        $('#languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+                        $('#languages_select').append('<option value="' + item.code2 + '">' + item.name + '</option>');
                     });
                     $("#languages_select").selectpicker("refresh");
                 }

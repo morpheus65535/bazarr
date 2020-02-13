@@ -4,7 +4,8 @@
 
 {% block bcleft %}
     <div class="">
-        <button class="btn btn-outline" id="mass_edit"  onclick="window.location.href = '{{ url_for('serieseditor') }}';">
+        <button class="btn btn-outline" id="mass_edit"
+                onclick="window.location.href = '{{ url_for('serieseditor') }}';">
             <div><i class="fas fa-list align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
             <div class="align-bottom text-themecolor small text-center">Mass Edit</div>
         </button>
@@ -18,16 +19,16 @@
 {% block body %}
     <table id="series" class="table table-striped" style="width:100%">
         <thead>
-            <tr>
-                <th>Name</th>
-                <th>Path Exist</th>
-                <th>Audio Language</th>
-                <th>Subtitles Languages</th>
-                <th>Hearing-Impaired</th>
-                <th>Forced</th>
-                <th>Subtitles</th>
-                <th></th>
-            </tr>
+        <tr>
+            <th>Name</th>
+            <th>Path Exist</th>
+            <th>Audio Language</th>
+            <th>Subtitles Languages</th>
+            <th>Hearing-Impaired</th>
+            <th>Forced</th>
+            <th>Subtitles</th>
+            <th></th>
+        </tr>
         </thead>
     </table>
 
@@ -56,7 +57,8 @@
                                     Subtitles Language(s)
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
+                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple
+                                            data-live-search="true"></select>
                                 </div>
                             </div>
                             <div class="row">
@@ -84,7 +86,7 @@
                             </div>
                         </div>
 
-                        <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value="" />
+                        <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value=""/>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
@@ -101,9 +103,9 @@
     <script>
         $(document).ready(function () {
             getLanguages();
-		    getEnabledLanguages();
+            getEnabledLanguages();
 
-		    events.on('event', function(event) {
+            events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'series' && event_json.action === 'insert') {
                     $.ajax({
@@ -140,29 +142,33 @@
             });
 
             var table = $('#series').DataTable({
-                "processing": true,
-                "serverSide": true,
+                dom:
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+                processing: true,
+                serverSide: true,
                 language: {
                     zeroRecords: 'No Series Found',
                     processing: "Loading Series..."
                 },
-                "searching": false,
-                "ordering": false,
-                "lengthChange": false,
-                "responsive": true,
-                "pageLength": {{ settings.general.page_size }},
-                "ajax": "{{ url_for('api.series') }}",
-                "columns": [
-                    {"data": null,
-                        "render": function (data) {
+                searching: false,
+                ordering: false,
+                lengthChange: false,
+                responsive: true,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.series') }}",
+                columns: [
+                    {
+                        data: null,
+                        render: function (data) {
                             return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.title + '</a>';
                         }
                     },
                     {
-                        "data": null,
-                        "className": "dt-center",
-                        "responsivePriority": 1,
-                        "render": function (data) {
+                        data: null,
+                        className: "dt-center",
+                        responsivePriority: 1,
+                        render: function (data) {
                             if (data.exist === false) {
                                 return '<i class="fas fa-exclamation-triangle" data-toggle="tooltip" data-placement="right" title="This path doesn\'t seem to be valid: ' + data.mapped_path + '"></i>';
                             } else if (data.exist === true) {
@@ -170,10 +176,10 @@
                             }
                         }
                     },
-                    {"data": "audio_language.name"},
+                    {data: "audio_language.name"},
                     {
-                        "data": "languages",
-                        "render": function (data) {
+                        data: "languages",
+                        render: function (data) {
                             if (data !== 'None') {
                                 var languages = '';
                                 data.forEach(appendFunc);
@@ -188,17 +194,17 @@
                         }
                     },
                     {
-                        "data": "hearing_impaired",
-                        "className": "dt-center"
+                        data: "hearing_impaired",
+                        className: "dt-center"
                     },
                     {
-                        "data": "forced",
-                        "className": "dt-center"
+                        data: "forced",
+                        className: "dt-center"
                     },
                     {
-                        "data": null,
-                        "responsivePriority": 2,
-                        "render": function (data) {
+                        data: null,
+                        responsivePriority: 2,
+                        render: function (data) {
                             var total = data.episodeFileCount;
                             var completed = data.episodeFileCount - data.episodeMissingCount;
                             var completed_style = '';
@@ -211,67 +217,67 @@
                         }
                     },
                     {
-                        "data": null,
-                        "render": function (data) {
-                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId='+data.sonarrSeriesId+' data-audiolanguage="'+data.audio_language.name+'" data-title="'+data.title+'" data-languages='+JSON.stringify(data.languages)+' data-hi="'+data.hearing_impaired+'" data-forced="'+data.forced+'"><i class="fas fa-wrench"></i></a>';
+                        data: null,
+                        render: function (data) {
+                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId=' + data.sonarrSeriesId + ' data-audiolanguage="' + data.audio_language.name + '" data-title="' + data.title + '" data-languages=' + JSON.stringify(data.languages) + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
                         }
                     }
                 ]
             });
         });
 
-        $('#series').on('click', '.edit_button', function(e){
-			e.preventDefault();
-			$("#edit_series_title_span").html($(this).data('title'));
-			$("#edit_audio_language_span").html($(this).data('audiolanguage'));
-			$('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
+        $('#series').on('click', '.edit_button', function (e) {
+            e.preventDefault();
+            $("#edit_series_title_span").html($(this).data('title'));
+            $("#edit_audio_language_span").html($(this).data('audiolanguage'));
+            $('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
 
 
-			$('#edit_languages_select').empty();
-			if ('{{settings.general.single_language}}' === 'True') {
-				$('#edit_languages_select').selectpicker({maxOptions: 1});
-			}
-			if ('{{settings.general.single_language}}' === 'True') {
+            $('#edit_languages_select').empty();
+            if ('{{settings.general.single_language}}' === 'True') {
+                $('#edit_languages_select').selectpicker({maxOptions: 1});
+            }
+            if ('{{settings.general.single_language}}' === 'True') {
                 $('#edit_languages_select').append('<option value="None">None</option>');
             }
             $.each(enabledLanguages, function (i, item) {
-				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
-			});
-			$("#edit_languages_select").selectpicker("refresh");
-			var selected_languages = Array();
-			$.each(Array.from($(this).data('languages')), function (i, item) {
-				selected_languages.push(item.code2);
-			});
-			$('#edit_languages_select').selectpicker('val', selected_languages);
-			$('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
-			$('#edit_forced_select').val($(this).data('forced')).change();
+                $('#edit_languages_select').append('<option value="' + item.code2 + '">' + item.name + '</option>');
+            });
+            $("#edit_languages_select").selectpicker("refresh");
+            var selected_languages = Array();
+            $.each(Array.from($(this).data('languages')), function (i, item) {
+                selected_languages.push(item.code2);
+            });
+            $('#edit_languages_select').selectpicker('val', selected_languages);
+            $('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
+            $('#edit_forced_select').val($(this).data('forced')).change();
 
-			$('#editModal')
-					.modal({
-						focus: false
-					});
-		});
+            $('#editModal')
+                .modal({
+                    focus: false
+                });
+        });
 
-        $('#edit_form').on('submit', function(e){
-			e.preventDefault();
-			var formdata = new FormData(document.getElementById("edit_form"));
+        $('#edit_form').on('submit', function (e) {
+            e.preventDefault();
+            var formdata = new FormData(document.getElementById("edit_form"));
 
-			$.ajax({
-				url: "{{ url_for('api.series') }}?seriesid=" + $('#edit_sonarrSeriesId').val(),
-				data: formdata,
-				processData: false,
-				contentType: false,
-				type: 'POST',
-				success: function(){
-					$('#editModal').modal('hide');
-				}
-			});
-		});
+            $.ajax({
+                url: "{{ url_for('api.series') }}?seriesid=" + $('#edit_sonarrSeriesId').val(),
+                data: formdata,
+                processData: false,
+                contentType: false,
+                type: 'POST',
+                success: function () {
+                    $('#editModal').modal('hide');
+                }
+            });
+        });
 
         function getLanguages() {
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=false",
-                success:function(data) {
+                success: function (data) {
                     availableLanguages = data;
                 }
             });
@@ -280,7 +286,7 @@
         function getEnabledLanguages() {
             $.ajax({
                 url: "{{ url_for('api.languages') }}?enabled=true",
-                success:function(data) {
+                success: function (data) {
                     enabledLanguages = data;
                 }
             });

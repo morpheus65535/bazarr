@@ -13,14 +13,14 @@
 {% block body %}
     <table id="history_series" class="table table-striped" style="width:100%">
         <thead>
-            <tr>
-                <th>Action</th>
-                <th>Name</th>
-                <th>Episode</th>
-                <th>Episode Title</th>
-                <th>Date</th>
-                <th>Description</th>
-            </tr>
+        <tr>
+            <th>Action</th>
+            <th>Name</th>
+            <th>Episode</th>
+            <th>Episode Title</th>
+            <th>Date</th>
+            <th>Description</th>
+        </tr>
         </thead>
     </table>
 {% endblock body %}
@@ -29,21 +29,22 @@
     <script>
         $(document).ready(function () {
             var table = $('#history_series').DataTable({
-                "processing": true,
-                "serverSide": true,
+                processing: true,
+                serverSide: true,
                 language: {
                     zeroRecords: 'Nothing Found In Series History',
                     processing: "Loading Series History..."
                 },
-                "searching": false,
-                "ordering": false,
-                "lengthChange": false,
-                "responsive": true,
-                "pageLength": {{ settings.general.page_size }},
-                "ajax": "{{ url_for('api.historyseries') }}",
-                "columns": [
-                    {"data": "action",
-						"render": function(data) {
+                searching: false,
+                ordering: false,
+                lengthChange: false,
+                responsive: true,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.historyseries') }}",
+                columns: [
+                    {
+                        data: "action",
+                        render: function (data) {
                             if (data === 0) {
                                 return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";
                             } else if (data === 1) {
@@ -57,16 +58,18 @@
                             }
                         }
                     },
-                    {"data": null,
-                        "render": function (data) {
+                    {
+                        data: null,
+                        render: function (data) {
                             return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.seriesTitle + '</a>';
                         }
                     },
-                    {"data": "episode_number"},
-                    {"data": "episodeTitle"},
-                    {"data": "timestamp"},
-                    {"data": null,
-                        "render": function (data) {
+                    {data: "episode_number"},
+                    {data: "episodeTitle"},
+                    {data: "timestamp"},
+                    {
+                        data: null,
+                        render: function (data) {
                             if (data.upgradable) {
                                 return "<i class='fas fa-recycle' title='This Subtitles File Is Eligible For An Upgrade.' style='color: green;' data-toggle='tooltip' data-placement='right'></i> " + data.description;
                             } else {
@@ -77,13 +80,13 @@
                 ]
             });
 
-            events.on('event', function(event) {
+            events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'episodeHistory') {
-                    $('#history_series').DataTable().ajax.reload(resetPaging=false);
+                    $('#history_series').DataTable().ajax.reload(resetPaging = false);
                     $('[data-toggle="tooltip"]').tooltip({html: true});
                 }
             });
-		});
+        });
     </script>
 {% endblock tail %}

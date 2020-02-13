@@ -133,7 +133,8 @@ a.link:hover, a.link:focus {
       font-weight: 400;
       border-left: 3px solid #ce2829;
       background: #252833;
-      padding: 8px 35px 8px 37px; }
+      padding: 8px 35px 8px 37px;
+      box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); }
       .sidebar-nav > ul > li.active > a i {
         color: #ce2829;
         font-size: 14px; }
@@ -294,14 +295,15 @@ a.link:hover, a.link:focus {
 
 .page-titles {
   background: #4f566f;
-  margin: 0 -30px 30px;
-  min-height: 50px;
-  height: 50px;
+  margin: 0 -30px 5px;
+  min-height: 60px;
+  height: 60px;
   padding: 0;
   box-shadow: 0 0 0 rgba(0, 0, 0, 0.1); }
   .page-titles .btn {
     height: 50px;
-    width: 80px; }
+    width: 70px;
+    padding: 0 0; }
 
 .card-no-border .sidebar-nav > ul > li > a.active {
   background: #252833; }
@@ -340,5 +342,41 @@ a.link:hover, a.link:focus {
 .page-wrapper {
   background: white;
   padding-bottom: 60px; }
+
+.overlay {
+  display: none;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  z-index: 2147483647;
+  left: 0;
+  top: 0;
+  background-color: black;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  overflow-x: hidden; }
+
+.overlay-content {
+  position: relative;
+  top: 50%;
+  width: 100%;
+  text-align: center; }
+
+.dataTables_wrapper {
+  padding-top: 0px; }
+
+.dt-buttons {
+  display: inline-block;
+  padding-top: 0;
+  margin-bottom: 0; }
+
+.tooltip {
+  pointer-events: none; }
+
+table.dataTable tbody td {
+  vertical-align: middle; }
+
+.container-fluid {
+  padding: 0 5px 25px 30px; }
 
 /*# sourceMappingURL=bazarr.css.map */
