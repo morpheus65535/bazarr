@@ -379,4 +379,10 @@ table.dataTable tbody td {
 .container-fluid {
   padding: 0 5px 25px 30px; }
 
+@media (min-width: 1024px) {
+  #edit_bar {
+    margin-left: 240px;
+  }
+}
+
 /*# sourceMappingURL=bazarr.css.map */
