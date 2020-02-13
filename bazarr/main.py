@@ -463,7 +463,7 @@ def download_log():
 @login_required
 def image_proxy(url):
     apikey = settings.sonarr.apikey
-    url_image = (url_sonarr() + '/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
+    url_image = (url_sonarr() + '/api/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
@@ -476,7 +476,7 @@ def image_proxy(url):
 @login_required
 def image_proxy_movies(url):
     apikey = settings.radarr.apikey
-    url_image = url_radarr() + '/' + url + '?apikey=' + apikey
+    url_image = url_radarr() + '/api/' + url + '?apikey=' + apikey
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False)
     except:
