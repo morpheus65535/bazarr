@@ -3,7 +3,10 @@
 {% block title %}Wanted (Movies) - Bazarr{% endblock %}
 
 {% block bcleft %}
-
+    <button class="btn btn-outline" id="search_button">
+		<div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Search All</div>
+	</button>
 {% endblock bcleft %}
 
 {% block bcright %}
@@ -59,6 +62,20 @@
                         }
                     }
                 ]
+            });
+
+            $('#search_button').on('click', function(e){
+                e.preventDefault();
+                $.ajax({
+                    url: "{{ url_for('api.searchwantedmovies') }}",
+                    type: 'GET',
+                    beforeSend: function() {
+                        $('#search_button').find("i").addClass('fa-spin');
+                    },
+                    complete: function() {
+                        $('#search_button').find("i").removeClass('fa-spin');
+                    }
+                });
             });
 
             $('#wanted_movies').on('click', '.get_subtitle', function(e){

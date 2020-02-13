@@ -1,6 +1,5 @@
 import os
 from sqlite3worker import Sqlite3Worker
-from six import string_types
 
 from get_args import args
 from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie

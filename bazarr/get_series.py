@@ -1,11 +1,8 @@
 # coding=utf-8
 
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 import requests
 import logging
-import six
 from queueconfig import notifications
 
 from config import settings, url_sonarr
@@ -108,7 +105,7 @@ def update_series():
                                       'fanart': fanart,
                                       'audio_language': audio_language,
                                       'sortTitle': show['sortTitle'],
-                                      'year': six.text_type(show['year']),
+                                      'year': str(show['year']),
                                       'alternateTitles': alternate_titles,
                                       'forced': serie_default_forced})
             else:
@@ -121,7 +118,7 @@ def update_series():
                                       'fanart': fanart,
                                       'audio_language': audio_language,
                                       'sortTitle': show['sortTitle'],
-                                      'year': six.text_type(show['year']),
+                                      'year': str(show['year']),
                                       'alternateTitles': alternate_titles})
 
     # Remove old series from DB

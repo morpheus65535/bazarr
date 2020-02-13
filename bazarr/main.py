@@ -11,22 +11,13 @@ import sys
 import libs
 import io
 
-import six
-from six.moves import zip
-from functools import reduce
-
-import itertools
-import operator
 import pretty
-import math
 import ast
 import hashlib
-import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import warnings
 import queueconfig
 import platform
 import apprise
-import operator
 
 
 from get_args import args
@@ -41,9 +32,8 @@ from notifier import update_notifier
 
 from cherrypy.wsgiserver import CherryPyWSGIServer
 
-from io import BytesIO
-from six import text_type
-from datetime import timedelta, datetime
+from urllib.parse import unquote
+from datetime import datetime
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
@@ -53,16 +43,9 @@ from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
-    list_missing_subtitles, list_missing_subtitles_movies
-from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
-from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
 from scheduler import Scheduler
-from notifier import send_notifications, send_notifications_movie
 from subliminal_patch.extensions import provider_registry as provider_manager
-from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from functools import wraps
 
 from app import create_app, socketio
@@ -202,7 +185,7 @@ def doShutdown():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.stop file.')
         else:
-            stop_file.write(six.text_type(''))
+            stop_file.write(str(''))
             stop_file.close()
             sys.exit(0)
     return ''
@@ -223,7 +206,7 @@ def restart():
             logging.error('BAZARR Cannot create bazarr.restart file.')
         else:
             logging.info('Bazarr is being restarted...')
-            restart_file.write(six.text_type(''))
+            restart_file.write(str(''))
             restart_file.close()
             sys.exit(0)
     return ''
@@ -293,20 +276,20 @@ def save_wizard():
     else:
         settings_upgrade_manual = 'True'
 
-    settings.general.ip = text_type(settings_general_ip)
-    settings.general.port = text_type(settings_general_port)
-    settings.general.base_url = text_type(settings_general_baseurl)
-    settings.general.path_mappings = text_type(settings_general_pathmapping)
-    settings.general.single_language = text_type(settings_general_single_language)
-    settings.general.use_sonarr = text_type(settings_general_use_sonarr)
-    settings.general.use_radarr = text_type(settings_general_use_radarr)
-    settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
-    settings.general.subfolder = text_type(settings_subfolder)
-    settings.general.subfolder_custom = text_type(settings_subfolder_custom)
-    settings.general.use_embedded_subs = text_type(settings_general_embedded)
-    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
-    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
-    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
+    settings.general.ip = str(settings_general_ip)
+    settings.general.port = str(settings_general_port)
+    settings.general.base_url = str(settings_general_baseurl)
+    settings.general.path_mappings = str(settings_general_pathmapping)
+    settings.general.single_language = str(settings_general_single_language)
+    settings.general.use_sonarr = str(settings_general_use_sonarr)
+    settings.general.use_radarr = str(settings_general_use_radarr)
+    settings.general.path_mappings_movie = str(settings_general_pathmapping_movie)
+    settings.general.subfolder = str(settings_subfolder)
+    settings.general.subfolder_custom = str(settings_subfolder_custom)
+    settings.general.use_embedded_subs = str(settings_general_embedded)
+    settings.general.upgrade_subs = str(settings_upgrade_subs)
+    settings.general.days_to_upgrade_subs = str(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = str(settings_upgrade_manual)
 
     settings_sonarr_ip = request.form.get('settings_sonarr_ip')
     settings_sonarr_port = request.form.get('settings_sonarr_port')
@@ -323,12 +306,12 @@ def save_wizard():
     else:
         settings_sonarr_only_monitored = 'True'
 
-    settings.sonarr.ip = text_type(settings_sonarr_ip)
-    settings.sonarr.port = text_type(settings_sonarr_port)
-    settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
-    settings.sonarr.ssl = text_type(settings_sonarr_ssl)
-    settings.sonarr.apikey = text_type(settings_sonarr_apikey)
-    settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
+    settings.sonarr.ip = str(settings_sonarr_ip)
+    settings.sonarr.port = str(settings_sonarr_port)
+    settings.sonarr.base_url = str(settings_sonarr_baseurl)
+    settings.sonarr.ssl = str(settings_sonarr_ssl)
+    settings.sonarr.apikey = str(settings_sonarr_apikey)
+    settings.sonarr.only_monitored = str(settings_sonarr_only_monitored)
 
     settings_radarr_ip = request.form.get('settings_radarr_ip')
     settings_radarr_port = request.form.get('settings_radarr_port')
@@ -345,12 +328,12 @@ def save_wizard():
     else:
         settings_radarr_only_monitored = 'True'
 
-    settings.radarr.ip = text_type(settings_radarr_ip)
-    settings.radarr.port = text_type(settings_radarr_port)
-    settings.radarr.base_url = text_type(settings_radarr_baseurl)
-    settings.radarr.ssl = text_type(settings_radarr_ssl)
-    settings.radarr.apikey = text_type(settings_radarr_apikey)
-    settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
+    settings.radarr.ip = str(settings_radarr_ip)
+    settings.radarr.port = str(settings_radarr_port)
+    settings.radarr.base_url = str(settings_radarr_baseurl)
+    settings.radarr.ssl = str(settings_radarr_ssl)
+    settings.radarr.apikey = str(settings_radarr_apikey)
+    settings.radarr.only_monitored = str(settings_radarr_only_monitored)
 
     settings_subliminal_providers = request.form.getlist('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
@@ -382,7 +365,7 @@ def save_wizard():
 
     settings.addic7ed.username = request.form.get('settings_addic7ed_username') or ''
     settings.addic7ed.password = request.form.get('settings_addic7ed_password') or ''
-    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents) or ''
+    settings.addic7ed.random_agents = str(settings_addic7ed_random_agents) or ''
     settings.assrt.token = request.form.get('settings_assrt_token') or ''
     settings.legendasdivx.username = request.form.get('settings_legendasdivx_username') or ''
     settings.legendasdivx.password = request.form.get('settings_legendasdivx_password') or ''
@@ -390,9 +373,9 @@ def save_wizard():
     settings.legendastv.password = request.form.get('settings_legendastv_password') or ''
     settings.opensubtitles.username = request.form.get('settings_opensubtitles_username') or ''
     settings.opensubtitles.password = request.form.get('settings_opensubtitles_password') or ''
-    settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
-    settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
-    settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.opensubtitles.vip = str(settings_opensubtitles_vip)
+    settings.opensubtitles.ssl = str(settings_opensubtitles_ssl)
+    settings.opensubtitles.skip_wrong_fps = str(settings_opensubtitles_skip_wrong_fps)
     settings.xsubs.username = request.form.get('settings_xsubs_username') or ''
     settings.xsubs.password = request.form.get('settings_xsubs_password') or ''
     settings.napisy24.username = request.form.get('settings_napisy24_username') or ''
@@ -415,41 +398,41 @@ def save_wizard():
         settings_serie_default_enabled = 'False'
     else:
         settings_serie_default_enabled = 'True'
-    settings.general.serie_default_enabled = text_type(settings_serie_default_enabled)
+    settings.general.serie_default_enabled = str(settings_serie_default_enabled)
 
     settings_serie_default_languages = str(request.form.getlist('settings_serie_default_languages'))
     if settings_serie_default_languages == "['None']":
         settings_serie_default_languages = 'None'
-    settings.general.serie_default_language = text_type(settings_serie_default_languages)
+    settings.general.serie_default_language = str(settings_serie_default_languages)
 
     settings_serie_default_hi = request.form.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
-    settings.general.serie_default_hi = text_type(settings_serie_default_hi)
+    settings.general.serie_default_hi = str(settings_serie_default_hi)
 
     settings_movie_default_enabled = request.form.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
         settings_movie_default_enabled = 'True'
-    settings.general.movie_default_enabled = text_type(settings_movie_default_enabled)
+    settings.general.movie_default_enabled = str(settings_movie_default_enabled)
 
     settings_movie_default_languages = str(request.form.getlist('settings_movie_default_languages'))
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
-    settings.general.movie_default_language = text_type(settings_movie_default_languages)
+    settings.general.movie_default_language = str(settings_movie_default_languages)
 
     settings_movie_default_hi = request.form.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
-    settings.general.movie_default_hi = text_type(settings_movie_default_hi)
+    settings.general.movie_default_hi = str(settings_movie_default_hi)
 
     settings_movie_default_forced = str(request.form.get('settings_movie_default_forced'))
-    settings.general.movie_default_forced = text_type(settings_movie_default_forced)
+    settings.general.movie_default_forced = str(settings_movie_default_forced)
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
@@ -579,23 +562,6 @@ def movie(no):
     return render_template('movie.html', id=str(no))
 
 
-@app.route('/scan_disk_movie/<int:no>', methods=['GET'])
-@login_required
-def scan_disk_movie(no):
-    movies_scan_subtitles(no)
-    return '', 200
-
-
-@app.route('/search_missing_subtitles_movie/<int:no>', methods=['GET'])
-@login_required
-def search_missing_subtitles_movie(no):
-
-    ref = request.environ['HTTP_REFERER']
-
-    scheduler.add_job(movies_download_subtitles, args=[no], name=('movies_download_subtitles_' + str(no)))
-    redirect(ref)
-
-
 @app.route('/historyseries/')
 @login_required
 def historyseries():
@@ -618,16 +584,6 @@ def wantedseries():
 @login_required
 def wantedmovies():
     return render_template('wantedmovies.html')
-
-
-@app.route('/wanted_search_missing_subtitles')
-@login_required
-def wanted_search_missing_subtitles_list():
-
-    ref = request.environ['HTTP_REFERER']
-
-    scheduler.add_job(wanted_search_missing_subtitles, name='manual_wanted_search_missing_subtitles')
-    redirect(ref)
 
 
 @app.route('/settings/')
@@ -765,47 +721,47 @@ def save_settings():
     settings_death_by_captcha_username = request.form.get('settings_death_by_captcha_username')
     settings_death_by_captcha_password = request.form.get('settings_death_by_captcha_password')
 
-    before = (six.text_type(settings.general.ip), int(settings.general.port), six.text_type(settings.general.base_url),
-              six.text_type(settings.general.path_mappings), six.text_type(settings.general.getboolean('use_sonarr')),
-              six.text_type(settings.general.getboolean('use_radarr')), six.text_type(settings.general.path_mappings_movie))
-    after = (six.text_type(settings_general_ip), int(settings_general_port), six.text_type(settings_general_baseurl),
-             six.text_type(settings_general_pathmapping), six.text_type(settings_general_use_sonarr),
-             six.text_type(settings_general_use_radarr), six.text_type(settings_general_pathmapping_movie))
+    before = (str(settings.general.ip), int(settings.general.port), str(settings.general.base_url),
+              str(settings.general.path_mappings), str(settings.general.getboolean('use_sonarr')),
+              str(settings.general.getboolean('use_radarr')), str(settings.general.path_mappings_movie))
+    after = (str(settings_general_ip), int(settings_general_port), str(settings_general_baseurl),
+             str(settings_general_pathmapping), str(settings_general_use_sonarr),
+             str(settings_general_use_radarr), str(settings_general_pathmapping_movie))
 
-    settings.general.ip = text_type(settings_general_ip)
-    settings.general.port = text_type(settings_general_port)
-    settings.general.base_url = text_type(settings_general_baseurl)
-    settings.general.path_mappings = text_type(settings_general_pathmapping)
-    settings.general.debug = text_type(settings_general_debug)
-    settings.general.chmod_enabled = text_type(settings_general_chmod_enabled)
-    settings.general.chmod = text_type(settings_general_chmod)
-    settings.general.branch = text_type(settings_general_branch)
-    settings.general.auto_update = text_type(settings_general_automatic)
-    settings.general.update_restart = text_type(settings_general_update_restart)
-    settings.analytics.enabled = text_type(settings_analytics_enabled)
-    settings.general.single_language = text_type(settings_general_single_language)
-    settings.general.minimum_score = text_type(settings_general_minimum_score)
-    settings.general.wanted_search_frequency = text_type(settings_general_wanted_search_frequency)
-    settings.general.use_scenename = text_type(settings_general_scenename)
-    settings.general.use_postprocessing = text_type(settings_general_use_postprocessing)
-    settings.general.postprocessing_cmd = text_type(settings_general_postprocessing_cmd)
-    settings.general.use_sonarr = text_type(settings_general_use_sonarr)
-    settings.general.use_radarr = text_type(settings_general_use_radarr)
-    settings.general.path_mappings_movie = text_type(settings_general_pathmapping_movie)
-    settings.general.page_size = text_type(settings_page_size)
-    settings.general.subfolder = text_type(settings_subfolder)
+    settings.general.ip = str(settings_general_ip)
+    settings.general.port = str(settings_general_port)
+    settings.general.base_url = str(settings_general_baseurl)
+    settings.general.path_mappings = str(settings_general_pathmapping)
+    settings.general.debug = str(settings_general_debug)
+    settings.general.chmod_enabled = str(settings_general_chmod_enabled)
+    settings.general.chmod = str(settings_general_chmod)
+    settings.general.branch = str(settings_general_branch)
+    settings.general.auto_update = str(settings_general_automatic)
+    settings.general.update_restart = str(settings_general_update_restart)
+    settings.analytics.enabled = str(settings_analytics_enabled)
+    settings.general.single_language = str(settings_general_single_language)
+    settings.general.minimum_score = str(settings_general_minimum_score)
+    settings.general.wanted_search_frequency = str(settings_general_wanted_search_frequency)
+    settings.general.use_scenename = str(settings_general_scenename)
+    settings.general.use_postprocessing = str(settings_general_use_postprocessing)
+    settings.general.postprocessing_cmd = str(settings_general_postprocessing_cmd)
+    settings.general.use_sonarr = str(settings_general_use_sonarr)
+    settings.general.use_radarr = str(settings_general_use_radarr)
+    settings.general.path_mappings_movie = str(settings_general_pathmapping_movie)
+    settings.general.page_size = str(settings_page_size)
+    settings.general.subfolder = str(settings_subfolder)
     if settings.general.subfolder == 'current':
         settings.general.subfolder_custom = ''
     else:
-        settings.general.subfolder_custom = text_type(settings_subfolder_custom)
-    settings.general.upgrade_subs = text_type(settings_upgrade_subs)
-    settings.general.upgrade_frequency = text_type(settings_upgrade_subs_frequency)
-    settings.general.days_to_upgrade_subs = text_type(settings_days_to_upgrade_subs)
-    settings.general.upgrade_manual = text_type(settings_upgrade_manual)
-    settings.general.anti_captcha_provider = text_type(settings_anti_captcha_provider)
-    settings.anticaptcha.anti_captcha_key = text_type(settings_anti_captcha_key)
-    settings.deathbycaptcha.username = text_type(settings_death_by_captcha_username)
-    settings.deathbycaptcha.password = text_type(settings_death_by_captcha_password)
+        settings.general.subfolder_custom = str(settings_subfolder_custom)
+    settings.general.upgrade_subs = str(settings_upgrade_subs)
+    settings.general.upgrade_frequency = str(settings_upgrade_subs_frequency)
+    settings.general.days_to_upgrade_subs = str(settings_days_to_upgrade_subs)
+    settings.general.upgrade_manual = str(settings_upgrade_manual)
+    settings.general.anti_captcha_provider = str(settings_anti_captcha_provider)
+    settings.anticaptcha.anti_captcha_key = str(settings_anti_captcha_key)
+    settings.deathbycaptcha.username = str(settings_death_by_captcha_username)
+    settings.deathbycaptcha.password = str(settings_death_by_captcha_password)
 
     # set anti-captcha provider and key
     if settings.general.anti_captcha_provider == 'anti-captcha':
@@ -818,12 +774,12 @@ def save_settings():
     else:
         os.environ["ANTICAPTCHA_CLASS"] = ''
 
-    settings.general.minimum_score_movie = text_type(settings_general_minimum_score_movies)
-    settings.general.use_embedded_subs = text_type(settings_general_embedded)
-    settings.general.utf8_encode = text_type(settings_general_utf8_encode)
-    settings.general.ignore_pgs_subs = text_type(settings_general_ignore_pgs)
-    settings.general.adaptive_searching = text_type(settings_general_adaptive_searching)
-    settings.general.multithreading = text_type(settings_general_multithreading)
+    settings.general.minimum_score_movie = str(settings_general_minimum_score_movies)
+    settings.general.use_embedded_subs = str(settings_general_embedded)
+    settings.general.utf8_encode = str(settings_general_utf8_encode)
+    settings.general.ignore_pgs_subs = str(settings_general_ignore_pgs)
+    settings.general.adaptive_searching = str(settings_general_adaptive_searching)
+    settings.general.multithreading = str(settings_general_multithreading)
 
     if after != before:
         configured()
@@ -835,22 +791,22 @@ def save_settings():
     settings_proxy_password = request.form.get('settings_proxy_password')
     settings_proxy_exclude = request.form.get('settings_proxy_exclude')
 
-    before_proxy_password = (six.text_type(settings.proxy.type), six.text_type(settings.proxy.exclude))
+    before_proxy_password = (str(settings.proxy.type), str(settings.proxy.exclude))
     if before_proxy_password[0] != settings_proxy_type:
         configured()
     if before_proxy_password[1] == settings_proxy_password:
-        settings.proxy.type = text_type(settings_proxy_type)
-        settings.proxy.url = text_type(settings_proxy_url)
-        settings.proxy.port = text_type(settings_proxy_port)
-        settings.proxy.username = text_type(settings_proxy_username)
-        settings.proxy.exclude = text_type(settings_proxy_exclude)
+        settings.proxy.type = str(settings_proxy_type)
+        settings.proxy.url = str(settings_proxy_url)
+        settings.proxy.port = str(settings_proxy_port)
+        settings.proxy.username = str(settings_proxy_username)
+        settings.proxy.exclude = str(settings_proxy_exclude)
     else:
-        settings.proxy.type = text_type(settings_proxy_type)
-        settings.proxy.url = text_type(settings_proxy_url)
-        settings.proxy.port = text_type(settings_proxy_port)
-        settings.proxy.username = text_type(settings_proxy_username)
-        settings.proxy.password = text_type(settings_proxy_password)
-        settings.proxy.exclude = text_type(settings_proxy_exclude)
+        settings.proxy.type = str(settings_proxy_type)
+        settings.proxy.url = str(settings_proxy_url)
+        settings.proxy.port = str(settings_proxy_port)
+        settings.proxy.username = str(settings_proxy_username)
+        settings.proxy.password = str(settings_proxy_password)
+        settings.proxy.exclude = str(settings_proxy_exclude)
 
     settings_auth_type = request.form.get('settings_auth_type')
     settings_auth_username = request.form.get('settings_auth_username')
@@ -859,11 +815,11 @@ def save_settings():
     if settings.auth.type != settings_auth_type:
         configured()
     if settings.auth.password == settings_auth_password:
-        settings.auth.type = text_type(settings_auth_type)
-        settings.auth.username = text_type(settings_auth_username)
+        settings.auth.type = str(settings_auth_type)
+        settings.auth.username = str(settings_auth_username)
     else:
-        settings.auth.type = text_type(settings_auth_type)
-        settings.auth.username = text_type(settings_auth_username)
+        settings.auth.type = str(settings_auth_type)
+        settings.auth.username = str(settings_auth_username)
         settings.auth.password = hashlib.md5(settings_auth_password.encode('utf-8')).hexdigest()
     settings.auth.apikey = request.form.get('settings_auth_apikey')
 
@@ -885,15 +841,15 @@ def save_settings():
     settings_sonarr_sync_day = request.form.get('settings_sonarr_sync_day')
     settings_sonarr_sync_hour = request.form.get('settings_sonarr_sync_hour')
 
-    settings.sonarr.ip = text_type(settings_sonarr_ip)
-    settings.sonarr.port = text_type(settings_sonarr_port)
-    settings.sonarr.base_url = text_type(settings_sonarr_baseurl)
-    settings.sonarr.ssl = text_type(settings_sonarr_ssl)
-    settings.sonarr.apikey = text_type(settings_sonarr_apikey)
-    settings.sonarr.only_monitored = text_type(settings_sonarr_only_monitored)
-    settings.sonarr.full_update = text_type(settings_sonarr_sync)
-    settings.sonarr.full_update_day = text_type(settings_sonarr_sync_day)
-    settings.sonarr.full_update_hour = text_type(settings_sonarr_sync_hour)
+    settings.sonarr.ip = str(settings_sonarr_ip)
+    settings.sonarr.port = str(settings_sonarr_port)
+    settings.sonarr.base_url = str(settings_sonarr_baseurl)
+    settings.sonarr.ssl = str(settings_sonarr_ssl)
+    settings.sonarr.apikey = str(settings_sonarr_apikey)
+    settings.sonarr.only_monitored = str(settings_sonarr_only_monitored)
+    settings.sonarr.full_update = str(settings_sonarr_sync)
+    settings.sonarr.full_update_day = str(settings_sonarr_sync_day)
+    settings.sonarr.full_update_hour = str(settings_sonarr_sync_hour)
 
     settings_radarr_ip = request.form.get('settings_radarr_ip')
     settings_radarr_port = request.form.get('settings_radarr_port')
@@ -913,15 +869,15 @@ def save_settings():
     settings_radarr_sync_day = request.form.get('settings_radarr_sync_day')
     settings_radarr_sync_hour = request.form.get('settings_radarr_sync_hour')
 
-    settings.radarr.ip = text_type(settings_radarr_ip)
-    settings.radarr.port = text_type(settings_radarr_port)
-    settings.radarr.base_url = text_type(settings_radarr_baseurl)
-    settings.radarr.ssl = text_type(settings_radarr_ssl)
-    settings.radarr.apikey = text_type(settings_radarr_apikey)
-    settings.radarr.only_monitored = text_type(settings_radarr_only_monitored)
-    settings.radarr.full_update = text_type(settings_radarr_sync)
-    settings.radarr.full_update_day = text_type(settings_radarr_sync_day)
-    settings.radarr.full_update_hour = text_type(settings_radarr_sync_hour)
+    settings.radarr.ip = str(settings_radarr_ip)
+    settings.radarr.port = str(settings_radarr_port)
+    settings.radarr.base_url = str(settings_radarr_baseurl)
+    settings.radarr.ssl = str(settings_radarr_ssl)
+    settings.radarr.apikey = str(settings_radarr_apikey)
+    settings.radarr.only_monitored = str(settings_radarr_only_monitored)
+    settings.radarr.full_update = str(settings_radarr_sync)
+    settings.radarr.full_update_day = str(settings_radarr_sync_day)
+    settings.radarr.full_update_hour = str(settings_radarr_sync_hour)
 
     settings_subliminal_providers = request.form.getlist('settings_subliminal_providers')
     settings.general.enabled_providers = u'' if not settings_subliminal_providers else ','.join(
@@ -953,7 +909,7 @@ def save_settings():
 
     settings.addic7ed.username = request.form.get('settings_addic7ed_username')
     settings.addic7ed.password = request.form.get('settings_addic7ed_password')
-    settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
+    settings.addic7ed.random_agents = str(settings_addic7ed_random_agents)
     settings.assrt.token = request.form.get('settings_assrt_token')
     settings.legendasdivx.username = request.form.get('settings_legendasdivx_username')
     settings.legendasdivx.password = request.form.get('settings_legendasdivx_password')
@@ -961,9 +917,9 @@ def save_settings():
     settings.legendastv.password = request.form.get('settings_legendastv_password')
     settings.opensubtitles.username = request.form.get('settings_opensubtitles_username')
     settings.opensubtitles.password = request.form.get('settings_opensubtitles_password')
-    settings.opensubtitles.vip = text_type(settings_opensubtitles_vip)
-    settings.opensubtitles.ssl = text_type(settings_opensubtitles_ssl)
-    settings.opensubtitles.skip_wrong_fps = text_type(settings_opensubtitles_skip_wrong_fps)
+    settings.opensubtitles.vip = str(settings_opensubtitles_vip)
+    settings.opensubtitles.ssl = str(settings_opensubtitles_ssl)
+    settings.opensubtitles.skip_wrong_fps = str(settings_opensubtitles_skip_wrong_fps)
     settings.xsubs.username = request.form.get('settings_xsubs_username')
     settings.xsubs.password = request.form.get('settings_xsubs_password')
     settings.napisy24.username = request.form.get('settings_napisy24_username')
@@ -984,44 +940,44 @@ def save_settings():
         settings_serie_default_enabled = 'False'
     else:
         settings_serie_default_enabled = 'True'
-    settings.general.serie_default_enabled = text_type(settings_serie_default_enabled)
+    settings.general.serie_default_enabled = str(settings_serie_default_enabled)
 
     settings_serie_default_languages = str(request.form.getlist('settings_serie_default_languages'))
     if settings_serie_default_languages == "['None']":
         settings_serie_default_languages = 'None'
-    settings.general.serie_default_language = text_type(settings_serie_default_languages)
+    settings.general.serie_default_language = str(settings_serie_default_languages)
 
     settings_serie_default_hi = request.form.get('settings_serie_default_hi')
     if settings_serie_default_hi is None:
         settings_serie_default_hi = 'False'
     else:
         settings_serie_default_hi = 'True'
-    settings.general.serie_default_hi = text_type(settings_serie_default_hi)
+    settings.general.serie_default_hi = str(settings_serie_default_hi)
 
     settings_serie_default_forced = str(request.form.get('settings_serie_default_forced'))
-    settings.general.serie_default_forced = text_type(settings_serie_default_forced)
+    settings.general.serie_default_forced = str(settings_serie_default_forced)
 
     settings_movie_default_enabled = request.form.get('settings_movie_default_enabled')
     if settings_movie_default_enabled is None:
         settings_movie_default_enabled = 'False'
     else:
         settings_movie_default_enabled = 'True'
-    settings.general.movie_default_enabled = text_type(settings_movie_default_enabled)
+    settings.general.movie_default_enabled = str(settings_movie_default_enabled)
 
     settings_movie_default_languages = str(request.form.getlist('settings_movie_default_languages'))
     if settings_movie_default_languages == "['None']":
         settings_movie_default_languages = 'None'
-    settings.general.movie_default_language = text_type(settings_movie_default_languages)
+    settings.general.movie_default_language = str(settings_movie_default_languages)
 
     settings_movie_default_hi = request.form.get('settings_movie_default_hi')
     if settings_movie_default_hi is None:
         settings_movie_default_hi = 'False'
     else:
         settings_movie_default_hi = 'True'
-    settings.general.movie_default_hi = text_type(settings_movie_default_hi)
+    settings.general.movie_default_hi = str(settings_movie_default_hi)
 
     settings_movie_default_forced = str(request.form.get('settings_movie_default_forced'))
-    settings.general.movie_default_forced = text_type(settings_movie_default_forced)
+    settings.general.movie_default_forced = str(settings_movie_default_forced)
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
@@ -1113,161 +1069,6 @@ def execute_task(taskid):
     return '', 200
 
 
-@app.route('/remove_subtitles_movie', methods=['POST'])
-@login_required
-def remove_subtitles_movie():
-    moviePath = request.form.get('moviePath')
-    language = request.form.get('language')
-    subtitlesPath = request.form.get('subtitlesPath')
-    radarrId = request.form.get('radarrId')
-
-    try:
-        os.remove(subtitlesPath)
-        result = language_from_alpha3(language) + " subtitles deleted from disk."
-        history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
-    except OSError as e:
-        logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-    store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
-
-
-@app.route('/get_subtitle_movie', methods=['POST'])
-@login_required
-def get_subtitle_movie():
-
-    ref = request.environ['HTTP_REFERER']
-
-    moviePath = request.form.get('moviePath')
-    sceneName = request.form.get('sceneName')
-    if sceneName == "null":
-        sceneName = "None"
-    language = request.form.get('language')
-    hi = request.form.get('hi').capitalize()
-    forced = request.form.get('forced').capitalize()
-    radarrId = request.form.get('radarrId')
-    title = request.form.get('title')
-    providers_list = get_providers()
-    providers_auth = get_providers_auth()
-
-    try:
-        result = download_subtitle(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
-                                   'movie')
-        if result is not None:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            language_code = result[2] + ":forced" if forced else result[2]
-            provider = result[3]
-            score = result[4]
-            history_log_movie(1, radarrId, message, path, language_code, provider, score)
-            send_notifications_movie(radarrId, message)
-            store_subtitles_movie(path, moviePath)
-        redirect(ref)
-    except OSError:
-        pass
-
-
-@app.route('/manual_search_movie', methods=['POST'])
-@login_required
-def manual_search_movie_json():
-
-
-    moviePath = request.form.get('moviePath')
-    sceneName = request.form.get('sceneName')
-    if sceneName == "null":
-        sceneName = "None"
-    language = request.form.get('language')
-    hi = request.form.get('hi').capitalize()
-    forced = request.form.get('forced').capitalize()
-    title = request.form.get('title')
-    providers_list = get_providers()
-    providers_auth = get_providers_auth()
-
-    data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title, 'movie')
-    return dict(data=data)
-
-
-@app.route('/manual_get_subtitle_movie', methods=['POST'])
-@login_required
-def manual_get_subtitle_movie():
-
-    ref = request.environ['HTTP_REFERER']
-
-    moviePath = request.form.get('moviePath')
-    sceneName = request.form.get('sceneName')
-    if sceneName == "null":
-        sceneName = "None"
-    language = request.form.get('language')
-    hi = request.form.get('hi').capitalize()
-    forced = request.form.get('forced').capitalize()
-    selected_provider = request.form.get('provider')
-    subtitle = request.form.get('subtitle')
-    radarrId = request.form.get('radarrId')
-    title = request.form.get('title')
-    providers_auth = get_providers_auth()
-
-    try:
-        result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider, providers_auth,
-                                          sceneName, title, 'movie')
-        if result is not None:
-            message = result[0]
-            path = result[1]
-            forced = result[5]
-            language_code = result[2] + ":forced" if forced else result[2]
-            provider = result[3]
-            score = result[4]
-            history_log_movie(2, radarrId, message, path, language_code, provider, score)
-            send_notifications_movie(radarrId, message)
-            store_subtitles_movie(path, moviePath)
-        redirect(ref)
-    except OSError:
-        pass
-
-
-@app.route('/manual_upload_subtitle_movie', methods=['POST'])
-@login_required
-def perform_manual_upload_subtitle_movie():
-
-    ref = request.environ['HTTP_REFERER']
-
-    moviePath = request.form.get('moviePath')
-    sceneName = request.form.get('sceneName')
-    if sceneName == "null":
-        sceneName = "None"
-    language = request.form.get('language')
-    forced = True if request.form.get('forced') == '1' else False
-    upload = request.files.get('upload')
-    radarrId = request.form.get('radarrId')
-    title = request.form.get('title')
-
-    _, ext = os.path.splitext(upload.filename)
-
-    if ext not in SUBTITLE_EXTENSIONS:
-        raise ValueError('A subtitle of an invalid format was uploaded.')
-
-    try:
-        result = manual_upload_subtitle(path=moviePath,
-                                        language=language,
-                                        forced=forced,
-                                        title=title,
-                                        scene_name=sceneName,
-                                        media_type='series',
-                                        subtitle=upload)
-
-        if result is not None:
-            message = result[0]
-            path = result[1]
-            language_code = language + ":forced" if forced else language
-            provider = "manual"
-            score = 120
-            history_log_movie(4, radarrId, message, path, language_code, provider, score)
-            send_notifications_movie(radarrId, message)
-            store_subtitles_movie(path, moviePath)
-
-        redirect(ref)
-    except OSError:
-        pass
-
-
 def configured():
     database.execute("UPDATE system SET configured = 1")
 
@@ -1336,7 +1137,7 @@ def api_movies_history():
 @login_required
 def test_url(protocol, url):
 
-    url = six.moves.urllib.parse.unquote(url)
+    url = unquote(url)
     try:
         result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
     except:
@@ -1349,7 +1150,7 @@ def test_url(protocol, url):
 @login_required
 def test_notification(protocol, provider):
 
-    provider = six.moves.urllib.parse.unquote(provider)
+    provider = unquote(provider)
     apobj = apprise.Apprise()
     apobj.add(protocol + "://" + provider)
 

@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from __future__ import absolute_import, print_function
 import os
 import time
 import rarfile
@@ -53,8 +52,7 @@ import logging
 # create random api_key if there's none in config.ini
 if not settings.auth.apikey:
     from binascii import hexlify
-    from six import text_type
-    settings.auth.apikey = text_type(hexlify(os.urandom(16)))
+    settings.auth.apikey = str(hexlify(os.urandom(16)))
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 

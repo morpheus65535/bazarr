@@ -7,7 +7,6 @@ import pretty
 import time
 from operator import itemgetter
 
-from get_args import args
 from config import settings, base_url
 
 from init import *
@@ -17,7 +16,8 @@ from helper import path_replace, path_replace_reverse, path_replace_movie, path_
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle
+    manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles_series, \
+    wanted_search_missing_subtitles_movies
 from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
@@ -1029,6 +1029,18 @@ class WantedMovies(Resource):
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
+class SearchWantedSeries(Resource):
+    def get(self):
+        wanted_search_missing_subtitles_series()
+        return '', 200
+
+
+class SearchWantedMovies(Resource):
+    def get(self):
+        wanted_search_missing_subtitles_movies()
+        return '', 200
+
+
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
 
@@ -1060,3 +1072,5 @@ api.add_resource(HistoryMovies, '/history_movies')
 
 api.add_resource(WantedSeries, '/wanted_series')
 api.add_resource(WantedMovies, '/wanted_movies')
+api.add_resource(SearchWantedSeries, '/search_wanted_series')
+api.add_resource(SearchWantedMovies, '/search_wanted_movies')

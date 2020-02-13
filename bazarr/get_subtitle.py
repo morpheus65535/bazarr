@@ -1,19 +1,15 @@
 # coding=utf-8
 
-from __future__ import absolute_import
 import os
 import sys
 import ast
 import logging
 import subprocess
 import time
-import six.moves.cPickle as pickle
+import pickle
 import codecs
-import types
 import re
 import subliminal
-import platform
-import operator
 from datetime import datetime, timedelta
 from subzero.language import Language
 from subzero.video import parse_video
@@ -31,15 +27,11 @@ from list_subtitles import store_subtitles, list_missing_subtitles, store_subtit
 from utils import history_log, history_log_movie, get_binary
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
-from get_args import args
 from queueconfig import notifications
 from pyprobe.pyprobe import VideoFileParser
 from database import database, dict_mapper
 
 from analytics import track_event
-import six
-from six.moves import range
-from functools import reduce
 from locale import getpreferredencoding
 
 
@@ -189,7 +181,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         
         saved_any = False
         if downloaded_subtitles:
-            for video, subtitles in six.iteritems(downloaded_subtitles):
+            for video, subtitles in downloaded_subtitles.items():
                 if not subtitles:
                     continue
                 
@@ -225,10 +217,10 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                         else:
                             action = "downloaded"
                         if video.used_scene_name:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + str(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
                         else:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + six.text_type(
+                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + str(
                                 round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
                         
                         if use_postprocessing is True:
@@ -426,7 +418,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " Subtitles downloaded from " + downloaded_provider + " with a score of " + six.text_type(
+                        message = downloaded_language + is_forced_string + " Subtitles downloaded from " + downloaded_provider + " with a score of " + str(
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
@@ -680,7 +672,7 @@ def wanted_download_subtitles(path, l, count_episodes):
     
     for episode in episodes_details:
         attempt = episode['failedAttempts']
-        if type(attempt) == six.text_type:
+        if type(attempt) == str:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(episode['missing_subtitles']):
             if attempt is None:
@@ -692,7 +684,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                     attempt.append([language, time.time()])
 
             database.execute("UPDATE table_episodes SET failedAttempts=? WHERE sonarrEpisodeId=?",
-                             (six.text_type(attempt), episode['sonarrEpisodeId']))
+                             (str(attempt), episode['sonarrEpisodeId']))
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -733,7 +725,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
     
     for movie in movies_details:
         attempt = movie['failedAttempts']
-        if type(attempt) == six.text_type:
+        if type(attempt) == str:
             attempt = ast.literal_eval(attempt)
         for language in ast.literal_eval(movie['missing_subtitles']):
             if attempt is None:
@@ -745,7 +737,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                     attempt.append([language, time.time()])
             
             database.execute("UPDATE table_movies SET failedAttempts=? WHERE radarrId=?",
-                             (six.text_type(attempt), movie['radarrId']))
+                             (str(attempt), movie['radarrId']))
             
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
@@ -776,53 +768,52 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             'BAZARR Search is not active for this Movie ' + movie['path'] + ' Language: ' + attempt[i][0])
 
 
-def wanted_search_missing_subtitles():
-    if settings.general.getboolean('use_sonarr'):
-        if settings.sonarr.getboolean('only_monitored'):
-            monitored_only_query_string_sonarr = ' AND monitored = "True"'
+def wanted_search_missing_subtitles_series():
+    if settings.sonarr.getboolean('only_monitored'):
+        monitored_only_query_string_sonarr = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string_sonarr = ""
+
+    episodes = database.execute("SELECT path FROM table_episodes WHERE missing_subtitles != '[]'" +
+                                monitored_only_query_string_sonarr)
+    # path_replace
+    dict_mapper.path_replace(episodes)
+
+    count_episodes = len(episodes)
+    for i, episode in enumerate(episodes, 1):
+        providers = get_providers()
+        if providers:
+            wanted_download_subtitles(episode['path'], i, count_episodes)
         else:
-            monitored_only_query_string_sonarr = ""
-
-        episodes = database.execute("SELECT path FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                    monitored_only_query_string_sonarr)
-        # path_replace
-        dict_mapper.path_replace(episodes)
-
-        count_episodes = len(episodes)
-        for i, episode in enumerate(episodes, 1):
-            providers = get_providers()
-            if providers:
-                wanted_download_subtitles(episode['path'], i, count_episodes)
-            else:
-                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
-                logging.info("BAZARR All providers are throttled")
-                return
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+            logging.info("BAZARR All providers are throttled")
+            return
     
-    if settings.general.getboolean('use_radarr'):
-        if settings.radarr.getboolean('only_monitored'):
-            monitored_only_query_string_radarr = ' AND monitored = "True"'
+    logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
+
+
+def wanted_search_missing_subtitles_movies():
+    if settings.radarr.getboolean('only_monitored'):
+        monitored_only_query_string_radarr = ' AND monitored = "True"'
+    else:
+        monitored_only_query_string_radarr = ""
+
+    movies = database.execute("SELECT path FROM table_movies WHERE missing_subtitles != '[]'" +
+                              monitored_only_query_string_radarr)
+    # path_replace
+    dict_mapper.path_replace_movie(movies)
+
+    count_movies = len(movies)
+    for i, movie in enumerate(movies, 1):
+        providers = get_providers()
+        if providers:
+            wanted_download_subtitles_movie(movie['path'], i, count_movies)
         else:
-            monitored_only_query_string_radarr = ""
+            notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
+            logging.info("BAZARR All providers are throttled")
+            return
 
-        movies = database.execute("SELECT path FROM table_movies WHERE missing_subtitles != '[]'" +
-                                  monitored_only_query_string_radarr)
-        # path_replace
-        dict_mapper.path_replace_movie(movies)
-
-        count_movies = len(movies)
-        for i, movie in enumerate(movies, 1):
-            providers = get_providers()
-            if providers:
-                wanted_download_subtitles_movie(movie['path'], i, count_movies)
-            else:
-                notifications.write(msg='BAZARR All providers are throttled', queue='get_subtitle', duration='long')
-                logging.info("BAZARR All providers are throttled")
-                return
-    
-    logging.info('BAZARR Finished searching for missing Subtitles. Check History for more information.')
-    
-    notifications.write(msg='Searching completed. Please reload the page.', type='success', duration='permanent',
-                        button='refresh', queue='get_subtitle')
+    logging.info('BAZARR Finished searching for missing Movies Subtitles. Check History for more information.')
 
 
 def search_active(timestamp):

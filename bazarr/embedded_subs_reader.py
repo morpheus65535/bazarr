@@ -1,10 +1,7 @@
-from __future__ import absolute_import
 import enzyme
 from enzyme.exceptions import MalformedMKVError
 import logging
 import os
-import subprocess
-import locale
 
 from utils import get_binary
 from pyprobe.pyprobe import VideoFileParser

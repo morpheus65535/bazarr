@@ -1,11 +1,10 @@
 # coding=utf-8
 
-from __future__ import absolute_import
 from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
-from get_subtitle import wanted_search_missing_subtitles, upgrade_subtitles
+from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, upgrade_subtitles
 from utils import cache_maintenance
 from get_args import args
 if not args.no_update:
@@ -211,10 +210,15 @@ class Scheduler:
                 id='update_release', name='Update Release Info', replace_existing=True)
 
     def __search_wanted_subtitles_task(self):
-        if settings.general.getboolean('use_sonarr') or settings.general.getboolean('use_radarr'):
+        if settings.general.getboolean('use_sonarr'):
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
-                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles',
+                wanted_search_missing_subtitles_series, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
+                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_series',
+                name='Search for wanted Subtitles', replace_existing=True)
+        if settings.general.getboolean('use_radarr'):
+            self.aps_scheduler.add_job(
+                wanted_search_missing_subtitles_movies, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
+                max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for wanted Subtitles', replace_existing=True)
 
     def __upgrade_subtitles_task(self):

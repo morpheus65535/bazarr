@@ -1,13 +1,9 @@
 # coding=utf-8
-from __future__ import absolute_import
-import os
 import requests
 import logging
-import re
 from queueconfig import notifications
 from database import database, dict_converter
 
-from get_args import args
 from config import settings, url_sonarr
 from helper import path_replace
 from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles

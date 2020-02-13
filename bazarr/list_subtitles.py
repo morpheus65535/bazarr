@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from __future__ import absolute_import
 import gc
 import os
 import logging
@@ -23,7 +22,6 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
 from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
 from websocket_handler import event_stream
-import six
 
 gc.enable()
 
@@ -68,7 +66,7 @@ def store_subtitles(original_path, reversed_path):
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
-            for subtitle, language in six.iteritems(subtitles):
+            for subtitle, language in subtitles.items():
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
@@ -143,7 +141,7 @@ def store_subtitles_movie(original_path, reversed_path):
             logging.exception("BAZARR unable to index external subtitles.")
             pass
         else:
-            for subtitle, language in six.iteritems(subtitles):
+            for subtitle, language in subtitles.items():
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
@@ -187,7 +185,7 @@ def list_missing_subtitles(no=None, epno=None):
                                           "FROM table_episodes LEFT JOIN table_shows "
                                           "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
                                           episodes_subtitles_clause)
-    if isinstance(episodes_subtitles, six.string_types):
+    if isinstance(episodes_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
         return
 
@@ -249,7 +247,7 @@ def list_missing_subtitles_movies(no=None):
 
     movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" +
                                         movies_subtitles_clause)
-    if isinstance(movies_subtitles, six.string_types):
+    if isinstance(movies_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
         return
     
@@ -367,7 +365,7 @@ def get_external_subtitles_path(file, subtitle):
 
 
 def guess_external_subtitles(dest_folder, subtitles):
-    for subtitle, language in six.iteritems(subtitles):
+    for subtitle, language in subtitles.items():
         if not language:
             subtitle_path = os.path.join(dest_folder, subtitle)
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
