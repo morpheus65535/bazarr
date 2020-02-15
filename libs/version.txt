@@ -27,4 +27,4 @@ stevedore=1.28.0
 subliminal=2.1.0dev
 tzlocal=1.5.1
 urllib3=1.23
-Js2Py=0.63
+Js2Py=0.63 <-- modified: manually merged from upstream: https://github.com/PiotrDabkowski/Js2Py/pull/192/files
