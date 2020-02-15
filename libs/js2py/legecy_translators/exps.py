@@ -16,6 +16,8 @@ If case of parsing errors it must return a pos of error.
 NOTES:
 Strings and other literals are not present so each = means assignment
 """
+from __future__ import print_function
+
 from utils import *
 from jsparser import *
 
@@ -80,4 +82,4 @@ def bass_translator(s):
 
 
 if __name__ == '__main__':
-    print bass_translator('3.ddsd = 40')
+    print(bass_translator('3.ddsd = 40'))

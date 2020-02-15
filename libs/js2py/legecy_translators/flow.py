@@ -9,6 +9,8 @@ FOR 123
 FOR iter
 CONTINUE, BREAK, RETURN, LABEL, THROW, TRY, SWITCH
 """
+from __future__ import print_function
+
 from utils import *
 from jsparser import *
 from nodevisitor import exp_translator
@@ -477,4 +479,4 @@ def translate_flow(source):
 if __name__ == '__main__':
     #print do_dowhile('do {} while(k+f)', 0)[0]
     #print 'e: "%s"'%do_expression('++(c?g:h);   mj', 0)[0]
-    print translate_flow('a; yimport test')[0]
+    print(translate_flow('a; yimport test')[0])

@@ -1,4 +1,6 @@
 """This module removes JS functions from source code"""
+from __future__ import print_function
+
 from jsparser import *
 from utils import *
 
@@ -94,5 +96,5 @@ def remove_functions(source, all_inline=False):
 
 
 if __name__ == '__main__':
-    print remove_functions(
-        '5+5 function n  (functiona ,functionaj) {dsd  s, dsdd}')
+    print(remove_functions(
+        '5+5 function n  (functiona ,functionaj) {dsd  s, dsdd}'))

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from jsparser import *
 from utils import *
 import re
@@ -557,6 +559,6 @@ if __name__ == '__main__':
     #print 'Here',  trans('(eee   )  .   ii  [  PyJsMarker   ]  [   jkj  ]  (  j  ,   j  )  .
     #    jiji   (h  ,  ji  ,  i)(non  )(  )()()()')
     for e in xrange(3):
-        print exp_translator('jk = kk.ik++')
+        print(exp_translator('jk = kk.ik++'))
     #First line translated with PyJs:  PyJsStrictEq(PyJsAdd((Js(100)*Js(50)),Js(30)), Js("5030")), yay!
-    print exp_translator('delete a.f')
+    print(exp_translator('delete a.f'))

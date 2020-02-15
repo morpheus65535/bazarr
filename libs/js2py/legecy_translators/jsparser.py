@@ -45,6 +45,7 @@ TODO
 
 
 """
+from __future__ import print_function
 
 from utils import *
 
@@ -64,7 +65,7 @@ OP_METHODS = {
 
 def dbg(source):
     try:
-        with open('C:\Users\Piotrek\Desktop\dbg.py', 'w') as f:
+        with open(r'C:\Users\Piotrek\Desktop\dbg.py', 'w') as f:
             f.write(source)
     except:
         pass
@@ -77,13 +78,13 @@ def indent(lines, ind=4):
 def inject_before_lval(source, lval, code):
     if source.count(lval) > 1:
         dbg(source)
-        print
-        print lval
+        print()
+        print(lval)
         raise RuntimeError('To many lvals (%s)' % lval)
     elif not source.count(lval):
         dbg(source)
-        print
-        print lval
+        print()
+        print(lval)
         assert lval not in source
         raise RuntimeError('No lval found "%s"' % lval)
     end = source.index(lval)
