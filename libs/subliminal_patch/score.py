@@ -113,7 +113,7 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
             matches |= {'title', 'year'}
 
     # handle hearing impaired
-    if hearing_impaired is not None and subtitle.hearing_impaired == hearing_impaired and subtitle.hearing_impaired:
+    if hearing_impaired is not None and subtitle.hearing_impaired == hearing_impaired:
         logger.debug('Matched hearing_impaired')
         matches.add('hearing_impaired')
 
