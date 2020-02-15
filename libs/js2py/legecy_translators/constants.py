@@ -1,3 +1,4 @@
+from __future__ import print_function
 from string import ascii_lowercase, digits
 ##################################
 StringName = u'PyJsConstantString%d_'
@@ -305,4 +306,4 @@ if __name__ == '__main__':
     ''')
 
     t, d = remove_constants(test)
-    print t, d
+    print(t, d)

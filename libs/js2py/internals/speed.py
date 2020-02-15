@@ -1,7 +1,14 @@
+from __future__ import print_function
+
 from timeit import timeit
 from collections import namedtuple
 from array import array
-from itertools import izip
+try:
+    #python 2 code
+    from itertools import izip as zip
+except ImportError:
+    pass
+
 from collections import deque
 
 
@@ -47,7 +54,7 @@ t = []
 
 Type = None
 try:
-    print timeit(
+    print(timeit(
         """
 
 t.append(4)
@@ -56,7 +63,7 @@ t.pop()
 
 
 """,
-        "from __main__ import X,Y,namedtuple,array,t,add,Type, izip",
-        number=1000000)
+        "from __main__ import X,Y,namedtuple,array,t,add,Type, zip",
+        number=1000000))
 except:
     raise
