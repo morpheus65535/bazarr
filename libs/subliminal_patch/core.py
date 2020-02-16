@@ -360,15 +360,16 @@ class SZProviderPool(ProviderPool):
             orig_matches = matches.copy()
 
             logger.debug('%r: Found matches %r', s, matches)
+            score, score_without_hash = compute_score(matches, s, video, hearing_impaired=use_hearing_impaired)
             unsorted_subtitles.append(
-                (s, compute_score(matches, s, video, hearing_impaired=use_hearing_impaired), matches, orig_matches))
+                (s, score, score_without_hash, matches, orig_matches))
 
         # sort subtitles by score
-        scored_subtitles = sorted(unsorted_subtitles, key=operator.itemgetter(1), reverse=True)
+        scored_subtitles = sorted(unsorted_subtitles, key=operator.itemgetter(1, 2), reverse=True)
 
         # download best subtitles, falling back on the next on error
         downloaded_subtitles = []
-        for subtitle, score, matches, orig_matches in scored_subtitles:
+        for subtitle, score, score_without_hash, matches, orig_matches in scored_subtitles:
             # check score
             if score < min_score:
                 logger.info('%r: Score %d is below min_score (%d)', subtitle, score, min_score)
@@ -552,7 +553,7 @@ def scan_video(path, dont_use_actual_file=False, hints=None, providers=None, ski
                 video.hashes['bsplayer'] = osub_hash = hash_opensubtitles(hash_path)
 
             if "opensubtitles" in providers:
-                video.hashes['opensubtitles'] = osub_hash = hash_opensubtitles(hash_path)
+                video.hashes['opensubtitles'] = osub_hash = osub_hash or hash_opensubtitles(hash_path)
 
             if "shooter" in providers:
                 video.hashes['shooter'] = hash_shooter(hash_path)
