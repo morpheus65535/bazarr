@@ -339,7 +339,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')
 
-                score = compute_score(matches, s, video, hearing_impaired=initial_hi)
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 not_matched = scores - matches
                 s.score = score
 
@@ -349,14 +349,17 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                         releases = s.release_info.split(',')
 
                 subtitles_list.append(
-                    dict(score=round((score[0] / max_score * 100), 2),
+                    dict(score=round((score / max_score * 100), 2),
+                         orig_score=score,
+                         score_without_hash=score_without_hash,
                          language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
                          release_info=releases))
             
-            final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
+            final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
+                                     reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching Subtitles for this file: ' + path)
     
@@ -399,7 +402,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                 logging.exception('BAZARR No valid Subtitles file found for this file: ' + path)
                 return
             try:
-                score = round(subtitle.score[0] / max_score * 100, 2)
+                score = round(subtitle.score / max_score * 100, 2)
                 fld = get_target_folder(path)
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.getboolean('chmod_enabled') else None
