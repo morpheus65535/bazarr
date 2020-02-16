@@ -349,7 +349,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                         releases = s.release_info.split(',')
 
                 subtitles_list.append(
-                    dict(score=round((score / max_score * 100), 2),
+                    dict(score=round((score[0] / max_score * 100), 2),
                          language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
@@ -399,7 +399,7 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
                 logging.exception('BAZARR No valid Subtitles file found for this file: ' + path)
                 return
             try:
-                score = round(subtitle.score / max_score * 100, 2)
+                score = round(subtitle.score[0] / max_score * 100, 2)
                 fld = get_target_folder(path)
                 chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
                     'win') and settings.general.getboolean('chmod_enabled') else None
