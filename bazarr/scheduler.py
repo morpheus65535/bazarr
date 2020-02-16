@@ -22,6 +22,7 @@ import pytz
 from tzlocal import get_localzone
 from calendar import day_name
 import pretty
+from six import PY2
 
 
 class Scheduler:
@@ -188,7 +189,9 @@ class Scheduler:
                     id='update_all_movies', name='Update all Movie Subtitles from disk', replace_existing=True)
 
     def __update_bazarr_task(self):
-        if not args.no_update:
+        if PY2:
+            pass
+        elif not args.no_update:
             task_name = 'Update Bazarr from source on Github'
             if args.release_update:
                 task_name = 'Update Bazarr from release on Github'
