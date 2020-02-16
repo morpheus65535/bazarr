@@ -117,7 +117,10 @@ def start_bazarr(process_registry=ProcessRegistry()):
     script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
 
     print("Bazarr starting...")
-    ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    if PY3:
+        ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
+    else:
+        ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=None)
     process_registry.register(ep)
     try:
         ep.wait()
