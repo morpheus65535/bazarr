@@ -1,6 +1,8 @@
 """ This module removes all objects/arrays from JS source code and replace them with LVALS.
 Also it has  s function translating removed object/array to python code.
 Use this module just after removing constants. Later move on to removing functions"""
+from __future__ import print_function
+
 OBJECT_LVAL = 'PyJsLvalObject%d_'
 ARRAY_LVAL = 'PyJsLvalArray%d_'
 from utils import *
@@ -180,7 +182,7 @@ def translate_object(obj, lval, obj_count=1, arr_count=1):
             try:
                 key, value = spl
             except:  #len(spl)> 2
-                print 'Unusual case ' + repr(e)
+                print('Unusual case ' + repr(e))
                 key = spl[0]
                 value = ':'.join(spl[1:])
             key = key.strip()
@@ -293,8 +295,8 @@ if __name__ == '__main__':
 
     #print remove_objects(test)
     #print list(bracket_split(' {}'))
-    print
-    print remove_arrays(
+    print()
+    print(remove_arrays(
         'typeof a&&!db.test(a)&&!ib[(bb.exec(a)||["",""], [][[5][5]])[1].toLowerCase()])'
-    )
-    print is_object('', ')')
+    ))
+    print(is_object('', ')'))

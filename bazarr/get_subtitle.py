@@ -331,7 +331,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')
 
-                score = compute_score(matches, s, video, hearing_impaired=initial_hi)
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
                 not_matched = scores - matches
                 s.score = score
 
@@ -342,13 +342,16 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
+                         orig_score=score,
+                         score_without_hash=score_without_hash,
                          language=str(s.language), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
                          release_info=releases))
             
-            final_subtitles = sorted(subtitles_list, key=lambda x: x['score'], reverse=True)
+            final_subtitles = sorted(subtitles_list, key=lambda x: (x['orig_score'], x['score_without_hash']),
+                                     reverse=True)
             logging.debug('BAZARR ' + str(len(final_subtitles)) + " Subtitles have been found for this file: " + path)
             logging.debug('BAZARR Ended searching Subtitles for this file: ' + path)
     

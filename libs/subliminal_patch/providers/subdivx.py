@@ -9,7 +9,11 @@ import zipfile
 import rarfile
 from subzero.language import Language
 from requests import Session
-from urllib.parse import urlparse
+from six import PY2
+if PY2:
+    from urlparse import urlparse
+else:
+    from urllib.parse import urlparse
 
 from subliminal import __short_version__
 from subliminal.exceptions import ServiceUnavailable

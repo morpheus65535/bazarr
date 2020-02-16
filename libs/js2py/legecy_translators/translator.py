@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from flow import translate_flow
 from constants import remove_constants, recover_constants
 from objects import remove_objects, remove_arrays, translate_object, translate_array, set_func_translator
@@ -148,4 +150,4 @@ if __name__ == '__main__':
     #res = translate_js(jq)
     res = translate_js(t)
     dbg(SANDBOX % indent(res))
-    print 'Done'
+    print('Done')

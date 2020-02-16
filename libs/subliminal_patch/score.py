@@ -61,6 +61,8 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     episode_hash_valid_if = {"series", "season", "episode", "format"}
     movie_hash_valid_if = {"video_codec", "format"}
 
+    orig_matches = matches.copy()
+
     # on hash match, discard everything else
     if subtitle.hash_verifiable:
         if 'hash' in matches:
@@ -84,41 +86,47 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
         matches &= {'hash'}
 
     # handle equivalent matches
+    eq_matches = set()
     if is_episode:
         if 'title' in matches:
             logger.debug('Adding title match equivalent')
-            matches.add('episode')
+            eq_matches.add('episode')
         if 'series_imdb_id' in matches:
             logger.debug('Adding series_imdb_id match equivalent')
-            matches |= {'series', 'year'}
+            eq_matches |= {'series', 'year'}
         if 'imdb_id' in matches:
             logger.debug('Adding imdb_id match equivalents')
-            matches |= {'series', 'year', 'season', 'episode'}
+            eq_matches |= {'series', 'year', 'season', 'episode'}
         if 'tvdb_id' in matches:
             logger.debug('Adding tvdb_id match equivalents')
-            matches |= {'series', 'year', 'season', 'episode', 'title'}
+            eq_matches |= {'series', 'year', 'season', 'episode', 'title'}
         if 'series_tvdb_id' in matches:
             logger.debug('Adding series_tvdb_id match equivalents')
-            matches |= {'series', 'year'}
+            eq_matches |= {'series', 'year'}
 
         # specials
         if video.is_special and 'title' in matches and 'series' in matches \
                 and 'year' in matches:
             logger.debug('Adding special title match equivalent')
-            matches |= {'season', 'episode'}
+            eq_matches |= {'season', 'episode'}
 
     elif is_movie:
         if 'imdb_id' in matches:
             logger.debug('Adding imdb_id match equivalents')
-            matches |= {'title', 'year'}
+            eq_matches |= {'title', 'year'}
+
+    matches |= eq_matches
 
     # handle hearing impaired
     if hearing_impaired is not None and subtitle.hearing_impaired == hearing_impaired:
         logger.debug('Matched hearing_impaired')
         matches.add('hearing_impaired')
+        orig_matches.add('hearing_impaired')
 
     # compute the score
     score = sum((scores.get(match, 0) for match in matches))
     logger.info('%r: Computed score %r with final matches %r', subtitle, score, matches)
 
-    return score
+    score_without_hash = sum((scores.get(match, 0) for match in orig_matches | eq_matches if match != "hash"))
+
+    return score, score_without_hash
