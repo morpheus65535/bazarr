@@ -1016,35 +1016,16 @@ def check_update():
     redirect(ref)
 
 
-@app.route('/system')
+@app.route('/systemstatus')
 @login_required
-def system():
+def systemstatus():
+    return render_template('systemstatus.html')
 
 
-    task_list = scheduler.get_task_list()
-
-    throttled_providers = list_throttled_providers()
-
-    try:
-        with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
-            releases = ast.literal_eval(f.read())
-    except Exception as e:
-        releases = []
-        logging.exception(
-            'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
-
-    sonarr_version = get_sonarr_version()
-
-    radarr_version = get_radarr_version()
-
-    page_size = int(settings.general.page_size)
-
-    return render_template('system.html', bazarr_version=bazarr_version,
-                    sonarr_version=sonarr_version, radarr_version=radarr_version,
-                    operating_system=platform.platform(), python_version=platform.python_version(),
-                    config_dir=args.config_dir, bazarr_dir=os.path.normcase(os.path.dirname(os.path.dirname(__file__))),
-                    base_url=base_url, task_list=task_list, page_size=page_size, releases=releases,
-                    current_port=settings.general.port, throttled_providers=throttled_providers)
+@app.route('/systemreleases')
+@login_required
+def systemreleases():
+    return render_template('systemreleases.html')
 
 
 @app.route('/logs')

@@ -6,7 +6,10 @@ import datetime
 import pretty
 import time
 from operator import itemgetter
+import platform
+import io
 
+from get_args import args
 from config import settings, base_url
 
 from init import *
@@ -21,7 +24,7 @@ from get_subtitle import download_subtitle, series_download_subtitles, movies_do
 from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
-from utils import history_log, history_log_movie
+from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from websocket_handler import event_stream
 
@@ -55,6 +58,37 @@ class Languages(Resource):
         else:
             result = database.execute("SELECT * FROM table_settings_languages")
         return jsonify(result)
+
+
+class SystemStatus(Resource):
+    def get(self):
+        system_status = {}
+        system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
+        system_status.update({'sonarr_version': get_sonarr_version()})
+        system_status.update({'radarr_version': get_radarr_version()})
+        system_status.update({'operating_system': platform.platform()})
+        system_status.update({'python_version': platform.python_version()})
+        system_status.update({'bazarr_directory': os.path.dirname(os.path.dirname(__file__))})
+        system_status.update({'bazarr_config_directory': args.config_dir})
+        return jsonify(data=system_status)
+
+
+class SystemReleases(Resource):
+    def get(self):
+        releases = []
+        try:
+            with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
+                releases = ast.literal_eval(f.read())
+            for release in releases:
+                release[1] = release[1].replace('- ', '')
+                release[1] = release[1].split('\r\n')
+                release[1].pop(0)
+                release.append(True if release[0].lstrip('v') == os.environ["BAZARR_VERSION"] else False)
+
+        except Exception as e:
+            logging.exception(
+                'BAZARR cannot parse releases caching file: ' + os.path.join(args.config_dir, 'config', 'releases.txt'))
+        return jsonify(data=releases)
 
 
 class Series(Resource):
@@ -1043,6 +1077,9 @@ class SearchWantedMovies(Resource):
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
+
+api.add_resource(SystemStatus, '/systemstatus')
+api.add_resource(SystemReleases, '/systemreleases')
 
 api.add_resource(Series, '/series')
 api.add_resource(SeriesEditSave, '/series_edit_save')

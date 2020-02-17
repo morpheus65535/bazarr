@@ -1,0 +1,129 @@
+{% extends '_main.html' %}
+
+{% block title %}Status - Bazarr{% endblock %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <h2>About</h2><hr/>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Bazarr Version:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="bazarr_version_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Sonarr Version:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="sonarr_version_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Radarr Version:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="radarr_version_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Operating System:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="operating_system_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Python Version:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="python_version_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Bazarr Directory:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="bazarr_directory_span"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Bazarr Config Directory:</b>
+            </div>
+            <div class="col-sm-8">
+                <span id="bazarr_config_directory_span"></span>
+            </div>
+        </div>
+        <br>
+        <h2>More info</h2><hr/>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Home Page:</b>
+            </div>
+            <div class="col-sm-8">
+                <i class="fas fa-paper-plane"></i>
+                <a href="https://www.bazarr.media" target="_blank">Bazarr Website</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Source:</b>
+            </div>
+            <div class="col-sm-8">
+                <i class="fab fa-github"></i>
+                <a href="https://github.com/morpheus65535/bazarr" target="_blank">Bazarr on GitHub</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Wiki:</b>
+            </div>
+            <div class="col-sm-8">
+                <i class="fab fa-wikipedia-w"></i>
+                <a href="https://github.com/morpheus65535/bazarr/wiki" target="_blank">Bazarr Wiki</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-2 text-right">
+                <b>Discord:</b>
+            </div>
+            <div class="col-sm-8">
+                <i class="fab fa-discord"></i>
+                <a href="https://discord.gg/MH2e2eb" target="_blank">Bazarr on Discord</a>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                url: "{{ url_for('api.systemstatus') }}"
+            }).done(function (data) {
+                $('#bazarr_version_span').text(data.data['bazarr_version']);
+                $('#sonarr_version_span').text(data.data['sonarr_version']);
+                $('#radarr_version_span').text(data.data['radarr_version']);
+                $('#operating_system_span').text(data.data['operating_system']);
+                $('#python_version_span').text(data.data['python_version']);
+                $('#bazarr_directory_span').text(data.data['bazarr_directory']);
+                $('#bazarr_config_directory_span').text(data.data['bazarr_config_directory']);
+            });
+        })
+    </script>
+{% endblock tail %}

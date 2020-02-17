@@ -1,0 +1,42 @@
+{% extends '_main.html' %}
+
+{% block title %}Releases - Bazarr{% endblock %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <span id="releases"></span>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                url: "{{ url_for('api.systemreleases') }}"
+            }).done(function (data) {
+                var releases = '';
+                data.data.forEach(appendFunc);
+
+                function appendFunc(value) {
+                    entries = '';
+                    value[1].forEach(appendEntry);
+                    releases = releases + '<h4>'+value[0]+((value[2]) ? ' <span class="badge badge-success">Current Version</span>' : '')+'</h4><hr/><p><b>From newest to oldest:</b></p><ul>'+entries+'</ul>';
+
+                    function appendEntry(entry) {
+                        entries = entries + '<li>'+entry+'</li>';
+                    }
+                }
+
+                $('#releases').html(releases);
+            });
+        })
+    </script>
+{% endblock tail %}
