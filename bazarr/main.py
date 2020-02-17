@@ -1016,6 +1016,12 @@ def check_update():
     redirect(ref)
 
 
+@app.route('/systemlogs')
+@login_required
+def systemlogs():
+    return render_template('systemlogs.html')
+
+
 @app.route('/systemstatus')
 @login_required
 def systemstatus():

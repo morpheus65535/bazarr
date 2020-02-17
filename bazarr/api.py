@@ -60,6 +60,18 @@ class Languages(Resource):
         return jsonify(result)
 
 
+class SystemLogs(Resource):
+    def get(self):
+        logs = []
+        with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
+            for line in file.readlines():
+                lin = []
+                lin = line.split('|')
+                logs.append(lin)
+            logs.reverse()
+        return jsonify(data=logs)
+
+
 class SystemStatus(Resource):
     def get(self):
         system_status = {}
@@ -1078,6 +1090,7 @@ class SearchWantedMovies(Resource):
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
 
+api.add_resource(SystemLogs, '/systemlogs')
 api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')
 

@@ -189,7 +189,7 @@
                                 class="fas fa-laptop"></i><span class="hide-menu"> System</span></a>
                             <ul aria-expanded="false" class="collapse">
                                 <li><a href="/"> Tasks</a></li>
-                                <li><a href="/"> Logs</a></li>
+                                <li><a href="{{ url_for('systemlogs') }}"> Logs</a></li>
                                 <li><a href="/"> Providers</a></li>
                                 <li><a href="{{ url_for('systemstatus') }}"> Status</a></li>
                                 <li><a href="{{ url_for('systemreleases') }}"> Releases</a></li>
@@ -269,6 +269,7 @@
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
     <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
 
     <script>
         $(document).ready(function () {
