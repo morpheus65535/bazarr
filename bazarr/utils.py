@@ -15,12 +15,10 @@ from websocket_handler import event_stream
 from subliminal import region as subliminal_cache_region
 import datetime
 import glob
-from threading import Event
 
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
                 score=None):
-    thread = Event()
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
                      "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)",
                      (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,

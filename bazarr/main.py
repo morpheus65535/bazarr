@@ -444,19 +444,19 @@ def save_wizard():
 @app.route('/emptylog')
 @login_required
 def emptylog():
-    ref = request.environ['HTTP_REFERER']
-
     empty_log()
-    logging.info('BAZARR Log file emptied')
-
-    redirect(ref)
+    return '', 200
 
 
 @app.route('/bazarr.log')
 @login_required
 def download_log():
-    return send_file(os.path.join(args.config_dir, 'log/'),
-                     attachment_filename='bazarr.log')
+    r = Response()
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0)
 
 
 @app.route('/image_proxy/<path:url>', methods=['GET'])
