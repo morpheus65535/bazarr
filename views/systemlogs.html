@@ -2,6 +2,17 @@
 
 {% block title %}Logs - Bazarr{% endblock %}
 
+{% block head %}
+    <style>
+        .dropdown-item-checked::before {
+            position: absolute;
+            left: .1rem;
+            content: '✓';
+            font-weight: 900;
+        }
+    </style>
+{% endblock head %}
+
 {% block bcleft %}
     <div class="">
         <button class="btn btn-outline" id="refresh_button">
@@ -27,11 +38,12 @@
                 <div class="align-bottom text-themecolor small text-center">Filter</div>
             </button>
             <div id="filter_menu" class="dropdown-menu dropdown-menu-right">
-                    <a href="" class="dropdown-item"><i class="far fa-circle" style="color: black;"></i> All</a>
-                    <a href="" class="dropdown-item"><i class="fas fa-info-circle" style="color: #1e90ff;"></i> Info</a>
-                    <a href="" class="dropdown-item"><i class="fas fa-exclamation-circle" style="color: yellow;"></i> Warning</a>
-                    <a href="" class="dropdown-item"><i class="fas fa-bug" style="color: red;"></i> Error</a>
-                    <a href="" class="dropdown-item"><i class="fas fa-bug" style="color: black;"></i> Debug</a>
+                    <a href="" class="dropdown-item filter_log dropdown-item-checked" data-level="ALL"><i class="far fa-circle" style="color: black;"></i> All</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="" class="dropdown-item filter_log" data-level="INFO"><i class="fas fa-info-circle" style="color: #1e90ff;"></i> Info</a>
+                    <a href="" class="dropdown-item filter_log" data-level="WARNING"><i class="fas fa-exclamation-circle" style="color: yellow;"></i> Warning</a>
+                    <a href="" class="dropdown-item filter_log" data-level="ERROR"><i class="fas fa-bug" style="color: red;"></i> Error</a>
+                    <a href="" class="dropdown-item filter_log" data-level="DEBUG"><i class="fas fa-bug" style="color: black;"></i> Debug</a>
             </div>
         </div>
     </div>
@@ -141,11 +153,28 @@
             $('#empty_button').on('click', function() {
                 $.ajax({
                     url: "{{ url_for('emptylog') }}"
-                }).done(function (data) {
+                }).done(function () {
                     table.ajax.reload();
                     table.columns.adjust().draw(false);
                 })
             })
+
+            $('.filter_log').on( 'click', function (e) {
+                e.preventDefault();
+                $('.filter_log').removeClass('dropdown-item-checked');
+                $(this).addClass('dropdown-item-checked');
+                if ($(this).data('level') === 'INFO') {
+                    table.column(0).search('INFO|WARNING|ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'WARNING') {
+                    table.column(0).search('WARNING|ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'ERROR') {
+                    table.column(0).search('ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'DEBUG') {
+                    table.column(0).search('DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'ALL') {
+                    table.column(0).search('').draw();
+                }
+            });
         })
     </script>
 {% endblock tail %}
