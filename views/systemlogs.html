@@ -63,6 +63,30 @@
             </thead>
         </table>
     </div>
+
+    <div id="logsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Details</span></h4><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <h5>Message</h5>
+                        <figure class="highlight"><pre><code class="zmdi-language-python-alt" role="alert" id="logs_message_span"></code></pre></figure>
+                        <h5 id="except_tag">Exception</h5>
+                        <figure class="highlight"><pre><code class="zmdi-language-python-alt" role="alert" id="logs_exception_span"></code></pre></figure>
+                    </div>
+                </div>
+                <div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+            </div>
+        </div>
+    </div>
 {% endblock body %}
 
 {% block tail %}
@@ -174,6 +198,29 @@
                 } else if ($(this).data('level') === 'ALL') {
                     table.column(0).search('').draw();
                 }
+            });
+
+            $('#logs').on('click', 'tr', function() {
+                var data = table.row( this ).data();
+
+                $("#logs_message_span").html(data[3]);
+                let exception = data[4];
+                exception = exception.replace(/'/g,"");
+                exception = exception.replace(/\\n\s\s\s\s/g, "\\n&emsp;&emsp;");
+                exception = exception.replace(/\\n\s\s/g, "\\n&emsp;");
+                exception = exception.replace(/\\n/g, "<br />");
+                $("#logs_exception_span").html(exception);
+                if (exception.length > 1) {
+                    $('#except_tag').show();
+                    $('#logs_exception_span').parent().parent().show();
+                } else {
+                    $('#except_tag').hide();
+                    $('#logs_exception_span').parent().parent().hide();
+                }
+                $('#logsModal')
+					.modal({
+						focus: false
+					});
             });
         })
     </script>
