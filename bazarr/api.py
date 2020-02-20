@@ -8,6 +8,7 @@ import time
 from operator import itemgetter
 import platform
 import io
+from calendar import day_name
 
 from get_args import args
 from config import settings, base_url
@@ -27,6 +28,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from websocket_handler import event_stream
+from scheduler import Scheduler
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -58,6 +60,15 @@ class Languages(Resource):
         else:
             result = database.execute("SELECT * FROM table_settings_languages")
         return jsonify(result)
+
+
+class SystemTasks(Resource):
+    def get(self):
+        scheduler = Scheduler()
+
+        task_list = scheduler.get_task_list()
+
+        return jsonify(data=task_list)
 
 
 class SystemLogs(Resource):
@@ -1090,6 +1101,7 @@ class SearchWantedMovies(Resource):
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
 
+api.add_resource(SystemTasks, '/systemtasks')
 api.add_resource(SystemLogs, '/systemlogs')
 api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')

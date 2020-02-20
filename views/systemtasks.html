@@ -1,0 +1,61 @@
+{% extends '_main.html' %}
+
+{% block title %}Logs - Bazarr{% endblock %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <table id="tasks" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Execution Frequency</th>
+                <th>Next Execution</th>
+                <th></th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#tasks').DataTable( {
+                language: {
+                    zeroRecords: 'No Task Scheduled.',
+                    processing: "Loading Tasks..."
+                },
+                paging: false,
+                lengthChange: false,
+                pageLength: {{ settings.general.page_size }},
+                searching: false,
+                ordering: false,
+                processing: true,
+                serverSide: false,
+                ajax: "{{ url_for('api.systemtasks') }}",
+                columns: [
+                    {
+                        data: 'name'
+                    },
+                    { data: 'interval'
+                    },
+                    { data: 'next_run_in'
+                    },
+                    { data: null,
+                        render: function(data) {
+                            return 'button'
+                        }
+                    }
+                ]
+            });
+        })
+    </script>
+{% endblock tail %}

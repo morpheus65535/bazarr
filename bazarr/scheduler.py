@@ -16,12 +16,13 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from tzlocal import get_localzone
 from calendar import day_name
 import pretty
-from six import PY2
+from random import seed, uniform, randint
+from websocket_handler import event_stream
 
 
 class Scheduler:
@@ -38,10 +39,12 @@ class Scheduler:
         def task_listener_add(event):
             if event.job_id not in self.__running_tasks:
                 self.__running_tasks.append(event.job_id)
+                event_stream.write(type='task', action='insert')
 
         def task_listener_remove(event):
             if event.job_id in self.__running_tasks:
                 self.__running_tasks.remove(event.job_id)
+                event_stream.write(type='task', action='delete')
 
         self.aps_scheduler.add_listener(task_listener_add, EVENT_JOB_SUBMITTED)
         self.aps_scheduler.add_listener(task_listener_remove, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
@@ -60,6 +63,7 @@ class Scheduler:
         self.__update_bazarr_task()
         self.__search_wanted_subtitles_task()
         self.__upgrade_subtitles_task()
+        self.__randomize_interval_task()
 
     def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None):
         self.aps_scheduler.add_job(
@@ -123,9 +127,12 @@ class Scheduler:
 
             if isinstance(job.trigger, IntervalTrigger):
                 interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
-                task_list.append([job.name, interval, next_run, job.id])
+                task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
+                                  'next_run_time': job.next_run_time.replace(tzinfo=None), 'job_id': job.id})
             elif isinstance(job.trigger, CronTrigger):
-                task_list.append([job.name, get_time_from_cron(job.trigger.fields), next_run, job.id])
+                task_list.append({'name': job.name, 'interval': get_time_from_cron(job.trigger.fields),
+                                  'next_run_in': next_run, 'next_run_time': job.next_run_time.replace(tzinfo=None),
+                                  'job_id': job.id})
 
         return task_list
 
@@ -188,9 +195,7 @@ class Scheduler:
                     id='update_all_movies', name='Update all Movie Subtitles from disk', replace_existing=True)
 
     def __update_bazarr_task(self):
-        if PY2:
-            pass
-        elif not args.no_update:
+        if not args.no_update:
             task_name = 'Update Bazarr from source on Github'
             if args.release_update:
                 task_name = 'Update Bazarr from release on Github'
@@ -231,3 +236,9 @@ class Scheduler:
                 upgrade_subtitles, IntervalTrigger(hours=int(settings.general.upgrade_frequency)), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
                 name='Upgrade previously downloaded Subtitles', replace_existing=True)
+
+    def __randomize_interval_task(self):
+        for job in self.aps_scheduler.get_jobs():
+            if isinstance(job.trigger, IntervalTrigger):
+                seed(randint(0,1000))
+                self.aps_scheduler.modify_job(job.id, next_run_time=datetime.now() + timedelta(seconds=uniform(job.trigger.interval.total_seconds()*0.75, job.trigger.interval.total_seconds())))
