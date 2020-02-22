@@ -1807,7 +1807,7 @@ def get_subtitle():
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.title
 
-    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,))
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
     audio_language = data['audio_language']
 
     providers_list = get_providers()
@@ -1946,7 +1946,7 @@ def get_subtitle_movie():
     radarrId = request.forms.get('radarrId')
     title = request.forms.title
 
-    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,))
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
     audio_language = data['audio_language']
 
     providers_list = get_providers()
