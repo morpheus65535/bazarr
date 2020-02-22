@@ -1,6 +1,6 @@
 {% extends '_main.html' %}
 
-{% block title %}Logs - Bazarr{% endblock %}
+{% block title %}Tasks - Bazarr{% endblock %}
 
 {% block bcleft %}
 
@@ -40,7 +40,10 @@
                 ordering: false,
                 processing: true,
                 serverSide: false,
-                ajax: "{{ url_for('api.systemtasks') }}",
+                ajax: {
+                    url: "{{ url_for('api.systemtasks') }}",
+                    type: 'GET'
+                },
                 columns: [
                     {
                         data: 'name'
@@ -51,10 +54,28 @@
                     },
                     { data: null,
                         render: function(data) {
-                            return 'button'
+                            if (data.job_running) {
+                                return '<i class="execute fas fa-sync fa-spin" data-taskid="'+data.job_id+'"></i>';
+                            } else {
+                                return '<i class="execute fas fa-sync" data-taskid="'+data.job_id+'"></i>';
+                            }
                         }
                     }
                 ]
+            });
+
+            $('#tasks').on('click', '.execute', function(e){
+                e.preventDefault();
+                const values = {
+                    'taskid': $(this).data("taskid")
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.systemtasks') }}",
+                    method: "POST",
+                    data: JSON.stringify(values),
+                    contentType: "application/json"
+                });
             });
         })
     </script>

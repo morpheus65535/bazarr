@@ -21,7 +21,7 @@ import pytz
 from tzlocal import get_localzone
 from calendar import day_name
 import pretty
-from random import seed, uniform, randint
+from random import randrange
 from websocket_handler import event_stream
 
 
@@ -125,14 +125,20 @@ class Scheduler:
             else:
                 next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
+            if job.id in self.__running_tasks:
+                running = True
+            else:
+                running = False
+
             if isinstance(job.trigger, IntervalTrigger):
                 interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
                 task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
-                                  'next_run_time': job.next_run_time.replace(tzinfo=None), 'job_id': job.id})
+                                  'next_run_time': job.next_run_time.replace(tzinfo=None), 'job_id': job.id,
+                                  'job_running': running})
             elif isinstance(job.trigger, CronTrigger):
                 task_list.append({'name': job.name, 'interval': get_time_from_cron(job.trigger.fields),
                                   'next_run_in': next_run, 'next_run_time': job.next_run_time.replace(tzinfo=None),
-                                  'job_id': job.id})
+                                  'job_id': job.id, 'job_running': running})
 
         return task_list
 
@@ -240,5 +246,4 @@ class Scheduler:
     def __randomize_interval_task(self):
         for job in self.aps_scheduler.get_jobs():
             if isinstance(job.trigger, IntervalTrigger):
-                seed(randint(0,1000))
-                self.aps_scheduler.modify_job(job.id, next_run_time=datetime.now() + timedelta(seconds=uniform(job.trigger.interval.total_seconds()*0.75, job.trigger.interval.total_seconds())))
+                self.aps_scheduler.modify_job(job.id, next_run_time=datetime.now() + timedelta(seconds=randrange(job.trigger.interval.total_seconds()*0.75, job.trigger.interval.total_seconds())))

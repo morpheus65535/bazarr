@@ -1055,13 +1055,6 @@ def get_logs():
     return dict(data=logs)
 
 
-@app.route('/execute/<taskid>')
-@login_required
-def execute_task(taskid):
-    scheduler.execute_now(taskid)
-    return '', 200
-
-
 def configured():
     database.execute("UPDATE system SET configured = 1")
 

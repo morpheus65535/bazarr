@@ -39,6 +39,8 @@ from flask_restful import Resource, Api
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
 
+scheduler = Scheduler()
+
 
 class Badges(Resource):
     def get(self):
@@ -64,11 +66,17 @@ class Languages(Resource):
 
 class SystemTasks(Resource):
     def get(self):
-        scheduler = Scheduler()
-
         task_list = scheduler.get_task_list()
 
         return jsonify(data=task_list)
+
+
+    def post(self):
+        taskid = request.json['taskid']
+
+        scheduler.execute_job_now(taskid)
+
+        return '', 200
 
 
 class SystemLogs(Resource):

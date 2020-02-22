@@ -210,12 +210,12 @@
                     <!-- ============================================================== -->
                     <!-- Bread crumb and right sidebar toggle -->
                     <!-- ============================================================== -->
-                    <div class="row page-titles">
-                        <div class="col-md-5 col-8 align-self-center">
+                    <div id="buttons_bars" class="row page-titles">
+                        <div id="buttons_bar_left" class="col-md-5 col-8 align-self-center">
                             {% block bcleft %}
                             {% endblock bcleft %}
                         </div>
-                        <div class="col-md-7 col-4 align-self-center">
+                        <div id="buttons_bar_right" class="col-md-7 col-4 align-self-center">
                             {% block bcright %}
                             {% endblock bcright %}
                         </div>
@@ -312,6 +312,12 @@
                         }, 8000);
                     })
                 })
+            }
+
+            if ( $('#buttons_bar_left').children().length > 0  ||  $('#buttons_bar_right').children().length > 0 ) {
+                $('#buttons_bars').show();
+            } else {
+                $('#buttons_bars').hide();
             }
         });
 
