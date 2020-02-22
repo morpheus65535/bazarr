@@ -28,6 +28,13 @@
 {% block tail %}
     <script>
         $(document).ready(function () {
+            events.on('event', function (event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'task') {
+                    table.ajax.reload();
+                }
+            });
+
             var table = $('#tasks').DataTable( {
                 language: {
                     zeroRecords: 'No Task Scheduled.',
