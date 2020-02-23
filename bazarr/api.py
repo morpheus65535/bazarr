@@ -66,7 +66,19 @@ class Languages(Resource):
 
 class SystemTasks(Resource):
     def get(self):
+        taskid = request.args.get('taskid')
+
         task_list = scheduler.get_task_list()
+
+        for item in task_list:
+            # Add Datatables rowId
+            item.update({"DT_RowId": item['job_id']})
+
+        if taskid:
+            for item in task_list:
+                if item['job_id'] == taskid:
+                    task_list = [item]
+                    continue
 
         return jsonify(data=task_list)
 

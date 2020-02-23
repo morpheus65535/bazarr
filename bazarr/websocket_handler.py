@@ -10,7 +10,7 @@ class EventStream:
     def __init__(self):
         pass
     
-    def write(self, type=None, action=None, series=None, episode=None, movie=None):
+    def write(self, type=None, action=None, series=None, episode=None, movie=None, task=None):
         """
             :param type: The type of element.
             :type type: str
@@ -22,8 +22,11 @@ class EventStream:
             :type episode: str
             :param movie: The movie id.
             :type movie: str
+            :param task: The task id.
+            :type task: str
         """
-        socketio.emit('event', json.dumps({"type": type, "action": action, "series": series, "episode": episode, "movie": movie}), broadcast=True)
+        socketio.emit('event', json.dumps({"type": type, "action": action, "series": series, "episode": episode,
+                                           "movie": movie, "task": task}), broadcast=True)
 
 
 event_stream = EventStream()

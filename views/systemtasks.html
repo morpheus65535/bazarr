@@ -31,7 +31,17 @@
             events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'task') {
-                    table.ajax.reload();
+                    var rowId = table.row('#'+event_json.task);
+                    if (rowId.length) {
+                         $.ajax({
+                             url: "{{ url_for('api.systemtasks') }}?taskid=" + event_json.task,
+                             success: function (data) {
+                                 if (data.data.length) {
+                                     table.row(rowId).data(data.data[0]);
+                                 }
+                             }
+                         })
+                    }
                 }
             });
 
