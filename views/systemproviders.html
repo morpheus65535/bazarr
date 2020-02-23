@@ -1,0 +1,55 @@
+{% extends '_main.html' %}
+
+{% block title %}Logs - Bazarr{% endblock %}
+
+{% block head %}
+
+{% endblock head %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <table id="providers" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Next Retry</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#providers').DataTable( {
+                language: {
+                    zeroRecords: 'No providers enabled.',
+                    processing: "Loading Providers..."
+                },
+                paging: false,
+                lengthChange: false,
+                searching: false,
+                ordering: false,
+                info: false,
+                processing: true,
+                serverSide: false,
+                ajax: "{{ url_for('api.systemproviders') }}",
+                columns: [
+                    { data: 0 },
+                    { data: 1 },
+                    { data: 2 }
+                ]
+            });
+        })
+    </script>
+{% endblock tail %}

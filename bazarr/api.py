@@ -103,6 +103,15 @@ class SystemLogs(Resource):
         return jsonify(data=logs)
 
 
+class SystemProviders(Resource):
+    def get(self):
+        throttled_providers = list_throttled_providers()
+        for i in range(len(throttled_providers)):
+            throttled_providers[i][1] = throttled_providers[i][1] if throttled_providers[i][1] is not None else "Good"
+            throttled_providers[i][2] = throttled_providers[i][2] if throttled_providers[i][2] != "now" else "-"
+        return jsonify(data=throttled_providers)
+
+
 class SystemStatus(Resource):
     def get(self):
         system_status = {}
@@ -1123,6 +1132,7 @@ api.add_resource(Languages, '/languages')
 
 api.add_resource(SystemTasks, '/systemtasks')
 api.add_resource(SystemLogs, '/systemlogs')
+api.add_resource(SystemProviders, '/systemproviders')
 api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')
 

@@ -1028,6 +1028,12 @@ def systemlogs():
     return render_template('systemlogs.html')
 
 
+@app.route('/systemproviders')
+@login_required
+def systemproviders():
+    return render_template('systemproviders.html')
+
+
 @app.route('/systemstatus')
 @login_required
 def systemstatus():
