@@ -280,7 +280,7 @@
             });
 
             events = io.connect({
-                path: '{{ settings.general.base_url }}socket.io',
+                path: '{{ settings.general.base_url.rstrip('/') }}/socket.io',
                 upgrade: false,
                 reconnection: true,
                 reconnectionDelay: 1000,

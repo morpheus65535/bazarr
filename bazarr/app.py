@@ -15,7 +15,7 @@ def create_app():
     app = Flask(__name__,
                 template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
                 static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'),
-                static_url_path=base_url + 'static')
+                static_url_path=base_url.rstrip('/') + '/static')
     app.route = prefix_route(app.route, base_url.rstrip('/'))
 
     app.config["SECRET_KEY"] = 'test'
@@ -39,7 +39,7 @@ def create_app():
     def http_error_handler(error):
         return redirect(base_url.rstrip('/')), 302
 
-    socketio.init_app(app, path=base_url+'socket.io', cors_allowed_origins='*')
+    socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*')
     return app
 
 
