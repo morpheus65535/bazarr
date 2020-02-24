@@ -378,8 +378,10 @@ table.dataTable tbody td {
 
 @media (min-width: 1024px) {
   #edit_bar {
-    margin-left: 240px;
-  }
-}
+    margin-left: 240px; } }
+@media (max-width: 767px) {
+  /*Sidebar and wrapper*/
+  .mini-sidebar .page-wrapper {
+    padding-top: 0; } }
 
 /*# sourceMappingURL=bazarr.css.map */

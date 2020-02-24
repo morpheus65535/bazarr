@@ -528,10 +528,10 @@ a.link {
   padding-top: 0px
 }
 
-.dt-buttons{
-    display: inline-block;
-    padding-top: 0;
-    margin-bottom: 0;
+.dt-buttons {
+  display: inline-block;
+  padding-top: 0;
+  margin-bottom: 0;
 }
 
 .tooltip {
@@ -545,6 +545,13 @@ table.dataTable tbody td {
 @media (min-width: 1024px) {
   #edit_bar {
     margin-left: 240px;
+  }
+}
+
+@media(max-width: 767px) {
+  /*Sidebar and wrapper*/
+  .mini-sidebar .page-wrapper {
+    padding-top: 0;
   }
 }
 
