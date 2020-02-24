@@ -1866,11 +1866,14 @@ def manual_get_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_auth = get_providers_auth()
     
     try:
-        result = manual_download_subtitle(episodePath, language, hi, forced, subtitle, selected_provider,
+        result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle, selected_provider,
                                           providers_auth,
                                           sceneName, title, 'series')
         if result is not None:
@@ -2004,11 +2007,14 @@ def manual_get_subtitle_movie():
     subtitle = request.forms.subtitle
     radarrId = request.forms.get('radarrId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_auth = get_providers_auth()
     
     try:
-        result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider, providers_auth,
+        result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
         if result is not None:
             message = result[0]
