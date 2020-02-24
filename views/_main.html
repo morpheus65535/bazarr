@@ -280,10 +280,12 @@
             });
 
             events = io.connect({
-                'reconnection': true,
-                'reconnectionDelay': 1000,
-                'reconnectionDelayMax' : 3000,
-                'reconnectionAttempts': 3
+                path: '{{ settings.general.base_url }}socket.io',
+                upgrade: false,
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax : 3000,
+                reconnectionAttempts: 3
             });
 
             events.on('reconnect_failed', (reason) => {
