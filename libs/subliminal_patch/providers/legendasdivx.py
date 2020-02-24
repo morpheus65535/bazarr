@@ -274,7 +274,7 @@ class LegendasdivxProvider(Provider):
 
             archive = self._get_archive(res.content)
             # extract the subtitle
-            subtitle_content = self._get_subtitle_from_archive(archive)
+            subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
             subtitle.content = fix_line_ending(subtitle_content)
             subtitle.normalize()
 
@@ -297,7 +297,7 @@ class LegendasdivxProvider(Provider):
 
         return archive
 
-    def _get_subtitle_from_archive(self, archive):
+    def _get_subtitle_from_archive(self, archive, subtitle):
         # some files have a non subtitle with .txt extension
         _tmp = list(SUBTITLE_EXTENSIONS)
         _tmp.remove('.txt')
@@ -311,6 +311,15 @@ class LegendasdivxProvider(Provider):
             # discard non-subtitle files
             if not name.lower().endswith(_subtitle_extensions):
                 continue
+
+            if isinstance(subtitle.video, Episode):
+                logger.debug ("guessing %s" % name)
+                guess = guessit(name)
+                logger.debug("subtitle S{}E{} video S{}E{}".format(guess['season'],guess['episode'],subtitle.video.season,subtitle.video.episode))
+
+                if subtitle.video.episode != guess['episode'] or subtitle.video.season != guess['season']:
+                    logger.debug('subtitle does not match video, skipping')
+                    continue
 
             logger.debug("returning from archive: %s" % name)
             return archive.read(name)
