@@ -165,10 +165,9 @@ class Series(Resource):
             item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
 
             # Parse audio language
-            if item['audio_language']:
-                item.update({"audio_language": {"name": item['audio_language'],
-                                                "code2": alpha2_from_language(item['audio_language']),
-                                                "code3": alpha3_from_language(item['audio_language'])}})
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
             if item['languages'] and item['languages'] != 'None':
@@ -555,10 +554,9 @@ class Movies(Resource):
             item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
 
             # Parse audio language
-            if item['audio_language']:
-                item.update({"audio_language": {"name": item['audio_language'],
-                                                "code2": alpha2_from_language(item['audio_language']),
-                                                "code3": alpha3_from_language(item['audio_language'])}})
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
             if item['languages'] and item['languages'] != 'None':
