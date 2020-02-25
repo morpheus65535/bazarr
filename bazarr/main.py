@@ -1745,7 +1745,7 @@ def remove_subtitles_movie():
 def get_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
-    
+
     episodePath = request.forms.episodePath
     sceneName = request.forms.sceneName
     language = request.forms.get('language')
@@ -1754,12 +1754,15 @@ def get_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
     try:
-        result = download_subtitle(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName, title,
                                    'series')
         if result is not None:
             message = result[0]
@@ -1811,11 +1814,14 @@ def manual_get_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_auth = get_providers_auth()
     
     try:
-        result = manual_download_subtitle(episodePath, language, hi, forced, subtitle, selected_provider,
+        result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle, selected_provider,
                                           providers_auth,
                                           sceneName, title, 'series')
         if result is not None:
@@ -1890,12 +1896,15 @@ def get_subtitle_movie():
     forced = request.forms.get('forced')
     radarrId = request.forms.get('radarrId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_list = get_providers()
     providers_auth = get_providers_auth()
     
     try:
-        result = download_subtitle(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName, title,
                                    'movie')
         if result is not None:
             message = result[0]
@@ -1946,11 +1955,14 @@ def manual_get_subtitle_movie():
     subtitle = request.forms.subtitle
     radarrId = request.forms.get('radarrId')
     title = request.forms.title
-    
+
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
+
     providers_auth = get_providers_auth()
     
     try:
-        result = manual_download_subtitle(moviePath, language, hi, forced, subtitle, selected_provider, providers_auth,
+        result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle, selected_provider, providers_auth,
                                           sceneName, title, 'movie')
         if result is not None:
             message = result[0]

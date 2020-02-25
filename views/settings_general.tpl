@@ -608,6 +608,18 @@
                                         <div class="header">&lbrace;&lbrace;subtitles_language_code3&rbrace;&rbrace;</div>
                                         The 3-letter ISO-639 language code of the subtitles language.
                                     </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;episode_language&rbrace;&rbrace;</div>
+                                        The audio language of the episode file.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;episode_language_code2&rbrace;&rbrace;</div>
+                                        The 2-letter ISO-639 language code of the episode audio language.
+                                    </div>
+                                    <div class="item">
+                                        <div class="header">&lbrace;&lbrace;episode_language_code3&rbrace;&rbrace;</div>
+                                        The 3-letter ISO-639 language code of the episode audio language.
+                                    </div>
                                 </div>
                             </div>
                         </div>
