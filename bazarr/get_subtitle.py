@@ -35,13 +35,12 @@ from analytics import track_event
 from locale import getpreferredencoding
 
 
-def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
+def get_video(path, title, sceneName, providers=None, media_type="movie"):
     """
     Construct `Video` instance
     :param path: path to video
     :param title: series/movie title
     :param sceneName: sceneName
-    :param use_scenename: use sceneName
     :param providers: provider list for selective hashing
     :param media_type: movie/series
     :return: `Video` instance
@@ -51,7 +50,7 @@ def get_video(path, title, sceneName, use_scenename, providers=None, media_type=
     original_path = path
     original_name = os.path.basename(path)
     hash_from = None
-    if sceneName != "None" and use_scenename:
+    if sceneName != "None":
         # use the sceneName but keep the folder structure for better guessing
         path = os.path.join(os.path.dirname(path), sceneName + os.path.splitext(path)[1])
         used_scene_name = True
@@ -138,7 +137,6 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
-    use_scenename = settings.general.getboolean('use_scenename')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
@@ -154,7 +152,7 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
         post_download_hook=None,
         language_hook=None
     """
-    video = get_video(force_unicode(path), title, sceneName, use_scenename, providers=providers,
+    video = get_video(force_unicode(path), title, sceneName, providers=providers,
                       media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type, min_score_movie_perc=int(minimum_score_movie),
@@ -216,12 +214,9 @@ def download_subtitle(path, language, hi, forced, providers, providers_auth, sce
                             action = "upgraded"
                         else:
                             action = "downloaded"
-                        if video.used_scene_name:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + str(
-                                round(subtitle.score * 100 / max_score, 2)) + "% using this scene name: " + sceneName
-                        else:
-                            message = downloaded_language + is_forced_string + " subtitles " + action + " from " + downloaded_provider + " with a score of " + str(
-                                round(subtitle.score * 100 / max_score, 2)) + "% using filename guessing."
+                        message = downloaded_language + is_forced_string + " subtitles " + action + " from " + \
+                            downloaded_provider + " with a score of " + str(round(subtitle.score * 100 / max_score, 2))\
+                            + "%."
                         
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
@@ -281,13 +276,12 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
     
-    use_scenename = settings.general.getboolean('use_scenename')
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     if providers:
-        video = get_video(force_unicode(path), title, sceneName, use_scenename, providers=providers,
+        video = get_video(force_unicode(path), title, sceneName, providers=providers,
                           media_type=media_type)
     else:
         logging.info("BAZARR All providers are throttled")
@@ -370,11 +364,10 @@ def manual_download_subtitle(path, language, hi, forced, subtitle, provider, pro
         os.environ["SZ_KEEP_ENCODING"] = "True"
     
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
-    use_scenename = settings.general.getboolean('use_scenename')
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
-    video = get_video(force_unicode(path), title, sceneName, use_scenename, providers={provider},
+    video = get_video(force_unicode(path), title, sceneName, providers={provider},
                       media_type=media_type)
     if video:
         min_score, max_score, scores = get_scores(video, media_type)
