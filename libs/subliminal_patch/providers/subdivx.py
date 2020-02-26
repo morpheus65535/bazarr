@@ -218,7 +218,7 @@ class SubdivxSubtitlesProvider(Provider):
             page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
             links_soup = page_soup.find_all("a", {'class': 'detalle_link'})
             for link_soup in links_soup:
-                if link_soup['href'].startswith('bajar'):
+                if link_soup['href'].startswith('Bajar'):
                     return self.server_url + link_soup['href']
         except Exception as e:
             raise ParseResponseError('Error parsing download link: ' + str(e))
