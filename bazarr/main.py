@@ -62,6 +62,7 @@ from utils import history_log, history_log_movie, get_sonarr_version, get_radarr
 from helper import path_replace_reverse, path_replace_reverse_movie
 from scheduler import Scheduler
 from notifier import send_notifications, send_notifications_movie
+from check_update import check_and_apply_update
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
