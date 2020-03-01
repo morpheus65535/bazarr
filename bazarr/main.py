@@ -2223,6 +2223,8 @@ def api_help():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
+# Mute Insecure HTTPS requests made to Sonarr and Radarr
+warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 if six.PY3:
     warnings.simplefilter("ignore", BrokenPipeError)
 server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
