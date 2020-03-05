@@ -57,7 +57,7 @@ from get_movies import *
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle
+    manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from helper import path_replace_reverse, path_replace_reverse_movie
 from scheduler import Scheduler
