@@ -12,3 +12,6 @@ class UnknownFormatIdentifierError(Pysubs2Error):
 
 class FormatAutodetectionError(Pysubs2Error):
     """Subtitle format is ambiguous or unknown."""
+
+class ContentNotUsable(Pysubs2Error):
+    """Current content not usable for specified format"""

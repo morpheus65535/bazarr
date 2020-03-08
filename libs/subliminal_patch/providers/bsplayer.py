@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 import logging
 import io
-import os
 
 from requests import Session
 from guessit import guessit
@@ -10,6 +9,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
+from subliminal.video import Episode, Movie
 from subzero.language import Language
 
 import gzip
@@ -44,6 +44,52 @@ class BSPlayerSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
         matches |= guess_matches(video, guessit(self.filename))
+
+        subtitle_filename = self.filename
+
+        # episode
+        if isinstance(video, Episode):
+            # already matched in search query
+            matches.update(['title', 'series', 'season', 'episode', 'year'])
+
+        # movie
+        elif isinstance(video, Movie):
+            # already matched in search query
+            matches.update(['title', 'year'])
+
+        # release_group
+        if video.release_group and video.release_group.lower() in subtitle_filename:
+            matches.add('release_group')
+
+        # resolution
+        if video.resolution and video.resolution.lower() in subtitle_filename:
+            matches.add('resolution')
+
+        # format
+        formats = []
+        if video.format:
+            formats = [video.format.lower()]
+            if formats[0] == "web-dl":
+                formats.append("webdl")
+                formats.append("webrip")
+                formats.append("web ")
+            for frmt in formats:
+                if frmt.lower() in subtitle_filename:
+                    matches.add('format')
+                    break
+
+        # video_codec
+        if video.video_codec:
+            video_codecs = [video.video_codec.lower()]
+            if video_codecs[0] == "h264":
+                formats.append("x264")
+            elif video_codecs[0] == "h265":
+                formats.append("x265")
+            for vc in formats:
+                if vc.lower() in subtitle_filename:
+                    matches.add('video_codec')
+                    break
+
         matches.add('hash')
 
         return matches

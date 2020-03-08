@@ -279,6 +279,12 @@ class Subtitle(Subtitle_):
 
     @classmethod
     def pysubs2_to_unicode(cls, sub, format="srt"):
+        """
+        this is a modified version of pysubs2.SubripFormat.to_file with special handling for drawing tags in ASS
+        :param sub:
+        :param format:
+        :return:
+        """
         def ms_to_timestamp(ms, mssep=","):
             """Convert ms to 'HH:MM:SS,mmm'"""
             # XXX throw on overflow/underflow?
@@ -293,6 +299,9 @@ class Subtitle(Subtitle_):
                 fragment = fragment.replace(r"\h", u" ")
                 fragment = fragment.replace(r"\n", u"\n")
                 fragment = fragment.replace(r"\N", u"\n")
+                if sty.drawing:
+                    raise pysubs2.ContentNotUsable
+
                 if format == "srt":
                     if sty.italic:
                         fragment = u"<i>%s</i>" % fragment
@@ -324,7 +333,10 @@ class Subtitle(Subtitle_):
         for i, line in enumerate(visible_lines, 1):
             start = ms_to_timestamp(line.start, mssep=mssep)
             end = ms_to_timestamp(line.end, mssep=mssep)
-            text = prepare_text(line.text, sub.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
+            try:
+                text = prepare_text(line.text, sub.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
+            except pysubs2.ContentNotUsable:
+                continue
 
             out.append(u"%d\n" % i)
             out.append(u"%s --> %s\n" % (start, end))

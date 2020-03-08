@@ -67,7 +67,6 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * SubZ
 * Supersubtitles
 * Titlovi
-* Titrari.ro
 * TVSubtitles
 * XSubs
 * Zimuku

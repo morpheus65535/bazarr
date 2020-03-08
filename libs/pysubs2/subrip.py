@@ -5,6 +5,7 @@ from .formatbase import FormatBase
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
 from .substation import parse_tags
+from .exceptions import ContentNotUsable
 from .time import ms_to_times, make_time, TIMESTAMP, timestamp_to_ms
 
 #: Largest timestamp allowed in SubRip, ie. 99:59:59,999.
@@ -81,6 +82,7 @@ class SubripFormat(FormatBase):
                 if sty.italic: fragment = "<i>%s</i>" % fragment
                 if sty.underline: fragment = "<u>%s</u>" % fragment
                 if sty.strikeout: fragment = "<s>%s</s>" % fragment
+                if sty.drawing: raise ContentNotUsable
                 body.append(fragment)
 
             return re.sub("\n+", "\n", "".join(body).strip())
@@ -90,7 +92,10 @@ class SubripFormat(FormatBase):
         for i, line in enumerate(visible_lines, 1):
             start = ms_to_timestamp(line.start)
             end = ms_to_timestamp(line.end)
-            text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
+            try:
+                text = prepare_text(line.text, subs.styles.get(line.style, SSAStyle.DEFAULT_STYLE))
+            except ContentNotUsable:
+                continue
 
             print("%d" % i, file=fp) # Python 2.7 compat
             print(start, "-->", end, file=fp)

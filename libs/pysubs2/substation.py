@@ -110,7 +110,7 @@ def parse_tags(text, style=SSAStyle.DEFAULT_STYLE, styles={}):
     
     def apply_overrides(all_overrides):
         s = style.copy()
-        for tag in re.findall(r"\\[ibus][10]|\\r[a-zA-Z_0-9 ]*", all_overrides):
+        for tag in re.findall(r"\\[ibusp][0-9]|\\r[a-zA-Z_0-9 ]*", all_overrides):
             if tag == r"\r":
                 s = style.copy() # reset to original line style
             elif tag.startswith(r"\r"):
@@ -122,6 +122,13 @@ def parse_tags(text, style=SSAStyle.DEFAULT_STYLE, styles={}):
                 elif "b" in tag: s.bold = "1" in tag
                 elif "u" in tag: s.underline = "1" in tag
                 elif "s" in tag: s.strikeout = "1" in tag
+                elif "p" in tag:
+                    try:
+                        scale = int(tag[2:])
+                    except (ValueError, IndexError):
+                        continue
+
+                    s.drawing = scale > 0
         return s
     
     overrides = SSAEvent.OVERRIDE_SEQUENCE.findall(text)

@@ -94,7 +94,7 @@ def path_replace_reverse_movie(path):
     return path
 
 
-def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, forced):
+def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced):
     is_forced = ":forced" if forced else ""
     is_forced_string = " forced" if forced else ""
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
@@ -104,6 +104,9 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{subtitles_language}}', language + is_forced_string)
     pp_command = pp_command.replace('{{subtitles_language_code2}}', language_code2 + is_forced)
     pp_command = pp_command.replace('{{subtitles_language_code3}}', language_code3 + is_forced)
+    pp_command = pp_command.replace('{{episode_language}}', episode_language)
+    pp_command = pp_command.replace('{{episode_language_code2}}', episode_language_code2)
+    pp_command = pp_command.replace('{{episode_language_code3}}', episode_language_code3)
     return pp_command
 
 

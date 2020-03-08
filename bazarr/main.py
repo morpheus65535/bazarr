@@ -819,16 +819,15 @@ def movie_history(no):
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
+# Mute Insecure HTTPS requests made to Sonarr and Radarr
+warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+# Mute Python3 BrokenPipeError
 warnings.simplefilter("ignore", BrokenPipeError)
-if args.dev:
-    server = app.run(
-        host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)))
-else:
-    server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
+
+server = CherryPyWSGIServer(host=str(settings.general.ip), port=int(args.port) if args.port else int(settings.general.port))), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
         args.port) if args.port else str(settings.general.port)) + str(base_url))
-    if not args.dev:
-        server.start()
+    server.start()
 except KeyboardInterrupt:
     doShutdown()

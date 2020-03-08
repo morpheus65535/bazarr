@@ -15,6 +15,7 @@ from subliminal_patch.subtitle import Subtitle
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending,guess_matches
 from subzero.language import Language
+from subliminal_patch.score import get_scores
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +105,8 @@ class LegendasdivxSubtitle(Subtitle):
                     matches.update(['video_codec'])
                     break
 
-        matches |= guess_matches(video, guessit(self.description))
+        # running guessit on a huge description may break guessit
+        # matches |= guess_matches(video, guessit(self.description))
         return matches
 
 
@@ -274,7 +276,7 @@ class LegendasdivxProvider(Provider):
 
             archive = self._get_archive(res.content)
             # extract the subtitle
-            subtitle_content = self._get_subtitle_from_archive(archive)
+            subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
             subtitle.content = fix_line_ending(subtitle_content)
             subtitle.normalize()
 
@@ -297,11 +299,13 @@ class LegendasdivxProvider(Provider):
 
         return archive
 
-    def _get_subtitle_from_archive(self, archive):
+    def _get_subtitle_from_archive(self, archive, subtitle):
         # some files have a non subtitle with .txt extension
         _tmp = list(SUBTITLE_EXTENSIONS)
         _tmp.remove('.txt')
         _subtitle_extensions = tuple(_tmp)
+        _max_score = 0
+        _scores = get_scores (subtitle.video)
 
         for name in archive.namelist():
             # discard hidden files
@@ -312,7 +316,26 @@ class LegendasdivxProvider(Provider):
             if not name.lower().endswith(_subtitle_extensions):
                 continue
 
-            logger.debug("returning from archive: %s" % name)
-            return archive.read(name)
+            _guess = guessit (name)
+            if isinstance(subtitle.video, Episode):
+                logger.debug ("guessing %s" % name)
+                logger.debug("subtitle S{}E{} video S{}E{}".format(_guess['season'],_guess['episode'],subtitle.video.season,subtitle.video.episode))
+
+                if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
+                    logger.debug('subtitle does not match video, skipping')
+                    continue
+
+            matches = set()
+            matches |= guess_matches (subtitle.video, _guess)
+            logger.debug('srt matches: %s' % matches)
+            _score = sum ((_scores.get (match, 0) for match in matches))
+            if _score > _max_score:
+                _max_name = name
+                _max_score = _score
+                logger.debug("new max: {} {}".format(name, _score))
+
+        if _max_score > 0:
+            logger.debug("returning from archive: {} scored {}".format(_max_name, _max_score))
+            return archive.read(_max_name)
 
         raise ParseResponseError('Can not find the subtitle in the compressed file')
