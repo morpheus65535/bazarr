@@ -41,6 +41,7 @@ class SSAStyle(object):
         self.italic = False #: Italic
         self.underline = False #: Underline (ASS only)
         self.strikeout = False #: Strikeout (ASS only)
+        self.drawing = False #: Drawing (ASS only, see http://docs.aegisub.org/3.1/ASS_Tags/#drawing-tags
         self.scalex = 100.0 #: Horizontal scaling (ASS only)
         self.scaley = 100.0 #: Vertical scaling (ASS only)
         self.spacing = 0.0 #: Letter spacing (ASS only)
