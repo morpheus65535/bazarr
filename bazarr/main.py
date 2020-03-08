@@ -824,10 +824,15 @@ warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 # Mute Python3 BrokenPipeError
 warnings.simplefilter("ignore", BrokenPipeError)
 
-server = CherryPyWSGIServer(host=str(settings.general.ip), port=int(args.port) if args.port else int(settings.general.port))), app)
+if args.dev:
+    server = app.run(
+        host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)))
+else:
+    server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
         args.port) if args.port else str(settings.general.port)) + str(base_url))
-    server.start()
+    if not args.dev:
+        server.start()
 except KeyboardInterrupt:
     doShutdown()
