@@ -9,9 +9,10 @@ from operator import itemgetter
 import platform
 import io
 from calendar import day_name
+import importlib
 
 from get_args import args
-from config import settings, base_url
+from config import settings, base_url, save_settings
 
 from init import *
 import logging
@@ -62,6 +63,13 @@ class Languages(Resource):
         else:
             result = database.execute("SELECT * FROM table_settings_languages")
         return jsonify(result)
+
+
+class SaveSettings(Resource):
+    def post(self):
+        save_settings(request.form.items())
+
+        return '', 200
 
 
 class SystemTasks(Resource):
@@ -1127,6 +1135,8 @@ class SearchWantedMovies(Resource):
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
+
+api.add_resource(SaveSettings, '/savesettings')
 
 api.add_resource(SystemTasks, '/systemtasks')
 api.add_resource(SystemLogs, '/systemlogs')

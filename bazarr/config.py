@@ -148,6 +148,23 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 base_url = settings.general.base_url
 
 
+def save_settings(settings_items):
+    for key, value in settings_items:
+        settings_keys = key.split('-')
+
+        if value == 'true':
+            value = 'True'
+        elif value == 'false':
+            value = 'False'
+
+        if settings_keys[0] == 'settings':
+            settings[settings_keys[1]][settings_keys[2]] = str(value)
+
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+
+
 def url_sonarr():
     if settings.sonarr.getboolean('ssl'):
         protocol_sonarr = "https"
