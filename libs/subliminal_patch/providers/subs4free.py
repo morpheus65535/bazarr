@@ -84,7 +84,8 @@ class Subs4FreeProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
+        from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+        self.session.headers['User-Agent'] = AGENT_LIST[random.randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
