@@ -47,7 +47,7 @@ from beaker.middleware import SessionMiddleware
 from cork import Cork
 from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import timedelta, datetime
-from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
+from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, clean_desired_languages
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
@@ -1624,6 +1624,8 @@ def save_settings():
         notifier_url = request.forms.get('settings_notifier_' + notifier['name'] + '_url')
         database.execute("UPDATE table_settings_notifier SET enabled=?, url=? WHERE name=?",
                          (enabled,notifier_url,notifier['name']))
+
+    clean_desired_languages()
 
     scheduler.update_configurable_tasks()
     
