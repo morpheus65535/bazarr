@@ -592,6 +592,12 @@ def settingsgeneral():
     return render_template('settingsgeneral.html')
 
 
+@app.route('/settingssonarr/')
+@login_required
+def settingssonarr():
+    return render_template('settingssonarr.html')
+
+
 @app.route('/check_update')
 @login_required
 def check_update():

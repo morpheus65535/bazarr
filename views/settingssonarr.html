@@ -1,250 +1,207 @@
-<div class="ui dividing header">Connection settings</div>
-<div class="twelve wide column">
-    <div class="ui grid">
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Settings Validation:</label>
-            </div>
-            <div class="two wide column">
-                <button id="sonarr_validate" class="test ui blue button" type="button">
-                    Test
-                </button>
-            </div>
-            <div class="seven wide column">
-                <div id="sonarr_validated" class="ui read-only checkbox">
-                    <input id="sonarr_validated_checkbox" type="checkbox">
-                    <label id="sonarr_validation_result">Not Tested Recently</label>
-                </div>
-            </div>
-        </div>
+{% extends '_main.html' %}
 
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Hostname or IP Address</label>
-            </div>
-            <div class="five wide column">
-                <div class='field'>
-                    <div class="ui fluid input">
-                        <input id="settings_sonarr_ip" name="settings_sonarr_ip" class="sonarr_config" type="text"
-                               value="{{ settings.sonarr.ip }}">
-                    </div>
-                </div>
-            </div>
-            <div class="collapsed center aligned column">
-                <div class="ui basic icon" data-tooltip="Hostname or IP4 Address of Sonarr" data-inverted="">
-                    <i class="help circle large icon"></i>
-                </div>
-            </div>
-        </div>
+{% block title %}Sonarr - Bazarr{% endblock %}
 
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Listening Port</label>
-            </div>
-            <div class="five wide column">
-                <div class='field'>
-                    <div class="ui fluid input">
-                        <input id="settings_sonarr_port" name="settings_sonarr_port" class="sonarr_config" type="text"
-                               value="{{ settings.sonarr.port }}">
-                    </div>
-                </div>
-            </div>
-            <div class="collapsed center aligned column">
-                <div class="ui basic icon" data-tooltip="TCP Port of Sonarr" data-inverted="">
-                    <i class="help circle large icon"></i>
-                </div>
-            </div>
-        </div>
+{% block page_head %}
 
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Base URL</label>
-            </div>
-            <div class="five wide column">
-                <div class="ui fluid input">
-                    <input id="settings_sonarr_baseurl" name="settings_sonarr_baseurl" class="sonarr_config" type="text"
-                           value="{{ settings.sonarr.base_url }}">
-                </div>
-            </div>
-            <div class="collapsed center aligned column">
-                <div class="ui basic icon" data-tooltip="Base URL for Sonarr (default: '/')" data-inverted="">
-                    <i class="help circle large icon"></i>
-                </div>
-            </div>
-        </div>
+{% endblock page_head %}
 
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>SSL Enabled</label>
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
             </div>
-            <div class="one wide column">
-                <div id="sonarr_ssl_div" class="ui toggle checkbox" data-ssl={{ settings.sonarr.getboolean('ssl') }}>
-                    <input id="settings_sonarr_ssl" name="settings_sonarr_ssl" type="checkbox">
-                    <label></label>
-                </div>
-            </div>
-        </div>
-
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>API Key</label>
-            </div>
-            <div class="five wide column">
-                <div class='field'>
-                    <div class="ui fluid input">
-                        <input id="settings_sonarr_apikey" name="settings_sonarr_apikey" class="sonarr_config"
-                               type="text" value="{{ settings.sonarr.apikey }}">
-                    </div>
-                </div>
-            </div>
-            <div class="collapsed center aligned column">
-                <div class="ui basic icon" data-tooltip="API Key for Sonarr (32 alphanumeric characters)"
-                     data-inverted="">
-                    <i class="help circle large icon"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Download Only Monitored</label>
-            </div>
-            <div class="one wide column">
-                <div id="settings_only_monitored_sonarr" class="ui toggle checkbox"
-                     data-monitored={{ settings.sonarr.getboolean('only_monitored') }}>
-                    <input name="settings_sonarr_only_monitored" type="checkbox">
-                    <label></label>
-                </div>
-            </div>
-            <div class="collapsed column">
-                <div class="collapsed center aligned column">
-                    <div class="ui basic icon"
-                         data-tooltip="Automatic download of Subtitles will only happen for monitored episodes in Sonarr."
-                         data-inverted="">
-                        <i class="help circle large icon"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
     </div>
-</div>
+{% endblock bcleft %}
 
-<div class="ui dividing header">Synchronization</div>
-<div class="twelve wide column">
-    <div class="ui grid">
-        <div class="middle aligned row">
-            <div class="right aligned four wide column">
-                <label>Full Filesystem Scan</label>
-            </div>
-            <div class="three wide column">
-                <div class='field'>
-                    <select name="settings_sonarr_sync" id="settings_sonarr_sync" class="ui fluid selection dropdown">
-                        <option value="Manually">Manually</option>
-                        <option value="Daily">Daily</option>
-                        <option value="Weekly">Weekly</option>
-                    </select>
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Use Sonarr</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-2 text-right">
+                    <b>Enabled</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_sonarr" name="settings-general-use_sonarr">
+                        <span class="custom-control-label" for="settings-general-use_sonarr"></span>
+                    </label>
                 </div>
             </div>
-            <div id="settings_sonarr_sync_day_div" class="three wide column">
-                <div class='field'>
-                    <select name="settings_sonarr_sync_day" id="settings_sonarr_sync_day"
-                            class="ui fluid selection dropdown">
-                        % import calendar
-                        % for idx, i in enumerate(calendar.day_name):
-                        <option value="{{ idx }}">{{ i }}</option>
-                        %end
-                    </select>
+            <br>
+
+            <div id="sonarr_div">
+                <h4>Host</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>Hostname or IP Address</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-sonarr-ip" name="settings-sonarr-ip" value="{{settings.sonarr.ip}}">
+                    </div>
                 </div>
-            </div>
-            <div id="settings_sonarr_sync_hour_div" class="two wide column">
-                <div class='field'>
-                    <select name="settings_sonarr_sync_hour" id="settings_sonarr_sync_hour"
-                            class="ui fluid selection dropdown">
-                        % for i in range(24):
-                        <option value="{{ i }}">{{ i }}:00</option>
-                        %end
-                    </select>
+                <br>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>Port Number</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-sonarr-port" name="settings-sonarr-port" value="{{settings.sonarr.port}}">
+                    </div>
                 </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>URL Base</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-sonarr-base_url" name="settings-sonarr-base_url" value="{{settings.sonarr.base_url}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>SSL Enabled</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-sonarr-ssl" name="settings-sonarr-ssl">
+                            <span class="custom-control-label" for="settings-sonarr-ssl"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>API Key</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-sonarr-apikey" name="settings-sonarr-apikey" value="{{settings.sonarr.apikey}}">
+                    </div>
+                </div>
+                <br>
+
+                <h4>Options</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>Minimum Score</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <input type="number" min="0" max="100" step="1" onkeydown="return false" class="form-control" id="settings-general-minimum_score" name="settings-general-minimum_score" value="{{settings.general.minimum_score}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <b>Download Only Monitored</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-sonarr-only_monitored" name="settings-sonarr-only_monitored">
+                            <span class="custom-control-label" for="settings-sonarr-only_monitored"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <h4>PAth Mapping</h4>
+                <hr/>
+                <div class="row">
+                    <table class="dataTable table table-striped" id="path_mapping">
+
+                    </table>
+                </div>
+                <br>
             </div>
-        </div>
+        </form>
     </div>
-</div>
-{% macro settings_sonarr() %}
-<script>
-    if ($('#sonarr_ssl_div').data("ssl") === "True") {
-        $("#sonarr_ssl_div").checkbox('check');
-    } else {
-        $("#sonarr_ssl_div").checkbox('uncheck');
-    }
+{% endblock body %}
 
-    if ($('#settings_only_monitored_sonarr').data("monitored") === "True") {
-        $("#settings_only_monitored_sonarr").checkbox('check');
-    } else {
-        $("#settings_only_monitored_sonarr").checkbox('uncheck');
-    }
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
 
-    $('#settings_sonarr_sync').dropdown('setting', 'onChange', function () {
-        if ($('#settings_sonarr_sync').val() === "Manually") {
-            $('#settings_sonarr_sync_day_div').hide();
-            $('#settings_sonarr_sync_hour_div').hide();
-        } else if ($('#settings_sonarr_sync').val() === "Daily") {
-            $('#settings_sonarr_sync_day_div').hide();
-            $('#settings_sonarr_sync_hour_div').show();
-        } else if ($('#settings_sonarr_sync').val() === "Weekly") {
-            $('#settings_sonarr_sync_day_div').show();
-            $('#settings_sonarr_sync_hour_div').show();
-        }
-    });
+            // Hide *_div on Select input changed to None
+            $('#settings-general-use_sonarr').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#sonarr_div').show();
+                } else {
+                    $('#sonarr_div').hide();
+                }
+            });
 
-    $('#settings_sonarr_sync').dropdown('clear');
-    $('#settings_sonarr_sync').dropdown('set selected', '{{settings.sonarr.full_update|safe}}');
-    $('#settings_sonarr_sync').dropdown('refresh');
-    $('#settings_sonarr_sync_day').dropdown('clear');
-    $('#settings_sonarr_sync_day').dropdown('set selected', '{{settings.sonarr.full_update_day|safe}}');
-    $('#settings_sonarr_sync_day').dropdown('refresh');
-    $('#settings_sonarr_sync_hour').dropdown('clear');
-    $('#settings_sonarr_sync_hour').dropdown('set selected', '{{settings.sonarr.full_update_hour|safe}}');
-    $('#settings_sonarr_sync_hour').dropdown('refresh');
+            // Set Checkbox input values
+            $('#settings-general-use_sonarr').prop('checked', {{'true' if settings.general.getboolean('use_sonarr')}});
+            $('#settings-sonarr-ssl').prop('checked', {{'true' if settings.sonarr.getboolean('ssl')}});
+            $('#settings-sonarr-only_monitored').prop('checked', {{'true' if settings.sonarr.getboolean('only_monitored')}});
 
-    $('#sonarr_validate').on('click', function () {
-        if ($('#sonarr_ssl_div').checkbox('is checked')) {
-            protocol = 'https';
-        } else {
-            protocol = 'http';
-        }
-        const sonarr_url = $('#settings_sonarr_ip').val() + ":" + $('#settings_sonarr_port').val() + $('#settings_sonarr_baseurl').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings_sonarr_apikey').val();
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
 
-        $.getJSON("{{base_url}}test_url/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
-            if (data.status) {
-                $('#sonarr_validated').checkbox('check');
-                $('#sonarr_validation_result').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
-                $('.form').form('validate form');
-                $('#loader').removeClass('active');
-            } else {
-                $('#sonarr_validated').checkbox('uncheck');
-                $('#sonarr_validation_result').text('Test Failed').css('color', 'red');
-                $('.form').form('validate form');
-                $('#loader').removeClass('active');
-            }
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+
+            table = $('#path_mapping').DataTable({
+                data: [["/tvsonarr", "/tvbazarr"]],
+                columns: [{
+                    title: "Path for Sonarr",
+                    type: "text"
+                }, {
+                    title: "Path for Bazarr",
+                    type: "text"
+                }],
+                dom: 'Bfrtip',        // Needs button container
+                select: 'single',
+                responsive: true,
+                altEditor: true,     // Enable altEditor
+                buttons: [{
+                    text: 'Add',
+                    name: 'add'        // do not change name
+                },
+                {
+                    extend: 'selected', // Bind to Selected row
+                    text: 'Edit',
+                    name: 'edit'        // do not change name
+                },
+                {
+                    extend: 'selected', // Bind to Selected row
+                    text: 'Delete',
+                    name: 'delete'      // do not change name
+                }]
+            });
         });
-    });
-
-    $('.sonarr_config').on('keyup', function () {
-        $('#sonarr_validated').checkbox('uncheck');
-        $('#sonarr_validation_result').text('You Must Test Your Sonarr Connection Settings Before Saving.').css('color', 'red');
-        $('.form').form('validate form');
-        $('#loader').removeClass('active');
-    });
-
-    $('#settings_sonarr_ssl').on('change', function () {
-        $('#sonarr_validated').checkbox('uncheck');
-        $('#sonarr_validation_result').text('You Must Test Your Sonarr Connection Settings Before Saving.').css('color', 'red');
-        $('.form').form('validate form');
-        $('#loader').removeClass('active');
-    });
-
-    $("#sonarr_validated").checkbox('check');
-
-
-</script>
-{% endmacro %}
+    </script>
+{% endblock tail %}
