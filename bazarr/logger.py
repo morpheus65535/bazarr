@@ -95,6 +95,7 @@ def configure_logging(debug=False):
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
         logging.getLogger("subzero").setLevel(logging.ERROR)
     
+    logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
