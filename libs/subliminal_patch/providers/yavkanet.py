@@ -61,8 +61,6 @@ class YavkaNetSubtitle(Subtitle):
              matches.add('hash')
 
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
-
-        matches.add(id(self))
         return matches
 
 
