@@ -96,10 +96,10 @@ class YavkaNetProvider(Provider):
         }
 
         if isEpisode:
-            params['s'] = "%s s%02de%02d" % (sanitize(video.series), video.season, video.episode)
+            params['s'] = "%s s%02de%02d" % (sanitize(video.series, {'\''}), video.season, video.episode)
         else:
             params['y'] = video.year
-            params['s'] = video.title
+            params['s'] = sanitize(video.title, {'\''})
 
         if   language == 'en' or language == 'eng':
             params['l'] = 'EN'
