@@ -13,9 +13,7 @@ import operator
 from subliminal import core
 from subliminal_patch import search_external_subtitles
 from subzero.language import Language
-from bs4 import UnicodeDammit
 import six
-from binaryornot.check import is_binary
 
 from get_args import args
 from database import database
@@ -27,6 +25,7 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
 from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
 import six
+import chardet
 
 gc.enable()
 
@@ -367,25 +366,29 @@ def guess_external_subtitles(dest_folder, subtitles):
             subtitle_path = os.path.join(dest_folder, subtitle)
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
                 logging.debug("BAZARR falling back to file content analysis to detect language.")
-                if is_binary(subtitle_path):
-                    logging.debug("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                detected_language = None
+                
+                # to improve performance, skip detection of files larger that 5M
+                if os.path.getsize(subtitle_path) > 5*1024*1024:
+                    logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
                                   subtitle_path)
                     continue
-                detected_language = None
-
-                if six.PY3:
-                    with open(subtitle_path, 'r', errors='ignore') as f:
-                        text = f.read()
-                else:
-                    with open(subtitle_path, 'r') as f:
-                        text = f.read()
-
+                                      
+                with open(subtitle_path, 'rb') as f:
+                    text = f.read()
+                    
                 try:
-                    encoding = UnicodeDammit(text)
-                    if six.PY2:
-                        text = text.decode(encoding.original_encoding)
+                    # to improve performance, use only the first 8K to detect encoding
+                    if len(text) > 8192: guess = chardet.detect(text[:8192])
+                    else: guess = chardet.detect(text)
+                    if guess["confidence"] < 0.8:
+                        raise UnicodeError
+                    text = text.decode(guess["encoding"])
                     detected_language = guess_language(text)
-                except Exception as e:
+                except UnicodeError:
+                    logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                                      subtitle_path)
+                except:
                     logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
                                       subtitle_path + ' You should try to delete this subtitles file manually and ask '
                                                       'Bazarr to download it again.')
