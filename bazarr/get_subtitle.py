@@ -29,7 +29,7 @@ from utils import history_log, history_log_movie, get_binary
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from queueconfig import notifications
-from pyprobe.pyprobe import VideoFileParser
+from knowit import api
 from database import database, dict_mapper
 
 from analytics import track_event
@@ -899,37 +899,30 @@ def refine_from_ffprobe(path, video):
     else:
         logging.debug('BAZARR FFprobe used is %s', exe)
     
-    parser = VideoFileParser(ffprobe=exe, includeMissing=True, rawMode=False)
-    data = parser.parseFfprobe(path)
+    api.initialize({'provider': 'ffmpeg', 'ffmpeg': exe})
+    data = api.know(path)
 
     logging.debug('FFprobe found: %s', data)
 
-    if 'videos' not in data:
+    if 'video' not in data:
         logging.debug('BAZARR FFprobe was unable to find video tracks in the file!')
     else:
-        if 'resolution' in data['videos'][0]:
+        if 'resolution' in data['video'][0]:
             if not video.resolution:
-                if data['videos'][0]['resolution'][0] >= 3200:
-                    video.resolution = "2160p"
-                elif data['videos'][0]['resolution'][0] >= 1800:
-                    video.resolution = "1080p"
-                elif data['videos'][0]['resolution'][0] >= 1200:
-                    video.resolution = "720p"
-                elif data['videos'][0]['resolution'][0] >= 0:
-                    video.resolution = "480p"
-        if 'codec' in data['videos'][0]:
+                video.resolution = data['video'][0]['resolution']
+        if 'codec' in data['video'][0]:
             if not video.video_codec:
-                video.video_codec = data['videos'][0]['codec']
-        if 'framerate' in data['videos'][0]:
+                video.video_codec = data['video'][0]['codec']
+        if 'frame_rate' in data['video'][0]:
             if not video.fps:
-                video.fps = data['videos'][0]['framerate']
+                video.fps = data['video'][0]['frame_rate']
 
-    if 'audios' not in data:
+    if 'audio' not in data:
         logging.debug('BAZARR FFprobe was unable to find audio tracks in the file!')
     else:
-        if 'codec' in data['audios'][0]:
+        if 'codec' in data['audio'][0]:
             if not video.audio_codec:
-                video.audio_codec = data['audios'][0]['codec'].upper()
+                video.audio_codec = data['audio'][0]['codec']
 
 
 def upgrade_subtitles():

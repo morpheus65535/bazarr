@@ -95,6 +95,7 @@ def configure_logging(debug=False):
         logging.getLogger("engineio.server").setLevel(logging.ERROR)
         logging.getLogger("socketio.server").setLevel(logging.ERROR)
 
+    logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
