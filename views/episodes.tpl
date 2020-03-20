@@ -734,6 +734,7 @@
                     const array_release_info = data.release_info;
                     let i;
                     let text = '<div class="ui fluid accordion"><div class="title"><i class="dropdown icon"></i>...</div><div class="content season">';
+                    if (array_release_info.length <= 1) text = '<div><div class="content season">';
                     for (i = 0; i < array_release_info.length; i++) {
                         text += '<div class="ui tiny label" style="margin-bottom: 2px;">' + array_release_info[i] + '</div>';
                     }
