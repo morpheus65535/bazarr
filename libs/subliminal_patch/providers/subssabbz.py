@@ -12,7 +12,7 @@ from requests import Session
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
@@ -22,6 +22,21 @@ from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Marvel's Daredevil": "Daredevil",
+                                           "Marvel's Luke Cage": "Luke Cage",
+                                           "Marvel's Iron Fist": "Iron Fist",
+                                           "Marvel's Jessica Jones": "Jessica Jones",
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow"
+                                           }, True)
 
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
@@ -34,6 +49,7 @@ class SubsSabBzSubtitle(Subtitle):
         self.page_link = link
         self.type = type
         self.video = video
+        self.release_info = os.path.splitext(filename)[0]
 
     @property
     def id(self):
@@ -60,8 +76,6 @@ class SubsSabBzSubtitle(Subtitle):
              matches.add('hash')
 
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
-
-        matches.add(id(self))
         return matches
 
 
@@ -99,10 +113,10 @@ class SubsSabBzProvider(Provider):
         }
 
         if isEpisode:
-            params['movie'] = "%s %02d %02d" % (sanitize(video.series), video.season, video.episode)
+            params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['yr'] = video.year
-            params['movie'] = (video.title)
+            params['movie'] = sanitize(video.title, {'\''})
 
         if language == 'en' or language == 'eng':
             params['select-language'] = 1
@@ -121,8 +135,8 @@ class SubsSabBzProvider(Provider):
         soup = BeautifulSoup(response.content, 'html.parser')
         rows = soup.findAll('tr', {'class': 'subs-row'})
 
-        # Search on first 10 rows only
-        for row in rows[:10]:
+        # Search on first 20 rows only
+        for row in rows[:20]:
             a_element_wrapper = row.find('td', { 'class': 'c2field' })
             if a_element_wrapper:
                 element = a_element_wrapper.find('a')
