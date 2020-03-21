@@ -92,6 +92,15 @@
                     </div>
                 </div>
                 <br>
+                <div class="row">
+                    <div class="col-sm-2 text-right">
+                        <button type="button" class="btn btn-secondary" id="test_sonarr_connection">Test</button>
+                    </div>
+                    <div class="col-sm-4">
+                        <span id="test_sonarr_span"></span>
+                    </div>
+                </div>
+                <br>
 
                 <h4>Options</h4>
                 <hr/>
@@ -116,16 +125,118 @@
                     </div>
                 </div>
                 <br>
-                <h4>PAth Mapping</h4>
+                <h4>Path Mappings</h4>
                 <hr/>
                 <div class="row">
-                    <table class="dataTable table table-striped" id="path_mapping">
+                    <div class="col-sm-8">
+                        <table class="table table-striped" id="path_mapping" style="width:100%;">
 
-                    </table>
+                        </table>
+                    </div>
                 </div>
                 <br>
             </div>
         </form>
+    </div>
+
+    <div id="addModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="add_form" id="add_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Sonarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="add_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="edit_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Sonarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_sonarr" name="edit_path_sonarr" value="">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_bazarr" name="edit_path_bazarr" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this path mapping?
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="delete_yes_button" class="btn btn-info">Yes</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock body %}
 
@@ -157,6 +268,8 @@
                     formdata.set($(this).prop('id'), $(this).prop('checked'));
                 });
 
+                formdata.append('settings-general-path_mappings', JSON.stringify(table.rows().data().toArray()));
+
                 $.ajax({
                     url: "{{ url_for('api.savesettings') }}",
                     data: formdata,
@@ -174,33 +287,93 @@
                 });
             });
 
-            table = $('#path_mapping').DataTable({
-                data: [["/tvsonarr", "/tvbazarr"]],
+            var path_mapping = jQuery.makeArray({{ settings.general.path_mappings|safe }})
+            path_mapping = $.grep(path_mapping, function(v) {
+                return v[0] !== "" || v[1] !== "";
+            });
+
+            var table = $('#path_mapping').DataTable({
+                data: path_mapping,
                 columns: [{
-                    title: "Path for Sonarr",
-                    type: "text"
-                }, {
-                    title: "Path for Bazarr",
-                    type: "text"
-                }],
-                dom: 'Bfrtip',        // Needs button container
-                select: 'single',
+                        title: "Path for Sonarr",
+                        type: "text"
+                    },
+                    {
+                        title: "Path for Bazarr",
+                        type: "text"
+                    }],
+                dom: 'Bfrtip',
+                select: {
+                    style: 'single'
+                },
+                language: {
+                    zeroRecords: 'No Path Mappings'
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: true,
                 responsive: true,
-                altEditor: true,     // Enable altEditor
+                paging: false,
+                info: false,
                 buttons: [{
                     text: 'Add',
-                    name: 'add'        // do not change name
+                    action: function () {
+                        $('#addModal').modal('show');
+                    }
                 },
                 {
-                    extend: 'selected', // Bind to Selected row
+                    extend: 'selected',
                     text: 'Edit',
-                    name: 'edit'        // do not change name
+                    action: function () {
+                        $('#edit_path_sonarr').val(table.row( { selected: true } ).data()[0]);
+                        $('#edit_path_bazarr').val(table.row( { selected: true } ).data()[1]);
+                        $('#editModal').modal('show');
+                    }
                 },
                 {
-                    extend: 'selected', // Bind to Selected row
+                    extend: 'selected',
                     text: 'Delete',
-                    name: 'delete'      // do not change name
+                    action: function () {
+                        $('#deleteModal').modal('show');
+                    }
                 }]
+            });
+
+            $('#add_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row.add([ $('#add_path_sonarr').val(), $('#add_path_bazarr').val()]).draw();
+                $('#add_path_sonarr').val('');
+                $('#add_path_bazarr').val('');
+                $('#addModal').modal('hide');
+            });
+
+            $('#edit_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row( { selected: true } ).data([ $('#edit_path_sonarr').val(), $('#edit_path_bazarr').val()]);
+                $('#editModal').modal('hide');
+            });
+
+            $('#delete_yes_button').on('click', function(e) {
+                e.preventDefault();
+                table.row( { selected: true } ).remove().draw();
+                $('#deleteModal').modal('hide');
+            });
+
+            $('#test_sonarr_connection').on('click', function() {
+                if ($('#settings-sonarr-ssl').is(':checked')) {
+                    var protocol = 'https';
+                } else {
+                    var protocol = 'http';
+                }
+                var sonarr_url = $('#settings-sonarr-ip').val() + ":" + $('#settings-sonarr-port').val() + $('#settings-sonarr-base_url').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings-sonarr-apikey').val();
+
+                $.getJSON("{{ url_for('test_url') }}/" + protocol + "/" + encodeURIComponent(sonarr_url), function (data) {
+                    if (data.status) {
+                        $('#test_sonarr_span').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
+                    } else {
+                        $('#test_sonarr_span').text('Test Failed').css('color', 'red');
+                    }
+                });
             });
         });
     </script>

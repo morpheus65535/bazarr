@@ -16,8 +16,8 @@ import ast
 import hashlib
 import warnings
 import queueconfig
-import platform
 import apprise
+import requests
 
 
 from get_args import args
@@ -38,13 +38,12 @@ from get_languages import load_language_in_db, language_from_alpha3, language_fr
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
-from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from scheduler import Scheduler
+from check_update import check_and_apply_update
 from subliminal_patch.extensions import provider_registry as provider_manager
 from functools import wraps
 
@@ -172,6 +171,7 @@ def logout():
 @login_required
 def shutdown():
     doShutdown()
+
 
 def doShutdown():
     try:
@@ -598,16 +598,19 @@ def settingssonarr():
     return render_template('settingssonarr.html')
 
 
+@app.route('/settingsradarr/')
+@login_required
+def settingsradarr():
+    return render_template('settingsradarr.html')
+
+
 @app.route('/check_update')
 @login_required
 def check_update():
-
-    ref = request.environ['HTTP_REFERER']
-
     if not args.no_update:
         check_and_apply_update()
 
-    redirect(ref)
+    return '', 200
 
 
 @app.route('/systemtasks')
@@ -638,21 +641,6 @@ def systemstatus():
 @login_required
 def systemreleases():
     return render_template('systemreleases.html')
-
-
-@app.route('/logs')
-@login_required
-def get_logs():
-
-    logs = []
-    with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
-        for line in file.readlines():
-            lin = []
-            lin = line.split('|')
-            logs.append(lin)
-        logs.reverse()
-
-    return dict(data=logs)
 
 
 def configured():
@@ -719,6 +707,7 @@ def api_movies_history():
     return dict(subtitles=history_subs)
 
 
+@app.route('/test_url', methods=['GET'])
 @app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
 @login_required
 def test_url(protocol, url):
@@ -742,85 +731,8 @@ def test_notification(protocol, provider):
 
     apobj.notify(
         title='Bazarr test notification',
-        body=('Test notification')
+        body='Test notification'
     )
-
-
-@app.route('/notifications')
-@login_required
-def notifications():
-    if queueconfig.notifications:
-        test = queueconfig.notifications
-        return queueconfig.notifications.read() or ''
-    else:
-        return abort(400)
-
-
-@app.route('/running_tasks')
-@login_required
-def running_tasks_list():
-
-    return dict(tasks=scheduler.get_running_tasks())
-
-
-@app.route('/episode_history/<int:no>')
-@login_required
-def episode_history(no):
-
-    episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
-                                       "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (no,))
-    for item in episode_history:
-        item['timestamp'] = "<div data-tooltip='" + \
-                            time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + "'>" + \
-                            pretty.date(datetime.fromtimestamp(item['timestamp'])) + "</div>"
-        if item['language']:
-            item['language'] = language_from_alpha2(item['language'])
-        else:
-            item['language'] = "<i>undefined</i>"
-        if item['score']:
-            item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
-
-    return dict(data=episode_history)
-
-
-@app.route('/movie_history/<int:no>')
-@login_required
-def movie_history(no):
-
-    movie_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history_movie "
-                                     "WHERE radarrId=? ORDER BY timestamp DESC", (no,))
-    for item in movie_history:
-        if item['action'] == 0:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "erased.' data-inverted='' data-position='top left'><i class='ui trash icon'></i></div>"
-        elif item['action'] == 1:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "downloaded.' data-inverted='' data-position='top left'><i class='ui download " \
-                             "icon'></i></div>"
-        elif item['action'] == 2:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "manually downloaded.' data-inverted='' data-position='top left'><i class='ui user " \
-                             "icon'></i></div>"
-        elif item['action'] == 3:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "upgraded.' data-inverted='' data-position='top left'><i class='ui recycle " \
-                             "icon'></i></div>"
-        elif item['action'] == 4:
-            item['action'] = "<div class ='ui inverted basic compact icon' data-tooltip='Subtitle file has been " \
-                             "manually uploaded.' data-inverted='' data-position='top left'><i class='ui cloud " \
-                             "upload icon'></i></div>"
-
-        item['timestamp'] = "<div data-tooltip='" + \
-                            time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + "'>" + \
-                            pretty.date(datetime.fromtimestamp(item['timestamp'])) + "</div>"
-        if item['language']:
-            item['language'] = language_from_alpha2(item['language'])
-        else:
-            item['language'] = "<i>undefined</i>"
-        if item['score']:
-            item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + '%'
-
-    return dict(data=movie_history)
 
 
 # Mute DeprecationWarning
