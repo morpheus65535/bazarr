@@ -346,10 +346,15 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 not_matched = scores - matches
                 s.score = score
 
-                releases = ['n/a']
+                releases = []
                 if hasattr(s, 'release_info'):
                     if s.release_info is not None:
-                        releases = s.release_info.split(',')
+                        for s_item in s.release_info.split(','):
+                            if s_item.strip():
+                                releases.append(s_item)
+                        
+                if len(releases) == 0:
+                    releases = ['n/a']
 
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
