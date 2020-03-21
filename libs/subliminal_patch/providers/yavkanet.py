@@ -12,7 +12,7 @@ from requests import Session
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize, fix_inconsistent_naming
+from subliminal_patch.utils import sanitize
 from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
@@ -23,27 +23,12 @@ from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
-def fix_tv_naming(title):
-    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
-
-    :param str title: original title.
-    :return: new title.
-    :rtype: str
-
-    """
-    return fix_inconsistent_naming(title, {"Marvel's Daredevil": "Daredevil",
-                                           "Marvel's Luke Cage": "Luke Cage",
-                                           "Marvel's Iron Fist": "Iron Fist",
-                                           "Marvel's Jessica Jones": "Jessica Jones",
-                                           "DC's Legends of Tomorrow": "Legends of Tomorrow"
-                                           }, True)
-
-class SubsSabBzSubtitle(Subtitle):
-    """SubsSabBz Subtitle."""
-    provider_name = 'subssabbz'
+class YavkaNetSubtitle(Subtitle):
+    """YavkaNet Subtitle."""
+    provider_name = 'yavkanet'
 
     def __init__(self, langauge, filename, type, video, link):
-        super(SubsSabBzSubtitle, self).__init__(langauge)
+        super(YavkaNetSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
         self.page_link = link
@@ -79,10 +64,10 @@ class SubsSabBzSubtitle(Subtitle):
         return matches
 
 
-class SubsSabBzProvider(Provider):
-    """SubsSabBz Provider."""
-    languages = {Language('por', 'BR')} | {Language(l) for l in [
-        'bul', 'eng'
+class YavkaNetProvider(Provider):
+    """YavkaNet Provider."""
+    languages = {Language(l) for l in [
+        'bul', 'eng', 'rus', 'spa', 'ita'
     ]}
 
     def initialize(self):
@@ -102,28 +87,32 @@ class SubsSabBzProvider(Provider):
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
-
         params = {
-            'act': 'search',
-            'movie': '',
-            'select-language': '2',
-            'upldr': '',
-            'yr': '',
-            'release': ''
+            's': '',
+            'y': '',
+            'u': '',
+            'l': 'BG',
+            'i': ''
         }
 
         if isEpisode:
-            params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
+            params['s'] = "%s s%02de%02d" % (sanitize(video.series, {'\''}), video.season, video.episode)
         else:
-            params['yr'] = video.year
-            params['movie'] = sanitize(video.title, {'\''})
+            params['y'] = video.year
+            params['s'] = sanitize(video.title, {'\''})
 
-        if language == 'en' or language == 'eng':
-            params['select-language'] = 1
+        if   language == 'en' or language == 'eng':
+            params['l'] = 'EN'
+        elif language == 'ru' or language == 'rus':
+            params['l'] = 'RU'
+        elif language == 'es' or language == 'spa':
+            params['l'] = 'ES'
+        elif language == 'it' or language == 'ita':
+            params['l'] = 'IT'
 
         logger.info('Searching subtitle %r', params)
-        response = self.session.post('http://subs.sab.bz/index.php?', params=params, allow_redirects=False, timeout=10, headers={
-            'Referer': 'http://subs.sab.bz/',
+        response = self.session.get('http://yavka.net/subtitles.php', params=params, allow_redirects=False, timeout=10, headers={
+            'Referer': 'http://yavka.net/',
             })
 
         response.raise_for_status()
@@ -133,20 +122,18 @@ class SubsSabBzProvider(Provider):
             return subtitles
 
         soup = BeautifulSoup(response.content, 'html.parser')
-        rows = soup.findAll('tr', {'class': 'subs-row'})
-
+        rows = soup.findAll('tr', {'class': 'info'})
+        
         # Search on first 20 rows only
         for row in rows[:20]:
-            a_element_wrapper = row.find('td', { 'class': 'c2field' })
-            if a_element_wrapper:
-                element = a_element_wrapper.find('a')
-                if element:
-                    link = element.get('href')
-                    logger.info('Found subtitle link %r', link)
-                    subtitles = subtitles + self.download_archive_and_add_subtitle_files(link, language, video)
+            element = row.find('a', {'class': 'selector'})
+            if element:
+                link = element.get('href')
+                logger.info('Found subtitle link %r', link)
+                subtitles = subtitles + self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video)
 
         return subtitles
-
+        
     def list_subtitles(self, video, languages):
         return [s for l in languages for s in self.query(l, video)]
 
@@ -166,7 +153,7 @@ class SubsSabBzProvider(Provider):
         for file_name in archiveStream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link)
+                subtitle = YavkaNetSubtitle(language, file_name, type, video, link)
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
@@ -174,7 +161,7 @@ class SubsSabBzProvider(Provider):
     def download_archive_and_add_subtitle_files(self, link, language, video ):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
-            'Referer': 'http://subs.sab.bz/index.php?'
+            'Referer': 'http://yavka.net/subtitles.php'
             })
         request.raise_for_status()
 
@@ -185,3 +172,4 @@ class SubsSabBzProvider(Provider):
             return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
         else:
             raise ValueError('Not a valid archive')
+        
