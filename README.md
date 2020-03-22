@@ -68,6 +68,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Supersubtitles
 * Titlovi
 * TVSubtitles
+* Wizdom
 * XSubs
 * Zimuku
 
