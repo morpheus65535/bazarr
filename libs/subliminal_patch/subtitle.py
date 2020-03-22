@@ -54,6 +54,7 @@ class Subtitle(Subtitle_):
     is_pack = False
     asked_for_release_group = None
     asked_for_episode = None
+    uploader = None # string - uploader username
 
     pack_data = None
     _guessed_encoding = None

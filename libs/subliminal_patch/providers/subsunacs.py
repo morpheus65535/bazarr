@@ -135,16 +135,22 @@ class SubsUnacsProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        rows = soup.findAll('td', {'class': 'tdMovie'})
+        soup = BeautifulSoup(response.content, 'lxml')
+        rows = soup.findAll('tr', onmouseover=True)
 
         # Search on first 20 rows only
         for row in rows[:20]:
-            element = row.find('a', {'class': 'tooltip'})
-            if element:
-                link = element.get('href')
-                logger.info('Found subtitle link %r', link)
-                subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
+            a_element_wrapper = row.find('td', {'class': 'tdMovie'})
+            if a_element_wrapper:
+                element = a_element_wrapper.find('a', {'class': 'tooltip'})
+                if element:
+                    link = element.get('href')
+                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&memid=.*'))
+                    uploader = element.get_text() if element else None
+                    logger.info('Found subtitle link %r', link)
+                    subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
+                    for s in subtitles: 
+                        s.uploader = uploader
 
         return subtitles
 
