@@ -416,11 +416,11 @@
 					<thead>
 						<tr>
 							<th style="text-align: left;">Score:</th>
-							<th style="text-align: left;">Lang.:</th>
-							<th style="text-align: left;">HI:</th>
+							<th style="text-align: left;"></th>
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Matching:</th>
 							<th style="text-align: left;">Releases:</th>
+							<th style="text-align: left;">Uploader:</th>
 							<th></th>
 						</tr>
 					</thead>
@@ -694,14 +694,19 @@
 				},
 				{ data: null,
 				render: function ( data, type, row ) {
+					let lng = data.language;
 		    		if ( data.language === "pt" && is_pb === true && is_pt === false) {
-		    			return 'pb'
-					} else {
-		    			return data.language
+		    			lng = 'pb'
 					}
+
+					let text = '<div class="ui tiny label" style="margin-bottom: 2px;">' + lng.toUpperCase() + '</div>';
+					if (data.hearing_impaired == "True") { 
+		    			text += '<div class="ui tiny inverted label" style="background-color: #313335;">HI</div>';
+					}
+
+					return text;
 					}
 				},
-				{ data: 'hearing_impaired' },
 				{ data: null,
 				render: function ( data, type, row ) {
         			return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
@@ -740,6 +745,11 @@
                     }
                     text += '</div></div>';
                     return text;
+                    }
+				},
+				{ data: 'uploader',
+				render: function ( data, type, row ) {
+                    return '<div class="ui tiny label">' + data + '</div>';
                     }
 				},
                 { data: null,
