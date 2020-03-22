@@ -26,10 +26,10 @@ class EmbeddedSubsReader:
 
             if 'subtitle' in data:
                 for detected_language in data['subtitle']:
-                    language = detected_language['language'].alpha3
-                    forced = detected_language['forced'] if 'forced' in detected_language else None
-                    codec = detected_language['format'] if 'format' in detected_language else None
-                    if language:
+                    if 'language' in detected_language:
+                        language = detected_language['language'].alpha3
+                        forced = detected_language['forced'] if 'forced' in detected_language else None
+                        codec = detected_language['format'] if 'format' in detected_language else None
                         subtitles_list.append([language, forced, codec])
                     else:
                         continue
