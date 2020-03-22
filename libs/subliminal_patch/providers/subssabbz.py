@@ -132,7 +132,7 @@ class SubsSabBzProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, 'lxml')
         rows = soup.findAll('tr', {'class': 'subs-row'})
 
         # Search on first 20 rows only
@@ -142,8 +142,12 @@ class SubsSabBzProvider(Provider):
                 element = a_element_wrapper.find('a')
                 if element:
                     link = element.get('href')
+                    element = row.find('a', href = re.compile(r'.*showuser=.*'))
+                    uploader = element.get_text() if element else None
                     logger.info('Found subtitle link %r', link)
                     subtitles = subtitles + self.download_archive_and_add_subtitle_files(link, language, video)
+                    for s in subtitles: 
+                        s.uploader = uploader
 
         return subtitles
 

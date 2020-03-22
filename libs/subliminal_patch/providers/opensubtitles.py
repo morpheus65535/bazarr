@@ -327,6 +327,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                                            hash, movie_name, movie_release_name, movie_year, movie_imdb_id,
                                            series_season, series_episode, query_parameters, filename, encoding,
                                            movie_fps, skip_wrong_fps=self.skip_wrong_fps)
+            subtitle.uploader = _subtitle_item['UserNickName']
             logger.debug('Found subtitle %r by %s', subtitle, matched_by)
             subtitles.append(subtitle)
 
