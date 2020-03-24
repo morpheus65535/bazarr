@@ -139,7 +139,7 @@
                     {
                         data: "languages",
                         render: function (data) {
-                            if (data !== 'None') {
+                            if (data && data !== 'None') {
                                 var languages = '';
                                 data.forEach(appendFunc);
                                 return languages;
