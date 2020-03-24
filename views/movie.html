@@ -703,7 +703,7 @@
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
 			var languages = '';
-			if (movieDetails['languages'] !== 'None') {
+			if (movieDetails['languages'] && movieDetails['languages'] !== 'None') {
 				movieDetails['languages'].forEach(appendFunc);
 			}
 
