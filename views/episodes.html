@@ -853,7 +853,7 @@
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
 
                 var languages = '';
-                if (seriesDetails['languages'] !== 'None') {
+                if (seriesDetails['languages'] && seriesDetails['languages'] !== 'None') {
                     seriesDetails['languages'].forEach(appendFunc);
                 }
 
