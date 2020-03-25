@@ -21,9 +21,16 @@ def update_series():
 
     sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
-    serie_default_language = settings.general.serie_default_language
-    serie_default_hi = settings.general.serie_default_hi
-    serie_default_forced = settings.general.serie_default_forced
+
+    if serie_default_enabled is True:
+        serie_default_language = settings.general.serie_default_language
+        serie_default_hi = settings.general.serie_default_hi
+        serie_default_forced = settings.general.serie_default_forced
+    else:
+        serie_default_language = '[]'
+        serie_default_hi = 'Flase'
+        serie_default_forced = 'False'
+
     audio_profiles = get_profile_list()
 
     # Get shows data from Sonarr
@@ -93,33 +100,20 @@ def update_series():
                                      'year': str(show['year']),
                                      'alternateTitles': alternate_titles})
         else:
-            if serie_default_enabled is True:
-                series_to_add.append({'title': show["title"],
-                                      'path': show["path"],
-                                      'tvdbId': show["tvdbId"],
-                                      'languages': serie_default_language,
-                                      'hearing_impaired': serie_default_hi,
-                                      'sonarrSeriesId': show["id"],
-                                      'overview': overview,
-                                      'poster': poster,
-                                      'fanart': fanart,
-                                      'audio_language': audio_language,
-                                      'sortTitle': show['sortTitle'],
-                                      'year': str(show['year']),
-                                      'alternateTitles': alternate_titles,
-                                      'forced': serie_default_forced})
-            else:
-                series_to_add.append({'title': show["title"],
-                                      'path': show["path"],
-                                      'tvdbId': show["tvdbId"],
-                                      'sonarrSeriesId': show["id"],
-                                      'overview': overview,
-                                      'poster': poster,
-                                      'fanart': fanart,
-                                      'audio_language': audio_language,
-                                      'sortTitle': show['sortTitle'],
-                                      'year': str(show['year']),
-                                      'alternateTitles': alternate_titles})
+            series_to_add.append({'title': show["title"],
+                                  'path': show["path"],
+                                  'tvdbId': show["tvdbId"],
+                                  'languages': serie_default_language,
+                                  'hearing_impaired': serie_default_hi,
+                                  'sonarrSeriesId': show["id"],
+                                  'overview': overview,
+                                  'poster': poster,
+                                  'fanart': fanart,
+                                  'audio_language': audio_language,
+                                  'sortTitle': show['sortTitle'],
+                                  'year': str(show['year']),
+                                  'alternateTitles': alternate_titles,
+                                  'forced': serie_default_forced})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
