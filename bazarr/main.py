@@ -2007,7 +2007,7 @@ def perform_manual_upload_subtitle_movie():
                                         forced=forced,
                                         title=title,
                                         scene_name=sceneName,
-                                        media_type='series',
+                                        media_type='movie',
                                         subtitle=upload)
 
         if result is not None:
