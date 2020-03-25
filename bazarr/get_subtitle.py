@@ -878,7 +878,7 @@ def refine_from_db(path, video):
                                 "WHERE table_episodes.path = ?", (path_replace_reverse(path),), only_one=True)
 
         if data:
-            video.series, year, country = series_re.match(data['seriesTitle']).groups()
+            video.series = data['seriesTitle']
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
