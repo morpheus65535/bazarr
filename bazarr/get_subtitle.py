@@ -42,6 +42,7 @@ import six
 from six.moves import range
 from functools import reduce
 from locale import getpreferredencoding
+import chardet
 
 
 def get_video(path, title, sceneName, use_scenename, providers=None, media_type="movie"):
@@ -502,7 +503,34 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if os.path.exists(subtitle_path):
         os.remove(subtitle_path)
 
-    subtitle.save(subtitle_path)
+    if settings.general.utf8_encode:
+        try:
+            os.remove(subtitle_path + ".tmp")
+        except:
+            pass
+
+        subtitle.save(subtitle_path + ".tmp")
+
+        with open(subtitle_path + ".tmp", 'rb') as fr:
+            text = fr.read()
+
+        try:
+            guess = chardet.detect(text)
+            text = text.decode(guess["encoding"])
+            text = text.encode('utf-8')
+        except UnicodeError:
+            logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                              subtitle_path)
+        else:
+            with open(subtitle_path, 'wb') as fw:
+                fw.write(text)
+        finally:
+            try:
+                os.remove(subtitle_path + ".tmp")
+            except:
+                pass
+    else:
+        subtitle.save(subtitle_path)
 
     if chmod:
         os.chmod(subtitle_path, chmod)
