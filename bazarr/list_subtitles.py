@@ -378,8 +378,8 @@ def guess_external_subtitles(dest_folder, subtitles):
                     text = f.read()
                     
                 try:
-                    # to improve performance, use only the first 8K to detect encoding
-                    if len(text) > 8192: guess = chardet.detect(text[:8192])
+                    # to improve performance, use only the first 32K to detect encoding
+                    if len(text) > 32768: guess = chardet.detect(text[:32768])
                     else: guess = chardet.detect(text)
                     if guess["confidence"] < 0.8:
                         raise UnicodeError
