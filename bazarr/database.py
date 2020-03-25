@@ -126,3 +126,11 @@ def db_upgrade():
                 database.execute('''ALTER TABLE {0} ADD COLUMN "{1}" "{2}" DEFAULT "{3}"'''.format(column[0], column[1], column[2], column[3]))
         except:
             pass
+
+    # Fix null languages, hearing-impaired and forced for series and movies.
+    database.execute("UPDATE table_shows SET languages = '[]' WHERE languages is null")
+    database.execute("UPDATE table_shows SET hearing_impaired = 'False' WHERE hearing_impaired is null")
+    database.execute("UPDATE table_shows SET forced = 'False' WHERE forced is null")
+    database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
+    database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
+    database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")
