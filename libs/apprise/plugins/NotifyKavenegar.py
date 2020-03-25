@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Chris Caron <lead2gold@gmail.com>
+# Copyright (C) 2020 Chris Caron <lead2gold@gmail.com>
 # All rights reserved.
 #
 # This code is licensed under the MIT License.
@@ -23,14 +23,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# Create an account https://messagebird.com if you don't already have one
+# To use this service you will need a Kavenegar account from their website
+# at https://kavenegar.com/
 #
-# Get your (apikey) and api example from the dashboard here:
-#   - https://dashboard.messagebird.com/en/user/index
+# After you've established your account you can get your API Key from your
+# account profile: https://panel.kavenegar.com/client/setting/account
 #
-
+# This provider does not accept +1 (for example) as a country code. You need
+# to specify 001 instead.
+#
 import re
 import requests
+from json import loads
 
 from .NotifyBase import NotifyBase
 from ..common import NotifyType
@@ -38,29 +42,59 @@ from ..utils import parse_list
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
+# Extend HTTP Error Messages
+# Based on https://kavenegar.com/rest.html
+KAVENEGAR_HTTP_ERROR_MAP = {
+    200: 'The request was approved',
+    400: 'Parameters are incomplete',
+    401: 'Account has been disabled',
+    402: 'The operation failed',
+    403: 'The API Key is invalid',
+    404: 'The method is unknown',
+    405: 'The GET/POST request is wrong',
+    406: 'Invalid mandatory parameters sent',
+    407: 'You canot access the information you want',
+    409: 'The server is unable to response',
+    411: 'The recipient is invalid',
+    412: 'The sender is invalid',
+    413: 'Message empty or message length exceeded',
+    414: 'The number of recipients is more than 200',
+    415: 'The start index is larger then the total',
+    416: 'The source IP of the service does not match the settings',
+    417: 'The submission date is incorrect, '
+         'either expired or not in the correct format',
+    418: 'Your account credit is insufficient',
+    422: 'Data cannot be processed due to invalid characters',
+    501: 'SMS can only be sent to the account holder number',
+}
+
 # Some Phone Number Detection
 IS_PHONE_NO = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
 
 
-class NotifyMessageBird(NotifyBase):
+class NotifyKavenegar(NotifyBase):
     """
-    A wrapper for MessageBird Notifications
+    A wrapper for Kavenegar Notifications
     """
 
     # The default descriptive name associated with the Notification
-    service_name = 'MessageBird'
+    service_name = 'Kavenegar'
 
     # The services URL
-    service_url = 'https://messagebird.com'
+    service_url = 'https://kavenegar.com/'
 
-    # The default protocol
-    secure_protocol = 'msgbird'
+    # All notification requests are secure
+    secure_protocol = 'kavenegar'
+
+    # Allow 300 requests per minute.
+    # 60/300 = 0.2
+    request_rate_per_sec = 0.20
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_messagebird'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_kavenegar'
 
-    # MessageBird uses the http protocol with JSON requests
-    notify_url = 'https://rest.messagebird.com/messages'
+    # Kavenegar single notification URL
+    notify_url = 'http://api.kavenegar.com/v1/{apikey}/sms/send.json'
 
     # The maximum length of the body
     body_maxlen = 160
@@ -71,8 +105,8 @@ class NotifyMessageBird(NotifyBase):
 
     # Define object templates
     templates = (
-        '{schema}://{apikey}/{source}',
-        '{schema}://{apikey}/{source}/{targets}',
+        '{schema}://{apikey}/{targets}',
+        '{schema}://{source}@{apikey}/{targets}',
     )
 
     # Define our template tokens
@@ -82,13 +116,12 @@ class NotifyMessageBird(NotifyBase):
             'type': 'string',
             'required': True,
             'private': True,
-            'regex': (r'^[a-z0-9]{25}$', 'i'),
+            'regex': (r'^[a-z0-9]+$', 'i'),
         },
         'source': {
             'name': _('Source Phone No'),
             'type': 'string',
             'prefix': '+',
-            'required': True,
             'regex': (r'^[0-9\s)(+-]+$', 'i'),
         },
         'target_phone': {
@@ -101,7 +134,8 @@ class NotifyMessageBird(NotifyBase):
         'targets': {
             'name': _('Targets'),
             'type': 'list:string',
-        }
+            'required': True,
+        },
     })
 
     # Define our template arguments
@@ -114,54 +148,51 @@ class NotifyMessageBird(NotifyBase):
         },
     })
 
-    def __init__(self, apikey, source, targets=None, **kwargs):
+    def __init__(self, apikey, source=None, targets=None, **kwargs):
         """
-        Initialize MessageBird Object
+        Initialize Kavenegar Object
         """
-        super(NotifyMessageBird, self).__init__(**kwargs)
+        super(NotifyKavenegar, self).__init__(**kwargs)
 
         # API Key (associated with project)
         self.apikey = validate_regex(
             apikey, *self.template_tokens['apikey']['regex'])
         if not self.apikey:
-            msg = 'An invalid MessageBird API Key ' \
+            msg = 'An invalid Kavenegar API Key ' \
                   '({}) was specified.'.format(apikey)
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        result = IS_PHONE_NO.match(source)
-        if not result:
-            msg = 'The MessageBird source specified ({}) is invalid.'\
-                .format(source)
-            self.logger.warning(msg)
-            raise TypeError(msg)
+        self.source = None
+        if source is not None:
+            result = IS_PHONE_NO.match(source)
+            if not result:
+                msg = 'The Kavenegar source specified ({}) is invalid.'\
+                    .format(source)
+                self.logger.warning(msg)
+                raise TypeError(msg)
 
-        # Further check our phone # for it's digit count
-        result = ''.join(re.findall(r'\d+', result.group('phone')))
-        if len(result) < 11 or len(result) > 14:
-            msg = 'The MessageBird source # specified ({}) is invalid.'\
-                .format(source)
-            self.logger.warning(msg)
-            raise TypeError(msg)
+            # Further check our phone # for it's digit count
+            result = ''.join(re.findall(r'\d+', result.group('phone')))
+            if len(result) < 11 or len(result) > 14:
+                msg = 'The MessageBird source # specified ({}) is invalid.'\
+                    .format(source)
+                self.logger.warning(msg)
+                raise TypeError(msg)
 
-        # Store our source
-        self.source = result
+            # Store our source
+            self.source = result
 
         # Parse our targets
         self.targets = list()
 
-        targets = parse_list(targets)
-        if not targets:
-            # No sources specified, use our own phone no
-            self.targets.append(self.source)
-            return
-
-        # otherwise, store all of our target numbers
-        for target in targets:
+        for target in parse_list(targets):
             # Validate targets and drop bad ones:
             result = IS_PHONE_NO.match(target)
             if result:
                 # Further check our phone # for it's digit count
+                # if it's less than 10, then we can assume it's
+                # a poorly specified phone no and spit a warning
                 result = ''.join(re.findall(r'\d+', result.group('phone')))
                 if len(result) < 11 or len(result) > 14:
                     self.logger.warning(
@@ -175,13 +206,10 @@ class NotifyMessageBird(NotifyBase):
                 continue
 
             self.logger.warning(
-                'Dropped invalid phone # '
-                '({}) specified.'.format(target),
-            )
+                'Dropped invalid phone # ({}) specified.'.format(target))
 
-        if not self.targets:
-            # We have a bot token and no target(s) to message
-            msg = 'No MessageBird targets to notify.'
+        if len(self.targets) == 0:
+            msg = 'There are no valid targets identified to notify.'
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -189,7 +217,7 @@ class NotifyMessageBird(NotifyBase):
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
-        Perform MessageBird Notification
+        Sends SMS Message
         """
 
         # error tracking (used for function return)
@@ -198,88 +226,70 @@ class NotifyMessageBird(NotifyBase):
         # Prepare our headers
         headers = {
             'User-Agent': self.app_id,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'AccessKey {}'.format(self.apikey),
+            'Accept': 'application/json',
         }
 
-        # Prepare our payload
-        payload = {
-            'originator': '+{}'.format(self.source),
-            'recipients': None,
-            'body': body,
+        # Our URL
+        url = self.notify_url.format(apikey=self.apikey)
 
-        }
-
-        # Create a copy of the targets list
+        # use the list directly
         targets = list(self.targets)
 
         while len(targets):
-            # Get our target to notify
+            # Get our target(s) to notify
             target = targets.pop(0)
 
-            # Prepare our user
-            payload['recipients'] = '+{}'.format(target)
+            # Prepare our payload
+            payload = {
+                'receptor': target,
+                'message': body,
+            }
+
+            if self.source:
+                # Only set source if specified
+                payload['sender'] = self.source
 
             # Some Debug Logging
             self.logger.debug(
-                'MessageBird POST URL: {} (cert_verify={})'.format(
-                    self.notify_url, self.verify_certificate))
-            self.logger.debug('MessageBird Payload: {}' .format(payload))
+                'Kavenegar POST URL: {} (cert_verify={})'.format(
+                    url, self.verify_certificate))
+            self.logger.debug('Kavenegar Payload: {}' .format(payload))
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
             try:
                 r = requests.post(
-                    self.notify_url,
-                    data=payload,
+                    url,
+                    params=payload,
                     headers=headers,
                     verify=self.verify_certificate,
                 )
 
-                # Sample output of a successful transmission
-                # {
-                #   "originator": "+15553338888",
-                #   "body": "test",
-                #   "direction": "mt",
-                #   "mclass": 1,
-                #   "reference": null,
-                #   "createdDatetime": "2019-08-22T01:32:18+00:00",
-                #   "recipients": {
-                #     "totalCount": 1,
-                #     "totalSentCount": 1,
-                #     "totalDeliveredCount": 0,
-                #     "totalDeliveryFailedCount": 0,
-                #     "items": [
-                #       {
-                #         "status": "sent",
-                #         "statusDatetime": "2019-08-22T01:32:18+00:00",
-                #         "recipient": 15553338888,
-                #         "messagePartCount": 1
-                #       }
-                #     ]
-                #   },
-                #   "validity": null,
-                #   "gateway": 10,
-                #   "typeDetails": {},
-                #   "href": "https://rest.messagebird.com/messages/\
-                #       b5d424244a5b4fd0b5b5728bccaafc23",
-                #   "datacoding": "plain",
-                #   "scheduledDatetime": null,
-                #   "type": "sms",
-                #   "id": "b5d424244a5b4fd0b5b5728bccaafc23"
-                # }
-
                 if r.status_code not in (
-                        requests.codes.ok, requests.codes.created):
+                        requests.codes.created, requests.codes.ok):
                     # We had a problem
                     status_str = \
-                        NotifyMessageBird.http_response_code_lookup(
-                            r.status_code)
+                        NotifyBase.http_response_code_lookup(
+                            r.status_code, KAVENEGAR_HTTP_ERROR_MAP)
+
+                    try:
+                        # Update our status response if we can
+                        json_response = loads(r.content)
+                        status_str = json_response.get('message', status_str)
+
+                    except (AttributeError, TypeError, ValueError):
+                        # ValueError = r.content is Unparsable
+                        # TypeError = r.content is None
+                        # AttributeError = r is None
+
+                        # We could not parse JSON response.
+                        # We will just use the status we already have.
+                        pass
 
                     self.logger.warning(
-                        'Failed to send MessageBird notification to {}: '
+                        'Failed to send Kavenegar SMS notification to {}: '
                         '{}{}error={}.'.format(
-                            ','.join(target),
+                            target,
                             status_str,
                             ', ' if status_str else '',
                             r.status_code))
@@ -291,17 +301,19 @@ class NotifyMessageBird(NotifyBase):
                     has_error = True
                     continue
 
-                else:
-                    self.logger.info(
-                        'Sent MessageBird notification to {}.'.format(target))
+                # If we reach here; the message was sent
+                self.logger.info(
+                    'Sent Kavenegar SMS notification to {}.'.format(target))
+
+                self.logger.debug(
+                    'Response Details:\r\n{}'.format(r.content))
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending MessageBird:%s ' % (
-                        target) + 'notification.'
+                    'A Connection error occured sending Kavenegar:%s ' % (
+                        ', '.join(self.targets)) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
-
                 # Mark our failure
                 has_error = True
                 continue
@@ -320,13 +332,13 @@ class NotifyMessageBird(NotifyBase):
             'verify': 'yes' if self.verify_certificate else 'no',
         }
 
-        return '{schema}://{apikey}/{source}/{targets}/?{args}'.format(
+        return '{schema}://{source}{apikey}/{targets}?{args}'.format(
             schema=self.secure_protocol,
+            source='' if not self.source else '{}@'.format(self.source),
             apikey=self.pprint(self.apikey, privacy, safe=''),
-            source=self.source,
             targets='/'.join(
-                [NotifyMessageBird.quote(x, safe='') for x in self.targets]),
-            args=NotifyMessageBird.urlencode(args))
+                [NotifyKavenegar.quote(x, safe='') for x in self.targets]),
+            args=NotifyKavenegar.urlencode(args))
 
     @staticmethod
     def parse_url(url):
@@ -335,36 +347,31 @@ class NotifyMessageBird(NotifyBase):
         us to substantiate this object.
 
         """
-
-        results = NotifyBase.parse_url(url)
+        results = NotifyBase.parse_url(url, verify_host=False)
 
         if not results:
             # We're done early as we couldn't load the results
             return results
 
+        # Store the source if specified
+        if results.get('user', None):
+            results['source'] = results['user']
+
         # Get our entries; split_path() looks after unquoting content for us
         # by default
-        results['targets'] = NotifyMessageBird.split_path(results['fullpath'])
-
-        try:
-            # The first path entry is the source/originator
-            results['source'] = results['targets'].pop(0)
-        except IndexError:
-            # No path specified... this URL is potentially un-parseable; we can
-            # hope for a from= entry
-            pass
+        results['targets'] = NotifyKavenegar.split_path(results['fullpath'])
 
         # The hostname is our authentication key
-        results['apikey'] = NotifyMessageBird.unquote(results['host'])
+        results['apikey'] = NotifyKavenegar.unquote(results['host'])
 
         # Support the 'to' variable so that we can support targets this way too
         # The 'to' makes it easier to use yaml configuration
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
-                NotifyMessageBird.parse_list(results['qsd']['to'])
+                NotifyKavenegar.parse_list(results['qsd']['to'])
 
         if 'from' in results['qsd'] and len(results['qsd']['from']):
             results['source'] = \
-                NotifyMessageBird.unquote(results['qsd']['from'])
+                NotifyKavenegar.unquote(results['qsd']['from'])
 
         return results

@@ -23,26 +23,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# To use this service you will need a Twilio account to which you can get your
-# AUTH_TOKEN and ACCOUNT SID right from your console/dashboard at:
-#     https://www.twilio.com/console
+# To use this service you will need a Sinch account to which you can get your
+# API_TOKEN and SERVICE_PLAN_ID right from your console/dashboard at:
+#     https://dashboard.sinch.com/sms/overview
 #
 # You will also need to send the SMS From a phone number or account id name.
 
 # This is identified as the source (or where the SMS message will originate
 # from). Activated phone numbers can be found on your dashboard here:
-#  - https://www.twilio.com/console/phone-numbers/incoming
-#
-# Alternatively, you can open your wallet and request a different Twilio
-# phone # from:
-#    https://www.twilio.com/console/phone-numbers/search
-#
-# or consider purchasing a short-code from here:
-#    https://www.twilio.com/docs/glossary/what-is-a-short-code
+#  - https://dashboard.sinch.com/numbers/your-numbers/numbers
 #
 import re
+import six
 import requests
-from json import loads
+import json
 
 from .NotifyBase import NotifyBase
 from ..URLBase import PrivacyMode
@@ -56,34 +50,47 @@ from ..AppriseLocale import gettext_lazy as _
 IS_PHONE_NO = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
 
 
-class NotifyTwilio(NotifyBase):
+class SinchRegion(object):
     """
-    A wrapper for Twilio Notifications
+    Defines the Sinch Server Regions
+    """
+    USA = 'us'
+    EUROPE = 'eu'
+
+
+# Used for verification purposes
+SINCH_REGIONS = (SinchRegion.USA, SinchRegion.EUROPE)
+
+
+class NotifySinch(NotifyBase):
+    """
+    A wrapper for Sinch Notifications
     """
 
     # The default descriptive name associated with the Notification
-    service_name = 'Twilio'
+    service_name = 'Sinch'
 
     # The services URL
-    service_url = 'https://www.twilio.com/'
+    service_url = 'https://sinch.com/'
 
     # All notification requests are secure
-    secure_protocol = 'twilio'
+    secure_protocol = 'sinch'
 
     # Allow 300 requests per minute.
     # 60/300 = 0.2
     request_rate_per_sec = 0.20
 
     # the number of seconds undelivered messages should linger for
-    # in the Twilio queue
+    # in the Sinch queue
     validity_period = 14400
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_twilio'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_sinch'
 
-    # Twilio uses the http protocol with JSON requests
-    notify_url = 'https://api.twilio.com/2010-04-01/Accounts/' \
-                 '{sid}/Messages.json'
+    # Sinch uses the http protocol with JSON requests
+    #   - the 'spi' gets substituted with the Service Provider ID
+    #     provided as part of the Apprise URL.
+    notify_url = 'https://{region}.sms.api.sinch.com/xms/v1/{spi}/batches'
 
     # The maximum length of the body
     body_maxlen = 160
@@ -94,20 +101,20 @@ class NotifyTwilio(NotifyBase):
 
     # Define object templates
     templates = (
-        '{schema}://{account_sid}:{auth_token}@{from_phone}',
-        '{schema}://{account_sid}:{auth_token}@{from_phone}/{targets}',
+        '{schema}://{service_plan_id}:{api_token}@{from_phone}',
+        '{schema}://{service_plan_id}:{api_token}@{from_phone}/{targets}',
     )
 
     # Define our template tokens
     template_tokens = dict(NotifyBase.template_tokens, **{
-        'account_sid': {
+        'service_plan_id': {
             'name': _('Account SID'),
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^AC[a-f0-9]+$', 'i'),
+            'regex': (r'^[a-f0-9]+$', 'i'),
         },
-        'auth_token': {
+        'api_token': {
             'name': _('Auth Token'),
             'type': 'string',
             'private': True,
@@ -148,36 +155,42 @@ class NotifyTwilio(NotifyBase):
         'from': {
             'alias_of': 'from_phone',
         },
-        'sid': {
-            'alias_of': 'account_sid',
+        'spi': {
+            'alias_of': 'service_plan_id',
+        },
+        'region': {
+            'name': _('Region'),
+            'type': 'string',
+            'regex': (r'^[a-z]{2}$', 'i'),
+            'default': SinchRegion.USA,
         },
         'token': {
-            'alias_of': 'auth_token',
+            'alias_of': 'api_token',
         },
     })
 
-    def __init__(self, account_sid, auth_token, source, targets=None,
-                 **kwargs):
+    def __init__(self, service_plan_id, api_token, source, targets=None,
+                 region=None, **kwargs):
         """
-        Initialize Twilio Object
+        Initialize Sinch Object
         """
-        super(NotifyTwilio, self).__init__(**kwargs)
+        super(NotifySinch, self).__init__(**kwargs)
 
         # The Account SID associated with the account
-        self.account_sid = validate_regex(
-            account_sid, *self.template_tokens['account_sid']['regex'])
-        if not self.account_sid:
-            msg = 'An invalid Twilio Account SID ' \
-                  '({}) was specified.'.format(account_sid)
+        self.service_plan_id = validate_regex(
+            service_plan_id, *self.template_tokens['service_plan_id']['regex'])
+        if not self.service_plan_id:
+            msg = 'An invalid Sinch Account SID ' \
+                  '({}) was specified.'.format(service_plan_id)
             self.logger.warning(msg)
             raise TypeError(msg)
 
         # The Authentication Token associated with the account
-        self.auth_token = validate_regex(
-            auth_token, *self.template_tokens['auth_token']['regex'])
-        if not self.auth_token:
-            msg = 'An invalid Twilio Authentication Token ' \
-                  '({}) was specified.'.format(auth_token)
+        self.api_token = validate_regex(
+            api_token, *self.template_tokens['api_token']['regex'])
+        if not self.api_token:
+            msg = 'An invalid Sinch Authentication Token ' \
+                  '({}) was specified.'.format(api_token)
             self.logger.warning(msg)
             raise TypeError(msg)
 
@@ -190,11 +203,18 @@ class NotifyTwilio(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        # Setup our region
+        self.region = self.template_args['region']['default'] \
+            if not isinstance(region, six.string_types) else region.lower()
+        if self.region and self.region not in SINCH_REGIONS:
+            msg = 'The region specified ({}) is invalid.'.format(region)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
         # Tidy source
         self.source = re.sub(r'[^\d]+', '', self.source)
 
         if len(self.source) < 11 or len(self.source) > 14:
-            # https://www.twilio.com/docs/glossary/what-is-a-short-code
             # A short code is a special 5 or 6 digit telephone number
             # that's shorter than a full phone number.
             if len(self.source) not in (5, 6):
@@ -241,7 +261,7 @@ class NotifyTwilio(NotifyBase):
             if len(self.source) in (5, 6):
                 # raise a warning since we're a short-code.  We need
                 # a number to message
-                msg = 'There are no valid Twilio targets to notify.'
+                msg = 'There are no valid Sinch targets to notify.'
                 self.logger.warning(msg)
                 raise TypeError(msg)
 
@@ -249,7 +269,7 @@ class NotifyTwilio(NotifyBase):
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
-        Perform Twilio Notification
+        Perform Sinch Notification
         """
 
         # error tracking (used for function return)
@@ -258,26 +278,25 @@ class NotifyTwilio(NotifyBase):
         # Prepare our headers
         headers = {
             'User-Agent': self.app_id,
-            'Accept': 'application/json',
+            'Authorization': 'Bearer {}'.format(self.api_token),
+            'Content-Type': 'application/json',
         }
 
         # Prepare our payload
         payload = {
-            'Body': body,
-            'From': self.source,
+            'body': body,
+            'from': self.source,
 
             # The To gets populated in the loop below
-            'To': None,
+            'to': None,
         }
 
-        # Prepare our Twilio URL
-        url = self.notify_url.format(sid=self.account_sid)
+        # Prepare our Sinch URL (spi = Service Provider ID)
+        url = self.notify_url.format(
+            region=self.region, spi=self.service_plan_id)
 
         # Create a copy of the targets list
         targets = list(self.targets)
-
-        # Set up our authentication
-        auth = (self.account_sid, self.auth_token)
 
         if len(targets) == 0:
             # No sources specified, use our own phone no
@@ -288,24 +307,37 @@ class NotifyTwilio(NotifyBase):
             target = targets.pop(0)
 
             # Prepare our user
-            payload['To'] = target
+            payload['to'] = [target]
 
             # Some Debug Logging
-            self.logger.debug('Twilio POST URL: {} (cert_verify={})'.format(
+            self.logger.debug('Sinch POST URL: {} (cert_verify={})'.format(
                 url, self.verify_certificate))
-            self.logger.debug('Twilio Payload: {}' .format(payload))
+            self.logger.debug('Sinch Payload: {}' .format(payload))
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
             try:
                 r = requests.post(
                     url,
-                    auth=auth,
-                    data=payload,
+                    data=json.dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
                 )
 
+                # The responsne might look like:
+                # {
+                #  "id": "CJloRJOe3MtDITqx",
+                #  "to": ["15551112222"],
+                #  "from": "15553334444",
+                #  "canceled": false,
+                #  "body": "This is a test message from your Sinch account",
+                #  "type": "mt_text",
+                #  "created_at": "2020-01-14T01:05:20.694Z",
+                #  "modified_at": "2020-01-14T01:05:20.694Z",
+                #  "delivery_report": "none",
+                #  "expire_at": "2020-01-17T01:05:20.694Z",
+                #  "flash_message": false
+                # }
                 if r.status_code not in (
                         requests.codes.created, requests.codes.ok):
                     # We had a problem
@@ -317,7 +349,7 @@ class NotifyTwilio(NotifyBase):
 
                     try:
                         # Update our status response if we can
-                        json_response = loads(r.content)
+                        json_response = json.loads(r.content)
                         status_code = json_response.get('code', status_code)
                         status_str = json_response.get('message', status_str)
 
@@ -331,7 +363,7 @@ class NotifyTwilio(NotifyBase):
                         pass
 
                     self.logger.warning(
-                        'Failed to send Twilio notification to {}: '
+                        'Failed to send Sinch notification to {}: '
                         '{}{}error={}.'.format(
                             target,
                             status_str,
@@ -347,11 +379,11 @@ class NotifyTwilio(NotifyBase):
 
                 else:
                     self.logger.info(
-                        'Sent Twilio notification to {}.'.format(target))
+                        'Sent Sinch notification to {}.'.format(target))
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Twilio:%s ' % (
+                    'A Connection error occured sending Sinch:%s ' % (
                         target) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -372,17 +404,18 @@ class NotifyTwilio(NotifyBase):
             'format': self.notify_format,
             'overflow': self.overflow_mode,
             'verify': 'yes' if self.verify_certificate else 'no',
+            'region': self.region,
         }
 
-        return '{schema}://{sid}:{token}@{source}/{targets}/?{args}'.format(
+        return '{schema}://{spi}:{token}@{source}/{targets}/?{args}'.format(
             schema=self.secure_protocol,
-            sid=self.pprint(
-                self.account_sid, privacy, mode=PrivacyMode.Tail, safe=''),
-            token=self.pprint(self.auth_token, privacy, safe=''),
-            source=NotifyTwilio.quote(self.source, safe=''),
+            spi=self.pprint(
+                self.service_plan_id, privacy, mode=PrivacyMode.Tail, safe=''),
+            token=self.pprint(self.api_token, privacy, safe=''),
+            source=NotifySinch.quote(self.source, safe=''),
             targets='/'.join(
-                [NotifyTwilio.quote(x, safe='') for x in self.targets]),
-            args=NotifyTwilio.urlencode(args))
+                [NotifySinch.quote(x, safe='') for x in self.targets]),
+            args=NotifySinch.urlencode(args))
 
     @staticmethod
     def parse_url(url):
@@ -392,48 +425,52 @@ class NotifyTwilio(NotifyBase):
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
-
         if not results:
             # We're done early as we couldn't load the results
             return results
 
         # Get our entries; split_path() looks after unquoting content for us
         # by default
-        results['targets'] = NotifyTwilio.split_path(results['fullpath'])
+        results['targets'] = NotifySinch.split_path(results['fullpath'])
 
         # The hostname is our source number
-        results['source'] = NotifyTwilio.unquote(results['host'])
+        results['source'] = NotifySinch.unquote(results['host'])
 
-        # Get our account_side and auth_token from the user/pass config
-        results['account_sid'] = NotifyTwilio.unquote(results['user'])
-        results['auth_token'] = NotifyTwilio.unquote(results['password'])
+        # Get our service_plan_ide and api_token from the user/pass config
+        results['service_plan_id'] = NotifySinch.unquote(results['user'])
+        results['api_token'] = NotifySinch.unquote(results['password'])
 
         # Auth Token
         if 'token' in results['qsd'] and len(results['qsd']['token']):
-            # Extract the account sid from an argument
-            results['auth_token'] = \
-                NotifyTwilio.unquote(results['qsd']['token'])
+            # Extract the account spi from an argument
+            results['api_token'] = \
+                NotifySinch.unquote(results['qsd']['token'])
 
         # Account SID
-        if 'sid' in results['qsd'] and len(results['qsd']['sid']):
-            # Extract the account sid from an argument
-            results['account_sid'] = \
-                NotifyTwilio.unquote(results['qsd']['sid'])
+        if 'spi' in results['qsd'] and len(results['qsd']['spi']):
+            # Extract the account spi from an argument
+            results['service_plan_id'] = \
+                NotifySinch.unquote(results['qsd']['spi'])
 
         # Support the 'from'  and 'source' variable so that we can support
         # targets this way too.
         # The 'from' makes it easier to use yaml configuration
         if 'from' in results['qsd'] and len(results['qsd']['from']):
             results['source'] = \
-                NotifyTwilio.unquote(results['qsd']['from'])
+                NotifySinch.unquote(results['qsd']['from'])
         if 'source' in results['qsd'] and len(results['qsd']['source']):
             results['source'] = \
-                NotifyTwilio.unquote(results['qsd']['source'])
+                NotifySinch.unquote(results['qsd']['source'])
+
+        # Allow one to define a region
+        if 'region' in results['qsd'] and len(results['qsd']['region']):
+            results['region'] = \
+                NotifySinch.unquote(results['qsd']['region'])
 
         # Support the 'to' variable so that we can support targets this way too
         # The 'to' makes it easier to use yaml configuration
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
-                NotifyTwilio.parse_list(results['qsd']['to'])
+                NotifySinch.parse_list(results['qsd']['to'])
 
         return results
