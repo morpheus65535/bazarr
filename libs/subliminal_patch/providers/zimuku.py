@@ -96,7 +96,7 @@ class ZimukuProvider(Provider):
             r.content.decode("utf-8", "ignore"), ["html.parser"]
         )
         subs_body = bs_obj.find("div", class_="subs box clearfix").find("tbody")
-        subs, lan_scores = [], {}
+        subs = []
         for sub in subs_body.find_all("tr"):
             a = sub.find("a")
             name = _extract_name(a.text)
@@ -104,20 +104,15 @@ class ZimukuProvider(Provider):
                 0
             ]  # remove ext because it can be an archive type
 
-            lan_score = 0
+            language = Language("eng")
             for img in sub.find("td", class_="tac lang").find_all("img"):
-                if "uk" in img.attrs["src"]:
-                    lan_score += 1
-                elif "hongkong" in img.attrs["src"]:
-                    lan_score += 2
-                elif "china" in img.attrs["src"]:
-                    lan_score += 4
-                elif "jollyroger" in img.attrs["src"]:
-                    lan_score += 8
-            if lan_score == 1:
-                language = Language("eng")
-            else:
-                language = Language("zho")
+                if (
+                    "hongkong" in img.attrs["src"]
+                    or "china" in img.attrs["src"]
+                    or "jollyroger" in img.attrs["src"]
+                ):
+                    language = Language("zho")
+                    break
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             backup_session = copy.deepcopy(self.session)
             backup_session.headers["Referer"] = link
@@ -125,10 +120,7 @@ class ZimukuProvider(Provider):
             subs.append(
                 self.subtitle_class(language, sub_page_link, name, backup_session)
             )
-            lan_scores[name] = lan_score
 
-        # prefer double languages
-        subs.sort(key=lambda s: lan_scores[s.version], reverse=True)
         return subs
 
     def query(self, keyword, season=None, episode=None, year=None):
