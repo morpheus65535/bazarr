@@ -1,4 +1,5 @@
 # coding=utf-8
+import hashlib
 import os
 
 from simpleconfigparser import simpleconfigparser
@@ -156,6 +157,9 @@ def save_settings(settings_items):
             value = 'True'
         elif value == 'false':
             value = 'False'
+
+        if key == 'settings-auth-password':
+            value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)

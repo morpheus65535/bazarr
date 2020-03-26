@@ -158,6 +158,7 @@ def post_get(name, default=''):
 @app.route("/logout/")
 @login_required
 def logout():
+    test = settings.auth.type
     if settings.auth.type == 'basic':
         return abort(401)
     elif settings.auth.type == 'form':
@@ -562,43 +563,43 @@ def movie(no):
     return render_template('movie.html', id=str(no))
 
 
-@app.route('/historyseries/')
+@app.route('/history/series/')
 @login_required
 def historyseries():
     return render_template('historyseries.html')
 
 
-@app.route('/historymovies/')
+@app.route('/history/movies/')
 @login_required
 def historymovies():
     return render_template('historymovies.html')
 
 
-@app.route('/wantedseries/')
+@app.route('/wanted/series/')
 @login_required
 def wantedseries():
     return render_template('wantedseries.html')
 
 
-@app.route('/wantedmovies/')
+@app.route('/wanted/movies/')
 @login_required
 def wantedmovies():
     return render_template('wantedmovies.html')
 
 
-@app.route('/settingsgeneral/')
+@app.route('/settings/general/')
 @login_required
 def settingsgeneral():
     return render_template('settingsgeneral.html')
 
 
-@app.route('/settingssonarr/')
+@app.route('/settings/sonarr/')
 @login_required
 def settingssonarr():
     return render_template('settingssonarr.html')
 
 
-@app.route('/settingsradarr/')
+@app.route('/settings/radarr/')
 @login_required
 def settingsradarr():
     return render_template('settingsradarr.html')
@@ -613,31 +614,31 @@ def check_update():
     return '', 200
 
 
-@app.route('/systemtasks')
+@app.route('/system/tasks')
 @login_required
 def systemtasks():
     return render_template('systemtasks.html')
 
 
-@app.route('/systemlogs')
+@app.route('/system/logs')
 @login_required
 def systemlogs():
     return render_template('systemlogs.html')
 
 
-@app.route('/systemproviders')
+@app.route('/system/providers')
 @login_required
 def systemproviders():
     return render_template('systemproviders.html')
 
 
-@app.route('/systemstatus')
+@app.route('/system/status')
 @login_required
 def systemstatus():
     return render_template('systemstatus.html')
 
 
-@app.route('/systemreleases')
+@app.route('/system/releases')
 @login_required
 def systemreleases():
     return render_template('systemreleases.html')

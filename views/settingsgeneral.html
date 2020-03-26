@@ -73,13 +73,13 @@
                     <b>Authentication</b>
                 </div>
                 <div class="form-group col-sm-4">
-                    <select class="selectpicker" id="settings-auth-type" name="settings-auth-type">
+                    <select class="form-control selectpicker" id="settings-auth-type" name="settings-auth-type">
                         <option value="None">None</option>
-                        <option value="Basic">Basic</option>
-                        <option value="Form">Form</option>
+                        <option value="basic">Basic</option>
+                        <option value="form">Form</option>
                     </select>
                     <label for="settings-auth-type">Require Username and Password to access Bazarr</label><br>
-                    <label class="restart">Requires restart to take effect</label>
+{#                    <label class="restart">Requires restart to take effect</label>#}
                 </div>
             </div>
             <div id="authentication_div">
@@ -122,7 +122,7 @@
                     <b>Type</b>
                 </div>
                 <div class="form-group col-sm-4">
-                    <select class="selectpicker" id="settings-proxy-type" name="settings-proxy-type">
+                    <select class="form-control selectpicker" id="settings-proxy-type" name="settings-proxy-type">
                         <option value="None">None</option>
                         <option value="http">HTTP(S)</option>
                         <option value="socks4">Socks4</option>
@@ -186,7 +186,7 @@
                     <b>Page Size</b>
                 </div>
                 <div class="form-group col-sm-4">
-                    <select class="selectpicker" id="settings-general-page_size" name="settings-general-page_size">
+                    <select class="form-control selectpicker" id="settings-general-page_size" name="settings-general-page_size">
                         <option value="-1">Unlimited</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -237,7 +237,7 @@
                         <b>Branch</b>
                     </div>
                     <div class="form-group col-sm-4">
-                        <select class="selectpicker" id="settings-general-branch" name="settings-general-branch">
+                        <select class="form-control selectpicker" id="settings-general-branch" name="settings-general-branch">
                             <option value="master">master</option>
                             <option value="development">development</option>
                         </select>
