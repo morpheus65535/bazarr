@@ -379,10 +379,12 @@ def guess_external_subtitles(dest_folder, subtitles):
                     
                 try:
                     # to improve performance, use only the first 32K to detect encoding
-                    if len(text) > 32768: guess = chardet.detect(text[:32768])
-                    else: guess = chardet.detect(text)
-                    if guess["confidence"] < 0.8:
+                    guess = chardet.detect(text[:32768])
+                    logging.debug('BAZARR detected encoding %r', guess)
+                    if guess["confidence"] < 0.6:
                         raise UnicodeError
+                    if guess["confidence"] < 0.8 or guess["encoding"] == "ascii":
+                        guess["encoding"] = "utf-8"
                     text = text.decode(guess["encoding"])
                     detected_language = guess_language(text)
                 except UnicodeError:
