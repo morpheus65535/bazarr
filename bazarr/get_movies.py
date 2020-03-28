@@ -25,10 +25,16 @@ def update_movies():
 
     radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
-    movie_default_language = settings.general.movie_default_language
-    movie_default_hi = settings.general.movie_default_hi
-    movie_default_forced = settings.general.movie_default_forced
-    
+
+    if movie_default_enabled is True:
+        movie_default_language = settings.general.movie_default_language
+        movie_default_hi = settings.general.movie_default_hi
+        movie_default_forced = settings.general.movie_default_forced
+    else:
+        movie_default_language = '[]'
+        movie_default_hi = 'False'
+        movie_default_forced = 'False'
+
     if apikey_radarr is None:
         pass
     else:
@@ -155,54 +161,29 @@ def update_movies():
                                                          'imdbId': imdbId,
                                                          'movie_file_id': int(movie['movieFile']['id'])})
                             else:
-                                if movie_default_enabled is True:
-                                    movies_to_add.append({'radarrId': int(movie["id"]),
-                                                          'title': movie["title"],
-                                                          'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdbId': str(movie["tmdbId"]),
-                                                          'languages': movie_default_language,
-                                                          'subtitles': '[]',
-                                                          'hearing_impaired': movie_default_hi,
-                                                          'overview': overview,
-                                                          'poster': poster,
-                                                          'fanart': fanart,
-                                                          'audio_language': audio_language,
-                                                          'sceneName': sceneName,
-                                                          'monitored': str(bool(movie['monitored'])),
-                                                          'sortTitle': movie['sortTitle'],
-                                                          'year': str(movie['year']),
-                                                          'alternativeTitles': alternativeTitles,
-                                                          'format': format,
-                                                          'resolution': resolution,
-                                                          'video_codec': videoCodec,
-                                                          'audio_codec': audioCodec,
-                                                          'imdbId': imdbId,
-                                                          'forced': movie_default_forced,
-                                                          'movie_file_id': int(movie['movieFile']['id'])})
-                                else:
-                                    movies_to_add.append({'radarrId': int(movie["id"]),
-                                                          'title': movie["title"],
-                                                          'path': movie["path"] + separator + movie['movieFile']['relativePath'],
-                                                          'tmdbId': str(movie["tmdbId"]),
-                                                          'languages': None,
-                                                          'subtitles': '[]',
-                                                          'hearing_impaired': None,
-                                                          'overview': overview,
-                                                          'poster': poster,
-                                                          'fanart': fanart,
-                                                          'audio_language': audio_language,
-                                                          'sceneName': sceneName,
-                                                          'monitored': str(bool(movie['monitored'])),
-                                                          'sortTitle': movie['sortTitle'],
-                                                          'year': str(movie['year']),
-                                                          'alternativeTitles': alternativeTitles,
-                                                          'format': format,
-                                                          'resolution': resolution,
-                                                          'video_codec': videoCodec,
-                                                          'audio_codec': audioCodec,
-                                                          'imdbId': imdbId,
-                                                          'forced': None,
-                                                          'movie_file_id': int(movie['movieFile']['id'])})
+                                movies_to_add.append({'radarrId': int(movie["id"]),
+                                                      'title': movie["title"],
+                                                      'path': movie["path"] + separator + movie['movieFile']['relativePath'],
+                                                      'tmdbId': str(movie["tmdbId"]),
+                                                      'languages': movie_default_language,
+                                                      'subtitles': '[]',
+                                                      'hearing_impaired': movie_default_hi,
+                                                      'overview': overview,
+                                                      'poster': poster,
+                                                      'fanart': fanart,
+                                                      'audio_language': audio_language,
+                                                      'sceneName': sceneName,
+                                                      'monitored': str(bool(movie['monitored'])),
+                                                      'sortTitle': movie['sortTitle'],
+                                                      'year': str(movie['year']),
+                                                      'alternativeTitles': alternativeTitles,
+                                                      'format': format,
+                                                      'resolution': resolution,
+                                                      'video_codec': videoCodec,
+                                                      'audio_codec': audioCodec,
+                                                      'imdbId': imdbId,
+                                                      'forced': movie_default_forced,
+                                                      'movie_file_id': int(movie['movieFile']['id'])})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
