@@ -30,11 +30,11 @@ class SubdivxSubtitle(Subtitle):
     provider_name = 'subdivx'
     hash_verifiable = False
 
-    def __init__(self, language, page_link, description, title):
-        super(SubdivxSubtitle, self).__init__(language, hearing_impaired=False,
-                                              page_link=page_link)
-        self.description = description.lower()
+    def __init__(self, language, page_link, title, description, uploader):
+        super(SubdivxSubtitle, self).__init__(language, hearing_impaired=False, page_link=page_link)
         self.title = title
+        self.description = description
+        self.uploader = uploader
 
     @property
     def id(self):
@@ -120,7 +120,7 @@ class SubdivxSubtitlesProvider(Provider):
             query += ' {:4d}'.format(year)
 
         params = {
-            'buscar': query,  # search string
+            'q': query,  # search string
             'accion': 5,  # action search
             'oxdown': 1,  # order by downloads descending
             'pg': 1  # page 1
@@ -131,7 +131,7 @@ class SubdivxSubtitlesProvider(Provider):
         language = self.language_list[0]
         search_link = self.server_url + 'index.php'
         while True:
-            response = self.session.get(search_link, params=params, timeout=10)
+            response = self.session.get(search_link, params=params, timeout=20)
             self._check_response(response)
 
             try:
@@ -142,11 +142,11 @@ class SubdivxSubtitlesProvider(Provider):
 
             subtitles += page_subtitles
 
-            if len(page_subtitles) >= 20:
-                params['pg'] += 1  # search next page
-                time.sleep(self.multi_result_throttle)
-            else:
-                break
+            if len(page_subtitles) < 20:
+                break  # this is the last page
+
+            params['pg'] += 1  # search next page
+            time.sleep(self.multi_result_throttle)
 
         return subtitles
 
@@ -204,13 +204,17 @@ class SubdivxSubtitlesProvider(Provider):
             title_soup, body_soup = title_soups[subtitle], body_soups[subtitle]
 
             # title
-            title = title_soup.find("a").text.replace("Subtitulo de ", "")
-            page_link = title_soup.find("a")["href"].replace('http://', 'https://')
+            title = title_soup.find("a").text.replace("Subtitulos de ", "")
+            page_link = title_soup.find("a")["href"]
 
-            # body
+            # description
             description = body_soup.find("div", {'id': 'buscador_detalle_sub'}).text
+            description = description.replace(",", " ").lower()
 
-            subtitle = self.subtitle_class(language, page_link, description, title)
+            # uploader
+            uploader = body_soup.find("a", {'class': 'link1'}).text
+
+            subtitle = self.subtitle_class(language, page_link, title, description, uploader)
 
             logger.debug('Found subtitle %r', subtitle)
             subtitles.append(subtitle)
@@ -218,7 +222,7 @@ class SubdivxSubtitlesProvider(Provider):
         return subtitles
 
     def _get_download_link(self, subtitle):
-        response = self.session.get(subtitle.page_link, timeout=10)
+        response = self.session.get(subtitle.page_link, timeout=20)
         self._check_response(response)
         try:
             page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
@@ -226,12 +230,10 @@ class SubdivxSubtitlesProvider(Provider):
             for link_soup in links_soup:
                 if link_soup['href'].startswith('bajar'):
                     return self.server_url + link_soup['href']
-            links_soup = page_soup.find_all ("a", {'class': 'link1'})
+            links_soup = page_soup.find_all("a", {'class': 'link1'})
             for link_soup in links_soup:
                 if "bajar.php" in link_soup['href']:
-                    # not using link_soup['href'] directly because it's http://
-                    dl_link = urlparse(link_soup['href'])
-                    return self.server_url + dl_link.path + '?' + dl_link.query
+                    return link_soup['href']
         except Exception as e:
             raise APIThrottled('Error parsing download link: ' + str(e))
 
