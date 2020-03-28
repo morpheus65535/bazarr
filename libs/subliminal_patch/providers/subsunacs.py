@@ -148,10 +148,10 @@ class SubsUnacsProvider(Provider):
                     element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&memid=.*'))
                     uploader = element.get_text() if element else None
                     logger.info('Found subtitle link %r', link)
-                    subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
-                    for s in subtitles: 
+                    sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
+                    for s in sub: 
                         s.uploader = uploader
-
+                    subtitles = subtitles + sub
         return subtitles
 
     def list_subtitles(self, video, languages):
