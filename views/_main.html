@@ -38,6 +38,7 @@
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}" />
 
         {% endblock head_css %}
 
@@ -107,8 +108,14 @@
                             <!-- Search -->
                             <!-- ============================================================== -->
                             <li class="nav-item hidden-sm-down search-box">
-                                <form class="form-material"><input type="text" class="form-control text-white"
-                                                                   placeholder="Search...">
+                                <form class="form-material">
+                                    <div class="typeahead__container">
+                                        <div class="typeahead__field">
+                                            <div class="typeahead__query">
+                                                <input class="form-control text-white js-typeahead" id="search" placeholder="Search..." autocomplete="off">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </form>
                             </li>
                         </ul>
@@ -279,6 +286,7 @@
         <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
         <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
         <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
+        <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
 
         <script>
             $(document).ready(function () {
@@ -324,6 +332,34 @@
                         })
                     })
                 }
+
+                $('#search').typeahead({
+                    display: 'name',
+                    debug: false,
+                    hint: true,
+                    minLength: 3,
+                    dynamic: true,
+                    accent: true,
+                    delay: 500,
+                    source: {
+                        search: {
+                            ajax: function (query) {
+                                return {
+                                    url: '{{ url_for("api.search")}}',
+                                    type: 'GET',
+                                    data: {
+                                        query: query
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    callback: {
+                        onClick: function (node, a, item, event) {
+                            window.location.pathname = item.url;
+                        }
+                    }
+                });
 
                 if ( $('#buttons_bar_left').children().length > 0  ||  $('#buttons_bar_right').children().length > 0 ) {
                     $('#buttons_bars').show();

@@ -10,8 +10,7 @@ import time
 from operator import itemgetter
 import platform
 import io
-from calendar import day_name
-import importlib
+import re
 
 from get_args import args
 from config import settings, base_url, save_settings
@@ -35,7 +34,7 @@ from scheduler import Scheduler
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from flask import Flask, jsonify, request, Response, Blueprint
+from flask import Flask, jsonify, request, Response, Blueprint, url_for
 
 from flask_restful import Resource, Api
 
@@ -65,6 +64,31 @@ class Languages(Resource):
         else:
             result = database.execute("SELECT * FROM table_settings_languages")
         return jsonify(result)
+
+
+class Search(Resource):
+    def get(self):
+        query = request.args.get('query')
+        search_list = []
+
+        if query:
+            if settings.general.getboolean('use_sonarr'):
+                # Get matching series
+                series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? "
+                                          "ORDER BY title ASC", ("%"+query+"%",))
+                for serie in series:
+                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', serie['title']) + ' (' + serie['year'] + ')',
+                                        'url': url_for('episodes', no=serie['sonarrSeriesId'])})
+
+            if settings.general.getboolean('use_radarr'):
+                # Get matching movies
+                movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
+                                          "title ASC", ("%"+query+"%",))
+                for movie in movies:
+                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', movie['title']) + ' (' + movie['year'] + ')',
+                                        'url': url_for('movie', no=movie['radarrId'])})
+
+        return jsonify(search_list)
 
 
 class SaveSettings(Resource):
@@ -1143,6 +1167,8 @@ class SearchWantedMovies(Resource):
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
+
+api.add_resource(Search, '/search_json')
 
 api.add_resource(SaveSettings, '/savesettings')
 

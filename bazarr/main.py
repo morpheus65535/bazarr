@@ -511,34 +511,6 @@ def serieseditor():
     return render_template('serieseditor.html')
 
 
-@app.route('/search_json/<query>', methods=['GET'])
-@login_required
-def search_json(query):
-
-
-    query = '%' + query + '%'
-    search_list = []
-
-    if settings.general.getboolean('use_sonarr'):
-        # Get matching series
-        series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? ORDER BY "
-                                  "title ASC", (query,))
-        for serie in series:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', serie['title']) + ' (' + serie['year'] + ')'),
-                                     ('url', '/episodes/' + str(serie['sonarrSeriesId']))]))
-
-    if settings.general.getboolean('use_radarr'):
-        # Get matching movies
-        movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
-                                  "title ASC", (query,))
-        for movie in movies:
-            search_list.append(dict([('name', re.sub(r'\ \(\d{4}\)', '', movie['title']) + ' (' + movie['year'] + ')'),
-                                     ('url', '/movie/' + str(movie['radarrId']))]))
-
-    request.content_type = 'application/json'
-    return dict(items=search_list)
-
-
 @app.route('/episodes/<no>')
 @login_required
 def episodes(no):
