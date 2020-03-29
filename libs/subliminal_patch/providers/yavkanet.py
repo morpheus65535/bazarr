@@ -121,7 +121,7 @@ class YavkaNetProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.content, 'lxml')
         rows = soup.findAll('tr', {'class': 'info'})
         
         # Search on first 20 rows only
@@ -129,9 +129,13 @@ class YavkaNetProvider(Provider):
             element = row.find('a', {'class': 'selector'})
             if element:
                 link = element.get('href')
+                element = row.find('a', {'class': 'click'})
+                uploader = element.get_text() if element else None
                 logger.info('Found subtitle link %r', link)
-                subtitles = subtitles + self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video)
-
+                sub = self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video)
+                for s in sub: 
+                    s.uploader = uploader
+                subtitles = subtitles + sub
         return subtitles
         
     def list_subtitles(self, video, languages):

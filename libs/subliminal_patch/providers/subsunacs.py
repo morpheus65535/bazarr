@@ -135,17 +135,23 @@ class SubsUnacsProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        rows = soup.findAll('td', {'class': 'tdMovie'})
+        soup = BeautifulSoup(response.content, 'lxml')
+        rows = soup.findAll('tr', onmouseover=True)
 
         # Search on first 20 rows only
         for row in rows[:20]:
-            element = row.find('a', {'class': 'tooltip'})
-            if element:
-                link = element.get('href')
-                logger.info('Found subtitle link %r', link)
-                subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
-
+            a_element_wrapper = row.find('td', {'class': 'tdMovie'})
+            if a_element_wrapper:
+                element = a_element_wrapper.find('a', {'class': 'tooltip'})
+                if element:
+                    link = element.get('href')
+                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&memid=.*'))
+                    uploader = element.get_text() if element else None
+                    logger.info('Found subtitle link %r', link)
+                    sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
+                    for s in sub: 
+                        s.uploader = uploader
+                    subtitles = subtitles + sub
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -165,11 +171,16 @@ class SubsUnacsProvider(Provider):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
-            if file_name.lower().endswith(('.srt', '.sub')):
+            if file_name.lower().endswith(('.srt', '.sub', '.txt')):
+                file_is_txt = True if file_name.lower().endswith('.txt') else False
+                if file_is_txt and re.search(r'subsunacs\.net|танете част|прочети|^read ?me|procheti', file_name, re.I): 
+                    logger.info('Ignore readme txt file %r', file_name)
+                    continue
                 logger.info('Found subtitle file %r', file_name)
                 subtitle = SubsUnacsSubtitle(language, file_name, type, video, link)
                 subtitle.content = archiveStream.read(file_name)
-                subtitles.append(subtitle)
+                if file_is_txt == False or subtitle.is_valid():
+                    subtitles.append(subtitle)
         return subtitles
 
     def download_archive_and_add_subtitle_files(self, link, language, video ):
