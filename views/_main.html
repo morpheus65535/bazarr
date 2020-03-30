@@ -336,11 +336,11 @@
                 $('#search').typeahead({
                     display: 'name',
                     debug: false,
-                    hint: true,
-                    minLength: 3,
+                    cancelButton: true,
+                    loadingAnimation: true,
+                    asyncResult: false,
                     dynamic: true,
-                    accent: true,
-                    delay: 500,
+                    delay: 300,
                     source: {
                         search: {
                             ajax: function (query) {
