@@ -145,7 +145,7 @@ class SubsUnacsProvider(Provider):
                 element = a_element_wrapper.find('a', {'class': 'tooltip'})
                 if element:
                     link = element.get('href')
-                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&memid=.*'))
+                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&(memid|u)=.*'))
                     uploader = element.get_text() if element else None
                     logger.info('Found subtitle link %r', link)
                     sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
