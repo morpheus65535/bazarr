@@ -231,8 +231,8 @@ def update_movies():
 
             for updated_movie in movies_to_update_list:
                 query = dict_converter.convert(updated_movie)
-                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
-                                 query.values + (updated_movie['radarrId'],))
+                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE tmdbId = ?''',
+                                 query.values + (updated_movie['tmdbId'],))
                 altered_movies.append([updated_movie['tmdbId'],
                                        updated_movie['path'],
                                        updated_movie['radarrId'],
