@@ -94,6 +94,7 @@ class Search(Resource):
 class SaveSettings(Resource):
     def post(self):
         save_settings(request.form.items())
+        scheduler.update_configurable_tasks()
 
         return '', 200
 

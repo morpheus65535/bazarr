@@ -16,7 +16,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pytz
 from tzlocal import get_localzone
 from calendar import day_name
@@ -64,6 +64,8 @@ class Scheduler:
         self.__search_wanted_subtitles_task()
         self.__upgrade_subtitles_task()
         self.__randomize_interval_task()
+        if args.no_tasks:
+            self.__no_task()
 
     def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None):
         self.aps_scheduler.add_job(
@@ -117,13 +119,12 @@ class Scheduler:
 
         task_list = []
         for job in self.aps_scheduler.get_jobs():
-            if isinstance(job.trigger, CronTrigger):
-                if str(job.trigger.__getstate__()['fields'][0]) == "2100":
-                    next_run = 'Never'
-                else:
-                    next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
-            else:
+            next_run = 'Never'
+            if job.next_run_time:
                 next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
+            if isinstance(job.trigger, CronTrigger):
+                if job.next_run_time and str(job.trigger.__getstate__()['fields'][0]) != "2100":
+                    next_run = pretty.date(job.next_run_time.replace(tzinfo=None))
 
             if job.id in self.__running_tasks:
                 running = True
@@ -133,12 +134,11 @@ class Scheduler:
             if isinstance(job.trigger, IntervalTrigger):
                 interval = "every " + get_time_from_interval(job.trigger.__getstate__()['interval'])
                 task_list.append({'name': job.name, 'interval': interval, 'next_run_in': next_run,
-                                  'next_run_time': job.next_run_time.replace(tzinfo=None), 'job_id': job.id,
-                                  'job_running': running})
+                                  'next_run_time': next_run, 'job_id': job.id, 'job_running': running})
             elif isinstance(job.trigger, CronTrigger):
                 task_list.append({'name': job.name, 'interval': get_time_from_cron(job.trigger.fields),
-                                  'next_run_in': next_run, 'next_run_time': job.next_run_time.replace(tzinfo=None),
-                                  'job_id': job.id, 'job_running': running})
+                                  'next_run_in': next_run, 'next_run_time': next_run, 'job_id': job.id,
+                                  'job_running': running})
 
         return task_list
 
@@ -247,3 +247,7 @@ class Scheduler:
         for job in self.aps_scheduler.get_jobs():
             if isinstance(job.trigger, IntervalTrigger):
                 self.aps_scheduler.modify_job(job.id, next_run_time=datetime.now() + timedelta(seconds=randrange(job.trigger.interval.total_seconds()*0.75, job.trigger.interval.total_seconds())))
+
+    def __no_task(self):
+        for job in self.aps_scheduler.get_jobs():
+            self.aps_scheduler.modify_job(job.id, next_run_time=None)
