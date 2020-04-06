@@ -16,6 +16,7 @@ def create_app():
                 template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
                 static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'),
                 static_url_path=base_url.rstrip('/') + '/static')
+    app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.route = prefix_route(app.route, base_url.rstrip('/'))
 
     app.config["SECRET_KEY"] = 'test'
@@ -51,3 +52,14 @@ def prefix_route(route_function, prefix='', mask='{0}{1}'):
         return route_function(mask.format(prefix, route), *args, **kwargs)
 
     return newroute
+
+
+class ReverseProxied(object):
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        scheme = environ.get('HTTP_X_FORWARDED_PROTO')
+        if scheme:
+            environ['wsgi.url_scheme'] = scheme
+        return self.app(environ, start_response)
