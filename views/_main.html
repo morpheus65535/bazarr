@@ -376,6 +376,17 @@
                 }
             });
 
+            {% if request.endpoint == 'login_page' %}
+            // Apikey excluded from login_page
+            {% else %}
+            // Add apikey to all AJAX requests.
+            $.ajaxSetup({
+                data: {
+                    apikey: "{{ settings.auth.apikey }}"
+                }
+            });
+            {% endif %}
+
             $(window).on('beforeunload', function() {
                 events.close();
             });

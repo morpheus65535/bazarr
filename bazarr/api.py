@@ -36,7 +36,8 @@ from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
 from flask import Flask, jsonify, request, Response, Blueprint, url_for
 
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, abort
+from functools import wraps
 
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
@@ -44,7 +45,23 @@ api = Api(api_bp)
 scheduler = Scheduler()
 
 
+def authenticate(actual_method):
+    @wraps(actual_method)
+    def wrapper(*args, **kwargs):
+        apikey_settings = settings.auth.apikey
+        apikey_get = request.args.get('apikey')
+        apikey_post = request.form.get('apikey')
+
+        if apikey_settings in [apikey_get, apikey_post]:
+            return actual_method(*args, **kwargs)
+
+        return abort(401, message="Unauthorized")
+
+    return wrapper
+
+
 class Badges(Resource):
+    @authenticate
     def get(self):
         result = {
             "missing_episodes": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles "
@@ -57,6 +74,7 @@ class Badges(Resource):
 
 
 class Languages(Resource):
+    @authenticate
     def get(self):
         enabled = request.args.get('enabled')
         if enabled.lower() in ['true', '1']:
@@ -67,6 +85,7 @@ class Languages(Resource):
 
 
 class Search(Resource):
+    @authenticate
     def get(self):
         query = request.args.get('query')
         search_list = []
@@ -92,6 +111,7 @@ class Search(Resource):
 
 
 class SaveSettings(Resource):
+    @authenticate
     def post(self):
         save_settings(request.form.items())
         scheduler.update_configurable_tasks()
@@ -100,6 +120,7 @@ class SaveSettings(Resource):
 
 
 class SystemTasks(Resource):
+    @authenticate
     def get(self):
         taskid = request.args.get('taskid')
 
@@ -117,7 +138,7 @@ class SystemTasks(Resource):
 
         return jsonify(data=task_list)
 
-
+    @authenticate
     def post(self):
         taskid = request.json['taskid']
 
@@ -127,6 +148,7 @@ class SystemTasks(Resource):
 
 
 class SystemLogs(Resource):
+    @authenticate
     def get(self):
         logs = []
         with io.open(os.path.join(args.config_dir, 'log', 'bazarr.log'), encoding='UTF-8') as file:
@@ -139,6 +161,7 @@ class SystemLogs(Resource):
 
 
 class SystemProviders(Resource):
+    @authenticate
     def get(self):
         throttled_providers = list_throttled_providers()
         for i in range(len(throttled_providers)):
@@ -148,6 +171,7 @@ class SystemProviders(Resource):
 
 
 class SystemStatus(Resource):
+    @authenticate
     def get(self):
         system_status = {}
         system_status.update({'bazarr_version': os.environ["BAZARR_VERSION"]})
@@ -161,6 +185,7 @@ class SystemStatus(Resource):
 
 
 class SystemReleases(Resource):
+    @authenticate
     def get(self):
         releases = []
         try:
@@ -179,7 +204,8 @@ class SystemReleases(Resource):
 
 
 class Series(Resource):
-    def get(self):
+    @authenticate
+    def get(self, **kwargs):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
@@ -241,7 +267,7 @@ class Series(Resource):
                 pass
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
-
+    @authenticate
     def post(self):
         seriesId = request.args.get('seriesid')
 
@@ -280,6 +306,7 @@ class Series(Resource):
 
 
 class SeriesEditSave(Resource):
+    @authenticate
     def post(self):
         changed_series = request.json
         lang = changed_series['languages']
@@ -309,6 +336,7 @@ class SeriesEditSave(Resource):
 
 
 class Episodes(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -368,7 +396,9 @@ class Episodes(Resource):
             item.update({"desired_languages": desired_languages})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
+
 class EpisodesSubtitlesDelete(Resource):
+    @authenticate
     def delete(self):
         episodePath = request.form.get('episodePath')
         language = request.form.get('language')
@@ -390,6 +420,7 @@ class EpisodesSubtitlesDelete(Resource):
 
 
 class EpisodesSubtitlesDownload(Resource):
+    @authenticate
     def post(self):
         episodePath = request.form.get('episodePath')
         sceneName = request.form.get('sceneName')
@@ -429,6 +460,7 @@ class EpisodesSubtitlesDownload(Resource):
 
 
 class EpisodesSubtitlesManualSearch(Resource):
+    @authenticate
     def post(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -452,6 +484,7 @@ class EpisodesSubtitlesManualSearch(Resource):
 
 
 class EpisodesSubtitlesManualDownload(Resource):
+    @authenticate
     def post(self):
         episodePath = request.form.get('episodePath')
         sceneName = request.form.get('sceneName')
@@ -490,6 +523,7 @@ class EpisodesSubtitlesManualDownload(Resource):
 
 
 class EpisodesSubtitlesUpload(Resource):
+    @authenticate
     def post(self):
         episodePath = request.form.get('episodePath')
         sceneName = request.form.get('sceneName')
@@ -534,6 +568,7 @@ class EpisodesSubtitlesUpload(Resource):
 
 
 class EpisodesScanDisk(Resource):
+    @authenticate
     def get(self):
         seriesid = request.args.get('seriesid')
         series_scan_subtitles(seriesid)
@@ -541,6 +576,7 @@ class EpisodesScanDisk(Resource):
 
 
 class EpisodesSearchMissing(Resource):
+    @authenticate
     def get(self):
         seriesid = request.args.get('seriesid')
         series_download_subtitles(seriesid)
@@ -548,6 +584,7 @@ class EpisodesSearchMissing(Resource):
 
 
 class EpisodesHistory(Resource):
+    @authenticate
     def get(self):
         episodeid = request.args.get('episodeid')
 
@@ -569,6 +606,7 @@ class EpisodesHistory(Resource):
 
 
 class Movies(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -647,7 +685,7 @@ class Movies(Resource):
                 pass
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
-
+    @authenticate
     def post(self):
         radarrId = request.args.get('radarrid')
 
@@ -686,6 +724,7 @@ class Movies(Resource):
 
 
 class MoviesEditSave(Resource):
+    @authenticate
     def post(self):
         changed_movies = request.json
         lang = changed_movies['languages']
@@ -713,7 +752,9 @@ class MoviesEditSave(Resource):
 
         return '', 204
 
+
 class MovieSubtitlesDelete(Resource):
+    @authenticate
     def delete(self):
         moviePath = request.form.get('moviePath')
         language = request.form.get('language')
@@ -734,6 +775,7 @@ class MovieSubtitlesDelete(Resource):
 
 
 class MovieSubtitlesDownload(Resource):
+    @authenticate
     def post(self):
         moviePath = request.form.get('moviePath')
         sceneName = request.form.get('sceneName')
@@ -772,6 +814,7 @@ class MovieSubtitlesDownload(Resource):
 
 
 class MovieSubtitlesManualSearch(Resource):
+    @authenticate
     def post(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -795,6 +838,7 @@ class MovieSubtitlesManualSearch(Resource):
 
 
 class MovieSubtitlesManualDownload(Resource):
+    @authenticate
     def post(self):
         moviePath = request.form.get('moviePath')
         sceneName = request.form.get('sceneName')
@@ -832,6 +876,7 @@ class MovieSubtitlesManualDownload(Resource):
 
 
 class MovieSubtitlesUpload(Resource):
+    @authenticate
     def post(self):
         moviePath = request.form.get('moviePath')
         sceneName = request.form.get('sceneName')
@@ -875,6 +920,7 @@ class MovieSubtitlesUpload(Resource):
 
 
 class MovieScanDisk(Resource):
+    @authenticate
     def get(self):
         radarrid = request.args.get('radarrid')
         movies_scan_subtitles(radarrid)
@@ -882,6 +928,7 @@ class MovieScanDisk(Resource):
 
 
 class MovieSearchMissing(Resource):
+    @authenticate
     def get(self):
         radarrid = request.args.get('radarrid')
         movies_download_subtitles(radarrid)
@@ -889,6 +936,7 @@ class MovieSearchMissing(Resource):
 
 
 class MovieHistory(Resource):
+    @authenticate
     def get(self):
         radarrid = request.args.get('radarrid')
 
@@ -911,6 +959,7 @@ class MovieHistory(Resource):
 
 
 class HistorySeries(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -992,6 +1041,7 @@ class HistorySeries(Resource):
 
 
 class HistoryMovies(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -1072,6 +1122,7 @@ class HistoryMovies(Resource):
 
 
 class WantedSeries(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -1116,6 +1167,7 @@ class WantedSeries(Resource):
 
 
 class WantedMovies(Resource):
+    @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
@@ -1155,12 +1207,14 @@ class WantedMovies(Resource):
 
 
 class SearchWantedSeries(Resource):
+    @authenticate
     def get(self):
         wanted_search_missing_subtitles_series()
         return '', 200
 
 
 class SearchWantedMovies(Resource):
+    @authenticate
     def get(self):
         wanted_search_missing_subtitles_movies()
         return '', 200
