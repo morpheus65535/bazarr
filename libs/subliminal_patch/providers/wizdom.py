@@ -4,7 +4,7 @@ import logging
 import os
 import zipfile
 
-from babelfish import Language
+from subzero.language import Language
 from guessit import guessit
 from requests import Session
 
@@ -75,7 +75,7 @@ class WizdomSubtitle(Subtitle):
 
 class WizdomProvider(Provider):
     """Wizdom Provider."""
-    languages = {Language.fromalpha2(l) for l in ['he']}
+    languages = {Language(l) for l in ['heb']}
     server_url = 'wizdom.xyz'
 
     _tmdb_api_key = 'a51ee051bcd762543373903de296e0a3'
@@ -156,7 +156,7 @@ class WizdomProvider(Provider):
         # loop over results
         subtitles = {}
         for result in results:
-            language = Language.fromalpha2('he')
+            language = Language('heb')
             hearing_impaired = False
             subtitle_id = result['id']
             release = result['version']
