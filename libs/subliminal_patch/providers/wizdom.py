@@ -197,6 +197,9 @@ class WizdomProvider(Provider):
         r = self.session.get(url, headers={'Referer': subtitle.page_link}, timeout=10)
         r.raise_for_status()
 
+        if len(r.content) == 0:
+            return
+
         # open the zip
         with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
             # remove some filenames from the namelist
