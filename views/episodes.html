@@ -323,6 +323,8 @@
             getLanguages();
             getEnabledLanguages();
 
+            var collapsedGroups = {};
+
             var table = $('#episodes').DataTable({
                 dom: "tr",
                 processing: true,
@@ -338,8 +340,18 @@
                 pageLength: {{ settings.general.page_size }},
                 ajax: "{{ url_for('api.episodes') }}?seriesid={{id}}",
                 rowGroup: {
-                    dataSrc: function (data) {
-                        return 'Season ' + data.season;
+                    dataSrc: 'season',
+                    startRender: function (rows, group) {
+                        var collapsed = !!collapsedGroups[group];
+
+                        rows.nodes().each(function (r) {
+                            r.style.display = collapsed ? 'none' : '';
+                        });
+
+                        return $('<tr/>')
+                            .append('<td colspan=' + rows.columns()[0].length + '>Season ' + group + '</td>')
+                            .attr('data-name', group)
+                            .toggleClass('collapsed', collapsed);
                     }
                 },
                 columns: [
@@ -422,6 +434,12 @@
                         }
                     }
                 ]
+            });
+
+            $('#episodes').on('click', 'tr.dtrg-start', function () {
+                var name = $(this).data('name');
+                collapsedGroups[name] = !collapsedGroups[name];
+                table.draw(false);
             });
 
             $('#episodes').on('click', '.remove_subtitles', function (e) {
