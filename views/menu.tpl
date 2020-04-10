@@ -134,7 +134,7 @@
 								</i>
 								System
 							</a>
-							<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+							<a id="donate" class="item" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url">
 								<i class="red heart icon"></i>
 								Donate
 							</a>
@@ -203,7 +203,7 @@
 										</i>
 										System
 									</a>
-									<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+									<a id="donate" class="item" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url">
 										<i class="red heart icon"></i>
 										Donate
 									</a>
