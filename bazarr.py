@@ -14,7 +14,7 @@ from libs.six import PY3
 def check_python_version():
     python_version = platform.python_version_tuple()
     minimum_py2_tuple = (2, 7, 13)
-    minimum_py3_tuple = (3, 6, 0)
+    minimum_py3_tuple = (3, 7, 0)
     minimum_py2_str = ".".join(str(i) for i in minimum_py2_tuple)
     minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
 
