@@ -481,6 +481,10 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
         'win') and settings.general.getboolean('chmod_enabled') else None
 
+    dest_directory = get_target_folder(path)
+    fake_video_path = None
+    if dest_directory:
+        fake_video_path = os.path.join(dest_directory, os.path.split(path)[1])
     _, ext = os.path.splitext(subtitle.filename)
 
     language = alpha3_from_alpha2(language)
@@ -493,7 +497,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
-    subtitle_path = get_subtitle_path(video_path=force_unicode(path),
+    subtitle_path = get_subtitle_path(video_path=force_unicode(fake_video_path if fake_video_path else path),
                                       language=None if single else lang_obj,
                                       extension=ext,
                                       forced_tag=forced)
