@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4.3'
+bazarr_version = '0.8.4.4'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
