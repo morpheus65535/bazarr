@@ -24,45 +24,16 @@
 # THE SOFTWARE.
 
 import re
-import ssl
-from os.path import isfile
 
-from .NotifyBase import NotifyBase
-from ..URLBase import PrivacyMode
-from ..common import NotifyType
-from ..utils import parse_list
-from ..AppriseLocale import gettext_lazy as _
+from ..NotifyBase import NotifyBase
+from ...URLBase import PrivacyMode
+from ...common import NotifyType
+from ...utils import parse_list
+from ...AppriseLocale import gettext_lazy as _
+from .SleekXmppAdapter import SleekXmppAdapter
 
 # xep string parser
 XEP_PARSE_RE = re.compile('^[^1-9]*(?P<xep>[1-9][0-9]{0,3})$')
-
-# Default our global support flag
-NOTIFY_XMPP_SUPPORT_ENABLED = False
-
-# Taken from https://golang.org/src/crypto/x509/root_linux.go
-CA_CERTIFICATE_FILE_LOCATIONS = [
-    # Debian/Ubuntu/Gentoo etc.
-    "/etc/ssl/certs/ca-certificates.crt",
-    # Fedora/RHEL 6
-    "/etc/pki/tls/certs/ca-bundle.crt",
-    # OpenSUSE
-    "/etc/ssl/ca-bundle.pem",
-    # OpenELEC
-    "/etc/pki/tls/cacert.pem",
-    # CentOS/RHEL 7
-    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
-]
-
-try:
-    # Import sleekxmpp if available
-    import sleekxmpp
-
-    NOTIFY_XMPP_SUPPORT_ENABLED = True
-
-except ImportError:
-    # No problem; we just simply can't support this plugin because we're
-    # either using Linux, or simply do not have sleekxmpp installed.
-    pass
 
 
 class NotifyXMPP(NotifyBase):
@@ -82,6 +53,9 @@ class NotifyXMPP(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_xmpp'
 
+    # Lower throttle rate for XMPP
+    request_rate_per_sec = 0.5
+
     # The default XMPP port
     default_unsecure_port = 5222
 
@@ -98,7 +72,7 @@ class NotifyXMPP(NotifyBase):
     # If anyone is seeing this had knows a better way of testing this
     # outside of what is defined in test/test_xmpp_plugin.py, please
     # let me know! :)
-    _enabled = NOTIFY_XMPP_SUPPORT_ENABLED
+    _enabled = SleekXmppAdapter._enabled
 
     # Define object templates
     templates = (
@@ -231,10 +205,11 @@ class NotifyXMPP(NotifyBase):
                 result = XEP_PARSE_RE.match(xep)
                 if result is not None:
                     self.xep.append(int(result.group('xep')))
+                    self.logger.debug('Loaded XMPP {}'.format(xep))
 
                 else:
                     self.logger.warning(
-                        "Could not load XMPP xep {}".format(xep))
+                        "Could not load XMPP {}".format(xep))
 
         # By default we send ourselves a message
         if targets:
@@ -267,34 +242,7 @@ class NotifyXMPP(NotifyBase):
                 jid = self.host
                 password = self.password if self.password else self.user
 
-        # Prepare our object
-        xmpp = sleekxmpp.ClientXMPP(jid, password)
-
-        for xep in self.xep:
-            # Load xep entries
-            xmpp.register_plugin('xep_{0:04d}'.format(xep))
-
-        if self.secure:
-            xmpp.ssl_version = ssl.PROTOCOL_TLSv1
-            # If the python version supports it, use highest TLS version
-            # automatically
-            if hasattr(ssl, "PROTOCOL_TLS"):
-                # Use the best version of TLS available to us
-                xmpp.ssl_version = ssl.PROTOCOL_TLS
-
-            xmpp.ca_certs = None
-            if self.verify_certificate:
-                # Set the ca_certs variable for certificate verification
-                xmpp.ca_certs = next(
-                    (cert for cert in CA_CERTIFICATE_FILE_LOCATIONS
-                     if isfile(cert)), None)
-
-                if xmpp.ca_certs is None:
-                    self.logger.warning(
-                        'XMPP Secure comunication can not be verified; '
-                        'no CA certificate found')
-
-        # Acquire our port number
+        # Compute port number
         if not self.port:
             port = self.default_secure_port \
                 if self.secure else self.default_unsecure_port
@@ -302,48 +250,22 @@ class NotifyXMPP(NotifyBase):
         else:
             port = self.port
 
-        # Establish our connection
-        if not xmpp.connect((self.host, port)):
-            return False
-
-        xmpp.send_presence()
-
         try:
-            xmpp.get_roster()
+            # Communicate with XMPP.
+            xmpp_adapter = SleekXmppAdapter(
+                host=self.host, port=port, secure=self.secure,
+                verify_certificate=self.verify_certificate, xep=self.xep,
+                jid=jid, password=password, body=body, targets=self.targets,
+                before_message=self.throttle, logger=self.logger)
 
-        except sleekxmpp.exceptions.IqError as e:
-            self.logger.warning('There was an error getting the XMPP roster.')
-            self.logger.debug(e.iq['error']['condition'])
-            xmpp.disconnect()
+        except ValueError:
+            # We failed
             return False
 
-        except sleekxmpp.exceptions.IqTimeout:
-            self.logger.warning('XMPP Server is taking too long to respond.')
-            xmpp.disconnect()
-            return False
+        # Initialize XMPP machinery and begin processing the XML stream.
+        outcome = xmpp_adapter.process()
 
-        targets = list(self.targets)
-        if not targets:
-            # We always default to notifying ourselves
-            targets.append(jid)
-
-        while len(targets) > 0:
-
-            # Get next target (via JID)
-            target = targets.pop(0)
-
-            # Always call throttle before any remote server i/o is made
-            self.throttle()
-
-            # The message we wish to send, and the JID that
-            # will receive it.
-            xmpp.send_message(mto=target, mbody=body, mtype='chat')
-
-        # Using wait=True ensures that the send queue will be
-        # emptied before ending the session.
-        xmpp.disconnect(wait=True)
-
-        return True
+        return outcome
 
     def url(self, privacy=False, *args, **kwargs):
         """

@@ -11,17 +11,19 @@ from bazarr.get_args import args
 
 
 def check_python_version():
-    python_version = (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
-    python_version_str = '.'.join(map(str, python_version))
-    minimum_python3_version = (3, 6, 0)
-    minimum_python3_version_str = '.'.join(map(str, minimum_python3_version))
+    python_version = platform.python_version_tuple()
+    minimum_py3_tuple = (3, 7, 0)
+    minimum_py3_str = ".".join(str(i) for i in minimum_py3_tuple)
 
-    if python_version >= minimum_python3_version:
-        pass
-    else:
-        print("Python " + minimum_python3_version_str + " or greater required. Current version is " +
-              python_version_str + ". Please upgrade Python.")
-        os._exit(0)
+    if int(python_version[0]) < 3:
+        print("Python " + minimum_py3_str + " or greater required. "
+              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        sys.exit(1)
+    elif (int(python_version[0]) == minimum_py3_tuple[0] and int(python_version[1]) < minimum_py3_tuple[1]) or \
+            (int(python_version[0]) != minimum_py3_tuple[0] and int(python_version[0]) != minimum_py2_tuple[0]):
+        print("Python " + minimum_py3_str + " or greater required. "
+              "Current version is " + platform.python_version() + ". Please upgrade Python.")
+        sys.exit(1)
 
 
 check_python_version()
@@ -51,30 +53,6 @@ class DaemonStatus(ProcessRegistry):
         self.__processes.remove(process)
 
     @staticmethod
-    def __wait_for_processes(processes, timeout):
-        """
-        Waits all the provided processes for the specified amount of time in seconds.
-        """
-        reference_ts = time.time()
-        elapsed = 0
-        remaining_processes = list(processes)
-        while elapsed < timeout and len(remaining_processes) > 0:
-            remaining_time = timeout - elapsed
-            for ep in list(remaining_processes):
-                if ep.poll() is not None:
-                    remaining_processes.remove(ep)
-                else:
-                    if remaining_time > 0:
-                        try:
-                            ep.wait(remaining_time)
-                            remaining_processes.remove(ep)
-                        except subprocess.TimeoutExpired:
-                            pass
-                        elapsed = time.time() - reference_ts
-                        remaining_time = timeout - elapsed
-        return remaining_processes
-
-    @staticmethod
     def __send_signal(processes, signal_no, live_processes=None):
         """
         Sends to every single of the specified processes the given signal and (if live_processes is not None) append to
@@ -96,9 +74,11 @@ class DaemonStatus(ProcessRegistry):
         Flags this instance as should stop and terminates as smoothly as possible children processes.
         """
         self.__should_stop = True
-        live_processes = DaemonStatus.__send_signal(self.__processes, signal.SIGINT, list())
-        live_processes = DaemonStatus.__wait_for_processes(live_processes, 120)
-        DaemonStatus.__send_signal(live_processes, signal.SIGTERM)
+        DaemonStatus.__send_signal(self.__processes, signal.SIGINT, list())
+
+    def force_stop(self):
+        self.__should_stop = True
+        DaemonStatus.__send_signal(self.__processes, signal.SIGTERM)
 
     def should_stop(self):
         return self.__should_stop
@@ -157,11 +137,19 @@ if __name__ == '__main__':
 
     daemonStatus = DaemonStatus()
 
-    def shutdown():
-        # indicates that everything should stop
-        daemonStatus.stop()
-        # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
-        os.kill(os.getpid(), signal.SIGINT)
+        def force_shutdown():
+            # force the killing of children processes
+            daemonStatus.force_stop()
+            # if a new SIGTERM signal is caught the standard behaviour should be followed
+            signal.signal(signal.SIGTERM, signal.SIG_DFL)
+            # emulate a Ctrl C command on itself (bypasses the signal thing but, then, emulates the "Ctrl+C break")
+            os.kill(os.getpid(), signal.SIGINT)
+
+        def shutdown():
+            # indicates that everything should stop
+            daemonStatus.stop()
+            # if a new sigterm signal is caught it should force the shutdown of children processes
+            signal.signal(signal.SIGTERM, lambda signal_no, frame: force_shutdown())
 
     signal.signal(signal.SIGTERM, lambda signal_no, frame: shutdown())
 
