@@ -757,6 +757,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Titrari.ro</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="titrari" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Romanian Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+                        <div id="titrari_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>TVSubtitles</label>
                             </div>
                             <div class="one wide column">
