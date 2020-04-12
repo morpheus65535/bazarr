@@ -13,6 +13,7 @@ from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
+from subliminal_patch.score import framerate_equal
 from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
@@ -42,13 +43,14 @@ class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
 
-    def __init__(self, langauge, filename, type, video, link):
+    def __init__(self, langauge, filename, type, video, link, fps):
         super(SubsSabBzSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
         self.page_link = link
         self.type = type
         self.video = video
+        self.fps = fps
         self.release_info = os.path.splitext(filename)[0]
 
     @property
@@ -76,6 +78,14 @@ class SubsSabBzSubtitle(Subtitle):
              matches.add('hash')
 
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+
+        if self.fps and video.fps and float(self.fps) != float(video.fps):
+            logger.info('FPS do not match for %r, %s vs %s. Reducing score.', self.page_link, self.fps, video.fps)
+            return set([x for x in matches if x in ['series', 'season', 'episode']])
+        else:
+            matches.add('fps')
+            matches.add('format')
+
         return matches
 
 
@@ -144,8 +154,17 @@ class SubsSabBzProvider(Provider):
                     link = element.get('href')
                     element = row.find('a', href = re.compile(r'.*showuser=.*'))
                     uploader = element.get_text() if element else None
-                    logger.info('Found subtitle link %r', link)
-                    sub = self.download_archive_and_add_subtitle_files(link, language, video)
+                    cells = row.findChildren('td')
+
+                    sub_disks = int(cells[6].getText()) if cells else 1
+                    if sub_disks != 1:
+                        logger.info('Multi-disk subtitles (unsupported). Skipping %r', link)
+                        continue
+
+                    sub_fps = float(cells[7].getText()) if cells else 0
+                    logger.info('Found subtitle link %r, fps %s, video %s', link, sub_fps, video.fps)
+
+                    sub = self.download_archive_and_add_subtitle_files(link, language, video, sub_fps)
                     for s in sub: 
                         s.uploader = uploader
                     subtitles = subtitles + sub
@@ -159,23 +178,23 @@ class SubsSabBzProvider(Provider):
             pass
         else:
             seeking_subtitle_file = subtitle.filename
-            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video, subtitle.fps)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link):
+    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link)
+                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link, fps)
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video ):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps ):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
             'Referer': 'http://subs.sab.bz/index.php?'
@@ -184,8 +203,8 @@ class SubsSabBzProvider(Provider):
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link, fps )
         elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link, fps )
         else:
             raise ValueError('Not a valid archive')
