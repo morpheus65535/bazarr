@@ -34,6 +34,7 @@ from os.path import abspath
 # Used for testing
 from . import NotifyEmail as NotifyEmailBase
 from .NotifyGrowl import gntp
+from .NotifyXMPP import SleekXmppAdapter
 
 # NotifyBase object is passed in as a module not class
 from . import NotifyBase
@@ -63,6 +64,9 @@ __all__ = [
 
     # gntp (used for NotifyGrowl Testing)
     'gntp',
+
+    # sleekxmpp access points (used for NotifyXMPP Testing)
+    'SleekXmppAdapter',
 ]
 
 # we mirror our base purely for the ability to reset everything; this
@@ -217,9 +221,16 @@ def _sanitize_token(tokens, default_delimiter):
                 and 'default' not in tokens[key] \
                 and 'values' in tokens[key] \
                 and len(tokens[key]['values']) == 1:
+
             # If there is only one choice; then make it the default
-            tokens[key]['default'] = \
-                tokens[key]['values'][0]
+            #  - support dictionaries too
+            tokens[key]['default'] = tokens[key]['values'][0] \
+                if not isinstance(tokens[key]['values'], dict) \
+                else next(iter(tokens[key]['values']))
+
+        if 'values' in tokens[key] and isinstance(tokens[key]['values'], dict):
+            # Convert values into a list if it was defined as a dictionary
+            tokens[key]['values'] = [k for k in tokens[key]['values'].keys()]
 
         if 'regex' in tokens[key]:
             # Verify that we are a tuple; convert strings to tuples

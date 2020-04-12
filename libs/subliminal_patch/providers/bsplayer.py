@@ -234,7 +234,7 @@ class BSPlayerProvider(Provider):
 
     def get_sub_domain(self):
         # s1-9, s101-109
-        SUB_DOMAINS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9',
+        SUB_DOMAINS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8',
                        's101', 's102', 's103', 's104', 's105', 's106', 's107', 's108', 's109']
         API_URL_TEMPLATE = "http://{sub_domain}.api.bsplayer-subtitles.com/v1.php"
         sub_domains_end = len(SUB_DOMAINS) - 1

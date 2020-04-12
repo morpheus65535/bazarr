@@ -118,7 +118,7 @@ class LegendasdivxProvider(Provider):
     SEARCH_THROTTLE = 8
     site = 'https://www.legendasdivx.pt'
     headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
+        'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Origin': 'https://www.legendasdivx.pt',
         'Referer': 'https://www.legendasdivx.pt',

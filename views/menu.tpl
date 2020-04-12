@@ -134,7 +134,7 @@
 								</i>
 								System
 							</a>
-							<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+							<a id="donate" class="item" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url">
 								<i class="red heart icon"></i>
 								Donate
 							</a>
@@ -203,7 +203,7 @@
 										</i>
 										System
 									</a>
-									<a id="donate" class="item" href="https://beerpay.io/morpheus65535/bazarr">
+									<a id="donate" class="item" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url">
 										<i class="red heart icon"></i>
 										Donate
 									</a>
@@ -237,7 +237,7 @@
 						<i class="python icon"></i>
 						<div class="content">
 							<div class="header">Python deprecation warning</div>
-							<p><b><u>Bazarr won't update anymore until you upgrade Python!</u></b></p>Bazarr is now compatible with Python 3.6 and newer. You must upgrade Python as we don't support Python 2.x anymore.
+							<p><b><u>Bazarr won't update anymore until you upgrade Python!</u></b></p>Bazarr is now compatible with Python 3.7 and newer. You must upgrade Python as we don't support Python 2.x anymore.
 							<div class="ui bulleted list">
 							    % if os.name == 'posix':
 								<div class="item">If you are running under Docker, don't worry, we'll take care of this for you. Just pull the new image.</div>

@@ -25,6 +25,8 @@ def update_all_movies():
 def update_movies():
     logging.debug('BAZARR Starting movie sync from Radarr.')
     apikey_radarr = settings.radarr.apikey
+
+    radarr_version = get_radarr_version()
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
     movie_default_language = settings.general.movie_default_language
     movie_default_hi = settings.general.movie_default_hi
@@ -130,6 +132,8 @@ def update_movies():
                                 videoCodec = None
                                 audioCodec = None
 
+                            audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
+
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(six.text_type(movie['tmdbId']))
                             
@@ -140,7 +144,7 @@ def update_movies():
                                                          'tmdbId': six.text_type(movie["tmdbId"]),
                                                          'poster': poster,
                                                          'fanart': fanart,
-                                                         'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
+                                                         'audio_language': audio_language,
                                                          'sceneName': sceneName,
                                                          'monitored': six.text_type(bool(movie['monitored'])),
                                                          'year': six.text_type(movie['year']),
@@ -165,7 +169,7 @@ def update_movies():
                                                           'overview': overview,
                                                           'poster': poster,
                                                           'fanart': fanart,
-                                                          'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
+                                                          'audio_language': audio_language,
                                                           'sceneName': sceneName,
                                                           'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
@@ -189,7 +193,7 @@ def update_movies():
                                                           'overview': overview,
                                                           'poster': poster,
                                                           'fanart': fanart,
-                                                          'audio_language': profile_id_to_language(movie['qualityProfileId'], audio_profiles),
+                                                          'audio_language': audio_language,
                                                           'sceneName': sceneName,
                                                           'monitored': six.text_type(bool(movie['monitored'])),
                                                           'sortTitle': movie['sortTitle'],
@@ -227,8 +231,8 @@ def update_movies():
 
             for updated_movie in movies_to_update_list:
                 query = dict_converter.convert(updated_movie)
-                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE radarrId = ?''',
-                                 query.values + (updated_movie['radarrId'],))
+                database.execute('''UPDATE table_movies SET ''' + query.keys_update + ''' WHERE tmdbId = ?''',
+                                 query.values + (updated_movie['tmdbId'],))
                 altered_movies.append([updated_movie['tmdbId'],
                                        updated_movie['path'],
                                        updated_movie['radarrId'],
@@ -275,8 +279,11 @@ def get_profile_list():
     radarr_version = get_radarr_version()
     profiles_list = []
     # Get profiles data from radarr
+    if radarr_version.startswith('0'):
+        url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
+    else:
+        url_radarr_api_movies = url_radarr() + "/api/v3/qualityprofile?apikey=" + apikey_radarr
 
-    url_radarr_api_movies = url_radarr() + "/api/profile?apikey=" + apikey_radarr
     try:
         profiles_json = requests.get(url_radarr_api_movies, timeout=60, verify=False)
     except requests.exceptions.ConnectionError as errc:
@@ -290,7 +297,7 @@ def get_profile_list():
         if radarr_version.startswith('0'):
             for profile in profiles_json.json():
                 profiles_list.append([profile['id'], profile['language'].capitalize()])
-        elif radarr_version.startswith('2'):
+        else:
             for profile in profiles_json.json():
                 profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
 

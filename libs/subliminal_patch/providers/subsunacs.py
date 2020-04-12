@@ -12,7 +12,7 @@ from requests import Session
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal_patch.utils import sanitize
+from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
@@ -22,6 +22,20 @@ from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
+
+def fix_tv_naming(title):
+    """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
+
+    :param str title: original title.
+    :return: new title.
+    :rtype: str
+
+    """
+    return fix_inconsistent_naming(title, {"Marvel's Daredevil": "Daredevil",
+                                           "Marvel's Luke Cage": "Luke Cage",
+                                           "Marvel's Iron Fist": "Iron Fist",
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow"
+                                           }, True)
 
 class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
@@ -34,6 +48,7 @@ class SubsUnacsSubtitle(Subtitle):
         self.page_link = link
         self.type = type
         self.video = video
+        self.release_info = os.path.splitext(filename)[0]
 
     @property
     def id(self):
@@ -60,8 +75,6 @@ class SubsUnacsSubtitle(Subtitle):
              matches.add('hash')
 
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
-
-        matches.add(id(self))
         return matches
 
 
@@ -103,10 +116,10 @@ class SubsUnacsProvider(Provider):
             'imdbcheck': 1}
 
         if isEpisode:
-            params['m'] = "%s %02d %02d" % (sanitize(video.series), video.season, video.episode)
+            params['m'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['y'] = video.year
-            params['m'] = (video.title)
+            params['m'] = sanitize(video.title, {'\''})
 
         if language == 'en' or language == 'eng':
             params['l'] = 1
@@ -122,17 +135,23 @@ class SubsUnacsProvider(Provider):
             logger.debug('No subtitles found')
             return subtitles
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        rows = soup.findAll('td', {'class': 'tdMovie'})
+        soup = BeautifulSoup(response.content, 'lxml')
+        rows = soup.findAll('tr', onmouseover=True)
 
-        # Search on first 10 rows only
-        for row in rows[:10]:
-            element = row.find('a', {'class': 'tooltip'})
-            if element:
-                link = element.get('href')
-                logger.info('Found subtitle link %r', link)
-                subtitles = subtitles + self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
-
+        # Search on first 20 rows only
+        for row in rows[:20]:
+            a_element_wrapper = row.find('td', {'class': 'tdMovie'})
+            if a_element_wrapper:
+                element = a_element_wrapper.find('a', {'class': 'tooltip'})
+                if element:
+                    link = element.get('href')
+                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&(memid|u)=.*'))
+                    uploader = element.get_text() if element else None
+                    logger.info('Found subtitle link %r', link)
+                    sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
+                    for s in sub: 
+                        s.uploader = uploader
+                    subtitles = subtitles + sub
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -152,11 +171,16 @@ class SubsUnacsProvider(Provider):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
-            if file_name.lower().endswith(('.srt', '.sub')):
+            if file_name.lower().endswith(('.srt', '.sub', '.txt')):
+                file_is_txt = True if file_name.lower().endswith('.txt') else False
+                if file_is_txt and re.search(r'subsunacs\.net|танете част|прочети|^read ?me|procheti', file_name, re.I): 
+                    logger.info('Ignore readme txt file %r', file_name)
+                    continue
                 logger.info('Found subtitle file %r', file_name)
                 subtitle = SubsUnacsSubtitle(language, file_name, type, video, link)
                 subtitle.content = archiveStream.read(file_name)
-                subtitles.append(subtitle)
+                if file_is_txt == False or subtitle.is_valid():
+                    subtitles.append(subtitle)
         return subtitles
 
     def download_archive_and_add_subtitle_files(self, link, language, video ):

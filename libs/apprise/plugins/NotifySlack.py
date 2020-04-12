@@ -176,7 +176,7 @@ class NotifySlack(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[A-Z0-9]{9}$', 'i'),
+            'regex': (r'^[A-Z0-9]+$', 'i'),
         },
         # Token required as part of the Webhook request
         #  /........./BBBBBBBBB/........................
@@ -185,7 +185,7 @@ class NotifySlack(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[A-Z0-9]{9}$', 'i'),
+            'regex': (r'^[A-Z0-9]+$', 'i'),
         },
         # Token required as part of the Webhook request
         #  /........./........./CCCCCCCCCCCCCCCCCCCCCCCC
@@ -194,7 +194,7 @@ class NotifySlack(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[A-Za-z0-9]{24}$', 'i'),
+            'regex': (r'^[A-Za-z0-9]+$', 'i'),
         },
         'target_encoded_id': {
             'name': _('Target Encoded ID'),
@@ -435,8 +435,18 @@ class NotifySlack(NotifyBase):
         if attach and self.mode is SlackMode.BOT and attach_channel_list:
             # Send our attachments (can only be done in bot mode)
             for attachment in attach:
-                self.logger.info(
-                    'Posting Slack Attachment {}'.format(attachment.name))
+
+                # Perform some simple error checking
+                if not attachment:
+                    # We could not access the attachment
+                    self.logger.error(
+                        'Could not access attachment {}.'.format(
+                            attachment.url(privacy=True)))
+                    return False
+
+                self.logger.debug(
+                    'Posting Slack attachment {}'.format(
+                        attachment.url(privacy=True)))
 
                 # Prepare API Upload Payload
                 _payload = {
@@ -515,25 +525,29 @@ class NotifySlack(NotifyBase):
                     'Response Details:\r\n{}'.format(r.content))
                 return False
 
-            try:
-                response = loads(r.content)
+            elif attach:
+                # Attachment posts return a JSON string
+                try:
+                    response = loads(r.content)
 
-            except (AttributeError, TypeError, ValueError):
-                # ValueError = r.content is Unparsable
-                # TypeError = r.content is None
-                # AttributeError = r is None
-                pass
+                except (AttributeError, TypeError, ValueError):
+                    # ValueError = r.content is Unparsable
+                    # TypeError = r.content is None
+                    # AttributeError = r is None
+                    pass
 
-            if not (response and response.get('ok', True)):
-                # Bare minimum requirements not met
-                self.logger.warning(
-                    'Failed to send {}to Slack: error={}.'.format(
-                        attach.name if attach else '',
-                        r.status_code))
+                if not (response and response.get('ok', True)):
+                    # Bare minimum requirements not met
+                    self.logger.warning(
+                        'Failed to send {}to Slack: error={}.'.format(
+                            attach.name if attach else '',
+                            r.status_code))
 
-                self.logger.debug(
-                    'Response Details:\r\n{}'.format(r.content))
-                return False
+                    self.logger.debug(
+                        'Response Details:\r\n{}'.format(r.content))
+                    return False
+            else:
+                response = r.content
 
             # Message Post Response looks like this:
             # {

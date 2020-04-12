@@ -60,7 +60,7 @@ def check_and_apply_update():
         if releases is None:
             notifications.write(msg='Could not get releases from GitHub.',
                                 queue='check_update', type='warning')
-            logging.warn('BAZARR Could not get releases from GitHub.')
+            logging.warning('BAZARR Could not get releases from GitHub.')
             return
         else:
             release = releases[0]

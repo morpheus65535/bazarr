@@ -267,14 +267,21 @@ class NotifyTelegram(NotifyBase):
         path = None
 
         if isinstance(attach, AttachBase):
+            if not attach:
+                # We could not access the attachment
+                self.logger.error(
+                    'Could not access attachment {}.'.format(
+                        attach.url(privacy=True)))
+                return False
+
+            self.logger.debug(
+                'Posting Telegram attachment {}'.format(
+                    attach.url(privacy=True)))
+
             # Store our path to our file
             path = attach.path
             file_name = attach.name
             mimetype = attach.mimetype
-
-            if not path:
-                # Could not load attachment
-                return False
 
             # Process our attachment
             function_name, key = \
@@ -470,6 +477,9 @@ class NotifyTelegram(NotifyBase):
             # Return our detected userid
             return _id
 
+        self.logger.warning(
+            'Failed to detect a Telegram user; '
+            'try sending your bot a message first.')
         return 0
 
     def send(self, body, title='', notify_type=NotifyType.INFO, attach=None,
@@ -498,8 +508,12 @@ class NotifyTelegram(NotifyBase):
         if self.notify_format == NotifyFormat.MARKDOWN:
             payload['parse_mode'] = 'MARKDOWN'
 
-        else:
-            # Either TEXT or HTML; if TEXT we'll make it HTML
+            payload['text'] = '{}{}'.format(
+                '{}\r\n'.format(title) if title else '',
+                body,
+            )
+
+        elif self.notify_format == NotifyFormat.HTML:
             payload['parse_mode'] = 'HTML'
 
             # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
@@ -517,30 +531,22 @@ class NotifyTelegram(NotifyBase):
                 # Tabs become 3 spaces
                 title = re.sub('&emsp;?', '   ', title, re.I)
 
-                # HTML
-                title = NotifyTelegram.escape_html(title, whitespace=False)
+            payload['text'] = '{}{}'.format(
+                '<b>{}</b>\r\n'.format(title) if title else '',
+                body,
+            )
 
-            # HTML
+        else:  # TEXT
+            payload['parse_mode'] = 'HTML'
+
+            # Escape content
+            title = NotifyTelegram.escape_html(title, whitespace=False)
             body = NotifyTelegram.escape_html(body, whitespace=False)
 
-        if title and self.notify_format == NotifyFormat.TEXT:
-            # Text HTML Formatting
-            payload['text'] = '<b>%s</b>\r\n%s' % (
-                title,
+            payload['text'] = '{}{}'.format(
+                '<b>{}</b>\r\n'.format(title) if title else '',
                 body,
             )
-
-        elif title:
-            # Already HTML; trust developer has wrapped
-            # the title appropriately
-            payload['text'] = '%s\r\n%s' % (
-                title,
-                body,
-            )
-
-        else:
-            # Assign the body
-            payload['text'] = body
 
         # Create a copy of the chat_ids list
         targets = list(self.targets)
@@ -639,10 +645,10 @@ class NotifyTelegram(NotifyBase):
             if attach:
                 # Send our attachments now (if specified and if it exists)
                 for attachment in attach:
-                    sent_attachment = self.send_media(
-                        payload['chat_id'], notify_type, attach=attachment)
+                    if not self.send_media(
+                            payload['chat_id'], notify_type,
+                            attach=attachment):
 
-                    if not sent_attachment:
                         # We failed; don't continue
                         has_error = True
                         break

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 import logging
 import os
+from random import randint
 
 import rarfile
 import re
@@ -82,7 +83,8 @@ class Subs4SeriesProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
+        from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()

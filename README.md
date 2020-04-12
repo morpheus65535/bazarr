@@ -3,12 +3,9 @@ Bazarr is a companion application to Sonarr and Radarr. It manages and downloads
 
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
-## Support on Beerpay
+## Support on Paypal
 At the request of some, here is a way to demonstrate your appreciation for the efforts made in the development of Bazarr:
-[![Beerpay](https://beerpay.io/morpheus65535/bazarr/badge.svg?style=beer-square)](https://beerpay.io/morpheus65535/bazarr)
-
-You can also make a wish but keep in mind that we do not commit to make it happen:
-[![Beerpay](https://beerpay.io/morpheus65535/bazarr/make-wish.svg?style=flat-square)](https://beerpay.io/morpheus65535/bazarr?focus=wish)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url)
 
 # Status
 [![GitHub issues](https://img.shields.io/github/issues/morpheus65535/bazarr.svg?style=flat-square)](https://github.com/morpheus65535/bazarr/issues)
@@ -69,6 +66,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Supersubtitles
 * Titlovi
 * TVSubtitles
+* Wizdom
 * XSubs
 * Zimuku
 

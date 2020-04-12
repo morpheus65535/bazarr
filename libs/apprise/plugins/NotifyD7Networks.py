@@ -86,7 +86,7 @@ class NotifyD7Networks(NotifyBase):
     # The services URL
     service_url = 'https://d7networks.com/'
 
-    # All pushover requests are secure
+    # All notification requests are secure
     secure_protocol = 'd7sms'
 
     # Allow 300 requests per minute.
@@ -94,7 +94,7 @@ class NotifyD7Networks(NotifyBase):
     request_rate_per_sec = 0.20
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_twilio'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_d7networks'
 
     # D7 Networks batch notification URL
     notify_batch_url = 'http://rest-api.d7networks.com/secure/sendbatch'

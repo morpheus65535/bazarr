@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# To use this service you will need a Twillio account to which you can get your
+# To use this service you will need a Twilio account to which you can get your
 # AUTH_TOKEN and ACCOUNT SID right from your console/dashboard at:
 #     https://www.twilio.com/console
 #
@@ -67,7 +67,7 @@ class NotifyTwilio(NotifyBase):
     # The services URL
     service_url = 'https://www.twilio.com/'
 
-    # All pushover requests are secure
+    # All notification requests are secure
     secure_protocol = 'twilio'
 
     # Allow 300 requests per minute.
@@ -86,7 +86,7 @@ class NotifyTwilio(NotifyBase):
                  '{sid}/Messages.json'
 
     # The maximum length of the body
-    body_maxlen = 140
+    body_maxlen = 160
 
     # A title can not be used for SMS Messages.  Setting this to zero will
     # cause any title (if defined) to get placed into the message body.

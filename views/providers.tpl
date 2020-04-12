@@ -483,6 +483,27 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>RegieLive</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="regielive" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Romanian Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="regielive_option" class="ui grid container">
+
+                        </div>
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Subdivx</label>
                             </div>
                             <div class="one wide column">
@@ -665,28 +686,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>SubZ</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="subz" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="subz_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>Subtitulamos.tv</label>
                             </div>
                             <div class="one wide column">
@@ -773,6 +772,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>Wizdom</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="wizdom" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Wizdom.xyz Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="wizdom_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>XSubs</label>
                             </div>
                             <div class="one wide column">
@@ -810,6 +831,28 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
+                                <label>Yavka.net</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="yavkanet" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Bulgarian (mostly) Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="yavkanet_option" class="ui grid container">
+
                         </div>
 
                         <div class="middle aligned row">

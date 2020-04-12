@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4.2'
+bazarr_version = '0.8.4.3'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -47,7 +47,7 @@ from beaker.middleware import SessionMiddleware
 from cork import Cork
 from bottle import route, template, static_file, request, redirect, response, HTTPError, app, hook, abort
 from datetime import timedelta, datetime
-from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
+from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, clean_desired_languages
 
 from get_providers import get_providers, get_providers_auth, list_throttled_providers
 from get_series import *
@@ -57,7 +57,7 @@ from get_movies import *
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle
+    manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from helper import path_replace_reverse, path_replace_reverse_movie
 from scheduler import Scheduler
@@ -1625,6 +1625,8 @@ def save_settings():
         database.execute("UPDATE table_settings_notifier SET enabled=?, url=? WHERE name=?",
                          (enabled,notifier_url,notifier['name']))
 
+    clean_desired_languages()
+
     scheduler.update_configurable_tasks()
     
     logging.info('BAZARR Settings saved succesfully.')
@@ -2005,7 +2007,7 @@ def perform_manual_upload_subtitle_movie():
                                         forced=forced,
                                         title=title,
                                         scene_name=sceneName,
-                                        media_type='series',
+                                        media_type='movie',
                                         subtitle=upload)
 
         if result is not None:
@@ -2223,6 +2225,8 @@ def api_help():
 
 # Mute DeprecationWarning
 warnings.simplefilter("ignore", DeprecationWarning)
+# Mute Insecure HTTPS requests made to Sonarr and Radarr
+warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 if six.PY3:
     warnings.simplefilter("ignore", BrokenPipeError)
 server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
