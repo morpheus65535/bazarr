@@ -2093,10 +2093,11 @@ def api_history():
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
     authorize()
-    url = six.moves.urllib.parse.unquote(url)
+    url = protocol + "://" + six.moves.urllib.parse.unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
-    except:
+        result = requests.get(url, allow_redirects=False, verify=False).json()['version']
+    except Exception as e:
+        logging.exception('BAZARR cannot successfully contact this URL: ' + url)
         return dict(status=False)
     else:
         return dict(status=True, version=result)
