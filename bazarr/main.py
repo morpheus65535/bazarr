@@ -684,11 +684,11 @@ def api_movies_history():
 @app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
 @login_required
 def test_url(protocol, url):
-
     url = unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
-    except:
+        result = requests.get(url, allow_redirects=False, verify=False).json()['version']
+    except Exception as e:
+        logging.exception('BAZARR cannot successfully contact this URL: ' + url)
         return dict(status=False)
     else:
         return dict(status=True, version=result)
