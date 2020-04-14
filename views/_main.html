@@ -139,8 +139,8 @@
                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
                                 <div class="dropdown-menu dropdown-menu-right scale-up">
                                     <ul class="dropdown-user">
-                                        <li><a href="{{ url_for('restart') }}"><i class="fas fa-redo"></i> Restart</a></li>
-                                        <li><a href="{{ url_for('shutdown') }}"><i class="fas fa-power-off"></i>
+                                        <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
+                                        <li><a id="shutdown""><i class="fas fa-power-off"></i>
                                             Shutdown</a></li>
                                         <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
                                         </li>
@@ -259,8 +259,8 @@
 
         <div id="reconnect_overlay" class="overlay">
             <div class="overlay-content">
-                <p style="color: white;">Connection to Backend Lost.</p>
-                <button class="btn btn-info" onclick="window.location.reload()">Reload</button>
+                <p id="loader_text" style="color: white;">Connection to Backend Lost.</p>
+                <button id="loader_button" class="btn btn-info" onclick="window.location.reload()">Reload</button>
             </div>
         </div>
     {% endblock page_body %}
@@ -389,6 +389,40 @@
 
             $(window).on('beforeunload', function() {
                 events.close();
+            });
+
+            $('#restart').on('click', function() {
+                $('#loader_button').prop("hidden", true);
+                $('#loader_text').text("Bazarr is restarting, please wait...");
+                $('#reconnect_overlay').show();
+                $.ajax({
+                    url: "{{ url_for('restart') }}",
+                    async: true,
+                    error: (function () {
+                        setTimeout(function () {
+                            setInterval(ping, 2000);
+                        }, 8000);
+                    })
+                });
+            });
+
+            function ping() {
+                $.ajax({
+                    url: window.location.href,
+                    success: function() {
+                        window.location.reload(true);
+                    }
+                });
+            }
+
+            $('#shutdown').on('click', function(){
+                document.open();
+                document.write('Bazarr has shutdown.');
+                document.close();
+                $.ajax({
+                    url: "{{ url_for('shutdown') }}",
+                    async: true
+                })
             });
         </script>
     {% endblock tail_js %}

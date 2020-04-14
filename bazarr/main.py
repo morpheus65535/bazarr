@@ -188,7 +188,7 @@ def doShutdown():
         else:
             stop_file.write(str(''))
             stop_file.close()
-            sys.exit(0)
+            os._exit(0)
     return ''
 
 
@@ -209,7 +209,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write(str(''))
             restart_file.close()
-            sys.exit(0)
+            os._exit(0)
     return ''
 
 
