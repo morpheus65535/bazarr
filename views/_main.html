@@ -401,14 +401,11 @@
                 $('#loader_text').text("Bazarr is restarting, please wait...");
                 $('#reconnect_overlay').show();
                 $.ajax({
-                    url: "{{ url_for('restart') }}",
-                    async: true,
-                    error: (function () {
-                        setTimeout(function () {
-                            setInterval(ping, 2000);
-                        }, 8000);
-                    })
-                });
+                    url: "{{ url_for('restart') }}"
+                })
+                setTimeout(function () {
+                    setInterval(ping, 2000);
+                }, 8000);
             });
 
             function ping() {

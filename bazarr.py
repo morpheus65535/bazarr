@@ -80,6 +80,6 @@ if __name__ == '__main__':
     while True:
         check_status()
         try:
-            time.sleep(1)
+            time.sleep(5)
         except (KeyboardInterrupt, SystemExit):
             pass
