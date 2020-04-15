@@ -222,7 +222,7 @@ def doShutdown():
         else:
             stop_file.write(six.text_type(''))
             stop_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'restart')
@@ -243,7 +243,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write(six.text_type(''))
             restart_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'wizard')
