@@ -219,8 +219,7 @@
                 $.ajax({
                     url: "{{ url_for('api.movieseditsave') }}",
                     method: "POST",
-                    data: JSON.stringify(values),
-                    contentType: 'application/json',
+                    data: values,
                     success: function () {
                         table.rows().deselect();
                         $('#languages_select').selectpicker('val', '');

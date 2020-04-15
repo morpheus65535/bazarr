@@ -140,7 +140,7 @@ class SystemTasks(Resource):
 
     @authenticate
     def post(self):
-        taskid = request.json['taskid']
+        taskid = request.form.get('taskid')
 
         scheduler.execute_job_now(taskid)
 
@@ -308,15 +308,14 @@ class Series(Resource):
 class SeriesEditSave(Resource):
     @authenticate
     def post(self):
-        changed_series = request.json
-        lang = changed_series['languages']
-        hi = changed_series['hi']
-        forced = changed_series['forced']
+        lang = request.form.getlist('languages[]')
+        hi = request.form.getlist('hi[]')
+        forced = request.form.getlist('forced[]')
 
         if lang == ['None']:
             lang = 'None'
 
-        for item in changed_series['seriesid']:
+        for item in request.form.getlist('seriesid[]'):
             seriesid = item.lstrip('row_')
             try:
                 if len(lang):
@@ -726,15 +725,14 @@ class Movies(Resource):
 class MoviesEditSave(Resource):
     @authenticate
     def post(self):
-        changed_movies = request.json
-        lang = changed_movies['languages']
-        hi = changed_movies['hi']
-        forced = changed_movies['forced']
+        lang = request.form.getlist('languages[]')
+        hi = request.form.getlist('hi[]')
+        forced = request.form.getlist('forced[]')
 
         if lang == ['None']:
             lang = 'None'
 
-        for item in changed_movies['radarrid']:
+        for item in request.form.getlist('radarrid[]'):
             radarrid = item.lstrip('row_')
             try:
                 if len(lang):

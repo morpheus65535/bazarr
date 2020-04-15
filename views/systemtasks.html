@@ -90,8 +90,7 @@
                 $.ajax({
                     url: "{{ url_for('api.systemtasks') }}",
                     method: "POST",
-                    data: JSON.stringify(values),
-                    contentType: "application/json"
+                    data: values
                 });
             });
         })

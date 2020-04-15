@@ -385,6 +385,11 @@
                     apikey: "{{ settings.auth.apikey }}"
                 }
             });
+            $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+                if (originalOptions.data instanceof FormData) {
+                    originalOptions.data.append("apikey", "{{ settings.auth.apikey }}");
+                }
+            });
             {% endif %}
 
             $(window).on('beforeunload', function() {

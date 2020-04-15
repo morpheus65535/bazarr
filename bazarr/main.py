@@ -30,7 +30,7 @@ from database import database, dict_mapper
 
 from notifier import update_notifier
 
-from cherrypy.wsgiserver import CherryPyWSGIServer
+from waitress.server import create_server
 
 from urllib.parse import unquote
 from datetime import datetime
@@ -176,9 +176,9 @@ def shutdown():
 
 def doShutdown():
     try:
-        server.stop()
+        server.close()
     except:
-        logging.error('BAZARR Cannot stop CherryPy.')
+        logging.error('BAZARR Cannot stop Waitress.')
     else:
         database.close()
         try:
@@ -196,9 +196,9 @@ def doShutdown():
 @login_required
 def restart():
     try:
-        server.stop()
+        server.close()
     except:
-        logging.error('BAZARR Cannot stop CherryPy.')
+        logging.error('BAZARR Cannot stop Waitress.')
     else:
         database.close()
         try:
@@ -719,11 +719,13 @@ if args.dev:
     server = app.run(
         host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)))
 else:
-    server = CherryPyWSGIServer((str(settings.general.ip), (int(args.port) if args.port else int(settings.general.port))), app)
+    server = create_server(app,
+                           host=str(settings.general.ip),
+                           port=int(args.port) if args.port else int(settings.general.port))
 try:
     logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
         args.port) if args.port else str(settings.general.port)) + str(base_url))
     if not args.dev:
-        server.start()
+        server.run()
 except KeyboardInterrupt:
     doShutdown()
