@@ -401,7 +401,7 @@
                 $('#loader_text').text("Bazarr is restarting, please wait...");
                 $('#reconnect_overlay').show();
                 $.ajax({
-                    url: "{{ url_for('restart') }}"
+                    url: "{{ url_for('api.restart') }}"
                 })
                 setTimeout(function () {
                     setInterval(ping, 2000);
@@ -422,7 +422,7 @@
                 document.write('Bazarr has shutdown.');
                 document.close();
                 $.ajax({
-                    url: "{{ url_for('shutdown') }}",
+                    url: "{{ url_for('api.shutdown') }}",
                     async: true
                 })
             });

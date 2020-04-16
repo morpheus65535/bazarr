@@ -168,12 +168,6 @@ def logout():
         return redirect(url_for('redirect_root'))
 
 
-@app.route('/shutdown/')
-@login_required
-def shutdown():
-    doShutdown()
-
-
 def doShutdown():
     try:
         server.close()
@@ -186,15 +180,13 @@ def doShutdown():
         except Exception as e:
             logging.error('BAZARR Cannot create bazarr.stop file.')
         else:
+            logging.info('Bazarr is being shutdown...')
             stop_file.write(str(''))
             stop_file.close()
             os._exit(0)
-    return ''
 
 
-@app.route('/restart/')
-@login_required
-def restart():
+def doRestart():
     try:
         server.close()
     except:
@@ -210,7 +202,6 @@ def restart():
             restart_file.write(str(''))
             restart_file.close()
             os._exit(0)
-    return ''
 
 
 @app.route('/wizard/')
@@ -722,10 +713,12 @@ else:
     server = create_server(app,
                            host=str(settings.general.ip),
                            port=int(args.port) if args.port else int(settings.general.port))
-try:
-    logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
-        args.port) if args.port else str(settings.general.port)) + str(base_url))
-    if not args.dev:
-        server.run()
-except KeyboardInterrupt:
-    doShutdown()
+
+if __name__ == "__main__":
+    try:
+        logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+            args.port) if args.port else str(settings.general.port)) + str(base_url))
+        if not args.dev:
+            server.run()
+    except KeyboardInterrupt:
+        doShutdown()

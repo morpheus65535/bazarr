@@ -60,6 +60,20 @@ def authenticate(actual_method):
     return wrapper
 
 
+class Shutdown(Resource):
+    @authenticate
+    def get(self):
+        from main import doShutdown
+        doShutdown()
+
+
+class Restart(Resource):
+    @authenticate
+    def get(self):
+        from main import doRestart
+        doRestart()
+
+
 class Badges(Resource):
     @authenticate
     def get(self):
@@ -1217,6 +1231,9 @@ class SearchWantedMovies(Resource):
         wanted_search_missing_subtitles_movies()
         return '', 200
 
+
+api.add_resource(Shutdown, '/shutdown')
+api.add_resource(Restart, '/restart')
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
