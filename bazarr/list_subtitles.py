@@ -40,7 +40,7 @@ def store_subtitles(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
+                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS":
                             logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -116,7 +116,7 @@ def store_subtitles_movie(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "hdmv_pgs_subtitle":
+                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS":
                             logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
                             continue
 
