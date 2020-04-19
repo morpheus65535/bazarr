@@ -383,7 +383,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                     logging.debug('BAZARR detected encoding %r', guess)
                     if guess["confidence"] < 0.6:
                         raise UnicodeError
-                    if guess["confidence"] < 0.8 or guess["encoding"] == "ascii":
+                    if guess["confidence"] < 0.7 or guess["encoding"] == "ascii":
                         guess["encoding"] = "utf-8"
                     text = text.decode(guess["encoding"])
                     detected_language = guess_language(text)
