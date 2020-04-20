@@ -303,6 +303,7 @@
             $('#settings-proxy-type').val('{{settings.proxy.type}}').trigger('change');
             $('#settings-general-page_size').val('{{settings.general.page_size}}');
             $('#settings-general-branch').val('{{settings.general.branch}}');
+            $('.selectpicker').selectpicker('refresh')
 
             // Set Checkbox input values
             $('#settings-general-debug').prop('checked', {{'true' if settings.general.getboolean('debug')}});

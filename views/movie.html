@@ -123,7 +123,7 @@
 <h5 style="font-weight: 500;">Missing Subtitles</h5>
 <span id="missingSubtitles"></span>
 
-<div id="manualSearchModal" class="modal" tabindex="-1" role="dialog">
+<div id="manualSearchModal" class="modal" tabindex="-1" role="dialog" data-backdrop="static">
 	<div class="modal-dialog modal-xl" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -135,16 +135,16 @@
 			<div class="modal-body">
 				<h6>Movie path is: <span id="movie_path_span" class="badge badge-secondary"></span>
 					<br>Scenename is: <span id="movie_scenename_span" class="badge badge-secondary"></span></h6>
-				<div class="container-fluid">
+				<div class="container-fluid" style="padding:0px;">
 					<table id="search_result" class="table table-striped">
 						<thead>
 						<tr>
 							<th style="text-align: left;">Score:</th>
-							<th style="text-align: left;">Lang.:</th>
-							<th style="text-align: left;">HI:</th>
+							<th></th>
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Matching:</th>
 							<th style="text-align: left;">Releases:</th>
+							<th style="text-align: left;">Uploader:</th>
 							<th></th>
 						</tr>
 						</thead>
@@ -427,14 +427,19 @@
 					},
 					{ data: null,
 						render: function ( data ) {
+							let lng = data.language;
 							if ( data.language === "pt" && is_pb === true && is_pt === false) {
-								return 'pb'
-							} else {
-								return data.language
+								lng = 'pb'
 							}
+
+							let text = '<div class="badge badge-secondary" style="margin:1px;">' + lng.toUpperCase() + '</div>';
+                            if (data.hearing_impaired == "True") {
+								text += '<div class="badge badge-dark" style="margin:1px;">HI</div>';
+							}
+
+							return text;
 						}
 					},
-					{ data: 'hearing_impaired' },
 					{ data: null,
 						render: function ( data ) {
 							return '<a href="'+data.url+'" target="_blank">'+data.provider+'</a>';
@@ -445,12 +450,12 @@
 							const array_matches = data.matches;
 							const array_dont_matches = data.dont_matches;
 							let i;
-							let text = '<div class="dropdown"><div class="btn-group dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-check-circle" style="color: green;"></i> '+array_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							let text = '<div class="dropdown"><div class="btn-group dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin:1px;"><i class="fas fa-check-circle" style="color: green;"></i> '+array_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 							for (i = 0; i < array_matches.length; i++) {
 								text += '<a class="dropdown-item disabled" href="#">' + array_matches[i] + '</a>';
 							}
 							text += '</div>';
-							text += '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-times-circle" style="color: red;"></i> '+array_dont_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+							text += '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin:1px;"><i class="fas fa-times-circle" style="color: red;"></i> '+array_dont_matches.length+'</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 							for (i = 0; i < array_dont_matches.length; i++) {
 								text += '<a class="dropdown-item disabled" href="#">' + array_dont_matches[i] + '</a>';
 							}
@@ -468,6 +473,11 @@
 							}
 							text += '</div></div>';
 							return text;
+						}
+					},
+					{ data: 'uploader',
+						render: function ( data, type, row ) {
+							return '<div class="badge badge-secondary">' + data + '</div>';
 						}
 					},
 					{ data: null,
