@@ -408,8 +408,9 @@
 					processing: "Searching (possibly solving captcha)..."
 				},
 				paging: true,
-				lengthChange: false,
-				pageLength: 5,
+				lengthChange: true,
+				pageLength: {{ settings.general.page_size_manual_search }},
+				lengthMenu: [ 5, 10, 15, 20, 25 ],
 				searching: false,
 				ordering: false,
 				processing: true,
@@ -476,7 +477,7 @@
 						}
 					},
 					{ data: 'uploader',
-						render: function ( data, type, row ) {
+						render: function ( data ) {
 							return '<div class="badge badge-secondary">' + data + '</div>';
 						}
 					},

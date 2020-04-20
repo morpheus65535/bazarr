@@ -197,6 +197,20 @@
                     </select>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-sm-2 text-right">
+                    <b>Page Size Manual Search</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-page_size_manual_search" name="settings-general-page_size_manual_search">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                    </select>
+                </div>
+            </div>            
             <br>
 
             <h4>Logging</h4>
@@ -302,6 +316,7 @@
             $('#settings-auth-type').val('{{settings.auth.type}}').trigger('change');
             $('#settings-proxy-type').val('{{settings.proxy.type}}').trigger('change');
             $('#settings-general-page_size').val('{{settings.general.page_size}}');
+            $('#settings-general-page_size_manual_search').val('{{settings.general.page_size_manual_search}}');
             $('#settings-general-branch').val('{{settings.general.branch}}');
             $('.selectpicker').selectpicker('refresh')
 
