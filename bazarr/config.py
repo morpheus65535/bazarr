@@ -150,7 +150,7 @@ else:
     settings = simpleconfigparser(defaults=defaults)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-base_url = settings.general.base_url
+base_url = settings.general.base_url if settings.general.base_url else '/'
 
 
 def url_sonarr():
