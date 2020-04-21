@@ -590,11 +590,17 @@
                             render: function (data) {
                                 const array_release_info = data.release_info;
                                 let i;
-                                let text = '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="\tfas fa-comment-dots"></i> ' + array_release_info.length + '</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                for (i = 0; i < array_release_info.length; i++) {
-                                    text += '<a class="dropdown-item" href="#">' + array_release_info[i] + '</a>';
+                                let text;
+                                if (array_release_info.length == 1) {
+                                    text = '<div style="font-size: 75%;font-weight: 400;">' + array_release_info[0] + '</div>';
                                 }
-                                text += '</div></div>';
+                                else {
+                                    text = '<div class="dropdown"><button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="\tfas fa-comment-dots"></i> ' + array_release_info.length + '</button><div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                                    for (i = 0; i < array_release_info.length; i++) {
+                                        text += '<a class="dropdown-item" href="#">' + array_release_info[i] + '</a>';
+                                    }
+                                    text += '</div></div>';
+                                }
                                 return text;
                             }
                         },
