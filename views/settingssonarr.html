@@ -256,9 +256,9 @@
             });
 
             // Set Checkbox input values
-            $('#settings-general-use_sonarr').prop('checked', {{'true' if settings.general.getboolean('use_sonarr')}}).trigger('change');
-            $('#settings-sonarr-ssl').prop('checked', {{'true' if settings.sonarr.getboolean('ssl')}});
-            $('#settings-sonarr-only_monitored').prop('checked', {{'true' if settings.sonarr.getboolean('only_monitored')}});
+            $('#settings-general-use_sonarr').prop('checked', {{'true' if settings.general.getboolean('use_sonarr') else 'false'}}).trigger('change');
+            $('#settings-sonarr-ssl').prop('checked', {{'true' if settings.sonarr.getboolean('ssl') else 'false'}});
+            $('#settings-sonarr-only_monitored').prop('checked', {{'true' if settings.sonarr.getboolean('only_monitored') else 'false'}});
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));

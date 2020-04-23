@@ -256,9 +256,9 @@
             });
 
             // Set Checkbox input values
-            $('#settings-general-use_radarr').prop('checked', {{'true' if settings.general.getboolean('use_radarr')}}).trigger('change');
-            $('#settings-radarr-ssl').prop('checked', {{'true' if settings.radarr.getboolean('ssl')}});
-            $('#settings-radarr-only_monitored').prop('checked', {{'true' if settings.radarr.getboolean('only_monitored')}});
+            $('#settings-general-use_radarr').prop('checked', {{'true' if settings.general.getboolean('use_radarr') else 'false'}}).trigger('change');
+            $('#settings-radarr-ssl').prop('checked', {{'true' if settings.radarr.getboolean('ssl') else 'false'}});
+            $('#settings-radarr-only_monitored').prop('checked', {{'true' if settings.radarr.getboolean('only_monitored') else 'false'}});
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));

@@ -105,7 +105,189 @@
                     <label for="settings-general-anti_captcha_provider">Choose the Anti-Captcha provider you want to use.</label>
                 </div>
             </div>
+            <div  id="anticaptcha_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Provider Website</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <a href="http://getcaptchasolution.com/eixxo1rsnw" target="_blank">Anti-Captcha.com</a>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Account Key</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-anticaptcha-anti_captcha_key" name="settings-anticaptcha-anti_captcha_key" value="{{settings.anticaptcha.anti_captcha_key}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+            <div  id="deathbycaptcha_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Provider Website</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <a href="https://www.deathbycaptcha.com" target="_blank">DeathByCaptcha.com</a>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-deathbycaptcha-username" name="settings-deathbycaptcha-username" value="{{settings.deathbycaptcha.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-deathbycaptcha-password" name="settings-deathbycaptcha-password" value="{{settings.deathbycaptcha.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
 
+            <h4>Performance / Optimization</h4>
+            <hr>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Adaptive Searching</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-adaptive_searching" name="settings-general-adaptive_searching">
+                        <span class="custom-control-label" for="settings-general-adaptive_searching"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Search Enabled Providers Simultaneously</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-multithreading" name="settings-general-multithreading">
+                        <span class="custom-control-label" for="settings-general-multithreading"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Use Embedded Subtitles</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_embedded_subs" name="settings-general-use_embedded_subs">
+                        <span class="custom-control-label" for="settings-general-use_embedded_subs"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="embedded_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Ignore Embedded PGS Subtitles</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-ignore_pgs_subs" name="settings-general-ignore_pgs_subs">
+                            <span class="custom-control-label" for="settings-general-ignore_pgs_subs"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Post-Processing</h4>
+            <hr>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Encode Subtitles To UTF8</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-utf8_encode" name="settings-general-utf8_encode">
+                        <span class="custom-control-label" for="settings-general-utf8_encode"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Enable CHMOD</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-chmod_enabled" name="settings-general-chmod_enabled">
+                        <span class="custom-control-label" for="settings-general-chmod_enabled"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="chmod_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Set Subtitle file permissions to</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-general-chmod" name="settings-general-chmod" value="{{settings.general.chmod}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Use Custom Post-Processing</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing" name="settings-general-use_postprocessing">
+                        <span class="custom-control-label" for="settings-general-use_postprocessing"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="custompp_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Post-processing command</b>
+                    </div>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="settings-general-postprocessing_cmd" name="settings-general-postprocessing_cmd" value="{{settings.general.postprocessing_cmd}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Variables you can use in your command (include the double curly brace):</b>
+                    </div>
+                    <div class="col-sm-8">
+                        <b>&lbrace;&lbrace;directory&rbrace;&rbrace;</b>
+                        <p>The full path of the episode file parent directory.</p>
+                        <b>&lbrace;&lbrace;episode&rbrace;&rbrace;</b>
+                        <p>The full path of the episode file.</p>
+                        <b>&lbrace;&lbrace;episode_name&rbrace;&rbrace;</b>
+                        <p>The filename of the episode without parent directory or extension.</p>
+                        <b>&lbrace;&lbrace;subtitles&rbrace;&rbrace;</b>
+                        <p>The full path of the subtitles file.</p>
+                        <b>&lbrace;&lbrace;subtitles_language&rbrace;&rbrace;</b>
+                        <p>The language of the subtitles file.</p>
+                        <b>&lbrace;&lbrace;subtitles_language_code2&rbrace;&rbrace;</b>
+                        <p>The 2-letter ISO-639 language code of the subtitles language.</p>
+                        <b>&lbrace;&lbrace;subtitles_language_code3&rbrace;&rbrace;</b>
+                        <p>The 3-letter ISO-639 language code of the subtitles language.</p>
+                        <b>&lbrace;&lbrace;episode_language&rbrace;&rbrace;</b>
+                        <p>The audio language of the episode file.</p>
+                        <b>&lbrace;&lbrace;episode_language_code2&rbrace;&rbrace;</b>
+                        <p>The 2-letter ISO-639 language code of the episode audio language.</p>
+                        <b>&lbrace;&lbrace;episode_language_code3&rbrace;&rbrace;</b>
+                        <p>The 3-letter ISO-639 language code of the episode audio language.</p>
+                    </div>
+                </div>
+            </div>
         </form>
     </div>
 {% endblock body %}
@@ -133,14 +315,58 @@
                 }
             });
 
+            $('#settings-general-anti_captcha_provider').on('change', function() {
+                if ($(this).val() === 'anti-captcha') {
+                    $('#anticaptcha_div').show();
+                    $('#deathbycaptcha_div').hide();
+                } else if ($(this).val() === 'death-by-captcha') {
+                    $('#anticaptcha_div').hide();
+                    $('#deathbycaptcha_div').show();
+                } else {
+                    $('#anticaptcha_div').hide();
+                    $('#deathbycaptcha_div').hide();
+                }
+            });
+
+            $('#settings-general-use_embedded_subs').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#embedded_div').show();
+                } else {
+                    $('#embedded_div').hide();
+                }
+            });
+
+            $('#settings-general-chmod_enabled').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#chmod_div').show();
+                } else {
+                    $('#chmod_div').hide();
+                }
+            });
+
+            $('#settings-general-use_postprocessing').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#custompp_div').show();
+                } else {
+                    $('#custompp_div').hide();
+                }
+            });
+
             // Set Select input values
             $('#settings-general-subfolder').val('{{settings.general.subfolder}}').trigger('change');
             $('#settings-general-anti_captcha_provider').val('{{settings.general.anti_captcha_provider}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
 
             // Set Checkbox input values
-            $('#settings-general-upgrade_subs').prop('checked', {{'true' if settings.general.getboolean('upgrade_subs')}}).trigger('change');;
-            $('#settings-general-upgrade_manual').prop('checked', {{'true' if settings.general.getboolean('upgrade_manual')}}).trigger('change');;
+            $('#settings-general-upgrade_subs').prop('checked', {{'true' if settings.general.getboolean('upgrade_subs') else 'false'}}).trigger('change');
+            $('#settings-general-upgrade_manual').prop('checked', {{'true' if settings.general.getboolean('upgrade_manual') else 'false'}}).trigger('change');
+            $('#settings-general-adaptive_searching').prop('checked', {{'true' if settings.general.getboolean('adaptive_searching') else 'false'}}).trigger('change');
+            $('#settings-general-multithreading').prop('checked', {{'true' if settings.general.getboolean('multithreading') else 'false'}}).trigger('change');
+            $('#settings-general-use_embedded_subs').prop('checked', {{'true' if settings.general.getboolean('use_embedded_subs') else 'false'}}).trigger('change');
+            $('#settings-general-ignore_pgs_subs').prop('checked', {{'true' if settings.general.getboolean('ignore_pgs_subs') else 'false'}}).trigger('change');
+            $('#settings-general-utf8_encode').prop('checked', {{'true' if settings.general.getboolean('utf8_encode') else 'false'}}).trigger('change');
+            $('#settings-general-chmod_enabled').prop('checked', {{'true' if settings.general.getboolean('chmod_enabled') else 'false'}}).trigger('change');
+            $('#settings-general-use_postprocessing').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing') else 'false'}}).trigger('change');
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));

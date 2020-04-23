@@ -321,10 +321,10 @@
             $('.selectpicker').selectpicker('refresh')
 
             // Set Checkbox input values
-            $('#settings-general-debug').prop('checked', {{'true' if settings.general.getboolean('debug')}});
-            $('#settings-analytics-enabled').prop('checked', {{'true' if settings.analytics.getboolean('enabled')}});
-            $('#settings-general-auto_update').prop('checked', {{'true' if settings.general.getboolean('auto_update')}});
-            $('#settings-general-update_restart').prop('checked', {{'true' if settings.general.getboolean('update_restart')}});
+            $('#settings-general-debug').prop('checked', {{'true' if settings.general.getboolean('debug') else 'false'}});
+            $('#settings-analytics-enabled').prop('checked', {{'true' if settings.analytics.getboolean('enabled') else 'false'}});
+            $('#settings-general-auto_update').prop('checked', {{'true' if settings.general.getboolean('auto_update') else 'false'}});
+            $('#settings-general-update_restart').prop('checked', {{'true' if settings.general.getboolean('update_restart') else 'false'}});
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
