@@ -473,7 +473,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
     logging.debug('BAZARR Ended manually downloading Subtitles for file: ' + path)
 
 
-def manual_upload_subtitle(path, language, forced, title, scene_name, media_type, subtitle):
+def manual_upload_subtitle(path, language, forced, title, scene_name, media_type, subtitle, audio_language):
     logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
 
     single = settings.general.getboolean('single_language')
@@ -547,6 +547,32 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     message = language_from_alpha3(language) + (" forced" if forced else "") + " Subtitles manually uploaded."
 
+	#############################################################
+	#Need :
+	#	subtitle path - ok
+	#	downloaded_language -ok
+	#	downloaded_language_code2 -ok
+	#	downloaded_language_code3 -ok
+	#	audio_language - ok
+	#	audio_language_code2 -ok
+	#	audio_language_code3 - ok
+	#	subtitle.language.forced -ok
+	
+	uploaded_language_code3 = language 
+	uploaded_language = language_from_alpha3(uploaded_language_code3)
+	uploaded_language_code2 = alpha2_from_alpha3(uploaded_language_code3)
+	audio_language_code2 = alpha2_from_language(audio_language)
+	audio_language_code3 = alpha3_from_language(audio_language)
+	
+	
+	if use_postprocessing is True:
+		command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
+							 uploaded_language_code2, uploaded_language_code3, audio_language,
+                             audio_language_code2, audio_language_code3, forced)
+		postprocessing(command, path)
+	
+	#############################################################
+	
     if media_type == 'series':
         reversed_path = path_replace_reverse(path)
     else:
