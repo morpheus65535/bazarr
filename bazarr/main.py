@@ -1873,7 +1873,8 @@ def perform_manual_upload_subtitle():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='series',
-                                        subtitle=upload, audio_language)
+                                        subtitle=upload,
+                                        audio_language)
 
         if result is not None:
             message = result[0]
@@ -2000,6 +2001,9 @@ def perform_manual_upload_subtitle_movie():
     radarrId = request.forms.get('radarrId')
     title = request.forms.title
 
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
+
     _, ext = os.path.splitext(upload.filename)
 
     if ext not in SUBTITLE_EXTENSIONS:
@@ -2012,7 +2016,8 @@ def perform_manual_upload_subtitle_movie():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='movie',
-                                        subtitle=upload)
+                                        subtitle=upload,
+                                        audio_language)
 
         if result is not None:
             message = result[0]
