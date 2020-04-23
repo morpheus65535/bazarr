@@ -1848,14 +1848,14 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.get('episodePath')
-    sceneName = request.forms.get('sceneName')
+    episodePath = request.forms.episodePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.get('title')
+    title = request.forms.title
     
     data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
     audio_language = data['audio_language']
@@ -1992,13 +1992,13 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.get('moviePath')
-    sceneName = request.forms.get('sceneName')
+    moviePath = request.forms.moviePath
+    sceneName = request.forms.sceneName
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.get('title')
+    title = request.forms.title
 
     data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
     audio_language = data['audio_language']
