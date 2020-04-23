@@ -480,7 +480,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     
     #############################################################
 	use_postprocessing = settings.general.getboolean('use_postprocessing')
-    postprocessing_cmd = settings.general.postprocessing_cmd
+	postprocessing_cmd = settings.general.postprocessing_cmd
 	
 	#############################################################
 
@@ -567,8 +567,8 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 	
 	if use_postprocessing is True:
 		command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
-							 uploaded_language_code2, uploaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, forced)
+							 uploaded_language_code2, uploaded_language_code3, audio_language, 
+							 audio_language_code2, audio_language_code3, forced)
 		postprocessing(command, path)
 	
 	#############################################################
