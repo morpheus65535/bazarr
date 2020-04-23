@@ -477,6 +477,12 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     logging.debug('BAZARR Manually uploading subtitles for this file: ' + path)
 
     single = settings.general.getboolean('single_language')
+    
+    #############################################################
+	use_postprocessing = settings.general.getboolean('use_postprocessing')
+    postprocessing_cmd = settings.general.postprocessing_cmd
+	
+	#############################################################
 
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
         'win') and settings.general.getboolean('chmod_enabled') else None
