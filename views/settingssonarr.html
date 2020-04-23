@@ -30,7 +30,7 @@
             <h4>Use Sonarr</h4>
             <hr/>
             <div class="row">
-                <div class="col-sm-2 text-right">
+                <div class="col-sm-3 text-right">
                     <b>Enabled</b>
                 </div>
                 <div class="form-group col-sm-1">
@@ -46,7 +46,7 @@
                 <h4>Host</h4>
                 <hr/>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>Hostname or IP Address</b>
                     </div>
                     <div class="col-sm-4">
@@ -55,7 +55,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>Port Number</b>
                     </div>
                     <div class="col-sm-4">
@@ -64,7 +64,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>URL Base</b>
                     </div>
                     <div class="col-sm-4">
@@ -73,7 +73,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>SSL Enabled</b>
                     </div>
                     <div class="form-group col-sm-1">
@@ -84,7 +84,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>API Key</b>
                     </div>
                     <div class="col-sm-4">
@@ -93,7 +93,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <button type="button" class="btn btn-secondary" id="test_sonarr_connection">Test</button>
                     </div>
                     <div class="col-sm-4">
@@ -105,7 +105,7 @@
                 <h4>Options</h4>
                 <hr/>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>Minimum Score</b>
                     </div>
                     <div class="col-sm-1">
@@ -114,7 +114,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-2 text-right">
+                    <div class="col-sm-3 text-right">
                         <b>Download Only Monitored</b>
                     </div>
                     <div class="form-group col-sm-1">
@@ -256,7 +256,7 @@
             });
 
             // Set Checkbox input values
-            $('#settings-general-use_sonarr').prop('checked', {{'true' if settings.general.getboolean('use_sonarr')}});
+            $('#settings-general-use_sonarr').prop('checked', {{'true' if settings.general.getboolean('use_sonarr')}}).trigger('change');
             $('#settings-sonarr-ssl').prop('checked', {{'true' if settings.sonarr.getboolean('ssl')}});
             $('#settings-sonarr-only_monitored').prop('checked', {{'true' if settings.sonarr.getboolean('only_monitored')}});
 
