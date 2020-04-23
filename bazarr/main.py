@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4.3'
+bazarr_version = '0.8.4.4'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -222,7 +222,7 @@ def doShutdown():
         else:
             stop_file.write(six.text_type(''))
             stop_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'restart')
@@ -243,7 +243,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write(six.text_type(''))
             restart_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'wizard')
@@ -1848,14 +1848,14 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.title
+    title = request.forms.get('title')
     
     data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
     audio_language = data['audio_language']
@@ -1992,13 +1992,13 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.title
+    title = request.forms.get('title')
 
     data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
     audio_language = data['audio_language']
@@ -2101,10 +2101,11 @@ def api_history():
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
     authorize()
-    url = six.moves.urllib.parse.unquote(url)
+    url = protocol + "://" + six.moves.urllib.parse.unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
-    except:
+        result = requests.get(url, allow_redirects=False, verify=False).json()['version']
+    except Exception as e:
+        logging.exception('BAZARR cannot successfully contact this URL: ' + url)
         return dict(status=False)
     else:
         return dict(status=True, version=result)

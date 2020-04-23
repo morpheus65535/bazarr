@@ -34,7 +34,8 @@ def fix_tv_naming(title):
     return fix_inconsistent_naming(title, {"Marvel's Daredevil": "Daredevil",
                                            "Marvel's Luke Cage": "Luke Cage",
                                            "Marvel's Iron Fist": "Iron Fist",
-                                           "DC's Legends of Tomorrow": "Legends of Tomorrow"
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow",
+                                           "Doctor Who (2005)": "Doctor Who",
                                            }, True)
 
 class SubsUnacsSubtitle(Subtitle):
@@ -196,4 +197,5 @@ class SubsUnacsProvider(Provider):
         elif is_zipfile(archive_stream):
             return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
         else:
-            raise ValueError('Not a valid archive')
+            logger.error('Ignore unsupported archive %r', request.headers)
+            return []

@@ -207,7 +207,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                      path_decoder=force_unicode
                                                      )
                 except Exception as e:
-                    logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+                    logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path + ': ' + repr(e))
                     pass
                 else:
                     saved_any = True

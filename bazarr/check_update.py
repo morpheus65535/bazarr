@@ -34,6 +34,8 @@ def gitconfig():
         logging.debug('BAZARR Settings git email')
         config_write.set_value("user", "email", "bazarr@fake.email")
 
+    config_write.release()
+
 
 def check_and_apply_update():
     check_releases()
