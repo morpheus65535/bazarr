@@ -1856,6 +1856,10 @@ def perform_manual_upload_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.title
+    
+    #ATTENTION le FROM est différent pour MOVIES -> CTRL+F fct manual_upload_subtitle
+	data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1869,7 +1873,7 @@ def perform_manual_upload_subtitle():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='series',
-                                        subtitle=upload)
+                                        subtitle=upload, audio_language)
 
         if result is not None:
             message = result[0]
