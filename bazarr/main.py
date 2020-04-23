@@ -1856,6 +1856,9 @@ def perform_manual_upload_subtitle():
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
     title = request.forms.get('title')
+    
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1869,7 +1872,8 @@ def perform_manual_upload_subtitle():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='series',
-                                        subtitle=upload)
+                                        subtitle=upload,
+                                        audio_language=audio_language))
 
         if result is not None:
             message = result[0]
@@ -1995,6 +1999,9 @@ def perform_manual_upload_subtitle_movie():
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
     title = request.forms.get('title')
+    
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -2008,7 +2015,8 @@ def perform_manual_upload_subtitle_movie():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='movie',
-                                        subtitle=upload)
+                                        subtitle=upload,
+                                        audio_language=audio_language)
 
         if result is not None:
             message = result[0]
