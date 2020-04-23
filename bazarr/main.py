@@ -1848,14 +1848,14 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.title
+    title = request.forms.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1988,13 +1988,13 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.title
+    title = request.forms.get('title')
 
     _, ext = os.path.splitext(upload.filename)
 
