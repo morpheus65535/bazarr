@@ -557,7 +557,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     #    audio_language_code2 -ok
     #    audio_language_code3 - ok
     #    subtitle.language.forced -ok
-    
+    logging.debug('COUCOU' + use_postprocessing)
     uploaded_language_code3 = language 
     uploaded_language = language_from_alpha3(uploaded_language_code3)
     uploaded_language_code2 = alpha2_from_alpha3(uploaded_language_code3)
@@ -566,6 +566,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     
     
     if use_postprocessing is True:
+        logging.debug('BEEN THERE')
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language, 
                              audio_language_code2, audio_language_code3, forced)
