@@ -3,7 +3,11 @@
 {% block title %}Languages - Bazarr{% endblock %}
 
 {% block page_head %}
-
+    <style>
+        .warning {
+            color: red;
+        }
+    </style>
 {% endblock page_head %}
 
 {% block bcleft %}
@@ -33,11 +37,13 @@
                 <div class="col-sm-3 text-right">
                     <b>Single Language</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-single_language" name="settings-general-single_language">
                         <span class="custom-control-label" for="settings-general-single_language"></span>
                     </label>
+                    <label>Download a single Subtitles file without adding the language code to the filename.</label>
+                    <label class="warning">We don't recommend enabling this option unless absolutely required (ie: media player not supporting language code in subtitles filename). Results may vary.</label>
                 </div>
             </div>
             <br>
@@ -143,7 +149,6 @@
                 $('input[type=checkbox]').each(function () {
                     formdata.set($(this).prop('id'), $(this).prop('checked'));
                 });
-
                 $.ajax({
                     url: "{{ url_for('api.savesettings') }}",
                     data: formdata,
@@ -179,8 +184,11 @@
                 $.ajax({
                     url: "{{ url_for('api.languages') }}?enabled=true",
                     success: function (data) {
-                        console.log(data);
-                        $('#enabled_languages').selectpicker('val', data);
+                        let optArr = [];
+                        $.each(data, function (i, item) {
+                            optArr.push(item.code2);
+                        });
+                        $('#enabled_languages').selectpicker('val', optArr);
                     }
                 });
             }
