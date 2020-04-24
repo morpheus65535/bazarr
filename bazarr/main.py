@@ -343,6 +343,12 @@ def settingssubtitles():
     return render_template('settingssubtitles.html')
 
 
+@app.route('/settings/languages/')
+@login_required
+def settingslanguages():
+    return render_template('settingslanguages.html')
+
+
 @app.route('/check_update')
 @login_required
 def check_update():

@@ -152,6 +152,10 @@ base_url = settings.general.base_url
 
 def save_settings(settings_items):
     for key, value in settings_items:
+        if key == 'enabled_languages':
+            print(key)
+            continue
+
         settings_keys = key.split('-')
 
         if value == 'true':

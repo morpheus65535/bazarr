@@ -92,9 +92,9 @@ class Languages(Resource):
     def get(self):
         enabled = request.args.get('enabled')
         if enabled.lower() in ['true', '1']:
-            result = database.execute("SELECT * FROM table_settings_languages WHERE enabled=1")
+            result = database.execute("SELECT * FROM table_settings_languages WHERE enabled=1 ORDER BY name")
         else:
-            result = database.execute("SELECT * FROM table_settings_languages")
+            result = database.execute("SELECT * FROM table_settings_languages ORDER BY name")
         return jsonify(result)
 
 

@@ -1,0 +1,189 @@
+{% extends '_main.html' %}
+
+{% block title %}Languages - Bazarr{% endblock %}
+
+{% block page_head %}
+
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
+            </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Subtitles languages</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Single Language</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-single_language" name="settings-general-single_language">
+                        <span class="custom-control-label" for="settings-general-single_language"></span>
+                    </label>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Enabled Languages</b>
+                </div>
+                <div class="form-group col-sm-8 pl-sm-0">
+                    <select class="selectpicker" id="enabled_languages" name="enabled_languages" data-live-search="true" multiple></select>
+                </div>
+            </div>
+            <br>
+
+            <h4>Default Settings</h4>
+            <hr>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Series Default Settings</b>
+                </div>
+
+            </div>
+            <br>
+            <div id="series_default_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Languages</b>
+                    </div>
+
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Hearing-Impaired</b>
+                    </div>
+
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Forced</b>
+                    </div>
+
+                </div>
+                <br>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Movies Default Settings</b>
+                </div>
+
+            </div>
+            <br>
+            <div id="movies_default_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Languages</b>
+                    </div>
+
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Hearing-Impaired</b>
+                    </div>
+
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Forced</b>
+                    </div>
+
+                </div>
+                <br>
+            </div>
+        </form>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            getLanguages();
+
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
+
+            // Hide *_div on Select input changed to None
+
+
+            // Set Select input values
+            $('#settings-general-subfolder').val('{{settings.general.subfolder}}').trigger('change');
+            $('#settings-general-anti_captcha_provider').val('{{settings.general.anti_captcha_provider}}').trigger('change');
+            $('.selectpicker').selectpicker('refresh')
+
+            // Set Checkbox input values
+            $('#settings-general-single_language').prop('checked', {{'true' if settings.general.getboolean('single_language') else 'false'}}).trigger('change');
+
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+
+            function getLanguages() {
+                $.ajax({
+                    url: "{{ url_for('api.languages') }}?enabled=false",
+                    success: function (data) {
+                        $('#enabled_languages').empty();
+                        $.each(data, function (i, item) {
+                            $('#enabled_languages').append('<option value="' + item.code2 + '">' + item.name + '</option>');
+                        });
+                        getEnabledLanguages();
+                        $("#enabled_languages").selectpicker("refresh");
+                    }
+                });
+            }
+
+            function getEnabledLanguages() {
+                $.ajax({
+                    url: "{{ url_for('api.languages') }}?enabled=true",
+                    success: function (data) {
+                        console.log(data);
+                        $('#enabled_languages').selectpicker('val', data);
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock tail %}
