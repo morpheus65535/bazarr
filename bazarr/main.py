@@ -1873,7 +1873,7 @@ def perform_manual_upload_subtitle():
                                         scene_name=sceneName,
                                         media_type='series',
                                         subtitle=upload,
-                                        audio_language=audio_language))
+                                        audio_language=audio_language)
 
         if result is not None:
             message = result[0]
