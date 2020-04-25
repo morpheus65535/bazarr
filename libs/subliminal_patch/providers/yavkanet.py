@@ -27,21 +27,24 @@ class YavkaNetSubtitle(Subtitle):
     """YavkaNet Subtitle."""
     provider_name = 'yavkanet'
 
-    def __init__(self, langauge, filename, type, video, link):
+    def __init__(self, langauge, filename, type, video, link, fps):
         super(YavkaNetSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
         self.page_link = link
         self.type = type
         self.video = video
+        self.fps = fps
         self.release_info = os.path.splitext(filename)[0]
 
     @property
     def id(self):
-        return self.filename
+        return self.page_link + self.filename
+
+    def get_fps(self):
+        return self.fps
 
     def make_picklable(self):
-        self.content = None
         return self
 
     def get_matches(self, video):
@@ -60,6 +63,10 @@ class YavkaNetSubtitle(Subtitle):
         if video_filename == subtitle_filename:
              matches.add('hash')
 
+        if video.year and self.year == video.year:
+            matches.add('year')
+
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
         return matches
 
@@ -122,18 +129,34 @@ class YavkaNetProvider(Provider):
             return subtitles
 
         soup = BeautifulSoup(response.content, 'lxml')
-        rows = soup.findAll('tr', {'class': 'info'})
+        rows = soup.findAll('tr')
         
-        # Search on first 20 rows only
-        for row in rows[:20]:
+        # Search on first 25 rows only
+        for row in rows[:25]:
             element = row.find('a', {'class': 'selector'})
             if element:
                 link = element.get('href')
+                notes = element.get('content')
+                title = element.get_text()
+
+                try:
+                    year = int(element.find_next_sibling('span').text.strip('()'))
+                except:
+                    year = None
+
+                try:
+                    fps = float(row.find('span', {'title': 'Кадри в секунда'}).text.strip())
+                except:
+                    fps = None
+
                 element = row.find('a', {'class': 'click'})
                 uploader = element.get_text() if element else None
                 logger.info('Found subtitle link %r', link)
-                sub = self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video)
-                for s in sub: 
+                sub = self.download_archive_and_add_subtitle_files('http://yavka.net/' + link, language, video, fps)
+                for s in sub:
+                    s.title = title
+                    s.notes = notes
+                    s.year = year
                     s.uploader = uploader
                 subtitles = subtitles + sub
         return subtitles
@@ -146,23 +169,24 @@ class YavkaNetProvider(Provider):
             pass
         else:
             seeking_subtitle_file = subtitle.filename
-            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
+                                                                subtitle.fps)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link):
+    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = YavkaNetSubtitle(language, file_name, type, video, link)
+                subtitle = YavkaNetSubtitle(language, file_name, type, video, link, fps)
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video ):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
             'Referer': 'http://yavka.net/subtitles.php'
@@ -171,9 +195,9 @@ class YavkaNetProvider(Provider):
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps)
         elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
             return []        
