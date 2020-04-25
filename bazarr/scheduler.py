@@ -30,10 +30,7 @@ class Scheduler:
     def __init__(self):
         self.__running_tasks = []
 
-        if str(get_localzone()) == "local":
-            self.aps_scheduler = BackgroundScheduler(timezone=pytz.timezone('UTC'))
-        else:
-            self.aps_scheduler = BackgroundScheduler()
+        self.aps_scheduler = BackgroundScheduler()
 
         # task listener
         def task_listener_add(event):

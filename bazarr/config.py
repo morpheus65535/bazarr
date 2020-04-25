@@ -147,6 +147,7 @@ defaults = {
 settings = simpleconfigparser(defaults=defaults, interpolation=None)
 settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 
+settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url
 
 

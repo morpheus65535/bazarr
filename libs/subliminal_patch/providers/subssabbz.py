@@ -35,7 +35,8 @@ def fix_tv_naming(title):
                                            "Marvel's Luke Cage": "Luke Cage",
                                            "Marvel's Iron Fist": "Iron Fist",
                                            "Marvel's Jessica Jones": "Jessica Jones",
-                                           "DC's Legends of Tomorrow": "Legends of Tomorrow"
+                                           "DC's Legends of Tomorrow": "Legends of Tomorrow",
+                                           "Doctor Who (2005)": "Doctor Who",
                                            }, True)
 
 class SubsSabBzSubtitle(Subtitle):
