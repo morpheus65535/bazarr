@@ -89,6 +89,13 @@ class Subtitle(Subtitle_):
     def numeric_id(self):
         raise NotImplemented
 
+    def get_fps(self):
+        """
+        :return: frames per second or None if not supported
+        :rtype: float
+        """
+        return None
+
     def make_picklable(self):
         """
         some subtitle instances might have unpicklable objects stored; clean them up here 
@@ -264,10 +271,14 @@ class Subtitle(Subtitle_):
                 else:
                     logger.info("Got format: %s", subs.format)
             except pysubs2.UnknownFPSError:
-                # if parsing failed, suggest our media file's fps
-                logger.info("No FPS info in subtitle. Using our own media FPS for the MicroDVD subtitle: %s",
-                            self.plex_media_fps)
-                subs = pysubs2.SSAFile.from_string(text, fps=self.plex_media_fps)
+                # if parsing failed, use frame rate from provider
+                sub_fps = self.get_fps()
+                if not isinstance(sub_fps, float) or sub_fps < 10.0:
+                    # or use our media file's fps as a fallback
+                    sub_fps = self.plex_media_fps
+                    logger.info("No FPS info in subtitle. Using our own media FPS for the MicroDVD subtitle: %s",
+                                self.plex_media_fps)
+                subs = pysubs2.SSAFile.from_string(text, fps=sub_fps)
 
             unicontent = self.pysubs2_to_unicode(subs)
             self.content = unicontent.encode(self._guessed_encoding)
