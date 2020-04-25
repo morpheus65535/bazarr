@@ -43,21 +43,25 @@ class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
 
-    def __init__(self, langauge, filename, type, video, link):
+    def __init__(self, langauge, filename, type, video, link, fps, num_cds):
         super(SubsSabBzSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
         self.page_link = link
         self.type = type
         self.video = video
+        self.fps = fps
+        self.num_cds = num_cds
         self.release_info = os.path.splitext(filename)[0]
 
     @property
     def id(self):
-        return self.filename
+        return self.page_link + self.filename
+
+    def get_fps(self):
+        return self.fps
 
     def make_picklable(self):
-        self.content = None
         return self
 
     def get_matches(self, video):
@@ -76,6 +80,14 @@ class SubsSabBzSubtitle(Subtitle):
         if video_filename == subtitle_filename:
              matches.add('hash')
 
+        if video.year and self.year == video.year:
+            matches.add('year')
+
+        if isinstance(video, Movie):
+            if video.imdb_id and self.imdb_id == video.imdb_id:
+                matches.add('imdb_id')
+
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
         return matches
 
@@ -136,19 +148,51 @@ class SubsSabBzProvider(Provider):
         soup = BeautifulSoup(response.content, 'lxml')
         rows = soup.findAll('tr', {'class': 'subs-row'})
 
-        # Search on first 20 rows only
-        for row in rows[:20]:
+        # Search on first 25 rows only
+        for row in rows[:25]:
             a_element_wrapper = row.find('td', { 'class': 'c2field' })
             if a_element_wrapper:
                 element = a_element_wrapper.find('a')
                 if element:
                     link = element.get('href')
-                    element = row.find('a', href = re.compile(r'.*showuser=.*'))
-                    uploader = element.get_text() if element else None
+                    notes = element.get('onmouseover')
+                    title = element.get_text()
+
+                    try:
+                        year = int(str(element.next_sibling).strip(' ()'))
+                    except:
+                        year = None
+
+                    td = row.findAll('td')
+
+                    try:
+                        num_cds = int(td[6].get_text())
+                    except:
+                        num_cds = None
+
+                    try:
+                        fps = float(td[7].get_text())
+                    except:
+                        fps = None
+
+                    try:
+                        uploader = td[8].get_text()
+                    except:
+                        uploader = None
+
+                    try:
+                        imdb_id = re.findall(r'imdb.com/title/(tt\d+)/?$', td[9].find('a').get('href'))[0]
+                    except:
+                        imdb_id = None
+
                     logger.info('Found subtitle link %r', link)
-                    sub = self.download_archive_and_add_subtitle_files(link, language, video)
-                    for s in sub: 
+                    sub = self.download_archive_and_add_subtitle_files(link, language, video, fps, num_cds)
+                    for s in sub:
+                        s.title = title
+                        s.notes = notes
+                        s.year = year
                         s.uploader = uploader
+                        s.imdb_id = imdb_id
                     subtitles = subtitles + sub
         return subtitles
 
@@ -160,23 +204,24 @@ class SubsSabBzProvider(Provider):
             pass
         else:
             seeking_subtitle_file = subtitle.filename
-            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
+                                                                subtitle.fps, subtitle.num_cds)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link):
+    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps, num_cds):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link)
+                subtitle = SubsSabBzSubtitle(language, file_name, type, video, link, fps, num_cds)
                 subtitle.content = archiveStream.read(file_name)
                 subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video ):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps, num_cds):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
             'Referer': 'http://subs.sab.bz/index.php?'
@@ -185,9 +230,9 @@ class SubsSabBzProvider(Provider):
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
         elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
             return []
