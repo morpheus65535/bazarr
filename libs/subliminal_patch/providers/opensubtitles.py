@@ -44,6 +44,12 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
         self.wrong_fps = False
         self.skip_wrong_fps = skip_wrong_fps
 
+    def get_fps(self):
+        try:
+            return float(self.fps)
+        except:
+            return None
+
     def get_matches(self, video, hearing_impaired=False):
         matches = super(OpenSubtitlesSubtitle, self).get_matches(video)
 
@@ -175,9 +181,10 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
         logger.info('Logging in')
 
-        token = str(region.get("os_token"))
-        if token is not NO_VALUE:
+        token_cache = region.get("os_token")
+        if token_cache is not NO_VALUE:
             try:
+                token = token_cache.decode("utf-8")
                 logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))
                 checked(lambda: self.server.NoOperation(token))
                 self.token = token
