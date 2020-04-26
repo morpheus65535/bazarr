@@ -45,6 +45,7 @@ class YavkaNetSubtitle(Subtitle):
         return self.fps
 
     def make_picklable(self):
+        self.content = None
         return self
 
     def get_matches(self, video):

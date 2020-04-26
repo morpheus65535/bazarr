@@ -42,18 +42,23 @@ class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
     provider_name = 'subsunacs'
 
-    def __init__(self, langauge, filename, type, video, link):
+    def __init__(self, langauge, filename, type, video, link, fps, num_cds):
         super(SubsUnacsSubtitle, self).__init__(langauge)
         self.langauge = langauge
         self.filename = filename
         self.page_link = link
         self.type = type
         self.video = video
+        self.fps = fps
+        self.num_cds = num_cds
         self.release_info = os.path.splitext(filename)[0]
 
     @property
     def id(self):
-        return self.filename
+        return self.page_link + self.filename
+
+    def get_fps(self):
+        return self.fps
 
     def make_picklable(self):
         self.content = None
@@ -75,6 +80,10 @@ class SubsUnacsSubtitle(Subtitle):
         if video_filename == subtitle_filename:
              matches.add('hash')
 
+        if video.year and self.year == video.year:
+            matches.add('year')
+
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
         matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
         return matches
 
@@ -146,11 +155,43 @@ class SubsUnacsProvider(Provider):
                 element = a_element_wrapper.find('a', {'class': 'tooltip'})
                 if element:
                     link = element.get('href')
-                    element = row.find('a', href = re.compile(r'.*/search\.php\?t=1\&(memid|u)=.*'))
-                    uploader = element.get_text() if element else None
+                    notes = element.get('title')
+                    title = element.get_text()
+
+                    try:
+                        year = int(element.find_next_sibling('span', {'class' : 'smGray'}).text.strip('\xa0()'))
+                    except:
+                        year = None
+
+                    td = row.findAll('td')
+
+                    try:
+                        num_cds = int(td[1].get_text())
+                    except:
+                        num_cds = None
+
+                    try:
+                        fps = float(td[2].get_text())
+                    except:
+                        fps = None
+
+                    try:
+                        rating = float(td[3].find('img').get('title'))
+                    except:
+                        rating = None
+
+                    try:
+                        uploader = td[5].get_text()
+                    except:
+                        uploader = None
+
                     logger.info('Found subtitle link %r', link)
-                    sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video)
-                    for s in sub: 
+                    sub = self.download_archive_and_add_subtitle_files('https://subsunacs.net' + link, language, video, fps, num_cds)
+                    for s in sub:
+                        s.title = title
+                        s.notes = notes
+                        s.year = year
+                        s.rating = rating
                         s.uploader = uploader
                     subtitles = subtitles + sub
         return subtitles
@@ -163,12 +204,13 @@ class SubsUnacsProvider(Provider):
             pass
         else:
             seeking_subtitle_file = subtitle.filename
-            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video)
+            arch = self.download_archive_and_add_subtitle_files(subtitle.page_link, subtitle.language, subtitle.video,
+                                                                subtitle.fps, subtitle.num_cds)
             for s in arch:
                 if s.filename == seeking_subtitle_file:
                     subtitle.content = s.content
 
-    def process_archive_subtitle_files(self, archiveStream, language, video, link):
+    def process_archive_subtitle_files(self, archiveStream, language, video, link, fps, num_cds):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
         for file_name in archiveStream.namelist():
@@ -178,13 +220,13 @@ class SubsUnacsProvider(Provider):
                     logger.info('Ignore readme txt file %r', file_name)
                     continue
                 logger.info('Found subtitle file %r', file_name)
-                subtitle = SubsUnacsSubtitle(language, file_name, type, video, link)
+                subtitle = SubsUnacsSubtitle(language, file_name, type, video, link, fps, num_cds)
                 subtitle.content = archiveStream.read(file_name)
                 if file_is_txt == False or subtitle.is_valid():
                     subtitles.append(subtitle)
         return subtitles
 
-    def download_archive_and_add_subtitle_files(self, link, language, video ):
+    def download_archive_and_add_subtitle_files(self, link, language, video, fps, num_cds):
         logger.info('Downloading subtitle %r', link)
         request = self.session.get(link, headers={
             'Referer': 'https://subsunacs.net/search.php'
@@ -193,9 +235,9 @@ class SubsUnacsProvider(Provider):
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files( RarFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
         elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files( ZipFile(archive_stream), language, video, link )
+            return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
             return []
