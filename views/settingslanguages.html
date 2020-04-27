@@ -72,10 +72,9 @@
                         <b>Languages</b>
                     </div>
                     <div class="form-group col-sm-8 pl-sm-0">
-                        <select class="selectpicker" id="settings-general-serie_default_language" name="settings-general-serie_default_language"></select>
+                        <select class="selectpicker" id="settings-general-serie_default_language" name="settings-general-serie_default_language" multiple></select>
                     </div>
                 </div>
-                <br>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Hearing-Impaired</b>
@@ -91,6 +90,7 @@
                 </div>
                 <br>
             </div>
+            <br>
             <div class="row">
                 <div class="col-sm-3 text-right">
                     <b>Movies Default Settings</b>
@@ -103,9 +103,10 @@
                     <div class="col-sm-3 text-right">
                         <b>Languages</b>
                     </div>
-
+                    <div class="form-group col-sm-8 pl-sm-0">
+                        <select class="selectpicker" id="settings-general-movie_default_language" name="settings-general-movie_default_language" multiple></select>
+                    </div>
                 </div>
-                <br>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Hearing-Impaired</b>
@@ -133,20 +134,56 @@
             // Hide checkmark over save button
             $('#save_button_checkmark').hide();
 
-            // Hide *_div on Select input changed to None
+            // Listen to selection change on enabled_languages select and keep series and movies default language select synced
+            $('#enabled_languages').on('changed.bs.select', function(event, clickedIndex, isSelected, previousValue) {
+                actual = $("#enabled_languages option:selected").map(function() {
+                    return $(this).val();
+                }).get();
 
+                if (previousValue) {
+                    var added = actual.filter(x => !previousValue.includes(x));
+                    var removed = previousValue.filter(x => !actual.includes(x));
 
-            $('#enabled_languages').on('change', function() {
-                //$('#settings-general-serie_default_language').selectpicker('val', $('#enabled_languages').val());
-                console.log($('#enabled_languages').val());
-                console.log($('#enabled_languages option:selected').text());
+                    if (added.length > 0) {
+                        $('#settings-general-serie_default_language').append('<option value="' + added[0] + '">' + $("#enabled_languages option[value="+added[0]+"]").text() + '</option>');
+                        $('#settings-general-movie_default_language').append('<option value="' + added[0] + '">' + $("#enabled_languages option[value="+added[0]+"]").text() + '</option>');
+                    }
+                    if (removed.length > 0) {
+                        $("#settings-general-serie_default_language option[value="+removed[0]+"]").remove();
+                        $("#settings-general-movie_default_language option[value="+removed[0]+"]").remove();
+                    }
+                } else {
+                    $(actual).each( function(i, item) {
+                        if ($('#settings-general-serie_default_language option[value='+item+']').length < 1) {
+                            $('#settings-general-serie_default_language').append('<option value="' + item + '">' + $("#enabled_languages option[value="+item+"]").text() + '</option>');
+                            $('#settings-general-movie_default_language').append('<option value="' + item + '">' + $("#enabled_languages option[value="+item+"]").text() + '</option>');
+                        }
+                    });
+                }
+
+                $('#settings-general-serie_default_language').selectpicker('val', {{settings.general.serie_default_language|safe}});
+                $('#settings-general-movie_default_language').selectpicker('val', {{settings.general.movie_default_language|safe}});
+                $("#settings-general-serie_default_language").selectpicker("refresh");
+                $("#settings-general-movie_default_language").selectpicker("refresh");
             })
 
             // Set Select input values
             $('#settings-general-subfolder').val('{{settings.general.subfolder}}').trigger('change');
             $('#settings-general-anti_captcha_provider').val('{{settings.general.anti_captcha_provider}}').trigger('change');
-            $('#settings-general-serie_default_language').val('{{settings.general.serie_default_language}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
+
+            // Listen to single language checkbox change to adapt languages menus
+            $('#settings-general-single_language').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#settings-general-serie_default_language').selectpicker({maxOptions:1}).selectpicker('refresh');
+                    $('#settings-general-movie_default_language').selectpicker({maxOptions:1}).selectpicker('refresh');
+                    $('#settings-general-serie_default_language').selectpicker('val', $('#settings-general-serie_default_language').val()[0]);
+                    $('#settings-general-movie_default_language').selectpicker('val', $('#settings-general-movie_default_language').val()[0]);
+                } else {
+                    $('#settings-general-serie_default_language').selectpicker({maxOptions:false}).selectpicker('refresh');
+                    $('#settings-general-movie_default_language').selectpicker({maxOptions:false}).selectpicker('refresh');
+                }
+            });
 
             // Set Checkbox input values
             $('#settings-general-single_language').prop('checked', {{'true' if settings.general.getboolean('single_language') else 'false'}}).trigger('change');
