@@ -340,7 +340,7 @@ def settingsradarr():
 @app.route('/settings/subtitles/')
 @login_required
 def settingssubtitles():
-    return render_template('settingssubtitles.html')
+    return render_template('settingssubtitles.html', os=sys.platform)
 
 
 @app.route('/settings/languages/')

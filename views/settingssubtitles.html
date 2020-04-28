@@ -217,8 +217,7 @@
                     </label>
                 </div>
             </div>
-            {% import sys %}
-            {% if not sys.platform.startswith('win') %}
+            {% if not os.startswith('win') %}
             <div class="row">
                 <div class="col-sm-3 text-right">
                     <b>Enable CHMOD</b>
