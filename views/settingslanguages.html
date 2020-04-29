@@ -63,9 +63,13 @@
                 <div class="col-sm-3 text-right">
                     <b>Series Default Settings</b>
                 </div>
-
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-serie_default_enabled" name="settings-general-serie_default_enabled">
+                        <span class="custom-control-label" for="settings-general-serie_default_enabled"></span>
+                    </label>
+                </div>
             </div>
-            <br>
             <div id="series_default_div">
                 <div class="row">
                     <div class="col-sm-3 text-right">
@@ -79,14 +83,24 @@
                     <div class="col-sm-3 text-right">
                         <b>Hearing-Impaired</b>
                     </div>
-
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-serie_default_hi" name="settings-general-serie_default_hi">
+                            <span class="custom-control-label" for="settings-general-serie_default_hi"></span>
+                        </label>
+                    </div>
                 </div>
-                <br>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Forced</b>
                     </div>
-
+                    <div class="form-group col-sm-8 pl-sm-0">
+                        <select class="selectpicker" id="settings-general-serie_default_forced" name="settings-general-serie_default_forced">
+                            <option value="False">False</option>
+                            <option value="True">True</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
                 </div>
                 <br>
             </div>
@@ -95,9 +109,13 @@
                 <div class="col-sm-3 text-right">
                     <b>Movies Default Settings</b>
                 </div>
-
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-movie_default_enabled" name="settings-general-movie_default_enabled">
+                        <span class="custom-control-label" for="settings-general-movie_default_enabled"></span>
+                    </label>
+                </div>
             </div>
-            <br>
             <div id="movies_default_div">
                 <div class="row">
                     <div class="col-sm-3 text-right">
@@ -111,14 +129,24 @@
                     <div class="col-sm-3 text-right">
                         <b>Hearing-Impaired</b>
                     </div>
-
+                        <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-movie_default_hi" name="settings-general-movie_default_hi">
+                            <span class="custom-control-label" for="settings-general-movie_default_hi"></span>
+                        </label>
+                    </div>
                 </div>
-                <br>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Forced</b>
                     </div>
-
+                    <div class="form-group col-sm-8 pl-sm-0">
+                        <select class="selectpicker" id="settings-general-movie_default_forced" name="settings-general-movie_default_forced">
+                            <option value="False">False</option>
+                            <option value="True">True</option>
+                            <option value="Both">Both</option>
+                        </select>
+                    </div>
                 </div>
                 <br>
             </div>
@@ -170,6 +198,8 @@
             // Set Select input values
             $('#settings-general-subfolder').val('{{settings.general.subfolder}}').trigger('change');
             $('#settings-general-anti_captcha_provider').val('{{settings.general.anti_captcha_provider}}').trigger('change');
+            $('#settings-general-serie_default_forced').val('{{settings.general.serie_default_forced}}').trigger('change');
+            $('#settings-general-movie_default_forced').val('{{settings.general.movie_default_forced}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
 
             // Listen to single language checkbox change to adapt languages menus
@@ -185,11 +215,40 @@
                 }
             });
 
+            // Hide *_div on default-enabled change
+            $('#settings-general-serie_default_enabled').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#series_default_div').show();
+                } else {
+                    $('#series_default_div').hide();
+                }
+            });
+
+            $('#settings-general-movie_default_enabled').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#movies_default_div').show();
+                } else {
+                    $('#movies_default_div').hide();
+                }
+            });
+
             // Set Checkbox input values
             $('#settings-general-single_language').prop('checked', {{'true' if settings.general.getboolean('single_language') else 'false'}}).trigger('change');
+            $('#settings-general-serie_default_enabled').prop('checked', {{'true' if settings.general.getboolean('serie_default_enabled') else 'false'}}).trigger('change');
+            $('#settings-general-serie_default_hi').prop('checked', {{'true' if settings.general.getboolean('serie_default_hi') else 'false'}}).trigger('change');
+            $('#settings-general-movie_default_enabled').prop('checked', {{'true' if settings.general.getboolean('movie_default_enabled') else 'false'}}).trigger('change');
+            $('#settings-general-movie_default_hi').prop('checked', {{'true' if settings.general.getboolean('movie_default_hi') else 'false'}}).trigger('change');
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure empty default languages select are send (bug in bootstrap-select)
+                if (formdata.get('settings-general-serie_default_language') == null) {
+                    formdata.append('settings-general-serie_default_language', null)
+                }
+                if (formdata.get('settings-general-movie_default_language') == null) {
+                    formdata.append('settings-general-movie_default_language', null)
+                }
 
                 // Make sure all checkbox input are sent with true/false value
                 $('input[type=checkbox]').each(function () {

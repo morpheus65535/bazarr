@@ -161,9 +161,14 @@ def save_settings(settings_items):
                 database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
             continue
 
-        # Make sure that text based form values aren't pass as list
-        if isinstance(value, list) and len(value) == 1:
+        # Make sure that text based form values aren't pass as list unless they are language list
+        if isinstance(value, list) and len(value) == 1 and key not in ['settings-general-serie_default_language',
+                                                                       'settings-general-movie_default_language']:
             value = value[0]
+
+        # Make sure empty language list are stored correctly due to bug in bootstrap-select
+        if key in ['settings-general-serie_default_language', 'settings-general-movie_default_language'] and value == ['null']:
+            value = []
 
         settings_keys = key.split('-')
 
