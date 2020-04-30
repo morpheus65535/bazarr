@@ -1,5 +1,5 @@
 #!/bin/env python
-from flask import Flask, redirect
+from flask import Flask, redirect, render_template
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_socketio import SocketIO
 import os
@@ -37,8 +37,8 @@ def create_app():
 
 
     @app.errorhandler(404)
-    def http_error_handler(error):
-        return redirect(base_url.rstrip('/')), 302
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
     socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*')
     return app

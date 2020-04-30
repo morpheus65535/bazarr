@@ -3,7 +3,12 @@
 {% block title %}Tasks - Bazarr{% endblock %}
 
 {% block bcleft %}
-
+    <div class="">
+        <button class="btn btn-outline" id="refresh_button">
+            <div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Refresh</div>
+        </button>
+    </div>
 {% endblock bcleft %}
 
 {% block bcright %}
@@ -80,6 +85,11 @@
                     }
                 ]
             });
+
+            $('#refresh_button').on('click', function() {
+                table.ajax.reload();
+                table.columns.adjust().draw(false);
+            })
 
             $('#tasks').on('click', '.execute', function(e){
                 e.preventDefault();

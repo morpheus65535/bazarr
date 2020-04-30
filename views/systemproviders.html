@@ -3,7 +3,16 @@
 {% block title %}Providers - Bazarr{% endblock %}
 
 {% block bcleft %}
-
+    <div class="">
+        <button class="btn btn-outline" id="refresh_button">
+            <div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Refresh</div>
+        </button>
+        <button class="btn btn-outline" id="reset_button">
+            <div><i class="fas fa-trash align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Reset Prov.</div>
+        </button>
+    </div>
 {% endblock bcleft %}
 
 {% block bcright %}
@@ -46,6 +55,20 @@
                     { data: 2 }
                 ]
             });
+
+            $('#refresh_button').on('click', function() {
+                table.ajax.reload();
+                table.columns.adjust().draw(false);
+            })
+
+            $('#reset_button').on('click', function() {
+                $.ajax({
+                    url: "{{ url_for('api.resetproviders') }}"
+                }).done(function () {
+                    table.ajax.reload();
+                    table.columns.adjust().draw(false);
+                })
+            })
         })
     </script>
 {% endblock tail %}

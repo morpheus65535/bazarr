@@ -239,3 +239,13 @@ def list_throttled_providers():
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
             throttled_providers.append([provider, reason, pretty.date(until)])
     return throttled_providers
+
+
+def reset_throttled_providers():
+    for provider in list(tp):
+        del tp[provider]
+    settings.general.throtteled_providers = str(tp)
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+    update_throttled_provider()
+    logging.info('BAZARR throttled providers have been reset.')

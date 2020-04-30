@@ -28,7 +28,7 @@ from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
-from get_providers import get_providers, get_providers_auth, list_throttled_providers
+from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from websocket_handler import event_stream
 from scheduler import Scheduler
 
@@ -122,6 +122,14 @@ class Search(Resource):
                                         'url': url_for('movie', no=movie['radarrId'])})
 
         return jsonify(search_list)
+
+
+class ResetProviders(Resource):
+    @authenticate
+    def get(self):
+        reset_throttled_providers()
+
+        return '', 200
 
 
 class SaveSettings(Resource):
@@ -1240,6 +1248,8 @@ api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
 
 api.add_resource(Search, '/search_json')
+
+api.add_resource(ResetProviders, '/resetproviders')
 
 api.add_resource(SaveSettings, '/savesettings')
 
