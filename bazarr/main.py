@@ -349,6 +349,12 @@ def settingslanguages():
     return render_template('settingslanguages.html')
 
 
+@app.route('/settings/providers/')
+@login_required
+def settingsproviders():
+    return render_template('settingsproviders.html')
+
+
 @app.route('/check_update')
 @login_required
 def check_update():

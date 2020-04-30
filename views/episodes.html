@@ -522,7 +522,7 @@
                     destroy: true,
                     language: {
                         zeroRecords: 'No Subtitles Found For This Episode',
-                        processing: "Searching (possibly solving captcha)..."
+                        processing: "Searching{% if settings.general.anti_captcha_provider != 'None' %} (possibly solving captcha){% endif %}..."
                     },
                     paging: true,
                     lengthChange: true,

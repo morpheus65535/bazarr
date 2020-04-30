@@ -1,0 +1,709 @@
+{% extends '_main.html' %}
+
+{% block title %}Providers - Bazarr{% endblock %}
+
+{% block page_head %}
+
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
+            </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Providers</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Addic7ed (Requires Anti-Captcha)</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="addic7ed">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="addic7ed_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-addic7ed-username" name="settings-addic7ed-username" value="{{settings.addic7ed.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-addic7ed-password" name="settings-addic7ed-password" value="{{settings.addic7ed.password}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Random User-Agents</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-addic7ed-random_agents" name="settings-addic7ed-random_agents">
+                            <span class="custom-control-label"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Argenteam</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="argenteam">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Assrt</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="assrt">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="assrt_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Token</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-assrt-token" name="settings-assrt-token" value="{{settings.assrt.token}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>BetaSeries</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="betaseries">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="betaseries_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Token/Secret Key</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-betaseries-token" name="settings-betaseries-token" value="{{settings.betaseries.token}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>BSplayer</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="bsplayer">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>GreekSubtitles</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="greeksubtitles">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Hosszupuska</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="hosszupuska">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>LegendasDivx</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="legendasdivx">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="legendasdivx_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-legendasdivx-username" name="settings-legendasdivx-username" value="{{settings.legendasdivx.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-legendasdivx-password" name="settings-legendasdivx-password" value="{{settings.legendasdivx.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>LegendasTV</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="legendastv">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="legendastv_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-legendastv-username" name="settings-legendastv-username" value="{{settings.legendastv.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-legendastv-password" name="settings-legendastv-password" value="{{settings.legendastv.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Napiprojekt</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="napiprojekt">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Napisy24</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="napisy24">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="napisy24_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-napisy24-username" name="settings-napisy24-username" value="{{settings.napisy24.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-napisy24-password" name="settings-napisy24-password" value="{{settings.napisy24.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Nekur</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="nekur">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>OpenSubtitles</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="opensubtitles">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="opensubtitles_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-opensubtitles-username" name="settings-opensubtitles-username" value="{{settings.opensubtitles.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-opensubtitles-password" name="settings-opensubtitles-password" value="{{settings.opensubtitles.password}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>VIP</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-opensubtitles-vip" name="settings-opensubtitles-vip">
+                            <span class="custom-control-label"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Use SSL</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-opensubtitles-ssl" name="settings-opensubtitles-ssl">
+                            <span class="custom-control-label"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Skip wrong FPS</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-opensubtitles-skip_wrong_fps" name="settings-opensubtitles-skip_wrong_fps">
+                            <span class="custom-control-label"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Podnapisi</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="podnapisi">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>RegieLive</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="regielive">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subdivx</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subdivx">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subs.sab.bz</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subssabbz">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subs4Free</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subs4free">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subs4Series</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subs4series">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subscene (Requires Anti-Captcha)</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subscene">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="subscene_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-subscene-username" name="settings-subscene-username" value="{{settings.subscene.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-subscene-password" name="settings-subscene-password" value="{{settings.subscene.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subscenter</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subscenter">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subsunacs.net</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subsunacs">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>subtitri.id.lv</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subtitriid">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Subtitulamos.tv</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="subtitulamostv">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Supersubtitles</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="supersubtitles">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Titlovi</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="titlovi">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="titlovi_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-titlovi-username" name="settings-titlovi-username" value="{{settings.titlovi.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-titlovi-password" name="settings-titlovi-password" value="{{settings.titlovi.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Titrari.ro</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="titrari">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>TVSubtitles</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="tvsubtitles">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Wizdom</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="wizdom">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>XSubs</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="xsubs">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="xsubs_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-xsubs-username" name="settings-xsubs-username" value="{{settings.xsubs.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-xsubs-password" name="settings-xsubs-password" value="{{settings.xsubs.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Yavka.net</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="yavkanet">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Zimuku</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input provider" id="zimuku">
+                        <span class="custom-control-label"></span>
+                    </label>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
+
+            // Hide *_div on Select input changed to None
+            $('.provider').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $("[id=" + $(this).attr('id') + "_div]").show();
+                } else {
+                    $("[id=" + $(this).attr('id') + "_div]").hide();
+                }
+            });
+
+            // Set Checkbox input values
+            $('.provider').prop('checked', false).trigger('change');
+            $('{{settings.general.enabled_providers}}'.split(',')).each( function(i, item) {
+                $("[id=" + item + "]").prop('checked', true).trigger('change');
+            })
+
+            $('#settings-addic7ed-random_agents').prop('checked', {{'true' if settings.addic7ed.getboolean('random_agents') else 'false'}});
+            $('#settings-opensubtitles-vip').prop('checked', {{'true' if settings.opensubtitles.getboolean('vip') else 'false'}});
+            $('#settings-opensubtitles-ssl').prop('checked', {{'true' if settings.opensubtitles.getboolean('ssl') else 'false'}});
+            $('#settings-opensubtitles-skip_wrong_fps').prop('checked', {{'true' if settings.opensubtitles.getboolean('skip_wrong_fps') else 'false'}});
+
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Add enabled providers
+                var enabled_providers = $(".provider").map(function () {
+                    if ($(this).prop('checked')) {
+                        return $(this).attr('id');
+                    }
+                }).get().join(',');
+                formdata.append('settings-general-enabled_providers', enabled_providers)
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock tail %}
