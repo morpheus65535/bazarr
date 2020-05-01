@@ -144,11 +144,9 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         return ServerProxy(url, SubZeroRequestsTransport(use_https=self.use_ssl, timeout=timeout or self.timeout,
                                                          user_agent=os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")))
 
-    def log_in(self, server_url=None):
-        if server_url:
-            self.terminate()
-
-            self.server = self.get_server_proxy(server_url)
+    def log_in_url(self, server_url):
+        self.token = None
+        self.server = self.get_server_proxy(server_url)
 
         response = self.retry(
             lambda: checked(
@@ -161,6 +159,25 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         logger.debug('Logged in with token %r', self.token[:10]+"X"*(len(self.token)-10))
 
         region.set("os_token", bytearray(self.token, encoding='utf-8'))
+        region.set("os_server_url", bytearray(server_url, encoding='utf-8'))
+
+    def log_in(self):
+        logger.info('Logging in')
+
+        try:
+            self.log_in_url(self.vip_url if self.is_vip else self.default_url)
+
+        except Unauthorized:
+            if self.is_vip:
+                logger.info("VIP server login failed, falling back")
+                try:
+                    self.log_in_url(self.default_url)
+                except Unauthorized:
+                    pass
+
+        if not self.token:
+            logger.error("Login failed, please check your credentials")
+            raise Unauthorized
 
     def use_token_or_login(self, func):
         if not self.token:
@@ -173,46 +190,18 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             return func()
 
     def initialize(self):
-        if self.is_vip:
-            self.server = self.get_server_proxy(self.vip_url)
-            logger.info("Using VIP server")
-        else:
-            self.server = self.get_server_proxy(self.default_url)
-
-        logger.info('Logging in')
-
         token_cache = region.get("os_token")
-        if token_cache is not NO_VALUE:
-            try:
-                token = token_cache.decode("utf-8")
-                logger.debug('Trying previous token: %r', token[:10]+"X"*(len(token)-10))
-                checked(lambda: self.server.NoOperation(token))
-                self.token = token
-                logger.debug("Using previous login token: %r", token[:10]+"X"*(len(token)-10))
-                return
-            except (NoSession, Unauthorized):
-                logger.debug('Token not valid.')
-                pass
+        url_cache = region.get("os_server_url")
 
-        try:
-            self.log_in()
+        if token_cache is not NO_VALUE and url_cache is not NO_VALUE:
+            self.token = token_cache.decode("utf-8")
+            self.server = self.get_server_proxy(url_cache.decode("utf-8"))
+            logger.debug("Using previous login token: %r", self.token[:10] + "X" * (len(self.token) - 10))
+        else:
+            self.server = None
+            self.token = None
 
-        except Unauthorized:
-            if self.is_vip:
-                logger.info("VIP server login failed, falling back")
-                self.log_in(self.default_url)
-                if self.token:
-                    return
-
-            logger.error("Login failed, please check your credentials")
-                
     def terminate(self):
-        if self.token:
-            try:
-                checked(lambda: self.server.LogOut(self.token))
-            except:
-                logger.error("Logout failed: %s", traceback.format_exc())
-
         self.server = None
         self.token = None
 

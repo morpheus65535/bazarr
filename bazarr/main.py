@@ -65,7 +65,7 @@ from notifier import send_notifications, send_notifications_movie
 from check_update import check_and_apply_update
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
-
+from subliminal.cache import region
 
 scheduler = Scheduler()
 
@@ -1536,7 +1536,13 @@ def save_settings():
         settings_opensubtitles_skip_wrong_fps = 'False'
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
-    
+
+    if (settings.opensubtitles.username != request.forms.get('settings_opensubtitles_username') or
+        settings.opensubtitles.password != request.forms.get('settings_opensubtitles_password') or
+        settings.opensubtitles.vip != text_type(settings_opensubtitles_vip)):
+        region.delete("os_token")
+        region.delete("os_server_url")
+
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
