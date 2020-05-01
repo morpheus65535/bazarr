@@ -30,6 +30,12 @@ body {
 /*******************
 /*Top bar
 *******************/
+.buttons_bars {
+  position: fixed;
+  top: 60px;
+  width: 100%;
+  z-index: 333; }
+
 .topbar {
   background: #ce2829; }
   .topbar .top-navbar .navbar-header .navbar-brand .light-logo {
@@ -341,7 +347,8 @@ a.link:hover, a.link:focus {
 
 .page-wrapper {
   background: #f5f7fa;
-  padding-bottom: 60px; }
+  padding-bottom: 60px;
+  padding-top: 60px; }
 
 .overlay {
   display: none;

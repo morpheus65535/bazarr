@@ -27,6 +27,12 @@ body {
 /*******************
 /*Top bar
 *******************/
+.buttons_bars {
+  position: fixed;
+  top: 60px;
+  width: 100%;
+  z-index: 333;
+}
 
 .topbar {
   background: $topbar;
@@ -501,6 +507,7 @@ a.link {
 .page-wrapper {
   background: $bodycolor;
   padding-bottom: 60px;
+  padding-top: 60px;
 }
 
 .overlay {
