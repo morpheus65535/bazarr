@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import logging
-import re
 import io
 import os
 from random import randint
@@ -13,7 +12,6 @@ from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import sanitize
-from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
@@ -67,8 +65,8 @@ class YavkaNetSubtitle(Subtitle):
         if video.year and self.year == video.year:
             matches.add('year')
 
-        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type, 'allowed_countries': [None]}))
+        matches |= guess_matches(video, guessit(self.filename, {'type': self.type, 'allowed_countries': [None]}))
         return matches
 
 
@@ -183,7 +181,7 @@ class YavkaNetProvider(Provider):
             if file_name.lower().endswith(('.srt', '.sub')):
                 logger.info('Found subtitle file %r', file_name)
                 subtitle = YavkaNetSubtitle(language, file_name, type, video, link, fps)
-                subtitle.content = archiveStream.read(file_name)
+                subtitle.content = fix_line_ending(archiveStream.read(file_name))
                 subtitles.append(subtitle)
         return subtitles
 
