@@ -13,7 +13,6 @@ from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
-from subliminal.exceptions import ProviderError
 from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
@@ -83,14 +82,14 @@ class SubsUnacsSubtitle(Subtitle):
         if video.year and self.year == video.year:
             matches.add('year')
 
-        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type, 'allowed_countries': [None]}))
+        matches |= guess_matches(video, guessit(self.filename, {'type': self.type, 'allowed_countries': [None]}))
         return matches
 
 
 class SubsUnacsProvider(Provider):
     """SubsUnacs Provider."""
-    languages = {Language('por', 'BR')} | {Language(l) for l in [
+    languages = {Language(l) for l in [
         'bul', 'eng'
     ]}
 
@@ -213,7 +212,7 @@ class SubsUnacsProvider(Provider):
     def process_archive_subtitle_files(self, archiveStream, language, video, link, fps, num_cds):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
-        for file_name in archiveStream.namelist():
+        for file_name in sorted(archiveStream.namelist()):
             if file_name.lower().endswith(('.srt', '.sub', '.txt')):
                 file_is_txt = True if file_name.lower().endswith('.txt') else False
                 if file_is_txt and re.search(r'subsunacs\.net|танете част|прочети|^read ?me|procheti', file_name, re.I): 
@@ -221,7 +220,7 @@ class SubsUnacsProvider(Provider):
                     continue
                 logger.info('Found subtitle file %r', file_name)
                 subtitle = SubsUnacsSubtitle(language, file_name, type, video, link, fps, num_cds)
-                subtitle.content = archiveStream.read(file_name)
+                subtitle.content = fix_line_ending(archiveStream.read(file_name))
                 if file_is_txt == False or subtitle.is_valid():
                     subtitles.append(subtitle)
         return subtitles
