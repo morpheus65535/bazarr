@@ -297,6 +297,14 @@
 {% block tail %}
     <script>
         $(document).ready(function () {
+            // Show warning if there's unsaved changes in the settings_form
+            var form_changed = false;
+            $(window).on('beforeunload', function() {
+                if (form_changed) {
+                    return "";
+                }
+            });
+
             // Hide checkmark over save button
             $('#save_button_checkmark').hide();
 
@@ -386,6 +394,7 @@
                     type: 'POST',
                     complete: function () {
                         $('#save_button_checkmark').show();
+                        form_changed = false;
                         setTimeout(
                             function()
                             {
@@ -394,6 +403,11 @@
                     }
                 });
             });
+
+            // monitor changes to the settings_form
+            $('#settings_form').on('change', function() {
+                form_changed = true;
+            })
         });
     </script>
 {% endblock tail %}
