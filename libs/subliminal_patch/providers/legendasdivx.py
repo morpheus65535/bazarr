@@ -13,7 +13,7 @@ from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
 from subliminal.video import Episode, Movie
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending,guess_matches
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, guess_matches
 from subzero.language import Language
 from subliminal_patch.score import get_scores
 
@@ -27,11 +27,12 @@ class LegendasdivxSubtitle(Subtitle):
         super(LegendasdivxSubtitle, self).__init__(language)
         self.language = language
         self.page_link = data['link']
-        self.hits=data['hits']
-        self.exact_match=data['exact_match']
-        self.description=data['description'].lower()
+        self.hits = data['hits']
+        self.exact_match = data['exact_match']
+        self.description = data['description'].lower()
         self.video = video
-        self.videoname =data['videoname']
+        self.videoname = data['videoname']
+        self.uploader = data['uploader']
 
     @property
     def id(self):
@@ -108,9 +109,6 @@ class LegendasdivxSubtitle(Subtitle):
         # running guessit on a huge description may break guessit
         # matches |= guess_matches(video, guessit(self.description))
         return matches
-
-
-
 
 class LegendasdivxProvider(Provider):
     """Legendasdivx Provider."""
@@ -204,14 +202,20 @@ class LegendasdivxProvider(Provider):
                 logger.warning('skipping subbox on %s' % self.searchurl.format(query=querytext))
                 continue
 
+            # get subtitle uploader
+            sub_header = _subbox.find("div", {"class" :"sub_header"}) 
+            uploader = sub_header.find("a").text if sub_header else '<n/a>'
+
             exact_match = False
             if video.name.lower() in description.get_text().lower():
                 exact_match = True
             data = {'link': self.site + '/modules.php' + download.get('href'),
                     'exact_match': exact_match,
                     'hits': hits,
+                    'uploader': uploader,
                     'videoname': videoname,
-                    'description': description.get_text() }
+                    'description': description.get_text()
+                    }
             subtitles.append(
                 LegendasdivxSubtitle(lang, video, data)
             )
