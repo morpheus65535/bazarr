@@ -369,6 +369,7 @@
             });
 
             $('#test_sonarr_connection').on('click', function() {
+                $('#test_sonarr_span').html('<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>');
                 if ($('#settings-sonarr-ssl').is(':checked')) {
                     var protocol = 'https';
                 } else {
@@ -380,7 +381,8 @@
                     if (data.status) {
                         $('#test_sonarr_span').text('Test Successful: Sonarr v' + data.version).css('color', 'green');
                     } else {
-                        $('#test_sonarr_span').text('Test Failed').css('color', 'red');
+                        console.log(data);
+                        $('#test_sonarr_span').text('Test Failed: ' + data.error).css('color', 'red');
                     }
                 });
             });

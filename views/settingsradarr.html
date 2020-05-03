@@ -369,6 +369,7 @@
             });
 
             $('#test_radarr_connection').on('click', function() {
+                $('#test_radarr_span').html('<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>');
                 if ($('#settings-radarr-ssl').is(':checked')) {
                     var protocol = 'https';
                 } else {
@@ -380,7 +381,7 @@
                     if (data.status) {
                         $('#test_radarr_span').text('Test Successful: Radarr v' + data.version).css('color', 'green');
                     } else {
-                        $('#test_radarr_span').text('Test Failed').css('color', 'red');
+                        $('#test_radarr_span').text('Test Failed: ' + data.error).css('color', 'red');
                     }
                 });
             });

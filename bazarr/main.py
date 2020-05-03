@@ -464,12 +464,18 @@ def api_movies_history():
 def test_url(protocol, url):
     url = protocol + '://' + unquote(url)
     try:
-        result = requests.get(url, allow_redirects=False, verify=False).json()['version']
+        result = requests.get(url, allow_redirects=False, verify=False, timeout=5)
     except Exception as e:
-        logging.exception('BAZARR cannot successfully contact this URL: ' + url)
-        return dict(status=False)
+        return dict(status=False, error=repr(e))
     else:
-        return dict(status=True, version=result)
+        if result.status_code == 200:
+            return dict(status=True, version=result.json()['version'])
+        elif result.status_code == 401:
+            return dict(status=False, error='Access Denied. Check API key.')
+        elif 300 <= result.status_code <= 399:
+            return dict(status=False, error='Wrong URL Base.')
+        else:
+            return dict(status=False, error=result.raise_for_status())
 
 
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
