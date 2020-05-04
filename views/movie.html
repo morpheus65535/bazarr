@@ -411,7 +411,7 @@
 				lengthChange: true,
 				pageLength: {{ settings.general.page_size_manual_search }},
 				lengthMenu: [ 5, 10, 15, 20, 25 ],
-				searching: false,
+				searching: true,
 				ordering: false,
 				processing: true,
 				serverSide: false,
@@ -447,6 +447,7 @@
 						}
 					},
 					{ data: null,
+						searchable: false,
 						render: function ( data ) {
 							const array_matches = data.matches;
 							const array_dont_matches = data.dont_matches;
@@ -488,6 +489,7 @@
 						}
 					},
 					{ data: null,
+						searchable: false,
 						render: function ( data ) {
 							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
 						}
