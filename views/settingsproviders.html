@@ -671,9 +671,11 @@
 
             // Set Checkbox input values
             $('.provider').prop('checked', false).trigger('change');
+            {% if settings.general.enabled_providers %}
             $('{{settings.general.enabled_providers}}'.split(',')).each( function(i, item) {
                 $("[id=" + item + "]").prop('checked', true).trigger('change');
             })
+            {% endif %}
 
             $('#settings-addic7ed-random_agents').prop('checked', {{'true' if settings.addic7ed.getboolean('random_agents') else 'false'}});
             $('#settings-opensubtitles-vip').prop('checked', {{'true' if settings.opensubtitles.getboolean('vip') else 'false'}});
