@@ -128,7 +128,7 @@
                     <h6>Episode path is: <span id="episode_path_span" class="badge badge-secondary"></span>
                         <br>Scenename is: <span id="episode_scenename_span" class="badge badge-secondary"></span></h6>
                     <div class="container-fluid" style="padding:0px;">
-                        <table id="search_result" class="table table-striped">
+                        <table id="search_result" class="table table-striped" style="width:100%">
                             <thead>
                             <tr>
                                 <th style="text-align: left;">Score:</th>
@@ -531,13 +531,15 @@
                     destroy: true,
                     language: {
                         zeroRecords: 'No Subtitles Found For This Episode',
-                        processing: "Searching{% if settings.general.anti_captcha_provider != 'None' %} (possibly solving captcha){% endif %}..."
+                        processing: "Searching{% if settings.general.anti_captcha_provider != 'None' %} (possibly solving captcha){% endif %}...",
+                        search: "Filter:"
                     },
                     paging: true,
                     lengthChange: true,
                     pageLength: {{ settings.general.page_size_manual_search }},
                     lengthMenu: [ 5, 10, 15, 20, 25 ],
                     searching: true,
+                    scrollX: true,
                     ordering: false,
                     processing: true,
                     serverSide: false,
