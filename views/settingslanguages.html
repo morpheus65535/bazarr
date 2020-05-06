@@ -204,8 +204,6 @@
             })
 
             // Set Select input values
-            $('#settings-general-subfolder').val('{{settings.general.subfolder}}').trigger('change');
-            $('#settings-general-anti_captcha_provider').val('{{settings.general.anti_captcha_provider}}').trigger('change');
             $('#settings-general-serie_default_forced').val('{{settings.general.serie_default_forced}}').trigger('change');
             $('#settings-general-movie_default_forced').val('{{settings.general.movie_default_forced}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
@@ -308,9 +306,13 @@
             }
 
             // monitor changes to the settings_form
-            $('#settings_form').on('change', function() {
-                form_changed = true;
-            })
+            setTimeout(
+                function()
+                {
+                    $('#settings_form').on('change', function() {
+                        form_changed = true;
+                    })
+                }, 2000);
         });
     </script>
 {% endblock tail %}
