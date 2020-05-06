@@ -219,7 +219,7 @@ class LegendasdivxProvider(Provider):
 
             # get subtitle uploader
             sub_header = _subbox.find("div", {"class" :"sub_header"}) 
-            uploader = sub_header.find("a").text if sub_header else '<n/a>'
+            uploader = sub_header.find("a").text if sub_header else 'anonymous'
 
             exact_match = False
             if video.name.lower() in description.lower():
