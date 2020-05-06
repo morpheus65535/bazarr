@@ -1,0 +1,131 @@
+{% extends '_main.html' %}
+
+{% block title %}Scheduler - Bazarr{% endblock %}
+
+{% block page_head %}
+
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
+            </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Sonarr/Radarr Sync</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Update Series list from Sonarr</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-sonarr-series_sync" name="settings-sonarr-series_sync">
+                        <option value="1">1 minute</option>
+                        <option value="5">5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="180">3 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Update Episodes list from Sonarr</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-sonarr-episodes_sync" name="settings-sonarr-episodes_sync">
+                        <option value="5">5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="180">3 hours</option>
+                        <option value="360">6 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Update Movies list from Radarr</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-radarr-movies_sync" name="settings-radarr-movies_sync">
+                        <option value="5">5 minutes</option>
+                        <option value="15">15 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="180">3 hours</option>
+                        <option value="360">6 hours</option>
+                    </select>
+                </div>
+            </div>
+
+        </form>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            // Show warning if there's unsaved changes in the settings_form
+            var form_changed = false;
+            $(window).on('beforeunload', function() {
+                if (form_changed) {
+                    return "";
+                }
+            });
+
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
+
+            // Set Select input values
+            $('#settings-sonarr-series_sync').val('{{settings.sonarr.series_sync}}').trigger('change');
+            $('#settings-sonarr-episodes_sync').val('{{settings.sonarr.episodes_sync}}').trigger('change');
+            $('#settings-radarr-movies_sync').val('{{settings.radarr.movies_sync}}').trigger('change');
+            $('.selectpicker').selectpicker('refresh')
+
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        form_changed = false;
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+
+            // monitor changes to the settings_form
+            $('#settings_form').on('change', function() {
+                form_changed = true;
+            })
+        });
+    </script>
+{% endblock tail %}

@@ -68,6 +68,8 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '4',
         'only_monitored': 'False',
+        'series_sync': '1',
+        'episodes_sync': '5',
     },
     'radarr': {
         'ip': '127.0.0.1',
@@ -79,6 +81,7 @@ defaults = {
         'full_update_day': '6',
         'full_update_hour': '5',
         'only_monitored': 'False',
+        'movies_sync': '5',
     },
     'proxy': {
         'type': 'None',
