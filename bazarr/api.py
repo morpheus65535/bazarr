@@ -11,6 +11,7 @@ from operator import itemgetter
 import platform
 import io
 import re
+import json
 
 from get_args import args
 from config import settings, base_url, save_settings
@@ -96,6 +97,22 @@ class Languages(Resource):
         else:
             result = database.execute("SELECT * FROM table_settings_languages ORDER BY name")
         return jsonify(result)
+
+
+class Notifications(Resource):
+    @authenticate
+    def get(self):
+        result = database.execute("SELECT * FROM table_settings_notifier ORDER BY name")
+        return jsonify(data=result)
+
+    @authenticate
+    def post(self):
+        notification_providers = json.loads(request.form.get('notification_providers'))
+        for item in notification_providers:
+            database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
+                             (item['enabled'], item['url'], item['name']))
+
+        return '', 204
 
 
 class Search(Resource):
@@ -1246,6 +1263,7 @@ api.add_resource(Restart, '/restart')
 
 api.add_resource(Badges, '/badges')
 api.add_resource(Languages, '/languages')
+api.add_resource(Notifications, '/notifications')
 
 api.add_resource(Search, '/search_json')
 

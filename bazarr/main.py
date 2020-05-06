@@ -355,6 +355,18 @@ def settingsproviders():
     return render_template('settingsproviders.html')
 
 
+@app.route('/settings/notifications/')
+@login_required
+def settingsnotifications():
+    return render_template('settingsnotifications.html')
+
+
+@app.route('/settings/scheduler/')
+@login_required
+def settingsscheduler():
+    return render_template('settingsscheduler.html')
+
+
 @app.route('/check_update')
 @login_required
 def check_update():
