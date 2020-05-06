@@ -3,6 +3,7 @@ cachefile.dbm
 *.log
 *.log.*
 *.db
+*.pyc
 .idea/*
 bazarr.pid
 /venv
@@ -10,6 +11,7 @@ bazarr.pid
 static/scss/.sass-cache/*
 static/scss/.sass-cache
 *.scssc
+/.vscode
 
 # Allow
 !*.dll

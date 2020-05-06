@@ -35,6 +35,11 @@ PROVIDER_THROTTLE_MAP = {
     },
     "titulky": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
+    },
+    "legendasdivx": {
+        TooManyRequests: (datetime.timedelta(hours=2), "2 hours"),
+        DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+        ParseResponseError: (datetime.timedelta(hours=1), "1 hours"),
     }
 }
 

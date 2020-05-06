@@ -45,6 +45,8 @@ from get_movies import *
 from scheduler import Scheduler
 from check_update import check_and_apply_update
 from subliminal_patch.extensions import provider_registry as provider_manager
+from subliminal_patch.core import SUBTITLE_EXTENSIONS
+from subliminal.cache import region
 from functools import wraps
 
 from app import create_app, socketio

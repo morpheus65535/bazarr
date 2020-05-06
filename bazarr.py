@@ -80,6 +80,9 @@ if __name__ == '__main__':
     while True:
         check_status()
         try:
-            time.sleep(5)
+            if sys.platform.startswith('win'):
+                time.sleep(5)
+            else:
+                os.wait()
         except (KeyboardInterrupt, SystemExit):
             pass
