@@ -140,10 +140,10 @@
                                 <div class="dropdown-menu dropdown-menu-right scale-up">
                                     <ul class="dropdown-user">
                                         <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
-                                        <li><a id="shutdown""><i class="fas fa-power-off"></i>
-                                            Shutdown</a></li>
-                                        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                                        </li>
+                                        <li><a id="shutdown"><i class="fas fa-power-off"></i> Shutdown</a></li>
+                                        {% if settings.auth.type != 'None' %}
+                                        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                                        {% endif %}
                                     </ul>
                                 </div>
                             </li>

@@ -339,6 +339,15 @@
                 responsive: true,
                 pageLength: {{ settings.general.page_size }},
                 ajax: "{{ url_for('api.episodes') }}?seriesid={{id}}",
+                initComplete: function() {
+                    $('.dtrg-start').each( function(i, item) {
+                        if (i > 0) {
+                            var name = $(item).data('name');
+                            collapsedGroups[name] = !collapsedGroups[name];
+                            table.draw(false);
+                        }
+                    })
+                },
                 rowGroup: {
                     dataSrc: 'season',
                     startRender: function (rows, group) {
