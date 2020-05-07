@@ -8,8 +8,10 @@ import rarfile
 import zipfile
 
 from requests import Session
+from requests.exceptions import HTTPError
 from guessit import guessit
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
@@ -160,20 +162,23 @@ class LegendasdivxProvider(Provider):
         data['password'] = self.password
 
         res = self.session.post(self.loginpage, data)
-        res.raise_for_status()
         
         if (res and 'bloqueado' in res.text.lower()): # blocked IP address 
             logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-            raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
+            raise TooManyRequests("Legendasdivx.pt :: Your IP is blocked on this server.")
 
         #make sure we're logged in
         try:
+            res.raise_for_status()
             logger.debug('Logged in successfully: PHPSESSID: %s' %
                          self.session.cookies.get_dict()['PHPSESSID'])
-            self.logged_in = True   
+            self.logged_in = True
         except KeyError:
             logger.error("Couldn't retrieve session ID, check your credentials")
             raise AuthenticationError("Please check your credentials.")
+        except HTTPError as e:
+            logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
+            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
         except Exception as e:
             logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
@@ -303,14 +308,22 @@ class LegendasdivxProvider(Provider):
 
     def download_subtitle(self, subtitle):
         res = self.session.get(subtitle.page_link)
-        res.raise_for_status()
+        
         if res:
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitReached("Legendasdivx.pt :: Daily download limit reached!")
-            elif 'bloqueado' in res.text.lower(): # blocked IP address 
-                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-                raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
+            try:
+                res.raise_for_status()
+                if 'limite' in res.text.lower(): # daily downloads limit reached
+                    logger.error("LegendasDivx.pt :: Daily download limit reached!")
+                    raise DownloadLimitReached("Legendasdivx.pt :: Daily download limit reached!")
+                elif 'bloqueado' in res.text.lower(): # blocked IP address 
+                    logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                    raise TooManyRequests("LegendasDivx.pt :: Your IP is blocked on this server.")
+            except HTTPError as e:
+                logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
+                raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
+            except Exception as e:
+                logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
+                raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
 
             archive = self._get_archive(res.content)
             # extract the subtitle
