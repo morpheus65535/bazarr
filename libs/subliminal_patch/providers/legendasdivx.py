@@ -8,7 +8,6 @@ import rarfile
 import zipfile
 
 from requests import Session
-from requests.exceptions import HTTPError
 from guessit import guessit
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
 from subliminal_patch.providers import Provider
