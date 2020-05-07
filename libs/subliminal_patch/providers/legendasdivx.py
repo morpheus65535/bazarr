@@ -163,6 +163,11 @@ class LegendasdivxProvider(Provider):
         res = self.session.post(self.loginpage, data)
         res.raise_for_status()
         
+        if (res and 'bloqueado' in res.text.lower()): # blocked IP address 
+            logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+            raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
+
+        #make sure we're logged in
         try:
             logger.debug('Logged in successfully: PHPSESSID: %s' %
                          self.session.cookies.get_dict()['PHPSESSID'])
@@ -171,9 +176,6 @@ class LegendasdivxProvider(Provider):
             logger.error("Couldn't retrieve session ID, check your credentials")
             raise AuthenticationError("Please check your credentials.")
         except Exception as e:
-            if (res and 'bloqueado' in res.text.lower()): # blocked IP address 
-                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-                raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
             logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
 
@@ -305,8 +307,10 @@ class LegendasdivxProvider(Provider):
         res.raise_for_status()
         if res:
             if 'limite' in res.text.lower(): # daily downloads limit reached
-                raise DownloadLimitReached("Legendasdivx.pt :: Download limit reached")
+                logger.error("LegendasDivx.pt :: Daily download limit reached!")
+                raise DownloadLimitReached("Legendasdivx.pt :: Daily download limit reached!")
             elif 'bloqueado' in res.text.lower(): # blocked IP address 
+                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
 
             archive = self._get_archive(res.content)
