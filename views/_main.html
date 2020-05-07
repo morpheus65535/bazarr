@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <title>{% block title %}Bazarr{% endblock %}</title>
+<head>
+    <title>{% block title %}Bazarr{% endblock %}</title>
 
-        {% block head_meta %}
+    {% block head_meta %}
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -17,9 +17,9 @@
         <meta name="msapplication-config" content="{{ url_for('static',filename='browserconfig.xml') }}">
         <meta name="theme-color" content="#ffffff">
 
-        {% endblock head_meta %}
+    {% endblock head_meta %}
 
-        {% block head_css %}
+    {% block head_css %}
         <link href="{{ url_for('static',filename='plugins/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
         <!-- Custom CSS -->
         <link href="{{ url_for('static',filename='css/style.css') }}" rel="stylesheet">
@@ -37,12 +37,12 @@
               href="{{ url_for('static',filename='datatables/buttons.dataTables.min.css') }}">
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
-        <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}" />
-        <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}" />
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
 
-        {% endblock head_css %}
+    {% endblock head_css %}
 
-        {% block head %}
+    {% block head %}
         <style>
             .table td, .table th {
                 padding: .4rem !important;
@@ -53,336 +53,344 @@
                 border: 1px solid #ced4da;
             }
         </style>
-        {% endblock head %}
+    {% endblock head %}
 
-        {% block page_head %}
-        {% endblock page_head %}
+    {% block page_head %}
+    {% endblock page_head %}
 
-        {% block head_tail %}
-        {% endblock head_tail %}
+    {% block head_tail %}
+    {% endblock head_tail %}
 
-    </head>
-    <body class="fix-header fix-sidebar card-no-border">
+</head>
+<body class="fix-header fix-sidebar card-no-border">
+<!-- ============================================================== -->
+<!-- Preloader - style you can find in spinners.css -->
+<!-- ============================================================== -->
+<div class="preloader">
+    <svg class="circular" viewBox="25 25 50 50">
+        <circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle>
+    </svg>
+</div>
+{% block page_body %}
+    <!-- ============================================================== -->
+    <!-- Main wrapper - style you can find in pages.scss -->
+    <!-- ============================================================== -->
+    <div id="main-wrapper">
         <!-- ============================================================== -->
-        <!-- Preloader - style you can find in spinners.css -->
+        <!-- Topbar header - style you can find in pages.scss -->
         <!-- ============================================================== -->
-        <div class="preloader">
-            <svg class="circular" viewBox="25 25 50 50">
-                <circle class="path" cx="50" cy="50" r="20" fill="none" stroke-width="2" stroke-miterlimit="10"></circle>
-            </svg>
-        </div>
-    {% block page_body %}
-        <!-- ============================================================== -->
-        <!-- Main wrapper - style you can find in pages.scss -->
-        <!-- ============================================================== -->
-        <div id="main-wrapper">
-            <!-- ============================================================== -->
-            <!-- Topbar header - style you can find in pages.scss -->
-            <!-- ============================================================== -->
-            <header class="topbar">
-                <nav class="navbar top-navbar navbar-expand-md navbar-light">
+        <header class="topbar">
+            <nav class="navbar top-navbar navbar-expand-md navbar-light">
+                <!-- ============================================================== -->
+                <!-- Logo -->
+                <!-- ============================================================== -->
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="{{ url_for('redirect_root') }}">
+                        <!-- Logo icon -->
+                        <b>
+                            <img src="{{ url_for('static',filename='logo128.png') }}" alt="homepage" width="40"
+                                 class="dark-logo"/>
+                        </b></a>
+                    <!--End Logo icon -->
+                    <!-- Logo text -->
+                </div>
+                <!-- ============================================================== -->
+                <!-- End Logo -->
+                <!-- ============================================================== -->
+                <div class="navbar-collapse">
                     <!-- ============================================================== -->
-                    <!-- Logo -->
+                    <!-- toggle and nav items -->
                     <!-- ============================================================== -->
-                    <div class="navbar-header">
-                        <a class="navbar-brand" href="{{ url_for('redirect_root') }}">
-                            <!-- Logo icon -->
-                            <b>
-                                <img src="{{ url_for('static',filename='logo128.png') }}" alt="homepage" width="40"
-                                     class="dark-logo"/>
-                            </b></a>
-                        <!--End Logo icon -->
-                        <!-- Logo text -->
-                    </div>
-                    <!-- ============================================================== -->
-                    <!-- End Logo -->
-                    <!-- ============================================================== -->
-                    <div class="navbar-collapse">
+                    <ul class="navbar-nav mr-auto mt-md-0">
+                        <!-- This is  -->
+                        <li class="nav-item"><a
+                                class="nav-link nav-toggler d-block d-md-none text-muted hidden-xl-up"
+                                href="javascript:void(0)"><i class="mdi mdi-menu"></i></a></li>
+                        <li class="nav-item"><a
+                                class="nav-link sidebartoggler d-none d-md-block text-muted hidden-xl-up"
+                                href="javascript:void(0)"><i class="ti-menu"></i></a></li>
                         <!-- ============================================================== -->
-                        <!-- toggle and nav items -->
+                        <!-- Search -->
                         <!-- ============================================================== -->
-                        <ul class="navbar-nav mr-auto mt-md-0">
-                            <!-- This is  -->
-                            <li class="nav-item"><a
-                                    class="nav-link nav-toggler d-block d-md-none text-muted hidden-xl-up"
-                                    href="javascript:void(0)"><i class="mdi mdi-menu"></i></a></li>
-                            <li class="nav-item"><a
-                                    class="nav-link sidebartoggler d-none d-md-block text-muted hidden-xl-up"
-                                    href="javascript:void(0)"><i class="ti-menu"></i></a></li>
-                            <!-- ============================================================== -->
-                            <!-- Search -->
-                            <!-- ============================================================== -->
-                            <li class="nav-item hidden-sm-down search-box">
-                                <form class="form-material">
-                                    <div class="typeahead__container">
-                                        <div class="typeahead__field">
-                                            <div class="typeahead__query">
-                                                <input class="form-control text-white js-typeahead" id="search" placeholder="Search..." autocomplete="off">
-                                            </div>
+                        <li class="nav-item hidden-sm-down search-box">
+                            <form class="form-material">
+                                <div class="typeahead__container">
+                                    <div class="typeahead__field">
+                                        <div class="typeahead__query">
+                                            <input class="form-control text-white js-typeahead" id="search"
+                                                   placeholder="Search..." autocomplete="off">
                                         </div>
                                     </div>
-                                </form>
-                            </li>
-                        </ul>
-                        <!-- ============================================================== -->
-                        <!-- User profile and search -->
-                        <!-- ============================================================== -->
-                        <ul class="navbar-nav my-lg-0">
-                            <!-- ============================================================== -->
-                            <!-- Profile -->
-                            <!-- ============================================================== -->
-                            <li class="nav-item">
-                                <a class="nav-link text-muted fas fa-heart" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url" target=”_blank”></a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-muted fas fa-user" href=""
-                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
-                                <div class="dropdown-menu dropdown-menu-right scale-up">
-                                    <ul class="dropdown-user">
-                                        <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
-                                        <li><a id="shutdown"><i class="fas fa-power-off"></i> Shutdown</a></li>
-                                        {% if settings.auth.type != 'None' %}
-                                        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                                        {% endif %}
-                                    </ul>
                                 </div>
-                            </li>
-                        </ul>
-                    </div>
-                </nav>
-            </header>
-            <!-- ============================================================== -->
-            <!-- End Topbar header -->
-            <!-- ============================================================== -->
-            <!-- ============================================================== -->
-            <!-- Left Sidebar - style you can find in sidebar.scss  -->
-            <!-- ============================================================== -->
-            <aside class="left-sidebar">
-                <!-- Sidebar scroll-->
-                <div class="scroll-sidebar">
-                    <!-- Sidebar navigation-->
-                    <nav class="sidebar-nav">
-                        <ul id="sidebarnav">
-                            {% if settings.general.getboolean('use_sonarr') %}
+                            </form>
+                        </li>
+                    </ul>
+                    <!-- ============================================================== -->
+                    <!-- User profile and search -->
+                    <!-- ============================================================== -->
+                    <ul class="navbar-nav my-lg-0">
+                        <!-- ============================================================== -->
+                        <!-- Profile -->
+                        <!-- ============================================================== -->
+                        <li class="nav-item">
+                            <a class="nav-link text-muted fas fa-heart"
+                               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
+                               target=”_blank”></a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-muted fas fa-user" href=""
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></a>
+                            <div class="dropdown-menu dropdown-menu-right scale-up">
+                                <ul class="dropdown-user">
+                                    <li><a id="restart"><i class="fas fa-redo"></i> Restart</a></li>
+                                    <li><a id="shutdown"><i class="fas fa-power-off"></i> Shutdown</a></li>
+                                    {% if settings.auth.type != 'None' %}
+                                        <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+        <!-- ============================================================== -->
+        <!-- End Topbar header -->
+        <!-- ============================================================== -->
+        <!-- ============================================================== -->
+        <!-- Left Sidebar - style you can find in sidebar.scss  -->
+        <!-- ============================================================== -->
+        <aside class="left-sidebar">
+            <!-- Sidebar scroll-->
+            <div class="scroll-sidebar">
+                <!-- Sidebar navigation-->
+                <nav class="sidebar-nav">
+                    <ul id="sidebarnav">
+                        {% if settings.general.getboolean('use_sonarr') %}
                             <li id="series_nav"><a href="{{ url_for('series') }}"><i class="fas fa-play"></i><span
                                     class="hide-menu"> Series</span></a>
                             </li>
-                            {% endif %}
+                        {% endif %}
 
-                            {% if settings.general.getboolean('use_radarr') %}
+                        {% if settings.general.getboolean('use_radarr') %}
                             <li id="movies_nav"><a href="{{ url_for('movies') }}"><i class="fas fa-film"></i><span
                                     class="hide-menu"> Movies</span></a>
                             </li>
-                            {% endif %}
+                        {% endif %}
 
-                            <li><a href="#"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    {% if settings.general.getboolean('use_sonarr') %}
+                        <li><a href="#"><i class="fas fa-clock"></i><span class="hide-menu"> History</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                {% if settings.general.getboolean('use_sonarr') %}
                                     <li><a href="{{ url_for('historyseries') }}"> Series</a></li>
-                                    {% endif %}
-                                    {% if settings.general.getboolean('use_radarr') %}
+                                {% endif %}
+                                {% if settings.general.getboolean('use_radarr') %}
                                     <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
-                                    {% endif %}
-                                </ul>
-                            </li>
+                                {% endif %}
+                            </ul>
+                        </li>
 
-                            <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span class="hide-menu"> Wanted</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    {% if settings.general.getboolean('use_sonarr') %}
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
+                                class="hide-menu"> Wanted</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                {% if settings.general.getboolean('use_sonarr') %}
                                     <li><a href="{{ url_for('wantedseries') }}"> Series</a></li>
-                                    {% endif %}
-                                    {% if settings.general.getboolean('use_radarr') %}
+                                {% endif %}
+                                {% if settings.general.getboolean('use_radarr') %}
                                     <li><a href="{{ url_for('wantedmovies') }}"> Movies</a></li>
-                                    {% endif %}
-                                </ul>
-                            </li>
+                                {% endif %}
+                            </ul>
+                        </li>
 
-                            <li><a href="#"><i
-                                    class="fas fa-cogs"></i><span class="hide-menu"> Settings</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    <li><a href="{{ url_for('settingsgeneral') }}"> General</a></li>
-                                    <li><a href="{{ url_for('settingssonarr') }}"> Sonarr</a></li>
-                                    <li><a href="{{ url_for('settingsradarr') }}"> Radarr</a></li>
-                                    <li><a href="{{ url_for('settingssubtitles') }}"> Subtitles</a></li>
-                                    <li><a href="{{ url_for('settingslanguages') }}"> Languages</a></li>
-                                    <li><a href="{{ url_for('settingsproviders') }}"> Providers</a></li>
-                                    <li><a href="{{ url_for('settingsnotifications') }}"> Notifications</a></li>
-                                    <li><a href="{{ url_for('settingsscheduler') }}"> Scheduler</a></li>
-                                </ul>
-                            </li>
+                        <li><a href="#"><i
+                                class="fas fa-cogs"></i><span class="hide-menu"> Settings</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                <li><a href="{{ url_for('settingsgeneral') }}"> General</a></li>
+                                <li><a href="{{ url_for('settingssonarr') }}"> Sonarr</a></li>
+                                <li><a href="{{ url_for('settingsradarr') }}"> Radarr</a></li>
+                                <li><a href="{{ url_for('settingssubtitles') }}"> Subtitles</a></li>
+                                <li><a href="{{ url_for('settingslanguages') }}"> Languages</a></li>
+                                <li><a href="{{ url_for('settingsproviders') }}"> Providers</a></li>
+                                <li><a href="{{ url_for('settingsnotifications') }}"> Notifications</a></li>
+                                <li><a href="{{ url_for('settingsscheduler') }}"> Scheduler</a></li>
+                            </ul>
+                        </li>
 
-                            <li><a href="#"><i
-                                    class="fas fa-laptop"></i><span class="hide-menu"> System</span></a>
-                                <ul aria-expanded="false" class="collapse">
-                                    <li><a href="{{ url_for('systemtasks') }}"> Tasks</a></li>
-                                    <li><a href="{{ url_for('systemlogs') }}"> Logs</a></li>
-                                    <li><a href="{{ url_for('systemproviders') }}"> Providers</a></li>
-                                    <li><a href="{{ url_for('systemstatus') }}"> Status</a></li>
-                                    <li><a href="{{ url_for('systemreleases') }}"> Releases</a></li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </nav>
-                    <!-- End Sidebar navigation -->
-                </div>
-                <!-- End Sidebar scroll-->
-            </aside>
-            <!-- ============================================================== -->
-            <!-- End Left Sidebar - style you can find in sidebar.scss  -->
-            <!-- ============================================================== -->
-            <div class="page-wrapper">
-                <div class="container-fluid">
-                    {% block breadcrumb %}
-                        <!-- ============================================================== -->
-                        <!-- Bread crumb and right sidebar toggle -->
-                        <!-- ============================================================== -->
-                        <div id="buttons_bars" class="row page-titles buttons_bars">
-                            <div id="buttons_bar_left" class="col-md-5 col-8 align-self-center">
-                                {% block bcleft %}
-                                {% endblock bcleft %}
-                            </div>
-                            <div id="buttons_bar_right" class="col-md-7 col-4 align-self-center">
-                                {% block bcright %}
-                                {% endblock bcright %}
-                            </div>
+                        <li><a href="#"><i
+                                class="fas fa-laptop"></i><span class="hide-menu"> System</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                <li><a href="{{ url_for('systemtasks') }}"> Tasks</a></li>
+                                <li><a href="{{ url_for('systemlogs') }}"> Logs</a></li>
+                                <li><a href="{{ url_for('systemproviders') }}"> Providers</a></li>
+                                <li><a href="{{ url_for('systemstatus') }}"> Status</a></li>
+                                <li><a href="{{ url_for('systemreleases') }}"> Releases</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+                <!-- End Sidebar navigation -->
+            </div>
+            <!-- End Sidebar scroll-->
+        </aside>
+        <!-- ============================================================== -->
+        <!-- End Left Sidebar - style you can find in sidebar.scss  -->
+        <!-- ============================================================== -->
+        <div class="page-wrapper">
+            <div class="container-fluid">
+                {% block breadcrumb %}
+                    <!-- ============================================================== -->
+                    <!-- Bread crumb and right sidebar toggle -->
+                    <!-- ============================================================== -->
+                    <div id="buttons_bars" class="row page-titles buttons_bars">
+                        <div id="buttons_bar_left" class="col-8 align-self-center">
+                            {% block bcleft %}
+                            {% endblock bcleft %}
                         </div>
-                    {% endblock breadcrumb %}
-                    {% block body %}
+                        <div id="buttons_bar_right" class="col-4 align-self-center">
+                            {% block bcright %}
+                            {% endblock bcright %}
+                        </div>
+                    </div>
+                {% endblock breadcrumb %}
+                {% block body %}
 
-                    {% endblock body %}
-                </div>
-            </div>
-            <!-- ============================================================== -->
-            <!-- footer -->
-            <!-- ============================================================== -->
-        </div>
-        <!-- ============================================================== -->
-        <!-- End footer -->
-        <!-- ============================================================== -->
-
-        <div id="reconnect_overlay" class="overlay">
-            <div class="overlay-content">
-                <p id="loader_text" style="color: white;">Connection to Backend Lost.</p>
-                <button id="loader_button" class="btn btn-info" onclick="window.location.reload()">Reload</button>
+                {% endblock body %}
             </div>
         </div>
-    {% endblock page_body %}
-
-
-    {% block tail_js %}
-
         <!-- ============================================================== -->
-        <!-- All Jquery -->
+        <!-- footer -->
         <!-- ============================================================== -->
-        <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
-        <!-- Bootstrap tether Core JavaScript -->
-        <script src="{{ url_for('static',filename='plugins/popper/popper.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
-        <!-- slimscrollbar scrollbar JavaScript -->
-        <script src="{{ url_for('static',filename='js/jquery.slimscroll.js') }}"></script>
-        <!--Menu sidebar -->
-        <script src="{{ url_for('static',filename='js/sidebarmenu.js') }}"></script>
+    </div>
+    <!-- ============================================================== -->
+    <!-- End footer -->
+    <!-- ============================================================== -->
 
-        <!--stickey kit -->
-        <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
-        <!--Custom JavaScript -->
-        <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='datatables/dataTables.rowGroup.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='datatables/dataTables.select.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='datatables/dataTables.buttons.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='datatables-alteditor/dataTables.altEditor.free.js') }}"></script>
-        <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
-        <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
-        <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
-        <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
-        <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
+    <div id="reconnect_overlay" class="overlay">
+        <div class="overlay-content">
+            <p id="loader_text" style="color: white;">Connection to Backend Lost.</p>
+            <button id="loader_button" class="btn btn-info" onclick="window.location.reload()">Reload</button>
+        </div>
+    </div>
+{% endblock page_body %}
 
-        <script>
-            $(document).ready(function () {
-                BadgesAjax();
 
-                $('.table').on('draw.dt', function () {
-                    $('[data-toggle="tooltip"]').tooltip({html: true});
-                });
+{% block tail_js %}
 
-                events = io.connect({
-                    path: '{{ settings.general.base_url.rstrip('/') }}/socket.io',
-                    upgrade: false,
-                    reconnection: true,
-                    reconnectionDelay: 1000,
-                    reconnectionDelayMax : 3000,
-                    reconnectionAttempts: 3
-                });
+    <!-- ============================================================== -->
+    <!-- All Jquery -->
+    <!-- ============================================================== -->
+    <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
+    <!-- Bootstrap tether Core JavaScript -->
+    <script src="{{ url_for('static',filename='plugins/popper/popper.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/bootstrap/js/bootstrap.min.js') }}"></script>
+    <!-- slimscrollbar scrollbar JavaScript -->
+    <script src="{{ url_for('static',filename='js/jquery.slimscroll.js') }}"></script>
+    <!--Menu sidebar -->
+    <script src="{{ url_for('static',filename='js/sidebarmenu.js') }}"></script>
 
-                events.on('reconnect_failed', (reason) => {
-                    $('#reconnect_overlay').show();
-                });
+    <!--stickey kit -->
+    <script src="{{ url_for('static',filename='plugins/sticky-kit-master/dist/sticky-kit.min.js') }}"></script>
+    <!--Custom JavaScript -->
+    <script src="{{ url_for('static',filename='datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.rowGroup.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables/dataTables.buttons.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='plugins/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='datatables-alteditor/dataTables.altEditor.free.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
 
-                function BadgesAjax() {
-                    $.ajax({
-                        url: "{{url_for('api.badges')}}",
-                        async: true,
-                        success: function (data) {
-                            if (data['throttled_providers']) {
-                                $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>');
-                            }
-                            if (data['missing_episodes']) {
-                                $('#wanted').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['missing_episodes'] + '</div>');
-                            }
-                            if (data['missing_movies']) {
-                                $('#wanted').append('<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">' + data['missing_movies'] + '</div>');
-                            }
+    <script>
+        $(document).ready(function () {
+            BadgesAjax();
+            $(window).on('load resize', function () {
+                $('#buttons_bars').width($('.page-wrapper').width());
+            });
 
-                        },
-                        error: (function () {
-                            setTimeout(function () {
-                                setInterval(ping, 2000);
-                            }, 8000);
-                        })
+            $('.table').on('draw.dt', function () {
+                $('[data-toggle="tooltip"]').tooltip({html: true});
+            });
+
+            events = io.connect({
+                path: '{{ settings.general.base_url.rstrip('/') }}/socket.io',
+                upgrade: false,
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 3000,
+                reconnectionAttempts: 3
+            });
+
+            events.on('reconnect_failed', (reason) => {
+                $('#reconnect_overlay').show();
+            });
+
+            function BadgesAjax() {
+                $.ajax({
+                    url: "{{url_for('api.badges')}}",
+                    async: true,
+                    success: function (data) {
+                        if (data['throttled_providers']) {
+                            $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>');
+                        }
+                        if (data['missing_episodes']) {
+                            $('#wanted').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['missing_episodes'] + '</div>');
+                        }
+                        if (data['missing_movies']) {
+                            $('#wanted').append('<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">' + data['missing_movies'] + '</div>');
+                        }
+
+                    },
+                    error: (function () {
+                        setTimeout(function () {
+                            setInterval(ping, 2000);
+                        }, 8000);
                     })
-                }
+                })
+            }
 
-                $('#search').typeahead({
-                    display: 'name',
-                    debug: false,
-                    cancelButton: true,
-                    loadingAnimation: true,
-                    asyncResult: false,
-                    dynamic: true,
-                    delay: 300,
-                    source: {
-                        search: {
-                            ajax: function (query) {
-                                return {
-                                    url: '{{ url_for("api.search")}}',
-                                    type: 'GET',
-                                    data: {
-                                        query: query
-                                    }
+            $('#search').typeahead({
+                display: 'name',
+                debug: false,
+                cancelButton: true,
+                loadingAnimation: true,
+                asyncResult: false,
+                dynamic: true,
+                delay: 300,
+                source: {
+                    search: {
+                        ajax: function (query) {
+                            return {
+                                url: '{{ url_for("api.search")}}',
+                                type: 'GET',
+                                data: {
+                                    query: query
                                 }
                             }
                         }
-                    },
-                    callback: {
-                        onClick: function (node, a, item, event) {
-                            window.location.pathname = item.url;
-                        }
                     }
-                });
-
-                if ( $('#buttons_bar_left').children().length > 0  ||  $('#buttons_bar_right').children().length > 0 ) {
-                    $('#buttons_bars').show();
-                } else {
-                    $('#buttons_bars').hide();
-                    $('.page-wrapper').css('padding-top', '-=60');
+                },
+                callback: {
+                    onClick: function (node, a, item, event) {
+                        window.location.pathname = item.url;
+                    }
                 }
             });
 
-            {% if request.endpoint == 'login_page' %}
+            if ($('#buttons_bar_left').children().length > 0 || $('#buttons_bar_right').children().length > 0) {
+                $('#buttons_bars').show();
+            } else {
+                $('#buttons_bars').hide();
+                $('.page-wrapper').css('padding-top', '-=60');
+            }
+        });
+
+        {% if request.endpoint == 'login_page' %}
             // Apikey excluded from login_page
-            {% else %}
+        {% else %}
             // Add apikey to all AJAX requests.
             $.ajaxSetup({
                 data: {
@@ -394,45 +402,45 @@
                     originalOptions.data.append("apikey", "{{ settings.auth.apikey }}");
                 }
             });
-            {% endif %}
+        {% endif %}
 
-            $(window).on('beforeunload', function() {
-                events.close();
+        $(window).on('beforeunload', function () {
+            events.close();
+        });
+
+        $('#restart').on('click', function () {
+            $('#loader_button').prop("hidden", true);
+            $('#loader_text').text("Bazarr is restarting, please wait...");
+            $('#reconnect_overlay').show();
+            $.ajax({
+                url: "{{ url_for('api.restart') }}"
+            })
+            setTimeout(function () {
+                setInterval(ping, 2000);
+            }, 8000);
+        });
+
+        function ping() {
+            $.ajax({
+                url: window.location.href,
+                success: function () {
+                    window.location.reload(true);
+                }
             });
+        }
 
-            $('#restart').on('click', function() {
-                $('#loader_button').prop("hidden", true);
-                $('#loader_text').text("Bazarr is restarting, please wait...");
-                $('#reconnect_overlay').show();
-                $.ajax({
-                    url: "{{ url_for('api.restart') }}"
-                })
-                setTimeout(function () {
-                    setInterval(ping, 2000);
-                }, 8000);
-            });
-
-            function ping() {
-                $.ajax({
-                    url: window.location.href,
-                    success: function() {
-                        window.location.reload(true);
-                    }
-                });
-            }
-
-            $('#shutdown').on('click', function(){
-                document.open();
-                document.write('Bazarr has shutdown.');
-                document.close();
-                $.ajax({
-                    url: "{{ url_for('api.shutdown') }}",
-                    async: true
-                })
-            });
-        </script>
-    {% endblock tail_js %}
-    {% block tail %}
-    {% endblock tail %}
-    </body>
+        $('#shutdown').on('click', function () {
+            document.open();
+            document.write('Bazarr has shutdown.');
+            document.close();
+            $.ajax({
+                url: "{{ url_for('api.shutdown') }}",
+                async: true
+            })
+        });
+    </script>
+{% endblock tail_js %}
+{% block tail %}
+{% endblock tail %}
+</body>
 </html>

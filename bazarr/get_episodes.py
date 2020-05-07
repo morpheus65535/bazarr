@@ -161,8 +161,7 @@ def sync_episodes():
             event_stream.write(type='episode', action='insert', series=added_episode['sonarrSeriesId'],
                                episode=added_episode['sonarrEpisodeId'])
         else:
-            logging.debug('BAZARR unable to insert this episode into the database:',
-                          path_replace(added_episode['path']))
+            logging.debug('BAZARR unable to insert this episode into the database:{}'.format(path_replace(added_episode['path'])))
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):

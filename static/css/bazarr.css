@@ -33,7 +33,6 @@ body {
 .buttons_bars {
   position: fixed;
   top: 60px;
-  width: 100%;
   z-index: 19; }
 
 .topbar {
