@@ -8,6 +8,7 @@ import rarfile
 import zipfile
 
 from requests import Session
+from requests.exceptions import HTTPError
 from guessit import guessit
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
 from subliminal_patch.providers import Provider
@@ -303,11 +304,7 @@ class LegendasdivxProvider(Provider):
         res = self.session.get(subtitle.page_link)
         res.raise_for_status()
         if res:
-            if res.status_code in ['500', '503']:
-                raise ServiceUnavailable("Legendasdivx.pt :: 503 - Service Unavailable")
-            elif res.status_code == '403':
-                raise ParseResponseError("Legendasdivx.pt :: 403 - Forbidden")
-            elif 'limite' in res.text.lower(): # daily downloads limit reached
+            if 'limite' in res.text.lower(): # daily downloads limit reached
                 raise DownloadLimitReached("Legendasdivx.pt :: Download limit reached")
             elif 'bloqueado' in res.text.lower(): # blocked IP address 
                 raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
