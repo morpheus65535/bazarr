@@ -170,7 +170,7 @@ class LegendasdivxProvider(Provider):
             logger.error("Couldn't retrieve session ID, check your credentials")
             raise AuthenticationError("Please check your credentials.")
         except Exception as e:
-            if 'bloqueado' in res.text.lower(): # blocked IP address 
+            if (res and 'bloqueado' in res.text.lower()): # blocked IP address 
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
             logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
@@ -193,9 +193,9 @@ class LegendasdivxProvider(Provider):
         for _subbox in _allsubs:
             hits = 0
             for th in _subbox.findAll("th", {"class": "color2"}):
-                if th.string == 'Hits:':
-                    hits = int(th.parent.find("td").string)
-                if th.string == 'Idioma:':
+                if th.text == 'Hits:':
+                    hits = int(th.parent.find("td").text)
+                if th.text == 'Idioma:':
                     lang = th.parent.find("td").find("img").get('src')
                     if 'brazil' in lang.lower():
                         lang = Language.fromopensubtitles('pob')
@@ -209,13 +209,12 @@ class LegendasdivxProvider(Provider):
             download = _subbox.find("a", {"class": "sub_download"})
             
             # sometimes BSoup can't find 'a' tag and returns None. 
-            i = 0
-            while not (download): # must get it... trying again...
-                download = _subbox.find("a", {"class": "sub_download"})
-                i=+1
-                logger.debug("Try number {0} try!".format(str(i)))
-            dl = download.get('href')
-            logger.debug("Found subtitle on: %s" % self.download_link.format(link=dl))
+            try:
+                dl = download.get('href')
+                logger.debug("Found subtitle link on: {0}").format(self.download_link.format(link=dl))
+            except:
+                logger.debug("Couldn't find download link. Trying next...")
+                continue
 
             # get subtitle uploader
             sub_header = _subbox.find("div", {"class" :"sub_header"}) 
@@ -268,7 +267,7 @@ class LegendasdivxProvider(Provider):
         self.session.headers.update(self.headers.items())
         res = self.session.get(_searchurl.format(query=querytext))
 
-        if "A legenda não foi encontrada" in res.text:
+        if (res and "A legenda não foi encontrada" in res.text):
             logger.warning('%s not found', querytext)
             return []
 
@@ -281,12 +280,13 @@ class LegendasdivxProvider(Provider):
         
         #get number of pages bases on results found
         page_header = bsoup.find("div", {"class": "pager_bar"})
-        results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1)
+        results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1) if page_header else 0
+        logger.debug("Found %s subtitles" % str(results_found))
         num_pages = (int(results_found) // 10) + 1
         num_pages = min(MAX_PAGES, num_pages)
 
         if num_pages > 1:
-            for num_page in range(2, num_pages+2):
+            for num_page in range(2, num_pages+1):
                 _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
                 logger.debug("Moving to next page: %s" % _search_next)
                 res = self.session.get(_search_next)
@@ -305,6 +305,8 @@ class LegendasdivxProvider(Provider):
         if res:
             if res.status_code in ['500', '503']:
                 raise ServiceUnavailable("Legendasdivx.pt :: 503 - Service Unavailable")
+            elif res.status_code == '403':
+                raise ParseResponseError("Legendasdivx.pt :: 403 - Forbidden")
             elif 'limite' in res.text.lower(): # daily downloads limit reached
                 raise DownloadLimitReached("Legendasdivx.pt :: Download limit reached")
             elif 'bloqueado' in res.text.lower(): # blocked IP address 
