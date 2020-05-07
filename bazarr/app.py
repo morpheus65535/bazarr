@@ -7,7 +7,7 @@ import os
 from get_args import args
 from config import base_url
 
-socketio = SocketIO()
+socketio = SocketIO(async_mode='threading')
 
 
 def create_app():
