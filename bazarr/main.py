@@ -18,6 +18,7 @@ import warnings
 import queueconfig
 import apprise
 import requests
+import calendar
 
 
 from get_args import args
@@ -366,7 +367,8 @@ def settingsnotifications():
 @app.route('/settings/scheduler/')
 @login_required
 def settingsscheduler():
-    return render_template('settingsscheduler.html')
+    days_of_the_week = list(enumerate(calendar.day_name))
+    return render_template('settingsscheduler.html', days=days_of_the_week)
 
 
 @app.route('/check_update')

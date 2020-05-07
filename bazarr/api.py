@@ -289,16 +289,21 @@ class Series(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isdir(mapped_path)})
 
+            only_monitored_where_clause = ''
+            if settings.sonarr.getboolean('only_monitored'):
+                only_monitored_where_clause = " AND table_episodes.monitored == 'True'"
+
             # Add missing subtitles episode count
             item.update({"episodeMissingCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
                                                                  "sonarrSeriesId=? AND missing_subtitles is not null "
-                                                                 "AND missing_subtitles != '[]'",
-                                                                 (item['sonarrSeriesId'],), only_one=True)['count']})
+                                                                 "AND missing_subtitles != '[]'" +
+                                                                 only_monitored_where_clause, (item['sonarrSeriesId'],),
+                                                                 only_one=True)['count']})
 
             # Add episode count
             item.update({"episodeFileCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
-                                                              "sonarrSeriesId=?", (item['sonarrSeriesId'],),
-                                                              only_one=True)['count']})
+                                                              "sonarrSeriesId=?" + only_monitored_where_clause,
+                                                              (item['sonarrSeriesId'],), only_one=True)['count']})
 
             # Add the series desired subtitles language code2
             try:

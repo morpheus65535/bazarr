@@ -51,7 +51,8 @@ defaults = {
         'days_to_upgrade_subs': '7',
         'upgrade_manual': 'True',
         'anti_captcha_provider': 'None',
-        'wanted_search_frequency': '3'
+        'wanted_search_frequency': '3',
+        'wanted_search_frequency_movie': '3'
     },
     'auth': {
         'type': 'None',

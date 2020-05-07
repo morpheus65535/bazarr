@@ -71,7 +71,128 @@
                     </select>
                 </div>
             </div>
+            <br>
 
+            <h4>Disk Indexing</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Update all Episode Subtitles from disk</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-sonarr-full_update" name="settings-sonarr-full_update">
+                        <option value="Manually">Manually</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                    </select>
+                </div>
+            </div>
+            <div id="settings-sonarr-full_update_day-div" class="row">
+                <div class="col-sm-4 text-right">
+                    <b>Day of the week</b>
+                </div>
+                <div class="form-group col-sm-3">
+                    <select class="form-control selectpicker" id="settings-sonarr-full_update_day" name="settings-sonarr-full_update_day">
+                        {% for idx, i in days %}
+                        <option value="{{idx}}">{{i}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div id="settings-sonarr-full_update_hour-div" class="row">
+                <div class="col-sm-4 text-right">
+                    <b>Hour of the day</b>
+                </div>
+                <div class="form-group col-sm-3">
+                    <select class="form-control selectpicker" id="settings-sonarr-full_update_hour" name="settings-sonarr-full_update_hour">
+                        {% for i in range(24) %}
+                        <option value="{{i}}">{{i}}:00</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Update all Movie Subtitles from disk</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-radarr-full_update" name="settings-radarr-full_update">
+                        <option value="Manually">Manually</option>
+                        <option value="Daily">Daily</option>
+                        <option value="Weekly">Weekly</option>
+                    </select>
+                </div>
+            </div>
+            <div id="settings-radarr-full_update_day-div" class="row">
+                <div class="col-sm-4 text-right">
+                    <b>Day of the week</b>
+                </div>
+                <div class="form-group col-sm-3">
+                    <select class="form-control selectpicker" id="settings-radarr-full_update_day" name="settings-radarr-full_update_day">
+                        {% for idx, i in days %}
+                        <option value="{{idx}}">{{i}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div id="settings-radarr-full_update_hour-div" class="row">
+                <div class="col-sm-4 text-right">
+                    <b>Hour of the day</b>
+                </div>
+                <div class="form-group col-sm-3">
+                    <select class="form-control selectpicker" id="settings-radarr-full_update_hour" name="settings-radarr-full_update_hour">
+                        {% for i in range(24) %}
+                        <option value="{{i}}">{{i}}:00</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <br>
+
+            <h4>Search and Upgrade Subtitles</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Search for Missing Series Subtitles</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-wanted_search_frequency" name="settings-general-wanted_search_frequency">
+                        <option value="3">3 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="12">12 hours</option>
+                        <option value="24">24 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Search for Missing Movies Subtitles</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-wanted_search_frequency_movie" name="settings-general-wanted_search_frequency_movie">
+                        <option value="3">3 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="12">12 hours</option>
+                        <option value="24">24 hours</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Upgrade previously downloaded Subtitles</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-upgrade_frequency" name="settings-general-upgrade_frequency">
+                        <option value="1">1 hours</option>
+                        <option value="3">3 hours</option>
+                        <option value="6">6 hours</option>
+                        <option value="12">12 hours</option>
+                        <option value="24">24 hours</option>
+                    </select>
+                </div>
+            </div>
+            <br>
         </form>
     </div>
 {% endblock body %}
@@ -89,11 +210,44 @@
 
             // Hide checkmark over save button
             $('#save_button_checkmark').hide();
+            $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+
+            // Hide *_div on Select input changed to None
+            $('#settings-sonarr-full_update').on('change', function() {
+                $('#settings-sonarr-full_update_day-div').hide();
+                    $('#settings-sonarr-full_update_hour-div').hide();
+                if ($(this).val() === 'Daily') {
+                    $('#settings-sonarr-full_update_hour-div').show();
+                } else if ($(this).val() === 'Weekly') {
+                    $('#settings-sonarr-full_update_day-div').show();
+                    $('#settings-sonarr-full_update_hour-div').show();
+                }
+            });
+
+            $('#settings-radarr-full_update').on('change', function() {
+                $('#settings-radarr-full_update_day-div').hide();
+                    $('#settings-radarr-full_update_hour-div').hide();
+                if ($(this).val() === 'Daily') {
+                    $('#settings-radarr-full_update_hour-div').show();
+                } else if ($(this).val() === 'Weekly') {
+                    $('#settings-radarr-full_update_day-div').show();
+                    $('#settings-radarr-full_update_hour-div').show();
+                }
+            });
 
             // Set Select input values
             $('#settings-sonarr-series_sync').val('{{settings.sonarr.series_sync}}').trigger('change');
             $('#settings-sonarr-episodes_sync').val('{{settings.sonarr.episodes_sync}}').trigger('change');
             $('#settings-radarr-movies_sync').val('{{settings.radarr.movies_sync}}').trigger('change');
+            $('#settings-sonarr-full_update').val('{{settings.sonarr.full_update}}').trigger('change');
+            $('#settings-sonarr-full_update_day').val('{{settings.sonarr.full_update_day}}').trigger('change');
+            $('#settings-sonarr-full_update_hour').val('{{settings.sonarr.full_update_hour}}').trigger('change');
+            $('#settings-radarr-full_update').val('{{settings.radarr.full_update}}').trigger('change');
+            $('#settings-radarr-full_update_day').val('{{settings.radarr.full_update_day}}').trigger('change');
+            $('#settings-radarr-full_update_hour').val('{{settings.radarr.full_update_hour}}').trigger('change');
+            $('#settings-general-wanted_search_frequency').val('{{settings.general.wanted_search_frequency}}').trigger('change');
+            $('#settings-general-wanted_search_frequency_movie').val('{{settings.general.wanted_search_frequency}}').trigger('change');
+            $('#settings-general-upgrade_frequency').val('{{settings.general.upgrade_frequency}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
 
             $('#save_button').on('click', function() {
@@ -113,6 +267,7 @@
                     complete: function () {
                         $('#save_button_checkmark').show();
                         form_changed = false;
+                        $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
                         setTimeout(
                             function()
                             {
@@ -125,6 +280,7 @@
             // monitor changes to the settings_form
             $('#settings_form').on('change', function() {
                 form_changed = true;
+                $('#save_button').prop('disabled', false).css('cursor', 'auto');
             })
         });
     </script>

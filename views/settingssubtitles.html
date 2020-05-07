@@ -307,6 +307,7 @@
 
             // Hide checkmark over save button
             $('#save_button_checkmark').hide();
+            $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
 
             // Hide *_div on Select input changed to None
             $('#settings-general-subfolder').on('change', function() {
@@ -395,6 +396,7 @@
                     complete: function () {
                         $('#save_button_checkmark').show();
                         form_changed = false;
+                        $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
                         setTimeout(
                             function()
                             {
@@ -407,6 +409,7 @@
             // monitor changes to the settings_form
             $('#settings_form').on('change', function() {
                 form_changed = true;
+                $('#save_button').prop('disabled', false).css('cursor', 'auto');
             })
         });
     </script>
