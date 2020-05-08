@@ -44,6 +44,8 @@ PROVIDER_THROTTLE_MAP = {
     "addic7ed": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
+
     },
     "titulky": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
