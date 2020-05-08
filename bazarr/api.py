@@ -1043,7 +1043,9 @@ class HistorySeries(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history", only_one=True)['count']
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
+                                     "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
+                                     "table_episodes.title is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_history.timestamp, "
@@ -1123,13 +1125,15 @@ class HistoryMovies(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie", only_one=True)['count']
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies on "
+                                     "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
+                                     "is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
                                 "table_history_movie.description, table_history_movie.radarrId, "
                                 "table_history_movie.video_path, table_history_movie.language, "
                                 "table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on "
-                                "table_movies.radarrId = table_history_movie.radarrId ORDER BY timestamp DESC LIMIT ? "
-                                "OFFSET ?", (length, start))
+                                "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
+                                "is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Mark movies as upgradable or not
