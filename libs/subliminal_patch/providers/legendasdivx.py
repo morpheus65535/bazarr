@@ -11,7 +11,7 @@ from requests import Session
 from requests.exceptions import HTTPError
 from guessit import guessit
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
-from subliminal_patch.exceptions import TooManyRequests
+from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
 from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
 from subliminal_patch.subtitle import Subtitle
@@ -20,6 +20,9 @@ from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, guess_matc
 from subzero.language import Language
 from subliminal_patch.score import get_scores
 from subliminal.utils import sanitize, sanitize_release_group
+from dogpile.cache.api import NO_VALUE
+from subliminal.cache import region
+from subliminal_patch.http import RetryingCFSession
 
 logger = logging.getLogger(__name__)
 
@@ -132,64 +135,73 @@ class LegendasdivxProvider(Provider):
     def __init__(self, username, password):
         # make sure login credentials are configured.
         if any((username, password)) and not all((username, password)):
-            raise ConfigurationError('Username and password must be specified')
+            raise ConfigurationError('Legendasdivx.pt :: Username and password must be specified')
         self.username = username
         self.password = password
-        self.logged_in = False
 
     def initialize(self):
-        self.session = Session()
-        self.session.headers.update(self.headers)
-        self.login()
+        logger.info("Legendasdivx.pt :: Creating session for requests")
+        #self.session = Session()
+        self.session = RetryingCFSession()
+        # re-use PHP Session if present
+        prev_cookies = region.get("legendasdivx_cookies2")
+        if prev_cookies != NO_VALUE:
+            logger.debug("Legendasdivx.pt :: Re-using previous legendasdivx cookies: %s", prev_cookies)
+            self.session.cookies.update(prev_cookies)
+        # Login if session has expired
+        else:
+            logger.debug("Legendasdivx.pt :: Session cookies not found!")
+            self.session.headers.update(self.headers)
+            self.login()
 
     def terminate(self):
-        self.logout()
+        # session close
         self.session.close()
 
     def login(self):
-        logger.info('Logging in')
-        
-        res = self.session.get(self.loginpage)
-        bsoup = ParserBeautifulSoup(res.content, ['lxml'])
-        
-        _allinputs = bsoup.findAll('input')
-        data = {}
-        # necessary to set 'sid' for POST request
-        for field in _allinputs:
-            data[field.get('name')] = field.get('value')
-        
-        data['username'] = self.username
-        data['password'] = self.password
-
-        res = self.session.post(self.loginpage, data)
-        
-        if (res and 'bloqueado' in res.text.lower()): # blocked IP address 
-            logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-            raise TooManyRequests("Legendasdivx.pt :: Your IP is blocked on this server.")
-
-        #make sure we're logged in
+        logger.info('Legendasdivx.pt :: Logging in')
         try:
+            res = self.session.get(self.loginpage)
             res.raise_for_status()
-            logger.debug('Logged in successfully: PHPSESSID: %s' %
+            bsoup = ParserBeautifulSoup(res.content, ['lxml'])
+            
+            _allinputs = bsoup.findAll('input')
+            data = {}
+            # necessary to set 'sid' for POST request
+            for field in _allinputs:
+                data[field.get('name')] = field.get('value')
+            
+            data['username'] = self.username
+            data['password'] = self.password
+    
+            res = self.session.post(self.loginpage, data)
+            res.raise_for_status()
+            #make sure we're logged in
+            logger.debug('Legendasdivx.pt :: Logged in successfully: PHPSESSID: %s' %
                          self.session.cookies.get_dict()['PHPSESSID'])
-            self.logged_in = True
+            cj = self.session.cookies.copy()
+            store_cks = ("PHPSESSID", "phpbb3_2z8zs_sid", "phpbb3_2z8zs_k", "phpbb3_2z8zs_u", "lang")
+            for cn in iter(self.session.cookies.keys()):
+                if cn not in store_cks:
+                    del cj[cn]
+            #store session cookies on cache
+            logger.debug("Legendasdivx.pt :: Storing legendasdivx session cookies: %r", cj)
+            region.set("legendasdivx_cookies2", cj)
+
         except KeyError:
-            logger.error("Couldn't retrieve session ID, check your credentials")
-            raise AuthenticationError("Please check your credentials.")
+            logger.error("Legendasdivx.pt :: Couldn't get session ID, check your credentials")
+            raise AuthenticationError("Legendasdivx.pt :: Couldn't get session ID, check your credentials")
         except HTTPError as e:
-            logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
-            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
+            if res.status_code == "403":
+                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+            else:
+                logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
+                raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
         except Exception as e:
             logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
 
-    def logout(self):
-        if self.logged_in:
-            logger.info('Legendasdivx:: Logging out')
-            r = self.session.get(self.logoutpage, timeout=10)
-            r.raise_for_status()
-            logger.debug('Legendasdivx :: Logged out')
-            self.logged_in = False
 
     def _process_page(self, video, bsoup, video_filename):
 
@@ -217,10 +229,10 @@ class LegendasdivxProvider(Provider):
             
             # sometimes BSoup can't find 'a' tag and returns None. 
             try:
-                dl = download.get('href')
-                logger.debug("Found subtitle link on: {0}").format(self.download_link.format(link=dl))
+                download_link = self.download_link.format(link=download.get('href'))
+                logger.debug("Legendasdivx.pt :: Found subtitle link on: %s " % download_link)
             except:
-                logger.debug("Couldn't find download link. Trying next...")
+                logger.debug("Legendasdivx.pt :: Couldn't find download link. Trying next...")
                 continue
 
             # get subtitle uploader
@@ -230,7 +242,7 @@ class LegendasdivxProvider(Provider):
             exact_match = False
             if video.name.lower() in description.lower():
                 exact_match = True
-            data = {'link': self.site + '/modules.php' + download.get('href'),
+            data = {'link': download_link,
                     'exact_match': exact_match,
                     'hits': hits,
                     'uploader': uploader,
@@ -275,27 +287,30 @@ class LegendasdivxProvider(Provider):
         res = self.session.get(_searchurl.format(query=querytext))
 
         if (res and "A legenda não foi encontrada" in res.text):
-            logger.warning('%s not found', querytext)
+            logger.warning('Legendasdivx.pt :: %s not found', querytext)
             return []
 
         bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
-        subtitles = self._process_page(video, bsoup, video_filename)
 
         # search for more than 10 results (legendasdivx uses pagination)
         # don't throttle - maximum results = 6 * 10
         MAX_PAGES = 6
-        
+
         #get number of pages bases on results found
         page_header = bsoup.find("div", {"class": "pager_bar"})
         results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1) if page_header else 0
-        logger.debug("Found %s subtitles" % str(results_found))
+        logger.debug("Legendasdivx.pt :: Found %s subtitles" % str(results_found))
         num_pages = (int(results_found) // 10) + 1
         num_pages = min(MAX_PAGES, num_pages)
 
+        # process first page
+        subtitles = self._process_page(video, bsoup, video_filename)
+
+        # more pages?
         if num_pages > 1:
             for num_page in range(2, num_pages+1):
                 _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
-                logger.debug("Moving to next page: %s" % _search_next)
+                logger.debug("Legendasdivx.pt :: Moving on to next page: %s" % _search_next)
                 res = self.session.get(_search_next)
                 next_page = ParserBeautifulSoup(res.content, ['html.parser'])
                 subs = self._process_page(video, next_page, video_filename)
@@ -315,15 +330,16 @@ class LegendasdivxProvider(Provider):
                 if 'limite' in res.text.lower(): # daily downloads limit reached
                     logger.error("LegendasDivx.pt :: Daily download limit reached!")
                     raise DownloadLimitReached("Legendasdivx.pt :: Daily download limit reached!")
-                elif 'bloqueado' in res.text.lower(): # blocked IP address 
-                    logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-                    raise TooManyRequests("LegendasDivx.pt :: Your IP is blocked on this server.")
             except HTTPError as e:
-                logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
-                raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
+                if res.status_code == "403":
+                    logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                    raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+                else:
+                    logger.error("Legendasdivx.pt :: HTTP Error %s" % e)
+                    raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s" % e)
             except Exception as e:
-                logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
-                raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
+                logger.error("LegendasDivx.pt :: Uncaught error: %r" % e)
+                raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % e)
 
             archive = self._get_archive(res.content)
             # extract the subtitle

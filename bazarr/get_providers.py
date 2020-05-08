@@ -8,9 +8,21 @@ import time
 
 from get_args import args
 from config import settings
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
+
+def time_until_end_of_day(dt=None):
+    # type: (datetime.datetime) -> datetime.timedelta
+    """
+    Get timedelta until end of day on the datetime passed, or current time.
+    """
+    if dt is None:
+        dt = datetime.datetime.now()
+    tomorrow = dt + datetime.timedelta(days=1)
+    return datetime.datetime.combine(tomorrow, datetime.time.min) - dt
+
+hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError)
@@ -39,7 +51,7 @@ PROVIDER_THROTTLE_MAP = {
     "legendasdivx": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
-        ParseResponseError: (datetime.timedelta(hours=1), "1 hours"),
+        IPAddressBlocked: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     }
 }
 
