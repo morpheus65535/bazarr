@@ -8,6 +8,7 @@ import time
 
 from get_args import args
 from config import settings
+from websocket_handler import event_stream
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
@@ -234,6 +235,8 @@ def update_throttled_provider():
         if changed:
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
                 settings.write(handle)
+
+        event_stream.write(type='badges')
 
 
 def list_throttled_providers():

@@ -194,10 +194,12 @@
                                 class="hide-menu"> Wanted</span></a>
                             <ul aria-expanded="false" class="collapse">
                                 {% if settings.general.getboolean('use_sonarr') %}
-                                    <li><a href="{{ url_for('wantedseries') }}"> Series</a></li>
+                                    <li>
+                                        <a href="{{ url_for('wantedseries') }}"> Series <span id="wanted_series_badge"></span></a>
+                                    </li>
                                 {% endif %}
                                 {% if settings.general.getboolean('use_radarr') %}
-                                    <li><a href="{{ url_for('wantedmovies') }}"> Movies</a></li>
+                                    <li><a href="{{ url_for('wantedmovies') }}"> Movies <span id="wanted_movies_badge"></span></a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -221,7 +223,7 @@
                             <ul aria-expanded="false" class="collapse">
                                 <li><a href="{{ url_for('systemtasks') }}"> Tasks</a></li>
                                 <li><a href="{{ url_for('systemlogs') }}"> Logs</a></li>
-                                <li><a href="{{ url_for('systemproviders') }}"> Providers</a></li>
+                                <li><a href="{{ url_for('systemproviders') }}"> Providers <span id="throttled_providers_count"></span></a></li>
                                 <li><a href="{{ url_for('systemstatus') }}"> Status</a></li>
                                 <li><a href="{{ url_for('systemreleases') }}"> Releases</a></li>
                             </ul>
@@ -328,19 +330,32 @@
                 $('#reconnect_overlay').show();
             });
 
+            events.on('event', function (event) {
+                var event_json_badges = JSON.parse(event);
+                if (event_json_badges.type === 'badges') {
+                    BadgesAjax();
+                }
+            });
+
             function BadgesAjax() {
                 $.ajax({
                     url: "{{url_for('api.badges')}}",
                     async: true,
                     success: function (data) {
                         if (data['throttled_providers']) {
-                            $('#throttled_providers_count').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['throttled_providers'] + '</div>');
+                            $('#throttled_providers_count').html('<span class="badge badge-secondary">' + data['throttled_providers'] + '</span>');
+                        } else {
+                            $('#throttled_providers_count').html('');
                         }
                         if (data['missing_episodes']) {
-                            $('#wanted').append('<div class="floating ui tiny yellow label" style="left:90% !important;top:0.5em !important;">' + data['missing_episodes'] + '</div>');
+                            $('#wanted_series_badge').html('<span class="badge badge-secondary">' + data['missing_episodes'] + '</span>');
+                        } else {
+                            $('#wanted_series_badge').html('');
                         }
                         if (data['missing_movies']) {
-                            $('#wanted').append('<div id="wanted_movies" class="floating ui tiny green label" style="left:90% !important;top:3em !important;">' + data['missing_movies'] + '</div>');
+                            $('#wanted_movies_badge').html('<span class="badge badge-secondary">' + data['missing_movies'] + '</span>');
+                        } else {
+                            $('#wanted_movies_badge').html('');
                         }
 
                     },
