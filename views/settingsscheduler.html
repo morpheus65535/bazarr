@@ -246,12 +246,13 @@
             $('#settings-radarr-full_update_day').val('{{settings.radarr.full_update_day}}').trigger('change');
             $('#settings-radarr-full_update_hour').val('{{settings.radarr.full_update_hour}}').trigger('change');
             $('#settings-general-wanted_search_frequency').val('{{settings.general.wanted_search_frequency}}').trigger('change');
-            $('#settings-general-wanted_search_frequency_movie').val('{{settings.general.wanted_search_frequency}}').trigger('change');
+            $('#settings-general-wanted_search_frequency_movie').val('{{settings.general.wanted_search_frequency_movie}}').trigger('change');
             $('#settings-general-upgrade_frequency').val('{{settings.general.upgrade_frequency}}').trigger('change');
             $('.selectpicker').selectpicker('refresh')
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
+                formdata.append('update_schedule', 'true');
 
                 // Make sure all checkbox input are sent with true/false value
                 $('input[type=checkbox]').each(function () {

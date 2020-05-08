@@ -157,6 +157,12 @@ base_url = settings.general.base_url
 
 def save_settings(settings_items):
     from database import database
+
+    configure_debug = False
+    configure_captcha = False
+    update_schedule = False
+    configure_proxy = False
+
     for key, value in settings_items:
         # Intercept database stored settings
         if key == 'enabled_languages':
@@ -184,12 +190,40 @@ def save_settings(settings_items):
         if key == 'settings-auth-password':
             value = hashlib.md5(value.encode('utf-8')).hexdigest()
 
+        if key == 'settings-general-debug':
+            configure_debug = True
+
+        if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
+                   'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
+            configure_captcha = True
+
+        if key == 'update_schedule':
+            update_schedule = True
+
+        if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
+                   'settings-proxy-password']:
+            configure_proxy = True
+
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
+    # Reconfigure Bazarr to reflect changes
+    if configure_debug:
+        from logger import configure_logging
+        configure_logging(settings.general.getboolean('debug') or args.debug)
+
+    if configure_captcha:
+        configure_captcha_func()
+
+    if update_schedule:
+        from scheduler import update_configurable_tasks
+        update_configurable_tasks()
+
+    if configure_proxy:
+        configure_proxy_func()
 
 
 def url_sonarr():
@@ -253,3 +287,28 @@ def url_radarr_short():
         settings.radarr.base_url = settings.radarr.base_url[:-1]
 
     return protocol_radarr + "://" + settings.radarr.ip + ":" + settings.radarr.port
+
+
+def configure_captcha_func():
+    # set anti-captcha provider and key
+    if settings.general.anti_captcha_provider == 'anti-captcha' and settings.anticaptcha.anti_captcha_key != "":
+        os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(settings.anticaptcha.anti_captcha_key)
+    elif settings.general.anti_captcha_provider == 'death-by-captcha' and settings.deathbycaptcha.username != "" and \
+            settings.deathbycaptcha.password != "":
+        os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(':'.join(
+            {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
+    else:
+        os.environ["ANTICAPTCHA_CLASS"] = ''
+
+def configure_proxy_func():
+    if settings.proxy.type != 'None':
+        if settings.proxy.username != '' and settings.proxy.password != '':
+            proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + \
+                    settings.proxy.url + ':' + settings.proxy.port
+        else:
+            proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
+        os.environ['HTTP_PROXY'] = str(proxy)
+        os.environ['HTTPS_PROXY'] = str(proxy)
+        os.environ['NO_PROXY'] = str(settings.proxy.exclude)

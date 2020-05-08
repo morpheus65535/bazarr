@@ -47,14 +47,14 @@ class Scheduler:
         self.aps_scheduler.add_listener(task_listener_remove, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
         # configure all tasks
-        self.__sonarr_update_task()
-        self.__radarr_update_task()
         self.__cache_cleanup_task()
         self.update_configurable_tasks()
 
         self.aps_scheduler.start()
 
     def update_configurable_tasks(self):
+        self.__sonarr_update_task()
+        self.__radarr_update_task()
         self.__sonarr_full_update_task()
         self.__radarr_full_update_task()
         self.__update_bazarr_task()
@@ -142,17 +142,20 @@ class Scheduler:
     def __sonarr_update_task(self):
         if settings.general.getboolean('use_sonarr'):
             self.aps_scheduler.add_job(
-                update_series, IntervalTrigger(minutes=1), max_instances=1, coalesce=True, misfire_grace_time=15,
-                id='update_series', name='Update Series list from Sonarr')
+                update_series, IntervalTrigger(minutes=int(settings.sonarr.series_sync)), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='update_series', name='Update Series list from Sonarr',
+                replace_existing=True)
             self.aps_scheduler.add_job(
-                sync_episodes, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15,
-                id='sync_episodes', name='Sync episodes with Sonarr')
+                sync_episodes, IntervalTrigger(minutes=int(settings.sonarr.episodes_sync)), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='sync_episodes', name='Sync episodes with Sonarr',
+                replace_existing=True)
 
     def __radarr_update_task(self):
         if settings.general.getboolean('use_radarr'):
             self.aps_scheduler.add_job(
-                update_movies, IntervalTrigger(minutes=5), max_instances=1, coalesce=True, misfire_grace_time=15,
-                id='update_movies', name='Update Movie list from Radarr')
+                update_movies, IntervalTrigger(minutes=int(settings.radarr.movies_sync)), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='update_movies', name='Update Movie list from Radarr',
+                replace_existing=True)
 
     def __cache_cleanup_task(self):
         self.aps_scheduler.add_job(cache_maintenance, IntervalTrigger(hours=24), max_instances=1, coalesce=True,
@@ -228,7 +231,7 @@ class Scheduler:
                 name='Search for wanted Series Subtitles', replace_existing=True)
         if settings.general.getboolean('use_radarr'):
             self.aps_scheduler.add_job(
-                wanted_search_missing_subtitles_movies, IntervalTrigger(hours=int(settings.general.wanted_search_frequency)),
+                wanted_search_missing_subtitles_movies, IntervalTrigger(hours=int(settings.general.wanted_search_frequency_movie)),
                 max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for wanted Movies Subtitles', replace_existing=True)
 

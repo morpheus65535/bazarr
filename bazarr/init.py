@@ -5,7 +5,7 @@ import time
 import rarfile
 
 from cork import Cork
-from config import settings
+from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
 from helper import create_path_mapping_dict
@@ -18,15 +18,7 @@ import datetime
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 
 # set anti-captcha provider and key
-if settings.general.anti_captcha_provider == 'anti-captcha' and settings.anticaptcha.anti_captcha_key != "":
-    os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(settings.anticaptcha.anti_captcha_key)
-elif settings.general.anti_captcha_provider == 'death-by-captcha' and settings.deathbycaptcha.username != "" and settings.deathbycaptcha.password != "":
-    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(':'.join(
-        {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
-else:
-    os.environ["ANTICAPTCHA_CLASS"] = ''
+configure_captcha_func()
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):

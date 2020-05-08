@@ -11,11 +11,9 @@ import sys
 import libs
 import io
 
-import pretty
 import ast
 import hashlib
 import warnings
-import queueconfig
 import apprise
 import requests
 import calendar
@@ -23,7 +21,7 @@ import calendar
 
 from get_args import args
 from logger import empty_log
-from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url
+from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url, configure_proxy_func
 
 from init import *
 import logging
@@ -62,15 +60,7 @@ scheduler = Scheduler()
 if args.release_update:
     check_and_apply_update()
 
-if settings.proxy.type != 'None':
-    if settings.proxy.username != '' and settings.proxy.password != '':
-        proxy = settings.proxy.type + '://' + settings.proxy.username + ':' + settings.proxy.password + '@' + \
-                settings.proxy.url + ':' + settings.proxy.port
-    else:
-        proxy = settings.proxy.type + '://' + settings.proxy.url + ':' + settings.proxy.port
-    os.environ['HTTP_PROXY'] = str(proxy)
-    os.environ['HTTPS_PROXY'] = str(proxy)
-    os.environ['NO_PROXY'] = str(settings.proxy.exclude)
+configure_proxy_func()
 
 # Reset restart required warning on start
 database.execute("UPDATE system SET configured='0', updated='0'")
