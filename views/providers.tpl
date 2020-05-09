@@ -265,6 +265,24 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="middle aligned row">
+                                <div class="right aligned six wide column">
+                                    <label>Skip wrong FPS</label>
+                                </div>
+                                <div class="one wide column">
+                                    <div id="settings_legendasdivx_skip_wrong_fps" class="ui toggle checkbox" data-ldfps={{settings.legendasdivx.getboolean('skip_wrong_fps')}}>
+                                        <input type="checkbox" name="settings_legendasdivx_skip_wrong_fps">
+                                        <label></label>
+                                    </div>
+                                </div>
+                                <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Skip Subtitles with a mismatched FPS value; might lead to more results when disabled but also to more false-positives." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="middle aligned row">
@@ -483,27 +501,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>RegieLive</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="regielive" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Romanian Subtitles Provider." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="regielive_option" class="ui grid container">
-
-                        </div>
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>Subdivx</label>
                             </div>
                             <div class="one wide column">
@@ -686,6 +683,28 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
+                                <label>SubZ</label>
+                            </div>
+                            <div class="one wide column">
+                                <div id="subz" class="ui toggle checkbox provider">
+                                    <input type="checkbox">
+                                    <label></label>
+                                </div>
+                            </div>
+                            <div class="collapsed column">
+                                <div class="collapsed center aligned column">
+                                    <div class="ui basic icon" data-tooltip="Greek Subtitles Provider." data-inverted="">
+                                        <i class="help circle large icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="subz_option" class="ui grid container">
+
+                        </div>
+
+                        <div class="middle aligned row">
+                            <div class="right aligned four wide column">
                                 <label>Subtitulamos.tv</label>
                             </div>
                             <div class="one wide column">
@@ -733,7 +752,7 @@
                             </div>
                         </div>
                         <div id="titlovi_option" class="ui grid container">
-                        	<div class="middle aligned row">
+                            <div class="middle aligned row">
                                 <div class="right aligned six wide column">
                                     <label>Username</label>
                                 </div>
@@ -757,28 +776,6 @@
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
-                                <label>Titrari.ro</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="titrari" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Romanian Subtitles Provider." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                     </div>
-                                 </div>
-                             </div>
-                        </div>
-                        <div id="titrari_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
                                 <label>TVSubtitles</label>
                             </div>
                             <div class="one wide column">
@@ -789,28 +786,6 @@
                             </div>
                         </div>
                         <div id="tvsubtitles_option" class="ui grid container">
-
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Wizdom</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="wizdom" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Wizdom.xyz Subtitles Provider." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="wizdom_option" class="ui grid container">
 
                         </div>
 
@@ -833,7 +808,7 @@
                             </div>
                         </div>
                         <div id="xsubs_option" class="ui grid container">
-                        	<div class="middle aligned row">
+                            <div class="middle aligned row">
                                 <div class="right aligned six wide column">
                                     <label>Username</label>
                                 </div>
@@ -853,28 +828,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="middle aligned row">
-                            <div class="right aligned four wide column">
-                                <label>Yavka.net</label>
-                            </div>
-                            <div class="one wide column">
-                                <div id="yavkanet" class="ui toggle checkbox provider">
-                                    <input type="checkbox">
-                                    <label></label>
-                                </div>
-                            </div>
-                            <div class="collapsed column">
-                                <div class="collapsed center aligned column">
-                                    <div class="ui basic icon" data-tooltip="Bulgarian (mostly) Subtitles Provider." data-inverted="">
-                                        <i class="help circle large icon"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="yavkanet_option" class="ui grid container">
-
                         </div>
 
                         <div class="middle aligned row">
@@ -942,6 +895,12 @@
                         $("#settings_opensubtitles_skip_wrong_fps").checkbox('check');
                     } else {
                         $("#settings_opensubtitles_skip_wrong_fps").checkbox('uncheck');
+                    }
+
+                    if ($('#settings_legendasdivx_skip_wrong_fps').data("ldfps") === "True") {
+                        $("#settings_legendasdivx_skip_wrong_fps").checkbox('check');
+                    } else {
+                        $("#settings_legendasdivx_skip_wrong_fps").checkbox('uncheck');
                     }
 
                     $('#settings_providers').dropdown('clear');

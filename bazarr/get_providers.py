@@ -135,6 +135,7 @@ def get_providers_auth():
                      },
         'legendasdivx': {'username': settings.legendasdivx.username,
                        'password': settings.legendasdivx.password,
+                       'skip_wrong_fps': settings.legendasdivx.getboolean('skip_wrong_fps'),
                        },
         'legendastv': {'username': settings.legendastv.username,
                        'password': settings.legendastv.password,
