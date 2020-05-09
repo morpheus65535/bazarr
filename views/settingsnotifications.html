@@ -95,6 +95,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" id="test_button" class="btn btn-secondary">Test</button>
                         <button type="submit" id="edit_save_button" class="btn btn-info">Ok</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
@@ -209,6 +210,23 @@
                                 $('#save_button_checkmark').hide();
                             }, 2000);
                     }
+                });
+            });
+
+            $('#test_button').on('click', function() {
+                const url_field = $('#notification_provider_url').val();
+                const url_protocol = url_field.split(':')[0];
+                const url_string = url_field.split('://')[1];
+
+                $.ajax({
+                    url: "{{ url_for('test_notification') }}/" + url_protocol + "/" + encodeURIComponent(url_string),
+                    beforeSend: function () {
+                        $('#loader').addClass('active');
+                    },
+                    complete: function () {
+                        $('#loader').removeClass('active');
+                    },
+                    cache: false
                 });
             });
 

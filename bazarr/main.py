@@ -83,7 +83,6 @@ def check_credentials(user, pw):
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        test = request
         if settings.auth.type == 'basic':
             auth = request.authorization
             if not (auth and check_credentials(request.authorization.username, request.authorization.password)):
@@ -151,7 +150,6 @@ def post_get(name, default=''):
 @app.route("/logout/")
 @login_required
 def logout():
-    test = settings.auth.type
     if settings.auth.type == 'basic':
         return abort(401)
     elif settings.auth.type == 'form':
@@ -484,6 +482,7 @@ def test_url(protocol, url):
             return dict(status=False, error=result.raise_for_status())
 
 
+@app.route('/test_notification', methods=['GET'])
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
 @login_required
 def test_notification(protocol, provider):
@@ -496,6 +495,8 @@ def test_notification(protocol, provider):
         title='Bazarr test notification',
         body='Test notification'
     )
+
+    return '', 200
 
 
 # Mute DeprecationWarning
