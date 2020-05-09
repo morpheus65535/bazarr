@@ -518,6 +518,8 @@
                             </div>
                         </div>
                         <div id="regielive_option" class="ui grid container">
+                        
+                        </div>
 
                         <div class="middle aligned row">
                             <div class="right aligned four wide column">
