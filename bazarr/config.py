@@ -108,7 +108,8 @@ defaults = {
     },
     'legendasdivx': {
         'username': '',
-        'password': ''
+        'password': '',
+        'skip_wrong_fps': 'False'
     },
     'legendastv': {
         'username': '',

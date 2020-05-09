@@ -2,22 +2,27 @@
 from __future__ import absolute_import
 import logging
 import io
-import re
 import os
-import rarfile
+import re
 import zipfile
+from time import sleep
+from requests.exceptions import HTTPError
+import rarfile
 
-from requests import Session
 from guessit import guessit
+from subliminal.cache import region
 from subliminal.exceptions import ConfigurationError, AuthenticationError, ServiceUnavailable, DownloadLimitExceeded
-from subliminal_patch.providers import Provider
 from subliminal.providers import ParserBeautifulSoup
-from subliminal_patch.subtitle import Subtitle
-from subliminal.video import Episode, Movie
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending, guess_matches
-from subzero.language import Language
-from subliminal_patch.score import get_scores
 from subliminal.utils import sanitize, sanitize_release_group
+from subliminal.video import Episode, Movie
+from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
+from subliminal_patch.http import RetryingCFSession
+from subliminal_patch.providers import Provider
+from subliminal_patch.score import get_scores, framerate_equal
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
+from dogpile.cache.api import NO_VALUE
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +30,7 @@ class LegendasdivxSubtitle(Subtitle):
     """Legendasdivx Subtitle."""
     provider_name = 'legendasdivx'
 
-    def __init__(self, language, video, data):
+    def __init__(self, language, video, data, skip_wrong_fps=True):
         super(LegendasdivxSubtitle, self).__init__(language)
         self.language = language
         self.page_link = data['link']
@@ -33,8 +38,11 @@ class LegendasdivxSubtitle(Subtitle):
         self.exact_match = data['exact_match']
         self.description = data['description']
         self.video = video
+        self.sub_frame_rate = data['frame_rate']
         self.video_filename = data['video_filename']
         self.uploader = data['uploader']
+        self.wrong_fps = False
+        self.skip_wrong_fps = skip_wrong_fps
 
     @property
     def id(self):
@@ -46,6 +54,23 @@ class LegendasdivxSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
+
+        # if skip_wrong_fps = True no point to continue if they don't match
+        subtitle_fps = None
+        try:
+            subtitle_fps = float(self.sub_frame_rate)
+        except ValueError:
+            pass
+
+        # check fps match and skip based on configuration
+        if video.fps and subtitle_fps and not framerate_equal(video.fps, subtitle_fps):
+            self.wrong_fps = True
+
+            if self.skip_wrong_fps:
+                logger.debug("Legendasdivx :: Skipping subtitle due to FPS mismatch (expected: %s, got: %s)", video.fps, self.sub_frame_rate)
+                # not a single match :)
+                return set()
+            logger.debug("Legendasdivx :: Frame rate mismatch (expected: %s, got: %s, but continuing...)", video.fps, self.sub_frame_rate)
 
         description = sanitize(self.description)
 
@@ -105,8 +130,6 @@ class LegendasdivxSubtitle(Subtitle):
                     matches.update(['video_codec'])
                     break
 
-        # running guessit on a huge description may break guessit
-        # matches |= guess_matches(video, guessit(self.description))
         return matches
 
 class LegendasdivxProvider(Provider):
@@ -118,71 +141,82 @@ class LegendasdivxProvider(Provider):
         'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Origin': 'https://www.legendasdivx.pt',
-        'Referer': 'https://www.legendasdivx.pt',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache'
+        'Referer': 'https://www.legendasdivx.pt'
     }
     loginpage = site + '/forum/ucp.php?mode=login'
-    logoutpage = site + '/sair.php'
     searchurl = site + '/modules.php?name=Downloads&file=jz&d_op=search&op=_jz00&query={query}'
     download_link = site + '/modules.php{link}'
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, skip_wrong_fps=True):
         # make sure login credentials are configured.
         if any((username, password)) and not all((username, password)):
-            raise ConfigurationError('Username and password must be specified')
+            raise ConfigurationError('Legendasdivx.pt :: Username and password must be specified')
         self.username = username
         self.password = password
-        self.logged_in = False
+        self.skip_wrong_fps = skip_wrong_fps
 
     def initialize(self):
-        self.session = Session()
-        self.session.headers.update(self.headers)
-        self.login()
+        logger.info("Legendasdivx.pt :: Creating session for requests")
+        self.session = RetryingCFSession()
+        # re-use PHP Session if present
+        prev_cookies = region.get("legendasdivx_cookies2")
+        if prev_cookies != NO_VALUE:
+            logger.debug("Legendasdivx.pt :: Re-using previous legendasdivx cookies: %s", prev_cookies)
+            self.session.cookies.update(prev_cookies)
+        # Login if session has expired
+        else:
+            logger.debug("Legendasdivx.pt :: Session cookies not found!")
+            self.session.headers.update(self.headers)
+            self.login()
 
     def terminate(self):
-        self.logout()
+        # session close
         self.session.close()
 
     def login(self):
-        logger.info('Logging in')
-        
-        res = self.session.get(self.loginpage)
-        bsoup = ParserBeautifulSoup(res.content, ['lxml'])
-        
-        _allinputs = bsoup.findAll('input')
-        data = {}
-        # necessary to set 'sid' for POST request
-        for field in _allinputs:
-            data[field.get('name')] = field.get('value')
-        
-        data['username'] = self.username
-        data['password'] = self.password
-
-        res = self.session.post(self.loginpage, data)
-        res.raise_for_status()
-        
+        logger.info('Legendasdivx.pt :: Logging in')
         try:
-            logger.debug('Logged in successfully: PHPSESSID: %s' %
-                         self.session.cookies.get_dict()['PHPSESSID'])
-            self.logged_in = True   
-        except KeyError:
-            logger.error("Couldn't retrieve session ID, check your credentials")
-            raise AuthenticationError("Please check your credentials.")
-        except Exception as e:
-            if 'bloqueado' in res.text.lower(): # blocked IP address 
-                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-                raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
-            logger.error("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
-            raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r" % repr(e))
+            res = self.session.get(self.loginpage)
+            res.raise_for_status()
+            bsoup = ParserBeautifulSoup(res.content, ['lxml'])
 
-    def logout(self):
-        if self.logged_in:
-            logger.info('Legendasdivx:: Logging out')
-            r = self.session.get(self.logoutpage, timeout=10)
-            r.raise_for_status()
-            logger.debug('Legendasdivx :: Logged out')
-            self.logged_in = False
+            _allinputs = bsoup.findAll('input')
+            data = {}
+            # necessary to set 'sid' for POST request
+            for field in _allinputs:
+                data[field.get('name')] = field.get('value')
+
+            data['username'] = self.username
+            data['password'] = self.password
+
+            res = self.session.post(self.loginpage, data)
+            res.raise_for_status()
+            #make sure we're logged in
+            logger.debug('Legendasdivx.pt :: Logged in successfully: PHPSESSID: %s', self.session.cookies.get_dict()['PHPSESSID'])
+            cj = self.session.cookies.copy()
+            store_cks = ("PHPSESSID", "phpbb3_2z8zs_sid", "phpbb3_2z8zs_k", "phpbb3_2z8zs_u", "lang")
+            for cn in iter(self.session.cookies.keys()):
+                if cn not in store_cks:
+                    del cj[cn]
+            #store session cookies on cache
+            logger.debug("Legendasdivx.pt :: Storing legendasdivx session cookies: %r", cj)
+            region.set("legendasdivx_cookies2", cj)
+
+        except KeyError:
+            logger.error("Legendasdivx.pt :: Couldn't get session ID, check your credentials")
+            raise AuthenticationError("Legendasdivx.pt :: Couldn't get session ID, check your credentials")
+        except HTTPError as e:
+            if "bloqueado" in res.text.lower(): # ip blocked on server
+                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+            if 'limite' in res.text.lower(): # daily downloads limit reached
+                logger.error("LegendasDivx.pt :: Daily download limit reached!")
+                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
+            logger.error("Legendasdivx.pt :: HTTP Error %s", e)
+            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
+        except Exception as e:
+            logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
+            raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
     def _process_page(self, video, bsoup, video_filename):
 
@@ -192,47 +226,50 @@ class LegendasdivxProvider(Provider):
 
         for _subbox in _allsubs:
             hits = 0
-            for th in _subbox.findAll("th", {"class": "color2"}):
-                if th.string == 'Hits:':
-                    hits = int(th.parent.find("td").string)
-                if th.string == 'Idioma:':
-                    lang = th.parent.find("td").find("img").get('src')
+            for th in _subbox.findAll("th"):
+                if th.text == 'Hits:':
+                    hits = int(th.find_next("td").text)
+                if th.text == 'Idioma:':
+                    lang = th.find_next("td").find("img").get('src')
                     if 'brazil' in lang.lower():
                         lang = Language.fromopensubtitles('pob')
                     elif 'portugal' in lang.lower():
                         lang = Language.fromopensubtitles('por')
                     else:
                         continue
+                if th.text == "Frame Rate:":
+                    frame_rate = th.find_next("td").text.strip()
+
             # get description for matches
             description = _subbox.find("td", {"class": "td_desc brd_up"}).get_text()
             #get subtitle link
             download = _subbox.find("a", {"class": "sub_download"})
-            
-            # sometimes BSoup can't find 'a' tag and returns None. 
-            i = 0
-            while not (download): # must get it... trying again...
-                download = _subbox.find("a", {"class": "sub_download"})
-                i=+1
-                logger.debug("Try number {0} try!".format(str(i)))
-            dl = download.get('href')
-            logger.debug("Found subtitle on: %s" % self.download_link.format(link=dl))
+
+            # sometimes BSoup can't find 'a' tag and returns None.
+            try:
+                download_link = self.download_link.format(link=download.get('href'))
+                logger.debug("Legendasdivx.pt :: Found subtitle link on: %s ", download_link)
+            except:
+                logger.debug("Legendasdivx.pt :: Couldn't find download link. Trying next...")
+                continue
 
             # get subtitle uploader
-            sub_header = _subbox.find("div", {"class" :"sub_header"}) 
+            sub_header = _subbox.find("div", {"class" :"sub_header"})
             uploader = sub_header.find("a").text if sub_header else 'anonymous'
 
             exact_match = False
             if video.name.lower() in description.lower():
                 exact_match = True
-            data = {'link': self.site + '/modules.php' + download.get('href'),
+            data = {'link': download_link,
                     'exact_match': exact_match,
                     'hits': hits,
                     'uploader': uploader,
+                    'frame_rate': frame_rate,
                     'video_filename': video_filename,
                     'description': description
                     }
             subtitles.append(
-                LegendasdivxSubtitle(lang, video, data)
+                LegendasdivxSubtitle(lang, video, data, skip_wrong_fps=self.skip_wrong_fps)
             )
         return subtitles
 
@@ -264,31 +301,58 @@ class LegendasdivxProvider(Provider):
 
         querytext = querytext + lang_filter if lang_filter else querytext
 
-        self.headers['Referer'] = self.site + '/index.php'
-        self.session.headers.update(self.headers.items())
-        res = self.session.get(_searchurl.format(query=querytext))
-
-        if "A legenda não foi encontrada" in res.text:
-            logger.warning('%s not found', querytext)
-            return []
+        try:
+            # sleep for a 1 second before another request
+            sleep(1)
+            self.headers['Referer'] = self.site + '/index.php'
+            self.session.headers.update(self.headers)
+            res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+            res.raise_for_status()
+            if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
+                logger.warning('Legendasdivx.pt :: %s not found', querytext)
+                return []
+            if res.status_code == 302: # got redirected to login page.
+                # Seems that our session cookies are no longer valid... clean them from cache
+                region.delete("legendasdivx_cookies2")
+                logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
+                self.login() # login and try again
+                res = self.session.get(_searchurl.format(query=querytext))
+                res.raise_for_status()
+        except HTTPError as e:
+            if "bloqueado" in res.text.lower(): # ip blocked on server
+                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+            if 'limite' in res.text.lower(): # daily downloads limit reached
+                logger.error("LegendasDivx.pt :: Daily download limit reached!")
+                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
+            logger.error("Legendasdivx.pt :: HTTP Error %s", e)
+            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
+        except Exception as e:
+            logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
+            raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
         bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
-        subtitles = self._process_page(video, bsoup, video_filename)
 
         # search for more than 10 results (legendasdivx uses pagination)
         # don't throttle - maximum results = 6 * 10
         MAX_PAGES = 6
-        
-        #get number of pages bases on results found
+
+        # get number of pages bases on results found
         page_header = bsoup.find("div", {"class": "pager_bar"})
-        results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1)
+        results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1) if page_header else 0
+        logger.debug("Legendasdivx.pt :: Found %s subtitles", str(results_found))
         num_pages = (int(results_found) // 10) + 1
         num_pages = min(MAX_PAGES, num_pages)
 
+        # process first page
+        subtitles = self._process_page(video, bsoup, video_filename)
+
+        # more pages?
         if num_pages > 1:
-            for num_page in range(2, num_pages+2):
+            for num_page in range(2, num_pages+1):
+                sleep(1) # another 1 sec before requesting...
                 _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
-                logger.debug("Moving to next page: %s" % _search_next)
+                logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
                 res = self.session.get(_search_next)
                 next_page = ParserBeautifulSoup(res.content, ['html.parser'])
                 subs = self._process_page(video, next_page, video_filename)
@@ -301,25 +365,29 @@ class LegendasdivxProvider(Provider):
 
     def download_subtitle(self, subtitle):
         res = self.session.get(subtitle.page_link)
-        res.raise_for_status()
-        if res:
-            if res.status_code in ['500', '503']:
-                raise ServiceUnavailable("Legendasdivx.pt :: 503 - Service Unavailable")
-            elif 'limite' in res.text.lower(): # daily downloads limit reached
-                raise DownloadLimitReached("Legendasdivx.pt :: Download limit reached")
-            elif 'bloqueado' in res.text.lower(): # blocked IP address 
-                raise ParseResponseError("Legendasdivx.pt :: %r" % res.text)
 
-            archive = self._get_archive(res.content)
-            # extract the subtitle
-            subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
-            subtitle.content = fix_line_ending(subtitle_content)
-            subtitle.normalize()
+        try:
+            res.raise_for_status()
+        except HTTPError as e:
+            if "bloqueado" in res.text.lower(): # ip blocked on server
+                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+            if 'limite' in res.text.lower(): # daily downloads limit reached
+                logger.error("LegendasDivx.pt :: Daily download limit reached!")
+                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
+            logger.error("Legendasdivx.pt :: HTTP Error %s", e)
+            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
+        except Exception as e:
+            logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
+            raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
-            return subtitle
+        archive = self._get_archive(res.content)
+        # extract the subtitle
+        subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
+        subtitle.content = fix_line_ending(subtitle_content)
+        subtitle.normalize()
 
-        logger.error("Legendasdivx.pt :: there was a problem retrieving subtitle (status %s)" % res.status_code)
-        return
+        return subtitle
 
     def _get_archive(self, content):
         # open the archive
@@ -353,26 +421,26 @@ class LegendasdivxProvider(Provider):
             if not name.lower().endswith(_subtitle_extensions):
                 continue
 
-            _guess = guessit (name)
+            _guess = guessit(name)
             if isinstance(subtitle.video, Episode):
-                logger.debug ("guessing %s" % name)
-                logger.debug("subtitle S{}E{} video S{}E{}".format(_guess['season'],_guess['episode'],subtitle.video.season,subtitle.video.episode))
+                logger.debug("guessing %s", name)
+                logger.debug("subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
 
                 if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
                     logger.debug('subtitle does not match video, skipping')
                     continue
 
             matches = set()
-            matches |= guess_matches (subtitle.video, _guess)
-            logger.debug('srt matches: %s' % matches)
-            _score = sum ((_scores.get (match, 0) for match in matches))
+            matches |= guess_matches(subtitle.video, _guess)
+            logger.debug('srt matches: %s', matches)
+            _score = sum((_scores.get(match, 0) for match in matches))
             if _score > _max_score:
                 _max_name = name
                 _max_score = _score
-                logger.debug("new max: {} {}".format(name, _score))
+                logger.debug("new max: %s %s", name, _score)
 
         if _max_score > 0:
-            logger.debug("returning from archive: {} scored {}".format(_max_name, _max_score))
+            logger.debug("returning from archive: %s scored %s", _max_name, _max_score)
             return archive.read(_max_name)
 
-        raise ValueError("No subtitle found on compressed file. Max score was 0") 
+        raise ValueError("No subtitle found on compressed file. Max score was 0")
