@@ -154,6 +154,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-proxy-username" name="settings-proxy-username" value="{{settings.proxy.username}}">
+                        <label for="settings-proxy-username">You only need to enter a username and password if one is required. Leave them blank otherwise.</label>
                     </div>
                 </div>
                 <br>
@@ -163,6 +164,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="password" class="form-control" id="settings-proxy-password" name="settings-proxy-password" value="{{settings.proxy.password}}">
+                        <label for="settings-proxy-password">You only need to enter a username and password if one is required. Leave them blank otherwise.</label>
                     </div>
                 </div>
                 <br>
@@ -172,6 +174,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-proxy-exclude" name="settings-proxy-exclude" value="{{settings.proxy.exclude}}">
+                        <label for="settings-proxy-exclude">Use ',' as a separator, and '*.' as a wildcard for subdomains</label>
                     </div>
                 </div>
                 <br>
@@ -217,11 +220,12 @@
                 <div class="col-sm-3 text-right">
                     <b>Debug</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-debug" name="settings-general-debug">
                         <span class="custom-control-label" for="settings-general-debug"></span>
                     </label>
+                    <label>Debug logging should only be enabled temporarily</label>
                 </div>
             </div>
             <br>
@@ -232,11 +236,12 @@
                 <div class="col-sm-3 text-right">
                     <b>Enabled</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-analytics-enabled" name="settings-analytics-enabled">
                         <span class="custom-control-label" for="settings-analytics-enabled"></span>
                     </label>
+                    <label>Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and what OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr.</label>
                 </div>
             </div>
             <br>
@@ -253,28 +258,31 @@
                             <option value="master">master</option>
                             <option value="development">development</option>
                         </select>
+                        <label>Branch used by external update mechanism</label>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Automatic</b>
                     </div>
-                    <div class="form-group col-sm-1">
+                    <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="settings-general-auto_update" name="settings-general-auto_update">
                             <span class="custom-control-label" for="settings-general-auto_update"></span>
                         </label>
+                        <label>Automatically download and install updates. You will still be able to install from System: Tasks</label>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Restart After Update</b>
                     </div>
-                    <div class="form-group col-sm-1">
+                    <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="settings-general-update_restart" name="settings-general-update_restart">
                             <span class="custom-control-label" for="settings-general-update_restart"></span>
                         </label>
+                        <label>Automatically restart after downloading and installing updates. You will still be able to restart manually</label>
                     </div>
                 </div>
             </div>
