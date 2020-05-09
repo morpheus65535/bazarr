@@ -209,9 +209,6 @@ class LegendasdivxProvider(Provider):
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
@@ -322,9 +319,6 @@ class LegendasdivxProvider(Provider):
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
@@ -364,22 +358,24 @@ class LegendasdivxProvider(Provider):
         return self.query(video, languages)
 
     def download_subtitle(self, subtitle):
-        res = self.session.get(subtitle.page_link)
 
         try:
+            res = self.session.get(subtitle.page_link)
             res.raise_for_status()
         except HTTPError as e:
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
             logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
+
+        # make sure we haven't maxed out our daily limit
+        if (res.status_code == 200 and 'limite' in res.text.lower()): # daily downloads limit reached
+            logger.error("LegendasDivx.pt :: Daily download limit reached!")
+            raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
 
         archive = self._get_archive(res.content)
         # extract the subtitle
