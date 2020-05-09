@@ -197,6 +197,18 @@
                     </div>
                 </div>
                 <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Skip wrong FPS</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-legendasdivx-skip_wrong_fps" name="settings-legendasdivx-skip_wrong_fps">
+                            <span class="custom-control-label"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
             </div>
 
             <div class="row">
@@ -682,6 +694,7 @@
             $('#settings-opensubtitles-vip').prop('checked', {{'true' if settings.opensubtitles.getboolean('vip') else 'false'}});
             $('#settings-opensubtitles-ssl').prop('checked', {{'true' if settings.opensubtitles.getboolean('ssl') else 'false'}});
             $('#settings-opensubtitles-skip_wrong_fps').prop('checked', {{'true' if settings.opensubtitles.getboolean('skip_wrong_fps') else 'false'}});
+            $('#settings-legendasdivx-skip_wrong_fps').prop('checked', {{'true' if settings.legendasdivx.getboolean('skip_wrong_fps') else 'false'}});
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));

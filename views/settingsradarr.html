@@ -51,6 +51,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-radarr-ip" name="settings-radarr-ip" value="{{settings.radarr.ip}}">
+                        <label>Hostname or IP4 address of Radarr</label>
                     </div>
                 </div>
                 <br>
@@ -60,6 +61,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-radarr-port" name="settings-radarr-port" value="{{settings.radarr.port}}">
+                        <label>TCP Port of Radarr</label>
                     </div>
                 </div>
                 <br>
@@ -69,6 +71,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-radarr-base_url" name="settings-radarr-base_url" value="{{settings.radarr.base_url}}">
+                        <label>Base URL for Radarr (default: '/')</label>
                     </div>
                 </div>
                 <br>
@@ -89,6 +92,7 @@
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-radarr-apikey" name="settings-radarr-apikey" value="{{settings.radarr.apikey}}">
+                        <label>API Key for Radarr (32 alphanumeric characters)</label>
                     </div>
                 </div>
                 <br>
@@ -112,16 +116,25 @@
                         <input type="number" min="0" max="100" step="1" onkeydown="return false" class="form-control" id="settings-general-minimum_score_movie" name="settings-general-minimum_score_movie" value="{{settings.general.minimum_score_movie}}">
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+
+                    </div>
+                    <div class="col-sm-8">
+                        <label for="settings-general-minimum_score_movie">Minimum score for an Movies Subtitle to be downloaded (0 to 100).</label>
+                    </div>
+                </div>
                 <br>
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Download Only Monitored</b>
                     </div>
-                    <div class="form-group col-sm-1">
+                    <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="settings-radarr-only_monitored" name="settings-radarr-only_monitored">
                             <span class="custom-control-label" for="settings-radarr-only_monitored"></span>
                         </label>
+                        <label>Automatic download of Subtitles will only happen for monitored movies in Radarr.</label>
                     </div>
                 </div>
                 <br>
