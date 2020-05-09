@@ -38,7 +38,7 @@
                     <b>Bind Address</b>
                 </div>
                 <div class="col-sm-4">
-                    <input type="text" class="form-control" id="settings-general-ip" name="settings-general-ip" value="{{settings.general.ip}}">
+                    <input type="text" class="form-control restart-required" id="settings-general-ip" name="settings-general-ip" value="{{settings.general.ip}}">
                     <label for="settings-general-ip">Valid IP4 address or '0.0.0.0' for all interfaces</label><br>
                     <label class="restart">Requires restart to take effect</label>
                 </div>
@@ -49,7 +49,7 @@
                     <b>Port Number</b>
                 </div>
                 <div class="col-sm-4">
-                    <input type="text" class="form-control" id="settings-general-port" name="settings-general-port" value="{{settings.general.port}}"><br>
+                    <input type="text" class="form-control restart-required" id="settings-general-port" name="settings-general-port" value="{{settings.general.port}}"><br>
                     <label class="restart">Requires restart to take effect</label>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                     <b>URL Base</b>
                 </div>
                 <div class="col-sm-4">
-                    <input type="text" class="form-control" id="settings-general-base_url" name="settings-general-base_url" value="{{settings.general.base_url}}">
+                    <input type="text" class="form-control restart-required" id="settings-general-base_url" name="settings-general-base_url" value="{{settings.general.base_url}}">
                     <label for="settings-general-base_url">For reverse proxy support, default is '/'</label><br>
                     <label class="restart">Requires restart to take effect</label>
                 </div>
@@ -280,11 +280,33 @@
             </div>
         </form>
     </div>
+
+    <div id="restart_modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Restart Bazarr</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Bazarr requires a restart to apply changes, do you want to restart now?
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="restart_button" class="btn btn-info">Restart Now</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">I'll restart later</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock body %}
 
 {% block tail %}
     <script>
         $(document).ready(function () {
+            var restart_required = false;
+
             // Show warning if there's unsaved changes in the settings_form
             var form_changed = false;
             $(window).on('beforeunload', function() {
@@ -351,6 +373,9 @@
                         $('#save_button_checkmark').show();
                         form_changed = false;
                         $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                        if (restart_required) {
+                            $('#restart_modal').modal('show');
+                        }
                         setTimeout(
                             function()
                             {
@@ -360,10 +385,19 @@
                 });
             });
 
+            $('#restart_button').on('click', function() {
+                $('#restart').trigger('click');
+            });
+
             // monitor changes to the settings_form
             $('#settings_form').on('change', function() {
                 form_changed = true;
                 $('#save_button').prop('disabled', false).css('cursor', 'auto');
+            })
+
+            // monitor changes to the fields that require restart to be effective.
+            $('.restart-required').on('change', function() {
+                restart_required = true;
             })
         });
 
