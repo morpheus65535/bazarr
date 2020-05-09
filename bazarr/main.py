@@ -401,12 +401,19 @@ def save_wizard():
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
     
+    settings_legendasdivx_skip_wrong_fps = request.forms.get('settings_legendasdivx_skip_wrong_fps')
+    if settings_legendasdivx_skip_wrong_fps is None:
+        settings_legendasdivx_skip_wrong_fps = 'False'
+    else:
+        settings_legendasdivx_skip_wrong_fps = 'True'
+
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
     settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
     settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
+    settings.legendasdivx.skip_wrong_fps = text_type(settings_legendasdivx_skip_wrong_fps)
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
@@ -1543,12 +1550,19 @@ def save_settings():
         region.delete("os_token")
         region.delete("os_server_url")
 
+    settings_legendasdivx_skip_wrong_fps = request.forms.get('settings_legendasdivx_skip_wrong_fps')
+    if settings_legendasdivx_skip_wrong_fps is None:
+        settings_legendasdivx_skip_wrong_fps = 'False'
+    else:
+        settings_legendasdivx_skip_wrong_fps = 'True'
+
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
     settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
     settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
+    settings.legendasdivx.skip_wrong_fps = text_type(settings_legendasdivx_skip_wrong_fps)
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')

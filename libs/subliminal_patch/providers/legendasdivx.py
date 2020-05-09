@@ -5,6 +5,7 @@ import io
 import os
 import re
 import zipfile
+from time import sleep
 from requests.exceptions import HTTPError
 import rarfile
 
@@ -18,7 +19,7 @@ from subliminal.video import Episode, Movie
 from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
 from subliminal_patch.http import RetryingCFSession
 from subliminal_patch.providers import Provider
-from subliminal_patch.score import get_scores
+from subliminal_patch.score import get_scores, framerate_equal
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 from dogpile.cache.api import NO_VALUE
@@ -29,7 +30,7 @@ class LegendasdivxSubtitle(Subtitle):
     """Legendasdivx Subtitle."""
     provider_name = 'legendasdivx'
 
-    def __init__(self, language, video, data):
+    def __init__(self, language, video, data, skip_wrong_fps=True):
         super(LegendasdivxSubtitle, self).__init__(language)
         self.language = language
         self.page_link = data['link']
@@ -37,8 +38,11 @@ class LegendasdivxSubtitle(Subtitle):
         self.exact_match = data['exact_match']
         self.description = data['description']
         self.video = video
+        self.sub_frame_rate = data['frame_rate']
         self.video_filename = data['video_filename']
         self.uploader = data['uploader']
+        self.wrong_fps = False
+        self.skip_wrong_fps = skip_wrong_fps
 
     @property
     def id(self):
@@ -50,6 +54,23 @@ class LegendasdivxSubtitle(Subtitle):
 
     def get_matches(self, video):
         matches = set()
+
+        # if skip_wrong_fps = True no point to continue if they don't match
+        subtitle_fps = None
+        try:
+            subtitle_fps = float(self.sub_frame_rate)
+        except ValueError:
+            pass
+
+        # check fps match and skip based on configuration
+        if video.fps and subtitle_fps and not framerate_equal(video.fps, subtitle_fps):
+            self.wrong_fps = True
+
+            if self.skip_wrong_fps:
+                logger.debug("Legendasdivx :: Skipping subtitle due to FPS mismatch (expected: %s, got: %s)", video.fps, self.sub_frame_rate)
+                # not a single match :)
+                return set()
+            logger.debug("Legendasdivx :: Frame rate mismatch (expected: %s, got: %s, but continuing...)", video.fps, self.sub_frame_rate)
 
         description = sanitize(self.description)
 
@@ -109,8 +130,6 @@ class LegendasdivxSubtitle(Subtitle):
                     matches.update(['video_codec'])
                     break
 
-        # running guessit on a huge description may break guessit
-        # matches |= guess_matches(video, guessit(self.description))
         return matches
 
 class LegendasdivxProvider(Provider):
@@ -122,21 +141,19 @@ class LegendasdivxProvider(Provider):
         'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Origin': 'https://www.legendasdivx.pt',
-        'Referer': 'https://www.legendasdivx.pt',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache'
+        'Referer': 'https://www.legendasdivx.pt'
     }
     loginpage = site + '/forum/ucp.php?mode=login'
-    logoutpage = site + '/sair.php'
     searchurl = site + '/modules.php?name=Downloads&file=jz&d_op=search&op=_jz00&query={query}'
     download_link = site + '/modules.php{link}'
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, skip_wrong_fps=True):
         # make sure login credentials are configured.
         if any((username, password)) and not all((username, password)):
             raise ConfigurationError('Legendasdivx.pt :: Username and password must be specified')
         self.username = username
         self.password = password
+        self.skip_wrong_fps = skip_wrong_fps
 
     def initialize(self):
         logger.info("Legendasdivx.pt :: Creating session for requests")
@@ -201,7 +218,6 @@ class LegendasdivxProvider(Provider):
             logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
-
     def _process_page(self, video, bsoup, video_filename):
 
         subtitles = []
@@ -210,17 +226,20 @@ class LegendasdivxProvider(Provider):
 
         for _subbox in _allsubs:
             hits = 0
-            for th in _subbox.findAll("th", {"class": "color2"}):
+            for th in _subbox.findAll("th"):
                 if th.text == 'Hits:':
-                    hits = int(th.parent.find("td").text)
+                    hits = int(th.find_next("td").text)
                 if th.text == 'Idioma:':
-                    lang = th.parent.find("td").find("img").get('src')
+                    lang = th.find_next("td").find("img").get('src')
                     if 'brazil' in lang.lower():
                         lang = Language.fromopensubtitles('pob')
                     elif 'portugal' in lang.lower():
                         lang = Language.fromopensubtitles('por')
                     else:
                         continue
+                if th.text == "Frame Rate:":
+                    frame_rate = th.find_next("td").text.strip()
+
             # get description for matches
             description = _subbox.find("td", {"class": "td_desc brd_up"}).get_text()
             #get subtitle link
@@ -245,11 +264,12 @@ class LegendasdivxProvider(Provider):
                     'exact_match': exact_match,
                     'hits': hits,
                     'uploader': uploader,
+                    'frame_rate': frame_rate,
                     'video_filename': video_filename,
                     'description': description
                     }
             subtitles.append(
-                LegendasdivxSubtitle(lang, video, data)
+                LegendasdivxSubtitle(lang, video, data, skip_wrong_fps=self.skip_wrong_fps)
             )
         return subtitles
 
@@ -281,15 +301,23 @@ class LegendasdivxProvider(Provider):
 
         querytext = querytext + lang_filter if lang_filter else querytext
 
-        self.headers['Referer'] = self.site + '/index.php'
-        self.session.headers.update(self.headers.items())
-        res = self.session.get(_searchurl.format(query=querytext))
-
         try:
+            # sleep for a 1 second before another request
+            sleep(1)
+            self.headers['Referer'] = self.site + '/index.php'
+            self.session.headers.update(self.headers)
+            res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
             res.raise_for_status()
-            if (res and "A legenda não foi encontrada" in res.text):
+            if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
                 logger.warning('Legendasdivx.pt :: %s not found', querytext)
                 return []
+            if res.status_code == 302: # got redirected to login page.
+                # Seems that our session cookies are no longer valid... clean them from cache
+                region.delete("legendasdivx_cookies2")
+                logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
+                self.login() # login and try again
+                res = self.session.get(_searchurl.format(query=querytext))
+                res.raise_for_status()
         except HTTPError as e:
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
@@ -322,6 +350,7 @@ class LegendasdivxProvider(Provider):
         # more pages?
         if num_pages > 1:
             for num_page in range(2, num_pages+1):
+                sleep(1) # another 1 sec before requesting...
                 _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
                 logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
                 res = self.session.get(_search_next)
