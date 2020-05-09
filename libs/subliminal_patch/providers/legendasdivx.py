@@ -400,7 +400,7 @@ class LegendasdivxProvider(Provider):
             logger.debug('Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
         else:
-            raise Exception('Unsupported compressed format')
+            raise ValueError('Unsupported compressed format')
 
         return archive
 
