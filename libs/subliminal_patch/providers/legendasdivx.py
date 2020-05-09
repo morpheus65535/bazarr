@@ -394,13 +394,13 @@ class LegendasdivxProvider(Provider):
         # stole^H^H^H^H^H inspired from subvix provider
         archive_stream = io.BytesIO(content)
         if rarfile.is_rarfile(archive_stream):
-            logger.debug('Identified rar archive')
+            logger.debug('Legendasdivx.pt :: Identified rar archive')
             archive = rarfile.RarFile(archive_stream)
         elif zipfile.is_zipfile(archive_stream):
-            logger.debug('Identified zip archive')
+            logger.debug('Legendasdivx.pt :: Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
         else:
-            raise ValueError('Unsupported compressed format')
+            raise ValueError('Legendasdivx.pt :: Unsupported compressed format')
 
         return archive
 
@@ -423,24 +423,24 @@ class LegendasdivxProvider(Provider):
 
             _guess = guessit(name)
             if isinstance(subtitle.video, Episode):
-                logger.debug("guessing %s", name)
-                logger.debug("subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
+                logger.debug("Legendasdivx.pt :: guessing %s", name)
+                logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
 
                 if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
-                    logger.debug('subtitle does not match video, skipping')
+                    logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')
                     continue
 
             matches = set()
             matches |= guess_matches(subtitle.video, _guess)
-            logger.debug('srt matches: %s', matches)
+            logger.debug('Legendasdivx.pt :: srt matches: %s', matches)
             _score = sum((_scores.get(match, 0) for match in matches))
             if _score > _max_score:
                 _max_name = name
                 _max_score = _score
-                logger.debug("new max: %s %s", name, _score)
+                logger.debug("Legendasdivx.pt :: new max: %s %s", name, _score)
 
         if _max_score > 0:
-            logger.debug("returning from archive: %s scored %s", _max_name, _max_score)
+            logger.debug("Legendasdivx.pt :: returning from archive: %s scored %s", _max_name, _max_score)
             return archive.read(_max_name)
 
-        raise ValueError("No subtitle found on compressed file. Max score was 0")
+        raise ValueError("Legendasdivx.pt :: No subtitle found on compressed file. Max score was 0")
