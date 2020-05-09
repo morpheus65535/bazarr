@@ -58,17 +58,18 @@
                 <div class="col-sm-3 text-right">
                     <b>Upgrade Previously Downloaded Subtitles</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_subs" name="settings-general-upgrade_subs">
                         <span class="custom-control-label" for="settings-general-upgrade_subs"></span>
                     </label>
+                    <label>Schedule a task to upgrade Subtitles previously downloaded by Bazarr.</label>
                 </div>
             </div>
             <br>
             <div id="upgradesubs_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Number of days to go back in history to upgrade subtitles (up to 30)</b>
                     </div>
                     <div class="col-sm-4">
@@ -77,14 +78,15 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Upgrade Manually Downloaded Subtitles</b>
                     </div>
-                    <div class="form-group col-sm-1">
+                    <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_manual" name="settings-general-upgrade_manual">
                             <span class="custom-control-label" for="settings-general-upgrade_manual"></span>
                         </label>
+                        <label>Enable or disable upgrade of manually searched and downloaded Subtitles.</label>
                     </div>
                 </div>
                 <br>
@@ -107,7 +109,7 @@
             </div>
             <div  id="anticaptcha_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Provider Website</b>
                     </div>
                     <div class="col-sm-4">
@@ -116,7 +118,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Account Key</b>
                     </div>
                     <div class="col-sm-4">
@@ -127,7 +129,7 @@
             </div>
             <div  id="deathbycaptcha_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Provider Website</b>
                     </div>
                     <div class="col-sm-4">
@@ -136,7 +138,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Username</b>
                     </div>
                     <div class="col-sm-4">
@@ -145,7 +147,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Password</b>
                     </div>
                     <div class="col-sm-4">
@@ -161,45 +163,49 @@
                 <div class="col-sm-3 text-right">
                     <b>Adaptive Searching</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-adaptive_searching" name="settings-general-adaptive_searching">
                         <span class="custom-control-label" for="settings-general-adaptive_searching"></span>
                     </label>
+                    <label>When searching for Subtitles, Bazarr will search less frequently to limit call to providers.</label>
                 </div>
             </div>
             <div class="row">
                 <div class="col-sm-3 text-right">
                     <b>Search Enabled Providers Simultaneously</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-multithreading" name="settings-general-multithreading">
                         <span class="custom-control-label" for="settings-general-multithreading"></span>
                     </label>
+                    <label>Search multiple providers at once (Don't choose this on low powered devices)</label>
                 </div>
             </div>
             <div class="row">
                 <div class="col-sm-3 text-right">
                     <b>Use Embedded Subtitles</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-use_embedded_subs" name="settings-general-use_embedded_subs">
                         <span class="custom-control-label" for="settings-general-use_embedded_subs"></span>
                     </label>
+                    <label>Use embedded Subtitles in media files when determining missing ones.</label>
                 </div>
             </div>
             <div id="embedded_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Ignore Embedded PGS Subtitles</b>
                     </div>
-                    <div class="form-group col-sm-1">
+                    <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="settings-general-ignore_pgs_subs" name="settings-general-ignore_pgs_subs">
                             <span class="custom-control-label" for="settings-general-ignore_pgs_subs"></span>
                         </label>
+                        <label>Ignores PGS Subtitles in Embedded Subtitles detection. Only relevant if 'Use embedded Subtitles' is enabled.</label>
                     </div>
                 </div>
             </div>
@@ -210,11 +216,12 @@
                 <div class="col-sm-3 text-right">
                     <b>Encode Subtitles To UTF8</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-utf8_encode" name="settings-general-utf8_encode">
                         <span class="custom-control-label" for="settings-general-utf8_encode"></span>
                     </label>
+                    <label>Re-encode downloaded Subtitles to UTF8. Should be left enabled in most case.</label>
                 </div>
             </div>
             {% if not os.startswith('win') %}
@@ -231,11 +238,12 @@
             </div>
             <div id="chmod_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Set Subtitle file permissions to</b>
                     </div>
                     <div class="col-sm-4">
                         <input type="text" class="form-control" id="settings-general-chmod" name="settings-general-chmod" value="{{settings.general.chmod}}">
+                        <label for="settings-general-chmod">Must be 4 digit octal, e.g.: 0775</label>
                     </div>
                 </div>
                 <br>
@@ -245,16 +253,17 @@
                 <div class="col-sm-3 text-right">
                     <b>Use Custom Post-Processing</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing" name="settings-general-use_postprocessing">
                         <span class="custom-control-label" for="settings-general-use_postprocessing"></span>
                     </label>
+                    <label>Enable the post-processing execution after downloading a subtitles.</label>
                 </div>
             </div>
             <div id="custompp_div">
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Post-processing command</b>
                     </div>
                     <div class="col-sm-8">
@@ -263,7 +272,7 @@
                 </div>
                 <br>
                 <div class="row">
-                    <div class="col-sm-3 text-right">
+                    <div class="col-sm-4 text-right">
                         <b>Variables you can use in your command (include the double curly brace):</b>
                     </div>
                     <div class="col-sm-8">
