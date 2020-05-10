@@ -53,7 +53,7 @@ PROVIDER_THROTTLE_MAP = {
     },
     "legendasdivx": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
-        DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+        DownloadLimitExceeded: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
         IPAddressBlocked: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     }
 }

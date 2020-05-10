@@ -209,9 +209,6 @@ class LegendasdivxProvider(Provider):
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
@@ -322,9 +319,6 @@ class LegendasdivxProvider(Provider):
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
@@ -364,22 +358,24 @@ class LegendasdivxProvider(Provider):
         return self.query(video, languages)
 
     def download_subtitle(self, subtitle):
-        res = self.session.get(subtitle.page_link)
 
         try:
+            res = self.session.get(subtitle.page_link)
             res.raise_for_status()
         except HTTPError as e:
             if "bloqueado" in res.text.lower(): # ip blocked on server
                 logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
                 raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            if 'limite' in res.text.lower(): # daily downloads limit reached
-                logger.error("LegendasDivx.pt :: Daily download limit reached!")
-                raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
             logger.error("Legendasdivx.pt :: HTTP Error %s", e)
             raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
         except Exception as e:
             logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
+
+        # make sure we haven't maxed out our daily limit
+        if (res.status_code == 200 and 'limite' in res.text.lower()): # daily downloads limit reached
+            logger.error("LegendasDivx.pt :: Daily download limit reached!")
+            raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
 
         archive = self._get_archive(res.content)
         # extract the subtitle
@@ -394,13 +390,13 @@ class LegendasdivxProvider(Provider):
         # stole^H^H^H^H^H inspired from subvix provider
         archive_stream = io.BytesIO(content)
         if rarfile.is_rarfile(archive_stream):
-            logger.debug('Identified rar archive')
+            logger.debug('Legendasdivx.pt :: Identified rar archive')
             archive = rarfile.RarFile(archive_stream)
         elif zipfile.is_zipfile(archive_stream):
-            logger.debug('Identified zip archive')
+            logger.debug('Legendasdivx.pt :: Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
         else:
-            raise Exception('Unsupported compressed format')
+            raise ValueError('Legendasdivx.pt :: Unsupported compressed format')
 
         return archive
 
@@ -423,24 +419,24 @@ class LegendasdivxProvider(Provider):
 
             _guess = guessit(name)
             if isinstance(subtitle.video, Episode):
-                logger.debug("guessing %s", name)
-                logger.debug("subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
+                logger.debug("Legendasdivx.pt :: guessing %s", name)
+                logger.debug("Legendasdivx.pt :: subtitle S%sE%s video S%sE%s", _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode)
 
                 if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
-                    logger.debug('subtitle does not match video, skipping')
+                    logger.debug('Legendasdivx.pt :: subtitle does not match video, skipping')
                     continue
 
             matches = set()
             matches |= guess_matches(subtitle.video, _guess)
-            logger.debug('srt matches: %s', matches)
+            logger.debug('Legendasdivx.pt :: srt matches: %s', matches)
             _score = sum((_scores.get(match, 0) for match in matches))
             if _score > _max_score:
                 _max_name = name
                 _max_score = _score
-                logger.debug("new max: %s %s", name, _score)
+                logger.debug("Legendasdivx.pt :: new max: %s %s", name, _score)
 
         if _max_score > 0:
-            logger.debug("returning from archive: %s scored %s", _max_name, _max_score)
+            logger.debug("Legendasdivx.pt :: returning from archive: %s scored %s", _max_name, _max_score)
             return archive.read(_max_name)
 
-        raise ValueError("No subtitle found on compressed file. Max score was 0")
+        raise ValueError("Legendasdivx.pt :: No subtitle found on compressed file. Max score was 0")
