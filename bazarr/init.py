@@ -1,12 +1,10 @@
 # coding=utf-8
 
 import os
-import time
 import rarfile
 import json
 import hashlib
 
-from cork import Cork
 from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
