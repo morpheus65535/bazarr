@@ -220,8 +220,8 @@ def save_settings(settings_items):
         configure_captcha_func()
 
     if update_schedule:
-        from scheduler import update_configurable_tasks
-        update_configurable_tasks()
+        from api import scheduler
+        scheduler.update_configurable_tasks()
 
     if configure_proxy:
         configure_proxy_func()

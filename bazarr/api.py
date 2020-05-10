@@ -152,9 +152,7 @@ class ResetProviders(Resource):
 class SaveSettings(Resource):
     @authenticate
     def post(self):
-
         save_settings(zip(request.form.keys(), request.form.listvalues()))
-        scheduler.update_configurable_tasks()
 
         return '', 200
 
