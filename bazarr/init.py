@@ -108,7 +108,7 @@ if settings.auth.type == 'form' and \
         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
         logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
-                     'to your username. Please change it as sson as possible in settings.')
+                     'to your username. Please change it as soon as possible in settings.')
 
 
 def init_binaries():
