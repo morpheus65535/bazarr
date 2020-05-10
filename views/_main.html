@@ -307,6 +307,7 @@
     <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
 
     <script>
+        {% if not request.endpoint == 'login_page' %}
         $(document).ready(function () {
             BadgesAjax();
             $(window).on('load resize', function () {
@@ -403,21 +404,17 @@
             }
         });
 
-        {% if request.endpoint == 'login_page' %}
-            // Apikey excluded from login_page
-        {% else %}
-            // Add apikey to all AJAX requests.
-            $.ajaxSetup({
-                data: {
-                    apikey: "{{ settings.auth.apikey }}"
-                }
-            });
-            $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
-                if (originalOptions.data instanceof FormData) {
-                    originalOptions.data.append("apikey", "{{ settings.auth.apikey }}");
-                }
-            });
-        {% endif %}
+        // Add apikey to all AJAX requests.
+        $.ajaxSetup({
+            data: {
+                apikey: "{{ settings.auth.apikey }}"
+            }
+        });
+        $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+            if (originalOptions.data instanceof FormData) {
+                originalOptions.data.append("apikey", "{{ settings.auth.apikey }}");
+            }
+        });
 
         $(window).on('beforeunload', function () {
             events.close();
@@ -453,6 +450,7 @@
                 async: true
             })
         });
+        {% endif %}
     </script>
 {% endblock tail_js %}
 {% block tail %}

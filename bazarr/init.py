@@ -3,6 +3,8 @@
 import os
 import time
 import rarfile
+import json
+import hashlib
 
 from cork import Cork
 from config import settings, configure_captcha_func
@@ -88,22 +90,27 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-    cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
-
-    cork._store.roles[''] = 100
-    cork._store.save_roles()
-
-    tstamp = str(time.time())
-    username = password = ''
-    cork._store.users[username] = {
-        'role': '',
-        'hash': cork._hash(username, password),
-        'email_addr': username,
-        'desc': username,
-        'creation_date': tstamp
-    }
-    cork._store.save_users()
+# Reset form login password for Bazarr after migration from 0.8.x to 0.9. Password will be equal to username.
+if settings.auth.type == 'form' and \
+        os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+    username = False
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))) as json_file:
+        try:
+            data = json.load(json_file)
+            username = next(iter(data))
+        except:
+            logging.error('BAZARR is unable to migrate credentials. You should disable login by modifying config.ini '
+                          'file and settings [auth]-->type = None')
+    if username:
+        settings.auth.username = username
+        settings.auth.password = hashlib.md5(username.encode('utf-8')).hexdigest()
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+        logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
+                     'to your username. Please change it as sson as possible in settings.')
 
 
 def init_binaries():

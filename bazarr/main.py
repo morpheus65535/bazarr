@@ -105,6 +105,9 @@ def login_required(f):
 @app.route('/login/', methods=["GET", "POST"])
 def login_page():
     error = ''
+    password_reset = False
+    if settings.auth.password == hashlib.md5(settings.auth.username.encode('utf-8')).hexdigest():
+        password_reset = True
     try:
         if request.method == "POST":
             if check_credentials(request.form['username'], request.form['password']):
@@ -117,7 +120,7 @@ def login_page():
                 error = "Invalid credentials, try again."
         gc.collect()
 
-        return render_template("login.html", error=error)
+        return render_template("login.html", error=error, password_reset=password_reset)
 
     except Exception as e:
         # flash(e)
