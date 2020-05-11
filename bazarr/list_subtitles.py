@@ -18,7 +18,6 @@ from config import settings
 from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie, get_subtitle_destination_folder
 
-from queueconfig import notifications
 from embedded_subs_reader import embedded_subs_reader
 from websocket_handler import event_stream
 import chardet
@@ -305,8 +304,6 @@ def series_full_scan_subtitles():
     count_episodes = len(episodes)
     
     for i, episode in enumerate(episodes, 1):
-        notifications.write(msg='Updating all episodes subtitles from disk...',
-                            queue='list_subtitles_series', item=i, length=count_episodes)
         store_subtitles(episode['path'], path_replace(episode['path']))
     
     gc.collect()
@@ -317,8 +314,6 @@ def movies_full_scan_subtitles():
     count_movies = len(movies)
     
     for i, movie in enumerate(movies, 1):
-        notifications.write(msg='Updating all movies subtitles from disk...',
-                            queue='list_subtitles_movies', item=i, length=count_movies)
         store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
     
     gc.collect()

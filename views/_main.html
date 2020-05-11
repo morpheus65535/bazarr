@@ -320,6 +320,7 @@
 
             events = io.connect({
                 path: '{{ settings.general.base_url.rstrip('/') }}/socket.io',
+                transports: ['polling'],
                 upgrade: false,
                 reconnection: true,
                 reconnectionDelay: 1000,

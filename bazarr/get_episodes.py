@@ -1,7 +1,6 @@
 # coding=utf-8
 import requests
 import logging
-from queueconfig import notifications
 from database import database, dict_converter
 
 from config import settings, url_sonarr
@@ -17,7 +16,6 @@ def update_all_episodes():
 
 
 def sync_episodes():
-    notifications.write(msg='Episodes sync from Sonarr started...', queue='get_episodes')
     logging.debug('BAZARR Starting episodes sync from Sonarr.')
     apikey_sonarr = settings.sonarr.apikey
     
@@ -36,7 +34,6 @@ def sync_episodes():
     
     seriesIdListLength = len(seriesIdList)
     for i, seriesId in enumerate(seriesIdList, 1):
-        notifications.write(msg='Getting episodes data from Sonarr...', queue='get_episodes', item=i, length=seriesIdListLength)
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:
@@ -165,8 +162,6 @@ def sync_episodes():
 
     # Store subtitles for added or modified episodes
     for i, altered_episode in enumerate(altered_episodes, 1):
-        notifications.write(msg='Indexing episodes embedded subtitles...', queue='get_episodes', item=i,
-                            length=len(altered_episodes))
         store_subtitles(altered_episode[1], path_replace(altered_episode[1]))
 
     logging.debug('BAZARR All episodes synced from Sonarr into database.')

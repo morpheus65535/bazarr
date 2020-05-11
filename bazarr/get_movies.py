@@ -3,7 +3,6 @@
 import os
 import requests
 import logging
-from queueconfig import notifications
 
 from config import settings, url_radarr
 from helper import path_replace_movie
@@ -70,8 +69,6 @@ def update_movies():
 
             moviesIdListLength = len(r.json())
             for i, movie in enumerate(r.json(), 1):
-                notifications.write(msg="Getting movies data from Radarr...", queue='get_movies', item=i,
-                                    length=moviesIdListLength)
                 if movie['hasFile'] is True:
                     if 'movieFile' in movie:
                         # Detect file separator
@@ -233,8 +230,6 @@ def update_movies():
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
-                notifications.write(msg='Indexing movies embedded subtitles...', queue='get_movies', item=i,
-                                    length=len(altered_movies))
                 store_subtitles_movie(altered_movie[1], path_replace_movie(altered_movie[1]))
 
             logging.debug('BAZARR All movies synced from Radarr into database.')

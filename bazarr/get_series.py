@@ -3,7 +3,6 @@
 import os
 import requests
 import logging
-from queueconfig import notifications
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -14,7 +13,6 @@ from websocket_handler import event_stream
 
 
 def update_series():
-    notifications.write(msg="Update series list from Sonarr is running...", queue='get_series')
     apikey_sonarr = settings.sonarr.apikey
     if apikey_sonarr is None:
         return
@@ -61,9 +59,6 @@ def update_series():
 
     series_list_length = len(r.json())
     for i, show in enumerate(r.json(), 1):
-        notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i,
-                            length=series_list_length)
-
         overview = show['overview'] if 'overview' in show else ''
         poster = ''
         fanart = ''

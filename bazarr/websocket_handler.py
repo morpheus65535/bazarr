@@ -4,7 +4,7 @@ from app import socketio
 
 class EventStream:
     """
-    This class is used to read or write items to the notifications deque.
+    This class is used to broadcast notifications to web client.
     """
     
     def __init__(self):
