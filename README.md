@@ -3,6 +3,8 @@ Bazarr is a companion application to Sonarr and Radarr. It manages and downloads
 
 Be aware that Bazarr doesn't scan disk to detect series and movies: It only takes care of the series and movies that are indexed in Sonarr and Radarr.
 
+Thanks to the folks at OpenSubtitles for their logo that was an inspiration for ours.
+
 ## Support on Paypal
 At the request of some, here is a way to demonstrate your appreciation for the efforts made in the development of Bazarr:
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url)
