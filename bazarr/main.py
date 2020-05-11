@@ -32,7 +32,6 @@ from notifier import update_notifier
 from waitress.server import create_server
 
 from urllib.parse import unquote
-from datetime import datetime
 from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
@@ -43,12 +42,9 @@ from get_movies import *
 
 from scheduler import Scheduler
 from check_update import check_and_apply_update
-from subliminal_patch.extensions import provider_registry as provider_manager
-from subliminal_patch.core import SUBTITLE_EXTENSIONS
-from subliminal.cache import region
 from functools import wraps
 
-from app import create_app, socketio
+from app import create_app
 app = create_app()
 
 from api import api_bp

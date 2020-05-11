@@ -26,7 +26,7 @@ class EventStream:
             :type task: str
         """
         socketio.emit('event', json.dumps({"type": type, "action": action, "series": series, "episode": episode,
-                                           "movie": movie, "task": task}), broadcast=True)
+                                           "movie": movie, "task": task}))
 
 
 event_stream = EventStream()
