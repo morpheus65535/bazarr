@@ -25,7 +25,7 @@ def time_until_end_of_day(dt=None):
 hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
-                             ParseResponseError)
+                             ParseResponseError, IPAddressBlocked)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
 
 PROVIDER_THROTTLE_MAP = {
