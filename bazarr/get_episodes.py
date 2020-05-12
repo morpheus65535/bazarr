@@ -32,8 +32,7 @@ def sync_episodes():
     # Get sonarrId for each series from database
     seriesIdList = database.execute("SELECT sonarrSeriesId, title FROM table_shows")
     
-    seriesIdListLength = len(seriesIdList)
-    for i, seriesId in enumerate(seriesIdList, 1):
+    for i, seriesId in enumerate(seriesIdList):
         # Get episodes data for a series from Sonarr
         url_sonarr_api_episode = url_sonarr() + "/api/episode?seriesId=" + str(seriesId['sonarrSeriesId']) + "&apikey=" + apikey_sonarr
         try:

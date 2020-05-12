@@ -42,8 +42,7 @@ def create_app():
             return redirect(url_for('series'), code=302)
         return render_template('404.html'), 404
 
-    socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*', async_mode='threading',
-                      manage_session=False)
+    socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*', async_mode='threading')
     return app
 
 
