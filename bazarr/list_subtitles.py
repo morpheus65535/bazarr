@@ -19,7 +19,7 @@ from helper import path_replace, path_replace_movie, path_replace_reverse, \
     path_replace_reverse_movie, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
-from websocket_handler import event_stream
+from event_handler import event_stream
 import chardet
 
 gc.enable()
@@ -234,9 +234,9 @@ def list_missing_subtitles(no=None, epno=None):
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
-        event_stream.write(type='episode', action='update', series=missing_subtitles_item[2],
-                           episode=missing_subtitles_item[1])
-        event_stream.write(type='badges')
+        event_stream(type='episode', action='update', series=missing_subtitles_item[2],
+                     episode=missing_subtitles_item[1])
+        event_stream(type='badges')
 
 
 def list_missing_subtitles_movies(no=None):
@@ -295,13 +295,12 @@ def list_missing_subtitles_movies(no=None):
         database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
-        event_stream.write(type='movie', action='update', movie=missing_subtitles_item[1])
-        event_stream.write(type='badges')
+        event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
+        event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
     episodes = database.execute("SELECT path FROM table_episodes")
-    count_episodes = len(episodes)
     
     for i, episode in enumerate(episodes, 1):
         store_subtitles(episode['path'], path_replace(episode['path']))
@@ -311,7 +310,6 @@ def series_full_scan_subtitles():
 
 def movies_full_scan_subtitles():
     movies = database.execute("SELECT path FROM table_movies")
-    count_movies = len(movies)
     
     for i, movie in enumerate(movies, 1):
         store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))

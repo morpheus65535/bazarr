@@ -30,7 +30,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
-from websocket_handler import event_stream
+from event_handler import event_stream
 from scheduler import Scheduler
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
@@ -343,7 +343,7 @@ class Series(Resource):
 
         list_missing_subtitles(no=seriesId)
 
-        event_stream.write(type='series', action='update', series=seriesId)
+        event_stream(type='series', action='update', series=seriesId)
 
         return '', 204
 
@@ -372,7 +372,7 @@ class SeriesEditSave(Resource):
             else:
                 list_missing_subtitles(no=seriesid)
 
-                event_stream.write(type='series', action='update', series=seriesid)
+                event_stream(type='series', action='update', series=seriesid)
 
         return '', 204
 
@@ -493,7 +493,7 @@ class EpisodesSubtitlesDownload(Resource):
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
-                event_stream.write(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
+                event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
             return result, 201
         except OSError:
             pass
@@ -760,7 +760,7 @@ class Movies(Resource):
 
         list_missing_subtitles_movies(no=radarrId)
 
-        event_stream.write(type='movie', action='update', movie=radarrId)
+        event_stream(type='movie', action='update', movie=radarrId)
 
         return '', 204
 
@@ -789,7 +789,7 @@ class MoviesEditSave(Resource):
             else:
                 list_missing_subtitles_movies(no=radarrid)
 
-                event_stream.write(type='movie', action='update', movie=radarrid)
+                event_stream(type='movie', action='update', movie=radarrid)
 
         return '', 204
 
@@ -846,7 +846,7 @@ class MovieSubtitlesDownload(Resource):
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
-                event_stream.write(type='movie', action='update', movie=int(radarrId))
+                event_stream(type='movie', action='update', movie=int(radarrId))
             return result, 201
         except OSError:
             pass
