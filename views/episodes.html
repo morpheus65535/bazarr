@@ -35,7 +35,6 @@
 
         .badge {
             display: inline-block;
-            max-width: 500px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -539,7 +538,7 @@
                     pageLength: {{ settings.general.page_size_manual_search }},
                     lengthMenu: [ 5, 10, 15, 20, 25 ],
                     searching: true,
-                    scrollX: true,
+                    responsive: true,
                     ordering: false,
                     processing: true,
                     serverSide: false,
@@ -844,6 +843,7 @@
                     pageLength: 5,
                     searching: true,
                     ordering: false,
+                    responsive: true,
                     processing: false,
                     serverSide: false,
                     ajax: {

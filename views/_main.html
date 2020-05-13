@@ -52,6 +52,11 @@
                 background-color: white;
                 border: 1px solid #ced4da;
             }
+
+            table.dataTable.dtr-inline.collapsed>tbody>tr[role="row"]>td:first-child:before, table.dataTable.dtr-inline.collapsed>tbody>tr[role="row"]>th:first-child:before {
+                left: -15px;
+                background-color: #911f93;
+            }
         </style>
     {% endblock head %}
 
@@ -311,7 +316,21 @@
         $(document).ready(function () {
             BadgesAjax();
             $(window).on('load resize', function () {
-                $('#buttons_bars').width($('.page-wrapper').width());
+                if ($('body').hasClass('mini-sidebar')) {
+                    $('#buttons_bars').width($(window).width());
+                    $('.page-wrapper').attr('style', 'padding-top: 60px !important');
+                    $('.badge').each(function() {
+                        $(this).css('max-width', $(this).closest( "div" ).width());
+                    })
+                    $('form .row :first-child').each( function() {
+                        $(this).removeClass('text-right');
+                    })
+                    $('.container-fluid .row :first-child').each( function() {
+                        $(this).removeClass('text-right');
+                    })
+                } else {
+                    $('#buttons_bars').width($('.page-wrapper').width());
+                }
             });
 
             $('.table').on('draw.dt', function () {
