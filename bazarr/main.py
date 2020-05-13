@@ -511,7 +511,8 @@ if args.dev:
 else:
     server = create_server(app,
                            host=str(settings.general.ip),
-                           port=int(args.port) if args.port else int(settings.general.port))
+                           port=int(args.port) if args.port else int(settings.general.port),
+                           threads=24)
 
 if __name__ == "__main__":
     try:
