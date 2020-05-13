@@ -169,7 +169,7 @@ class LegendasdivxProvider(Provider):
         self.skip_wrong_fps = skip_wrong_fps
 
     def initialize(self):
-        logger.info("Legendasdivx.pt :: Creating session for requests")
+        logger.debug("Legendasdivx.pt :: Creating session for requests")
         self.session = RetryingCFSession()
         # re-use PHP Session if present
         prev_cookies = region.get("legendasdivx_cookies2")
@@ -187,7 +187,7 @@ class LegendasdivxProvider(Provider):
         self.session.close()
 
     def login(self):
-        logger.info('Legendasdivx.pt :: Logging in')
+        logger.debug('Legendasdivx.pt :: Logging in')
         try:
             res = self.session.get(self.loginpage)
             res.raise_for_status()
@@ -317,8 +317,16 @@ class LegendasdivxProvider(Provider):
             res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
             res.raise_for_status()
             if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
-                logger.warning('Legendasdivx.pt :: %s not found', querytext)
-                return []
+                logger.warning('Legendasdivx.pt :: query %s return no results!', querytext)
+                # for series, if no results found, try again just with series and season (subtitle packs)
+                if isinstance(video, Episode):
+                    logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
+                    querytext = re.sub("(e|E)(\d{2})", "", querytext)
+                    res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+                    res.raise_for_status()
+                    if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
+                        logger.warning('Legendasdivx.pt :: query %s return no results (for series and season only).', querytext)
+                        return []
             if res.status_code == 302: # got redirected to login page.
                 # seems that our session cookies are no longer valid... clean them from cache
                 region.delete("legendasdivx_cookies2")
@@ -385,17 +393,19 @@ class LegendasdivxProvider(Provider):
             raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
         # make sure we haven't maxed out our daily limit
-        if (res.status_code == 200 and 'limite' in res.text.lower()):
+        if (res.status_code == 200 and 'limite de downloads diário atingido' in res.text.lower()):
             logger.error("LegendasDivx.pt :: Daily download limit reached!")
             raise DownloadLimitExceeded("Legendasdivx.pt :: Daily download limit reached!")
 
         archive = self._get_archive(res.content)
         # extract the subtitle
-        subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
-        subtitle.content = fix_line_ending(subtitle_content)
-        subtitle.normalize()
-
-        return subtitle
+        if archive:
+            subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
+            if subtitle_content:
+                subtitle.content = fix_line_ending(subtitle_content)
+                subtitle.normalize()
+                return subtitle
+        return
 
     def _get_archive(self, content):
         # open the archive
@@ -407,8 +417,8 @@ class LegendasdivxProvider(Provider):
             logger.debug('Legendasdivx.pt :: Identified zip archive')
             archive = zipfile.ZipFile(archive_stream)
         else:
-            raise ValueError('Legendasdivx.pt :: Unsupported compressed format')
-
+            logger.error('Legendasdivx.pt :: Unsupported compressed format')
+            return None
         return archive
 
     def _get_subtitle_from_archive(self, archive, subtitle):
@@ -450,4 +460,5 @@ class LegendasdivxProvider(Provider):
             logger.debug("Legendasdivx.pt :: returning from archive: %s scored %s", _max_name, _max_score)
             return archive.read(_max_name)
 
-        raise ValueError("Legendasdivx.pt :: No subtitle found on compressed file. Max score was 0")
+        logger.error("Legendasdivx.pt :: No subtitle found on compressed file. Max score was 0")
+        return None
