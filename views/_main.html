@@ -457,9 +457,7 @@
                 $('#buttons_bars').width($('body').width() - 240);
             }
 
-            $('.badge').each(function() {
-                $(this).css('max-width', $(this).closest( "div" ).width());
-            })
+
 
             if ($(window).width() <= 1170) {
                 $('form .row :first-child').each( function() {
@@ -467,6 +465,9 @@
                 })
                 $('.container-fluid .row :first-child').each( function() {
                     $(this).removeClass('text-right');
+                })
+                $('.badge').each(function() {
+                    $(this).css('max-width', $(this).closest( "div" ).width());
                 })
             }
 
