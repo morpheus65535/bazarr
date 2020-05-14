@@ -416,6 +416,8 @@ class Episodes(Resource):
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
                                "forced": True if len(subtitle) > 1 else False}
+            else:
+                item.update({"subtitles": []})
 
             # Parse missing subtitles
             if item['missing_subtitles']:
@@ -426,6 +428,8 @@ class Episodes(Resource):
                                                     "code2": subtitle[0],
                                                     "code3": alpha3_from_alpha2(subtitle[0]),
                                                     "forced": True if len(subtitle) > 1 else False}
+            else:
+                item.update({"missing_subtitles": []})
 
             # Provide mapped path
             mapped_path = path_replace(item['path'])
@@ -702,6 +706,8 @@ class Movies(Resource):
                                             "code3": alpha3_from_alpha2(language[0]),
                                             "forced": True if len(language) > 1 else False}
                 item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+            else:
+                item.update({"subtitles": []})
 
             # Parse missing subtitles
             if item['missing_subtitles']:
@@ -712,6 +718,8 @@ class Movies(Resource):
                                                     "code2": language[0],
                                                     "code3": alpha3_from_alpha2(language[0]),
                                                     "forced": True if len(language) > 1 else False}
+            else:
+                item.update({"missing_subtitles": []})
 
             # Provide mapped path
             mapped_path = path_replace_movie(item['path'])
@@ -1200,6 +1208,8 @@ class WantedSeries(Resource):
                                                     "code2": splitted_subs[0],
                                                     "code3": alpha3_from_alpha2(splitted_subs[0]),
                                                     "forced": True if len(splitted_subs) > 1 else False}
+            else:
+                item.update({"missing_subtitles": []})
 
             # Provide mapped path
             mapped_path = path_replace(item['path'])
@@ -1240,6 +1250,8 @@ class WantedMovies(Resource):
                                                     "code2": splitted_subs[0],
                                                     "code3": alpha3_from_alpha2(splitted_subs[0]),
                                                     "forced": True if len(splitted_subs) > 1 else False}
+            else:
+                item.update({"missing_subtitles": []})
 
             # Provide mapped path
             mapped_path = path_replace_movie(item['path'])
