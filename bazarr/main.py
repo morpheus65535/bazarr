@@ -465,22 +465,25 @@ def test_notification(protocol, provider):
 
 
 class Server:
-    # Mute DeprecationWarning
-    warnings.simplefilter("ignore", DeprecationWarning)
-    # Mute Insecure HTTPS requests made to Sonarr and Radarr
-    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-    # Mute Python3 BrokenPipeError
-    warnings.simplefilter("ignore", BrokenPipeError)
+    try:
+        if args.dev:
+            server = app.run(host=str(settings.general.ip),
+                             port=(int(args.port) if args.port else int(settings.general.port)))
+        else:
+            server = create_server(app,
+                                   host=str(settings.general.ip),
+                                   port=int(args.port) if args.port else int(settings.general.port),
+                                   threads=24)
+    except:
+        pass
 
-    if args.dev:
-        server = app.run(
-            host=str(settings.general.ip),
-            port=(int(args.port) if args.port else int(settings.general.port)))
-    else:
-        server = create_server(app,
-                               host=str(settings.general.ip),
-                               port=int(args.port) if args.port else int(settings.general.port),
-                               threads=24)
+    def __init__(self):
+        # Mute DeprecationWarning
+        warnings.simplefilter("ignore", DeprecationWarning)
+        # Mute Insecure HTTPS requests made to Sonarr and Radarr
+        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+        # Mute Python3 BrokenPipeError
+        warnings.simplefilter("ignore", BrokenPipeError)
 
     @classmethod
     def start(cls):
@@ -497,8 +500,8 @@ class Server:
     def shutdown(cls):
         try:
             cls.server.close()
-        except:
-            logging.error('BAZARR Cannot stop Waitress.')
+        except Exception as e:
+            logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:
             database.close()
             try:
@@ -515,8 +518,8 @@ class Server:
     def restart(cls):
         try:
             cls.server.close()
-        except:
-            logging.error('BAZARR Cannot stop Waitress.')
+        except Exception as e:
+            logging.error('BAZARR Cannot stop Waitress: ' + repr(e))
         else:
             database.close()
             try:
