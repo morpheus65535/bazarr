@@ -198,7 +198,8 @@ def save_settings(settings_items):
                    'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
             configure_captcha = True
 
-        if key == 'update_schedule':
+        if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
+                   'settings-general-auto_update', 'settings-general-upgrade_subs']:
             update_schedule = True
 
         if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
