@@ -466,6 +466,8 @@ def test_notification(protocol, provider):
 
 class Server:
     try:
+        server
+    except NameError:
         if args.dev:
             server = app.run(host=str(settings.general.ip),
                              port=(int(args.port) if args.port else int(settings.general.port)))
@@ -474,8 +476,6 @@ class Server:
                                    host=str(settings.general.ip),
                                    port=int(args.port) if args.port else int(settings.general.port),
                                    threads=24)
-    except:
-        pass
 
     def __init__(self):
         # Mute DeprecationWarning
