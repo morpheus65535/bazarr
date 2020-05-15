@@ -64,15 +64,15 @@ def authenticate(actual_method):
 class Shutdown(Resource):
     @authenticate
     def get(self):
-        from main import webserver
-        webserver.shutdown()
+        from main import Server
+        Server.shutdown()
 
 
 class Restart(Resource):
     @authenticate
     def get(self):
-        from main import webserver
-        webserver.restart()
+        from main import Server
+        Server.restart()
 
 
 class Badges(Resource):

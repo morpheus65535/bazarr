@@ -464,38 +464,39 @@ def test_notification(protocol, provider):
     return '', 200
 
 
-class Server():
-    def __init__(self):
-        # Mute DeprecationWarning
-        warnings.simplefilter("ignore", DeprecationWarning)
-        # Mute Insecure HTTPS requests made to Sonarr and Radarr
-        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-        # Mute Python3 BrokenPipeError
-        warnings.simplefilter("ignore", BrokenPipeError)
+class Server:
+    # Mute DeprecationWarning
+    warnings.simplefilter("ignore", DeprecationWarning)
+    # Mute Insecure HTTPS requests made to Sonarr and Radarr
+    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+    # Mute Python3 BrokenPipeError
+    warnings.simplefilter("ignore", BrokenPipeError)
 
-        if args.dev:
-            self.server = app.run(
-                host=str(settings.general.ip),
-                port=(int(args.port) if args.port else int(settings.general.port)))
-        else:
-            self.server = create_server(app,
-                                        host=str(settings.general.ip),
-                                        port=int(args.port) if args.port else int(settings.general.port),
-                                        threads=24)
+    if args.dev:
+        server = app.run(
+            host=str(settings.general.ip),
+            port=(int(args.port) if args.port else int(settings.general.port)))
+    else:
+        server = create_server(app,
+                               host=str(settings.general.ip),
+                               port=int(args.port) if args.port else int(settings.general.port),
+                               threads=24)
 
-    def start(self):
+    @classmethod
+    def start(cls):
         try:
             logging.info(
                 'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
                     args.port) if args.port else str(settings.general.port)) + str(base_url))
             if not args.dev:
-                self.server.run()
+                cls.server.run()
         except KeyboardInterrupt:
-            self.shutdown()
+            cls.shutdown()
 
-    def shutdown(self):
+    @classmethod
+    def shutdown(cls):
         try:
-            self.server.close()
+            cls.server.close()
         except:
             logging.error('BAZARR Cannot stop Waitress.')
         else:
@@ -510,9 +511,10 @@ class Server():
                 stop_file.close()
                 os._exit(0)
 
-    def restart(self):
+    @classmethod
+    def restart(cls):
         try:
-            self.server.close()
+            cls.server.close()
         except:
             logging.error('BAZARR Cannot stop Waitress.')
         else:
@@ -528,8 +530,5 @@ class Server():
                 os._exit(0)
 
 
-webserver = Server()
-
-
 if __name__ == "__main__":
-    webserver.start()
+    Server.start()
