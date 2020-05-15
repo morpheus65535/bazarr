@@ -225,7 +225,20 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            postprocessing(command, path)
+                            percent_score = round(subtitle.score * 100 / max_score, 2)
+
+                            if media_type == 'series':
+                                use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
+                                pp_threshold = settings.general.postprocessing_threshold
+                            else:
+                                use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
+                                pp_threshold = settings.general.postprocessing_threshold_movie
+
+                            if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
+                                postprocessing(command, path)
+                            else:
+                                logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
+                                             "threshold value: " + str(pp_threshold) + "%")
                         
                         # fixme: support multiple languages at once
                         if media_type == 'series':
@@ -436,7 +449,20 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            postprocessing(command, path)
+                            percent_score = round(subtitle.score * 100 / max_score, 2)
+
+                            if media_type == 'series':
+                                use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
+                                pp_threshold = settings.general.postprocessing_threshold
+                            else:
+                                use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
+                                pp_threshold = settings.general.postprocessing_threshold_movie
+
+                            if not use_pp_threshold or (use_pp_threshold and percent_score < float(pp_threshold)):
+                                postprocessing(command, path)
+                            else:
+                                logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
+                                             "threshold value: " + pp_threshold + "%")
                         
                         if media_type == 'series':
                             reversed_path = path_replace_reverse(path)
@@ -537,7 +563,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
-                             uploaded_language_code2, uploaded_language_code3, audio_language, 
+                             uploaded_language_code2, uploaded_language_code3, audio_language,
                              audio_language_code2, audio_language_code3, forced)
         postprocessing(command, path)
 

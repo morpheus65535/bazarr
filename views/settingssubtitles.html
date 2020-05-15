@@ -264,6 +264,48 @@
             <div id="custompp_div">
                 <div class="row">
                     <div class="col-sm-4 text-right">
+                        <b>Post-processing score threshold for series</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing_threshold" name="settings-general-use_postprocessing_threshold">
+                            <span class="custom-control-label" for="settings-general-use_postprocessing_threshold"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-5 text-right">
+                        <b>Only for score below</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold" name="settings-general-postprocessing_threshold" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.postprocessing_threshold}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Post-processing score threshold for movies</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing_threshold_movie" name="settings-general-use_postprocessing_threshold_movie">
+                            <span class="custom-control-label" for="settings-general-use_postprocessing_threshold_movie"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-5 text-right">
+                        <b>Only for score below</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold_movie" name="settings-general-postprocessing_threshold_movie" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.postprocessing_threshold_movie}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
                         <b>Post-processing command</b>
                     </div>
                     <div class="col-sm-8">
@@ -387,6 +429,8 @@
             $('#settings-general-utf8_encode').prop('checked', {{'true' if settings.general.getboolean('utf8_encode') else 'false'}}).trigger('change');
             $('#settings-general-chmod_enabled').prop('checked', {{'true' if settings.general.getboolean('chmod_enabled') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing') else 'false'}}).trigger('change');
+            $('#settings-general-use_postprocessing_threshold').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold') else 'false'}}).trigger('change');
+            $('#settings-general-use_postprocessing_threshold_movie').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold_movie') else 'false'}}).trigger('change');
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
