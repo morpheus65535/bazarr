@@ -11,7 +11,6 @@ import sys
 import libs
 import io
 
-import ast
 import hashlib
 import warnings
 import apprise
@@ -76,6 +75,7 @@ def check_credentials(user, pw):
         return True
     return False
 
+
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -125,11 +125,11 @@ def login_page():
 
 
 @app.context_processor
-def restart_processor():
-    def restart_required():
-        restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
-        return restart_required
-    return dict(restart_required=restart_required()['configured'], update_required=restart_required()['updated'], ast=ast, settings=settings, locals=locals(), args=args, os=os)
+def template_variable_processor():
+    restart_required = database.execute("SELECT configured, updated FROM system", only_one=True)
+
+    return dict(restart_required=restart_required['configured'], update_required=restart_required['updated'],
+                settings=settings, args=args)
 
 
 def api_authorize():
@@ -156,42 +156,6 @@ def logout():
         flash("You have been logged out!")
         gc.collect()
         return redirect(url_for('redirect_root'))
-
-
-def doShutdown():
-    try:
-        server.close()
-    except:
-        logging.error('BAZARR Cannot stop Waitress.')
-    else:
-        database.close()
-        try:
-            stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error('BAZARR Cannot create bazarr.stop file.')
-        else:
-            logging.info('Bazarr is being shutdown...')
-            stop_file.write(str(''))
-            stop_file.close()
-            os._exit(0)
-
-
-def doRestart():
-    try:
-        server.close()
-    except:
-        logging.error('BAZARR Cannot stop Waitress.')
-    else:
-        database.close()
-        try:
-            restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-        except Exception as e:
-            logging.error('BAZARR Cannot create bazarr.restart file.')
-        else:
-            logging.info('Bazarr is being restarted...')
-            restart_file.write(str(''))
-            restart_file.close()
-            os._exit(0)
 
 
 @app.route('/emptylog')
@@ -403,15 +367,16 @@ def configured():
 
 @app.route('/api/series/wanted')
 def api_wanted():
-    data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                            "table_episodes.title as episodeTitle, table_episodes.missing_subtitles FROM table_episodes "
-                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
-                            "WHERE table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC "
-                            "LIMIT 10")
+    data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
+                            "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
+                            "table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on "
+                            "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                            "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10")
 
     wanted_subs = []
     for item in data:
-        wanted_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['missing_subtitles']])
+        wanted_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'],
+                            item['missing_subtitles']])
 
     return dict(subtitles=wanted_subs)
 
@@ -424,12 +389,13 @@ def api_history():
                             "strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')) as date, "
                             "table_history.description FROM table_history "
                             "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
-                            "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId "
-                            "WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
+                            "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
+                            "table_history.sonarrEpisodeId WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
 
     history_subs = []
     for item in data:
-        history_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['date'], item['description']])
+        history_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['date'],
+                             item['description']])
 
     return dict(subtitles=history_subs)
 
@@ -498,27 +464,72 @@ def test_notification(protocol, provider):
     return '', 200
 
 
-# Mute DeprecationWarning
-warnings.simplefilter("ignore", DeprecationWarning)
-# Mute Insecure HTTPS requests made to Sonarr and Radarr
-warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-# Mute Python3 BrokenPipeError
-warnings.simplefilter("ignore", BrokenPipeError)
+class Server():
+    def __init__(self):
+        # Mute DeprecationWarning
+        warnings.simplefilter("ignore", DeprecationWarning)
+        # Mute Insecure HTTPS requests made to Sonarr and Radarr
+        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+        # Mute Python3 BrokenPipeError
+        warnings.simplefilter("ignore", BrokenPipeError)
 
-if args.dev:
-    server = app.run(
-        host=str(settings.general.ip), port=(int(args.port) if args.port else int(settings.general.port)))
-else:
-    server = create_server(app,
-                           host=str(settings.general.ip),
-                           port=int(args.port) if args.port else int(settings.general.port),
-                           threads=24)
+        if args.dev:
+            self.server = app.run(
+                host=str(settings.general.ip),
+                port=(int(args.port) if args.port else int(settings.general.port)))
+        else:
+            self.server = create_server(app,
+                                        host=str(settings.general.ip),
+                                        port=int(args.port) if args.port else int(settings.general.port),
+                                        threads=24)
+
+    def start(self):
+        try:
+            logging.info(
+                'BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
+                    args.port) if args.port else str(settings.general.port)) + str(base_url))
+            if not args.dev:
+                self.server.run()
+        except KeyboardInterrupt:
+            self.shutdown()
+
+    def shutdown(self):
+        try:
+            self.server.close()
+        except:
+            logging.error('BAZARR Cannot stop Waitress.')
+        else:
+            database.close()
+            try:
+                stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
+            except Exception as e:
+                logging.error('BAZARR Cannot create bazarr.stop file.')
+            else:
+                logging.info('Bazarr is being shutdown...')
+                stop_file.write(str(''))
+                stop_file.close()
+                os._exit(0)
+
+    def restart(self):
+        try:
+            self.server.close()
+        except:
+            logging.error('BAZARR Cannot stop Waitress.')
+        else:
+            database.close()
+            try:
+                restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
+            except Exception as e:
+                logging.error('BAZARR Cannot create bazarr.restart file.')
+            else:
+                logging.info('Bazarr is being restarted...')
+                restart_file.write(str(''))
+                restart_file.close()
+                os._exit(0)
+
+
+webserver = Server()
+
 
 if __name__ == "__main__":
-    try:
-        logging.info('BAZARR is started and waiting for request on http://' + str(settings.general.ip) + ':' + (str(
-            args.port) if args.port else str(settings.general.port)) + str(base_url))
-        if not args.dev:
-            server.run()
-    except KeyboardInterrupt:
-        doShutdown()
+    webserver.start()
