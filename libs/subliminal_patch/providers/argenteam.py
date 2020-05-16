@@ -55,7 +55,7 @@ class ArgenteamSubtitle(Subtitle):
             return self._release_info
 
         combine = []
-        for attr in ("format", "version", "video_codec"):
+        for attr in ("format", "version"):
             value = getattr(self, attr)
             if value:
                 combine.append(value)
