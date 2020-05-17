@@ -465,25 +465,21 @@ def test_notification(protocol, provider):
 
 
 class Server:
-    try:
-        server
-    except NameError:
-        if args.dev:
-            server = app.run(host=str(settings.general.ip),
-                             port=(int(args.port) if args.port else int(settings.general.port)))
-        else:
-            server = create_server(app,
-                                   host=str(settings.general.ip),
-                                   port=int(args.port) if args.port else int(settings.general.port),
-                                   threads=24)
+    # Mute DeprecationWarning
+    warnings.simplefilter("ignore", DeprecationWarning)
+    # Mute Insecure HTTPS requests made to Sonarr and Radarr
+    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+    # Mute Python3 BrokenPipeError
+    warnings.simplefilter("ignore", BrokenPipeError)
 
-    def __init__(self):
-        # Mute DeprecationWarning
-        warnings.simplefilter("ignore", DeprecationWarning)
-        # Mute Insecure HTTPS requests made to Sonarr and Radarr
-        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-        # Mute Python3 BrokenPipeError
-        warnings.simplefilter("ignore", BrokenPipeError)
+    if args.dev:
+        server = app.run(host=str(settings.general.ip),
+                         port=(int(args.port) if args.port else int(settings.general.port)))
+    else:
+        server = create_server(app,
+                               host=str(settings.general.ip),
+                               port=int(args.port) if args.port else int(settings.general.port),
+                               threads=24)
 
     @classmethod
     def start(cls):
@@ -507,7 +503,7 @@ class Server:
             try:
                 stop_file = io.open(os.path.join(args.config_dir, "bazarr.stop"), "w", encoding='UTF-8')
             except Exception as e:
-                logging.error('BAZARR Cannot create bazarr.stop file.')
+                logging.error('BAZARR Cannot create bazarr.stop file: ' + repr(e))
             else:
                 logging.info('Bazarr is being shutdown...')
                 stop_file.write(str(''))
@@ -525,7 +521,7 @@ class Server:
             try:
                 restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
             except Exception as e:
-                logging.error('BAZARR Cannot create bazarr.restart file.')
+                logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
             else:
                 logging.info('Bazarr is being restarted...')
                 restart_file.write(str(''))
