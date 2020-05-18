@@ -31,10 +31,17 @@ check_python_version()
 dir_name = os.path.dirname(__file__)
 
 
+def end_child_process(ep):
+    try:
+        ep.kill()
+    except:
+        pass
+
+
 def start_bazarr():
     script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
-    atexit.register(lambda: ep.kill())
+    atexit.register(end_child_process, ep=ep)
 
 
 def check_status():
@@ -85,4 +92,5 @@ if __name__ == '__main__':
             else:
                 os.wait()
         except (KeyboardInterrupt, SystemExit):
-            pass
+            print('Bazarr exited.')
+            sys.exit(0)
