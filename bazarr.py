@@ -91,6 +91,7 @@ if __name__ == '__main__':
                 time.sleep(5)
             else:
                 os.wait()
+                time.sleep(1)
         except (KeyboardInterrupt, SystemExit):
             print('Bazarr exited.')
             sys.exit(0)
