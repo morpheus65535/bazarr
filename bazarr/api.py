@@ -64,14 +64,14 @@ def authenticate(actual_method):
 class Shutdown(Resource):
     @authenticate
     def get(self):
-        from main import webserver
+        from server import webserver
         webserver.shutdown()
 
 
 class Restart(Resource):
     @authenticate
     def get(self):
-        from main import webserver
+        from server import webserver
         webserver.restart()
 
 
