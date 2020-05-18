@@ -2,7 +2,6 @@
 
 import os
 import ast
-import libs
 from datetime import timedelta
 import datetime
 import pretty
@@ -31,7 +30,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
 from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from event_handler import event_stream
-from scheduler import Scheduler
+from scheduler import scheduler
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -42,8 +41,6 @@ from functools import wraps
 
 api_bp = Blueprint('api', __name__, url_prefix=base_url.rstrip('/')+'/api')
 api = Api(api_bp)
-
-scheduler = Scheduler()
 
 
 def authenticate(actual_method):

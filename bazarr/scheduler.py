@@ -16,9 +16,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
-from datetime import datetime, timedelta, date
-import pytz
-from tzlocal import get_localzone
+from datetime import datetime, timedelta
 from calendar import day_name
 import pretty
 from random import randrange
@@ -251,3 +249,6 @@ class Scheduler:
     def __no_task(self):
         for job in self.aps_scheduler.get_jobs():
             self.aps_scheduler.modify_job(job.id, next_run_time=None)
+
+
+scheduler = Scheduler()

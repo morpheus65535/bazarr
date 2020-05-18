@@ -3,7 +3,6 @@
 bazarr_version = '0.9'
 
 import os
-os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 import gc
@@ -34,12 +33,9 @@ from get_series import *
 from get_episodes import *
 from get_movies import *
 
-from scheduler import Scheduler
 from check_update import check_and_apply_update
 from server import app, webserver
 from functools import wraps
-
-scheduler = Scheduler()
 
 # Check and install update on startup when running on Windows from installer
 if args.release_update:

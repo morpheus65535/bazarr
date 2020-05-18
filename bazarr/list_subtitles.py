@@ -5,12 +5,10 @@ import os
 import logging
 import ast
 from guess_language import guess_language
-import subliminal
 import subliminal_patch
 from subliminal import core
 from subliminal_patch import search_external_subtitles
 from subzero.language import Language
-import six
 
 from database import database
 from get_languages import alpha2_from_alpha3, get_language_set

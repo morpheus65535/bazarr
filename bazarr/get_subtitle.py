@@ -18,7 +18,6 @@ from subliminal import region, score as subliminal_scores, \
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
     list_all_subtitles, get_subtitle_path
 from subliminal_patch.score import compute_score
-from subliminal.refiners.tvdb import series_re
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
     alpha2_from_language, alpha3_from_language
 from config import settings
