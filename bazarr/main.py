@@ -481,6 +481,15 @@ class Server:
                                port=int(args.port) if args.port else int(settings.general.port),
                                threads=24)
 
+    # Make sure that server class instance isn't getting instantiated again but reused instead.
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Server, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._instance
+
     @classmethod
     def start(cls):
         try:
