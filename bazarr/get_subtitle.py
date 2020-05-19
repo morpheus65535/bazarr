@@ -842,8 +842,8 @@ def wanted_search_missing_subtitles_series():
 
     episodes = database.execute("SELECT path FROM table_episodes WHERE missing_subtitles != '[]'" +
                                 monitored_only_query_string_sonarr)
-    # path_mappings.path_replace
-    dict_mapper.path_mappings.path_replace(episodes)
+    # path_replace
+    dict_mapper.path_replace(episodes)
 
     count_episodes = len(episodes)
     for i, episode in enumerate(episodes, 1):
@@ -865,8 +865,8 @@ def wanted_search_missing_subtitles_movies():
 
     movies = database.execute("SELECT path FROM table_movies WHERE missing_subtitles != '[]'" +
                               monitored_only_query_string_radarr)
-    # path_mappings.path_replace
-    dict_mapper.path_mappings.path_replace_movie(movies)
+    # path_replace
+    dict_mapper.path_replace_movie(movies)
 
     count_movies = len(movies)
     for i, movie in enumerate(movies, 1):
