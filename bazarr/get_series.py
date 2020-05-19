@@ -8,7 +8,7 @@ from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from database import database, dict_converter
 from utils import get_sonarr_version
-from helper import path_replace
+from helper import path_mappings
 from event_handler import event_stream
 
 
@@ -143,7 +143,7 @@ def update_series():
             list_missing_subtitles(no=added_series['sonarrSeriesId'])
         else:
             logging.debug('BAZARR unable to insert this series into the database:',
-                          path_replace(added_series['path']))
+                          path_mappings.path_replace(added_series['path']))
 
             event_stream(type='series', action='insert', series=added_series['sonarrSeriesId'])
 

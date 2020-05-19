@@ -13,8 +13,7 @@ from subzero.language import Language
 from database import database
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
-from helper import path_replace, path_replace_movie, path_replace_reverse, \
-    path_replace_reverse_movie, get_subtitle_destination_folder
+from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream
@@ -68,17 +67,17 @@ def store_subtitles(original_path, reversed_path):
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
                     actual_subtitles.append(
-                        [str("pb"), path_replace_reverse(subtitle_path)])
+                        [str("pb"), path_mappings.path_replace_reverse(subtitle_path)])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
-                        [str("pb:forced"), path_replace_reverse(subtitle_path)])
+                        [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
                 elif not language:
                     continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
                     actual_subtitles.append(
-                        [str(language), path_replace_reverse(subtitle_path)])
+                        [str(language), path_mappings.path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -142,15 +141,15 @@ def store_subtitles_movie(original_path, reversed_path):
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
                 if str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese)):
                     logging.debug("BAZARR external subtitles detected: " + "pb")
-                    actual_subtitles.append([str("pb"), path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([str("pb"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
-                    actual_subtitles.append([str("pb:forced"), path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif not language:
                     continue
                 elif str(language) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language))
-                    actual_subtitles.append([str(language), path_replace_reverse_movie(subtitle_path)])
+                    actual_subtitles.append([str(language), path_mappings.path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -301,7 +300,7 @@ def series_full_scan_subtitles():
     episodes = database.execute("SELECT path FROM table_episodes")
     
     for i, episode in enumerate(episodes, 1):
-        store_subtitles(episode['path'], path_replace(episode['path']))
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
     
     gc.collect()
 
@@ -310,7 +309,7 @@ def movies_full_scan_subtitles():
     movies = database.execute("SELECT path FROM table_movies")
     
     for i, movie in enumerate(movies, 1):
-        store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
+        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
     
     gc.collect()
 
@@ -320,14 +319,14 @@ def series_scan_subtitles(no):
                                 (no,))
     
     for episode in episodes:
-        store_subtitles(episode['path'], path_replace(episode['path']))
+        store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
 
 
 def movies_scan_subtitles(no):
     movies = database.execute("SELECT path FROM table_movies WHERE radarrId=? ORDER BY radarrId", (no,))
     
     for movie in movies:
-        store_subtitles_movie(movie['path'], path_replace_movie(movie['path']))
+        store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
 
 
 def get_external_subtitles_path(file, subtitle):

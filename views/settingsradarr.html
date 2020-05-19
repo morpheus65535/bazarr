@@ -369,18 +369,21 @@
                 $('#add_path_radarr').val('');
                 $('#add_path_bazarr').val('');
                 $('#addModal').modal('hide');
+                $('#settings_form').trigger('change');
             });
 
             $('#edit_save_button').on('click', function(e) {
                 e.preventDefault();
                 table.row( { selected: true } ).data([ $('#edit_path_radarr').val(), $('#edit_path_bazarr').val()]);
                 $('#editModal').modal('hide');
+                $('#settings_form').trigger('change');
             });
 
             $('#delete_yes_button').on('click', function(e) {
                 e.preventDefault();
                 table.row( { selected: true } ).remove().draw();
                 $('#deleteModal').modal('hide');
+                $('#settings_form').trigger('change');
             });
 
             $('#test_radarr_connection').on('click', function() {

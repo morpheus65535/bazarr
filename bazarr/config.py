@@ -166,6 +166,7 @@ def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
     update_schedule = False
+    update_path_map = False
     configure_proxy = False
 
     for key, value in settings_items:
@@ -206,6 +207,9 @@ def save_settings(settings_items):
                    'settings-general-auto_update', 'settings-general-upgrade_subs']:
             update_schedule = True
 
+        if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
+            update_path_map = True
+
         if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
                    'settings-proxy-password']:
             configure_proxy = True
@@ -227,6 +231,10 @@ def save_settings(settings_items):
     if update_schedule:
         from api import scheduler
         scheduler.update_configurable_tasks()
+
+    if update_path_map:
+        from helper import path_mappings
+        path_mappings.update()
 
     if configure_proxy:
         configure_proxy_func()
@@ -307,6 +315,7 @@ def configure_captcha_func():
             {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
     else:
         os.environ["ANTICAPTCHA_CLASS"] = ''
+
 
 def configure_proxy_func():
     if settings.proxy.type != 'None':

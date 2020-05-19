@@ -8,7 +8,7 @@ import hashlib
 from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
-from helper import create_path_mapping_dict
+from helper import path_mappings
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -132,4 +132,4 @@ def init_binaries():
 
 
 init_binaries()
-create_path_mapping_dict()
+path_mappings.update()

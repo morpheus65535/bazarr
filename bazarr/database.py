@@ -2,7 +2,7 @@ import os
 from sqlite3worker import Sqlite3Worker
 
 from get_args import args
-from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
+from helper import path_mappings
 
 
 def db_init():
@@ -69,20 +69,20 @@ class SqliteDictPathMapper:
     def path_replace(self, values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_replace(item['path'])
+                item['path'] = path_mappings.path_replace(item['path'])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_replace(values_dict['path'])
+            values_dict['path'] = path_mappings.path_replace(values_dict['path'])
         else:
-            return path_replace(values_dict)
+            return path_mappings.path_replace(values_dict)
 
     def path_replace_movie(self, values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_replace_movie(item['path'])
+                item['path'] = path_mappings.path_replace_movie(item['path'])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_replace_movie(values_dict['path'])
+            values_dict['path'] = path_mappings.path_replace_movie(values_dict['path'])
         else:
-            return path_replace(values_dict)
+            return path_mappings.path_replace_movie(values_dict)
 
 
 dict_mapper = SqliteDictPathMapper()

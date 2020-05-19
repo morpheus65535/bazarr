@@ -18,7 +18,7 @@ from config import settings, base_url, save_settings
 from init import *
 import logging
 from database import database
-from helper import path_replace, path_replace_reverse, path_replace_movie, path_replace_reverse_movie
+from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
@@ -278,7 +278,7 @@ class Series(Resource):
                 item.update({"alternateTitles": ast.literal_eval(item['alternateTitles'])})
 
             # Provide mapped path
-            mapped_path = path_replace(item['path'])
+            mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist
@@ -429,7 +429,7 @@ class Episodes(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_replace(item['path'])
+            mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist
@@ -450,15 +450,15 @@ class EpisodesSubtitlesDelete(Resource):
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
 
         try:
-            os.remove(path_replace(subtitlesPath))
+            os.remove(path_mappings.path_replace(subtitlesPath))
             result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
-            store_subtitles(path_replace_reverse(episodePath), episodePath)
+            store_subtitles(path_mappings.path_replace_reverse(episodePath), episodePath)
             return result, 202
         except OSError as e:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
 
-        store_subtitles(path_replace_reverse(episodePath), episodePath)
+        store_subtitles(path_mappings.path_replace_reverse(episodePath), episodePath)
         return '', 204
 
 
@@ -719,7 +719,7 @@ class Movies(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_replace_movie(item['path'])
+            mapped_path = path_mappings.path_replace_movie(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist
@@ -808,15 +808,15 @@ class MovieSubtitlesDelete(Resource):
         radarrId = request.form.get('radarrId')
 
         try:
-            os.remove(path_replace_movie(subtitlesPath))
+            os.remove(path_mappings.path_replace_movie(subtitlesPath))
             result = language_from_alpha3(language) + " subtitles deleted from disk."
             history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
-            store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(moviePath), moviePath)
             return result, 202
         except OSError as e:
             logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
 
-        store_subtitles_movie(path_replace_reverse_movie(moviePath), moviePath)
+        store_subtitles_movie(path_mappings.path_replace_reverse_movie(moviePath), moviePath)
         return '', 204
 
 
@@ -1079,7 +1079,7 @@ class HistorySeries(Resource):
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             # Provide mapped path
-            mapped_path = path_replace(item['path'])
+            mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist
@@ -1159,7 +1159,7 @@ class HistoryMovies(Resource):
 
             if item['video_path']:
                 # Provide mapped path
-                mapped_path = path_replace_movie(item['video_path'])
+                mapped_path = path_mappings.path_replace_movie(item['video_path'])
                 item.update({"mapped_path": mapped_path})
 
                 # Confirm if path exist
@@ -1209,7 +1209,7 @@ class WantedSeries(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_replace(item['path'])
+            mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist
@@ -1251,7 +1251,7 @@ class WantedMovies(Resource):
                 item.update({"missing_subtitles": []})
 
             # Provide mapped path
-            mapped_path = path_replace_movie(item['path'])
+            mapped_path = path_mappings.path_replace_movie(item['path'])
             item.update({"mapped_path": mapped_path})
 
             # Confirm if path exist

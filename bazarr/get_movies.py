@@ -5,7 +5,7 @@ import requests
 import logging
 
 from config import settings, url_radarr
-from helper import path_replace_movie
+from helper import path_mappings
 from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
 
@@ -226,11 +226,11 @@ def update_movies():
                                            added_movie['monitored']])
                 else:
                     logging.debug('BAZARR unable to insert this movie into the database:',
-                                  path_replace_movie(added_movie['path']))
+                                  path_mappings.path_replace_movie(added_movie['path']))
 
             # Store subtitles for added or modified movies
             for i, altered_movie in enumerate(altered_movies, 1):
-                store_subtitles_movie(altered_movie[1], path_replace_movie(altered_movie[1]))
+                store_subtitles_movie(altered_movie[1], path_mappings.path_replace_movie(altered_movie[1]))
 
             logging.debug('BAZARR All movies synced from Radarr into database.')
 
