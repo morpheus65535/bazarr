@@ -36,7 +36,7 @@ defaults = {
         'movie_default_hi': 'False',
         'movie_default_forced': 'False',
         'page_size': '25',
-        'page_size_manual_search': '5',
+        'page_size_manual_search': '10',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
         'utf8_encode': 'True',

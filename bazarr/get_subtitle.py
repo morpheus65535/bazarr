@@ -440,7 +440,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " Subtitles downloaded from " + downloaded_provider + " with a score of " + str(
+                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + downloaded_provider + " with a score of " + str(
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
