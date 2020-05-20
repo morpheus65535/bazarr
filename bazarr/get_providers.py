@@ -114,7 +114,6 @@ def get_providers_auth():
     providers_auth = {
         'addic7ed': {'username': settings.addic7ed.username,
                      'password': settings.addic7ed.password,
-                     'use_random_agents': settings.addic7ed.getboolean('random_agents'),
                      },
         'opensubtitles': {'username': settings.opensubtitles.username,
                           'password': settings.opensubtitles.password,

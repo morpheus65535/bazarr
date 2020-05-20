@@ -107,8 +107,7 @@ defaults = {
     },
     'addic7ed': {
         'username': '',
-        'password': '',
-        'random_agents': 'True'
+        'password': ''
     },
     'legendasdivx': {
         'username': '',
