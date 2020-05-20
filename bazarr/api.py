@@ -75,11 +75,22 @@ class Restart(Resource):
 class Badges(Resource):
     @authenticate
     def get(self):
+        sonarr_only_monitored_where_clause = ''
+        if settings.sonarr.getboolean('only_monitored'):
+            sonarr_only_monitored_where_clause = " AND table_episodes.monitored == 'True'"
+
+        radarr_only_monitored_where_clause = ''
+        if settings.radarr.getboolean('only_monitored'):
+            radarr_only_monitored_where_clause = " AND table_movies.monitored == 'True'"
+
         result = {
             "missing_episodes": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles "
-                                                 "is not null AND missing_subtitles != '[]'", only_one=True)['count'],
+                                                 "is not null AND missing_subtitles != '[]'" +
+                                                 sonarr_only_monitored_where_clause, only_one=True)['count'],
+
             "missing_movies": database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles "
-                                               "is not null AND missing_subtitles != '[]'", only_one=True)['count'],
+                                               "is not null AND missing_subtitles != '[]'" +
+                                               radarr_only_monitored_where_clause, only_one=True)['count'],
             "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
