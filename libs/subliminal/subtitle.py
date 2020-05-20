@@ -10,6 +10,7 @@ import pysrt
 from .score import get_equivalent_release_groups
 from .video import Episode, Movie
 from .utils import sanitize, sanitize_release_group
+from six import text_type
 
 
 logger = logging.getLogger(__name__)
@@ -71,10 +72,12 @@ class Subtitle(object):
         if not self.content:
             return
 
-        if self.encoding:
-            return self.content.decode(self.encoding, errors='replace')
+        if not isinstance(self.content, text_type):
+            if self.encoding:
+                return self.content.decode(self.encoding, errors='replace')
+            return self.content.decode(self.guess_encoding(), errors='replace')
 
-        return self.content.decode(self.guess_encoding(), errors='replace')
+        return self.content
 
     def is_valid(self):
         """Check if a :attr:`text` is a valid SubRip format.
@@ -238,9 +241,9 @@ def guess_matches(video, guess, partial=False):
     # resolution
     if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
         matches.add('resolution')
-    # format
-    if video.format and 'format' in guess and guess['format'].lower() == video.format.lower():
-        matches.add('format')
+    # source
+    if video.source and 'source' in guess and guess['source'].lower() == video.source.lower():
+        matches.add('source')
     # video_codec
     if video.video_codec and 'video_codec' in guess and guess['video_codec'] == video.video_codec:
         matches.add('video_codec')

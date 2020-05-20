@@ -2,35 +2,23 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name
 import logging
-
+import os
 # io.open supports encoding= in python 2.7
 from io import open  # pylint: disable=redefined-builtin
-import os
-import yaml
-
-import six
 
 import babelfish
-import pytest
-
+import six  # pylint:disable=wrong-import-order
+import yaml  # pylint:disable=wrong-import-order
 from rebulk.remodule import re
 from rebulk.utils import is_iterable
 
-from ..options import parse_options, load_config
-from ..yamlutils import OrderedDictYAMLLoader
 from .. import guessit
-
+from ..options import parse_options
+from ..yamlutils import OrderedDictYAMLLoader
 
 logger = logging.getLogger(__name__)
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-
-filename_predicate = None
-string_predicate = None
-
-
-# filename_predicate = lambda filename: 'episode_title' in filename
-# string_predicate = lambda string: '-DVD.BlablaBla.Fix.Blablabla.XVID' in string
 
 
 class EntryResult(object):
@@ -64,10 +52,10 @@ class EntryResult(object):
     def __repr__(self):
         if self.ok:
             return self.string + ': OK!'
-        elif self.warning:
+        if self.warning:
             return '%s%s: WARNING! (valid=%i, extra=%i)' % ('-' if self.negates else '', self.string, len(self.valid),
                                                             len(self.extra))
-        elif self.error:
+        if self.error:
             return '%s%s: ERROR! (valid=%i, missing=%i, different=%i, extra=%i, others=%i)' % \
                    ('-' if self.negates else '', self.string, len(self.valid), len(self.missing), len(self.different),
                     len(self.extra), len(self.others))
@@ -136,9 +124,51 @@ class TestYml(object):
     Use $ marker to check inputs that should not match results.
     """
 
-    options_re = re.compile(r'^([ \+-]+)(.*)')
+    options_re = re.compile(r'^([ +-]+)(.*)')
 
-    files, ids = files_and_ids(filename_predicate)
+    def _get_unique_id(self, collection, base_id):
+        ret = base_id
+        i = 2
+        while ret in collection:
+            suffix = "-" + str(i)
+            ret = base_id + suffix
+            i += 1
+        return ret
+
+    def pytest_generate_tests(self, metafunc):
+        if 'yml_test_case' in metafunc.fixturenames:
+            entries = []
+            entry_ids = []
+            entry_set = set()
+
+            for filename, _ in zip(*files_and_ids()):
+                with open(os.path.join(__location__, filename), 'r', encoding='utf-8') as infile:
+                    data = yaml.load(infile, OrderedDictYAMLLoader)
+
+                last_expected = None
+                for string, expected in reversed(list(data.items())):
+                    if expected is None:
+                        data[string] = last_expected
+                    else:
+                        last_expected = expected
+
+                default = None
+                try:
+                    default = data['__default__']
+                    del data['__default__']
+                except KeyError:
+                    pass
+
+                for string, expected in data.items():
+                    TestYml.set_default(expected, default)
+                    string = TestYml.fix_encoding(string, expected)
+
+                    entries.append((filename, string, expected))
+                    unique_id = self._get_unique_id(entry_set, '[' + filename + '] ' + str(string))
+                    entry_set.add(unique_id)
+                    entry_ids.append(unique_id)
+
+            metafunc.parametrize('yml_test_case', entries, ids=entry_ids)
 
     @staticmethod
     def set_default(expected, default):
@@ -147,34 +177,8 @@ class TestYml(object):
                 if k not in expected:
                     expected[k] = v
 
-    @pytest.mark.parametrize('filename', files, ids=ids)
-    def test(self, filename, caplog):
-        caplog.setLevel(logging.INFO)
-        with open(os.path.join(__location__, filename), 'r', encoding='utf-8') as infile:
-            data = yaml.load(infile, OrderedDictYAMLLoader)
-        entries = Results()
-
-        last_expected = None
-        for string, expected in reversed(list(data.items())):
-            if expected is None:
-                data[string] = last_expected
-            else:
-                last_expected = expected
-
-        default = None
-        try:
-            default = data['__default__']
-            del data['__default__']
-        except KeyError:
-            pass
-
-        for string, expected in data.items():
-            TestYml.set_default(expected, default)
-            entry = self.check_data(filename, string, expected)
-            entries.append(entry)
-        entries.assert_ok()
-
-    def check_data(self, filename, string, expected):
+    @classmethod
+    def fix_encoding(cls, string, expected):
         if six.PY2:
             if isinstance(string, six.text_type):
                 string = string.encode('utf-8')
@@ -187,16 +191,23 @@ class TestYml(object):
                 expected[k] = v
         if not isinstance(string, str):
             string = str(string)
-        if not string_predicate or string_predicate(string):  # pylint: disable=not-callable
-            entry = self.check(string, expected)
-            if entry.ok:
-                logger.debug('[' + filename + '] ' + str(entry))
-            elif entry.warning:
-                logger.warning('[' + filename + '] ' + str(entry))
-            elif entry.error:
-                logger.error('[' + filename + '] ' + str(entry))
-                for line in entry.details:
-                    logger.error('[' + filename + '] ' + ' ' * 4 + line)
+        return string
+
+    def test_entry(self, yml_test_case):
+        filename, string, expected = yml_test_case
+        result = self.check_data(filename, string, expected)
+        assert not result.error
+
+    def check_data(self, filename, string, expected):
+        entry = self.check(string, expected)
+        if entry.ok:
+            logger.debug('[%s] %s', filename, entry)
+        elif entry.warning:
+            logger.warning('[%s] %s', filename, entry)
+        elif entry.error:
+            logger.error('[%s] %s', filename, entry)
+            for line in entry.details:
+                logger.error('[%s] %s', filename, ' ' * 4 + line)
         return entry
 
     def check(self, string, expected):
@@ -207,12 +218,10 @@ class TestYml(object):
             options = {}
         if not isinstance(options, dict):
             options = parse_options(options)
-        options['config'] = False
-        options = load_config(options)
         try:
             result = guessit(string, options)
         except Exception as exc:
-            logger.error('[' + string + '] Exception: ' + str(exc))
+            logger.error('[%s] Exception: %s', string, exc)
             raise exc
 
         entry = EntryResult(string, negates)
@@ -258,10 +267,10 @@ class TestYml(object):
             return False
         if isinstance(next(iter(values)), babelfish.Language):
             # pylint: disable=no-member
-            expecteds = set([babelfish.Language.fromguessit(expected) for expected in expecteds])
+            expecteds = {babelfish.Language.fromguessit(expected) for expected in expecteds}
         elif isinstance(next(iter(values)), babelfish.Country):
             # pylint: disable=no-member
-            expecteds = set([babelfish.Country.fromguessit(expected) for expected in expecteds])
+            expecteds = {babelfish.Country.fromguessit(expected) for expected in expecteds}
         return values == expecteds
 
     def check_expected(self, result, expected, entry):
@@ -274,10 +283,10 @@ class TestYml(object):
                             if negates_key:
                                 entry.valid.append((expected_key, expected_value))
                             else:
-                                entry.different.append((expected_key, expected_value, result[expected_key]))
+                                entry.different.append((expected_key, expected_value, result[result_key]))
                         else:
                             if negates_key:
-                                entry.different.append((expected_key, expected_value, result[expected_key]))
+                                entry.different.append((expected_key, expected_value, result[result_key]))
                             else:
                                 entry.valid.append((expected_key, expected_value))
                     elif not negates_key:

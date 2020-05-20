@@ -15,9 +15,19 @@ def formatters(*chained_formatters):
     :return:
     :rtype:
     """
+
     def formatters_chain(input_string):  # pylint:disable=missing-docstring
         for chained_formatter in chained_formatters:
             input_string = chained_formatter(input_string)
         return input_string
 
     return formatters_chain
+
+
+def default_formatter(input_string):
+    """
+    Default formatter
+    :param input_string:
+    :return:
+    """
+    return input_string

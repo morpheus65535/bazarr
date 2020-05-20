@@ -7,41 +7,50 @@ country property
 import babelfish
 
 from rebulk import Rebulk
-from ..common.words import COMMON_WORDS, iter_words
+from ..common.pattern import is_disabled
+from ..common.words import iter_words
 
 
-def country():
+def country(config, common_words):
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
+    :param common_words: common words
+    :type common_words: set
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk().defaults(name='country')
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'country'))
+    rebulk = rebulk.defaults(name='country')
+
+    def find_countries(string, context=None):
+        """
+        Find countries in given string.
+        """
+        allowed_countries = context.get('allowed_countries') if context else None
+        return CountryFinder(allowed_countries, common_words).find(string)
 
     rebulk.functional(find_countries,
                       #  Prefer language and any other property over country if not US or GB.
                       conflict_solver=lambda match, other: match
-                      if other.name != 'language' or match.value not in [babelfish.Country('US'),
-                                                                         babelfish.Country('GB')]
+                      if other.name != 'language' or match.value not in (babelfish.Country('US'),
+                                                                         babelfish.Country('GB'))
                       else other,
-                      properties={'country': [None]})
+                      properties={'country': [None]},
+                      disabled=lambda context: not context.get('allowed_countries'))
+
+    babelfish.country_converters['guessit'] = GuessitCountryConverter(config['synonyms'])
 
     return rebulk
 
 
-COUNTRIES_SYN = {'ES': ['españa'],
-                 'GB': ['UK'],
-                 'BR': ['brazilian', 'bra'],
-                 'CA': ['québec', 'quebec', 'qc'],
-                 # FIXME: this one is a bit of a stretch, not sure how to do it properly, though...
-                 'MX': ['Latinoamérica', 'latin america']}
-
-
 class GuessitCountryConverter(babelfish.CountryReverseConverter):  # pylint: disable=missing-docstring
-    def __init__(self):
+    def __init__(self, synonyms):
         self.guessit_exceptions = {}
 
-        for alpha2, synlist in COUNTRIES_SYN.items():
+        for alpha2, synlist in synonyms.items():
             for syn in synlist:
                 self.guessit_exceptions[syn.lower()] = alpha2
 
@@ -78,32 +87,28 @@ class GuessitCountryConverter(babelfish.CountryReverseConverter):  # pylint: dis
         raise babelfish.CountryReverseError(name)
 
 
-babelfish.country_converters['guessit'] = GuessitCountryConverter()
+class CountryFinder(object):
+    """Helper class to search and return country matches."""
 
+    def __init__(self, allowed_countries, common_words):
+        self.allowed_countries = {l.lower() for l in allowed_countries or []}
+        self.common_words = common_words
 
-def is_allowed_country(country_object, context=None):
-    """
-    Check if country is allowed.
-    """
-    if context and context.get('allowed_countries'):
-        allowed_countries = context.get('allowed_countries')
-        return country_object.name.lower() in allowed_countries or country_object.alpha2.lower() in allowed_countries
-    return True
+    def find(self, string):
+        """Return all matches for country."""
+        for word_match in iter_words(string.strip().lower()):
+            word = word_match.value
+            if word.lower() in self.common_words:
+                continue
 
+            try:
+                country_object = babelfish.Country.fromguessit(word)
+                if (country_object.name.lower() in self.allowed_countries or
+                        country_object.alpha2.lower() in self.allowed_countries):
+                    yield self._to_rebulk_match(word_match, country_object)
+            except babelfish.Error:
+                continue
 
-def find_countries(string, context=None):
-    """
-    Find countries in given string.
-    """
-    ret = []
-    for word_match in iter_words(string.strip().lower()):
-        word = word_match.value
-        if word.lower() in COMMON_WORDS:
-            continue
-        try:
-            country_object = babelfish.Country.fromguessit(word)
-            if is_allowed_country(country_object, context):
-                ret.append((word_match.span[0], word_match.span[1], {'value': country_object}))
-        except babelfish.Error:
-            continue
-    return ret
+    @classmethod
+    def _to_rebulk_match(cls, word, value):
+        return word.span[0], word.span[1], {'value': value}

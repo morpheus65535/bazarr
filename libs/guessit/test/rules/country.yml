@@ -5,6 +5,9 @@
 : country: US
   title: this is title
 
-? This.is.us.title
-: title: This is us title
+? This.is.Us
+: title: This is Us
 
+? This.Is.Us
+: options: --no-default-config
+  title: This Is Us

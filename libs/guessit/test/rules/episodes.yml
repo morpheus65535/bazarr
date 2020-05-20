@@ -32,8 +32,6 @@
 ? +serie Season 2 other
 ? +serie Saisons 2 other
 ? +serie Seasons 2 other
-? +serie Serie 2 other
-? +serie Series 2 other
 ? +serie Season Two other
 ? +serie Season II other
 : season: 2
@@ -156,7 +154,7 @@
 
 ? Show.Name.Season.1.3&5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.3 and 5.HDTV.XviD-GoodGroup[SomeTrash]
-: format: HDTV
+: source: HDTV
   release_group: GoodGroup[SomeTrash]
   season:
   - 1
@@ -164,12 +162,12 @@
   - 5
   title: Show Name
   type: episode
-  video_codec: XviD
+  video_codec: Xvid
 
 ? Show.Name.Season.1.2.3-5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.2.3~5.HDTV.XviD-GoodGroup[SomeTrash]
 ? Show.Name.Season.1.2.3 to 5.HDTV.XviD-GoodGroup[SomeTrash]
-: format: HDTV
+: source: HDTV
   release_group: GoodGroup[SomeTrash]
   season:
   - 1
@@ -179,18 +177,19 @@
   - 5
   title: Show Name
   type: episode
-  video_codec: XviD
+  video_codec: Xvid
 
 ? The.Get.Down.S01EP01.FRENCH.720p.WEBRIP.XVID-STR
 : episode: 1
-  format: WEBRip
+  source: Web
+  other: Rip
   language: fr
   release_group: STR
   screen_size: 720p
   season: 1
   title: The Get Down
   type: episode
-  video_codec: XviD
+  video_codec: Xvid
 
 ? My.Name.Is.Earl.S01E01-S01E21.SWE-SUB
 : episode:
@@ -270,3 +269,63 @@
 ? Episode71
 ? Episode 71
 : episode: 71
+
+? S01D02.3-5-GROUP
+: disc: [2, 3, 4, 5]
+
+? S01D02&4-6&8
+: disc: [2, 4, 5, 6, 8]
+
+? Something.4x05-06
+? Something - 4x05-06
+? Something:4x05-06
+? Something 4x05-06
+? Something-4x05-06
+: title: Something
+  season: 4
+  episode:
+  - 5
+  - 6
+
+? Something.4x05-06
+? Something - 4x05-06
+? Something:4x05-06
+? Something 4x05-06
+? Something-4x05-06
+: options: -T something
+  title: something
+  season: 4
+  episode:
+  - 5
+  - 6
+
+? Colony 23/S01E01.Some.title.mkv
+: title: Colony 23
+  season: 1
+  episode: 1
+  episode_title: Some title
+
+? Show.Name.E02.2010.mkv
+: options: -t episode
+  title: Show Name
+  year: 2010
+  episode: 2
+
+? Show.Name.E02.S2010.mkv
+: options: -t episode
+  title: Show Name
+  year: 2010
+  season: 2010
+  episode: 2
+
+
+? Show.Name.E02.2010.mkv
+: title: Show Name
+  year: 2010
+  episode: 2
+
+? Show.Name.E02.S2010.mkv
+: title: Show Name
+  year: 2010
+  season: 2010
+  episode: 2

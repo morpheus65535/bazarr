@@ -3,7 +3,7 @@
 """
 Introspect rebulk object to retrieve capabilities.
 """
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 
 import six
@@ -16,7 +16,8 @@ class Description(object):
     """
     Abstract class for a description.
     """
-    @abstractproperty
+    @property
+    @abstractmethod
     def properties(self):  # pragma: no cover
         """
         Properties of described object.

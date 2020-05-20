@@ -53,6 +53,14 @@ if six.PY2:
 """
 
 
+def test_ensure_standard_string_class():
+    class CustomStr(str):
+        pass
+
+    ret = guessit(CustomStr('1080p'), options={'advanced': True})
+    assert ret and 'screen_size' in ret and not isinstance(ret['screen_size'].input_string, CustomStr)
+
+
 def test_properties():
     props = properties()
     assert 'video_codec' in props.keys()

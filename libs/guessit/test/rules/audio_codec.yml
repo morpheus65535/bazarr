@@ -8,22 +8,25 @@
 ? +lame3.100
 : audio_codec: MP3
 
+? +MP2
+: audio_codec: MP2
+
 ? +DolbyDigital
 ? +DD
 ? +Dolby Digital
 ? +AC3
-: audio_codec: AC3
+: audio_codec: Dolby Digital
 
 ? +DDP
 ? +DD+
 ? +EAC3
-: audio_codec: EAC3
+: audio_codec: Dolby Digital Plus
 
 ? +DolbyAtmos
 ? +Dolby Atmos
 ? +Atmos
 ? -Atmosphere
-: audio_codec: DolbyAtmos
+: audio_codec: Dolby Atmos
 
 ? +AAC
 : audio_codec: AAC
@@ -36,33 +39,34 @@
 
 ? +True-HD
 ? +trueHD
-: audio_codec: TrueHD
+: audio_codec: Dolby TrueHD
 
 ? +True-HD51
 ? +trueHD51
-: audio_codec: TrueHD
+: audio_codec: Dolby TrueHD
   audio_channels: '5.1'
 
-
+? +DTSHD
+? +DTS HD
 ? +DTS-HD
-: audio_codec: DTS
-  audio_profile: HD
+: audio_codec: DTS-HD
 
 ? +DTS-HDma
-: audio_codec: DTS
-  audio_profile: HDMA
+? +DTSMA
+: audio_codec: DTS-HD
+  audio_profile: Master Audio
 
 ? +AC3-hq
-: audio_codec: AC3
-  audio_profile: HQ
+: audio_codec: Dolby Digital
+  audio_profile: High Quality
 
 ? +AAC-HE
 : audio_codec: AAC
-  audio_profile: HE
+  audio_profile: High Efficiency
 
 ? +AAC-LC
 : audio_codec: AAC
-  audio_profile: LC
+  audio_profile: Low Complexity
 
 ? +AAC2.0
 ? +AAC20
@@ -90,8 +94,41 @@
 
 ? DD5.1
 ? DD51
-: audio_codec: AC3
+: audio_codec: Dolby Digital
   audio_channels: '5.1'
 
 ? -51
 : audio_channels: '5.1'
+
+? DTS-HD.HRA
+? DTSHD.HRA
+? DTS-HD.HR
+? DTSHD.HR
+? -HRA
+? -HR
+: audio_codec: DTS-HD
+  audio_profile: High Resolution Audio
+
+? DTSES
+? DTS-ES
+? -ES
+: audio_codec: DTS
+  audio_profile: Extended Surround
+
+? DD-EX
+? DDEX
+? -EX
+: audio_codec: Dolby Digital
+  audio_profile: EX
+
+? OPUS
+: audio_codec: Opus
+
+? Vorbis
+: audio_codec: Vorbis
+
+? PCM
+: audio_codec: PCM
+
+? LPCM
+: audio_codec: LPCM

@@ -5,7 +5,11 @@ Classes and functions related to matches
 """
 import copy
 import itertools
-from collections import defaultdict, MutableSequence
+from collections import defaultdict
+try:
+    from collections.abc import MutableSequence
+except ImportError:
+    from collections import MutableSequence
 
 try:
     from collections import OrderedDict  # pylint:disable=ungrouped-imports
@@ -778,9 +782,9 @@ class Match(object):
                     right.start = end
                     if right:
                         ret.append(right)
-                elif end <= current.end and end > current.start:
+                elif current.end >= end > current.start:
                     current.start = end
-                elif start >= current.start and start < current.end:
+                elif current.start <= start < current.end:
                     current.end = start
         return filter_index(ret, predicate, index)
 
@@ -810,6 +814,24 @@ class Match(object):
                     split_match = None
 
         return filter_index(ret, predicate, index)
+
+    def tagged(self, *tags):
+        """
+        Check if this match has at least one of the provided tags
+
+        :param tags:
+        :return: True if at least one tag is defined, False otherwise.
+        """
+        return any(tag in self.tags for tag in tags)
+
+    def named(self, *names):
+        """
+        Check if one of the children match has one of the provided name
+
+        :param names:
+        :return: True if at least one child is named with a given name is defined, False otherwise.
+        """
+        return any(name in self.names for name in names)
 
     def __len__(self):
         return self.end - self.start

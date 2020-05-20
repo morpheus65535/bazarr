@@ -17,7 +17,13 @@ from rebulk.__version__ import __version__ as __rebulk_version__
 from guessit import api
 from guessit.__version__ import __version__
 from guessit.jsonutils import GuessitEncoder
-from guessit.options import argument_parser, parse_options, load_config
+from guessit.options import argument_parser, parse_options, load_config, merge_options
+
+
+try:
+    from collections import OrderedDict
+except ImportError:  # pragma: no-cover
+    from ordereddict import OrderedDict  # pylint:disable=import-error
 
 
 def guess_filename(filename, options):
@@ -45,7 +51,7 @@ def guess_filename(filename, options):
         import yaml
         from guessit import yamlutils
 
-        ystr = yaml.dump({filename: dict(guess)}, Dumper=yamlutils.CustomDumper, default_flow_style=False,
+        ystr = yaml.dump({filename: OrderedDict(guess)}, Dumper=yamlutils.CustomDumper, default_flow_style=False,
                          allow_unicode=True)
         i = 0
         for yline in ystr.splitlines():
@@ -91,9 +97,9 @@ def display_properties(options):
                     print(4 * ' ' + '[!] %s' % (property_value,))
 
 
-def main(args=None):  # pylint:disable=too-many-branches
+def fix_argv_encoding():
     """
-    Main function for entry point
+    Fix encoding of sys.argv on windows Python 2
     """
     if six.PY2 and os.name == 'nt':  # pragma: no cover
         # see http://bugs.python.org/issue2128
@@ -102,11 +108,21 @@ def main(args=None):  # pylint:disable=too-many-branches
         for i, j in enumerate(sys.argv):
             sys.argv[i] = j.decode(locale.getpreferredencoding())
 
+
+def main(args=None):  # pylint:disable=too-many-branches
+    """
+    Main function for entry point
+    """
+    fix_argv_encoding()
+
     if args is None:  # pragma: no cover
         options = parse_options()
     else:
         options = parse_options(args)
-    options = load_config(options)
+
+    config = load_config(options)
+    options = merge_options(config, options)
+
     if options.get('verbose'):
         logging.basicConfig(stream=sys.stdout, format='%(message)s')
         logging.getLogger().setLevel(logging.DEBUG)
@@ -126,7 +142,7 @@ def main(args=None):  # pylint:disable=too-many-branches
 
     if options.get('yaml'):
         try:
-            import yaml  # pylint:disable=unused-variable
+            import yaml  # pylint:disable=unused-variable,unused-import
         except ImportError:  # pragma: no cover
             del options['yaml']
             print('PyYAML is not installed. \'--yaml\' option will be ignored ...', file=sys.stderr)

@@ -30,7 +30,7 @@ def _default_conflict_solver(match, conflicting_match):
     """
     if len(conflicting_match.initiator) < len(match.initiator):
         return conflicting_match
-    elif len(match.initiator) < len(conflicting_match.initiator):
+    if len(match.initiator) < len(conflicting_match.initiator):
         return match
     return None
 

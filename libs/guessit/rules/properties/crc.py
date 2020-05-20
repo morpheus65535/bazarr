@@ -6,20 +6,25 @@ crc and uuid properties
 from rebulk.remodule import re
 
 from rebulk import Rebulk
+from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
 
 
-def crc():
+def crc(config):  # pylint:disable=unused-argument
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk().regex_defaults(flags=re.IGNORECASE)
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'crc32'))
+    rebulk = rebulk.regex_defaults(flags=re.IGNORECASE)
     rebulk.defaults(validator=seps_surround)
 
     rebulk.regex('(?:[a-fA-F]|[0-9]){8}', name='crc32',
-                 conflict_solver=lambda match, other: match
+                 conflict_solver=lambda match, other: other
                  if other.name in ['episode', 'season']
                  else '__default__')
 

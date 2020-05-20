@@ -37,3 +37,11 @@
 ? +ENG.-.SVSUB
 : language: English
   subtitle_language: Swedish
+
+? The English Patient (1996)
+: title: The English Patient
+  -language: english
+
+? French.Kiss.1995.1080p
+: title: French Kiss
+  -language: french

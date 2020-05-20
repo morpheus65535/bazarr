@@ -21,6 +21,7 @@ from subliminal.subtitle import Episode, Movie, sanitize_release_group, get_equi
 from subliminal_patch.utils import sanitize
 from ftfy import fix_text
 from codecs import BOM_UTF8, BOM_UTF16_BE, BOM_UTF16_LE, BOM_UTF32_BE, BOM_UTF32_LE
+from six import text_type
 
 BOMS = (
     (BOM_UTF8, "UTF-8"),
@@ -80,10 +81,12 @@ class Subtitle(Subtitle_):
         if not self.content:
             return
 
-        #if self.encoding:
-        #    return fix_text(self.content.decode(self.encoding, errors='replace'), **ftfy_defaults)
+        if not isinstance(self.content, text_type):
+            if self.encoding:
+                return self.content.decode(self.encoding, errors='replace')
+            return self.content.decode(self.guess_encoding(), errors='replace')
 
-        return self.content.decode(self.guess_encoding(), errors='replace')
+        return self.content
 
     @property
     def numeric_id(self):
@@ -472,14 +475,14 @@ def guess_matches(video, guess, partial=False):
     if video.resolution and 'screen_size' in guess and guess['screen_size'] == video.resolution:
         matches.add('resolution')
 
-    # format
-    if 'format' in guess:
-        formats = guess["format"]
+    # source
+    if 'source' in guess:
+        formats = guess["source"]
         if not isinstance(formats, list):
             formats = [formats]
 
-        if video.format:
-            video_format = video.format.lower()
+        if video.source:
+            video_format = video.source.lower()
             _video_gen_format = MERGED_FORMATS_REV.get(video_format)
             if _video_gen_format:
                 logger.debug("Treating %s as %s the same", video_format, _video_gen_format)
@@ -488,10 +491,10 @@ def guess_matches(video, guess, partial=False):
                 _guess_gen_frmt = MERGED_FORMATS_REV.get(frmt.lower())
 
                 if _guess_gen_frmt == _video_gen_format:
-                    matches.add('format')
+                    matches.add('source')
                     break
-        if "release_group" in matches and "format" not in matches:
-            logger.info("Release group matched but format didn't. Remnoving release group match.")
+        if "release_group" in matches and "source" not in matches:
+            logger.info("Release group matched but source didn't. Remnoving release group match.")
             matches.remove("release_group")
 
     # video_codec

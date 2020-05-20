@@ -6,15 +6,19 @@
 ? Rv30
 ? rv40
 ? -xrv40
-: video_codec: Real
+: video_codec: RealVideo
 
 ? mpeg2
 ? MPEG2
+? MPEG-2
+? mpg2
+? H262
+? H.262
+? x262
 ? -mpeg
-? -mpeg 2  # Not sure if we should ignore this one ...
 ? -xmpeg2
 ? -mpeg2x
-: video_codec: Mpeg2
+: video_codec: MPEG-2
 
 ? DivX
 ? -div X
@@ -26,19 +30,25 @@
 ? XviD
 ? xvid
 ? -x vid
-: video_codec: XviD
+: video_codec: Xvid
+
+? h263
+? x263
+? h.263
+: video_codec: H.263
 
 ? h264
 ? x264
 ? h.264
 ? x.264
-? mpeg4-AVC
+? AVC
+? AVCHD
 ? -MPEG-4
 ? -mpeg4
 ? -mpeg
 ? -h 265
 ? -x265
-: video_codec: h264
+: video_codec: H.264
 
 ? h265
 ? x265
@@ -47,13 +57,42 @@
 ? hevc
 ? -h 264
 ? -x264
-: video_codec: h265
+: video_codec: H.265
 
 ? hevc10
 ? HEVC-YUV420P10
-: video_codec: h265
-  video_profile: 10bit
+: video_codec: H.265
+  color_depth: 10-bit
 
 ? h265-HP
-: video_codec: h265
-  video_profile: HP
+: video_codec: H.265
+  video_profile: High
+
+? H.264-SC
+: video_codec: H.264
+  video_profile: Scalable Video Coding
+
+? mpeg4-AVC
+: video_codec: H.264
+  video_profile: Advanced Video Codec High Definition
+
+? AVCHD-SC
+? H.264-AVCHD-SC
+: video_codec: H.264
+  video_profile:
+  - Scalable Video Coding
+  - Advanced Video Codec High Definition
+
+? VC1
+? VC-1
+: video_codec: VC-1
+
+? VP7
+: video_codec: VP7
+
+? VP8
+? VP80
+: video_codec: VP8
+
+? VP9
+: video_codec: VP9

@@ -39,7 +39,7 @@ class ArgenteamSubtitle(Subtitle):
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
         self.matches = None
-        self.format = source
+        self.source = source
         self.video_codec = video_codec
         self.tvdb_id = tvdb_id
         self.imdb_id = "tt" + imdb_id if imdb_id else None
@@ -55,7 +55,7 @@ class ArgenteamSubtitle(Subtitle):
             return self._release_info
 
         combine = []
-        for attr in ("format", "version"):
+        for attr in ("source", "version"):
             value = getattr(self, attr)
             if value:
                 combine.append(value)
@@ -115,22 +115,22 @@ class ArgenteamSubtitle(Subtitle):
             if any(r in sanitize_release_group(self.release) for r in get_equivalent_release_groups(rg)):
                 matches.add('release_group')
 
-                # blatantly assume we've got a matching format if the release group matches
+                # blatantly assume we've got a matching source if the release group matches
                 # fixme: smart?
-                #matches.add('format')
+                #matches.add('source')
 
         # resolution
         if video.resolution and self.version and str(video.resolution) in self.version.lower():
             matches.add('resolution')
-        # format
-        if video.format and self.format:
-            formats = [video.format]
-            if video.format == "WEB-DL":
+        # source
+        if video.source and self.source:
+            formats = [video.source]
+            if video.source == "Web":
                 formats.append("WEB")
 
             for fmt in formats:
-                if fmt.lower() in self.format.lower():
-                    matches.add('format')
+                if fmt.lower() in self.source.lower():
+                    matches.add('source')
                     break
 
         matches |= guess_matches(video, guessit(self.release_info), partial=True)

@@ -2,68 +2,279 @@
 # Use - marker to check inputs that should not match results.
 ? +360p
 ? +360px
-? +360i
-? "+360"
+? -360
 ? +500x360
+? -250x360
 : screen_size: 360p
+
+? +640x360
+? -640x360i
+? -684x360i
+: screen_size: 360p
+  aspect_ratio: 1.778
+
+? +360i
+: screen_size: 360i
+
+? +480x360i
+? -480x360p
+? -450x360
+: screen_size: 360i
+  aspect_ratio: 1.333
 
 ? +368p
 ? +368px
-? +368i
-? "+368"
+? -368i
+? -368
 ? +500x368
 : screen_size: 368p
 
+? -490x368
+? -700x368
+: screen_size: 368p
+
+? +492x368p
+: screen_size:
+  aspect_ratio: 1.337
+
+? +654x368
+: screen_size: 368p
+  aspect_ratio: 1.777
+
+? +698x368
+: screen_size: 368p
+  aspect_ratio: 1.897
+
+? +368i
+: -screen_size: 368i
+
 ? +480p
 ? +480px
-? +480i
-? "+480"
-? +500x480
+? -480i
+? -480
+? -500x480
+? -638x480
+? -920x480
 : screen_size: 480p
+
+? +640x480
+: screen_size: 480p
+  aspect_ratio: 1.333
+
+? +852x480
+: screen_size: 480p
+  aspect_ratio: 1.775
+
+? +910x480
+: screen_size: 480p
+  aspect_ratio: 1.896
+
+? +500x480
+? +500 x 480
+? +500 * 480
+? +500x480p
+? +500X480i
+: screen_size: 500x480
+  aspect_ratio: 1.042
+
+? +480i
+? +852x480i
+: screen_size: 480i
 
 ? +576p
 ? +576px
-? +576i
-? "+576"
-? +500x576
+? -576i
+? -576
+? -500x576
+? -766x576
+? -1094x576
 : screen_size: 576p
+
+? +768x576
+: screen_size: 576p
+  aspect_ratio: 1.333
+
+? +1024x576
+: screen_size: 576p
+  aspect_ratio: 1.778
+
+? +1092x576
+: screen_size: 576p
+  aspect_ratio: 1.896
+
+? +500x576
+: screen_size: 500x576
+  aspect_ratio: 0.868
+
+? +576i
+: screen_size: 576i
 
 ? +720p
 ? +720px
+? -720i
 ? 720hd
 ? 720pHD
-? +720i
-? "+720"
-? +500x720
+? -720
+? -500x720
+? -950x720
+? -1368x720
 : screen_size: 720p
+
+? +960x720
+: screen_size: 720p
+  aspect_ratio: 1.333
+
+? +1280x720
+: screen_size: 720p
+  aspect_ratio: 1.778
+
+? +1366x720
+: screen_size: 720p
+  aspect_ratio: 1.897
+
+? +500x720
+: screen_size: 500x720
+  aspect_ratio: 0.694
 
 ? +900p
 ? +900px
-? +900i
-? "+900"
-? +500x900
+? -900i
+? -900
+? -500x900
+? -1198x900
+? -1710x900
 : screen_size: 900p
+
+? +1200x900
+: screen_size: 900p
+  aspect_ratio: 1.333
+
+? +1600x900
+: screen_size: 900p
+  aspect_ratio: 1.778
+
+? +1708x900
+: screen_size: 900p
+  aspect_ratio: 1.898
+
+? +500x900
+? +500x900p
+? +500x900i
+: screen_size: 500x900
+  aspect_ratio: 0.556
+
+? +900i
+: screen_size: 900i
 
 ? +1080p
 ? +1080px
 ? +1080hd
 ? +1080pHD
 ? -1080i
-? "+1080"
-? +500x1080
+? -1080
+? -500x1080
+? -1438x1080
+? -2050x1080
 : screen_size: 1080p
+
+? +1440x1080
+: screen_size: 1080p
+  aspect_ratio: 1.333
+
+? +1920x1080
+: screen_size: 1080p
+  aspect_ratio: 1.778
+
+? +2048x1080
+: screen_size: 1080p
+  aspect_ratio: 1.896
 
 ? +1080i
 ? -1080p
 : screen_size: 1080i
 
+? 1440p
+: screen_size: 1440p
+
+? +500x1080
+: screen_size: 500x1080
+  aspect_ratio: 0.463
+
 ? +2160p
 ? +2160px
-? +2160i
-? "+2160"
+? -2160i
+? -2160
 ? +4096x2160
-: screen_size: 4K
+? +4k
+? -2878x2160
+? -4100x2160
+: screen_size: 2160p
+
+? +2880x2160
+: screen_size: 2160p
+  aspect_ratio: 1.333
+
+? +3840x2160
+: screen_size: 2160p
+  aspect_ratio: 1.778
+
+? +4098x2160
+: screen_size: 2160p
+  aspect_ratio: 1.897
+
+? +500x2160
+: screen_size: 500x2160
+  aspect_ratio: 0.231
+
+? +4320p
+? +4320px
+? -4320i
+? -4320
+? -5758x2160
+? -8198x2160
+: screen_size: 4320p
+
+? +5760x4320
+: screen_size: 4320p
+  aspect_ratio: 1.333
+
+? +7680x4320
+: screen_size: 4320p
+  aspect_ratio: 1.778
+
+? +8196x4320
+: screen_size: 4320p
+  aspect_ratio: 1.897
+
+? +500x4320
+: screen_size: 500x4320
+  aspect_ratio: 0.116
 
 ? Test.File.720hd.bluray
+? Test.File.720p24
+? Test.File.720p30
 ? Test.File.720p50
+? Test.File.720p60
+? Test.File.720p120
 : screen_size: 720p
+
+? Test.File.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p
+
+? Test.File2.400p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 400p
+
+? Test.File.720p
+: options:
+    advanced_config:
+      screen_size:
+        progressive: ["400"]
+  screen_size: 720p

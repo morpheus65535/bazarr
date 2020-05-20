@@ -918,8 +918,8 @@ def refine_from_db(path, video):
                 if int(data['year']) > 0: video.year = int(data['year'])
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
-            if not video.format:
-                video.format = str(data['format'])
+            if not video.source:
+                video.source = str(data['format'])
             if not video.resolution:
                 video.resolution = str(data['resolution'])
             if not video.video_codec:
@@ -937,8 +937,8 @@ def refine_from_db(path, video):
                 if int(data['year']) > 0: video.year = int(data['year'])
             if data['imdbId']: video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
-            if not video.format:
-                if data['format']: video.format = data['format']
+            if not video.source:
+                if data['format']: video.source = data['format']
             if not video.resolution:
                 if data['resolution']: video.resolution = data['resolution']
             if not video.video_codec:

@@ -4,7 +4,7 @@
 Backports
 """
 # pragma: no-cover
-# pylint: disabled
+# pylint: skip-file
 
 def cmp_to_key(mycmp):
     """functools.cmp_to_key backport"""

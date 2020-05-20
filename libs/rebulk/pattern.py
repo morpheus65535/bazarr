@@ -10,14 +10,39 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from . import debug
+from .formatters import default_formatter
 from .loose import call, ensure_list, ensure_dict
 from .match import Match
 from .remodule import re, REGEX_AVAILABLE
 from .utils import find_all, is_iterable, get_first_defined
+from .validators import allways_true
 
 
 @six.add_metaclass(ABCMeta)
-class Pattern(object):
+class BasePattern(object):
+    """
+    Base class for Pattern like objects
+    """
+
+    @abstractmethod
+    def matches(self, input_string, context=None, with_raw_matches=False):
+        """
+        Computes all matches for a given input
+
+        :param input_string: the string to parse
+        :type input_string: str
+        :param context: the context
+        :type context: dict
+        :param with_raw_matches: should return details
+        :type with_raw_matches: dict
+        :return: matches based on input_string for this pattern
+        :rtype: iterator[Match]
+        """
+        pass
+
+
+@six.add_metaclass(ABCMeta)
+class Pattern(BasePattern):
     """
     Definition of a particular pattern to search for.
     """
@@ -25,7 +50,7 @@ class Pattern(object):
     def __init__(self, name=None, tags=None, formatter=None, value=None, validator=None, children=False, every=False,
                  private_parent=False, private_children=False, private=False, private_names=None, ignore_names=None,
                  marker=False, format_all=False, validate_all=False, disabled=lambda context: False, log_level=None,
-                 properties=None, post_processor=None, **kwargs):
+                 properties=None, post_processor=None, pre_match_processor=None, post_match_processor=None, **kwargs):
         """
         :param name: Name of this pattern
         :type name: str
@@ -66,15 +91,19 @@ class Pattern(object):
         :type disabled: bool|function
         :param log_lvl: Log level associated to this pattern
         :type log_lvl: int
-        :param post_process: Post processing function
+        :param post_processor: Post processing function
         :type post_processor: func
+        :param pre_match_processor: Pre match processing function
+        :type pre_match_processor: func
+        :param post_match_processor: Post match processing function
+        :type post_match_processor: func
         """
         # pylint:disable=too-many-locals,unused-argument
         self.name = name
         self.tags = ensure_list(tags)
-        self.formatters, self._default_formatter = ensure_dict(formatter, lambda x: x)
+        self.formatters, self._default_formatter = ensure_dict(formatter, default_formatter)
         self.values, self._default_value = ensure_dict(value, None)
-        self.validators, self._default_validator = ensure_dict(validator, lambda match: True)
+        self.validators, self._default_validator = ensure_dict(validator, allways_true)
         self.every = every
         self.children = children
         self.private = private
@@ -96,6 +125,14 @@ class Pattern(object):
             self.post_processor = None
         else:
             self.post_processor = post_processor
+        if not callable(pre_match_processor):
+            self.pre_match_processor = None
+        else:
+            self.pre_match_processor = pre_match_processor
+        if not callable(post_match_processor):
+            self.post_match_processor = None
+        else:
+            self.post_match_processor = post_match_processor
 
     @property
     def log_level(self):
@@ -105,83 +142,6 @@ class Pattern(object):
         :rtype:
         """
         return self._log_level if self._log_level is not None else debug.LOG_LEVEL
-
-    def _yield_children(self, match):
-        """
-        Does this match has children
-        :param match:
-        :type match:
-        :return:
-        :rtype:
-        """
-        return match.children and (self.children or self.every)
-
-    def _yield_parent(self):
-        """
-        Does this mat
-        :param match:
-        :type match:
-        :return:
-        :rtype:
-        """
-        return not self.children or self.every
-
-    def _match_parent(self, match, yield_parent):
-        """
-        Handle a parent match
-        :param match:
-        :type match:
-        :param yield_parent:
-        :type yield_parent:
-        :return:
-        :rtype:
-        """
-        if not match or match.value == "":
-            return False
-
-        pattern_value = get_first_defined(self.values, [match.name, '__parent__', None],
-                                          self._default_value)
-        if pattern_value:
-            match.value = pattern_value
-
-        if yield_parent or self.format_all:
-            match.formatter = get_first_defined(self.formatters, [match.name, '__parent__', None],
-                                                self._default_formatter)
-        if yield_parent or self.validate_all:
-            validator = get_first_defined(self.validators, [match.name, '__parent__', None],
-                                          self._default_validator)
-            if validator and not validator(match):
-                return False
-        return True
-
-    def _match_child(self, child, yield_children):
-        """
-        Handle a children match
-        :param child:
-        :type child:
-        :param yield_children:
-        :type yield_children:
-        :return:
-        :rtype:
-        """
-        if not child or child.value == "":
-            return False
-
-        pattern_value = get_first_defined(self.values, [child.name, '__children__', None],
-                                          self._default_value)
-        if pattern_value:
-            child.value = pattern_value
-
-        if yield_children or self.format_all:
-            child.formatter = get_first_defined(self.formatters, [child.name, '__children__', None],
-                                                self._default_formatter)
-
-        if yield_children or self.validate_all:
-            validator = get_first_defined(self.validators, [child.name, '__children__', None],
-                                          self._default_validator)
-            if validator and not validator(child):
-                return False
-        return True
 
     def matches(self, input_string, context=None, with_raw_matches=False):
         """
@@ -200,41 +160,168 @@ class Pattern(object):
 
         matches = []
         raw_matches = []
+
         for pattern in self.patterns:
-            yield_parent = self._yield_parent()
-            match_index = -1
+            match_index = 0
             for match in self._match(pattern, input_string, context):
-                match_index += 1
-                match.match_index = match_index
                 raw_matches.append(match)
-                yield_children = self._yield_children(match)
-                if not self._match_parent(match, yield_parent):
-                    continue
-                validated = True
-                for child in match.children:
-                    if not self._match_child(child, yield_children):
-                        validated = False
-                        break
-                if validated:
-                    if self.private_parent:
-                        match.private = True
-                    if self.private_children:
-                        for child in match.children:
-                            child.private = True
-                    if yield_parent or self.private_parent:
-                        matches.append(match)
-                    if yield_children or self.private_children:
-                        for child in match.children:
-                            child.match_index = match_index
-                            matches.append(child)
-        matches = self._matches_post_process(matches)
-        self._matches_privatize(matches)
-        self._matches_ignore(matches)
+                matches.extend(self._process_matches(match, match_index))
+                match_index += 1
+
+        matches = self._post_process_matches(matches)
+
         if with_raw_matches:
             return matches, raw_matches
         return matches
 
-    def _matches_post_process(self, matches):
+    @property
+    def _should_include_children(self):
+        """
+        Check if children matches from this pattern should be included in matches results.
+        :param match:
+        :type match:
+        :return:
+        :rtype:
+        """
+        return self.children or self.every
+
+    @property
+    def _should_include_parent(self):
+        """
+        Check is a match from this pattern should be included in matches results.
+        :param match:
+        :type match:
+        :return:
+        :rtype:
+        """
+        return not self.children or self.every
+
+    @staticmethod
+    def _match_config_property_keys(match, child=False):
+        if match.name:
+            yield match.name
+        if child:
+            yield '__children__'
+        else:
+            yield '__parent__'
+        yield None
+
+    @staticmethod
+    def _process_match_index(match, match_index):
+        """
+        Process match index from this pattern process state.
+
+        :param match:
+        :return:
+        """
+        match.match_index = match_index
+
+    def _process_match_private(self, match, child=False):
+        """
+        Process match privacy from this pattern configuration.
+
+        :param match:
+        :param child:
+        :return:
+        """
+
+        if match.name and match.name in self.private_names or \
+                not child and self.private_parent or \
+                child and self.private_children:
+            match.private = True
+
+    def _process_match_value(self, match, child=False):
+        """
+        Process match value from this pattern configuration.
+        :param match:
+        :return:
+        """
+        keys = self._match_config_property_keys(match, child=child)
+        pattern_value = get_first_defined(self.values, keys, self._default_value)
+        if pattern_value:
+            match.value = pattern_value
+
+    def _process_match_formatter(self, match, child=False):
+        """
+        Process match formatter from this pattern configuration.
+
+        :param match:
+        :return:
+        """
+        included = self._should_include_children if child else self._should_include_parent
+        if included or self.format_all:
+            keys = self._match_config_property_keys(match, child=child)
+            match.formatter = get_first_defined(self.formatters, keys, self._default_formatter)
+
+    def _process_match_validator(self, match, child=False):
+        """
+        Process match validation from this pattern configuration.
+
+        :param match:
+        :return: True if match is validated by the configured validator, False otherwise.
+        """
+        included = self._should_include_children if child else self._should_include_parent
+        if included or self.validate_all:
+            keys = self._match_config_property_keys(match, child=child)
+            validator = get_first_defined(self.validators, keys, self._default_validator)
+            if validator and not validator(match):
+                return False
+        return True
+
+    def _process_match(self, match, match_index, child=False):
+        """
+        Process match from this pattern by setting all properties from defined configuration
+        (index, private, value, formatter, validator, ...).
+
+        :param match:
+        :type match:
+        :return: True if match is validated by the configured validator, False otherwise.
+        :rtype:
+        """
+        self._process_match_index(match, match_index)
+        self._process_match_private(match, child)
+        self._process_match_value(match, child)
+        self._process_match_formatter(match, child)
+        return self._process_match_validator(match, child)
+
+    @staticmethod
+    def _process_match_processor(match, processor):
+        if processor:
+            ret = processor(match)
+            if ret is not None:
+                return ret
+        return match
+
+    def _process_matches(self, match, match_index):
+        """
+        Process and generate all matches for the given unprocessed match.
+        :param match:
+        :param match_index:
+        :return: Process and dispatched matches.
+        """
+        match = self._process_match_processor(match, self.pre_match_processor)
+        if not match:
+            return
+
+        if not self._process_match(match, match_index):
+            return
+
+        for child in match.children:
+            if not self._process_match(child, match_index, child=True):
+                return
+
+        match = self._process_match_processor(match, self.post_match_processor)
+        if not match:
+            return
+
+        if (self._should_include_parent or self.private_parent) and match.name not in self.ignore_names:
+            yield match
+        if self._should_include_children or self.private_children:
+            children = [x for x in match.children if x.name not in self.ignore_names]
+            for child in children:
+                yield child
+
+    def _post_process_matches(self, matches):
         """
         Post process matches with user defined function
         :param matches:
@@ -245,32 +332,6 @@ class Pattern(object):
         if self.post_processor:
             return self.post_processor(matches, self)
         return matches
-
-    def _matches_privatize(self, matches):
-        """
-        Mark matches included in private_names with private flag.
-        :param matches:
-        :type matches:
-        :return:
-        :rtype:
-        """
-        if self.private_names:
-            for match in matches:
-                if match.name in self.private_names:
-                    match.private = True
-
-    def _matches_ignore(self, matches):
-        """
-        Ignore matches included in ignore_names.
-        :param matches:
-        :type matches:
-        :return:
-        :rtype:
-        """
-        if self.ignore_names:
-            for match in list(matches):
-                if match.name in self.ignore_names:
-                    matches.remove(match)
 
     @abstractproperty
     def patterns(self):  # pragma: no cover
@@ -306,7 +367,7 @@ class Pattern(object):
     @abstractmethod
     def _match(self, pattern, input_string, context=None):  # pragma: no cover
         """
-        Computes all matches for a given pattern and input
+        Computes all unprocess matches for a given pattern and input.
 
         :param pattern: the pattern to use
         :param input_string: the string to parse
@@ -350,7 +411,9 @@ class StringPattern(Pattern):
 
     def _match(self, pattern, input_string, context=None):
         for index in find_all(input_string, pattern, **self._kwargs):
-            yield Match(index, index + len(pattern), pattern=self, input_string=input_string, **self._match_kwargs)
+            match = Match(index, index + len(pattern), pattern=self, input_string=input_string, **self._match_kwargs)
+            if match:
+                yield match
 
 
 class RePattern(Pattern):
@@ -411,15 +474,18 @@ class RePattern(Pattern):
                         for start, end in match_object.spans(i):
                             child_match = Match(start, end, name=name, parent=main_match, pattern=self,
                                                 input_string=input_string, **self._children_match_kwargs)
-                            main_match.children.append(child_match)
+                            if child_match:
+                                main_match.children.append(child_match)
                     else:
                         start, end = match_object.span(i)
                         if start > -1 and end > -1:
                             child_match = Match(start, end, name=name, parent=main_match, pattern=self,
                                                 input_string=input_string, **self._children_match_kwargs)
-                            main_match.children.append(child_match)
+                            if child_match:
+                                main_match.children.append(child_match)
 
-            yield main_match
+            if main_match:
+                yield main_match
 
 
 class FunctionalPattern(Pattern):
@@ -457,14 +523,18 @@ class FunctionalPattern(Pattern):
                     if self._match_kwargs:
                         options = self._match_kwargs.copy()
                         options.update(args)
-                    yield Match(pattern=self, input_string=input_string, **options)
+                    match = Match(pattern=self, input_string=input_string, **options)
+                    if match:
+                        yield match
                 else:
                     kwargs = self._match_kwargs
                     if isinstance(args[-1], dict):
                         kwargs = dict(kwargs)
                         kwargs.update(args[-1])
                         args = args[:-1]
-                    yield Match(*args, pattern=self, input_string=input_string, **kwargs)
+                    match = Match(*args, pattern=self, input_string=input_string, **kwargs)
+                    if match:
+                        yield match
 
 
 def filter_match_kwargs(kwargs, children=False):

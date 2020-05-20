@@ -6,17 +6,20 @@ Groups markers (...), [...] and {...}
 from rebulk import Rebulk
 
 
-def groups():
+def groups(config):
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
     rebulk = Rebulk()
     rebulk.defaults(name="group", marker=True)
 
-    starting = '([{'
-    ending = ')]}'
+    starting = config['starting']
+    ending = config['ending']
 
     def mark_groups(input_string):
         """
