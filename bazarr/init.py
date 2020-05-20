@@ -109,6 +109,15 @@ if settings.auth.type == 'form' and \
         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
         logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
                      'to your username. Please change it as soon as possible in settings.')
+else:
+    if os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+        try:
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+        except:
+            logging.error("BAZARR cannot delete those file. Please do it manually: users.json, roles.json, "
+                          "register.json")
 
 
 def init_binaries():
