@@ -83,7 +83,7 @@ class ProviderSubtitleArchiveMixin(object):
 
                 # consider subtitle valid if:
                 # - episode and season match
-                # - format matches (if it was matched before)
+                # - source matches (if it was matched before)
                 # - release group matches (and we asked for one and it was matched, or it was not matched)
                 # - not asked for forced and "forced" not in filename
                 is_episode = subtitle.asked_for_episode
@@ -103,27 +103,27 @@ class ProviderSubtitleArchiveMixin(object):
                                 or (subtitle.is_pack and subtitle.asked_for_episode in episodes)
                         ) and guess.get("season") == subtitle.season):
 
-                    format_matches = True
-                    wanted_format_but_not_found = False
+                    source_matches = True
+                    wanted_source_but_not_found = False
 
-                    if "format" in subtitle.matches:
-                        format_matches = False
+                    if "source" in subtitle.matches:
+                        source_matches = False
                         if isinstance(subtitle.releases, list):
                             releases = ",".join(subtitle.releases).lower()
                         else:
                             releases = subtitle.releases.lower()
 
-                        if "format" not in guess:
-                            wanted_format_but_not_found = True
+                        if "source" not in guess:
+                            wanted_source_but_not_found = True
 
                         else:
-                            formats = guess["format"]
+                            formats = guess["source"]
                             if not isinstance(formats, list):
                                 formats = [formats]
 
                             for f in formats:
-                                format_matches = f.lower() in releases
-                                if format_matches:
+                                source_matches = f.lower() in releases
+                                if source_matches:
                                     break
 
                     release_group_matches = True
@@ -139,11 +139,11 @@ class ProviderSubtitleArchiveMixin(object):
                                 if asked_for_rlsgrp in sub_name_lower:
                                     release_group_matches = True
 
-                    if release_group_matches and format_matches:
+                    if release_group_matches and source_matches:
                         matching_sub = sub_name
                         break
 
-                    elif release_group_matches and wanted_format_but_not_found:
+                    elif release_group_matches and wanted_source_but_not_found:
                         subs_unsure.append(sub_name)
                     else:
                         subs_fallback.append(sub_name)

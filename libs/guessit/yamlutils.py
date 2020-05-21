@@ -3,23 +3,26 @@
 """
 Options
 """
+
 try:
     from collections import OrderedDict
 except ImportError:  # pragma: no-cover
     from ordereddict import OrderedDict  # pylint:disable=import-error
 import babelfish
 
-import yaml
+import yaml  # pylint:disable=wrong-import-order
+
+from .rules.common.quantity import BitRate, FrameRate, Size
 
 
-class OrderedDictYAMLLoader(yaml.Loader):
+class OrderedDictYAMLLoader(yaml.SafeLoader):
     """
     A YAML loader that loads mappings into ordered dictionaries.
     From https://gist.github.com/enaeseth/844388
     """
 
     def __init__(self, *args, **kwargs):
-        yaml.Loader.__init__(self, *args, **kwargs)
+        yaml.SafeLoader.__init__(self, *args, **kwargs)
 
         self.add_constructor(u'tag:yaml.org,2002:map', type(self).construct_yaml_map)
         self.add_constructor(u'tag:yaml.org,2002:omap', type(self).construct_yaml_map)
@@ -55,17 +58,24 @@ class CustomDumper(yaml.SafeDumper):
     """
     Custom YAML Dumper.
     """
-    pass
+    pass  # pylint:disable=unnecessary-pass
 
 
 def default_representer(dumper, data):
     """Default representer"""
     return dumper.represent_str(str(data))
+
+
 CustomDumper.add_representer(babelfish.Language, default_representer)
 CustomDumper.add_representer(babelfish.Country, default_representer)
+CustomDumper.add_representer(BitRate, default_representer)
+CustomDumper.add_representer(FrameRate, default_representer)
+CustomDumper.add_representer(Size, default_representer)
 
 
 def ordered_dict_representer(dumper, data):
     """OrderedDict representer"""
-    return dumper.represent_dict(data)
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+
+
 CustomDumper.add_representer(OrderedDict, ordered_dict_representer)

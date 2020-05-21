@@ -58,8 +58,8 @@ def compute_score(matches, subtitle, video, hearing_impaired=None):
     is_episode = isinstance(video, Episode)
     is_movie = isinstance(video, Movie)
 
-    episode_hash_valid_if = {"series", "season", "episode", "format"}
-    movie_hash_valid_if = {"video_codec", "format"}
+    episode_hash_valid_if = {"series", "season", "episode", "source"}
+    movie_hash_valid_if = {"video_codec", "source"}
 
     orig_matches = matches.copy()
 

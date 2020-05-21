@@ -1,0 +1,108 @@
+{% extends '_main.html' %}
+
+{% block title %}Tasks - Bazarr{% endblock %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="refresh_button">
+            <div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Refresh</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <table id="tasks" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Execution Frequency</th>
+                <th>Next Execution</th>
+                <th></th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            events.on('event', function (event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'task') {
+                    var rowId = table.row('#'+event_json.task);
+                    if (rowId.length) {
+                         $.ajax({
+                             url: "{{ url_for('api.systemtasks') }}?taskid=" + event_json.task,
+                             success: function (data) {
+                                 if (data.data.length) {
+                                     table.row(rowId).data(data.data[0]);
+                                 }
+                             }
+                         })
+                    }
+                }
+            });
+
+            var table = $('#tasks').DataTable( {
+                language: {
+                    zeroRecords: 'No Task Scheduled.',
+                    processing: "Loading Tasks..."
+                },
+                paging: false,
+                lengthChange: false,
+                searching: false,
+                ordering: false,
+                info: false,
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: "{{ url_for('api.systemtasks') }}",
+                    type: 'GET'
+                },
+                columns: [
+                    {
+                        data: 'name'
+                    },
+                    { data: 'interval'
+                    },
+                    { data: 'next_run_in'
+                    },
+                    { data: null,
+                        render: function(data) {
+                            if (data.job_running) {
+                                return '<i class="execute fas fa-sync fa-spin" data-taskid="'+data.job_id+'"></i>';
+                            } else {
+                                return '<i class="execute fas fa-sync" data-taskid="'+data.job_id+'"></i>';
+                            }
+                        }
+                    }
+                ]
+            });
+
+            $('#refresh_button').on('click', function() {
+                table.ajax.reload();
+                table.columns.adjust().draw(false);
+            })
+
+            $('#tasks').on('click', '.execute', function(e){
+                e.preventDefault();
+                const values = {
+                    'taskid': $(this).data("taskid")
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.systemtasks') }}",
+                    method: "POST",
+                    data: values
+                });
+            });
+        })
+    </script>
+{% endblock tail %}

@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # pylint: disable=no-self-use, pointless-statement, missing-docstring, invalid-name, pointless-string-statement
-
+import json
 import os
+import sys
 
 import pytest
 import six
 
-from ..api import guessit, properties, GuessitException
+from ..api import guessit, properties, suggested_expected, GuessitException
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -25,6 +26,18 @@ def test_forced_unicode():
 def test_forced_binary():
     ret = guessit(b'Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
     assert ret and 'title' in ret and isinstance(ret['title'], six.binary_type)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 4), reason="Path is not available")
+def test_pathlike_object():
+    try:
+        from pathlib import Path
+
+        path = Path('Fear.and.Loathing.in.Las.Vegas.FRENCH.ENGLISH.720p.HDDVD.DTS.x264-ESiR.mkv')
+        ret = guessit(path)
+        assert ret and 'title' in ret
+    except ImportError:  # pragma: no-cover
+        pass
 
 
 def test_unicode_japanese():
@@ -61,3 +74,10 @@ def test_exception():
     assert "An internal error has occured in guessit" in str(excinfo.value)
     assert "Guessit Exception Report" in str(excinfo.value)
     assert "Please report at https://github.com/guessit-io/guessit/issues" in str(excinfo.value)
+
+
+def test_suggested_expected():
+    with open(os.path.join(__location__, 'suggested.json'), 'r') as f:
+        content = json.load(f)
+    actual = suggested_expected(content['titles'])
+    assert actual == content['suggested']

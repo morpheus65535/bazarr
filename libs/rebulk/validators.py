@@ -62,9 +62,20 @@ def validators(*chained_validators):
     :return:
     :rtype:
     """
+
     def validator_chain(match):  # pylint:disable=missing-docstring
         for chained_validator in chained_validators:
             if not chained_validator(match):
                 return False
         return True
+
     return validator_chain
+
+
+def allways_true(match):  # pylint:disable=unused-argument
+    """
+    A validator which is allways true
+    :param match:
+    :return:
+    """
+    return True

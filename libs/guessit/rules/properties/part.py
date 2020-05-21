@@ -7,20 +7,25 @@ from rebulk.remodule import re
 
 from rebulk import Rebulk
 from ..common import dash
-from ..common.validators import seps_surround, int_coercable, compose
+from ..common.pattern import is_disabled
+from ..common.validators import seps_surround, int_coercable, and_
 from ..common.numeral import numeral, parse_numeral
 from ...reutils import build_or_pattern
 
 
-def part():
+def part(config):  # pylint:disable=unused-argument
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk().regex_defaults(flags=re.IGNORECASE, abbreviations=[dash], validator={'__parent__': seps_surround})
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'part'))
+    rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash], validator={'__parent__': seps_surround})
 
-    prefixes = ['pt', 'part']
+    prefixes = config['prefixes']
 
     def validate_roman(match):
         """
@@ -36,6 +41,6 @@ def part():
 
     rebulk.regex(build_or_pattern(prefixes) + r'-?(?P<part>' + numeral + r')',
                  prefixes=prefixes, validate_all=True, private_parent=True, children=True, formatter=parse_numeral,
-                 validator={'part': compose(validate_roman, lambda m: 0 < m.value < 100)})
+                 validator={'part': and_(validate_roman, lambda m: 0 < m.value < 100)})
 
     return rebulk

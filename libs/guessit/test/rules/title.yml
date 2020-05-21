@@ -30,3 +30,14 @@
 ? Some.Other title/Some other title.mkv
 : title: Some Other title
 
+? This T.I.T.L.E. has dots
+? This.T.I.T.L.E..has.dots
+: title: This T.I.T.L.E has dots
+
+? This.T.I.T.L.E..has.dots.S01E02.This E.P.T.I.T.L.E.has.dots
+: title: This T.I.T.L.E has dots
+  season: 1
+  episode: 2
+  episode_title: This E.P.T.I.T.L.E has dots
+  type: episode
+

@@ -1,0 +1,414 @@
+{% extends '_main.html' %}
+
+{% block title %}Radarr - Bazarr{% endblock %}
+
+{% block page_head %}
+
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
+            </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Use Radarr</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Enabled</b>
+                </div>
+                <div class="form-group col-sm-1">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_radarr" name="settings-general-use_radarr">
+                        <span class="custom-control-label" for="settings-general-use_radarr"></span>
+                    </label>
+                </div>
+            </div>
+            <br>
+
+            <div id="radarr_div">
+                <h4>Host</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Hostname or IP Address</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-radarr-ip" name="settings-radarr-ip" value="{{settings.radarr.ip}}">
+                        <label>Hostname or IP4 address of Radarr</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Port Number</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-radarr-port" name="settings-radarr-port" value="{{settings.radarr.port}}">
+                        <label>TCP Port of Radarr</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>URL Base</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-radarr-base_url" name="settings-radarr-base_url" value="{{settings.radarr.base_url}}">
+                        <label>Base URL for Radarr (default: '/')</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>SSL Enabled</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-radarr-ssl" name="settings-radarr-ssl">
+                            <span class="custom-control-label" for="settings-radarr-ssl"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>API Key</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-radarr-apikey" name="settings-radarr-apikey" value="{{settings.radarr.apikey}}">
+                        <label>API Key for Radarr (32 alphanumeric characters)</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <button type="button" class="btn btn-secondary" id="test_radarr_connection">Test</button>
+                    </div>
+                    <div class="col-sm-4">
+                        <span id="test_radarr_span"></span>
+                    </div>
+                </div>
+                <br>
+
+                <h4>Options</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Minimum Score</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <input type="number" min="0" max="100" step="1" onkeydown="return false" class="form-control" id="settings-general-minimum_score_movie" name="settings-general-minimum_score_movie" value="{{settings.general.minimum_score_movie}}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+
+                    </div>
+                    <div class="col-sm-8">
+                        <label for="settings-general-minimum_score_movie">Minimum score for an Movies Subtitle to be downloaded (0 to 100).</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Download Only Monitored</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-radarr-only_monitored" name="settings-radarr-only_monitored">
+                            <span class="custom-control-label" for="settings-radarr-only_monitored"></span>
+                        </label>
+                        <label>Automatic download of Subtitles will only happen for monitored movies in Radarr.</label>
+                    </div>
+                </div>
+                <br>
+                <h4>Path Mappings</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-8">
+                        <table class="table table-striped" id="path_mapping_movie" style="width:100%;">
+
+                        </table>
+                    </div>
+                </div>
+                <br>
+            </div>
+        </form>
+    </div>
+
+    <div id="addModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="add_form" id="add_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Radarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_radarr" name="add_path_radarr" value="">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="add_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="edit_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Radarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_radarr" name="edit_path_radarr" value="">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_bazarr" name="edit_path_bazarr" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this path mapping?
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="delete_yes_button" class="btn btn-info">Yes</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            // Show warning if there's unsaved changes in the settings_form
+            var form_changed = false;
+            $(window).on('beforeunload', function() {
+                if (form_changed) {
+                    return "";
+                }
+            });
+
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
+            $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+
+            // Hide *_div on Select input changed to None
+            $('#settings-general-use_radarr').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#radarr_div').show();
+                } else {
+                    $('#radarr_div').hide();
+                }
+            });
+
+            // Set Checkbox input values
+            $('#settings-general-use_radarr').prop('checked', {{'true' if settings.general.getboolean('use_radarr') else 'false'}}).trigger('change');
+            $('#settings-radarr-ssl').prop('checked', {{'true' if settings.radarr.getboolean('ssl') else 'false'}});
+            $('#settings-radarr-only_monitored').prop('checked', {{'true' if settings.radarr.getboolean('only_monitored') else 'false'}});
+
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                formdata.append('settings-general-path_mappings_movie', JSON.stringify(table.rows().data().toArray()));
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        form_changed = false;
+                        $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+
+            var path_mapping_movie = jQuery.makeArray({{ settings.general.path_mappings_movie|safe }})
+            path_mapping_movie = $.grep(path_mapping_movie, function(v) {
+                return v[0] !== "" || v[1] !== "";
+            });
+
+            var table = $('#path_mapping_movie').DataTable({
+                data: path_mapping_movie,
+                columns: [{
+                        title: "Path for Radarr",
+                        type: "text"
+                    },
+                    {
+                        title: "Path for Bazarr",
+                        type: "text"
+                    }],
+                dom: 'Bfrtip',
+                select: {
+                    style: 'single'
+                },
+                language: {
+                    zeroRecords: 'No Path Mappings'
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: true,
+                responsive: true,
+                paging: false,
+                info: false,
+                buttons: [{
+                    text: 'Add',
+                    action: function () {
+                        $('#addModal').modal('show');
+                    }
+                },
+                {
+                    extend: 'selected',
+                    text: 'Edit',
+                    action: function () {
+                        $('#edit_path_radarr').val(table.row( { selected: true } ).data()[0]);
+                        $('#edit_path_bazarr').val(table.row( { selected: true } ).data()[1]);
+                        $('#editModal').modal('show');
+                    }
+                },
+                {
+                    extend: 'selected',
+                    text: 'Delete',
+                    action: function () {
+                        $('#deleteModal').modal('show');
+                    }
+                }]
+            });
+
+            $('#add_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row.add([ $('#add_path_radarr').val(), $('#add_path_bazarr').val()]).draw();
+                $('#add_path_radarr').val('');
+                $('#add_path_bazarr').val('');
+                $('#addModal').modal('hide');
+                $('#settings_form').trigger('change');
+            });
+
+            $('#edit_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row( { selected: true } ).data([ $('#edit_path_radarr').val(), $('#edit_path_bazarr').val()]);
+                $('#editModal').modal('hide');
+                $('#settings_form').trigger('change');
+            });
+
+            $('#delete_yes_button').on('click', function(e) {
+                e.preventDefault();
+                table.row( { selected: true } ).remove().draw();
+                $('#deleteModal').modal('hide');
+                $('#settings_form').trigger('change');
+            });
+
+            $('#test_radarr_connection').on('click', function() {
+                $('#test_radarr_span').html('<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>');
+                if ($('#settings-radarr-ssl').is(':checked')) {
+                    var protocol = 'https';
+                } else {
+                    var protocol = 'http';
+                }
+                var radarr_url = $('#settings-radarr-ip').val() + ":" + $('#settings-radarr-port').val() + $('#settings-radarr-base_url').val().replace(/\/$/, "") + "/api/system/status?apikey=" + $('#settings-radarr-apikey').val();
+
+                $.getJSON("{{ url_for('test_url') }}/" + protocol + "/" + encodeURIComponent(radarr_url), function (data) {
+                    if (data.status) {
+                        $('#test_radarr_span').text('Test Successful: Radarr v' + data.version).css('color', 'green');
+                    } else {
+                        $('#test_radarr_span').text('Test Failed: ' + data.error).css('color', 'red');
+                    }
+                });
+            });
+
+            // monitor changes to the settings_form
+            $('#settings_form').on('change', function() {
+                form_changed = true;
+                $('#save_button').prop('disabled', false).css('cursor', 'auto');
+            })
+        });
+    </script>
+{% endblock tail %}

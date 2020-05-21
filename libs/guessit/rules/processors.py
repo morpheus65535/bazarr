@@ -36,6 +36,7 @@ class EnlargeGroupMatches(CustomRule):
 
         if starting or ending:
             return starting, ending
+        return False
 
     def then(self, matches, when_response, context):
         starting, ending = when_response
@@ -193,6 +194,23 @@ class SeasonYear(Rule):
         return ret
 
 
+class YearSeason(Rule):
+    """
+    If a year is found, no season found, and episode is found, create an match with season.
+    """
+    priority = POST_PROCESS
+    consequence = AppendMatch
+
+    def when(self, matches, context):
+        ret = []
+        if not matches.named('season') and matches.named('episode'):
+            for year in matches.named('year'):
+                season = copy.copy(year)
+                season.name = 'season'
+                ret.append(season)
+        return ret
+
+
 class Processors(CustomRule):
     """
     Empty rule for ordering post_processing properly.
@@ -226,13 +244,16 @@ class StripSeparators(CustomRule):
                     match.raw_end -= 1
 
 
-def processors():
+def processors(config):  # pylint:disable=unused-argument
     """
     Builder for rebulk object.
+
+    :param config: rule configuration
+    :type config: dict
     :return: Created Rebulk object
     :rtype: Rebulk
     """
     return Rebulk().rules(EnlargeGroupMatches, EquivalentHoles,
                           RemoveLessSpecificSeasonEpisode('season'),
                           RemoveLessSpecificSeasonEpisode('episode'),
-                          RemoveAmbiguous, SeasonYear, Processors, StripSeparators)
+                          RemoveAmbiguous, SeasonYear, YearSeason, Processors, StripSeparators)

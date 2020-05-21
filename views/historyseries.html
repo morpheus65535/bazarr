@@ -1,0 +1,92 @@
+{% extends '_main.html' %}
+
+{% block title %}History (Series) - Bazarr{% endblock %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <table id="history_series" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>Action</th>
+            <th>Name</th>
+            <th>Episode</th>
+            <th>Episode Title</th>
+            <th>Date</th>
+            <th style="max-width: 40%;">Description</th>
+        </tr>
+        </thead>
+    </table>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#history_series').DataTable({
+                processing: true,
+                serverSide: true,
+                language: {
+                    zeroRecords: 'Nothing Found In Series History',
+                    processing: "Loading Series History..."
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: false,
+                responsive: true,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.historyseries') }}",
+                columns: [
+                    {
+                        data: "action",
+                        render: function (data) {
+                            if (data === 0) {
+                                return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 1) {
+                                return "<i class='fas fa-download' title='Subtitle file has been downloaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 2) {
+                                return "<i class='fas fa-user' title='Subtitle file has been manually downloaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 3) {
+                                return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";
+                            } else if (data === 4) {
+                                return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";
+                            }
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.seriesTitle + '</a>';
+                        }
+                    },
+                    {data: "episode_number"},
+                    {data: "episodeTitle"},
+                    {data: "timestamp"},
+                    {
+                        data: null,
+                        render: function (data) {
+                            if (data.upgradable) {
+                                return "<i class='fas fa-recycle' title='This Subtitles File Is Eligible For An Upgrade.' style='color: green;' data-toggle='tooltip' data-placement='right'></i> " + data.description;
+                            } else {
+                                return data.description;
+                            }
+                        }
+                    }
+                ]
+            });
+
+            events.on('event', function (event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'episodeHistory') {
+                    $('#history_series').DataTable().ajax.reload(resetPaging = false);
+                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                }
+            });
+        });
+    </script>
+{% endblock tail %}

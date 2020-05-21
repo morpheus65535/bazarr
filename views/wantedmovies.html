@@ -1,0 +1,116 @@
+{% extends '_main.html' %}
+
+{% block title %}Wanted (Movies) - Bazarr{% endblock %}
+
+{% block bcleft %}
+    <button class="btn btn-outline" id="search_button">
+        <div><i class="fas fa-search align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+        <div class="align-bottom text-themecolor small text-center">Search All</div>
+    </button>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <table id="wanted_movies" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>Movies</th>
+            <th>Missing Subtitle(s)</th>
+        </tr>
+        </thead>
+    </table>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#wanted_movies').DataTable({
+                processing: true,
+                serverSide: true,
+                language: {
+                    zeroRecords: 'No Missing Movies Subtitles',
+                    processing: "Loading Missing Movies Subtitles..."
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: false,
+                responsive: true,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.wantedmovies') }}",
+                columns: [
+                    {
+                        data: null,
+                        render: function (data) {
+                            return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data) {
+                            if (data.missing_subtitles !== 'None') {
+                                var languages = '';
+                                data.missing_subtitles.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null;
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced' : '') + '" data-moviepath="' + data.mapped_path + '" data-scenename="' + data.sceneName + '" data-movietitle="' + data.title + '" data-language="' + value.code3 + '" data-hi="' + data.hearing_impaired + '" data-forced="' + value.forced + '" data-radarrid=' + data.radarrId + '>' + value.code2 + ((value.forced) ? ':forced' : '') + ' <i class="fas fa-search"></i></a> ';
+                            }
+                        }
+                    }
+                ]
+            });
+
+            $('#search_button').on('click', function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: "{{ url_for('api.searchwantedmovies') }}",
+                    type: 'GET',
+                    beforeSend: function () {
+                        $('#search_button').find("i").addClass('fa-spin');
+                    },
+                    complete: function () {
+                        $('#search_button').find("i").removeClass('fa-spin');
+                    }
+                });
+            });
+
+            $('#wanted_movies').on('click', '.get_subtitle', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+                const values = {
+                    moviePath: $(this).attr("data-moviepath"),
+                    sceneName: $(this).attr("data-scenename"),
+                    language: $(this).attr("data-language"),
+                    hi: $(this).attr("data-hi"),
+                    forced: $(this).attr("data-forced"),
+                    radarrId: $(this).attr("data-radarrid"),
+                    title: $(this).attr("data-movietitle")
+                };
+                var cell = $(this).parent();
+                $.ajax({
+                    url: "{{ url_for('api.moviesubtitlesdownload') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    }
+                });
+            });
+
+            events.on('event', function (event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'movie') {
+                    $('#wanted_movies').DataTable().ajax.reload(resetPaging = false);
+                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                }
+            });
+        });
+    </script>
+{% endblock tail %}

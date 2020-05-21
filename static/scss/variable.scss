@@ -1,0 +1,107 @@
+// Variables
+@import url('https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700');
+
+$bodyfont:'Poppins', sans-serif;
+$headingfont:'Poppins', sans-serif;
+
+
+/*Theme Colors*/
+
+$topbar: #2196f3;
+$sidebar: #fff;
+$sidebar-white: #e5edef;
+$sidebar-alt:#f2f6f8;
+$bodycolor: #eef5f9;
+$headingtext: #455a64;
+$bodytext: #67757c; 
+$sidebar-text: #607d8b;
+$sidebar-icons: #99abb4 ;
+
+$light-text: #a6b7bf;
+$themecolor: #009efb;
+$themecolor-alt: #26c6da;
+$themecolor-dark: #028ee1;
+
+/*bootstrap Color*/
+$danger: #fc4b6c;
+$success: #26c6da;
+$warning: #ffb22b;
+$primary: #7460ee;
+$info: #1e88e5;
+$inverse: #2f3d4a;
+$muted: #99abb4;
+$dark: #263238;
+$light: #f2f4f8;
+$extra-light: #ebf3f5;
+$secondary: #727b84;
+
+/*Light colors*/
+$light-danger: #f9e7eb;
+$light-success: #e8fdeb;
+$light-warning: #fff8ec;
+$light-primary: #f1effd;
+$light-info: #cfecfe;
+$light-inverse: #f6f6f6;
+$light-megna: #e0f2f4; 
+
+
+
+$danger-dark: #e6294b;
+$success-dark: #1eacbe;
+$warning-dark: #e9ab2e;
+$primary-dark: #6352ce;
+$info-dark: #028ee1;
+$red-dark: #d61f1f;
+$inverse-dark: #232a37;
+$dark-transparent:rgba(0, 0, 0, 0.05);
+
+$info-shadow: 0 2px 2px 0 rgba(66,165,245,.14), 0 3px 1px -2px rgba(66,165,245,.2), 0 1px 5px 0 rgba(66,165,245,.12);
+$info-shadow-hover:0 14px 26px -12px rgba(23,105,255,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(23,105,255,.2);
+
+$warning-shadow:0 2px 2px 0 rgba(248,194,0,.14), 0 3px 1px -2px rgba(248,194,0,.2), 0 1px 5px 0 rgba(248,194,0,.12);
+$warning-shadow-hover:0 14px 26px -12px rgba(248,194,0,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(248,194,0,.2);
+
+$danger-shadow:0 2px 2px 0 rgba(239,83,80,.14), 0 3px 1px -2px rgba(239,83,80,.2), 0 1px 5px 0 rgba(239,83,80,.12);
+$danger-shadow-hover:0 14px 26px -12px rgba(239,83,80,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(239,83,80,.2);
+
+$success-shadow:0 2px 2px 0 rgba(40,190,189,.14), 0 3px 1px -2px rgba(40,190,189,.2), 0 1px 5px 0 rgba(40,190,189,.12);
+$success-shadow-hover:0 14px 26px -12px rgba(40,190,189,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(40,190,189,.2);
+    
+$primary-shadow:0 2px 2px 0 rgba(116,96,238,.14), 0 3px 1px -2px rgba(116,96,238,.2), 0 1px 5px 0 rgba(116,96,238,.12);
+$primary-shadow-hover:0 14px 26px -12px rgba(116,96,238,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(116,96,238,.2);
+
+$default-shadow:0 2px 2px 0 rgba(169,169,169,.14), 0 3px 1px -2px rgba(169,169,169,.2), 0 1px 5px 0 rgba(169,169,169,.12);
+$default-shadow-hover:0 14px 26px -12px rgba(169,169,169,.42), 0 4px 23px 0 rgba(0,0,0,.12), 0 8px 10px -5px rgba(169,169,169,.2);
+
+/*Normal Color*/
+$white: #ffffff;
+$red: #fb3a3a;
+$yellow: #a0aec4;
+$purple: #7460ee;
+$blue: #02bec9;
+$megna: #00897b;
+
+/*Extra Variable*/
+$rgt: right;
+$lft: left;
+$border: rgba(120, 130, 140, 0.13);
+$table-border:#f3f1f1;
+$card-brd:#d7dfe3;
+$dark-text: #848a96;
+$radius: 4px;
+$form-brd: #d9d9d9;
+/*Preloader*/
+.preloader{
+    width: 100%;
+    height: 100%;
+    top:0px;
+    position: fixed;
+    z-index: 99999;
+    background: #fff;
+    .cssload-speeding-wheel{
+        position: absolute;
+        top: calc(50% - 3.5px);
+        left: calc(50% - 3.5px);
+    }
+}
+

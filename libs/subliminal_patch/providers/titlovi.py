@@ -126,9 +126,9 @@ class TitloviSubtitle(Subtitle):
         # resolution
         if video.resolution and self.releases and video.resolution in self.releases.lower():
             matches.add('resolution')
-        # format
-        if video.format and self.releases and video.format.lower() in self.releases.lower():
-            matches.add('format')
+        # source
+        if video.source and self.releases and video.source.lower() in self.releases.lower():
+            matches.add('source')
         # other properties
         matches |= guess_matches(video, guessit(self.releases))
 

@@ -1,31 +1,34 @@
 # coding=utf-8
 
-from __future__ import absolute_import
-from __future__ import print_function
 import os
 import requests
 import logging
-import six
-from queueconfig import notifications
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
 from database import database, dict_converter
 from utils import get_sonarr_version
-from helper import path_replace
+from helper import path_mappings
+from event_handler import event_stream
 
 
 def update_series():
-    notifications.write(msg="Update series list from Sonarr is running...", queue='get_series')
     apikey_sonarr = settings.sonarr.apikey
     if apikey_sonarr is None:
         return
 
     sonarr_version = get_sonarr_version()
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
-    serie_default_language = settings.general.serie_default_language
-    serie_default_hi = settings.general.serie_default_hi
-    serie_default_forced = settings.general.serie_default_forced
+
+    if serie_default_enabled is True:
+        serie_default_language = settings.general.serie_default_language
+        serie_default_hi = settings.general.serie_default_hi
+        serie_default_forced = settings.general.serie_default_forced
+    else:
+        serie_default_language = '[]'
+        serie_default_hi = 'Flase'
+        serie_default_forced = 'False'
+
     audio_profiles = get_profile_list()
 
     # Get shows data from Sonarr
@@ -56,9 +59,6 @@ def update_series():
 
     series_list_length = len(r.json())
     for i, show in enumerate(r.json(), 1):
-        notifications.write(msg="Getting series data from Sonarr...", queue='get_series', item=i,
-                            length=series_list_length)
-
         overview = show['overview'] if 'overview' in show else ''
         poster = ''
         fanart = ''
@@ -92,42 +92,30 @@ def update_series():
                                      'fanart': fanart,
                                      'audio_language': audio_language,
                                      'sortTitle': show['sortTitle'],
-                                     'year': six.text_type(show['year']),
+                                     'year': str(show['year']),
                                      'alternateTitles': alternate_titles})
         else:
-            if serie_default_enabled is True:
-                series_to_add.append({'title': show["title"],
-                                      'path': show["path"],
-                                      'tvdbId': show["tvdbId"],
-                                      'languages': serie_default_language,
-                                      'hearing_impaired': serie_default_hi,
-                                      'sonarrSeriesId': show["id"],
-                                      'overview': overview,
-                                      'poster': poster,
-                                      'fanart': fanart,
-                                      'audio_language': audio_language,
-                                      'sortTitle': show['sortTitle'],
-                                      'year': six.text_type(show['year']),
-                                      'alternateTitles': alternate_titles,
-                                      'forced': serie_default_forced})
-            else:
-                series_to_add.append({'title': show["title"],
-                                      'path': show["path"],
-                                      'tvdbId': show["tvdbId"],
-                                      'sonarrSeriesId': show["id"],
-                                      'overview': overview,
-                                      'poster': poster,
-                                      'fanart': fanart,
-                                      'audio_language': audio_language,
-                                      'sortTitle': show['sortTitle'],
-                                      'year': six.text_type(show['year']),
-                                      'alternateTitles': alternate_titles})
+            series_to_add.append({'title': show["title"],
+                                  'path': show["path"],
+                                  'tvdbId': show["tvdbId"],
+                                  'languages': serie_default_language,
+                                  'hearing_impaired': serie_default_hi,
+                                  'sonarrSeriesId': show["id"],
+                                  'overview': overview,
+                                  'poster': poster,
+                                  'fanart': fanart,
+                                  'audio_language': audio_language,
+                                  'sortTitle': show['sortTitle'],
+                                  'year': str(show['year']),
+                                  'alternateTitles': alternate_titles,
+                                  'forced': serie_default_forced})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
 
     for series in removed_series:
-        database.execute("DELETE FROM table_shows WHERE sonarrSEriesId=?", (series,))
+        database.execute("DELETE FROM table_shows WHERE sonarrSeriesId=?",(series,))
+        event_stream(type='series', action='delete', series=series)
 
     # Update existing series in DB
     series_in_db_list = []
@@ -143,6 +131,7 @@ def update_series():
         query = dict_converter.convert(updated_series)
         database.execute('''UPDATE table_shows SET ''' + query.keys_update + ''' WHERE sonarrSeriesId = ?''',
                          query.values + (updated_series['sonarrSeriesId'],))
+        event_stream(type='series', action='update', series=updated_series['sonarrSeriesId'])
 
     # Insert new series in DB
     for added_series in series_to_add:
@@ -154,9 +143,11 @@ def update_series():
             list_missing_subtitles(no=added_series['sonarrSeriesId'])
         else:
             logging.debug('BAZARR unable to insert this series into the database:',
-                          path_replace(added_series['path']))
+                          path_mappings.path_replace(added_series['path']))
 
-    logging.debug('BAZARR All series synced from Sonarr into database.')
+            event_stream(type='series', action='insert', series=added_series['sonarrSeriesId'])
+
+            logging.debug('BAZARR All series synced from Sonarr into database.')
 
 
 def get_profile_list():

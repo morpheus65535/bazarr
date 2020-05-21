@@ -1,11 +1,8 @@
 # coding=utf-8
 
-from __future__ import absolute_import
-import os
 import pycountry
 import ast
 
-from get_args import args
 from subzero.language import Language
 from database import database
 

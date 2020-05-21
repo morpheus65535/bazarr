@@ -140,10 +140,9 @@ class RemoveMatch(Consequence):  # pylint: disable=abstract-method
                     matches.remove(match)
                     ret.append(match)
             return ret
-        else:
-            if when_response in matches:
-                matches.remove(when_response)
-                return when_response
+        if when_response in matches:
+            matches.remove(when_response)
+            return when_response
 
 
 class AppendMatch(Consequence):  # pylint: disable=abstract-method
@@ -164,12 +163,11 @@ class AppendMatch(Consequence):  # pylint: disable=abstract-method
                     matches.append(match)
                     ret.append(match)
             return ret
-        else:
-            if self.match_name:
-                when_response.name = self.match_name
-            if when_response not in matches:
-                matches.append(when_response)
-                return when_response
+        if self.match_name:
+            when_response.name = self.match_name
+        if when_response not in matches:
+            matches.append(when_response)
+            return when_response
 
 
 class RenameMatch(Consequence):  # pylint: disable=abstract-method

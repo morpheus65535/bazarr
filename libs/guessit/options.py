@@ -3,10 +3,12 @@
 """
 Options
 """
+import copy
 import json
 import os
 import pkgutil
 import shlex
+
 from argparse import ArgumentParser
 
 import six
@@ -42,6 +44,10 @@ def build_argument_parser():
                              help='Expected title to parse (can be used multiple times)')
     naming_opts.add_argument('-G', '--expected-group', action='append', dest='expected_group', default=None,
                              help='Expected release group (can be used multiple times)')
+    naming_opts.add_argument('--includes', action='append', dest='includes', default=None,
+                             help='List of properties to be detected')
+    naming_opts.add_argument('--excludes', action='append', dest='excludes', default=None,
+                             help='List of properties to be ignored')
 
     input_opts = opts.add_argument_group("Input")
     input_opts.add_argument('-f', '--input-file', dest='input_file', default=None,
@@ -65,14 +71,20 @@ def build_argument_parser():
 
     conf_opts = opts.add_argument_group("Configuration")
     conf_opts.add_argument('-c', '--config', dest='config', action='append', default=None,
-                           help='Filepath to the configuration file. Configuration contains the same options as '
-                                'those command line options, but option names have "-" characters replaced with "_". '
-                                'If not defined, guessit tries to read a configuration default configuration file at '
-                                '~/.guessit/options.(json|yml|yaml) and ~/.config/guessit/options.(json|yml|yaml). '
-                                'Set to "false" to disable default configuration file loading.')
-    conf_opts.add_argument('--no-embedded-config', dest='no_embedded_config', action='store_true',
+                           help='Filepath to configuration file. Configuration file contains the same '
+                                'options as those from command line options, but option names have "-" characters '
+                                'replaced with "_". This configuration will be merged with default and user '
+                                'configuration files.')
+    conf_opts.add_argument('--no-user-config', dest='no_user_config', action='store_true',
                            default=None,
-                           help='Disable default configuration.')
+                           help='Disable user configuration. If not defined, guessit tries to read configuration files '
+                                'at ~/.guessit/options.(json|yml|yaml) and ~/.config/guessit/options.(json|yml|yaml)')
+    conf_opts.add_argument('--no-default-config', dest='no_default_config', action='store_true',
+                           default=None,
+                           help='Disable default configuration. This should be done only if you are providing a full '
+                                'configuration through user configuration or --config option. If no "advanced_config" '
+                                'is provided by another configuration file, it will still be loaded from default '
+                                'configuration.')
 
     information_opts = opts.add_argument_group("Information")
     information_opts.add_argument('-p', '--properties', dest='properties', action='store_true', default=None,
@@ -92,7 +104,7 @@ def parse_options(options=None, api=False):
     :param options:
     :type options:
     :param api
-    :type boolean
+    :type api: boolean
     :return:
     :rtype:
     """
@@ -116,91 +128,111 @@ class ConfigurationException(Exception):
     """
     Exception related to configuration file.
     """
-    pass
+    pass  # pylint:disable=unnecessary-pass
 
 
 def load_config(options):
     """
-    Load configuration from configuration file, if defined.
+    Load options from configuration files, if defined and present.
     :param options:
     :type options:
     :return:
     :rtype:
     """
-    config_files_enabled = True
-    custom_config_files = None
-    if options.get('config') is not None:
-        custom_config_files = options.get('config')
-        if not custom_config_files \
-                or not custom_config_files[0] \
-                or custom_config_files[0].lower() in ['0', 'no', 'false', 'disabled']:
-            config_files_enabled = False
-
     configurations = []
-    if config_files_enabled:
+
+    if not options.get('no_default_config'):
+        default_options_data = pkgutil.get_data('guessit', 'config/options.json').decode('utf-8')
+        default_options = json.loads(default_options_data)
+        configurations.append(default_options)
+
+    config_files = []
+
+    if not options.get('no_user_config'):
         home_directory = os.path.expanduser("~")
         cwd = os.getcwd()
         yaml_supported = False
         try:
-            import yaml  # pylint: disable=unused-variable
+            import yaml  # pylint:disable=unused-variable,unused-import
             yaml_supported = True
         except ImportError:
             pass
-        config_file_locations = get_config_file_locations(home_directory, cwd, yaml_supported)
+
+        config_file_locations = get_options_file_locations(home_directory, cwd, yaml_supported)
         config_files = [f for f in config_file_locations if os.path.exists(f)]
 
-        if custom_config_files:
-            config_files = config_files + custom_config_files
+    custom_config_files = options.get('config')
+    if custom_config_files:
+        config_files = config_files + custom_config_files
 
-        for config_file in config_files:
-            config_file_options = load_config_file(config_file)
-            if config_file_options:
-                configurations.append(config_file_options)
+    for config_file in config_files:
+        config_file_options = load_config_file(config_file)
+        if config_file_options:
+            configurations.append(config_file_options)
 
-    if not options.get('no_embedded_config'):
-        embedded_options_data = pkgutil.get_data('guessit', 'config/options.json').decode("utf-8")
-        embedded_options = json.loads(embedded_options_data)
-        configurations.append(embedded_options)
-
+    config = {}
     if configurations:
-        configurations.append(options)
-        return merge_configurations(*configurations)
+        config = merge_options(*configurations)
 
-    return options
+    if 'advanced_config' not in config:
+        # Guessit doesn't work without advanced_config, so we use default if no configuration files provides it.
+        default_options_data = pkgutil.get_data('guessit', 'config/options.json').decode('utf-8')
+        default_options = json.loads(default_options_data)
+        config['advanced_config'] = default_options['advanced_config']
+
+    return config
 
 
-def merge_configurations(*configurations):
+def merge_options(*options):
     """
-    Merge configurations into a single options dict.
-    :param configurations:
-    :type configurations:
+    Merge options into a single options dict.
+    :param options:
+    :type options:
     :return:
     :rtype:
     """
 
     merged = {}
+    if options:
+        if options[0]:
+            merged.update(copy.deepcopy(options[0]))
 
-    for options in configurations:
-        pristine = options.get('pristine')
+        for options in options[1:]:
+            if options:
+                pristine = options.get('pristine')
 
-        if pristine:
-            if pristine is True:
-                merged = {}
-            else:
-                for to_reset in pristine:
-                    if to_reset in merged:
-                        del merged[to_reset]
+                if pristine is True:
+                    merged = {}
+                elif pristine:
+                    for to_reset in pristine:
+                        if to_reset in merged:
+                            del merged[to_reset]
 
-        for (option, value) in options.items():
-            if value is not None and option != 'pristine':
-                if option in merged.keys() and isinstance(merged[option], list):
-                    merged[option].extend(value)
-                elif isinstance(value, list):
-                    merged[option] = list(value)
-                else:
-                    merged[option] = value
+                for (option, value) in options.items():
+                    merge_option_value(option, value, merged)
 
     return merged
+
+
+def merge_option_value(option, value, merged):
+    """
+    Merge option value
+    :param option:
+    :param value:
+    :param merged:
+    :return:
+    """
+    if value is not None and option != 'pristine':
+        if option in merged.keys() and isinstance(merged[option], list):
+            for val in value:
+                if val not in merged[option]:
+                    merged[option].append(val)
+        elif option in merged.keys() and isinstance(merged[option], dict):
+            merged[option] = merge_options(merged[option], value)
+        elif isinstance(value, list):
+            merged[option] = list(value)
+        else:
+            merged[option] = value
 
 
 def load_config_file(filepath):
@@ -220,17 +252,24 @@ def load_config_file(filepath):
         try:
             import yaml
             with open(filepath) as config_file_data:
-                return yaml.load(config_file_data)
+                return yaml.load(config_file_data, yaml.SafeLoader)
         except ImportError:  # pragma: no cover
             raise ConfigurationException('Configuration file extension is not supported. '
                                          'PyYAML should be installed to support "%s" file' % (
                                              filepath,))
+
+    try:
+        # Try to load input as JSON
+        return json.loads(filepath)
+    except:  # pylint: disable=bare-except
+        pass
+
     raise ConfigurationException('Configuration file extension is not supported for "%s" file.' % (filepath,))
 
 
-def get_config_file_locations(homedir, cwd, yaml_supported=False):
+def get_options_file_locations(homedir, cwd, yaml_supported=False):
     """
-    Get all possible locations for configuration file.
+    Get all possible locations for options file.
     :param homedir: user home directory
     :type homedir: basestring
     :param cwd: current working directory

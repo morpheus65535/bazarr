@@ -42,30 +42,30 @@
 
 ? Show.Name.x264-byEMP
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: byEMP
 
 ? Show.Name.x264-NovaRip
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: NovaRip
 
 ? Show.Name.x264-PARTiCLE
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: PARTiCLE
 
 ? Show.Name.x264-POURMOi
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: POURMOi
 
 ? Show.Name.x264-RipPourBox
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: RipPourBox
 
 ? Show.Name.x264-RiPRG
 : title: Show Name
-  video_codec: h264
+  video_codec: H.264
   release_group: RiPRG

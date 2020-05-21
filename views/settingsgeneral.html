@@ -1,0 +1,418 @@
+{% extends '_main.html' %}
+
+{% block title %}General - Bazarr{% endblock %}
+
+{% block page_head %}
+
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="save_button">
+            <div>
+                <span class="fa-stack">
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
+                </span>
+            </div>
+            <div class="align-bottom text-themecolor small text-center">Save</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid" style="padding-top: 3em;">
+        <form class="form" name="settings_form" id="settings_form">
+            <h4>Host</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Bind Address</b>
+                </div>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control restart-required" id="settings-general-ip" name="settings-general-ip" value="{{settings.general.ip}}">
+                    <label for="settings-general-ip">Valid IP4 address or '0.0.0.0' for all interfaces</label><br>
+                    <label class="restart">Requires restart to take effect</label>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Port Number</b>
+                </div>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control restart-required" id="settings-general-port" name="settings-general-port" value="{{settings.general.port}}"><br>
+                    <label class="restart">Requires restart to take effect</label>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>URL Base</b>
+                </div>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control restart-required" id="settings-general-base_url" name="settings-general-base_url" value="{{settings.general.base_url}}">
+                    <label for="settings-general-base_url">For reverse proxy support, default is '/'</label><br>
+                    <label class="restart">Requires restart to take effect</label>
+                </div>
+            </div>
+            <br>
+
+            <h4>Security</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Authentication</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-auth-type" name="settings-auth-type">
+                        <option value="None">None</option>
+                        <option value="basic">Basic</option>
+                        <option value="form">Form</option>
+                    </select>
+                    <label for="settings-auth-type">Require Username and Password to access Bazarr</label><br>
+                </div>
+            </div>
+            <div id="authentication_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-auth-username" name="settings-auth-username" value="{{settings.auth.username}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-auth-password" name="settings-auth-password" value="{{settings.auth.password}}">
+                    </div>
+                </div>
+                <br>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>API Key</b>
+                </div>
+                <div class="input-group col-sm-4">
+                    <input type="text" class="form-control" id="settings-auth-apikey" name="settings-auth-apikey" readonly value="{{settings.auth.apikey}}">
+                    <div class="input-group-append">
+                        <button class="btn btn-danger" type="button" onclick="generate_apikey()"><i class="fas fa-sync"></i></button>
+                    </div>
+                </div>
+            </div>
+            <br>
+
+            <h4>Proxy</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Type</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-proxy-type" name="settings-proxy-type">
+                        <option value="None">None</option>
+                        <option value="http">HTTP(S)</option>
+                        <option value="socks4">Socks4</option>
+                        <option value="socks5">Socks5</option>
+                    </select><br>
+                </div>
+            </div>
+            <div id="proxy_div">
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Hostname</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-proxy-url" name="settings-proxy-url" value="{{settings.proxy.url}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Port</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-proxy-port" name="settings-proxy-port" value="{{settings.proxy.port}}">
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Username</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-proxy-username" name="settings-proxy-username" value="{{settings.proxy.username}}">
+                        <label for="settings-proxy-username">You only need to enter a username and password if one is required. Leave them blank otherwise.</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Password</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="password" class="form-control" id="settings-proxy-password" name="settings-proxy-password" value="{{settings.proxy.password}}">
+                        <label for="settings-proxy-password">You only need to enter a username and password if one is required. Leave them blank otherwise.</label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Ignored Addresses</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="settings-proxy-exclude" name="settings-proxy-exclude" value="{{settings.proxy.exclude}}">
+                        <label for="settings-proxy-exclude">Use ',' as a separator, and '*.' as a wildcard for subdomains</label>
+                    </div>
+                </div>
+                <br>
+            </div>
+
+            <h4>UI</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Page Size</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-page_size" name="settings-general-page_size">
+                        <option value="-1">Unlimited</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                        <option value="500">500</option>
+                        <option value="1000">1000</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Page Size Manual Search</b>
+                </div>
+                <div class="form-group col-sm-4">
+                    <select class="form-control selectpicker" id="settings-general-page_size_manual_search" name="settings-general-page_size_manual_search">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                    </select>
+                </div>
+            </div>            
+            <br>
+
+            <h4>Logging</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Debug</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-debug" name="settings-general-debug">
+                        <span class="custom-control-label" for="settings-general-debug"></span>
+                    </label>
+                    <label>Debug logging should only be enabled temporarily</label>
+                </div>
+            </div>
+            <br>
+
+            <h4>Analytics</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Enabled</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-analytics-enabled" name="settings-analytics-enabled">
+                        <span class="custom-control-label" for="settings-analytics-enabled"></span>
+                    </label>
+                    <label>Send anonymous usage information, nothing that can identify you. This includes information on which providers you use, what languages you search for, Bazarr, Python, Sonarr, Radarr and what OS version you are using. We will use this information to prioritize features and bug fixes. Please, keep this enabled as this is the only way we have to better understand how you use Bazarr.</label>
+                </div>
+            </div>
+            <br>
+
+            <div id="update_div">
+                <h4>Updates</h4>
+                <hr/>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Branch</b>
+                    </div>
+                    <div class="form-group col-sm-4">
+                        <select class="form-control selectpicker" id="settings-general-branch" name="settings-general-branch">
+                            <option value="master">master</option>
+                            <option value="development">development</option>
+                        </select>
+                        <label>Branch used by external update mechanism</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Automatic</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-auto_update" name="settings-general-auto_update">
+                            <span class="custom-control-label" for="settings-general-auto_update"></span>
+                        </label>
+                        <label>Automatically download and install updates. You will still be able to install from System: Tasks</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Restart After Update</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-update_restart" name="settings-general-update_restart">
+                            <span class="custom-control-label" for="settings-general-update_restart"></span>
+                        </label>
+                        <label>Automatically restart after downloading and installing updates. You will still be able to restart manually</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="restart_modal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Restart Bazarr</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Bazarr requires a restart to apply changes, do you want to restart now?
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="restart_button" class="btn btn-info">Restart Now</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">I'll restart later</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var restart_required = false;
+
+            // Show warning if there's unsaved changes in the settings_form
+            var form_changed = false;
+            $(window).on('beforeunload', function() {
+                if (form_changed) {
+                    return "";
+                }
+            });
+
+            // Hide checkmark over save button
+            $('#save_button_checkmark').hide();
+            $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+
+            // Hide update_div if args.no-update
+            {% if args.no_update %}
+            $('#update_div').hide()
+            {% endif %}
+
+            // Hide *_div on Select input changed to None
+            $('#settings-auth-type').on('change', function() {
+                if ($(this).val() === 'None') {
+                    $('#authentication_div').hide();
+                } else {
+                    $('#authentication_div').show();
+                }
+            });
+
+            $('#settings-proxy-type').on('change', function() {
+                if ($(this).val() === 'None') {
+                    $('#proxy_div').hide();
+                } else {
+                    $('#proxy_div').show();
+                }
+            });
+
+            // Set Select input values
+            $('#settings-auth-type').val('{{settings.auth.type}}').trigger('change');
+            $('#settings-proxy-type').val('{{settings.proxy.type}}').trigger('change');
+            $('#settings-general-page_size').val('{{settings.general.page_size}}');
+            $('#settings-general-page_size_manual_search').val('{{settings.general.page_size_manual_search}}');
+            $('#settings-general-branch').val('{{settings.general.branch}}');
+            $('.selectpicker').selectpicker('refresh')
+
+            // Set Checkbox input values
+            $('#settings-general-debug').prop('checked', {{'true' if settings.general.getboolean('debug') else 'false'}});
+            $('#settings-analytics-enabled').prop('checked', {{'true' if settings.analytics.getboolean('enabled') else 'false'}});
+            $('#settings-general-auto_update').prop('checked', {{'true' if settings.general.getboolean('auto_update') else 'false'}});
+            $('#settings-general-update_restart').prop('checked', {{'true' if settings.general.getboolean('update_restart') else 'false'}});
+
+            $('#save_button').on('click', function() {
+                var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
+
+                $.ajax({
+                    url: "{{ url_for('api.savesettings') }}",
+                    data: formdata,
+                    processData: false,
+                    contentType: false,
+                    type: 'POST',
+                    complete: function () {
+                        $('#save_button_checkmark').show();
+                        form_changed = false;
+                        $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                        if (restart_required) {
+                            $('#restart_modal').modal('show');
+                        }
+                        setTimeout(
+                            function()
+                            {
+                                $('#save_button_checkmark').hide();
+                            }, 2000);
+                    }
+                });
+            });
+
+            $('#restart_button').on('click', function() {
+                $('#restart').trigger('click');
+            });
+
+            // monitor changes to the settings_form
+            $('#settings_form').on('change', function() {
+                form_changed = true;
+                $('#save_button').prop('disabled', false).css('cursor', 'auto');
+            })
+
+            // monitor changes to the fields that require restart to be effective.
+            $('.restart-required').on('change', function() {
+                restart_required = true;
+            })
+        });
+
+        function generate_apikey() {
+            var result           = '';
+            var characters       = 'abcdef0123456789';
+            var charactersLength = characters.length;
+            for ( var i = 0; i < 32; i++ ) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            $( "#settings-auth-apikey" ).val( result );
+        }
+    </script>
+{% endblock tail %}

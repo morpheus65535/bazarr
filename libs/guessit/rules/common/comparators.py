@@ -13,9 +13,12 @@ def marker_comparator_predicate(match):
     """
     Match predicate used in comparator
     """
-    return not match.private and \
-           match.name not in ['proper_count', 'title', 'episode_title', 'alternative_title'] and \
-           not (match.name == 'container' and 'extension' in match.tags)
+    return (
+        not match.private
+        and match.name not in ('proper_count', 'title')
+        and not (match.name == 'container' and 'extension' in match.tags)
+        and not (match.name == 'other' and match.value == 'Rip')
+    )
 
 
 def marker_weight(matches, marker, predicate):
@@ -50,9 +53,8 @@ def marker_comparator(matches, markers, predicate):
         matches_count = marker_weight(matches, marker2, predicate) - marker_weight(matches, marker1, predicate)
         if matches_count:
             return matches_count
-        len_diff = len(marker2) - len(marker1)
-        if len_diff:
-            return len_diff
+
+        # give preference to rightmost path
         return markers.index(marker2) - markers.index(marker1)
 
     return comparator

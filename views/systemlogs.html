@@ -1,0 +1,231 @@
+{% extends '_main.html' %}
+
+{% block title %}Logs - Bazarr{% endblock %}
+
+{% block page_head %}
+    <style>
+        .dropdown-item-checked::before {
+            position: absolute;
+            left: .1rem;
+            content: '✓';
+            font-weight: 900;
+        }
+
+        .table tbody tr {
+            cursor: pointer;
+        }
+    </style>
+{% endblock page_head %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="refresh_button">
+            <div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Refresh</div>
+        </button>
+        <button class="btn btn-outline" id="download_button">
+            <div><i class="fas fa-download align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Download</div>
+        </button>
+        <button class="btn btn-outline" id="empty_button">
+            <div><i class="fas fa-trash align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Empty</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+    <div class="d-flex m-t-5 justify-content-end">
+        <div class="dropdown">
+            <button type="button" class="btn btn-outline" data-toggle="dropdown">
+                <i class="fas fa-filter align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                <div class="align-bottom text-themecolor small text-center">Filter</div>
+            </button>
+            <div id="filter_menu" class="dropdown-menu dropdown-menu-right">
+                    <a href="" class="dropdown-item filter_log dropdown-item-checked" data-level="ALL"><i class="far fa-circle" style="color: black;"></i> All</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="" class="dropdown-item filter_log" data-level="INFO"><i class="fas fa-info-circle" style="color: #1e90ff;"></i> Info</a>
+                    <a href="" class="dropdown-item filter_log" data-level="WARNING"><i class="fas fa-exclamation-circle" style="color: yellow;"></i> Warning</a>
+                    <a href="" class="dropdown-item filter_log" data-level="ERROR"><i class="fas fa-bug" style="color: red;"></i> Error</a>
+                    <a href="" class="dropdown-item filter_log" data-level="DEBUG"><i class="fas fa-bug" style="color: black;"></i> Debug</a>
+            </div>
+        </div>
+    </div>
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <table id="logs" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>Message</th>
+                <th>Time</th>
+                <th></th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+
+    <div id="logsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Details</h4><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <h5>Message</h5>
+                        <figure class="highlight"><pre><code class="zmdi-language-python-alt" role="alert" id="logs_message_span"></code></pre></figure>
+                        <h5 id="except_tag">Exception</h5>
+                        <figure class="highlight"><pre><code class="zmdi-language-python-alt" role="alert" id="logs_exception_span"></code></pre></figure>
+                    </div>
+                </div>
+                <div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				</div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#logs').DataTable( {
+                language: {
+                    zeroRecords: 'No entries found in logs matching this log level.',
+                    processing: "Loading Logs..."
+                },
+                paging: true,
+                lengthChange: false,
+                pageLength: {{ settings.general.page_size }},
+                searching: true,
+                search: {
+                    regex: true
+                },
+                ordering: false,
+                processing: true,
+                serverSide: false,
+                ajax: "{{ url_for('api.systemlogs') }}",
+                columns: [
+                    {
+                        data: 1,
+                        render: function (data) {
+                            return $.trim(data);
+                        }
+                    },
+                    { data: 1,
+                        render: function (data) {
+                            var icon;
+                            switch ($.trim(data)) {
+                                case 'INFO':
+                                    icon = '"fas fa-info-circle" style="color: #1e90ff;"';
+                                    break;
+                                case 'WARNING':
+                                    icon = '"fas fa-exclamation-circle text-warning"';
+                                    break;
+                                case 'ERROR':
+                                    icon = '"fas fa-bug" style="color: red;"';
+                                    break;
+                                case 'DEBUG':
+                                    icon = '"fas fa-bug" style="color: black;"';
+                            }
+                            return '<i class=' + icon + '></i>';
+                        }
+                    },
+                    { data: 3,
+                        render: function (data) {
+                            return $.trim(data);
+                        }
+                    },
+                    { data: 0,
+                        render: function (data) {
+                            return '<div class="description" data-toggle="tooltip" data-title="' + $.trim(data) + '">' + moment($.trim(data), "DD/MM/YYYY hh:mm:ss").fromNow() + '</div>'
+                        }
+                    },
+                    { data: 4,
+                        render: function (data) {
+                            return $.trim(data);
+                        }
+                    }
+                ],
+                columnDefs: [
+                    {
+                        "targets": [ 0 ],
+                        "visible": false,
+                        "searchable": true
+                    },
+                    {
+                        "targets": [ 4 ],
+                        "visible": false,
+                        "searchable": false
+                    }
+                ]
+            });
+
+            $('#refresh_button').on('click', function() {
+                table.ajax.reload();
+                table.columns.adjust().draw(false);
+            })
+
+            $('#download_button').on('click', function(e) {
+                e.preventDefault();
+                window.location.href = "{{ url_for('download_log') }}";
+            })
+
+            $('#empty_button').on('click', function() {
+                $.ajax({
+                    url: "{{ url_for('emptylog') }}"
+                }).done(function () {
+                    table.ajax.reload();
+                    table.columns.adjust().draw(false);
+                })
+            })
+
+            $('.filter_log').on( 'click', function (e) {
+                e.preventDefault();
+                $('.filter_log').removeClass('dropdown-item-checked');
+                $(this).addClass('dropdown-item-checked');
+                if ($(this).data('level') === 'INFO') {
+                    table.column(0).search('INFO|WARNING|ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'WARNING') {
+                    table.column(0).search('WARNING|ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'ERROR') {
+                    table.column(0).search('ERROR|DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'DEBUG') {
+                    table.column(0).search('DEBUG', true, false).draw();
+                } else if ($(this).data('level') === 'ALL') {
+                    table.column(0).search('').draw();
+                }
+            });
+
+            $('#logs').on('click', 'tr', function() {
+                var data = table.row( this ).data();
+
+                $("#logs_message_span").html(data[3]);
+                let exception = data[4];
+                exception = exception.replace(/'/g,"");
+                exception = exception.replace(/\\n\s\s\s\s/g, "\\n&emsp;&emsp;");
+                exception = exception.replace(/\\n\s\s/g, "\\n&emsp;");
+                exception = exception.replace(/\\n/g, "<br />");
+                $("#logs_exception_span").html(exception);
+                if (exception.length > 1) {
+                    $('#except_tag').show();
+                    $('#logs_exception_span').parent().parent().show();
+                } else {
+                    $('#except_tag').hide();
+                    $('#logs_exception_span').parent().parent().hide();
+                }
+                $('#logsModal')
+					.modal({
+						focus: false
+					});
+            });
+        })
+    </script>
+{% endblock tail %}

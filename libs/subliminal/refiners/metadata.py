@@ -46,13 +46,13 @@ def refine(video, embedded_subtitles=True, **kwargs):
 
             # video codec
             if video_track.codec_id == 'V_MPEG4/ISO/AVC':
-                video.video_codec = 'h264'
+                video.video_codec = 'H.264'
                 logger.debug('Found video_codec %s', video.video_codec)
             elif video_track.codec_id == 'V_MPEG4/ISO/SP':
                 video.video_codec = 'DivX'
                 logger.debug('Found video_codec %s', video.video_codec)
             elif video_track.codec_id == 'V_MPEG4/ISO/ASP':
-                video.video_codec = 'XviD'
+                video.video_codec = 'Xvid'
                 logger.debug('Found video_codec %s', video.video_codec)
         else:
             logger.warning('MKV has no video track')
@@ -62,7 +62,7 @@ def refine(video, embedded_subtitles=True, **kwargs):
             audio_track = mkv.audio_tracks[0]
             # audio codec
             if audio_track.codec_id == 'A_AC3':
-                video.audio_codec = 'AC3'
+                video.audio_codec = 'Dolby Digital'
                 logger.debug('Found audio_codec %s', video.audio_codec)
             elif audio_track.codec_id == 'A_DTS':
                 video.audio_codec = 'DTS'

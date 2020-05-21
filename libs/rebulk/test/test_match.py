@@ -116,6 +116,9 @@ class TestMatchesClass(object):
         assert "tag1" in matches.tags
         assert "tag2" in matches.tags
 
+        assert self.match3.tagged("tag1")
+        assert not self.match3.tagged("start")
+
         tag1 = matches.tagged("tag1")
         assert len(tag1) == 2
         assert tag1[0] == self.match2

@@ -1,9 +1,8 @@
 import os
 from sqlite3worker import Sqlite3Worker
-from six import string_types
 
 from get_args import args
-from helper import path_replace, path_replace_movie, path_replace_reverse, path_replace_reverse_movie
+from helper import path_mappings
 
 
 def db_init():
@@ -70,20 +69,20 @@ class SqliteDictPathMapper:
     def path_replace(self, values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_replace(item['path'])
+                item['path'] = path_mappings.path_replace(item['path'])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_replace(values_dict['path'])
+            values_dict['path'] = path_mappings.path_replace(values_dict['path'])
         else:
-            return path_replace(values_dict)
+            return path_mappings.path_replace(values_dict)
 
     def path_replace_movie(self, values_dict):
         if type(values_dict) is list:
             for item in values_dict:
-                item['path'] = path_replace_movie(item['path'])
+                item['path'] = path_mappings.path_replace_movie(item['path'])
         elif type(values_dict) is dict:
-            values_dict['path'] = path_replace_movie(values_dict['path'])
+            values_dict['path'] = path_mappings.path_replace_movie(values_dict['path'])
         else:
-            return path_replace(values_dict)
+            return path_mappings.path_replace_movie(values_dict)
 
 
 dict_mapper = SqliteDictPathMapper()
@@ -127,3 +126,11 @@ def db_upgrade():
                 database.execute('''ALTER TABLE {0} ADD COLUMN "{1}" "{2}" DEFAULT "{3}"'''.format(column[0], column[1], column[2], column[3]))
         except:
             pass
+
+    # Fix null languages, hearing-impaired and forced for series and movies.
+    database.execute("UPDATE table_shows SET languages = '[]' WHERE languages is null")
+    database.execute("UPDATE table_shows SET hearing_impaired = 'False' WHERE hearing_impaired is null")
+    database.execute("UPDATE table_shows SET forced = 'False' WHERE forced is null")
+    database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
+    database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
+    database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")

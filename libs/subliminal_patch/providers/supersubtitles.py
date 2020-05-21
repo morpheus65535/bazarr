@@ -129,9 +129,9 @@ class SuperSubtitlesSubtitle(Subtitle):
         # resolution
         if video.resolution and self.version and video.resolution in self.version.lower():
             matches.add('resolution')
-        # format
-        if video.format and self.version and video.format.lower() in self.version.lower():
-            matches.add('format')
+        # source
+        if video.source and self.version and video.source.lower() in self.version.lower():
+            matches.add('source')
 
         self.matches = matches
         return matches

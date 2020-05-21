@@ -1,0 +1,74 @@
+{% extends '_main.html' %}
+
+{% block title %}Providers - Bazarr{% endblock %}
+
+{% block bcleft %}
+    <div class="">
+        <button class="btn btn-outline" id="refresh_button">
+            <div><i class="fas fa-sync align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Refresh</div>
+        </button>
+        <button class="btn btn-outline" id="reset_button">
+            <div><i class="fas fa-trash align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Reset Prov.</div>
+        </button>
+    </div>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <div class="container-fluid">
+        <table id="providers" class="table table-striped" style="width:100%">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Next Retry</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#providers').DataTable( {
+                language: {
+                    zeroRecords: 'No providers enabled.',
+                    processing: "Loading Providers..."
+                },
+                paging: false,
+                lengthChange: false,
+                searching: false,
+                ordering: false,
+                info: false,
+                processing: true,
+                serverSide: false,
+                ajax: "{{ url_for('api.systemproviders') }}",
+                columns: [
+                    { data: 0 },
+                    { data: 1 },
+                    { data: 2 }
+                ]
+            });
+
+            $('#refresh_button').on('click', function() {
+                table.ajax.reload();
+                table.columns.adjust().draw(false);
+            })
+
+            $('#reset_button').on('click', function() {
+                $.ajax({
+                    url: "{{ url_for('api.resetproviders') }}"
+                }).done(function () {
+                    table.ajax.reload();
+                    table.columns.adjust().draw(false);
+                })
+            })
+        })
+    </script>
+{% endblock tail %}

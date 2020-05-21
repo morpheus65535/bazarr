@@ -8,6 +8,7 @@ import time
 
 from get_args import args
 from config import settings
+from event_handler import event_stream
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
@@ -113,7 +114,6 @@ def get_providers_auth():
     providers_auth = {
         'addic7ed': {'username': settings.addic7ed.username,
                      'password': settings.addic7ed.password,
-                     'use_random_agents': settings.addic7ed.getboolean('random_agents'),
                      },
         'opensubtitles': {'username': settings.opensubtitles.username,
                           'password': settings.opensubtitles.password,
@@ -250,6 +250,8 @@ def update_throttled_provider():
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
                 settings.write(handle)
 
+        event_stream(type='badges')
+
 
 def list_throttled_providers():
     update_throttled_provider()
@@ -259,3 +261,13 @@ def list_throttled_providers():
             reason, until, throttle_desc = tp.get(provider, (None, None, None))
             throttled_providers.append([provider, reason, pretty.date(until)])
     return throttled_providers
+
+
+def reset_throttled_providers():
+    for provider in list(tp):
+        del tp[provider]
+    settings.general.throtteled_providers = str(tp)
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+    update_throttled_provider()
+    logging.info('BAZARR throttled providers have been reset.')

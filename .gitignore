@@ -8,6 +8,9 @@ cachefile.dbm
 bazarr.pid
 /venv
 /data
+static/scss/.sass-cache/*
+static/scss/.sass-cache
+*.scssc
 /.vscode
 
 # Allow

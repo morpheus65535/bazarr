@@ -1,15 +1,14 @@
 # coding=utf-8
 
-from __future__ import absolute_import, print_function
 import os
-import time
 import rarfile
+import json
+import hashlib
 
-from cork import Cork
-from config import settings
+from config import settings, configure_captcha_func
 from get_args import args
 from logger import configure_logging
-from helper import create_path_mapping_dict
+from helper import path_mappings
 
 from dogpile.cache.region import register_backend as register_cache_backend
 import subliminal
@@ -19,15 +18,7 @@ import datetime
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
 
 # set anti-captcha provider and key
-if settings.general.anti_captcha_provider == 'anti-captcha' and settings.anticaptcha.anti_captcha_key != "":
-    os.environ["ANTICAPTCHA_CLASS"] = 'AntiCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(settings.anticaptcha.anti_captcha_key)
-elif settings.general.anti_captcha_provider == 'death-by-captcha' and settings.deathbycaptcha.username != "" and settings.deathbycaptcha.password != "":
-    os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
-    os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(':'.join(
-        {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
-else:
-    os.environ["ANTICAPTCHA_CLASS"] = ''
+configure_captcha_func()
 
 # Check if args.config_dir exist
 if not os.path.exists(args.config_dir):
@@ -53,8 +44,13 @@ import logging
 # create random api_key if there's none in config.ini
 if not settings.auth.apikey:
     from binascii import hexlify
-    from six import text_type
-    settings.auth.apikey = text_type(hexlify(os.urandom(16)))
+    settings.auth.apikey = hexlify(os.urandom(16)).decode()
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
+# change default base_url to ''
+if settings.general.base_url == '/':
+    settings.general.base_url = ''
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
@@ -92,22 +88,36 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
-if not os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-    cork = Cork(os.path.normpath(os.path.join(args.config_dir, 'config')), initialize=True)
-
-    cork._store.roles[''] = 100
-    cork._store.save_roles()
-
-    tstamp = str(time.time())
-    username = password = ''
-    cork._store.users[username] = {
-        'role': '',
-        'hash': cork._hash(username, password),
-        'email_addr': username,
-        'desc': username,
-        'creation_date': tstamp
-    }
-    cork._store.save_users()
+# Reset form login password for Bazarr after migration from 0.8.x to 0.9. Password will be equal to username.
+if settings.auth.type == 'form' and \
+        os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+    username = False
+    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))) as json_file:
+        try:
+            data = json.load(json_file)
+            username = next(iter(data))
+        except:
+            logging.error('BAZARR is unable to migrate credentials. You should disable login by modifying config.ini '
+                          'file and settings [auth]-->type = None')
+    if username:
+        settings.auth.username = username
+        settings.auth.password = hashlib.md5(username.encode('utf-8')).hexdigest()
+        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+            settings.write(handle)
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+        logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
+                     'to your username. Please change it as soon as possible in settings.')
+else:
+    if os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+        try:
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+        except:
+            logging.error("BAZARR cannot delete those file. Please do it manually: users.json, roles.json, "
+                          "register.json")
 
 
 def init_binaries():
@@ -131,4 +141,4 @@ def init_binaries():
 
 
 init_binaries()
-create_path_mapping_dict()
+path_mappings.update()

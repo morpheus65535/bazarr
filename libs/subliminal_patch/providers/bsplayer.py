@@ -65,25 +65,25 @@ class BSPlayerSubtitle(Subtitle):
         if video.resolution and video.resolution.lower() in subtitle_filename:
             matches.add('resolution')
 
-        # format
+        # source
         formats = []
-        if video.format:
-            formats = [video.format.lower()]
-            if formats[0] == "web-dl":
+        if video.source:
+            formats = [video.source.lower()]
+            if formats[0] == "web":
                 formats.append("webdl")
                 formats.append("webrip")
                 formats.append("web ")
             for frmt in formats:
                 if frmt.lower() in subtitle_filename:
-                    matches.add('format')
+                    matches.add('source')
                     break
 
         # video_codec
         if video.video_codec:
             video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "h264":
+            if video_codecs[0] == "H.264":
                 formats.append("x264")
-            elif video_codecs[0] == "h265":
+            elif video_codecs[0] == "H.265":
                 formats.append("x265")
             for vc in formats:
                 if vc.lower() in subtitle_filename:

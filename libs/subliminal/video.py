@@ -25,7 +25,7 @@ class Video(object):
     Represent a video, existing or not.
 
     :param str name: name or path of the video.
-    :param str format: format of the video (HDTV, WEB-DL, BluRay, ...).
+    :param str source: source of the video (HDTV, Web, Blu-ray, ...).
     :param str release_group: release group of the video.
     :param str resolution: resolution of the video stream (480p, 720p, 1080p or 1080i).
     :param str video_codec: codec of the video stream.
@@ -36,13 +36,13 @@ class Video(object):
     :param set subtitle_languages: existing subtitle languages.
 
     """
-    def __init__(self, name, format=None, release_group=None, resolution=None, video_codec=None, audio_codec=None,
+    def __init__(self, name, source=None, release_group=None, resolution=None, video_codec=None, audio_codec=None,
                  imdb_id=None, hashes=None, size=None, subtitle_languages=None):
         #: Name or path of the video
         self.name = name
 
-        #: Format of the video (HDTV, WEB-DL, BluRay, ...)
-        self.format = format
+        #: Source of the video (HDTV, Web, Blu-ray, ...)
+        self.source = source
 
         #: Release group of the video
         self.release_group = release_group
@@ -177,7 +177,7 @@ class Episode(Video):
         episode = min(episode_guess) if episode_guess and isinstance(episode_guess, list) else episode_guess
 
         return cls(name, guess['title'], guess.get('season', 1), episode, title=guess.get('episode_title'),
-                   year=guess.get('year'), format=guess.get('format'), original_series='year' not in guess,
+                   year=guess.get('year'), source=guess.get('source'), original_series='year' not in guess,
                    release_group=guess.get('release_group'), resolution=guess.get('screen_size'),
                    video_codec=guess.get('video_codec'), audio_codec=guess.get('audio_codec'))
 
@@ -225,7 +225,7 @@ class Movie(Video):
         if 'alternative_title' in guess:
             alternative_titles.append(u"%s %s" % (guess['title'], guess['alternative_title']))
 
-        return cls(name, guess['title'], format=guess.get('format'), release_group=guess.get('release_group'),
+        return cls(name, guess['title'], source=guess.get('source'), release_group=guess.get('release_group'),
                    resolution=guess.get('screen_size'), video_codec=guess.get('video_codec'),
                    audio_codec=guess.get('audio_codec'), year=guess.get('year'), alternative_titles=alternative_titles)
 

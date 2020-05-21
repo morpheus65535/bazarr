@@ -1,13 +1,10 @@
 # coding=utf-8
 
-from __future__ import absolute_import
 import os
 import logging
 import re
-import types
 import platform
 import warnings
-import six
 
 from logging.handlers import TimedRotatingFileHandler
 from get_args import args
@@ -42,8 +39,7 @@ class NoExceptionFormatter(logging.Formatter):
 
 
 def configure_logging(debug=False):
-    if six.PY3:
-        warnings.simplefilter('ignore', category=ResourceWarning)
+    warnings.simplefilter('ignore', category=ResourceWarning)
 
     if not debug:
         log_level = "INFO"
@@ -77,13 +73,15 @@ def configure_logging(debug=False):
     logger.addHandler(fh)
     
     if debug:
-        logging.getLogger("sqlite3worker").setLevel(logging.DEBUG)
+        logging.getLogger("sqlite3worker").setLevel(logging.ERROR)
         logging.getLogger("apscheduler").setLevel(logging.DEBUG)
         logging.getLogger("subliminal").setLevel(logging.DEBUG)
         logging.getLogger("subliminal_patch").setLevel(logging.DEBUG)
         logging.getLogger("subzero").setLevel(logging.DEBUG)
         logging.getLogger("git").setLevel(logging.DEBUG)
         logging.getLogger("apprise").setLevel(logging.DEBUG)
+        logging.getLogger("engineio.server").setLevel(logging.DEBUG)
+        logging.getLogger("socketio.server").setLevel(logging.DEBUG)
         logging.debug('Bazarr version: %s', os.environ["BAZARR_VERSION"])
         logging.debug('Bazarr branch: %s', settings.general.branch)
         logging.debug('Operating system: %s', platform.platform())
@@ -94,13 +92,15 @@ def configure_logging(debug=False):
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
         logging.getLogger("subzero").setLevel(logging.ERROR)
-    
+        logging.getLogger("engineio.server").setLevel(logging.ERROR)
+        logging.getLogger("socketio.server").setLevel(logging.ERROR)
+
+    logging.getLogger("waitress").setLevel(logging.CRITICAL)
     logging.getLogger("knowit").setLevel(logging.CRITICAL)
     logging.getLogger("enzyme").setLevel(logging.CRITICAL)
     logging.getLogger("guessit").setLevel(logging.WARNING)
     logging.getLogger("rebulk").setLevel(logging.WARNING)
     logging.getLogger("stevedore.extension").setLevel(logging.CRITICAL)
-    logging.getLogger("geventwebsocket.handler").setLevel(logging.WARNING)
 
 
 class MyFilter(logging.Filter):
@@ -118,7 +118,7 @@ class ArgsFilteringFilter(logging.Filter):
         if isinstance(record.args, (list, tuple)):
             final_args = []
             for arg in record.args:
-                if not isinstance(arg, six.string_types):
+                if not isinstance(arg, str):
                     final_args.append(arg)
                     continue
                 
@@ -126,7 +126,7 @@ class ArgsFilteringFilter(logging.Filter):
             record.args = type(record.args)(final_args)
         elif isinstance(record.args, dict):
             for key, arg in record.args.items():
-                if not isinstance(arg, six.string_types):
+                if not isinstance(arg, str):
                     continue
                 
                 record.args[key] = func(arg)
@@ -184,3 +184,4 @@ class PublicIPFilter(ArgsFilteringFilter):
 
 def empty_log():
     fh.doRollover()
+    logging.info('BAZARR Log file emptied')
