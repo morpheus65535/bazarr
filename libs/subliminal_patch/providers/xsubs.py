@@ -19,6 +19,8 @@ from subliminal.video import Episode
 logger = logging.getLogger(__name__)
 article_re = re.compile(r'^([A-Za-z]{1,3}) (.*)$')
 episode_re = re.compile(r'^(\d+)(-(\d+))*$')
+episode_name_re = re.compile(r'^(.*?)( [\[(].{2,4}[\])])*$')
+series_sanitize_re = re.compile(r'^(.*?)( \[\D+\])*$')
 
 
 class XSubsSubtitle(Subtitle):
@@ -143,7 +145,11 @@ class XSubsProvider(Provider):
         for show_category in soup.findAll('seriesl'):
             if show_category.attrs['category'] == u'Σειρές':
                 for show in show_category.findAll('series'):
-                    show_ids[sanitize(show.text)] = int(show['srsid'])
+                    series = show.text
+                    series_match = series_sanitize_re.match(series)
+                    if series_match:
+                        series = series_match.group(1)
+                    show_ids[sanitize(series)] = int(show['srsid'])
                 break
         logger.debug('Found %d show ids', len(show_ids))
 
@@ -195,6 +201,9 @@ class XSubsProvider(Provider):
         soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
 
         series = soup.find('name').text
+        series_match = episode_name_re.match(series)
+        if series_match:
+            series = series_match.group(1)
 
         # loop over season rows
         seasons = soup.findAll('series_group')

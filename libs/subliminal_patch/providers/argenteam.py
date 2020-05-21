@@ -55,7 +55,7 @@ class ArgenteamSubtitle(Subtitle):
             return self._release_info
 
         combine = []
-        for attr in ("format", "version", "video_codec"):
+        for attr in ("format", "version"):
             value = getattr(self, attr)
             if value:
                 combine.append(value)
@@ -76,9 +76,11 @@ class ArgenteamSubtitle(Subtitle):
             if video.series and (sanitize(self.title) in (
                      sanitize(name) for name in [video.series] + video.alternative_series)):
                 matches.add('series')
+
             # season
             if video.season and self.season == video.season:
                 matches.add('season')
+
             # episode
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
@@ -86,6 +88,9 @@ class ArgenteamSubtitle(Subtitle):
             # tvdb_id
             if video.tvdb_id and str(self.tvdb_id) == str(video.tvdb_id):
                 matches.add('tvdb_id')
+
+            # year (year is not available for series, but we assume it matches)
+            matches.add('year')
 
         elif isinstance(video, Movie) and self.movie_kind == 'movie':
             # title
@@ -230,29 +235,29 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
         has_multiple_ids = len(argenteam_ids) > 1
         for aid in argenteam_ids:
             response = self.session.get(url, params={'id': aid}, timeout=10)
-
             response.raise_for_status()
             content = response.json()
 
-            imdb_id = year = None
-            returned_title = title
-            if not is_episode and "info" in content:
-                imdb_id = content["info"].get("imdb")
-                year = content["info"].get("year")
-                returned_title = content["info"].get("title", title)
+            if content is not None:  # eg https://argenteam.net/api/v1/episode?id=11534
+                imdb_id = year = None
+                returned_title = title
+                if not is_episode and "info" in content:
+                    imdb_id = content["info"].get("imdb")
+                    year = content["info"].get("year")
+                    returned_title = content["info"].get("title", title)
 
-            for r in content['releases']:
-                for s in r['subtitles']:
-                    movie_kind = "episode" if is_episode else "movie"
-                    page_link = self.BASE_URL + movie_kind + "/" + str(aid)
-                    # use https and new domain
-                    download_link = s['uri'].replace('http://www.argenteam.net/', self.BASE_URL)
-                    sub = ArgenteamSubtitle(language, page_link, download_link, movie_kind, returned_title,
-                                            season, episode, year, r.get('team'), r.get('tags'),
-                                            r.get('source'), r.get('codec'), content.get("tvdb"), imdb_id,
-                                            asked_for_release_group=video.release_group,
-                                            asked_for_episode=episode)
-                    subtitles.append(sub)
+                for r in content['releases']:
+                    for s in r['subtitles']:
+                        movie_kind = "episode" if is_episode else "movie"
+                        page_link = self.BASE_URL + movie_kind + "/" + str(aid)
+                        # use https and new domain
+                        download_link = s['uri'].replace('http://www.argenteam.net/', self.BASE_URL)
+                        sub = ArgenteamSubtitle(language, page_link, download_link, movie_kind, returned_title,
+                                                season, episode, year, r.get('team'), r.get('tags'),
+                                                r.get('source'), r.get('codec'), content.get("tvdb"), imdb_id,
+                                                asked_for_release_group=video.release_group,
+                                                asked_for_episode=episode)
+                        subtitles.append(sub)
 
             if has_multiple_ids:
                 time.sleep(self.multi_result_throttle)

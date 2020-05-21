@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.8.4.3'
+bazarr_version = '0.8.4.4'
 
 import os
 os.environ["SZ_USER_AGENT"] = "Bazarr/1"
@@ -65,7 +65,7 @@ from notifier import send_notifications, send_notifications_movie
 from check_update import check_and_apply_update
 from subliminal_patch.extensions import provider_registry as provider_manager
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
-
+from subliminal.cache import region
 
 scheduler = Scheduler()
 
@@ -222,7 +222,7 @@ def doShutdown():
         else:
             stop_file.write(six.text_type(''))
             stop_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'restart')
@@ -243,7 +243,7 @@ def restart():
             logging.info('Bazarr is being restarted...')
             restart_file.write(six.text_type(''))
             restart_file.close()
-            sys.exit(0)
+            os._exit(0)
 
 
 @route(base_url + 'wizard')
@@ -401,12 +401,19 @@ def save_wizard():
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
     
+    settings_legendasdivx_skip_wrong_fps = request.forms.get('settings_legendasdivx_skip_wrong_fps')
+    if settings_legendasdivx_skip_wrong_fps is None:
+        settings_legendasdivx_skip_wrong_fps = 'False'
+    else:
+        settings_legendasdivx_skip_wrong_fps = 'True'
+
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
     settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
     settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
+    settings.legendasdivx.skip_wrong_fps = text_type(settings_legendasdivx_skip_wrong_fps)
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
@@ -1536,13 +1543,26 @@ def save_settings():
         settings_opensubtitles_skip_wrong_fps = 'False'
     else:
         settings_opensubtitles_skip_wrong_fps = 'True'
-    
+
+    if (settings.opensubtitles.username != request.forms.get('settings_opensubtitles_username') or
+        settings.opensubtitles.password != request.forms.get('settings_opensubtitles_password') or
+        settings.opensubtitles.vip != text_type(settings_opensubtitles_vip)):
+        region.delete("os_token")
+        region.delete("os_server_url")
+
+    settings_legendasdivx_skip_wrong_fps = request.forms.get('settings_legendasdivx_skip_wrong_fps')
+    if settings_legendasdivx_skip_wrong_fps is None:
+        settings_legendasdivx_skip_wrong_fps = 'False'
+    else:
+        settings_legendasdivx_skip_wrong_fps = 'True'
+
     settings.addic7ed.username = request.forms.get('settings_addic7ed_username')
     settings.addic7ed.password = request.forms.get('settings_addic7ed_password')
     settings.addic7ed.random_agents = text_type(settings_addic7ed_random_agents)
     settings.assrt.token = request.forms.get('settings_assrt_token')
     settings.legendasdivx.username = request.forms.get('settings_legendasdivx_username')
     settings.legendasdivx.password = request.forms.get('settings_legendasdivx_password')
+    settings.legendasdivx.skip_wrong_fps = text_type(settings_legendasdivx_skip_wrong_fps)
     settings.legendastv.username = request.forms.get('settings_legendastv_username')
     settings.legendastv.password = request.forms.get('settings_legendastv_password')
     settings.opensubtitles.username = request.forms.get('settings_opensubtitles_username')
@@ -1848,14 +1868,17 @@ def perform_manual_upload_subtitle():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    episodePath = request.forms.episodePath
-    sceneName = request.forms.sceneName
+    episodePath = request.forms.get('episodePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     sonarrSeriesId = request.forms.get('sonarrSeriesId')
     sonarrEpisodeId = request.forms.get('sonarrEpisodeId')
-    title = request.forms.title
+    title = request.forms.get('title')
+    
+    data = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?", (sonarrSeriesId,), only_one=True)
+    audio_language = data['audio_language']
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -1869,7 +1892,8 @@ def perform_manual_upload_subtitle():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='series',
-                                        subtitle=upload)
+                                        subtitle=upload,
+                                        audio_language=audio_language)
 
         if result is not None:
             message = result[0]
@@ -1988,13 +2012,16 @@ def perform_manual_upload_subtitle_movie():
     authorize()
     ref = request.environ['HTTP_REFERER']
 
-    moviePath = request.forms.moviePath
-    sceneName = request.forms.sceneName
+    moviePath = request.forms.get('moviePath')
+    sceneName = request.forms.get('sceneName')
     language = request.forms.get('language')
     forced = True if request.forms.get('forced') == '1' else False
     upload = request.files.get('upload')
     radarrId = request.forms.get('radarrId')
-    title = request.forms.title
+    title = request.forms.get('title')
+    
+    data = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+    audio_language = data['audio_language']
 
     _, ext = os.path.splitext(upload.filename)
 
@@ -2008,7 +2035,8 @@ def perform_manual_upload_subtitle_movie():
                                         title=title,
                                         scene_name=sceneName,
                                         media_type='movie',
-                                        subtitle=upload)
+                                        subtitle=upload,
+                                        audio_language=audio_language)
 
         if result is not None:
             message = result[0]
@@ -2093,10 +2121,11 @@ def api_history():
 @custom_auth_basic(check_credentials)
 def test_url(protocol, url):
     authorize()
-    url = six.moves.urllib.parse.unquote(url)
+    url = protocol + "://" + six.moves.urllib.parse.unquote(url)
     try:
-        result = requests.get(protocol + "://" + url, allow_redirects=False, verify=False).json()['version']
-    except:
+        result = requests.get(url, allow_redirects=False, verify=False).json()['version']
+    except Exception as e:
+        logging.exception('BAZARR cannot successfully contact this URL: ' + url)
         return dict(status=False)
     else:
         return dict(status=True, version=result)

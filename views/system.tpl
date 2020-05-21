@@ -403,15 +403,12 @@
     });
 
 	$('#shutdown').on('click', function(){
-		$.ajax({
-			url: "{{base_url}}shutdown",
-			async: false
+        document.open();
+        document.write('Bazarr has shutdown.');
+        document.close();
+	    $.ajax({
+			url: "{{base_url}}shutdown"
 		})
-		.always(function(){
-			document.open();
-			document.write('Bazarr has shutdown.');
-			document.close();
-		});
 	});
 
     $('#logout').on('click', function(){
@@ -422,11 +419,9 @@
 		$('#loader_text').text("Bazarr is restarting, please wait...");
 		$.ajax({
             url: "{{base_url}}restart",
-            async: true,
-            error: (function () {
-                setTimeout(function () { setInterval(ping, 2000); }, 8000);
-            })
+            async: true
         });
+		setTimeout(function () { setInterval(ping, 2000); }, 8000);
 	});
 
     % from config import settings

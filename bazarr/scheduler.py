@@ -18,8 +18,6 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from apscheduler.events import EVENT_JOB_SUBMITTED, EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 from datetime import datetime
-import pytz
-from tzlocal import get_localzone
 from calendar import day_name
 import pretty
 from six import PY2
@@ -30,10 +28,7 @@ class Scheduler:
     def __init__(self):
         self.__running_tasks = []
 
-        if str(get_localzone()) == "local":
-            self.aps_scheduler = BackgroundScheduler(timezone=pytz.timezone('UTC'))
-        else:
-            self.aps_scheduler = BackgroundScheduler()
+        self.aps_scheduler = BackgroundScheduler()
 
         # task listener
         def task_listener_add(event):

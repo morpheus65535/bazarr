@@ -8,12 +8,24 @@ import time
 
 from get_args import args
 from config import settings
-from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError
+from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
 
+def time_until_end_of_day(dt=None):
+    # type: (datetime.datetime) -> datetime.timedelta
+    """
+    Get timedelta until end of day on the datetime passed, or current time.
+    """
+    if dt is None:
+        dt = datetime.datetime.now()
+    tomorrow = dt + datetime.timedelta(days=1)
+    return datetime.datetime.combine(tomorrow, datetime.time.min) - dt
+
+hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
+
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
-                             ParseResponseError)
+                             ParseResponseError, IPAddressBlocked)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
 
 PROVIDER_THROTTLE_MAP = {
@@ -32,9 +44,16 @@ PROVIDER_THROTTLE_MAP = {
     "addic7ed": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
+        IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
+
     },
     "titulky": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
+    },
+    "legendasdivx": {
+        TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
+        DownloadLimitExceeded: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+        IPAddressBlocked: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
     }
 }
 
@@ -116,6 +135,7 @@ def get_providers_auth():
                      },
         'legendasdivx': {'username': settings.legendasdivx.username,
                        'password': settings.legendasdivx.password,
+                       'skip_wrong_fps': settings.legendasdivx.getboolean('skip_wrong_fps'),
                        },
         'legendastv': {'username': settings.legendastv.username,
                        'password': settings.legendastv.password,
