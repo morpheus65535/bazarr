@@ -42,7 +42,7 @@ configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging
 
 # create random api_key if there's none in config.ini
-if not settings.auth.apikey:
+if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
     from binascii import hexlify
     settings.auth.apikey = hexlify(os.urandom(16)).decode()
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
