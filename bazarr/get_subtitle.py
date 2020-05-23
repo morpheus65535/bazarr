@@ -234,7 +234,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                             if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
                                 postprocessing(command, path)
-                                logging.debug("BAZARR Using post-processing command {}".format(command + path))
+                                logging.debug("BAZARR Using post-processing command: {}".format(command))
                             else:
                                 logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
                                              "threshold value: " + str(pp_threshold) + "%")
