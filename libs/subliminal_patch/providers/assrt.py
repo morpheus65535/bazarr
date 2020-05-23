@@ -126,12 +126,14 @@ class AssrtProvider(Provider):
         keywords = []
         if isinstance(video, Movie):
             if video.title:
-                keywords.append(video.title)
+                title = "".join(e for e in video.title if e.isascii())
+                keywords.append(title)
             if video.year:
                 keywords.append(str(video.year))
         elif isinstance(video, Episode):
             if video.series:
-                keywords.append(video.series)
+                series = "".join(e for e in video.series if e.isascii())
+                keywords.append(series)
             if video.season and video.episode:
                 keywords.append('S%02dE%02d' % (video.season, video.episode))
             elif video.episode:
