@@ -227,13 +227,14 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
-                                pp_threshold = settings.general.postprocessing_threshold
+                                pp_threshold = int(settings.general.postprocessing_threshold)
                             else:
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
-                                pp_threshold = settings.general.postprocessing_threshold_movie
+                                pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
                             if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
                                 postprocessing(command, path)
+                                logging.debug("BAZARR Using post-processing command {}".format(command + path))
                             else:
                                 logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
                                              "threshold value: " + str(pp_threshold) + "%")
