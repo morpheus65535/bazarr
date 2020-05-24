@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import logging
+import re
 import io
 import os
+import codecs
+from hashlib import sha1
 from random import randint
 from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from requests import Session
 from guessit import guessit
+from dogpile.cache.api import NO_VALUE
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import sanitize
-from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
+from subliminal.cache import region
 from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
@@ -44,6 +48,7 @@ class YavkaNetSubtitle(Subtitle):
 
     def make_picklable(self):
         self.content = None
+        self._is_valid = False
         return self
 
     def get_matches(self, video):
@@ -52,21 +57,22 @@ class YavkaNetSubtitle(Subtitle):
         video_filename = video.name
         video_filename = os.path.basename(video_filename)
         video_filename, _ = os.path.splitext(video_filename)
-        video_filename = sanitize_release_group(video_filename)
+        video_filename = re.sub(r'\[\w+\]$', '', video_filename).strip().upper()
 
         subtitle_filename = self.filename
         subtitle_filename = os.path.basename(subtitle_filename)
         subtitle_filename, _ = os.path.splitext(subtitle_filename)
-        subtitle_filename = sanitize_release_group(subtitle_filename)
+        subtitle_filename = re.sub(r'\[\w+\]$', '', subtitle_filename).strip().upper()
 
-        if video_filename == subtitle_filename:
+        if ((video_filename == subtitle_filename) or
+            (self.single_file is True and video_filename in self.notes.upper())):
              matches.add('hash')
 
         if video.year and self.year == video.year:
             matches.add('year')
 
-        matches |= guess_matches(video, guessit(self.title, {'type': self.type, 'allowed_countries': [None]}))
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type, 'allowed_countries': [None]}))
+        matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
+        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
         return matches
 
 
@@ -157,6 +163,7 @@ class YavkaNetProvider(Provider):
                     s.notes = notes
                     s.year = year
                     s.uploader = uploader
+                    s.single_file = True if len(sub) == 1 else False
                 subtitles = subtitles + sub
         return subtitles
         
@@ -187,10 +194,16 @@ class YavkaNetProvider(Provider):
 
     def download_archive_and_add_subtitle_files(self, link, language, video, fps):
         logger.info('Downloading subtitle %r', link)
-        request = self.session.get(link, headers={
-            'Referer': 'http://yavka.net/subtitles.php'
-            })
-        request.raise_for_status()
+        cache_key = sha1(link.encode("utf-8")).digest()
+        request = region.get(cache_key)
+        if request is NO_VALUE:
+            request = self.session.get(link, headers={
+                'Referer': 'http://yavka.net/subtitles.php'
+                })
+            request.raise_for_status()
+            region.set(cache_key, request)
+        else:
+            logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
 
         archive_stream = io.BytesIO(request.content)
         if is_rarfile(archive_stream):
