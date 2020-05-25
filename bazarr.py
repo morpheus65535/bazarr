@@ -2,6 +2,7 @@
 
 import os
 import platform
+import signal
 import subprocess
 import sys
 import time
@@ -37,11 +38,18 @@ def end_child_process(ep):
     except:
         pass
 
+def terminate_child_process(ep):
+    try:
+        ep.terminate()
+    except:
+        pass
+
 
 def start_bazarr():
     script = [sys.executable, "-u", os.path.normcase(os.path.join(dir_name, 'bazarr', 'main.py'))] + sys.argv[1:]
     ep = subprocess.Popen(script, stdout=None, stderr=None, stdin=subprocess.DEVNULL)
     atexit.register(end_child_process, ep=ep)
+    signal.signal(signal.SIGTERM, lambda signal_no, frame: terminate_child_process(ep))
 
 
 def check_status():
@@ -92,6 +100,6 @@ if __name__ == '__main__':
             else:
                 os.wait()
                 time.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
+        except (KeyboardInterrupt, SystemExit, ChildProcessError):
             print('Bazarr exited.')
             sys.exit(0)
