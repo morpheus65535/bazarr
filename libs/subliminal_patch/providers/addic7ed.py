@@ -183,7 +183,8 @@ class Addic7edProvider(_Addic7edProvider):
         :rtype: int
         """
         show_id = None
-        ids_to_look_for = {sanitize(series).lower(), sanitize(series.replace(".", "")).lower()}
+        ids_to_look_for = {sanitize(series).lower(), sanitize(series.replace(".", "")).lower(),
+                           sanitize(series.replace("&", "and")).lower()}
         show_ids = self._get_show_ids()
         if ignore_cache or not show_ids:
             show_ids = self._get_show_ids.refresh(self)
