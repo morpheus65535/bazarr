@@ -283,7 +283,7 @@ def request_json(url, **kwargs):
 
 def updated(restart=True):
     if settings.general.getboolean('update_restart') and restart:
-        from main import Server
-        Server.restart()
+        from server import webserver
+        webserver.restart()
     else:
         database.execute("UPDATE system SET updated='1'")
