@@ -21,9 +21,11 @@ from subliminal.video import Episode, Movie
 from subliminal.subtitle import fix_line_ending
 from subliminal.cache import region
 from subzero.language import Language
+from py7zr import is_7zfile, SevenZipFile
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
+
 
 def fix_tv_naming(title):
     """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
@@ -40,13 +42,13 @@ def fix_tv_naming(title):
                                            "Doctor Who (2005)": "Doctor Who",
                                            }, True)
 
+
 class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
     provider_name = 'subsunacs'
 
-    def __init__(self, langauge, filename, type, video, link, fps, num_cds):
-        super(SubsUnacsSubtitle, self).__init__(langauge)
-        self.langauge = langauge
+    def __init__(self, language, filename, type, video, link, fps, num_cds):
+        super(SubsUnacsSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
         self.type = type
@@ -82,7 +84,7 @@ class SubsUnacsSubtitle(Subtitle):
 
         if ((video_filename == subtitle_filename) or
             (self.single_file is True and video_filename in self.notes.upper())):
-             matches.add('hash')
+            matches.add('hash')
 
         if video.year and self.year == video.year:
             matches.add('year')
@@ -218,17 +220,32 @@ class SubsUnacsProvider(Provider):
     def process_archive_subtitle_files(self, archiveStream, language, video, link, fps, num_cds):
         subtitles = []
         type = 'episode' if isinstance(video, Episode) else 'movie'
-        for file_name in sorted(archiveStream.namelist()):
-            if file_name.lower().endswith(('.srt', '.sub', '.txt')):
+
+        is_7zip = isinstance(archiveStream, SevenZipFile)
+        if is_7zip:
+            try:
+                file_content = archiveStream.readall()
+                file_list = sorted(file_content)
+            except:
+                return []
+        else:
+            file_list = sorted(archiveStream.namelist())
+
+        for file_name in file_list:
+            if file_name.lower().endswith(('srt', '.sub', '.txt')):
                 file_is_txt = True if file_name.lower().endswith('.txt') else False
-                if file_is_txt and re.search(r'subsunacs\.net|танете част|прочети|^read ?me|procheti', file_name, re.I): 
+                if file_is_txt and re.search(r'subsunacs\.net|танете част|прочети|^read ?me|procheti', file_name, re.I):
                     logger.info('Ignore readme txt file %r', file_name)
                     continue
                 logger.info('Found subtitle file %r', file_name)
                 subtitle = SubsUnacsSubtitle(language, file_name, type, video, link, fps, num_cds)
-                subtitle.content = fix_line_ending(archiveStream.read(file_name))
-                if file_is_txt == False or subtitle.is_valid():
+                if is_7zip:
+                    subtitle.content = fix_line_ending(file_content[file_name].read())
+                else:
+                    subtitle.content = fix_line_ending(archiveStream.read(file_name))
+                if subtitle.is_valid():
                     subtitles.append(subtitle)
+
         return subtitles
 
     def download_archive_and_add_subtitle_files(self, link, language, video, fps, num_cds):
@@ -249,6 +266,8 @@ class SubsUnacsProvider(Provider):
             return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
         elif is_zipfile(archive_stream):
             return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
+        elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream):
+            return self.process_archive_subtitle_files(SevenZipFile(archive_stream), language, video, link, fps, num_cds)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
             return []
