@@ -719,8 +719,10 @@ class Movies(Resource):
                                             "forced": True if len(language) > 1 else False}
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
-                    item['subtitles'] = [x for x in item['subtitles'] if
-                                         x['code2'] in [y['code2'] for y in item['languages']] or x['path']]
+                    desired_lang_list = []
+                    if item['languages'] and item['languages'] != 'None':
+                        desired_lang_list = [x['code2'] for x in item['languages']]
+                    item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
 
                 item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
             else:
