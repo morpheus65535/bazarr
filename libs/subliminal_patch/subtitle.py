@@ -82,9 +82,7 @@ class Subtitle(Subtitle_):
             return
 
         if not isinstance(self.content, text_type):
-            if self.encoding:
-                return self.content.decode(self.encoding, errors='replace')
-            return self.content.decode(self.guess_encoding(), errors='replace')
+            return self.content.decode(self.get_encoding(), errors='replace')
 
         return self.content
 
@@ -106,8 +104,11 @@ class Subtitle(Subtitle_):
         """
         return self
 
+    def get_encoding(self):
+        return self.encoding if self.encoding else self.guess_encoding()
+
     def set_encoding(self, encoding):
-        ge = self.guess_encoding()
+        ge = self.get_encoding()
         if encoding == ge:
             return
 
@@ -115,6 +116,7 @@ class Subtitle(Subtitle_):
         logger.debug("Changing encoding: to %s, from %s", encoding, ge)
         self.content = unicontent.encode(encoding)
         self._guessed_encoding = encoding
+        self.encoding = encoding
 
     def normalize(self):
         """
@@ -284,7 +286,7 @@ class Subtitle(Subtitle_):
                 subs = pysubs2.SSAFile.from_string(text, fps=sub_fps)
 
             unicontent = self.pysubs2_to_unicode(subs)
-            self.content = unicontent.encode(self._guessed_encoding)
+            self.content = unicontent.encode(self.get_encoding())
         except:
             logger.exception("Couldn't convert subtitle %s to .srt format: %s", self, traceback.format_exc())
             return False
@@ -364,8 +366,8 @@ class Subtitle(Subtitle_):
         :return: string 
         """
         if not self.mods:
-            return fix_text(self.content.decode(encoding=self._guessed_encoding), **ftfy_defaults).encode(
-                encoding=self._guessed_encoding)
+            return fix_text(self.content.decode(encoding=self.get_encoding()), **ftfy_defaults).encode(
+                encoding=self.get_encoding())
 
         submods = SubtitleModifications(debug=debug)
         if submods.load(content=self.text, language=self.language):
@@ -374,7 +376,7 @@ class Subtitle(Subtitle_):
             self.mods = submods.mods_used
 
             content = fix_text(self.pysubs2_to_unicode(submods.f, format=format), **ftfy_defaults)\
-                .encode(encoding=self._guessed_encoding)
+                .encode(encoding=self.get_encoding())
             submods.f = None
             del submods
             return content
