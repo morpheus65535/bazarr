@@ -90,7 +90,14 @@ class SubsUnacsSubtitle(Subtitle):
             matches.add('year')
 
         matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+
+        guess_filename = guessit(self.filename, video.hints)
+        matches |= guess_matches(video, guess_filename)
+
+        if isinstance(video, Movie) and (self.num_cds > 1 or 'cd' in guess_filename):
+            # reduce score of subtitles for multi-disc movie releases
+            return set()
+
         return matches
 
 

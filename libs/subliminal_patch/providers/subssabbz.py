@@ -25,6 +25,7 @@ from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
+
 def fix_tv_naming(title):
     """Fix TV show titles with inconsistent naming using dictionary, but do not sanitize them.
 
@@ -41,13 +42,13 @@ def fix_tv_naming(title):
                                            "Doctor Who (2005)": "Doctor Who",
                                            }, True)
 
+
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
 
-    def __init__(self, langauge, filename, type, video, link, fps, num_cds):
-        super(SubsSabBzSubtitle, self).__init__(langauge)
-        self.langauge = langauge
+    def __init__(self, language, filename, type, video, link, fps, num_cds):
+        super(SubsSabBzSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
         self.type = type
@@ -83,7 +84,7 @@ class SubsSabBzSubtitle(Subtitle):
 
         if ((video_filename == subtitle_filename) or
             (self.single_file is True and video_filename in self.notes.upper())):
-             matches.add('hash')
+            matches.add('hash')
 
         if video.year and self.year == video.year:
             matches.add('year')
@@ -93,7 +94,14 @@ class SubsSabBzSubtitle(Subtitle):
                 matches.add('imdb_id')
 
         matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
-        matches |= guess_matches(video, guessit(self.filename, {'type': self.type}))
+
+        guess_filename = guessit(self.filename, video.hints)
+        matches |= guess_matches(video, guess_filename)
+
+        if isinstance(video, Movie) and (self.num_cds > 1 or 'cd' in guess_filename):
+            # reduce score of subtitles for multi-disc movie releases
+            return set()
+
         return matches
 
 
