@@ -39,6 +39,7 @@ defaults = {
         'page_size_manual_search': '10',
         'minimum_score_movie': '70',
         'use_embedded_subs': 'True',
+        'embedded_subs_show_desired': 'True',
         'utf8_encode': 'True',
         'ignore_pgs_subs': 'False',
         'adaptive_searching': 'False',

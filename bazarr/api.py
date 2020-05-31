@@ -424,6 +424,10 @@ class Episodes(Resource):
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
                                "forced": True if len(subtitle) > 1 else False}
+
+                if settings.general.getboolean('embedded_subs_show_desired'):
+                    item['subtitles'] = [x for x in item['subtitles'] if
+                                         x[0]['code2'] in ast.literal_eval(desired_languages) or x[1]]
             else:
                 item.update({"subtitles": []})
 
@@ -713,6 +717,11 @@ class Movies(Resource):
                                             "code2": language[0],
                                             "code3": alpha3_from_alpha2(language[0]),
                                             "forced": True if len(language) > 1 else False}
+
+                if settings.general.getboolean('embedded_subs_show_desired'):
+                    item['subtitles'] = [x for x in item['subtitles'] if
+                                         x['code2'] in [y['code2'] for y in item['languages']] or x['path']]
+
                 item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
             else:
                 item.update({"subtitles": []})
