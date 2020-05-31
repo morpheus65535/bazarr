@@ -277,4 +277,5 @@ class SubsUnacsProvider(Provider):
             return self.process_archive_subtitle_files(SevenZipFile(archive_stream), language, video, link, fps, num_cds)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
+            region.delete(cache_key)
             return []

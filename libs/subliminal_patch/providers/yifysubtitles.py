@@ -178,6 +178,7 @@ class YifySubtitlesProvider(Provider):
             self._process_archive(ZipFile(archive_stream), subtitle)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
+            region.delete(cache_key)
 
     def _process_archive(self, archive_stream, subtitle):
         for file_name in archive_stream.namelist():

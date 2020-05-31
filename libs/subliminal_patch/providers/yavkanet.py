@@ -25,13 +25,13 @@ from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
+
 class YavkaNetSubtitle(Subtitle):
     """YavkaNet Subtitle."""
     provider_name = 'yavkanet'
 
-    def __init__(self, langauge, filename, type, video, link, fps):
-        super(YavkaNetSubtitle, self).__init__(langauge)
-        self.langauge = langauge
+    def __init__(self, language, filename, type, video, link, fps):
+        super(YavkaNetSubtitle, self).__init__(language)
         self.filename = filename
         self.page_link = link
         self.type = type
@@ -66,7 +66,7 @@ class YavkaNetSubtitle(Subtitle):
 
         if ((video_filename == subtitle_filename) or
             (self.single_file is True and video_filename in self.notes.upper())):
-             matches.add('hash')
+            matches.add('hash')
 
         if video.year and self.year == video.year:
             matches.add('year')
@@ -212,4 +212,5 @@ class YavkaNetProvider(Provider):
             return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps)
         else:
             logger.error('Ignore unsupported archive %r', request.headers)
+            region.delete(cache_key)
             return []        
