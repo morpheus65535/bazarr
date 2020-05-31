@@ -96,6 +96,7 @@ class YifySubtitlesProvider(Provider):
 
     languages = {Language(l, c) for (_, l, c) in YifyLanguages}
     server_url = 'https://www.yifysubtitles.com'
+    video_types = (Movie,)
 
     def initialize(self):
         self.session = Session()
@@ -129,11 +130,11 @@ class YifySubtitlesProvider(Provider):
 
         return []
 
-    def _query(self, languages, video):
+    def query(self, languages, imdb_id):
         subtitles = []
 
-        logger.info('Searching subtitle %r', video.imdb_id)
-        response = self.session.get(self.server_url + '/movie-imdb/' + video.imdb_id,
+        logger.info('Searching subtitle %r', imdb_id)
+        response = self.session.get(self.server_url + '/movie-imdb/' + imdb_id,
                                     allow_redirects=False, timeout=10,
                                     headers={'Referer': self.server_url})
         response.raise_for_status()
@@ -157,7 +158,7 @@ class YifySubtitlesProvider(Provider):
         return subtitles
 
     def list_subtitles(self, video, languages):
-        return self._query(languages, video) if isinstance(video, Movie) and video.imdb_id else []
+        return self.query(languages, video.imdb_id) if isinstance(video, Movie) and video.imdb_id else []
 
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle.sub_link)
