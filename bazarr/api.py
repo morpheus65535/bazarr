@@ -589,6 +589,7 @@ class EpisodesSubtitlesUpload(Resource):
         sonarrSeriesId = request.form.get('sonarrSeriesId')
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
         title = request.form.get('title')
+        audioLanguage = request.form.get('audioLanguage')
 
         _, ext = os.path.splitext(upload.filename)
 
@@ -602,7 +603,8 @@ class EpisodesSubtitlesUpload(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
-                                            subtitle=upload)
+                                            subtitle=upload,
+                                            audio_language=audioLanguage)
 
             if result is not None:
                 message = result[0]
@@ -944,6 +946,7 @@ class MovieSubtitlesUpload(Resource):
         upload = request.files.get('upload')
         radarrId = request.form.get('radarrId')
         title = request.form.get('title')
+        audioLanguage = request.form.get('audioLanguage')
 
         _, ext = os.path.splitext(upload.filename)
 
@@ -957,7 +960,8 @@ class MovieSubtitlesUpload(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='movie',
-                                            subtitle=upload)
+                                            subtitle=upload,
+                                            audio_language=audioLanguage)
 
             if result is not None:
                 message = result[0]

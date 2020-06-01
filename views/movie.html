@@ -205,6 +205,7 @@
 					<input type="hidden" id="upload_sceneName" name="sceneName" value="" />
 					<input type="hidden" id="upload_radarrId" name="radarrId" value="" />
 					<input type="hidden" id="upload_title" name="title" value="" />
+					<input type="hidden" id="upload_audioLanguage" name="audioLanguage" value="" />
 				</div>
 				<div class="modal-footer">
 					<button type="submit" id="upload_save_button" class="btn btn-info">Save</button>
@@ -535,10 +536,11 @@
 		$('#upload_button').on('click', function(e){
 			e.preventDefault();
 			$("#upload_movie_title_span").html(movieDetails['title']);
-			$('#upload_moviePath').val($(this).data("moviepath"));
-			$('#upload_sceneName').val($(this).data("scenename"));
-			$('#upload_radarrId').val($(this).data("radarrid"));
-			$('#upload_title').val($(this).data("movie_title"));
+			$('#upload_moviePath').val(movieDetails['mapped_path']);
+			$('#upload_sceneName').val(movieDetails['sceneName']);
+			$('#upload_radarrId').val(movieDetails['radarrId']);
+			$('#upload_title').val(movieDetails['title']);
+			$('#upload_audioLanguage').val(movieDetails['audio_language']['name']);
 
 			$('#manual_language_select').empty();
 			$.each(enabledLanguages, function (i, item) {
@@ -719,7 +721,7 @@
 				$('#moviealternativeTitles').hide();
 			}
 
-			$('#movieAudioLanguage').text(movieDetails['audio_language'].name);
+			$('#movieAudioLanguage').text(movieDetails['audio_language']['name']);
 			$('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 

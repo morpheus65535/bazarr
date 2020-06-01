@@ -199,6 +199,7 @@
                         <input type="hidden" id="upload_sonarrSeriesId" name="sonarrSeriesId" value=""/>
                         <input type="hidden" id="upload_sonarrEpisodeId" name="sonarrEpisodeId" value=""/>
                         <input type="hidden" id="upload_title" name="title" value=""/>
+                        <input type="hidden" id="upload_audioLanguage" name="audioLanguage" value=""/>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" id="upload_save_button" class="btn btn-info">Save</button>
@@ -675,6 +676,7 @@
                 $('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
                 $('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
                 $('#upload_title').val($(this).data("episode_title"));
+                $('#upload_audioLanguage').val(seriesDetails['audio_language']['name']);
 
                 $('#manual_language_select').empty();
                 $.each(enabledLanguages, function (i, item) {
@@ -896,7 +898,7 @@
                     $('#seriesAlternateTitles').hide();
                 }
 
-                $('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
+                $('#seriesAudioLanguage').text(seriesDetails['audio_language']['name']);
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
