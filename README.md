@@ -71,6 +71,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Wizdom
 * XSubs
 * Yavka.net
+* YIFY Subtitles
 * Zimuku
 
 ## Screenshot
