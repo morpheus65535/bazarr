@@ -105,6 +105,10 @@ defaults = {
         'timeout': '15',
         'skip_wrong_fps': 'False'
     },
+    'opensubtitlescom': {
+        'username': '',
+        'password': ''
+    },
     'addic7ed': {
         'username': '',
         'password': ''
