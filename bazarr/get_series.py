@@ -26,7 +26,7 @@ def update_series():
         serie_default_forced = settings.general.serie_default_forced
     else:
         serie_default_language = '[]'
-        serie_default_hi = 'Flase'
+        serie_default_hi = 'False'
         serie_default_forced = 'False'
 
     audio_profiles = get_profile_list()
