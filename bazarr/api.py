@@ -722,7 +722,7 @@ class Movies(Resource):
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
                     desired_lang_list = []
-                    if item['languages'] and item['languages'] != 'None':
+                    if isinstance(item['languages'], list):
                         desired_lang_list = [x['code2'] for x in item['languages']]
                     item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
 
