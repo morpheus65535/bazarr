@@ -206,7 +206,7 @@ class Subtitle(Subtitle_):
 
         else:
             # Western European (windows-1252) / Northern European
-            encodings.extend(['latin-1', 'iso-8859-15', 'iso-8859-9', 'iso-8859-4', 'iso-8859-1'])
+            encodings.extend(['windows-1252', 'iso-8859-15', 'iso-8859-9', 'iso-8859-4', 'iso-8859-1'])
 
         # try to decode
         logger.debug('Trying encodings %r', encodings)
