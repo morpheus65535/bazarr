@@ -108,7 +108,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{episode_language}}', episode_language)
     pp_command = pp_command.replace('{{episode_language_code2}}', episode_language_code2)
     pp_command = pp_command.replace('{{episode_language_code3}}', episode_language_code3)
-    pp_command = pp_command.replace('{{score}}', score)
+    pp_command = pp_command.replace('{{score}}', str(score))
     return pp_command
 
 
