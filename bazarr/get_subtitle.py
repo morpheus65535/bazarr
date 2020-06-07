@@ -220,10 +220,10 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             + "%."
                         
                         if use_postprocessing is True:
+                            percent_score = round(subtitle.score * 100 / max_score, 2)
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
-                                                 audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            percent_score = round(subtitle.score * 100 / max_score, 2)
+                                                 audio_language_code2, audio_language_code3, subtitle.language.forced, percent_score)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -445,10 +445,10 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             score) + "% using manual search."
                         
                         if use_postprocessing is True:
+                            percent_score = round(subtitle.score * 100 / max_score, 2)
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
-                                                 audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            percent_score = round(subtitle.score * 100 / max_score, 2)
+                                                 audio_language_code2, audio_language_code3, subtitle.language.forced, percent_score)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -560,10 +560,10 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     audio_language_code3 = alpha3_from_language(audio_language)
 
 
-    if use_postprocessing is True:
+    if use_postprocessing:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, forced)
+                             audio_language_code2, audio_language_code3, forced, 100)
         postprocessing(command, path)
 
 
