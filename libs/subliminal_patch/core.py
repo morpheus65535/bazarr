@@ -606,7 +606,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             continue
 
         if p_root.lower() == fn_no_ext_lower:
-            # skip check for language code is the subtitle file name is the same as the video name
+            # skip check for language code if the subtitle file name is the same as the video name
             subtitles[p] = None
             continue
 
