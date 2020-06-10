@@ -76,7 +76,7 @@ class SubSyncer:
             raise NoAudioTrack
 
         ffmpeg_exe = get_binary('ffmpeg')
-        if not ffprobe_exe:
+        if not ffmpeg_exe:
             logging.debug('BAZARR FFmpeg not found!')
             return
         else:
