@@ -150,6 +150,13 @@ defaults = {
     'titlovi': {
         'username': '',
         'password': ''
+    },
+    'subsync': {
+        'use_subsync': 'False',
+        'use_subsync_threshold': 'False',
+        'subsync_threshold': '90',
+        'use_subsync_movie_threshold': 'False',
+        'subsync_movie_threshold': '70'
     }
 }
 

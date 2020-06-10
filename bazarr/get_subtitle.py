@@ -27,6 +27,7 @@ from utils import history_log, history_log_movie, get_binary
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
+from subsyncer import subsync
 from database import database, dict_mapper
 
 from analytics import track_event
@@ -215,15 +216,20 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             action = "upgraded"
                         else:
                             action = "downloaded"
+                        percent_score = round(subtitle.score * 100 / max_score, 2)
                         message = downloaded_language + is_forced_string + " subtitles " + action + " from " + \
-                            downloaded_provider + " with a score of " + str(round(subtitle.score * 100 / max_score, 2))\
-                            + "%."
+                            downloaded_provider + " with a score of " + str(percent_score) + "%."
+
+                        sync_result = sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                                     srt_lang=downloaded_language_code3, media_type=media_type,
+                                                     percent_score=percent_score)
+                        if sync_result:
+                            message += " The subtitles file have been synced."
                         
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            percent_score = round(subtitle.score * 100 / max_score, 2)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -441,14 +447,19 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + downloaded_provider + " with a score of " + str(
-                            score) + "% using manual search."
+                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + \
+                                  downloaded_provider + " with a score of " + str(score) + "% using manual search."
+
+                        sync_result = sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                                     srt_lang=downloaded_language_code3, media_type=media_type,
+                                                     percent_score=score)
+                        if sync_result:
+                            message += " The subtitles file have been synced."
                         
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced)
-                            percent_score = round(subtitle.score * 100 / max_score, 2)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -457,7 +468,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold_movie')
                                 pp_threshold = settings.general.postprocessing_threshold_movie
 
-                            if not use_pp_threshold or (use_pp_threshold and percent_score < float(pp_threshold)):
+                            if not use_pp_threshold or (use_pp_threshold and score < float(pp_threshold)):
                                 postprocessing(command, path)
                             else:
                                 logging.debug("BAZARR post-processing skipped because subtitles score isn't below this "
@@ -559,6 +570,10 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     audio_language_code2 = alpha2_from_language(audio_language)
     audio_language_code3 = alpha3_from_language(audio_language)
 
+    sync_result = sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3,
+                                 media_type=media_type, percent_score=100)
+    if sync_result:
+        message += " The subtitles file have been synced."
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
@@ -985,6 +1000,11 @@ def refine_from_ffprobe(path, video):
         if 'codec' in data['audio'][0]:
             if not video.audio_codec:
                 video.audio_codec = data['audio'][0]['codec']
+        for track in data['audio']:
+            if 'language' in track:
+                video.audio_languages.add(track['language'].alpha3)
+
+    return video
 
 
 def upgrade_subtitles():
@@ -1197,3 +1217,21 @@ def postprocessing(command, path):
                 'BAZARR Post-processing result for file ' + path + ' : Nothing returned from command execution')
         else:
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
+
+
+def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score):
+    if settings.subsync.use_subsync:
+        if media_type == 'series':
+            use_subsync_threshold = settings.subsync.getboolean('use_subsync_threshold')
+            subsync_threshold = settings.subsync.subsync_threshold
+        else:
+            use_subsync_threshold = settings.subsync.getboolean('use_subsync_movie_threshold')
+            subsync_threshold = settings.subsync.subsync_movie_threshold
+
+        if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
+            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang)
+            return True
+        else:
+            logging.debug("BAZARR subsync skipped because subtitles score isn't below this "
+                          "threshold value: " + subsync_threshold + "%")
+    return False

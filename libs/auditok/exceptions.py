@@ -1,0 +1,3 @@
+
+class DuplicateArgument(Exception):
+    pass
