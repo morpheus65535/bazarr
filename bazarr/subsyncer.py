@@ -4,6 +4,9 @@ from ffsubsync.ffsubsync import run
 from ffsubsync.constants import *
 from knowit import api
 from utils import get_binary
+from utils import history_log, history_log_movie
+from get_languages import alpha2_from_alpha3, language_from_alpha3
+from helper import path_mappings
 
 
 class SubSyncer:
@@ -30,7 +33,8 @@ class SubSyncer:
         self.merge_with_reference = None
         self.output_encoding = 'same'
 
-    def sync(self, video_path, srt_path, srt_lang):
+    def sync(self, video_path, srt_path, srt_lang, media_type, sonarr_series_id=None, sonarr_episode_id=None,
+             radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
         self.srtout = None
@@ -83,7 +87,26 @@ class SubSyncer:
             logging.debug('BAZARR FFmpeg used is %s', ffmpeg_exe)
 
         self.ffmpeg_path = os.path.dirname(ffmpeg_exe)
-        run(self)
+        result = run(self)
+
+        if result['sync_was_successful']:
+            message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale factor" \
+                      " of {2}.".format(language_from_alpha3(srt_lang), result['offset_seconds'],
+                                        result['framerate_scale_factor'])
+
+            if media_type == 'series':
+                history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                            description=message, video_path=path_mappings.path_replace_reverse(self.reference),
+                            language=alpha2_from_alpha3(srt_lang))
+            else:
+                history_log_movie(action=5, radarr_id=radarr_id, description=message,
+                                  video_path=path_mappings.path_replace_reverse_movie(self.reference),
+                                  language=alpha2_from_alpha3(srt_lang))
+        else:
+            logging.error('BAZARR unable to sync subtitles: ' + str(result))
+
+        return result
+
 
 class NoAudioTrack(Exception):
     """Exception raised if no audio track can be found in video file."""

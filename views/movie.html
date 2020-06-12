@@ -65,6 +65,10 @@
 		<div><i class="fas fa-history align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
 		<div class="align-bottom text-themecolor small text-center">History</div>
 	</button>
+	<button class="btn btn-outline" id="tools_button">
+		<div><i class="fa fa-briefcase align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+		<div class="align-bottom text-themecolor small text-center">Tools</div>
+	</button>
 </div>
 {% endblock bcleft %}
 
@@ -299,6 +303,35 @@
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Score:</th>
 							<th style="text-align: left;">Date:</th>
+						</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="movieToolsModal" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-xl" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title"><span id="movie_tools_title_span"></span></h5><br>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="container-fluid">
+					<table id="movie_tools_result" class="table table-striped" style="width:100%">
+						<thead>
+						<tr>
+							<th style="text-align: left;">Language:</th>
+							<th style="text-align: left;">Filename:</th>
+							<th style="text-align: left;">Sync:</th>
 						</tr>
 						</thead>
 					</table>
@@ -564,7 +597,10 @@
 				processData: false,
 				contentType: false,
 				type: 'POST',
-				success: function(){
+				beforeSend: function () {
+					$('#upload_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				},
+				complete: function(){
 					$('#uploadModal').modal('hide');
 				}
 			});
@@ -690,6 +726,7 @@
 							else if (data === 2) {return "<i class='fas fa-user' title='Subtitle file has been manually downloaded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 3) {return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 4) {return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";}
+							else if (data === 5) {return "<i class='fas fa-clock' title='Subtitle file has been synced.' data-toggle='tooltip' data-placement='right'></i>";}
 						}},
 					{ data: 'language' },
 					{ data: 'provider' },
@@ -702,6 +739,72 @@
 					.modal({
 						focus: false
 					});
+		});
+
+		$('#tools_button').on('click', function (e) {
+			$(this).tooltip('dispose');
+			e.preventDefault();
+
+			$("#movie_tools_title_span").html(movieDetails['title']);
+
+			radarrId = movieDetails['radarrId'];
+
+			$('#movie_tools_result').DataTable({
+				destroy: true,
+				language: {
+					zeroRecords: 'No External Subtitles Found For This Movie'
+				},
+				paging: true,
+				lengthChange: false,
+				pageLength: 5,
+				searching: true,
+				ordering: false,
+				scrollX: true,
+				processing: false,
+				serverSide: false,
+				ajax: {
+					url: '{{ url_for( 'api.movietools' )}}?movieid=' + radarrId
+				},
+				columns: [
+					{data: 'language.name'},
+					{data: 'filename'},
+					{
+						data: null,
+						"render": function (data) {
+							return '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '"><i class="far fa-play-circle"></i></a>';
+						}
+					}
+				]
+			});
+
+			$('#movieToolsModal')
+					.modal({
+						focus: false
+					});
+		});
+
+		$('#movie_tools_result').on('click', '.subtitles_sync', function (e) {
+			e.preventDefault();
+			const values = {
+				language: $(this).attr("data-language"),
+				subtitlesPath: $(this).attr("data-path"),
+				videoPath: $(this).attr("data-videopath"),
+				mediaType: 'movies'
+			};
+			var cell = $(this).parent()
+			;
+			$.ajax({
+				url: "{{ url_for('api.syncsubtitles') }}",
+				type: "POST",
+				dataType: "json",
+				data: values,
+				beforeSend: function () {
+					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				},
+				complete: function (data) {
+					$('#movieToolsModal').modal('hide');
+				}
+			});
 		});
 	});
 

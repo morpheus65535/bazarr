@@ -220,12 +220,25 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         message = downloaded_language + is_forced_string + " subtitles " + action + " from " + \
                             downloaded_provider + " with a score of " + str(percent_score) + "%."
 
-                        sync_result = sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                                     srt_lang=downloaded_language_code3, media_type=media_type,
-                                                     percent_score=percent_score)
-                        if sync_result:
-                            message += " The subtitles file have been synced."
-                        
+                        if media_type == 'series':
+                            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM "
+                                                                "table_episodes WHERE path = ?",
+                                                                (path_mappings.path_replace_reverse(path),),
+                                                                only_one=True)
+                            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           percent_score=percent_score,
+                                           sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                                           sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+                        else:
+                            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                                              (path_mappings.path_replace_reverse_movie(path),),
+                                                              only_one=True)
+                            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           percent_score=percent_score,
+                                           radarr_id=movie_metadata['radarrId'])
+
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
@@ -450,12 +463,24 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         message = downloaded_language + is_forced_string + " subtitles downloaded from " + \
                                   downloaded_provider + " with a score of " + str(score) + "% using manual search."
 
-                        sync_result = sync_subtitles(video_path=path, srt_path=downloaded_path,
-                                                     srt_lang=downloaded_language_code3, media_type=media_type,
-                                                     percent_score=score)
-                        if sync_result:
-                            message += " The subtitles file have been synced."
-                        
+                        if media_type == 'series':
+                            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM "
+                                                                "table_episodes WHERE path = ?",
+                                                                (path_mappings.path_replace_reverse(path),),
+                                                                only_one=True)
+                            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           percent_score=score,
+                                           sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                                           sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+                        else:
+                            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                                              (path_mappings.path_replace_reverse_movie(path),),
+                                                              only_one=True)
+                            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                                           srt_lang=downloaded_language_code3, media_type=media_type,
+                                           percent_score=score, radarr_id=movie_metadata['radarrId'])
+
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
@@ -570,10 +595,19 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     audio_language_code2 = alpha2_from_language(audio_language)
     audio_language_code3 = alpha3_from_language(audio_language)
 
-    sync_result = sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3,
-                                 media_type=media_type, percent_score=100)
-    if sync_result:
-        message += " The subtitles file have been synced."
+    if media_type == 'series':
+        episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE path = ?",
+                                            (path_mappings.path_replace_reverse(path),),
+                                            only_one=True)
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+                       percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                       sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+    else:
+        movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                          (path_mappings.path_replace_reverse_movie(path),),
+                                          only_one=True)
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
+                       percent_score=100, radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing is True:
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
@@ -1219,8 +1253,9 @@ def postprocessing(command, path):
             logging.info('BAZARR Post-processing result for file ' + path + ' : ' + out)
 
 
-def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score):
-    if settings.subsync.use_subsync:
+def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score, sonarr_series_id=None,
+                   sonarr_episode_id=None, radarr_id=None):
+    if settings.subsync.getboolean('use_subsync'):
         if media_type == 'series':
             use_subsync_threshold = settings.subsync.getboolean('use_subsync_threshold')
             subsync_threshold = settings.subsync.subsync_threshold
@@ -1229,7 +1264,8 @@ def sync_subtitles(video_path, srt_path, srt_lang, media_type, percent_score):
             subsync_threshold = settings.subsync.subsync_movie_threshold
 
         if not use_subsync_threshold or (use_subsync_threshold and percent_score < float(subsync_threshold)):
-            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang)
+            subsync.sync(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, media_type=media_type,
+                         sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id)
             return True
         else:
             logging.debug("BAZARR subsync skipped because subtitles score isn't below this "

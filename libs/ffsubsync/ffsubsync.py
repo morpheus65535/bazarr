@@ -8,10 +8,10 @@ import shutil
 import sys
 
 import numpy as np
-from .sklearn_shim import Pipeline
 
 from .aligners import FFTAligner, MaxScoreAligner, FailedToFindAlignmentException
 from .constants import *
+from .sklearn_shim import Pipeline
 from .speech_transformers import (
     VideoSpeechTransformer,
     DeserializeSpeechTransformer,
@@ -21,7 +21,6 @@ from .subtitle_parser import make_subtitle_parser
 from .subtitle_transformers import SubtitleMerger, SubtitleShifter
 from .version import __version__
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -32,23 +31,29 @@ def override(args, **kwargs):
 
 
 def run(args):
-    retval = 0
+    result = {'retval': 0,
+              'offset_seconds': None,
+              'framerate_scale_factor': None,
+              'sync_was_successful': None}
     if args.vlc_mode:
         logger.setLevel(logging.CRITICAL)
     if args.make_test_case and not args.gui_mode:  # this validation not necessary for gui mode
         if args.srtin is None or args.srtout is None:
             logger.error('need to specify input and output srt files for test cases')
-            return 1
+            result['retval'] = 1
+            return result
     if args.overwrite_input:
         if args.srtin is None:
             logger.error('need to specify input srt if --overwrite-input is specified since we cannot overwrite stdin')
-            return 1
+            result['retval'] = 1
+            return result
         if args.srtout is not None:
             logger.error('overwrite input set but output file specified; refusing to run in case this was not intended')
-            return 1
+            result['retval'] = 1
+            return result
         args.srtout = args.srtin
     if args.gui_mode and args.srtout is None:
-        args.srtout = '{}.synced.srt'.format(args.srtin[:-4])
+        args.srtout = '{}.synced.srt'.format(os.path.splitext(args.srtin)[0])
     ref_format = args.reference[-3:]
     if args.merge_with_reference and ref_format not in SUBTITLE_EXTENSIONS:
         logger.error('merging synced output with reference only valid '
@@ -107,8 +112,8 @@ def run(args):
         logger.info('...done')
         if args.srtin is None:
             logger.info('unsynchronized subtitle file not specified; skipping synchronization')
-            return retval
-    parser = make_subtitle_parser(fmt=args.srtin[-3:], caching=True, **args.__dict__)
+            return result
+    parser = make_subtitle_parser(fmt=os.path.splitext(args.srtin)[-1][1:], caching=True, **args.__dict__)
     logger.info("extracting speech segments from subtitles '%s'...", args.srtin)
     srt_pipes = [
         make_subtitle_speech_pipeline(
@@ -147,6 +152,11 @@ def run(args):
     except FailedToFindAlignmentException as e:
         sync_was_successful = False
         logger.error(e)
+    else:
+        result['offset_seconds'] = offset_seconds
+        result['framerate_scale_factor'] = scale_step.scale_factor
+    finally:
+        result['sync_was_successful'] = sync_was_successful
     if args.make_test_case:
         if npy_savename is None:
             raise ValueError('need non-null npy_savename')
@@ -176,11 +186,11 @@ def run(args):
             else:
                 logger.error('failed to create test archive; no formats supported '
                              '(this should not happen)')
-                retval = 1
+                result['retval'] = 1
             logger.info('...done')
         finally:
             shutil.rmtree(tar_dir)
-    return retval
+    return result
 
 
 def add_main_args_for_cli(parser):
@@ -200,7 +210,7 @@ def add_main_args_for_cli(parser):
 
 def add_cli_only_args(parser):
     parser.add_argument('-v', '--version', action='version',
-                        version='%(prog)s {version}'.format(version=__version__))
+                        version='{package} {version}'.format(package=__package__, version=__version__))
     parser.add_argument('--overwrite-input', action='store_true',
                         help='If specified, will overwrite the input srt instead of writing the output to a new file.')
     parser.add_argument('--encoding', default=DEFAULT_ENCODING,
