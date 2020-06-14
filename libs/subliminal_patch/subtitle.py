@@ -105,7 +105,7 @@ class Subtitle(Subtitle_):
         return self
 
     def get_encoding(self):
-        return self.encoding if self.encoding else self.guess_encoding()
+        return self.guess_encoding()
 
     def set_encoding(self, encoding):
         ge = self.get_encoding()
@@ -116,7 +116,6 @@ class Subtitle(Subtitle_):
         logger.debug("Changing encoding: to %s, from %s", encoding, ge)
         self.content = unicontent.encode(encoding)
         self._guessed_encoding = encoding
-        self.encoding = encoding
 
     def normalize(self):
         """
@@ -140,6 +139,16 @@ class Subtitle(Subtitle_):
         """
         if self._guessed_encoding:
             return self._guessed_encoding
+
+        if self.encoding:
+            # check provider encoding and use it only if it is valid
+            try:
+                self.content.decode(self.encoding)
+                self._guessed_encoding = self.encoding
+                return self._guessed_encoding
+            except:
+                # provider specified encoding is invalid, fallback to guessing
+                pass
 
         logger.info('Guessing encoding for language %s', self.language)
 
