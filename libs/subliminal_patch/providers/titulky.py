@@ -66,7 +66,6 @@ class TitulkySubtitle(Subtitle):
         self.version = version
         self.year = year
         self.download_link = download_link
-        self.encoding = 'UTF-8'
         for t in title:
             self.title = t
         if year:

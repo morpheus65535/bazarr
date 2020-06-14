@@ -38,6 +38,7 @@
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-slider.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
 
     {% endblock head_css %}
@@ -130,7 +131,7 @@
                         <!-- ============================================================== -->
                         <!-- Search -->
                         <!-- ============================================================== -->
-                        <li class="nav-item hidden-sm-down search-box">
+                        <li class="nav-item search-box">
                             <form class="form-material">
                                 <div class="typeahead__container">
                                     <div class="typeahead__field">
@@ -321,6 +322,7 @@
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
     <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap-slider.min.js') }}"></script>
     <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
     <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
 
@@ -339,6 +341,11 @@
 
             $('.table').on('draw.dt', function () {
                 $('[data-toggle="tooltip"]').tooltip({html: true});
+            });
+
+            $(".slider").slider({
+                tooltip: 'always',
+                tooltip_position: 'bottom'
             });
 
             events = io.connect({

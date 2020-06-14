@@ -364,8 +364,8 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.debug("BAZARR falling back to file content analysis to detect language.")
                 detected_language = None
 
-                # to improve performance, skip detection of files larger that 5M
-                if os.path.getsize(subtitle_path) > 5*1024*1024:
+                # to improve performance, skip detection of files larger that 1M
+                if os.path.getsize(subtitle_path) > 1*1024*1024:
                     logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
                                   subtitle_path)
                     continue
@@ -374,16 +374,11 @@ def guess_external_subtitles(dest_folder, subtitles):
                     text = f.read()
 
                 try:
-                    # to improve performance, use only the first 32K to detect encoding
-                    guess = chardet.detect(text[:32768])
+                    guess = chardet.detect(text)
                     logging.debug('BAZARR detected encoding %r', guess)
-                    if guess["confidence"] < 0.6:
-                        raise UnicodeError
-                    if guess["encoding"] == "ascii":
-                        guess["encoding"] = "utf-8"
                     text = text.decode(guess["encoding"])
                     detected_language = guess_language(text)
-                except UnicodeError:
+                except (UnicodeDecodeError, TypeError):
                     logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
                                       subtitle_path)
                 except:
