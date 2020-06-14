@@ -78,9 +78,7 @@
                         <b>Number of days to go back in history to upgrade subtitles (up to 30)</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="number" class="form-control" id="settings-general-days_to_upgrade_subs"
-                               name="settings-general-days_to_upgrade_subs" min="1" max="30"
-                               value="{{ settings.general.days_to_upgrade_subs }}" onkeydown="return false">
+                        <input class="slider" id="settings-general-days_to_upgrade_subs" name="settings-general-days_to_upgrade_subs" data-slider-id='settings-general-days_to_upgrade_subs' type="text" data-slider-min="0" data-slider-max="30" data-slider-step="1" data-slider-value="{{settings.general.days_to_upgrade_subs}}"/>
                     </div>
                 </div>
                 <br>
@@ -319,10 +317,8 @@
                     <div class="col-sm-5 text-right">
                         <b>Only for score below</b>
                     </div>
-                    <div class="col-sm-1">
-                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold"
-                               name="settings-general-postprocessing_threshold" min="0" max="100" step="1"
-                               onkeydown="return false" value="{{ settings.general.postprocessing_threshold }}">
+                    <div class="col-sm-4">
+                        <input class="slider" id="settings-general-postprocessing_threshold" name="settings-general-postprocessing_threshold" data-slider-id='settings-general-postprocessing_threshold' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.general.postprocessing_threshold}}"/>
                     </div>
                 </div>
                 <br>
@@ -345,10 +341,8 @@
                     <div class="col-sm-5 text-right">
                         <b>Only for score below</b>
                     </div>
-                    <div class="col-sm-1">
-                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold_movie"
-                               name="settings-general-postprocessing_threshold_movie" min="0" max="100" step="1"
-                               onkeydown="return false" value="{{ settings.general.postprocessing_threshold_movie }}">
+                    <div class="col-sm-4">
+                        <input class="slider" id="settings-general-postprocessing_threshold_movie" name="settings-general-postprocessing_threshold_movie" data-slider-id='settings-general-postprocessing_threshold_movie' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.general.postprocessing_threshold_movie}}"/>
                     </div>
                 </div>
                 <br>
