@@ -111,7 +111,7 @@ class SubSyncer:
                                   video_path=path_mappings.path_replace_reverse_movie(self.reference),
                                   language=alpha2_from_alpha3(srt_lang))
         else:
-            logging.error('BAZARR unable to sync subtitles: ' + str(result))
+            logging.error('BAZARR unable to sync subtitles: ' + self.srtin)
 
         return result
 
