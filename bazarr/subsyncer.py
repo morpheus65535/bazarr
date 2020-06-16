@@ -60,7 +60,7 @@ class SubSyncer:
                         self.reference_stream = "s:{}".format(i)
                         break
             if not self.reference_stream:
-                using_what = "{0} embedded subtitle track".format(embedded_subs['language'].name)
+                using_what = "{0} embedded subtitle track".format(language_from_alpha3(embedded_subs['language'].alpha3))
                 self.reference_stream = "s:0"
         elif 'audio' in data:
             audio_tracks = data['audio']
