@@ -68,7 +68,7 @@ class SubSyncer:
                 if 'language' in audio_track:
                     language = audio_track['language'].alpha3
                     if language == srt_lang:
-                        using_what = "{0} audio track".format(audio_track['language'].name)
+                        using_what = "{0} audio track".format(language_from_alpha3(audio_track['language'].alpha3))
                         self.reference_stream = "a:{}".format(i)
                         break
             if not self.reference_stream:
