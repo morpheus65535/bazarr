@@ -49,14 +49,18 @@ class SubSyncer:
         api.initialize({'provider': 'ffmpeg', 'ffmpeg': ffprobe_exe})
         data = api.know(self.reference)
 
+        using_what = None
+
         if 'subtitle' in data:
             for i, embedded_subs in enumerate(data['subtitle']):
                 if 'language' in embedded_subs:
                     language = embedded_subs['language'].alpha3
                     if language == "eng":
+                        using_what = "English embedded subtitle track"
                         self.reference_stream = "s:{}".format(i)
                         break
             if not self.reference_stream:
+                using_what = "{0} embedded subtitle track".format(embedded_subs['language'].name)
                 self.reference_stream = "s:0"
         elif 'audio' in data:
             audio_tracks = data['audio']
@@ -64,6 +68,7 @@ class SubSyncer:
                 if 'language' in audio_track:
                     language = audio_track['language'].alpha3
                     if language == srt_lang:
+                        using_what = "{0} audio track".format(audio_track['language'].name)
                         self.reference_stream = "a:{}".format(i)
                         break
             if not self.reference_stream:
@@ -72,9 +77,11 @@ class SubSyncer:
                     if 'language' in audio_track:
                         language = audio_track['language'].alpha3
                         if language == "eng":
+                            using_what = "English audio track"
                             self.reference_stream = "a:{}".format(i)
                             break
                 if not self.reference_stream:
+                    using_what = "first audio track"
                     self.reference_stream = "a:0"
         else:
             raise NoAudioTrack
@@ -91,8 +98,9 @@ class SubSyncer:
 
         if result['sync_was_successful']:
             message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale factor" \
-                      " of {2}.".format(language_from_alpha3(srt_lang), result['offset_seconds'],
-                                        result['framerate_scale_factor'])
+                      " of {2} using {3} (0:{4}).".format(language_from_alpha3(srt_lang), result['offset_seconds'],
+                                                        result['framerate_scale_factor'], using_what,
+                                                        self.reference_stream)
 
             if media_type == 'series':
                 history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
