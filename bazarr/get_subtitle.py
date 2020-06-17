@@ -243,7 +243,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         if use_postprocessing is True:
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
-                                                 audio_language_code2, audio_language_code3, subtitle.language.forced)
+                                                 audio_language_code2, audio_language_code3, subtitle.language.forced,
+                                                 percent_score)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
