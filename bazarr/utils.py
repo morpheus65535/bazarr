@@ -17,6 +17,10 @@ import datetime
 import glob
 
 
+class BinaryNotFound(Exception):
+    pass
+
+
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
                 score=None):
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
@@ -42,15 +46,22 @@ def get_binary(name):
     if installed_exe and os.path.isfile(installed_exe):
         return installed_exe
     else:
+        if name == 'ffprobe':
+            dir_name = 'ffmpeg'
+        else:
+            dir_name = name
+
         if platform.system() == "Windows":  # Windows
-            exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", name, "%s.exe" % name))
+            exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", dir_name, "%s.exe" % name))
         elif platform.system() == "Darwin":  # MacOSX
-            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", name, name))
+            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", dir_name, name))
         elif platform.system() == "Linux":  # Linux
-            exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), name, name))
+            exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), dir_name, name))
 
     if exe and os.path.isfile(exe):
         return exe
+    else:
+        raise BinaryNotFound
 
 
 def cache_maintenance():
