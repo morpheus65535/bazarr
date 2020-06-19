@@ -72,6 +72,10 @@
             .restart {
                 color: orange;
             }
+
+            .slider_span {
+                margin-left: 1em;
+            }
         </style>
     {% endblock head %}
 
@@ -346,9 +350,12 @@
                 $('[data-toggle="tooltip"]').tooltip({html: true});
             });
 
-            $(".slider").slider({
-                tooltip: 'always',
-                tooltip_position: 'bottom'
+            $(".slider").slider();
+            $(".slider").on("slide", function(slideEvt) {
+                $(this).next("span").text(slideEvt.value);
+            });
+            $(".slider").each(function() {
+                $(this).next("span").text($(this).val());
             });
 
             events = io.connect({
