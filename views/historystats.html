@@ -1,0 +1,149 @@
+{% extends '_main.html' %}
+
+{% block title %}History (Statistics) - Bazarr{% endblock %}
+
+{% block bcleft %}
+
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <canvas id="history_stats" height="125"></canvas>
+
+    <nav id="edit_bar" class="navbar fixed-bottom navbar-dark bg-dark">
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="timeframe_select">Time frame: </label>
+                <select class="selectpicker show-tick" id="timeframe_select" name="timeframe">
+                    <option value="week">Last week</option>
+                    <option value="month" selected>Last month</option>
+                    <option value="trimester">Last trimester</option>
+                    <option value="year">Last year</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="action_select">Action: </label>
+                <select class="selectpicker show-tick" id="action_select" name="action">
+                    <option value="All" selected>All</option>
+                    <option value="1">Automatically Downloaded</option>
+                    <option value="2">Manually Downloaded</option>
+                    <option value="3">Upgraded</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="provider_select">Provider: </label>
+                <select class="selectpicker show-tick" id="provider_select" name="provider"></select>
+            </div>
+        </div>
+        <div class="form-check form-check-inline">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label for="language_select">Language: </label>
+                <select class="selectpicker" id="language_select" name="language"></select>
+            </div>
+        </div>
+    </nav>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            getEnabledLanguages();
+            getEnabledProviders();
+
+            var timeframe = 'month';
+            var action = 'All';
+            var provider = 'All';
+            var language = 'All';
+
+            var labels_series = [];
+            var data_series = [];
+            var labels_movies = [];
+            var data_movies = [];
+
+            var history_chart = new Chart($('#history_stats'), {
+                type: 'bar',
+                data: {
+                    labels: labels_series,
+                    datasets: [{
+                        label: 'Series',
+                        backgroundColor: '#2193b5',
+                        data: data_series
+                    }, {
+                        label: 'Movies',
+                        backgroundColor: '#ffc230',
+                        data: data_movies
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                precision: 0
+                            }
+                        }]
+                    }
+                }
+            });
+
+            get_data();
+
+            $('.selectpicker').on('change', function() {
+                timeframe = $('#timeframe_select').selectpicker('val');
+                action = $('#action_select').selectpicker('val');
+                provider = $('#provider_select').selectpicker('val');
+                language = $('#language_select').selectpicker('val');
+
+                get_data();
+            })
+
+            function get_data() {
+                $.ajax({
+                    dataType: "json",
+                    url: "{{ url_for('api.historystats') }}?timeframe=" + timeframe + "&action=" + action + "&provider=" + provider + "&language=" + language,
+                    success: function(json_data) {
+                        labels_series = json_data.data_series.map(function(e) {
+                            return e.date;
+                        });
+                        data_series = json_data.data_series.map(function(e) {
+                            return e.count;
+                        });
+
+                        data_movies = json_data.data_movies.map(function(e) {
+                            return e.count;
+                        });
+
+                        history_chart.data.labels = labels_series;
+                        history_chart.data.datasets[0].data = data_series;
+                        history_chart.data.datasets[1].data = data_movies;
+
+                        history_chart.update();
+                    }
+                });
+            }
+        });
+
+        function getEnabledLanguages() {
+            $('#language_select').append('<option value="All" selected>All</option>');
+            {% for item in data_languages %}
+            $('#language_select').append('<option value="{{item['code2'] + (':forced' if item['forced'] else '')}}">{{item['name'] + (' Forced' if item['forced'] else '')}}</option>');
+            {% endfor %}
+            $("#language_select").selectpicker("refresh");
+        }
+
+        function getEnabledProviders() {
+            $('#provider_select').append('<option value="All" selected>All</option>');
+            {% for item in data_providers %}
+            $('#provider_select').append('<option value="{{item}}">{{item}}</option>');
+            {% endfor %}
+            $("#provider_select").selectpicker("refresh");
+        }
+    </script>
+{% endblock tail %}

@@ -4,6 +4,7 @@ import os
 import ast
 from datetime import timedelta
 import datetime
+from dateutil import rrule
 import pretty
 import time
 from operator import itemgetter
@@ -1256,6 +1257,58 @@ class HistoryMovies(Resource):
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
+class HistoryStats(Resource):
+    @authenticate
+    def get(self):
+        timeframe = request.args.get('timeframe') or 'month'
+        action = request.args.get('action') or 'All'
+        provider = request.args.get('provider') or 'All'
+        language = request.args.get('language') or 'All'
+
+        history_where_clause = " WHERE id"
+
+        # timeframe must be in ['week', 'month', 'trimester', 'year']
+        if timeframe == 'year':
+            days = 364
+        elif timeframe == 'trimester':
+            days = 90
+        elif timeframe == 'month':
+            days = 30
+        elif timeframe == 'week':
+            days = 6
+
+        history_where_clause += " AND datetime(timestamp, 'unixepoch') BETWEEN datetime('now', '-" + str(days) + \
+                                " days') AND datetime('now', 'localtime')"
+        if action != 'All':
+            history_where_clause += " AND action = " + action
+        else:
+            history_where_clause += " AND action IN (1,2,3)"
+        if provider != 'All':
+            history_where_clause += " AND provider = '" + provider + "'"
+        if language != 'All':
+            history_where_clause += " AND language = '" + language + "'"
+
+        data_series = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
+                                       "COUNT(id) as count FROM table_history" + history_where_clause +
+                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
+        data_movies = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
+                                       "COUNT(id) as count FROM table_history_movie" + history_where_clause +
+                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
+
+        for dt in rrule.rrule(rrule.DAILY,
+                              dtstart=datetime.datetime.now() - datetime.timedelta(days=days),
+                              until=datetime.datetime.now()):
+            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
+                data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
+            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_movies):
+                data_movies.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
+
+        sorted_data_series = sorted(data_series, key=lambda i: i['date'])
+        sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
+
+        return jsonify(data_series=sorted_data_series, data_movies=sorted_data_movies)
+
+
 class WantedSeries(Resource):
     @authenticate
     def get(self):
@@ -1429,6 +1482,7 @@ api.add_resource(MovieTools, '/movie_tools')
 
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')
+api.add_resource(HistoryStats, '/history_stats')
 
 api.add_resource(WantedSeries, '/wanted_series')
 api.add_resource(WantedMovies, '/wanted_movies')

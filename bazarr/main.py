@@ -25,7 +25,8 @@ from database import database, dict_mapper
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3
+from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, \
+    alpha3_from_alpha2
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
@@ -245,6 +246,32 @@ def historyseries():
 @login_required
 def historymovies():
     return render_template('historymovies.html')
+
+
+@app.route('/history/stats/')
+@login_required
+def historystats():
+    data_providers = database.execute("SELECT DISTINCT provider FROM table_history WHERE provider IS NOT null "
+                                      "UNION SELECT DISTINCT provider FROM table_history_movie WHERE provider "
+                                      "IS NOT null")
+    data_providers_list = []
+    for item in data_providers:
+        data_providers_list.append(item['provider'])
+
+    data_languages = database.execute("SELECT DISTINCT language FROM table_history WHERE language IS NOT null "
+                                      "AND language != '' UNION SELECT DISTINCT language FROM table_history_movie "
+                                      "WHERE language IS NOT null AND language != ''")
+    data_languages_list = []
+    for item in data_languages:
+        splitted_lang = item['language'].split(':')
+        item = {"name": language_from_alpha2(splitted_lang[0]),
+                "code2": splitted_lang[0],
+                "code3": alpha3_from_alpha2(splitted_lang[0]),
+                "forced": True if len(splitted_lang) > 1 else False}
+        data_languages_list.append(item)
+
+    return render_template('historystats.html', data_providers=data_providers_list,
+                           data_languages=sorted(data_languages_list, key=lambda i: i['name']))
 
 
 @app.route('/wanted/series/')

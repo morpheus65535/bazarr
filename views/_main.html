@@ -40,6 +40,7 @@
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-slider.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/Chart.min.css') }}"/>
 
     {% endblock head_css %}
 
@@ -206,6 +207,7 @@
                                 {% if settings.general.getboolean('use_radarr') %}
                                     <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
                                 {% endif %}
+                                <li><a href="{{ url_for('historystats') }}"> Statistics</a></li>
                             </ul>
                         </li>
 
@@ -325,6 +327,7 @@
     <script src="{{ url_for('static',filename='js/bootstrap-slider.min.js') }}"></script>
     <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
     <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/Chart.min.js') }}"></script>
 
     <script>
         {% if not request.endpoint == 'login_page' %}
