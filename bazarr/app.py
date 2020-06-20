@@ -20,6 +20,8 @@ def create_app():
     app.route = prefix_route(app.route, base_url.rstrip('/'))
 
     app.config["SECRET_KEY"] = 'test'
+    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+    app.config['JSON_AS_ASCII'] = False
 
     if args.dev:
         app.config["DEBUG"] = True

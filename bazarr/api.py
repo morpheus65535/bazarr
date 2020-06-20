@@ -33,6 +33,7 @@ from get_providers import get_providers, get_providers_auth, list_throttled_prov
 from event_handler import event_stream
 from scheduler import scheduler
 from subsyncer import subsync
+from filesystem import browse_bazarr_filesystem, browse_sonarr_filesystem, browse_radarr_filesystem
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
@@ -1436,6 +1437,28 @@ class SyncSubtitles(Resource):
         return '', 200
 
 
+class BrowseBazarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        result = browse_bazarr_filesystem(path)
+        return jsonify(result)
+
+
+class BrowseSonarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        return jsonify(browse_sonarr_filesystem(path))
+
+
+class BrowseRadarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        return jsonify(browse_radarr_filesystem(path))
+
+
 api.add_resource(Shutdown, '/shutdown')
 api.add_resource(Restart, '/restart')
 
@@ -1490,3 +1513,7 @@ api.add_resource(SearchWantedSeries, '/search_wanted_series')
 api.add_resource(SearchWantedMovies, '/search_wanted_movies')
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
+
+api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
+api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
+api.add_resource(BrowseRadarrFS, '/browse_radarr_filesystem')
