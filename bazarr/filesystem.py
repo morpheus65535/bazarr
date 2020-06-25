@@ -6,8 +6,8 @@ import string
 from config import settings, url_sonarr, url_radarr
 
 
-def browse_bazarr_filesystem(path=''):
-    if path == '' or path == '/':
+def browse_bazarr_filesystem(path='#'):
+    if path == '#' or path == '/' or path == '':
         if os.name == 'nt':
             dir_list = []
             for drive in string.ascii_uppercase:
@@ -32,13 +32,17 @@ def browse_bazarr_filesystem(path=''):
     parent = os.path.dirname(path)
 
     result = {'directories': data}
-    if parent != path:
+    if path == '#':
+        result.update({'parent': '#'})
+    else:
         result.update({'parent': parent})
 
     return result
 
 
-def browse_sonarr_filesystem(path=''):
+def browse_sonarr_filesystem(path='#'):
+    if path == '#':
+        path = ''
     url_sonarr_api_filesystem = url_sonarr() + "/api/filesystem?path=" + path + \
                                 "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                 settings.sonarr.apikey
@@ -61,7 +65,10 @@ def browse_sonarr_filesystem(path=''):
     return r.json()
 
 
-def browse_radarr_filesystem(path=''):
+def browse_radarr_filesystem(path='#'):
+    if path == '#':
+        path = ''
+
     url_radarr_api_filesystem = url_radarr() + "/api/filesystem?path=" + path + \
                                 "&allowFoldersWithoutTrailingSlashes=true&includeFiles=false&apikey=" + \
                                 settings.radarr.apikey

@@ -41,6 +41,7 @@
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-slider.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/Chart.min.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='jstree/themes/default/style.min.css') }}"/>
 
     {% endblock head_css %}
 
@@ -332,6 +333,7 @@
     <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
     <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
     <script src="{{ url_for('static',filename='js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='jstree/jstree.min.js') }}"></script>
 
     <script>
         {% if not request.endpoint == 'login_page' %}

@@ -37,7 +37,7 @@ from filesystem import browse_bazarr_filesystem, browse_sonarr_filesystem, brows
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from flask import Flask, jsonify, request, Response, Blueprint, url_for
+from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response
 
 from flask_restful import Resource, Api, abort
 from functools import wraps
@@ -1440,23 +1440,34 @@ class SyncSubtitles(Resource):
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('path') or ''
+        path = request.args.get('id') or ''
+        data = []
         result = browse_bazarr_filesystem(path)
-        return jsonify(result)
+        for item in result['directories']:
+            data.append({'id': item['name'], 'parent': result['parent'], 'children': True})
+        return jsonify(data=data)
 
 
 class BrowseSonarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('path') or ''
-        return jsonify(browse_sonarr_filesystem(path))
+        path = request.args.get('id') or ''
+        data = []
+        result = browse_sonarr_filesystem(path)
+        for item in result['directories']:
+            data.append({'id': item['name'], 'parent': result['parent'] if 'parent' in result else '#'})
+        return jsonify(data=data)
 
 
 class BrowseRadarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('path') or ''
-        return jsonify(browse_radarr_filesystem(path))
+        path = request.args.get('id') or ''
+        data = []
+        result = browse_radarr_filesystem(path)
+        for item in result['directories']:
+            data.append({'id': item['name'], 'parent': result['parent'] if 'parent' in result else '#'})
+        return jsonify(data=data)
 
 
 api.add_resource(Shutdown, '/shutdown')

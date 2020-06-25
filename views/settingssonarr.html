@@ -171,6 +171,7 @@
                                 </div>
                                 <div class="col-sm-8">
                                     <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="">
+                                    <div id="sonarr_browser"></div>
                                 </div>
                             </div>
                             <br>
@@ -180,6 +181,7 @@
                                 </div>
                                 <div class="col-sm-8">
                                     <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                    <div id="bazarr_browser"></div>
                                 </div>
                             </div>
                         </div>
@@ -411,6 +413,21 @@
                 form_changed = true;
                 $('#save_button').prop('disabled', false).css('cursor', 'auto');
             })
+
+            $('#sonarr_browser').jstree({
+                'core' : {
+                    'data' : {
+                        'url' : '{{ url_for('api.browsesonarrfs') }}'
+                    }
+                }
+            });
+            $('#bazarr_browser').jstree({
+                'core' : {
+                    'data' : {
+                        'url' : '{{ url_for('api.browsebazarrfs') }}'
+                    }
+                }
+            });
         });
     </script>
 {% endblock tail %}
