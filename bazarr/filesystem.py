@@ -31,7 +31,7 @@ def browse_bazarr_filesystem(path='#'):
 
     parent = os.path.dirname(path)
 
-    result = {'directories': data}
+    result = {'directories': sorted(data, key=lambda i: i['name'])}
     if path == '#':
         result.update({'parent': '#'})
     else:
