@@ -141,6 +141,12 @@
                 <br>
                 <h4>Path Mappings</h4>
                 <hr/>
+                <h5>Some tips to ensure things goes smoothly:</h5>
+                <ul>
+                    <li>You should create a mapping for each Root Folders you have configured in Radarr</li>
+                    <li>Point Bazarr to the folder containing all of your movies, not a specific one. eg. "/movies" and not "/movies/the matrix"</li>
+                    <li>UNC path under Windows must be typed manually. eg. "\\server\share"</li>
+                </ul>
                 <div class="row">
                     <div class="col-sm-8">
                         <table class="table table-striped" id="path_mapping_movie" style="width:100%;">
@@ -170,7 +176,8 @@
                                     Path for Radarr
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_radarr" name="add_path_radarr" value="">
+                                    <input type="text" class="form-control" id="add_path_radarr" name="add_path_radarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="radarr_browser"></div>
                                 </div>
                             </div>
                             <br>
@@ -179,7 +186,8 @@
                                     Path for Bazarr
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="bazarr_browser"></div>
                                 </div>
                             </div>
                         </div>
@@ -364,11 +372,61 @@
                 }]
             });
 
+            $('#addModal').on('hidden.bs.modal', function() {
+                $('#add_form')[0].reset();
+                $('#radarr_browser').jstree('destroy');
+                $('#radarr_browser').slimScroll({destroy: true});
+                $('#bazarr_browser').jstree('destroy');
+                $('#bazarr_browser').slimScroll({destroy: true});
+            })
+
+            $('#addModal').on('show.bs.modal', function() {
+                $('#radarr_browser').slimScroll({
+                    height: '200px',
+                    start: 'top'
+                });
+                $('#radarr_browser').jstree({
+                    'core' : {
+                        'data' : {
+                            'url' : '{{ url_for('api.browseradarrfs') }}',
+                            'data' : function (node) {
+                                if (node.original === undefined) {
+                                    return {'path': ''};
+                                } else {
+                                    return {'path': node.original.path};
+                                }
+                            }
+                        }
+                    }
+                }).on('changed.jstree', function (e, data) {
+                    $('#add_path_radarr').val(data.node.original.path);
+                });
+
+                $('#bazarr_browser').slimScroll({
+                    height: '200px',
+                    start: 'top'
+                });
+                $('#bazarr_browser').jstree({
+                    'core' : {
+                        'data' : {
+                            'url' : '{{ url_for('api.browsebazarrfs') }}',
+                            'data' : function (node) {
+                                if (node.original === undefined) {
+                                    return {'path': ''};
+                                } else {
+                                    return {'path': node.original.path};
+                                }
+                            }
+                        }
+                    }
+                }).on('changed.jstree', function (e, data) {
+                    $('#add_path_bazarr').val(data.node.original.path);
+                });
+            })
+
             $('#add_save_button').on('click', function(e) {
                 e.preventDefault();
                 table.row.add([ $('#add_path_radarr').val(), $('#add_path_bazarr').val()]).draw();
-                $('#add_path_radarr').val('');
-                $('#add_path_bazarr').val('');
                 $('#addModal').modal('hide');
                 $('#settings_form').trigger('change');
             });

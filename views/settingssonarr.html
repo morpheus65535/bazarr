@@ -141,6 +141,12 @@
                 <br>
                 <h4>Path Mappings</h4>
                 <hr/>
+                <h5>Some tips to ensure things goes smoothly:</h5>
+                <ul>
+                    <li>You should create a mapping for each Root Folders you have configured in Sonarr</li>
+                    <li>Point Bazarr to the folder containing all of your tv shows, not a specific one. eg. "/tv shows" and not "/tv shows/the simpsons"</li>
+                    <li>UNC path under Windows must be typed manually. eg. "\\server\share"</li>
+                </ul>
                 <div class="row">
                     <div class="col-sm-8">
                         <table class="table table-striped" id="path_mapping" style="width:100%;">
@@ -170,8 +176,8 @@
                                     Path for Sonarr
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="">
-                                    <div id="sonarr_browser"></div>
+                                    <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="sonarr_browser"></div>
                                 </div>
                             </div>
                             <br>
@@ -180,8 +186,8 @@
                                     Path for Bazarr
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
-                                    <div id="bazarr_browser"></div>
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="bazarr_browser"></div>
                                 </div>
                             </div>
                         </div>
@@ -366,11 +372,61 @@
                 }]
             });
 
+            $('#addModal').on('hidden.bs.modal', function() {
+                $('#add_form')[0].reset();
+                $('#sonarr_browser').jstree('destroy');
+                $('#sonarr_browser').slimScroll({destroy: true});
+                $('#bazarr_browser').jstree('destroy');
+                $('#bazarr_browser').slimScroll({destroy: true});
+            })
+
+            $('#addModal').on('show.bs.modal', function() {
+                $('#sonarr_browser').slimScroll({
+                    height: '200px',
+                    start: 'top'
+                });
+                $('#sonarr_browser').jstree({
+                    'core' : {
+                        'data' : {
+                            'url' : '{{ url_for('api.browsesonarrfs') }}',
+                            'data' : function (node) {
+                                if (node.original === undefined) {
+                                    return {'path': ''};
+                                } else {
+                                    return {'path': node.original.path};
+                                }
+                            }
+                        }
+                    }
+                }).on('changed.jstree', function (e, data) {
+                    $('#add_path_sonarr').val(data.node.original.path);
+                });
+
+                $('#bazarr_browser').slimScroll({
+                    height: '200px',
+                    start: 'top'
+                });
+                $('#bazarr_browser').jstree({
+                    'core' : {
+                        'data' : {
+                            'url' : '{{ url_for('api.browsebazarrfs') }}',
+                            'data' : function (node) {
+                                if (node.original === undefined) {
+                                    return {'path': ''};
+                                } else {
+                                    return {'path': node.original.path};
+                                }
+                            }
+                        }
+                    }
+                }).on('changed.jstree', function (e, data) {
+                    $('#add_path_bazarr').val(data.node.original.path);
+                });
+            })
+
             $('#add_save_button').on('click', function(e) {
                 e.preventDefault();
                 table.row.add([ $('#add_path_sonarr').val(), $('#add_path_bazarr').val()]).draw();
-                $('#add_path_sonarr').val('');
-                $('#add_path_bazarr').val('');
                 $('#addModal').modal('hide');
                 $('#settings_form').trigger('change');
             });
@@ -413,21 +469,6 @@
                 form_changed = true;
                 $('#save_button').prop('disabled', false).css('cursor', 'auto');
             })
-
-            $('#sonarr_browser').jstree({
-                'core' : {
-                    'data' : {
-                        'url' : '{{ url_for('api.browsesonarrfs') }}'
-                    }
-                }
-            });
-            $('#bazarr_browser').jstree({
-                'core' : {
-                    'data' : {
-                        'url' : '{{ url_for('api.browsebazarrfs') }}'
-                    }
-                }
-            });
         });
     </script>
 {% endblock tail %}

@@ -1440,34 +1440,34 @@ class SyncSubtitles(Resource):
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('id') or ''
+        path = request.args.get('path') or ''
         data = []
         result = browse_bazarr_filesystem(path)
         for item in result['directories']:
-            data.append({'id': item['name'], 'parent': result['parent'], 'children': True})
-        return jsonify(data=data)
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
 
 
 class BrowseSonarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('id') or ''
+        path = request.args.get('path') or ''
         data = []
         result = browse_sonarr_filesystem(path)
         for item in result['directories']:
-            data.append({'id': item['name'], 'parent': result['parent'] if 'parent' in result else '#'})
-        return jsonify(data=data)
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
 
 
 class BrowseRadarrFS(Resource):
     @authenticate
     def get(self):
-        path = request.args.get('id') or ''
+        path = request.args.get('path') or ''
         data = []
         result = browse_radarr_filesystem(path)
         for item in result['directories']:
-            data.append({'id': item['name'], 'parent': result['parent'] if 'parent' in result else '#'})
-        return jsonify(data=data)
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
 
 
 api.add_resource(Shutdown, '/shutdown')
