@@ -608,6 +608,11 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
         if not INCLUDE_EXOTIC_SUBS and p_ext not in (".srt", ".ass", ".ssa", ".vtt"):
             continue
 
+        if p_root.lower() == fn_no_ext_lower:
+            # skip check for language code if the subtitle file name is the same as the video name
+            subtitles[p] = None
+            continue
+
         # extract potential forced/normal/default tag
         # fixme: duplicate from subtitlehelpers
         split_tag = p_root.rsplit('.', 1)

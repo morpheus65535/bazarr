@@ -6,11 +6,6 @@ from knowit import api
 
 from utils import get_binary
 
-class NotMKVAndNoFFprobe(Exception):
-    pass
-
-class FFprobeError(Exception):
-    pass
 
 class EmbeddedSubsReader:
     def __init__(self):

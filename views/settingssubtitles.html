@@ -11,7 +11,8 @@
         <button class="btn btn-outline" id="save_button">
             <div>
                 <span class="fa-stack">
-                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20" aria-hidden="true"></i>
+                    <i class="fas fa-save fa-stack-2x align-top text-themecolor text-center font-20"
+                       aria-hidden="true"></i>
                     <i id="save_button_checkmark" class="fas fa-check fa-stack-2x" style="color:green;"></i>
                 </span>
             </div>
@@ -34,21 +35,24 @@
                     <b>Subtitle Folder</b>
                 </div>
                 <div class="form-group col-sm-4">
-                    <select class="form-control selectpicker" id="settings-general-subfolder" name="settings-general-subfolder">
+                    <select class="form-control selectpicker" id="settings-general-subfolder"
+                            name="settings-general-subfolder">
                         <option value="current">Alongside Media File</option>
                         <option value="relative">Relative Path To Media File</option>
                         <option value="absolute">Absolute Path</option>
                     </select>
-                    <label for="settings-general-subfolder">Choose the folder you wish to store/read the Subtitles</label>
+                    <label for="settings-general-subfolder">Choose the folder you wish to store/read the
+                        Subtitles</label>
                 </div>
             </div>
-            <div  id="subfolder_div">
+            <div id="subfolder_div">
                 <div class="row">
                     <div class="col-sm-3 text-right">
                         <b>Custom Subtitle Folder</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" id="settings-general-subfolder_custom" name="settings-general-subfolder_custom" value="{{settings.general.subfolder_custom}}">
+                        <input type="text" class="form-control" id="settings-general-subfolder_custom"
+                               name="settings-general-subfolder_custom" value="{{ settings.general.subfolder_custom }}">
                         <label for="settings-general-subfolder_custom">Choose your own folder for Subtitles</label>
                     </div>
                 </div>
@@ -60,7 +64,8 @@
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_subs" name="settings-general-upgrade_subs">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_subs"
+                               name="settings-general-upgrade_subs">
                         <span class="custom-control-label" for="settings-general-upgrade_subs"></span>
                     </label>
                     <label>Schedule a task to upgrade Subtitles previously downloaded by Bazarr.</label>
@@ -73,7 +78,8 @@
                         <b>Number of days to go back in history to upgrade subtitles (up to 30)</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="number" class="form-control" id="settings-general-days_to_upgrade_subs" name="settings-general-days_to_upgrade_subs" min="1" max="30" value="{{settings.general.days_to_upgrade_subs}}" onkeydown="return false">
+                        <input class="slider" id="settings-general-days_to_upgrade_subs" name="settings-general-days_to_upgrade_subs" data-slider-id='settings-general-days_to_upgrade_subs' type="text" data-slider-min="0" data-slider-max="30" data-slider-step="1" data-slider-value="{{settings.general.days_to_upgrade_subs}}"/>
+                        <span class="slider_span"></span>
                     </div>
                 </div>
                 <br>
@@ -83,7 +89,8 @@
                     </div>
                     <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_manual" name="settings-general-upgrade_manual">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-upgrade_manual"
+                                   name="settings-general-upgrade_manual">
                             <span class="custom-control-label" for="settings-general-upgrade_manual"></span>
                         </label>
                         <label>Enable or disable upgrade of manually searched and downloaded Subtitles.</label>
@@ -99,15 +106,17 @@
                     <b>Provider</b>
                 </div>
                 <div class="form-group col-sm-4">
-                    <select class="form-control selectpicker" id="settings-general-anti_captcha_provider" name="settings-general-anti_captcha_provider">
+                    <select class="form-control selectpicker" id="settings-general-anti_captcha_provider"
+                            name="settings-general-anti_captcha_provider">
                         <option value="None">None</option>
                         <option value="anti-captcha">Anti-Captcha</option>
                         <option value="death-by-captcha">Death by Captcha</option>
                     </select>
-                    <label for="settings-general-anti_captcha_provider">Choose the Anti-Captcha provider you want to use.</label>
+                    <label for="settings-general-anti_captcha_provider">Choose the Anti-Captcha provider you want to
+                        use.</label>
                 </div>
             </div>
-            <div  id="anticaptcha_div">
+            <div id="anticaptcha_div">
                 <div class="row">
                     <div class="col-sm-4 text-right">
                         <b>Provider Website</b>
@@ -122,12 +131,14 @@
                         <b>Account Key</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" id="settings-anticaptcha-anti_captcha_key" name="settings-anticaptcha-anti_captcha_key" value="{{settings.anticaptcha.anti_captcha_key}}">
+                        <input type="text" class="form-control" id="settings-anticaptcha-anti_captcha_key"
+                               name="settings-anticaptcha-anti_captcha_key"
+                               value="{{ settings.anticaptcha.anti_captcha_key }}">
                     </div>
                 </div>
                 <br>
             </div>
-            <div  id="deathbycaptcha_div">
+            <div id="deathbycaptcha_div">
                 <div class="row">
                     <div class="col-sm-4 text-right">
                         <b>Provider Website</b>
@@ -142,7 +153,8 @@
                         <b>Username</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" id="settings-deathbycaptcha-username" name="settings-deathbycaptcha-username" value="{{settings.deathbycaptcha.username}}">
+                        <input type="text" class="form-control" id="settings-deathbycaptcha-username"
+                               name="settings-deathbycaptcha-username" value="{{ settings.deathbycaptcha.username }}">
                     </div>
                 </div>
                 <br>
@@ -151,7 +163,8 @@
                         <b>Password</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="password" class="form-control" id="settings-deathbycaptcha-password" name="settings-deathbycaptcha-password" value="{{settings.deathbycaptcha.password}}">
+                        <input type="password" class="form-control" id="settings-deathbycaptcha-password"
+                               name="settings-deathbycaptcha-password" value="{{ settings.deathbycaptcha.password }}">
                     </div>
                 </div>
                 <br>
@@ -165,10 +178,12 @@
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-adaptive_searching" name="settings-general-adaptive_searching">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-adaptive_searching"
+                               name="settings-general-adaptive_searching">
                         <span class="custom-control-label" for="settings-general-adaptive_searching"></span>
                     </label>
-                    <label>When searching for Subtitles, Bazarr will search less frequently to limit call to providers.</label>
+                    <label>When searching for Subtitles, Bazarr will search less frequently to limit call to
+                        providers.</label>
                 </div>
             </div>
             <div class="row">
@@ -177,7 +192,8 @@
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-multithreading" name="settings-general-multithreading">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-multithreading"
+                               name="settings-general-multithreading">
                         <span class="custom-control-label" for="settings-general-multithreading"></span>
                     </label>
                     <label>Search multiple providers at once (Don't choose this on low powered devices)</label>
@@ -189,7 +205,8 @@
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-use_embedded_subs" name="settings-general-use_embedded_subs">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_embedded_subs"
+                               name="settings-general-use_embedded_subs">
                         <span class="custom-control-label" for="settings-general-use_embedded_subs"></span>
                     </label>
                     <label>Use embedded Subtitles in media files when determining missing ones.</label>
@@ -202,10 +219,26 @@
                     </div>
                     <div class="form-group col-sm-8">
                         <label class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="settings-general-ignore_pgs_subs" name="settings-general-ignore_pgs_subs">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-ignore_pgs_subs"
+                                   name="settings-general-ignore_pgs_subs">
                             <span class="custom-control-label" for="settings-general-ignore_pgs_subs"></span>
                         </label>
-                        <label>Ignores PGS Subtitles in Embedded Subtitles detection. Only relevant if 'Use embedded Subtitles' is enabled.</label>
+                        <label>Ignores PGS Subtitles in Embedded Subtitles detection. Only relevant if 'Use embedded
+                            Subtitles' is enabled.</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Show Only Desired Languages</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input"
+                                   id="settings-general-embedded_subs_show_desired"
+                                   name="settings-general-embedded_subs_show_desired">
+                            <span class="custom-control-label" for="settings-general-embedded_subs_show_desired"></span>
+                        </label>
+                        <label>Hide embedded subtitles for languages that are not currently desired.</label>
                     </div>
                 </div>
             </div>
@@ -218,44 +251,106 @@
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-utf8_encode" name="settings-general-utf8_encode">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-utf8_encode"
+                               name="settings-general-utf8_encode">
                         <span class="custom-control-label" for="settings-general-utf8_encode"></span>
                     </label>
                     <label>Re-encode downloaded Subtitles to UTF8. Should be left enabled in most case.</label>
                 </div>
             </div>
             {% if not os.startswith('win') %}
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Enable CHMOD</b>
+                    </div>
+                    <div class="form-group col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-chmod_enabled"
+                                   name="settings-general-chmod_enabled">
+                            <span class="custom-control-label" for="settings-general-chmod_enabled"></span>
+                        </label>
+                    </div>
+                </div>
+                <div id="chmod_div">
+                    <div class="row">
+                        <div class="col-sm-4 text-right">
+                            <b>Set Subtitle file permissions to</b>
+                        </div>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" id="settings-general-chmod"
+                                   name="settings-general-chmod" value="{{ settings.general.chmod }}">
+                            <label for="settings-general-chmod">Must be 4 digit octal, e.g.: 0775</label>
+                        </div>
+                    </div>
+                    <br>
+                </div>
+            {% endif %}
             <div class="row">
                 <div class="col-sm-3 text-right">
-                    <b>Enable CHMOD</b>
+                    <b>Subtitles synchronization</b>
                 </div>
-                <div class="form-group col-sm-1">
+                <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-chmod_enabled" name="settings-general-chmod_enabled">
-                        <span class="custom-control-label" for="settings-general-chmod_enabled"></span>
+                        <input type="checkbox" class="custom-control-input" id="settings-subsync-use_subsync" name="settings-subsync-use_subsync">
+                        <span class="custom-control-label" for="settings-subsync-use_subsync"></span>
                     </label>
+                    <label>Enable the subtitles synchronization after downloading a subtitles.</label>
                 </div>
             </div>
-            <div id="chmod_div">
+            <div id="subsync_div">
                 <div class="row">
                     <div class="col-sm-4 text-right">
-                        <b>Set Subtitle file permissions to</b>
+                        <b>Subtitles synchronization score threshold for series</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-subsync-use_subsync_threshold" name="settings-subsync-use_subsync_threshold">
+                            <span class="custom-control-label" for="settings-subsync-use_subsync_threshold"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-5 text-right">
+                        <b>Only for score below</b>
                     </div>
                     <div class="col-sm-4">
-                        <input type="text" class="form-control" id="settings-general-chmod" name="settings-general-chmod" value="{{settings.general.chmod}}">
-                        <label for="settings-general-chmod">Must be 4 digit octal, e.g.: 0775</label>
+                        <input class="slider" id="settings-subsync-subsync_threshold" name="settings-subsync-subsync_threshold" data-slider-id='settings-subsync-subsync_threshold' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.subsync.subsync_threshold}}"/>
+                        <span class="slider_span"></span>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Subtitles synchronization score threshold for movies</b>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-subsync-use_subsync_movie_threshold" name="settings-subsync-use_subsync_movie_threshold">
+                            <span class="custom-control-label" for="settings-subsync-use_subsync_movie_threshold"></span>
+                        </label>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col-sm-5 text-right">
+                        <b>Only for score below</b>
+                    </div>
+                    <div class="col-sm-4">
+                        <input class="slider" id="settings-subsync-subsync_movie_threshold" name="settings-subsync-subsync_movie_threshold" data-slider-id='settings-subsync-subsync_movie_threshold' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.subsync.subsync_movie_threshold}}"/>
+                        <span class="slider_span"></span>
                     </div>
                 </div>
                 <br>
             </div>
-            {% endif %}
             <div class="row">
                 <div class="col-sm-3 text-right">
                     <b>Use Custom Post-Processing</b>
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing" name="settings-general-use_postprocessing">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing"
+                               name="settings-general-use_postprocessing">
                         <span class="custom-control-label" for="settings-general-use_postprocessing"></span>
                     </label>
                     <label>Enable the post-processing execution after downloading a subtitles.</label>
@@ -268,8 +363,11 @@
                     </div>
                     <div class="col-sm-1">
                         <label class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing_threshold" name="settings-general-use_postprocessing_threshold">
-                            <span class="custom-control-label" for="settings-general-use_postprocessing_threshold"></span>
+                            <input type="checkbox" class="custom-control-input"
+                                   id="settings-general-use_postprocessing_threshold"
+                                   name="settings-general-use_postprocessing_threshold">
+                            <span class="custom-control-label"
+                                  for="settings-general-use_postprocessing_threshold"></span>
                         </label>
                     </div>
                 </div>
@@ -278,8 +376,9 @@
                     <div class="col-sm-5 text-right">
                         <b>Only for score below</b>
                     </div>
-                    <div class="col-sm-1">
-                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold" name="settings-general-postprocessing_threshold" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.postprocessing_threshold}}">
+                    <div class="col-sm-4">
+                        <input class="slider" id="settings-general-postprocessing_threshold" name="settings-general-postprocessing_threshold" data-slider-id='settings-general-postprocessing_threshold' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.general.postprocessing_threshold}}"/>
+                        <span class="slider_span"></span>
                     </div>
                 </div>
                 <br>
@@ -289,8 +388,11 @@
                     </div>
                     <div class="col-sm-1">
                         <label class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="settings-general-use_postprocessing_threshold_movie" name="settings-general-use_postprocessing_threshold_movie">
-                            <span class="custom-control-label" for="settings-general-use_postprocessing_threshold_movie"></span>
+                            <input type="checkbox" class="custom-control-input"
+                                   id="settings-general-use_postprocessing_threshold_movie"
+                                   name="settings-general-use_postprocessing_threshold_movie">
+                            <span class="custom-control-label"
+                                  for="settings-general-use_postprocessing_threshold_movie"></span>
                         </label>
                     </div>
                 </div>
@@ -299,8 +401,9 @@
                     <div class="col-sm-5 text-right">
                         <b>Only for score below</b>
                     </div>
-                    <div class="col-sm-1">
-                        <input type="number" class="form-control" id="settings-general-postprocessing_threshold_movie" name="settings-general-postprocessing_threshold_movie" min="0" max="100" step="1" onkeydown="return false" value="{{settings.general.postprocessing_threshold_movie}}">
+                    <div class="col-sm-4">
+                        <input class="slider" id="settings-general-postprocessing_threshold_movie" name="settings-general-postprocessing_threshold_movie" data-slider-id='settings-general-postprocessing_threshold_movie' type="text" data-slider-min="1" data-slider-max="100" data-slider-step="1" data-slider-value="{{settings.general.postprocessing_threshold_movie}}"/>
+                        <span class="slider_span"></span>
                     </div>
                 </div>
                 <br>
@@ -309,7 +412,9 @@
                         <b>Post-processing command</b>
                     </div>
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" id="settings-general-postprocessing_cmd" name="settings-general-postprocessing_cmd" value="{{settings.general.postprocessing_cmd}}">
+                        <input type="text" class="form-control" id="settings-general-postprocessing_cmd"
+                               name="settings-general-postprocessing_cmd"
+                               value="{{ settings.general.postprocessing_cmd }}">
                     </div>
                 </div>
                 <br>
@@ -338,6 +443,8 @@
                         <p>The 2-letter ISO-639 language code of the episode audio language.</p>
                         <b>&lbrace;&lbrace;episode_language_code3&rbrace;&rbrace;</b>
                         <p>The 3-letter ISO-639 language code of the episode audio language.</p>
+                        <b>&lbrace;&lbrace;score&rbrace;&rbrace;</b>
+                        <p>The score of the subtitles file.</p>
                     </div>
                 </div>
             </div>
@@ -350,7 +457,7 @@
         $(document).ready(function () {
             // Show warning if there's unsaved changes in the settings_form
             var form_changed = false;
-            $(window).on('beforeunload', function() {
+            $(window).on('beforeunload', function () {
                 if (form_changed) {
                     return "";
                 }
@@ -361,7 +468,7 @@
             $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
 
             // Hide *_div on Select input changed to None
-            $('#settings-general-subfolder').on('change', function() {
+            $('#settings-general-subfolder').on('change', function () {
                 if ($(this).val() === 'current') {
                     $('#subfolder_div').hide();
                 } else {
@@ -369,7 +476,7 @@
                 }
             });
 
-            $('#settings-general-upgrade_subs').on('change', function() {
+            $('#settings-general-upgrade_subs').on('change', function () {
                 if ($(this).prop('checked')) {
                     $('#upgradesubs_div').show();
                 } else {
@@ -377,7 +484,7 @@
                 }
             });
 
-            $('#settings-general-anti_captcha_provider').on('change', function() {
+            $('#settings-general-anti_captcha_provider').on('change', function () {
                 if ($(this).val() === 'anti-captcha') {
                     $('#anticaptcha_div').show();
                     $('#deathbycaptcha_div').hide();
@@ -390,7 +497,7 @@
                 }
             });
 
-            $('#settings-general-use_embedded_subs').on('change', function() {
+            $('#settings-general-use_embedded_subs').on('change', function () {
                 if ($(this).prop('checked')) {
                     $('#embedded_div').show();
                 } else {
@@ -398,7 +505,7 @@
                 }
             });
 
-            $('#settings-general-chmod_enabled').on('change', function() {
+            $('#settings-general-chmod_enabled').on('change', function () {
                 if ($(this).prop('checked')) {
                     $('#chmod_div').show();
                 } else {
@@ -406,11 +513,19 @@
                 }
             });
 
-            $('#settings-general-use_postprocessing').on('change', function() {
+            $('#settings-general-use_postprocessing').on('change', function () {
                 if ($(this).prop('checked')) {
                     $('#custompp_div').show();
                 } else {
                     $('#custompp_div').hide();
+                }
+            });
+
+            $('#settings-subsync-use_subsync').on('change', function() {
+                if ($(this).prop('checked')) {
+                    $('#subsync_div').show();
+                } else {
+                    $('#subsync_div').hide();
                 }
             });
 
@@ -426,13 +541,17 @@
             $('#settings-general-multithreading').prop('checked', {{'true' if settings.general.getboolean('multithreading') else 'false'}}).trigger('change');
             $('#settings-general-use_embedded_subs').prop('checked', {{'true' if settings.general.getboolean('use_embedded_subs') else 'false'}}).trigger('change');
             $('#settings-general-ignore_pgs_subs').prop('checked', {{'true' if settings.general.getboolean('ignore_pgs_subs') else 'false'}}).trigger('change');
+            $('#settings-general-embedded_subs_show_desired').prop('checked', {{'true' if settings.general.getboolean('embedded_subs_show_desired') else 'false'}}).trigger('change');
             $('#settings-general-utf8_encode').prop('checked', {{'true' if settings.general.getboolean('utf8_encode') else 'false'}}).trigger('change');
             $('#settings-general-chmod_enabled').prop('checked', {{'true' if settings.general.getboolean('chmod_enabled') else 'false'}}).trigger('change');
+            $('#settings-subsync-use_subsync').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync') else 'false'}}).trigger('change');
+            $('#settings-subsync-use_subsync_threshold').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync_threshold') else 'false'}}).trigger('change');
+            $('#settings-subsync-use_subsync_movie_threshold').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync_movie_threshold') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing_threshold').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing_threshold_movie').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold_movie') else 'false'}}).trigger('change');
 
-            $('#save_button').on('click', function() {
+            $('#save_button').on('click', function () {
                 var formdata = new FormData(document.getElementById("settings_form"));
 
                 // Make sure all checkbox input are sent with true/false value
@@ -451,8 +570,7 @@
                         form_changed = false;
                         $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
                         setTimeout(
-                            function()
-                            {
+                            function () {
                                 $('#save_button_checkmark').hide();
                             }, 2000);
                     }
@@ -460,7 +578,7 @@
             });
 
             // monitor changes to the settings_form
-            $('#settings_form').on('change', function() {
+            $('#settings_form').on('change', function () {
                 form_changed = true;
                 $('#save_button').prop('disabled', false).css('cursor', 'auto');
             })

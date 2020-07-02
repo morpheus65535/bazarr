@@ -4,6 +4,7 @@ import os
 import ast
 from datetime import timedelta
 import datetime
+from dateutil import rrule
 import pretty
 import time
 from operator import itemgetter
@@ -31,10 +32,12 @@ from utils import history_log, history_log_movie, get_sonarr_version, get_radarr
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
+from subsyncer import subsync
+from filesystem import browse_bazarr_filesystem, browse_sonarr_filesystem, browse_radarr_filesystem
 
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 
-from flask import Flask, jsonify, request, Response, Blueprint, url_for
+from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response
 
 from flask_restful import Resource, Api, abort
 from functools import wraps
@@ -424,6 +427,10 @@ class Episodes(Resource):
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
                                "forced": True if len(subtitle) > 1 else False}
+
+                if settings.general.getboolean('embedded_subs_show_desired'):
+                    item['subtitles'] = [x for x in item['subtitles'] if
+                                         x[0]['code2'] in ast.literal_eval(desired_languages) or x[1]]
             else:
                 item.update({"subtitles": []})
 
@@ -463,7 +470,8 @@ class EpisodesSubtitlesDelete(Resource):
         try:
             os.remove(path_mappings.path_replace(subtitlesPath))
             result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language))
+            history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language),
+                        video_path=path_mappings.path_replace_reverse(episodePath))
             store_subtitles(path_mappings.path_replace_reverse(episodePath), episodePath)
             return result, 202
         except OSError as e:
@@ -589,6 +597,7 @@ class EpisodesSubtitlesUpload(Resource):
         sonarrSeriesId = request.form.get('sonarrSeriesId')
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
         title = request.form.get('title')
+        audioLanguage = request.form.get('audioLanguage')
 
         _, ext = os.path.splitext(upload.filename)
 
@@ -602,7 +611,8 @@ class EpisodesSubtitlesUpload(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
-                                            subtitle=upload)
+                                            subtitle=upload,
+                                            audio_language=audioLanguage)
 
             if result is not None:
                 message = result[0]
@@ -659,6 +669,34 @@ class EpisodesHistory(Resource):
         return jsonify(data=episode_history)
 
 
+class EpisodesTools(Resource):
+    @authenticate
+    def get(self):
+        episodeid = request.args.get('episodeid')
+
+        episode_ext_subs = database.execute("SELECT path, subtitles FROM table_episodes WHERE sonarrEpisodeId=?",
+                                            (episodeid,), only_one=True)
+        try:
+            all_subs = ast.literal_eval(episode_ext_subs['subtitles'])
+        except:
+            episode_external_subtitles = None
+        else:
+            episode_external_subtitles = []
+            for subs in all_subs:
+                if subs[1]:
+                    subtitle = subs[0].split(':')
+                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
+                               "code2": subtitle[0],
+                               "code3": alpha3_from_alpha2(subtitle[0]),
+                               "forced": True if len(subtitle) > 1 else False}
+                    episode_external_subtitles.append({'language': subs[0],
+                                                       'path': path_mappings.path_replace(subs[1]),
+                                                       'filename': os.path.basename(subs[1]),
+                                                       'videopath': path_mappings.path_replace(episode_ext_subs['path'])})
+
+        return jsonify(data=episode_external_subtitles)
+
+
 class Movies(Resource):
     @authenticate
     def get(self):
@@ -713,6 +751,13 @@ class Movies(Resource):
                                             "code2": language[0],
                                             "code3": alpha3_from_alpha2(language[0]),
                                             "forced": True if len(language) > 1 else False}
+
+                if settings.general.getboolean('embedded_subs_show_desired'):
+                    desired_lang_list = []
+                    if isinstance(item['languages'], list):
+                        desired_lang_list = [x['code2'] for x in item['languages']]
+                    item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
+
                 item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
             else:
                 item.update({"subtitles": []})
@@ -821,7 +866,8 @@ class MovieSubtitlesDelete(Resource):
         try:
             os.remove(path_mappings.path_replace_movie(subtitlesPath))
             result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language))
+            history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language),
+                              video_path=path_mappings.path_replace_reverse_movie(moviePath))
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(moviePath), moviePath)
             return result, 202
         except OSError as e:
@@ -944,6 +990,7 @@ class MovieSubtitlesUpload(Resource):
         upload = request.files.get('upload')
         radarrId = request.form.get('radarrId')
         title = request.form.get('title')
+        audioLanguage = request.form.get('audioLanguage')
 
         _, ext = os.path.splitext(upload.filename)
 
@@ -957,7 +1004,8 @@ class MovieSubtitlesUpload(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='movie',
-                                            subtitle=upload)
+                                            subtitle=upload,
+                                            audio_language=audioLanguage)
 
             if result is not None:
                 message = result[0]
@@ -1013,6 +1061,34 @@ class MovieHistory(Resource):
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
 
         return jsonify(data=movie_history)
+
+
+class MovieTools(Resource):
+    @authenticate
+    def get(self):
+        movieid = request.args.get('movieid')
+
+        movie_ext_subs = database.execute("SELECT path, subtitles FROM table_movies WHERE radarrId=?",
+                                          (movieid,), only_one=True)
+        try:
+            all_subs = ast.literal_eval(movie_ext_subs['subtitles'])
+        except:
+            movie_external_subtitles = None
+        else:
+            movie_external_subtitles = []
+            for subs in all_subs:
+                if subs[1]:
+                    subtitle = subs[0].split(':')
+                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
+                               "code2": subtitle[0],
+                               "code3": alpha3_from_alpha2(subtitle[0]),
+                               "forced": True if len(subtitle) > 1 else False}
+                    movie_external_subtitles.append({'language': subs[0],
+                                                     'path': path_mappings.path_replace_movie(subs[1]),
+                                                     'filename': os.path.basename(subs[1]),
+                                                     'videopath': path_mappings.path_replace_movie(movie_ext_subs['path'])})
+
+        return jsonify(data=movie_external_subtitles)
 
 
 class HistorySeries(Resource):
@@ -1182,6 +1258,58 @@ class HistoryMovies(Resource):
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
 
+class HistoryStats(Resource):
+    @authenticate
+    def get(self):
+        timeframe = request.args.get('timeframe') or 'month'
+        action = request.args.get('action') or 'All'
+        provider = request.args.get('provider') or 'All'
+        language = request.args.get('language') or 'All'
+
+        history_where_clause = " WHERE id"
+
+        # timeframe must be in ['week', 'month', 'trimester', 'year']
+        if timeframe == 'year':
+            days = 364
+        elif timeframe == 'trimester':
+            days = 90
+        elif timeframe == 'month':
+            days = 30
+        elif timeframe == 'week':
+            days = 6
+
+        history_where_clause += " AND datetime(timestamp, 'unixepoch') BETWEEN datetime('now', '-" + str(days) + \
+                                " days') AND datetime('now', 'localtime')"
+        if action != 'All':
+            history_where_clause += " AND action = " + action
+        else:
+            history_where_clause += " AND action IN (1,2,3)"
+        if provider != 'All':
+            history_where_clause += " AND provider = '" + provider + "'"
+        if language != 'All':
+            history_where_clause += " AND language = '" + language + "'"
+
+        data_series = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
+                                       "COUNT(id) as count FROM table_history" + history_where_clause +
+                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
+        data_movies = database.execute("SELECT strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch')) as date, "
+                                       "COUNT(id) as count FROM table_history_movie" + history_where_clause +
+                                       " GROUP BY strftime ('%Y-%m-%d',datetime(timestamp, 'unixepoch'))")
+
+        for dt in rrule.rrule(rrule.DAILY,
+                              dtstart=datetime.datetime.now() - datetime.timedelta(days=days),
+                              until=datetime.datetime.now()):
+            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_series):
+                data_series.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
+            if not any(d['date'] == dt.strftime('%Y-%m-%d') for d in data_movies):
+                data_movies.append({'date': dt.strftime('%Y-%m-%d'), 'count': 0})
+
+        sorted_data_series = sorted(data_series, key=lambda i: i['date'])
+        sorted_data_movies = sorted(data_movies, key=lambda i: i['date'])
+
+        return jsonify(data_series=sorted_data_series, data_movies=sorted_data_movies)
+
+
 class WantedSeries(Resource):
     @authenticate
     def get(self):
@@ -1285,6 +1413,63 @@ class SearchWantedMovies(Resource):
         return '', 200
 
 
+class SyncSubtitles(Resource):
+    @authenticate
+    def post(self):
+        language = request.form.get('language')
+        subtitles_path = request.form.get('subtitlesPath')
+        video_path = request.form.get('videoPath')
+        media_type = request.form.get('mediaType')
+
+        if media_type == 'series':
+            episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes"
+                                                " WHERE path = ?", (path_mappings.path_replace_reverse(video_path),),
+                                                only_one=True)
+            subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                         srt_lang=language, media_type=media_type, sonarr_series_id=episode_metadata['sonarrSeriesId'],
+                         sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
+        else:
+            movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
+                                              (path_mappings.path_replace_reverse_movie(video_path),), only_one=True)
+            subsync.sync(video_path=video_path, srt_path=subtitles_path,
+                         srt_lang=language, media_type=media_type, radarr_id=movie_metadata['radarrId'])
+
+        return '', 200
+
+
+class BrowseBazarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        data = []
+        result = browse_bazarr_filesystem(path)
+        for item in result['directories']:
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
+
+
+class BrowseSonarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        data = []
+        result = browse_sonarr_filesystem(path)
+        for item in result['directories']:
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
+
+
+class BrowseRadarrFS(Resource):
+    @authenticate
+    def get(self):
+        path = request.args.get('path') or ''
+        data = []
+        result = browse_radarr_filesystem(path)
+        for item in result['directories']:
+            data.append({'text': item['name'], 'children': True, 'path': item['path']})
+        return jsonify(data)
+
+
 api.add_resource(Shutdown, '/shutdown')
 api.add_resource(Restart, '/restart')
 
@@ -1315,6 +1500,7 @@ api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
 api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(EpisodesHistory, '/episodes_history')
+api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')
 api.add_resource(MoviesEditSave, '/movies_edit_save')
@@ -1326,11 +1512,19 @@ api.add_resource(MovieSubtitlesUpload, '/movie_subtitles_upload')
 api.add_resource(MovieScanDisk, '/movie_scan_disk')
 api.add_resource(MovieSearchMissing, '/movie_search_missing')
 api.add_resource(MovieHistory, '/movie_history')
+api.add_resource(MovieTools, '/movie_tools')
 
 api.add_resource(HistorySeries, '/history_series')
 api.add_resource(HistoryMovies, '/history_movies')
+api.add_resource(HistoryStats, '/history_stats')
 
 api.add_resource(WantedSeries, '/wanted_series')
 api.add_resource(WantedMovies, '/wanted_movies')
 api.add_resource(SearchWantedSeries, '/search_wanted_series')
 api.add_resource(SearchWantedMovies, '/search_wanted_movies')
+
+api.add_resource(SyncSubtitles, '/sync_subtitles')
+
+api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
+api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
+api.add_resource(BrowseRadarrFS, '/browse_radarr_filesystem')

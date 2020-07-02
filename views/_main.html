@@ -38,7 +38,10 @@
         <link rel="stylesheet" type="text/css"
               href="{{ url_for('static',filename='plugins/datatables.net-bs4/css/dataTables.bootstrap4.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-select.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap-slider.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static',filename='css/jquery.typeahead.min.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/Chart.min.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static',filename='jstree/themes/default/style.min.css') }}"/>
 
     {% endblock head_css %}
 
@@ -69,6 +72,25 @@
 
             .restart {
                 color: orange;
+            }
+
+            .slider_span {
+                margin-left: 1em;
+            }
+
+            .custom-file {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .filetree {
+                border: 1px solid #ced4da;
+                border-radius: .25rem;
+            }
+
+            #add_path_sonarr, #add_path_radarr, #add_path_bazarr {
+                margin-bottom: 0.5em;
             }
         </style>
     {% endblock head %}
@@ -130,7 +152,7 @@
                         <!-- ============================================================== -->
                         <!-- Search -->
                         <!-- ============================================================== -->
-                        <li class="nav-item hidden-sm-down search-box">
+                        <li class="nav-item search-box mt-2 mt-xl-0">
                             <form class="form-material">
                                 <div class="typeahead__container">
                                     <div class="typeahead__field">
@@ -205,6 +227,7 @@
                                 {% if settings.general.getboolean('use_radarr') %}
                                     <li><a href="{{ url_for('historymovies') }}"> Movies</a></li>
                                 {% endif %}
+                                <li><a href="{{ url_for('historystats') }}"> Statistics</a></li>
                             </ul>
                         </li>
 
@@ -321,8 +344,11 @@
     <script src="{{ url_for('static',filename='js/custom.js') }}"></script>
     <script src="{{ url_for('static',filename='js/socket.io.js') }}"></script>
     <script src="{{ url_for('static',filename='js/bootstrap-select.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap-slider.min.js') }}"></script>
     <script src="{{ url_for('static',filename='moment/moment.js') }}"></script>
     <script src="{{ url_for('static',filename='js/jquery.typeahead.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='jstree/jstree.min.js') }}"></script>
 
     <script>
         {% if not request.endpoint == 'login_page' %}
@@ -339,6 +365,14 @@
 
             $('.table').on('draw.dt', function () {
                 $('[data-toggle="tooltip"]').tooltip({html: true});
+            });
+
+            $(".slider").slider();
+            $(".slider").on("slide", function(slideEvt) {
+                $(this).next("span").text(slideEvt.value);
+            });
+            $(".slider").each(function() {
+                $(this).next("span").text($(this).val());
             });
 
             events = io.connect({

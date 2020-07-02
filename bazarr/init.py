@@ -4,6 +4,8 @@ import os
 import rarfile
 import json
 import hashlib
+import sys
+import subprocess
 
 from config import settings, configure_captcha_func
 from get_args import args
@@ -40,6 +42,27 @@ if not os.path.exists(os.path.join(args.config_dir, 'cache')):
 
 configure_logging(settings.general.getboolean('debug') or args.debug)
 import logging
+
+# deploy requirements.txt
+if not args.no_update:
+    try:
+        import lxml, numpy
+    except ImportError:
+        try:
+            import pip
+        except ImportError:
+            logging.info('BAZARR unable to install requirements (pip not installed).')
+        else:
+            logging.info('BAZARR installing requirements...')
+            subprocess.call([sys.executable, '-m', 'pip', 'install', '--user', '-r',
+                             os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            logging.info('BAZARR requirements installed.')
+            try:
+                from server import webserver
+                webserver.restart()
+            except:
+                logging.info('BAZARR unable to restart. Please do it manually.')
 
 # create random api_key if there's none in config.ini
 if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):

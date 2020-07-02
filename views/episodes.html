@@ -110,6 +110,7 @@
             <th>Missing Subtitles</th>
             <th>Manual Search</th>
             <th>Manual Upload</th>
+            <th>Tools</th>
         </tr>
         </thead>
     </table>
@@ -199,6 +200,7 @@
                         <input type="hidden" id="upload_sonarrSeriesId" name="sonarrSeriesId" value=""/>
                         <input type="hidden" id="upload_sonarrEpisodeId" name="sonarrEpisodeId" value=""/>
                         <input type="hidden" id="upload_title" name="title" value=""/>
+                        <input type="hidden" id="upload_audioLanguage" name="audioLanguage" value=""/>
                     </div>
                     <div class="modal-footer">
                         <button type="submit" id="upload_save_button" class="btn btn-info">Save</button>
@@ -300,6 +302,35 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="episodeToolsModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="episode_tools_title_span"></span></h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <table id="episode_tools_result" class="table table-striped" style="width:100%">
+                            <thead>
+                            <tr>
+                                <th style="text-align: left;">Language:</th>
+                                <th style="text-align: left;">Filename:</th>
+                                <th style="text-align: left;">Sync:</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -439,6 +470,12 @@
                             } else {
                                 return ''
                             }
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return '<a href="" class="episode_tools badge badge-secondary" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-season="' + data.season + '" data-episode="' + data.episode + '" data-episode_title="' + data.title + '"><i class="fa fa-briefcase"></i></a>';
                         }
                     }
                 ]
@@ -675,6 +712,7 @@
                 $('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
                 $('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
                 $('#upload_title').val($(this).data("episode_title"));
+                $('#upload_audioLanguage').val(seriesDetails['audio_language']['name']);
 
                 $('#manual_language_select').empty();
                 $.each(enabledLanguages, function (i, item) {
@@ -698,7 +736,10 @@
                     processData: false,
                     contentType: false,
                     type: 'POST',
-                    success: function () {
+                    beforeSend: function () {
+                        $('#upload_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
                         $('#uploadModal').modal('hide');
                     }
                 });
@@ -863,6 +904,8 @@
                                     return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";
                                 } else if (data === 4) {
                                     return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";
+                                } else if (data === 5) {
+                                    return "<i class='fas fa-clock' title='Subtitle file has been synced.' data-toggle='tooltip' data-placement='right'></i>";
                                 }
                             }
                         },
@@ -877,6 +920,73 @@
                     .modal({
                         focus: false
                     });
+            });
+
+            $('#episodes').on('click', '.episode_tools', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+
+                $("#episode_tools_title_span").html(seriesDetails['title'] + ' - ' + $(this).data("season") + 'x' + $(this).data("episode") + ' - ' + $(this).data("episode_title"));
+
+                sonarrEpisodeId = $(this).data("sonarrepisodeid");
+
+                $('#episode_tools_result').DataTable({
+                    destroy: true,
+                    language: {
+                        zeroRecords: 'No External Subtitles Found For This Episode'
+                    },
+                    paging: true,
+                    lengthChange: false,
+                    pageLength: 5,
+                    searching: true,
+                    ordering: false,
+                    scrollX: true,
+                    processing: false,
+                    serverSide: false,
+                    ajax: {
+                        url: '{{ url_for( 'api.episodestools' )}}?episodeid=' + sonarrEpisodeId
+                    },
+                    columns: [
+                        {data: 'language.name'},
+                        {data: 'filename'},
+                        {
+                            data: null,
+                            "render": function (data) {
+                                return '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '"><i class="far fa-play-circle"></i></a>';
+                            }
+                        }
+                    ]
+                });
+
+                $('#episodeToolsModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+            $('#episode_tools_result').on('click', '.subtitles_sync', function (e) {
+                e.preventDefault();
+                const values = {
+                    language: $(this).attr("data-language"),
+                    subtitlesPath: $(this).attr("data-path"),
+                    videoPath: $(this).attr("data-videopath"),
+                    mediaType: 'series'
+                };
+
+                var cell = $(this).parent();
+
+                $.ajax({
+                    url: "{{ url_for('api.syncsubtitles') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
+                        $('#episodeToolsModal').modal('hide');
+                    }
+                });
             });
         });
 
@@ -896,7 +1006,7 @@
                     $('#seriesAlternateTitles').hide();
                 }
 
-                $('#seriesAudioLanguage').text(seriesDetails['audio_language'].name);
+                $('#seriesAudioLanguage').text(seriesDetails['audio_language']['name']);
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
