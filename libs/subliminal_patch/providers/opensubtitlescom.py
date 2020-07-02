@@ -23,23 +23,27 @@ class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
     hash_verifiable = False
 
-    def __init__(self, language, page_link, file_id, releases, title, year, season=None, episode=None):
-        super(OpenSubtitlesComSubtitle, self).__init__(language, hearing_impaired=False,
-                                                       page_link=page_link)
+    def __init__(self, language, hearing_impaired, hash, page_link, file_id, releases, uploader, title, year, season=None, episode=None):
         self.title = title
         self.year = year
         self.season = season
         self.episode = episode
         self.releases = releases
         self.release_info = releases
+        self.language = language
+        self.hearing_impaired = hearing_impaired
         self.file_id = file_id
+        self.page_link = page_link
         self.download_link = None
+        self.uploader = uploader
         self.matches = None
+        self.hash = hash
+        self.encoding = 'utf-8'
 
 
     @property
     def id(self):
-        return self.download_link
+        return self.file_id
 
     def get_matches(self, video):
         matches = set()
@@ -93,7 +97,7 @@ class OpenSubtitlesComProvider(Provider):
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, username=None, password=None, use_hash=True):
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
 
@@ -102,6 +106,8 @@ class OpenSubtitlesComProvider(Provider):
         self.token = None
         self.username = username
         self.password = password
+        self.use_hash = use_hash
+        self.hash = None
 
     def initialize(self):
         if self.token:
@@ -138,14 +144,6 @@ class OpenSubtitlesComProvider(Provider):
             return False
 
     def search_titles(self, title, video):
-        """Search for titles matching the `title`.
-
-        For episodes, each season has it own title
-        :param str title: the title to search for.
-        :param obj video: the video object.
-        :return: found title.
-        :rtype: dict
-        """
         title_id = None
 
         if isinstance(video, Episode):
@@ -169,16 +167,22 @@ class OpenSubtitlesComProvider(Provider):
 
             if title_id:
                 return title_id
-            else:
+        finally:
+            if not title_id:
                 logger.debug('No match found for "%s" and "%d"' % (title, video.year))
 
     def query(self, languages, video):
+        if self.use_hash:
+            self.hash = video.hashes.get('opensubtitlescom')
+
         if isinstance(video, Episode):
             title = video.series
         else:
             title = video.title
 
         title_id = self.search_titles(title, video)
+        if not title_id:
+            return []
         lang_strings = [str(lang) for lang in languages]
         langs = ','.join(lang_strings)
 
@@ -200,9 +204,12 @@ class OpenSubtitlesComProvider(Provider):
                 if item['type'] == 'subtitle':
                     subtitle = OpenSubtitlesComSubtitle(
                             language=Language.fromietf(item['attributes']['language']),
+                            hearing_impaired=item['attributes']['hearing_impaired'],
+                            hash=None,
                             page_link=item['attributes']['url'],
                             file_id=item['attributes']['files'][0]['id'],
                             releases=item['attributes']['release'],
+                            uploader=item['attributes']['uploader']['name'],
                             title=item['attributes']['feature_details']['movie_name'],
                             year=video.year,
                             season=item['attributes']['feature_details']['season_number'] if isinstance(video, Episode) else None,

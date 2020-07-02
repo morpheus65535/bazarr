@@ -126,7 +126,8 @@ def get_providers_auth():
                           'skip_wrong_fps': settings.opensubtitles.getboolean('skip_wrong_fps'),
                           },
         'opensubtitlescom': {'username': settings.opensubtitlescom.username,
-                             'password': settings.opensubtitlescom.password
+                             'password': settings.opensubtitlescom.password,
+                             'use_hash': settings.opensubtitlescom.getboolean('use_hash')
                              },
         'podnapisi': {
             'only_foreign': False,  # fixme

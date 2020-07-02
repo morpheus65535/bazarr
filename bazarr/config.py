@@ -107,7 +107,8 @@ defaults = {
     },
     'opensubtitlescom': {
         'username': '',
-        'password': ''
+        'password': '',
+        'use_hash': 'True'
     },
     'addic7ed': {
         'username': '',
