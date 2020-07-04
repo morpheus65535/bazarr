@@ -541,6 +541,8 @@ class EpisodesSubtitlesManualSearch(Resource):
 
         data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
                              'series')
+        if not data:
+            data = []
         row_count = len(data)
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
@@ -936,6 +938,8 @@ class MovieSubtitlesManualSearch(Resource):
 
         data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
                              'movie')
+        if not data:
+            data = []
         row_count = len(data)
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
