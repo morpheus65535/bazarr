@@ -5,7 +5,7 @@ from flask_socketio import SocketIO
 import os
 
 from get_args import args
-from config import base_url
+from config import settings, base_url
 
 socketio = SocketIO()
 
@@ -19,7 +19,7 @@ def create_app():
     app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.route = prefix_route(app.route, base_url.rstrip('/'))
 
-    app.config["SECRET_KEY"] = 'test'
+    app.config["SECRET_KEY"] = settings.general.flask_secret_key
     app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
     app.config['JSON_AS_ASCII'] = False
 

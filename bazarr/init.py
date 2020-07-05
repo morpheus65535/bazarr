@@ -71,6 +71,13 @@ if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
 
+# create random Flask secret_key if there's none in config.ini
+if not settings.general.flask_secret_key:
+    from binascii import hexlify
+    settings.general.flask_secret_key = hexlify(os.urandom(16)).decode()
+    with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+        settings.write(handle)
+
 # change default base_url to ''
 if settings.general.base_url == '/':
     settings.general.base_url = ''
