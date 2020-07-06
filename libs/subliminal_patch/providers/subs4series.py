@@ -30,12 +30,14 @@ class Subs4SeriesSubtitle(Subtitle):
     """Subs4Series Subtitle."""
     provider_name = 'subs4series'
 
-    def __init__(self, language, page_link, series, year, version, download_link):
+    def __init__(self, language, page_link, series, year, version, download_link, uploader):
         super(Subs4SeriesSubtitle, self).__init__(language, page_link=page_link)
         self.series = series
         self.year = year
         self.version = version
+        self.release_info = version
         self.download_link = download_link
+        self.uploader = uploader
         self.hearing_impaired = None
         self.encoding = 'windows-1253'
 
@@ -167,11 +169,12 @@ class Subs4SeriesProvider(Provider):
         # loop over episode rows
         for subs_tag in soup.select('table .seeDark,.seeMedium'):
             # read common info
-            version = subs_tag.find('b').text
+            version = subs_tag.find_all('b')[0].text
             download_link = self.server_url + subs_tag.find('a')['href']
+            uploader = subs_tag.find_all('b')[1].text
             language = Language.fromalpha2(subs_tag.find('img')['src'].split('/')[-1].split('.')[0])
 
-            subtitle = self.subtitle_class(language, page_link, show_title, year, version, download_link)
+            subtitle = self.subtitle_class(language, page_link, show_title, year, version, download_link, uploader)
 
             logger.debug('Found subtitle %r', subtitle)
             subtitles.append(subtitle)
