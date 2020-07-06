@@ -1,2 +1,2 @@
 lxml>=4.3.0
-numpy
+numpy>=1.12.0
