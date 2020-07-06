@@ -30,12 +30,14 @@ class Subs4FreeSubtitle(Subtitle):
     """Subs4Free Subtitle."""
     provider_name = 'subs4free'
 
-    def __init__(self, language, page_link, title, year, version, download_link):
+    def __init__(self, language, page_link, title, year, version, download_link, uploader):
         super(Subs4FreeSubtitle, self).__init__(language, page_link=page_link)
         self.title = title
         self.year = year
         self.version = version
+        self.release_info = version
         self.download_link = download_link
+        self.uploader = uploader
         self.hearing_impaired = None
         self.encoding = 'utf8'
 
@@ -71,8 +73,8 @@ class Subs4FreeProvider(Provider):
     """Subs4Free Provider."""
     languages = {Language(l) for l in ['ell', 'eng']}
     video_types = (Movie,)
-    server_url = 'https://www.sf4-industry.com'
-    download_url = '/getSub.html'
+    server_url = 'https://www.subs4free.info'
+    download_url = '/getSub.php'
     search_url = '/search_report.php?search={}&searchType=1'
     anti_block_1 = 'https://images.subs4free.info/favicon.ico'
     anti_block_2 = 'https://www.subs4series.com/includes/anti-block-layover.php?launch=1'
@@ -171,13 +173,15 @@ class Subs4FreeProvider(Provider):
 
         subtitles = []
         # loop over episode rows
-        for subs_tag in soup.select('table .seeDark,.seeMedium'):
+        for subs_tag in soup.select('.movie-details'):
             # read common info
-            version = subs_tag.find('b').text
+            version = subs_tag.find('span').text
             download_link = self.server_url + subs_tag.find('a')['href']
-            language = Language.fromalpha2(subs_tag.find('img')['src'].split('/')[-1].split('.')[0])
+            uploader = subs_tag.select_one('.movie-info').find('p').find('a').text
+            language_code = subs_tag.select_one('.sprite')['class'][1].split('gif')[0]
+            language = Language.fromietf(language_code)
 
-            subtitle = self.subtitle_class(language, page_link, show_title, year, version, download_link)
+            subtitle = self.subtitle_class(language, page_link, show_title, year, version, download_link, uploader)
 
             logger.debug('Found subtitle {!r}'.format(subtitle))
             subtitles.append(subtitle)
