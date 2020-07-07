@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import io
 import logging
 import os
-from random import randint
 
 import rarfile
 import re
@@ -14,7 +13,6 @@ from guessit import guessit
 from requests import Session
 
 from subliminal.providers import ParserBeautifulSoup, Provider
-from subliminal import __short_version__
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
 from subliminal.score import get_equivalent_release_groups
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches
@@ -85,8 +83,10 @@ class Subs4SeriesProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
-        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
+                                             'like Gecko) Chrome/83.0.4103.116 Safari/537.36'
+        # We don't use FIRST_THOUSAND_OR_SO_USER_AGENTS list because it includes mobile browser that get redirected to
+        # mobile website
 
     def terminate(self):
         self.session.close()
