@@ -23,7 +23,8 @@ class OpenSubtitlesComSubtitle(Subtitle):
     provider_name = 'opensubtitlescom'
     hash_verifiable = False
 
-    def __init__(self, language, hearing_impaired, hash, page_link, file_id, releases, uploader, title, year, season=None, episode=None):
+    def __init__(self, language, hearing_impaired, page_link, file_id, releases, uploader, title, year,
+                 hash_matched, hash=None, season=None, episode=None):
         self.title = title
         self.year = year
         self.season = season
@@ -39,6 +40,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         self.matches = None
         self.hash = hash
         self.encoding = 'utf-8'
+        self.hash_matched = hash_matched
 
 
     @property
@@ -82,6 +84,9 @@ class OpenSubtitlesComSubtitle(Subtitle):
         # source
         if video.source and self.releases and video.source.lower() in self.releases.lower():
             matches.add('source')
+        # hash
+        if self.hash_matched:
+            matches.add('hash')
         # other properties
         matches |= guess_matches(video, guessit(self.releases))
 
@@ -107,7 +112,6 @@ class OpenSubtitlesComProvider(Provider):
         self.username = username
         self.password = password
         self.use_hash = use_hash
-        self.hash = None
 
     def initialize(self):
         if self.token:
@@ -173,7 +177,7 @@ class OpenSubtitlesComProvider(Provider):
 
     def query(self, languages, video):
         if self.use_hash:
-            self.hash = video.hashes.get('opensubtitlescom')
+            hash = video.hashes.get('opensubtitlescom')
 
         if isinstance(video, Episode):
             title = video.series
@@ -191,10 +195,11 @@ class OpenSubtitlesComProvider(Provider):
         if isinstance(video, Episode):
             res = self.session.get(self.server_url + 'find/tv', params={'parent_id': title_id, 'languages': langs,
                                                                         'episode_number': video.episode,
-                                                                        'season_number': video.season}, timeout=10)
+                                                                        'season_number': video.season,
+                                                                        'moviehash': hash}, timeout=10)
         else:
-            res = self.session.get(self.server_url + 'find/movie', params={'id': title_id, 'languages': langs},
-                                   timeout=10)
+            res = self.session.get(self.server_url + 'find/movie', params={'id': title_id, 'languages': langs,
+                                                                           'moviehash': hash}, timeout=10)
         res.raise_for_status()
         result = res.json()
 
@@ -205,7 +210,6 @@ class OpenSubtitlesComProvider(Provider):
                     subtitle = OpenSubtitlesComSubtitle(
                             language=Language.fromietf(item['attributes']['language']),
                             hearing_impaired=item['attributes']['hearing_impaired'],
-                            hash=None,
                             page_link=item['attributes']['url'],
                             file_id=item['attributes']['files'][0]['id'],
                             releases=item['attributes']['release'],
@@ -213,7 +217,8 @@ class OpenSubtitlesComProvider(Provider):
                             title=item['attributes']['feature_details']['movie_name'],
                             year=video.year,
                             season=item['attributes']['feature_details']['season_number'] if isinstance(video, Episode) else None,
-                            episode=item['attributes']['feature_details']['episode_number'] if isinstance(video, Episode) else None
+                            episode=item['attributes']['feature_details']['episode_number'] if isinstance(video, Episode) else None,
+                            hash_matched=item['attributes']['moviehash_match'] if 'moviehash_match' in item['attributes'] else False
                         )
                     subtitle.get_matches(video)
                     subtitles.append(subtitle)
