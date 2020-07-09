@@ -109,10 +109,10 @@ def update_movies():
                                 format, resolution = movie['movieFile']['quality']['quality']['name'].split('-')
                             except:
                                 format = movie['movieFile']['quality']['quality']['name']
-                            try:
-                                resolution = movie['movieFile']['quality']['quality']['resolution'].lstrip('r').lower()
-                            except:
-                                resolution = None
+                                try:
+                                    resolution = str(movie['movieFile']['quality']['quality']['resolution']) + 'p'
+                                except:
+                                    resolution = None
 
                             if 'mediaInfo' in movie['movieFile']:
                                 videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
