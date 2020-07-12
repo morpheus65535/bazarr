@@ -1,17 +1,16 @@
 import os
+import ast
+import sqlite3
+import logging
+
 from sqlite3worker import Sqlite3Worker
 
 from get_args import args
 from helper import path_mappings
+from config import settings
 
 
 def db_init():
-    import sqlite3
-    import os
-    import logging
-
-    from get_args import args
-
     if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
         # Get SQL script from file
         fd = open(os.path.join(os.path.dirname(__file__), 'create_db.sql'), 'r')
@@ -93,6 +92,7 @@ def db_upgrade():
         ['table_shows', 'year', 'text'],
         ['table_shows', 'alternateTitles', 'text'],
         ['table_shows', 'forced', 'text', 'False'],
+        ['table_shows', 'tags', 'text', '[]'],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
@@ -108,6 +108,7 @@ def db_upgrade():
         ['table_movies', 'imdbId', 'text'],
         ['table_movies', 'forced', 'text', 'False'],
         ['table_movies', 'movie_file_id', 'integer'],
+        ['table_movies', 'tags', 'text', '[]'],
         ['table_history', 'video_path', 'text'],
         ['table_history', 'language', 'text'],
         ['table_history', 'provider', 'text'],
@@ -134,3 +135,18 @@ def db_upgrade():
     database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
     database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
     database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")
+
+
+def filter_exclusions(dicts_list, type):
+    if type == 'series':
+        tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
+        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+    else:
+        tagsList = ast.literal_eval(settings.radarr.excluded_tags)
+        monitoredOnly = settings.radarr.getboolean('only_monitored')
+    dictsList_tags_filtered = [item for item in dicts_list if set(tagsList).isdisjoint(ast.literal_eval(item['tags']))]
+    if monitoredOnly:
+        dictsList_tags_monitored = [item for item in dictsList_tags_filtered if item['monitored'] == 'True']
+    else:
+        dictsList_tags_monitored = dictsList_tags_filtered
+    return dictsList_tags_monitored

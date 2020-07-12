@@ -96,6 +96,8 @@
 				<div class="row">
 					<h5><span id="movieAudioLanguage" class="badge badge-secondary"></span></h5>
 					<h5><span id="movieMappedPath" data-toggle="tooltip" data-placement="right" title="None" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
+							  title="None" data-html="true">Tags</span></h5>
 				</div>
 				<div class="row">
 					<h5><span id="movieSubtitlesLanguages"></span></h5>
@@ -822,6 +824,12 @@
 				$('#moviealternativeTitles').attr("data-original-title", "<b>Alternative Titles:</b><br>" + movieDetails['alternativeTitles']);
 			} else {
 				$('#moviealternativeTitles').hide();
+			}
+
+			if (movieDetails['tags'].length > 0) {
+				$('#movieTags').attr("data-original-title", "<b>Tags:</b><br>" + movieDetails['tags']);
+			} else {
+				$('#movieTags').hide();
 			}
 
 			$('#movieAudioLanguage').text(movieDetails['audio_language']['name']);

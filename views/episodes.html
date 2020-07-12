@@ -82,6 +82,8 @@
                         <h5><span id="seriesAudioLanguage" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
+                        <h5><span id="seriesTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
+                                  title="None" data-html="true">Tags</span></h5>
                     </div>
                     <div class="row">
                         <h5><span id="seriesSubtitlesLanguages"></span></h5>
@@ -1004,6 +1006,12 @@
                     $('#seriesAlternateTitles').attr("data-original-title", "<b>Alternative Titles:</b><br>" + seriesDetails['alternateTitles']);
                 } else {
                     $('#seriesAlternateTitles').hide();
+                }
+
+                if (seriesDetails['tags'].length > 0) {
+                    $('#seriesTags').attr("data-original-title", "<b>Tags:</b><br>" + seriesDetails['tags']);
+                } else {
+                    $('#seriesTags').hide();
                 }
 
                 $('#seriesAudioLanguage').text(seriesDetails['audio_language']['name']);

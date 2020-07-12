@@ -153,7 +153,9 @@ def sync_episodes():
             '''INSERT OR IGNORE INTO table_episodes(''' + query.keys_insert + ''') VALUES(''' + query.question_marks +
             ''')''', query.values)
         if result > 0:
-            altered_episodes.append([added_episode['sonarrEpisodeId'], added_episode['path']])
+            altered_episodes.append([added_episode['sonarrEpisodeId'],
+                                     added_episode['path'],
+                                     added_episode['monitored']])
             event_stream(type='episode', action='insert', series=added_episode['sonarrSeriesId'],
                          episode=added_episode['sonarrEpisodeId'])
         else:
@@ -169,7 +171,11 @@ def sync_episodes():
     if len(altered_episodes) <= 5:
         logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
         for altered_episode in altered_episodes:
-            episode_download_subtitles(altered_episode[0])
+            if settings.sonarr.getboolean('only_monitored'):
+                if altered_episode[2] == 'True':
+                    episode_download_subtitles(altered_episode[0])
+            else:
+                episode_download_subtitles(altered_episode[0])
     else:
         logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
 

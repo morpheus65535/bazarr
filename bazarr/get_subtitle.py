@@ -28,7 +28,7 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
 from subsyncer import subsync
-from database import database, dict_mapper
+from database import database, dict_mapper, filter_exclusions
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -630,14 +630,12 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
 
 def series_download_subtitles(no):
-    if settings.sonarr.getboolean('only_monitored'):
-        episodes_details_clause = " AND monitored='True'"
-    else:
-        episodes_details_clause = ''
-
-    episodes_details = database.execute("SELECT path, missing_subtitles, sonarrEpisodeId, scene_name "
-                                        "FROM table_episodes WHERE sonarrSeriesId=? and missing_subtitles!='[]'" +
-                                        episodes_details_clause, (no,))
+    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
+                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags "
+                                        "FROM table_episodes INNER JOIN table_shows on  table_shows.sonarrSeriesId = "
+                                        "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=? and "
+                                        "missing_subtitles!='[]'", (no,))
+    episodes_details = filter_exclusions(episodes_details, 'series')
     if not episodes_details:
         logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
         return
@@ -684,18 +682,13 @@ def series_download_subtitles(no):
 
 
 def episode_download_subtitles(no):
-    if settings.sonarr.getboolean('only_monitored'):
-        episodes_details_clause = " AND monitored='True'"
-    else:
-        episodes_details_clause = ''
-
-    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
-                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, "
+    episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
+                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                         "table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, "
-                                        "table_shows.forced, table_shows.audio_language FROM table_episodes LEFT JOIN table_shows on "
-                                        "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
-                                        "WHERE sonarrEpisodeId=?" + episodes_details_clause, (no,))
-
+                                        "table_shows.forced, table_shows.audio_language FROM table_episodes LEFT JOIN "
+                                        "table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
+                                        "WHERE sonarrEpisodeId=?", (no,))
+    episodes_details = filter_exclusions(episodes_details, 'series')
     if not episodes_details:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
         return
@@ -734,18 +727,15 @@ def episode_download_subtitles(no):
 
 
 def movies_download_subtitles(no):
-    if settings.radarr.getboolean('only_monitored'):
-        movie_details_clause = " AND monitored='True'"
-    else:
-        movie_details_clause = ''
-
-    movie = database.execute(
-        "SELECT path, missing_subtitles, audio_language, radarrId, sceneName, hearing_impaired, title, forced "
-        "FROM table_movies WHERE radarrId=?" + movie_details_clause, (no,), only_one=True)
-
-    if not movie:
+    movies = database.execute(
+        "SELECT path, missing_subtitles, audio_language, radarrId, sceneName, hearing_impaired, title, forced, tags, "
+        "monitored FROM table_movies WHERE radarrId=?", (no,))
+    movies = filter_exclusions(movies, 'movie')
+    if not len(movies):
         logging.debug("BAZARR no movie with that radarrId can be found in database:", str(no))
         return
+    else:
+        movie = movies[0]
 
     providers_list = get_providers()
     providers_auth = get_providers_auth()
@@ -897,13 +887,10 @@ def wanted_download_subtitles_movie(path, l, count_movies):
 
 
 def wanted_search_missing_subtitles_series():
-    if settings.sonarr.getboolean('only_monitored'):
-        monitored_only_query_string_sonarr = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string_sonarr = ""
-
-    episodes = database.execute("SELECT path FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                monitored_only_query_string_sonarr)
+    episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored FROM "
+                                "table_episodes INNER JOIN table_shows on  table_shows.sonarrSeriesId = "
+                                "table_episodes.sonarrSeriesId WHERE missing_subtitles != '[]'")
+    episodes = filter_exclusions(episodes, 'series')
     # path_replace
     dict_mapper.path_replace(episodes)
 
@@ -920,13 +907,8 @@ def wanted_search_missing_subtitles_series():
 
 
 def wanted_search_missing_subtitles_movies():
-    if settings.radarr.getboolean('only_monitored'):
-        monitored_only_query_string_radarr = ' AND monitored = "True"'
-    else:
-        monitored_only_query_string_radarr = ""
-
-    movies = database.execute("SELECT path FROM table_movies WHERE missing_subtitles != '[]'" +
-                              monitored_only_query_string_radarr)
+    movies = database.execute("SELECT path, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'")
+    movies = filter_exclusions(movies, 'movie')
     # path_replace
     dict_mapper.path_replace_movie(movies)
 
@@ -1059,16 +1041,6 @@ def upgrade_subtitles():
     minimum_timestamp = ((datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                          datetime(1970, 1, 1)).total_seconds()
 
-    if settings.sonarr.getboolean('only_monitored'):
-        series_monitored_only_query_string = ' AND table_episodes.monitored = "True"'
-    else:
-        series_monitored_only_query_string = ""
-
-    if settings.radarr.getboolean('only_monitored'):
-        movies_monitored_only_query_string = ' AND table_movies.monitored = "True"'
-    else:
-        movies_monitored_only_query_string = ""
-
     if settings.general.getboolean('upgrade_manual'):
         query_actions = [1, 2, 3]
     else:
@@ -1079,17 +1051,17 @@ def upgrade_subtitles():
                                                "table_history.score, table_shows.hearing_impaired, table_shows.audio_language, "
                                                "table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
-                                               "MAX(table_history.timestamp) as timestamp, "
-                                               "table_shows.languages, table_shows.forced "
+                                               "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
+                                               "table_shows.languages, table_shows.forced, table_shows.tags "
                                                "FROM table_history INNER JOIN table_shows on "
                                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
                                                "table_episodes on table_episodes.sonarrEpisodeId = "
                                                "table_history.sonarrEpisodeId WHERE action IN "
-                                               "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND "
-                                                                                         "score is not null" + series_monitored_only_query_string +
-                                               " GROUP BY table_history.video_path, table_history.language",
+                                               "(" + ','.join(map(str, query_actions)) +
+                                               ") AND timestamp > ? AND score is not null GROUP BY "
+                                               "table_history.video_path, table_history.language",
                                                (minimum_timestamp,))
-
+        upgradable_episodes = filter_exclusions(upgradable_episodes, 'series')
         upgradable_episodes_not_perfect = []
         for upgradable_episode in upgradable_episodes:
             if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1110,17 +1082,16 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
-                                             "table_history_movie.score, table_movies.hearing_impaired, table_movies.audio_language, "
-                                             "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
-                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.languages, "
-                                             "table_movies.forced FROM table_history_movie INNER JOIN "
-                                             "table_movies on table_movies.radarrId = table_history_movie.radarrId "
-                                             "WHERE action  IN (" + ','.join(map(str, query_actions)) +
-                                             ") AND timestamp > ? AND score is not null" +
-                                             movies_monitored_only_query_string +
-                                             " GROUP BY table_history_movie.video_path, table_history_movie.language",
-                                             (minimum_timestamp,))
-
+                                             "table_history_movie.score, table_movies.hearing_impaired, "
+                                             "table_movies.audio_language, table_movies.sceneName, table_movies.title, "
+                                             "table_movies.radarrId, MAX(table_history_movie.timestamp) as timestamp, "
+                                             "table_movies.languages, table_movies.forced, table_movies.tags, "
+                                             "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
+                                             "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
+                                             "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
+                                             "is not null GROUP BY table_history_movie.video_path, "
+                                             "table_history_movie.language", (minimum_timestamp,))
+        upgradable_movies = filter_exclusions(upgradable_movies, 'movie')
         upgradable_movies_not_perfect = []
         for upgradable_movie in upgradable_movies:
             if upgradable_movie['timestamp'] > minimum_timestamp:

@@ -18,7 +18,7 @@ from config import settings, base_url, save_settings
 
 from init import *
 import logging
-from database import database
+from database import database, filter_exclusions
 from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
@@ -78,22 +78,21 @@ class Restart(Resource):
 class Badges(Resource):
     @authenticate
     def get(self):
-        sonarr_only_monitored_where_clause = ''
-        if settings.sonarr.getboolean('only_monitored'):
-            sonarr_only_monitored_where_clause = " AND table_episodes.monitored == 'True'"
+        missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM table_episodes "
+                                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                            "table_episodes.sonarrSeriesId WHERE missing_subtitles is not null AND "
+                                            "missing_subtitles != '[]'")
+        missing_episodes = filter_exclusions(missing_episodes, 'series')
+        missing_episodes = len(missing_episodes)
 
-        radarr_only_monitored_where_clause = ''
-        if settings.radarr.getboolean('only_monitored'):
-            radarr_only_monitored_where_clause = " AND table_movies.monitored == 'True'"
+        missing_movies = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles is not "
+                                          "null AND missing_subtitles != '[]'")
+        missing_movies = filter_exclusions(missing_movies, 'movie')
+        missing_movies = len(missing_movies)
 
         result = {
-            "missing_episodes": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles "
-                                                 "is not null AND missing_subtitles != '[]'" +
-                                                 sonarr_only_monitored_where_clause, only_one=True)['count'],
-
-            "missing_movies": database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles "
-                                               "is not null AND missing_subtitles != '[]'" +
-                                               radarr_only_monitored_where_clause, only_one=True)['count'],
+            "missing_episodes": missing_episodes,
+            "missing_movies": missing_movies,
             "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
@@ -291,6 +290,9 @@ class Series(Resource):
             if item['alternateTitles']:
                 item.update({"alternateTitles": ast.literal_eval(item['alternateTitles'])})
 
+            # Parse tags
+            item.update({"tags": ast.literal_eval(item['tags'])})
+
             # Provide mapped path
             mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
@@ -298,21 +300,24 @@ class Series(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isdir(mapped_path)})
 
-            only_monitored_where_clause = ''
-            if settings.sonarr.getboolean('only_monitored'):
-                only_monitored_where_clause = " AND table_episodes.monitored == 'True'"
-
             # Add missing subtitles episode count
-            item.update({"episodeMissingCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
-                                                                 "sonarrSeriesId=? AND missing_subtitles is not null "
-                                                                 "AND missing_subtitles != '[]'" +
-                                                                 only_monitored_where_clause, (item['sonarrSeriesId'],),
-                                                                 only_one=True)['count']})
+            episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM "
+                                                   "table_episodes INNER JOIN table_shows on "
+                                                   "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
+                                                   "WHERE table_episodes.sonarrSeriesId=? AND missing_subtitles is not "
+                                                   "null AND missing_subtitles != '[]'", (item['sonarrSeriesId'],))
+            episodeMissingCount = filter_exclusions(episodeMissingCount, 'series')
+            episodeMissingCount = len(episodeMissingCount)
+            item.update({"episodeMissingCount": episodeMissingCount})
 
             # Add episode count
-            item.update({"episodeFileCount": database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE "
-                                                              "sonarrSeriesId=?" + only_monitored_where_clause,
-                                                              (item['sonarrSeriesId'],), only_one=True)['count']})
+            episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM table_episodes "
+                                                "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                                "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=?",
+                                                (item['sonarrSeriesId'],))
+            episodeFileCount = filter_exclusions(episodeFileCount, 'series')
+            episodeFileCount = len(episodeFileCount)
+            item.update({"episodeFileCount": episodeFileCount})
 
             # Add the series desired subtitles language code2
             try:
@@ -776,6 +781,9 @@ class Movies(Resource):
             else:
                 item.update({"missing_subtitles": []})
 
+            # Parse tags
+            item.update({"tags": ast.literal_eval(item['tags'])})
+
             # Provide mapped path
             mapped_path = path_mappings.path_replace_movie(item['path'])
             item.update({"mapped_path": mapped_path})
@@ -1113,19 +1121,15 @@ class HistorySeries(Resource):
             else:
                 query_actions = [1, 3]
 
-            if settings.sonarr.getboolean('only_monitored'):
-                series_monitored_only_query_string = " AND monitored='True'"
-            else:
-                series_monitored_only_query_string = ''
-
             upgradable_episodes = database.execute(
-                "SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history "
-                "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                "table_history.sonarrEpisodeId WHERE action IN (" +
+                "SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.tags, table_episodes.monitored FROM "
+                "table_history INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
+                "table_history.sonarrEpisodeId INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                "table_episodes.sonarrSeriesId WHERE action IN (" +
                 ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
-                "score is not null" + series_monitored_only_query_string + " GROUP BY "
-                "table_history.video_path, table_history.language",
+                "score is not null GROUP BY table_history.video_path, table_history.language",
                 (minimum_timestamp,))
+            upgradable_episodes = filter_exclusions(upgradable_episodes, 'series')
 
             for upgradable_episode in upgradable_episodes:
                 if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1140,19 +1144,19 @@ class HistorySeries(Resource):
         row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
                                      "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
                                      "table_episodes.title is not NULL", only_one=True)['count']
-        data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, "
+        data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_history.timestamp, "
                                 "table_history.description, table_history.sonarrSeriesId, table_episodes.path, "
-                                "table_history.language, table_history.score FROM table_history LEFT JOIN table_shows "
-                                "on table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes "
-                                "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                "table_episodes.title is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?",
-                                (length, start))
+                                "table_history.language, table_history.score, table_shows.tags FROM table_history "
+                                "LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
+                                "LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = "
+                                "table_history.sonarrEpisodeId WHERE table_episodes.title is not NULL ORDER BY "
+                                "timestamp DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Mark episode as upgradable or not
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score'])} in upgradable_episodes_not_perfect:
+            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_episodes_not_perfect:
                 item.update({"upgradable": True})
             else:
                 item.update({"upgradable": False})
@@ -1193,21 +1197,17 @@ class HistoryMovies(Resource):
             minimum_timestamp = ((datetime.datetime.now() - timedelta(days=int(days_to_upgrade_subs))) -
                                  datetime.datetime(1970, 1, 1)).total_seconds()
 
-            if settings.radarr.getboolean('only_monitored'):
-                movies_monitored_only_query_string = ' AND table_movies.monitored = "True"'
-            else:
-                movies_monitored_only_query_string = ""
-
             if settings.general.getboolean('upgrade_manual'):
                 query_actions = [1, 2, 3]
             else:
                 query_actions = [1, 3]
 
             upgradable_movies = database.execute(
-                "SELECT video_path, MAX(timestamp) as timestamp, score FROM table_history_movie "
+                "SELECT video_path, MAX(timestamp) as timestamp, score, tags, monitored FROM table_history_movie "
                 "INNER JOIN table_movies on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" +
-                movies_monitored_only_query_string + " GROUP BY video_path, language", (minimum_timestamp,))
+                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL  GROUP BY video_path, "
+                                                    "language", (minimum_timestamp,))
+            upgradable_movies = filter_exclusions(upgradable_movies, 'movie')
 
             for upgradable_movie in upgradable_movies:
                 if upgradable_movie['timestamp'] > minimum_timestamp:
@@ -1223,15 +1223,15 @@ class HistoryMovies(Resource):
                                      "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
                                      "is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
-                                "table_history_movie.description, table_history_movie.radarrId, "
-                                "table_history_movie.video_path, table_history_movie.language, "
+                                "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored, "
+                                "table_history_movie.video_path, table_history_movie.language, table_movies.tags, "
                                 "table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on "
                                 "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
                                 "is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Mark movies as upgradable or not
-            if {"video_path": str(item['video_path']), "timestamp": float(item['timestamp']), "score": str(item['score'])} in upgradable_movies_not_perfect:
+            if {"video_path": str(item['video_path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_movies_not_perfect:
                 item.update({"upgradable": True})
             else:
                 item.update({"upgradable": False})
@@ -1321,22 +1321,17 @@ class WantedSeries(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        if settings.sonarr.getboolean('only_monitored'):
-            monitored_only_query_string = " AND monitored='True'"
-        else:
-            monitored_only_query_string = ''
-
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string, only_one=True)['count']
-        data = database.execute("SELECT table_shows.title as seriesTitle, "
+        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
                                 "table_episodes.sonarrSeriesId, table_episodes.path, table_shows.hearing_impaired, "
-                                "table_episodes.sonarrEpisodeId, table_episodes.scene_name, "
+                                "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                 "table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on "
                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                "table_episodes.missing_subtitles != '[]'" + monitored_only_query_string +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+                                "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? "
+                                "OFFSET ?", (length, start))
+        data = filter_exclusions(data, 'series')
+        row_count = len(data)
 
         for item in data:
             # Parse missing subtitles
@@ -1368,17 +1363,11 @@ class WantedMovies(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        if settings.radarr.getboolean('only_monitored'):
-            monitored_only_query_string = " AND monitored='True'"
-        else:
-            monitored_only_query_string = ''
-
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies WHERE missing_subtitles != '[]'" +
-                                     monitored_only_query_string, only_one=True)['count']
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
-                                "failedAttempts FROM table_movies WHERE missing_subtitles != '[]'" +
-                                monitored_only_query_string + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?",
-                                (length, start))
+                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]' "
+                                "ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+        data = filter_exclusions(data, 'movie')
+        row_count = len(data)
 
         for item in data:
             # Parse missing subtitles

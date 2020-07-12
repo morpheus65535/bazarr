@@ -138,6 +138,15 @@
                         <label>Automatic download of Subtitles will only happen for monitored movies in Radarr.</label>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Excluded tags</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <input type="text" id="settings-radarr-excluded_tags" name="settings-radarr-excluded_tags" data-role="tagsinput">
+                        <label>Movies with those tags (case sensitive) in Radarr will be excluded from automatic download of Subtitles.</label>
+                    </div>
+                </div>
                 <br>
                 <h4>Path Mappings</h4>
                 <hr/>
@@ -286,6 +295,16 @@
                 }
             });
 
+            // Set tags input values
+            $('settings-radarr-excluded_tags').tagsinput({
+                confirmKeys: [9, 13, 32, 44]
+            });
+            var tags = jQuery.makeArray({{ settings.radarr.excluded_tags|safe }})
+            $(tags).each(function (index, value) {
+                $('#settings-radarr-excluded_tags').tagsinput('add', value);
+            });
+            $('#settings-radarr-excluded_tags').tagsinput('refresh');
+
             // Set Checkbox input values
             $('#settings-general-use_radarr').prop('checked', {{'true' if settings.general.getboolean('use_radarr') else 'false'}}).trigger('change');
             $('#settings-radarr-ssl').prop('checked', {{'true' if settings.radarr.getboolean('ssl') else 'false'}});
@@ -300,6 +319,7 @@
                 });
 
                 formdata.append('settings-general-path_mappings_movie', JSON.stringify(table.rows().data().toArray()));
+                formdata.set('settings-radarr-excluded_tags', JSON.stringify($("#settings-radarr-excluded_tags").tagsinput('items')));
 
                 $.ajax({
                     url: "{{ url_for('api.savesettings') }}",

@@ -38,6 +38,7 @@ def update_movies():
         pass
     else:
         audio_profiles = get_profile_list()
+        tagsDict = get_tags()
         
         # Get movies data from radarr
         url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
@@ -134,6 +135,8 @@ def update_movies():
 
                             audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
 
+                            tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
+
                             # Add movies in radarr to current movies list
                             current_movies_radarr.append(str(movie['tmdbId']))
                             
@@ -156,7 +159,8 @@ def update_movies():
                                                          'audio_codec': audioCodec,
                                                          'overview': overview,
                                                          'imdbId': imdbId,
-                                                         'movie_file_id': int(movie['movieFile']['id'])})
+                                                         'movie_file_id': int(movie['movieFile']['id']),
+                                                         'tags': str(tags)})
                             else:
                                 movies_to_add.append({'radarrId': int(movie["id"]),
                                                       'title': movie["title"],
@@ -180,7 +184,8 @@ def update_movies():
                                                       'audio_codec': audioCodec,
                                                       'imdbId': imdbId,
                                                       'forced': movie_default_forced,
-                                                      'movie_file_id': int(movie['movieFile']['id'])})
+                                                      'movie_file_id': int(movie['movieFile']['id']),
+                                                      'tags': str(tags)})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -197,7 +202,7 @@ def update_movies():
             movies_in_db = database.execute("SELECT radarrId, title, path, tmdbId, overview, poster, fanart, "
                                             "audio_language, sceneName, monitored, sortTitle, year, "
                                             "alternativeTitles, format, resolution, video_codec, audio_codec, imdbId,"
-                                            "movie_file_id FROM table_movies")
+                                            "movie_file_id, tags FROM table_movies")
 
             for item in movies_in_db:
                 movies_in_db_list.append(item)
@@ -331,5 +336,23 @@ def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLi
     return videoFormat
 
 
-if __name__ == '__main__':
-    update_movies()
+def get_tags():
+    apikey_radarr = settings.radarr.apikey
+    tagsDict = []
+
+    # Get tags data from Sonarr
+    url_sonarr_api_series = url_radarr() + "/api/tag?apikey=" + apikey_radarr
+
+    try:
+        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get tags from Radarr. Connection Error.")
+        return []
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get tags from Radarr. Timeout Error.")
+        return []
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get tags from Radarr.")
+        return []
+    else:
+        return tagsDict.json()
