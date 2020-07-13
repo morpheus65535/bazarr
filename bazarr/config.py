@@ -76,7 +76,8 @@ defaults = {
         'only_monitored': 'False',
         'series_sync': '1',
         'episodes_sync': '5',
-        'excluded_tags': '[]'
+        'excluded_tags': '[]',
+        'excluded_series_types': '[]'
     },
     'radarr': {
         'ip': '127.0.0.1',

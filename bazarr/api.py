@@ -78,9 +78,9 @@ class Restart(Resource):
 class Badges(Resource):
     @authenticate
     def get(self):
-        missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM table_episodes "
-                                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                            "table_episodes.sonarrSeriesId WHERE missing_subtitles is not null AND "
+        missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored, table_shows.seriesType "
+                                            "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId ="
+                                            " table_episodes.sonarrSeriesId WHERE missing_subtitles is not null AND "
                                             "missing_subtitles != '[]'")
         missing_episodes = filter_exclusions(missing_episodes, 'series')
         missing_episodes = len(missing_episodes)
@@ -293,6 +293,9 @@ class Series(Resource):
             # Parse tags
             item.update({"tags": ast.literal_eval(item['tags'])})
 
+            # Parse seriesType
+            item.update({"seriesType": item['seriesType'].capitalize()})
+
             # Provide mapped path
             mapped_path = path_mappings.path_replace(item['path'])
             item.update({"mapped_path": mapped_path})
@@ -301,9 +304,9 @@ class Series(Resource):
             item.update({"exist": os.path.isdir(mapped_path)})
 
             # Add missing subtitles episode count
-            episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM "
-                                                   "table_episodes INNER JOIN table_shows on "
-                                                   "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
+            episodeMissingCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
+                                                   "table_shows.seriesType FROM table_episodes INNER JOIN table_shows "
+                                                   "on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
                                                    "WHERE table_episodes.sonarrSeriesId=? AND missing_subtitles is not "
                                                    "null AND missing_subtitles != '[]'", (item['sonarrSeriesId'],))
             episodeMissingCount = filter_exclusions(episodeMissingCount, 'series')
@@ -311,10 +314,10 @@ class Series(Resource):
             item.update({"episodeMissingCount": episodeMissingCount})
 
             # Add episode count
-            episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored FROM table_episodes "
-                                                "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                                "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=?",
-                                                (item['sonarrSeriesId'],))
+            episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
+                                                "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
+                                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                                                "table_episodes.sonarrSeriesId=?", (item['sonarrSeriesId'],))
             episodeFileCount = filter_exclusions(episodeFileCount, 'series')
             episodeFileCount = len(episodeFileCount)
             item.update({"episodeFileCount": episodeFileCount})
@@ -1122,9 +1125,9 @@ class HistorySeries(Resource):
                 query_actions = [1, 3]
 
             upgradable_episodes = database.execute(
-                "SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.tags, table_episodes.monitored FROM "
-                "table_history INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                "table_history.sonarrEpisodeId INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                "SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.tags, table_episodes.monitored, "
+                "table_shows.seriesType FROM table_history INNER JOIN table_episodes on table_episodes.sonarrEpisodeId "
+                "= table_history.sonarrEpisodeId INNER JOIN table_shows on table_shows.sonarrSeriesId = "
                 "table_episodes.sonarrSeriesId WHERE action IN (" +
                 ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
                 "score is not null GROUP BY table_history.video_path, table_history.language",
@@ -1326,8 +1329,8 @@ class WantedSeries(Resource):
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
                                 "table_episodes.sonarrSeriesId, table_episodes.path, table_shows.hearing_impaired, "
                                 "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                "table_episodes.failedAttempts FROM table_episodes INNER JOIN table_shows on "
-                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                                "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
+                                "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? "
                                 "OFFSET ?", (length, start))
         data = filter_exclusions(data, 'series')

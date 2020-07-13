@@ -93,6 +93,7 @@ def db_upgrade():
         ['table_shows', 'alternateTitles', 'text'],
         ['table_shows', 'forced', 'text', 'False'],
         ['table_shows', 'tags', 'text', '[]'],
+        ['table_shows', 'seriesType', 'text', ''],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
@@ -144,9 +145,21 @@ def filter_exclusions(dicts_list, type):
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
         monitoredOnly = settings.radarr.getboolean('only_monitored')
+
+    # Filter tags
     dictsList_tags_filtered = [item for item in dicts_list if set(tagsList).isdisjoint(ast.literal_eval(item['tags']))]
+
+    # Filter monitored
     if monitoredOnly:
-        dictsList_tags_monitored = [item for item in dictsList_tags_filtered if item['monitored'] == 'True']
+        dictsList_monitored_filtered = [item for item in dictsList_tags_filtered if item['monitored'] == 'True']
     else:
-        dictsList_tags_monitored = dictsList_tags_filtered
-    return dictsList_tags_monitored
+        dictsList_monitored_filtered = dictsList_tags_filtered
+
+    # Filter series type
+    if type == 'series':
+        dictsList_types_filtered = [item for item in dictsList_monitored_filtered if item['seriesType'] not in
+                                    ast.literal_eval(settings.sonarr.excluded_series_types)]
+    else:
+        dictsList_types_filtered = dictsList_monitored_filtered
+
+    return dictsList_types_filtered

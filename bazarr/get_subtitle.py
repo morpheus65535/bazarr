@@ -631,10 +631,10 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
 def series_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
-                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags "
-                                        "FROM table_episodes INNER JOIN table_shows on  table_shows.sonarrSeriesId = "
-                                        "table_episodes.sonarrSeriesId WHERE table_episodes.sonarrSeriesId=? and "
-                                        "missing_subtitles!='[]'", (no,))
+                                        "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
+                                        "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
+                                        "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
+                                        "table_episodes.sonarrSeriesId=? and missing_subtitles!='[]'", (no,))
     episodes_details = filter_exclusions(episodes_details, 'series')
     if not episodes_details:
         logging.debug("BAZARR no episode for that sonarrSeriesId can be found in database:", str(no))
@@ -685,9 +685,9 @@ def episode_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                         "table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, "
-                                        "table_shows.forced, table_shows.audio_language FROM table_episodes LEFT JOIN "
-                                        "table_shows on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
-                                        "WHERE sonarrEpisodeId=?", (no,))
+                                        "table_shows.forced, table_shows.audio_language, table_shows.seriesType FROM "
+                                        "table_episodes LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
+                                        "table_shows.sonarrSeriesId WHERE sonarrEpisodeId=?", (no,))
     episodes_details = filter_exclusions(episodes_details, 'series')
     if not episodes_details:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
@@ -887,9 +887,10 @@ def wanted_download_subtitles_movie(path, l, count_movies):
 
 
 def wanted_search_missing_subtitles_series():
-    episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored FROM "
-                                "table_episodes INNER JOIN table_shows on  table_shows.sonarrSeriesId = "
-                                "table_episodes.sonarrSeriesId WHERE missing_subtitles != '[]'")
+    episodes = database.execute("SELECT table_episodes.path, table_shows.tags, table_episodes.monitored, "
+                                "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
+                                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE missing_subtitles != "
+                                "'[]'")
     episodes = filter_exclusions(episodes, 'series')
     # path_replace
     dict_mapper.path_replace(episodes)
@@ -1048,12 +1049,12 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
-                                               "table_history.score, table_shows.hearing_impaired, table_shows.audio_language, "
-                                               "table_episodes.scene_name, table_episodes.title,"
+                                               "table_history.score, table_shows.hearing_impaired, "
+                                               "table_shows.audio_language, table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
-                                               "table_shows.languages, table_shows.forced, table_shows.tags "
-                                               "FROM table_history INNER JOIN table_shows on "
+                                               "table_shows.languages, table_shows.forced, table_shows.tags, "
+                                               "table_shows.seriesType FROM table_history INNER JOIN table_shows on "
                                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId INNER JOIN "
                                                "table_episodes on table_episodes.sonarrEpisodeId = "
                                                "table_history.sonarrEpisodeId WHERE action IN "

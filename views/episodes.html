@@ -82,6 +82,7 @@
                         <h5><span id="seriesAudioLanguage" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
+                        <h5><span id="seriesType" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
                                   title="None" data-html="true">Tags</span></h5>
                     </div>
@@ -1018,6 +1019,7 @@
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
+                $('#seriesType').text(seriesDetails['seriesType']);
 
                 var languages = '';
                 if (seriesDetails['languages'] && seriesDetails['languages'] !== 'None') {

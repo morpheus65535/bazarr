@@ -140,11 +140,24 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-3 text-right">
-                        <b>Excluded tags</b>
+                        <b>Excluded Tags</b>
                     </div>
                     <div class="form-group col-sm-8">
                         <input type="text" id="settings-sonarr-excluded_tags" name="settings-sonarr-excluded_tags" data-role="tagsinput">
                         <label>Episodes from series with those tags (case sensitive) in Sonarr will be excluded from automatic download of Subtitles.</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-3 text-right">
+                        <b>Excluded Series Types</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <select class="form-control selectpicker" id="settings-sonarr-excluded_series_types" name="settings-sonarr-excluded_series_types" multiple>
+                            <option value="standard">Standard</option>
+                            <option value="anime">Anime</option>
+                            <option value="daily">Daily</option>
+                        </select>
+                        <label for="settings-sonarr-excluded_series_types">Episodes from series with those types in Sonarr will be excluded from automatic download of Subtitles.</label><br>
                     </div>
                 </div>
                 <br>
@@ -286,6 +299,10 @@
             $('#save_button_checkmark').hide();
             $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
 
+            // Set Select input values
+            var types = jQuery.makeArray({{ settings.sonarr.excluded_series_types|safe }})
+            $('#settings-sonarr-excluded_series_types').selectpicker('val', types);
+
             // Hide *_div on Select input changed to None
             $('#settings-general-use_sonarr').on('change', function() {
                 if ($(this).prop('checked')) {
@@ -320,6 +337,12 @@
 
                 formdata.append('settings-general-path_mappings', JSON.stringify(table.rows().data().toArray()));
                 formdata.set('settings-sonarr-excluded_tags', JSON.stringify($("#settings-sonarr-excluded_tags").tagsinput('items')));
+
+                var types_array = [];
+                $('#settings-sonarr-excluded_series_types :selected').each(function(i, selected){
+                    types_array[i] = $(selected).val();
+                });
+                formdata.set('settings-sonarr-excluded_series_types', JSON.stringify(types_array));
 
                 $.ajax({
                     url: "{{ url_for('api.savesettings') }}",
