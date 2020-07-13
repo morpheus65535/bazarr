@@ -1324,6 +1324,11 @@ class WantedSeries(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
+        data_count = database.execute("SELECT table_episodes.monitored, table_shows.tags, table_shows.seriesType FROM "
+                                      "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                      "table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'")
+        data_count = filter_exclusions(data_count, 'series')
+        row_count = len(data_count)
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -1334,7 +1339,6 @@ class WantedSeries(Resource):
                                 "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT ? "
                                 "OFFSET ?", (length, start))
         data = filter_exclusions(data, 'series')
-        row_count = len(data)
 
         for item in data:
             # Parse missing subtitles
@@ -1366,11 +1370,13 @@ class WantedMovies(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
+        data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'")
+        data_count = filter_exclusions(data_count, 'movie')
+        row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]' "
                                 "ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
         data = filter_exclusions(data, 'movie')
-        row_count = len(data)
 
         for item in data:
             # Parse missing subtitles
