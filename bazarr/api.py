@@ -517,7 +517,8 @@ class EpisodesSubtitlesDownload(Resource):
                 language_code = result[2] + ":forced" if forced else result[2]
                 provider = result[3]
                 score = result[4]
-                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                subs_id = result[6]
+                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
@@ -584,7 +585,8 @@ class EpisodesSubtitlesManualDownload(Resource):
                 language_code = result[2] + ":forced" if forced else result[2]
                 provider = result[3]
                 score = result[4]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                subs_id = result[6]
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             return result, 201
@@ -917,7 +919,8 @@ class MovieSubtitlesDownload(Resource):
                 language_code = result[2] + ":forced" if forced else result[2]
                 provider = result[3]
                 score = result[4]
-                history_log_movie(1, radarrId, message, path, language_code, provider, score)
+                subs_id = result[6]
+                history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
@@ -983,7 +986,8 @@ class MovieSubtitlesManualDownload(Resource):
                 language_code = result[2] + ":forced" if forced else result[2]
                 provider = result[3]
                 score = result[4]
-                history_log_movie(2, radarrId, message, path, language_code, provider, score)
+                subs_id = result[6]
+                history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             return result, 201

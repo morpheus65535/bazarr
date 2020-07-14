@@ -114,10 +114,12 @@ def db_upgrade():
         ['table_history', 'language', 'text'],
         ['table_history', 'provider', 'text'],
         ['table_history', 'score', 'text'],
+        ['table_history', 'subs_id', 'text'],
         ['table_history_movie', 'video_path', 'text'],
         ['table_history_movie', 'language', 'text'],
         ['table_history_movie', 'provider', 'text'],
-        ['table_history_movie', 'score', 'text']
+        ['table_history_movie', 'score', 'text'],
+        ['table_history_movie', 'subs_id', 'text']
     ]
 
     for column in columnToAdd:

@@ -22,18 +22,19 @@ class BinaryNotFound(Exception):
 
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
-                score=None):
+                score=None, subs_id=None):
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
-                     "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)",
+                     "video_path, language, provider, score, subs_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
                      (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
-                      provider, score))
+                      provider, score, subs_id))
     event_stream(type='episodeHistory')
 
 
-def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None):
+def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
+                      subs_id=None):
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
-                     "provider, score) VALUES (?,?,?,?,?,?,?,?)",
-                     (action, radarr_id, time.time(), description, video_path, language, provider, score))
+                     "provider, score, subs_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                     (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id))
     event_stream(type='movieHistory')
 
 

@@ -268,7 +268,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
-                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
+                               subtitle.language.forced, subtitle.id
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
@@ -512,7 +513,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         track_event(category=downloaded_provider, action="manually_downloaded",
                                     label=downloaded_language)
 
-                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, subtitle.language.forced
+                        return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
+                               subtitle.language.forced, subtitle.id
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -673,8 +675,10 @@ def series_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
+                        subs_id = result[6]
                         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
-                        history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score)
+                        history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score,
+                                    subs_id)
                         send_notifications(no, episode['sonarrEpisodeId'], message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -717,9 +721,10 @@ def episode_download_subtitles(no):
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
+                        subs_id = result[6]
                         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                         history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                    language_code, provider, score)
+                                    language_code, provider, score, subs_id)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -765,8 +770,9 @@ def movies_download_subtitles(no):
                     language_code = result[2] + ":forced" if forced else result[2]
                     provider = result[3]
                     score = result[4]
+                    subs_id = result[6]
                     store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-                    history_log_movie(1, no, message, path, language_code, provider, score)
+                    history_log_movie(1, no, message, path, language_code, provider, score, subs_id)
                     send_notifications_movie(no, message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -877,8 +883,10 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
+                            subs_id = result[6]
                             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-                            history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score)
+                            history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
+                                              subs_id)
                             send_notifications_movie(movie['radarrId'], message)
                     else:
                         logging.info(
@@ -1158,9 +1166,10 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
+                        subs_id = result[6]
                         store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
                         history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                    language_code, provider, score)
+                                    language_code, provider, score, subs_id)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
     if settings.general.getboolean('use_radarr'):
@@ -1207,9 +1216,10 @@ def upgrade_subtitles():
                         language_code = result[2] + ":forced" if forced else result[2]
                         provider = result[3]
                         score = result[4]
+                        subs_id = result[6]
                         store_subtitles_movie(movie['video_path'],
                                               path_mappings.path_replace_movie(movie['video_path']))
-                        history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score)
+                        history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id)
                         send_notifications_movie(movie['radarrId'], message)
 
 
