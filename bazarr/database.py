@@ -115,11 +115,13 @@ def db_upgrade():
         ['table_history', 'provider', 'text'],
         ['table_history', 'score', 'text'],
         ['table_history', 'subs_id', 'text'],
+        ['table_history', 'subtitles_path', 'text'],
         ['table_history_movie', 'video_path', 'text'],
         ['table_history_movie', 'language', 'text'],
         ['table_history_movie', 'provider', 'text'],
         ['table_history_movie', 'score', 'text'],
-        ['table_history_movie', 'subs_id', 'text']
+        ['table_history_movie', 'subs_id', 'text'],
+        ['table_history_movie', 'subtitles_path', 'text']
     ]
 
     for column in columnToAdd:
@@ -138,6 +140,12 @@ def db_upgrade():
     database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
     database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
     database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")
+
+    # Create blacklist tables
+    database.execute("CREATE TABLE IF NOT EXISTS table_blacklist (sonarr_series_id integer, sonarr_episode_id integer, "
+                     "timestamp integer, provider text, subs_id text, language text)")
+    database.execute("CREATE TABLE IF NOT EXISTS table_blacklist_movie (radarr_id integer, timestamp integer, "
+                     "provider text, subs_id text, language text)")
 
 
 def filter_exclusions(dicts_list, type):

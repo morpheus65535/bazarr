@@ -23,7 +23,7 @@ from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_
 from config import settings
 from helper import path_mappings, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
-from utils import history_log, history_log_movie, get_binary
+from utils import history_log, history_log_movie, get_binary, get_blacklist
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
@@ -167,7 +167,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                            pool_class=provider_pool(),
                                                            compute_score=compute_score,
                                                            throttle_time=None,  # fixme
-                                                           blacklist=None,  # fixme
+                                                           blacklist=get_blacklist(media_type=media_type),
                                                            throttle_callback=provider_throttle,
                                                            pre_download_hook=None,  # fixme
                                                            post_download_hook=None,  # fixme
@@ -263,13 +263,16 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         # fixme: support multiple languages at once
                         if media_type == 'series':
                             reversed_path = path_mappings.path_replace_reverse(path)
+                            reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
+
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
+                            reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id
+                               subtitle.language.forced, subtitle.id, reversed_subtitles_path
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
@@ -332,6 +335,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 subtitles = list_all_subtitles([video], language_set,
                                                providers=providers,
                                                provider_configs=providers_auth,
+                                               blacklist=get_blacklist(media_type=media_type),
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
             else:
@@ -420,8 +424,12 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         min_score, max_score, scores = get_scores(video, media_type)
         try:
             if provider:
-                download_subtitles([subtitle], providers={provider}, provider_configs=providers_auth,
-                                   pool_class=provider_pool(), throttle_callback=provider_throttle)
+                download_subtitles([subtitle],
+                                   providers={provider},
+                                   provider_configs=providers_auth,
+                                   pool_class=provider_pool(),
+                                   blacklist=get_blacklist(media_type=media_type),
+                                   throttle_callback=provider_throttle)
                 logging.debug('BAZARR Subtitles file downloaded for this file:' + path)
             else:
                 logging.info("BAZARR All providers are throttled")
@@ -507,14 +515,16 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
 
                         if media_type == 'series':
                             reversed_path = path_mappings.path_replace_reverse(path)
+                            reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
+                            reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
 
                         track_event(category=downloaded_provider, action="manually_downloaded",
                                     label=downloaded_language)
 
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id
+                               subtitle.language.forced, subtitle.id, reversed_subtitles_path
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -625,10 +635,12 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
 
-    return message, reversed_path
+    return message, reversed_path, reversed_subtitles_path
 
 
 def series_download_subtitles(no):
@@ -676,9 +688,10 @@ def series_download_subtitles(no):
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
+                        subs_path = result[7]
                         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                         history_log(1, no, episode['sonarrEpisodeId'], message, path, language_code, provider, score,
-                                    subs_id)
+                                    subs_id, subs_path)
                         send_notifications(no, episode['sonarrEpisodeId'], message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -722,9 +735,10 @@ def episode_download_subtitles(no):
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
+                        subs_path = result[7]
                         store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                         history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                    language_code, provider, score, subs_id)
+                                    language_code, provider, score, subs_id, subs_path)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -771,8 +785,9 @@ def movies_download_subtitles(no):
                     provider = result[3]
                     score = result[4]
                     subs_id = result[6]
+                    subs_path = result[7]
                     store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
-                    history_log_movie(1, no, message, path, language_code, provider, score, subs_id)
+                    history_log_movie(1, no, message, path, language_code, provider, score, subs_id, subs_path)
                     send_notifications_movie(no, message)
         else:
             logging.info("BAZARR All providers are throttled")
@@ -828,9 +843,11 @@ def wanted_download_subtitles(path, l, count_episodes):
                             language_code = result[2] + ":forced" if forced else result[2]
                             provider = result[3]
                             score = result[4]
+                            subs_id = result[6]
+                            subs_path = result[7]
                             store_subtitles(episode['path'], path_mappings.path_replace(episode['path']))
                             history_log(1, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                        language_code, provider, score)
+                                        language_code, provider, score, subs_id, subs_path)
                             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
                     else:
                         logging.debug(
@@ -884,9 +901,10 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             provider = result[3]
                             score = result[4]
                             subs_id = result[6]
+                            subs_path = result[7]
                             store_subtitles_movie(movie['path'], path_mappings.path_replace_movie(movie['path']))
                             history_log_movie(1, movie['radarrId'], message, path, language_code, provider, score,
-                                              subs_id)
+                                              subs_id, subs_path)
                             send_notifications_movie(movie['radarrId'], message)
                     else:
                         logging.info(
@@ -1167,9 +1185,10 @@ def upgrade_subtitles():
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
+                        subs_path = result[7]
                         store_subtitles(episode['video_path'], path_mappings.path_replace(episode['video_path']))
                         history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message, path,
-                                    language_code, provider, score, subs_id)
+                                    language_code, provider, score, subs_id, subs_path)
                         send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], message)
 
     if settings.general.getboolean('use_radarr'):
@@ -1217,9 +1236,10 @@ def upgrade_subtitles():
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
+                        subs_path = result[7]
                         store_subtitles_movie(movie['video_path'],
                                               path_mappings.path_replace_movie(movie['video_path']))
-                        history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id)
+                        history_log_movie(3, movie['radarrId'], message, path, language_code, provider, score, subs_id, subs_path)
                         send_notifications_movie(movie['radarrId'], message)
 
 

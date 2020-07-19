@@ -24,11 +24,13 @@ from get_languages import language_from_alpha3, language_from_alpha2, alpha2_fro
     alpha3_from_language, alpha3_from_alpha2
 from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
     manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles_series, \
-    wanted_search_missing_subtitles_movies
+    wanted_search_missing_subtitles_movies, episode_download_subtitles, movies_download_subtitles
 from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
-from utils import history_log, history_log_movie, get_sonarr_version, get_radarr_version
+from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
+    blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
+    delete_subtitles
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
@@ -471,22 +473,22 @@ class EpisodesSubtitlesDelete(Resource):
     def delete(self):
         episodePath = request.form.get('episodePath')
         language = request.form.get('language')
+        forced = request.form.get('forced')
         subtitlesPath = request.form.get('subtitlesPath')
         sonarrSeriesId = request.form.get('sonarrSeriesId')
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
 
-        try:
-            os.remove(path_mappings.path_replace(subtitlesPath))
-            result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log(0, sonarrSeriesId, sonarrEpisodeId, result, language=alpha2_from_alpha3(language),
-                        video_path=path_mappings.path_replace_reverse(episodePath))
-            store_subtitles(path_mappings.path_replace_reverse(episodePath), episodePath)
-            return result, 202
-        except OSError as e:
-            logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-
-        store_subtitles(path_mappings.path_replace_reverse(episodePath), episodePath)
-        return '', 204
+        result = delete_subtitles(media_type='series',
+                                  language=language,
+                                  forced=forced,
+                                  media_path=episodePath,
+                                  subtitles_path=subtitlesPath,
+                                  sonarr_series_id=sonarrSeriesId,
+                                  sonarr_episode_id=sonarrEpisodeId)
+        if result:
+            return '', 202
+        else:
+            return '', 204
 
 
 class EpisodesSubtitlesDownload(Resource):
@@ -518,7 +520,8 @@ class EpisodesSubtitlesDownload(Resource):
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
-                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id)
+                subs_path = result[7]
+                history_log(1, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             else:
@@ -586,7 +589,8 @@ class EpisodesSubtitlesManualDownload(Resource):
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id)
+                subs_path = result[7]
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             return result, 201
@@ -629,10 +633,11 @@ class EpisodesSubtitlesUpload(Resource):
             if result is not None:
                 message = result[0]
                 path = result[1]
+                subs_path = result[2]
                 language_code = language + ":forced" if forced else language
                 provider = "manual"
                 score = 360
-                history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score)
+                history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subtitles_path=subs_path)
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
@@ -664,7 +669,8 @@ class EpisodesHistory(Resource):
     def get(self):
         episodeid = request.args.get('episodeid')
 
-        episode_history = database.execute("SELECT action, timestamp, language, provider, score FROM table_history "
+        episode_history = database.execute("SELECT action, timestamp, language, provider, score, sonarrSeriesId, "
+                                           "sonarrEpisodeId, subs_id, video_path, subtitles_path FROM table_history "
                                            "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
         for item in episode_history:
             item['timestamp'] = "<div title='" + \
@@ -672,11 +678,44 @@ class EpisodesHistory(Resource):
                                 "' data-toggle='tooltip' data-placement='left'>" + \
                                 pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
             if item['language']:
-                item['language'] = language_from_alpha2(item['language'])
-            else:
-                item['language'] = "<i>undefined</i>"
+                language = item['language'].split(':')
+                item['language'] = {"name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": True if len(language) > 1 else False}
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 360), 2)) + "%"
+
+            if item['video_path']:
+                # Provide mapped path
+                mapped_path = path_mappings.path_replace(item['video_path'])
+                item.update({"mapped_path": mapped_path})
+
+                # Confirm if path exist
+                item.update({"exist": os.path.isfile(mapped_path)})
+            else:
+                item.update({"mapped_path": None})
+                item.update({"exist": False})
+
+            if item['subtitles_path']:
+                # Provide mapped subtitles path
+                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
+                item.update({"mapped_subtitles_path": mapped_subtitles_path})
+            else:
+                item.update({"mapped_subtitles_path": None})
+
+            # Check if subtitles is blacklisted
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute(
+                    "SELECT provider, subs_id FROM table_blacklist WHERE provider=? AND "
+                    "subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
+
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
         return jsonify(data=episode_history)
 
@@ -875,21 +914,20 @@ class MovieSubtitlesDelete(Resource):
     def delete(self):
         moviePath = request.form.get('moviePath')
         language = request.form.get('language')
+        forced = request.form.get('forced')
         subtitlesPath = request.form.get('subtitlesPath')
         radarrId = request.form.get('radarrId')
 
-        try:
-            os.remove(path_mappings.path_replace_movie(subtitlesPath))
-            result = language_from_alpha3(language) + " subtitles deleted from disk."
-            history_log_movie(0, radarrId, result, language=alpha2_from_alpha3(language),
-                              video_path=path_mappings.path_replace_reverse_movie(moviePath))
-            store_subtitles_movie(path_mappings.path_replace_reverse_movie(moviePath), moviePath)
-            return result, 202
-        except OSError as e:
-            logging.exception('BAZARR cannot delete subtitles file: ' + subtitlesPath)
-
-        store_subtitles_movie(path_mappings.path_replace_reverse_movie(moviePath), moviePath)
-        return '', 204
+        result = delete_subtitles(media_type='movie',
+                                  language=language,
+                                  forced=forced,
+                                  media_path=moviePath,
+                                  subtitles_path=subtitlesPath,
+                                  radarr_id=radarrId)
+        if result:
+            return '', 202
+        else:
+            return '', 204
 
 
 class MovieSubtitlesDownload(Resource):
@@ -920,7 +958,8 @@ class MovieSubtitlesDownload(Resource):
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
-                history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id)
+                subs_path = result[7]
+                history_log_movie(1, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             else:
@@ -987,7 +1026,8 @@ class MovieSubtitlesManualDownload(Resource):
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
-                history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id)
+                subs_path = result[7]
+                history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             return result, 201
@@ -1029,10 +1069,11 @@ class MovieSubtitlesUpload(Resource):
             if result is not None:
                 message = result[0]
                 path = result[1]
+                subs_path = result[2]
                 language_code = language + ":forced" if forced else language
                 provider = "manual"
                 score = 120
-                history_log_movie(4, radarrId, message, path, language_code, provider, score)
+                history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
                 send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
 
@@ -1064,20 +1105,53 @@ class MovieHistory(Resource):
     def get(self):
         radarrid = request.args.get('radarrid')
 
-        movie_history = database.execute("SELECT action, timestamp, language, provider, score "
-                                           "FROM table_history_movie WHERE radarrId=? ORDER BY timestamp DESC",
-                                           (radarrid,))
+        movie_history = database.execute("SELECT action, timestamp, language, provider, score, radarrId, subs_id, "
+                                         "video_path, subtitles_path FROM table_history_movie WHERE radarrId=? ORDER "
+                                         "BY timestamp DESC", (radarrid,))
         for item in movie_history:
             item['timestamp'] = "<div title='" + \
                                 time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
                                 "' data-toggle='tooltip' data-placement='left'>" + \
                                 pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
             if item['language']:
-                item['language'] = language_from_alpha2(item['language'])
-            else:
-                item['language'] = "<i>undefined</i>"
+                language = item['language'].split(':')
+                item['language'] = {"name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": True if len(language) > 1 else False}
             if item['score']:
                 item['score'] = str(round((int(item['score']) * 100 / 120), 2)) + "%"
+
+            if item['video_path']:
+                # Provide mapped path
+                mapped_path = path_mappings.path_replace(item['video_path'])
+                item.update({"mapped_path": mapped_path})
+
+                # Confirm if path exist
+                item.update({"exist": os.path.isfile(mapped_path)})
+            else:
+                item.update({"mapped_path": None})
+                item.update({"exist": False})
+
+            if item['subtitles_path']:
+                # Provide mapped subtitles path
+                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
+                item.update({"mapped_subtitles_path": mapped_subtitles_path})
+            else:
+                item.update({"mapped_subtitles_path": None})
+
+            # Check if subtitles is blacklisted
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute(
+                    "SELECT provider, subs_id FROM table_blacklist_movie WHERE provider=? AND "
+                    "subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
+
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
         return jsonify(data=movie_history)
 
@@ -1130,12 +1204,11 @@ class HistorySeries(Resource):
 
             upgradable_episodes = database.execute(
                 "SELECT video_path, MAX(timestamp) as timestamp, score, table_shows.tags, table_episodes.monitored, "
-                "table_shows.seriesType FROM table_history INNER JOIN table_episodes on table_episodes.sonarrEpisodeId "
-                "= table_history.sonarrEpisodeId INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                "table_episodes.sonarrSeriesId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND "
-                "score is not null GROUP BY table_history.video_path, table_history.language",
-                (minimum_timestamp,))
+                "table_shows.seriesType FROM table_history INNER JOIN table_episodes on "
+                "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
+                "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
+                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null GROUP BY "
+                "table_history.video_path, table_history.language", (minimum_timestamp,))
             upgradable_episodes = filter_exclusions(upgradable_episodes, 'series')
 
             for upgradable_episode in upgradable_episodes:
@@ -1151,15 +1224,17 @@ class HistorySeries(Resource):
         row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
                                      "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
                                      "table_episodes.title is not NULL", only_one=True)['count']
-        data = database.execute("SELECT table_history.action, table_shows.title as seriesTitle, table_episodes.monitored, "
+        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                                "table_episodes.title as episodeTitle, table_history.timestamp, "
+                                "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
                                 "table_history.description, table_history.sonarrSeriesId, table_episodes.path, "
-                                "table_history.language, table_history.score, table_shows.tags FROM table_history "
-                                "LEFT JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
-                                "LEFT JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                                "table_history.sonarrEpisodeId WHERE table_episodes.title is not NULL ORDER BY "
-                                "timestamp DESC LIMIT ? OFFSET ?", (length, start))
+                                "table_history.language, table_history.score, table_shows.tags, table_history.action, "
+                                "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider "
+                                "FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = "
+                                "table_history.sonarrSeriesId LEFT JOIN table_episodes on "
+                                "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
+                                "table_episodes.title is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+                                (length, start))
 
         for item in data:
             # Mark episode as upgradable or not
@@ -1180,12 +1255,35 @@ class HistorySeries(Resource):
             if item['timestamp']:
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
-            # Provide mapped path
-            mapped_path = path_mappings.path_replace(item['path'])
-            item.update({"mapped_path": mapped_path})
+            if item['path']:
+                # Provide mapped path
+                mapped_path = path_mappings.path_replace(item['path'])
+                item.update({"mapped_path": mapped_path})
 
-            # Confirm if path exist
-            item.update({"exist": os.path.isfile(mapped_path)})
+                # Confirm if path exist
+                item.update({"exist": os.path.isfile(mapped_path)})
+            else:
+                item.update({"mapped_path": None})
+                item.update({"exist": False})
+
+            if item['subtitles_path']:
+                # Provide mapped subtitles path
+                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
+                item.update({"mapped_subtitles_path": mapped_subtitles_path})
+            else:
+                item.update({"mapped_subtitles_path": None})
+
+            # Check if subtitles is blacklisted
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist WHERE provider=? AND "
+                                                "subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
+
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
@@ -1230,11 +1328,13 @@ class HistoryMovies(Resource):
                                      "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
                                      "is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
-                                "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored, "
-                                "table_history_movie.video_path, table_history_movie.language, table_movies.tags, "
-                                "table_history_movie.score FROM table_history_movie LEFT JOIN table_movies on "
-                                "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
-                                "is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?", (length, start))
+                                "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored,"
+                                " table_history_movie.video_path, table_history_movie.language, table_movies.tags, "
+                                "table_history_movie.score, table_history_movie.subs_id, table_history_movie.provider, "
+                                "table_history_movie.subtitles_path, table_history_movie.subtitles_path FROM "
+                                "table_history_movie LEFT JOIN table_movies on table_movies.radarrId = "
+                                "table_history_movie.radarrId WHERE table_movies.title is not NULL ORDER BY timestamp "
+                                "DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Mark movies as upgradable or not
@@ -1265,6 +1365,25 @@ class HistoryMovies(Resource):
             else:
                 item.update({"mapped_path": None})
                 item.update({"exist": False})
+
+            if item['subtitles_path']:
+                # Provide mapped subtitles path
+                mapped_subtitles_path = path_mappings.path_replace_movie(item['subtitles_path'])
+                item.update({"mapped_subtitles_path": mapped_subtitles_path})
+            else:
+                item.update({"mapped_subtitles_path": None})
+
+            # Check if subtitles is blacklisted
+            if item['action'] not in [0, 4, 5]:
+                blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie WHERE provider=? "
+                                                "AND subs_id=?", (item['provider'], item['subs_id']))
+            else:
+                blacklist_db = []
+
+            if len(blacklist_db):
+                item.update({"blacklisted": True})
+            else:
+                item.update({"blacklisted": False})
 
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
 
@@ -1419,6 +1538,159 @@ class SearchWantedMovies(Resource):
         return '', 200
 
 
+class BlacklistSeries(Resource):
+    @authenticate
+    def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist", only_one=True)['count']
+        data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
+                                "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
+                                "table_episodes.sonarrSeriesId, table_blacklist.provider, table_blacklist.subs_id, "
+                                "table_blacklist.language, table_blacklist.timestamp FROM table_blacklist INNER JOIN "
+                                "table_episodes on table_episodes.sonarrEpisodeId = table_blacklist.sonarr_episode_id "
+                                "INNER JOIN table_shows on table_shows.sonarrSeriesId = "
+                                "table_blacklist.sonarr_series_id ORDER BY table_blacklist.timestamp DESC LIMIT ? "
+                                "OFFSET ?", (length, start))
+
+        for item in data:
+            # Make timestamp pretty
+            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+
+            # Convert language code2 to name
+            if item['language']:
+                language = item['language'].split(':')
+                item['language'] = {"name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": True if len(language) > 1 else False}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+
+
+class BlacklistEpisodeSubtitlesAdd(Resource):
+    @authenticate
+    def post(self):
+        sonarr_series_id = int(request.form.get('sonarr_series_id'))
+        sonarr_episode_id = int(request.form.get('sonarr_episode_id'))
+        provider = request.form.get('provider')
+        subs_id = request.form.get('subs_id')
+        language = request.form.get('language')
+        forced = request.form.get('forced')
+        language_str = language + ':forced' if forced == 'true' else language
+        media_path = request.form.get('video_path')
+        subtitles_path = request.form.get('subtitles_path')
+
+        blacklist_log(sonarr_series_id=sonarr_series_id,
+                      sonarr_episode_id=sonarr_episode_id,
+                      provider=provider,
+                      subs_id=subs_id,
+                      language=language_str)
+        delete_subtitles(media_type='series',
+                         language=alpha3_from_alpha2(language),
+                         forced=forced,
+                         media_path=path_mappings.path_replace(media_path),
+                         subtitles_path=path_mappings.path_replace(subtitles_path),
+                         sonarr_series_id=sonarr_series_id,
+                         sonarr_episode_id=sonarr_episode_id)
+        episode_download_subtitles(sonarr_episode_id)
+        event_stream(type='episodeHistory')
+        return '', 200
+
+
+class BlacklistEpisodeSubtitlesRemove(Resource):
+    @authenticate
+    def delete(self):
+        provider = request.form.get('provider')
+        subs_id = request.form.get('subs_id')
+
+        blacklist_delete(provider=provider, subs_id=subs_id)
+        return '', 200
+
+
+class BlacklistEpisodeSubtitlesRemoveAll(Resource):
+    @authenticate
+    def delete(self):
+        blacklist_delete_all()
+        return '', 200
+
+
+class BlacklistMovies(Resource):
+    @authenticate
+    def get(self):
+        start = request.args.get('start') or 0
+        length = request.args.get('length') or -1
+        draw = request.args.get('draw')
+
+        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist_movie", only_one=True)['count']
+        data = database.execute("SELECT table_movies.title, table_movies.radarrId, table_blacklist_movie.provider, "
+                                "table_blacklist_movie.subs_id, table_blacklist_movie.language, "
+                                "table_blacklist_movie.timestamp FROM table_blacklist_movie INNER JOIN "
+                                "table_movies on table_movies.radarrId = table_blacklist_movie.radarr_id "
+                                "ORDER BY table_blacklist_movie.timestamp DESC LIMIT ? "
+                                "OFFSET ?", (length, start))
+
+        for item in data:
+            # Make timestamp pretty
+            item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
+
+            # Convert language code2 to name
+            if item['language']:
+                language = item['language'].split(':')
+                item['language'] = {"name": language_from_alpha2(language[0]),
+                                    "code2": language[0],
+                                    "code3": alpha3_from_alpha2(language[0]),
+                                    "forced": True if len(language) > 1 else False}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+
+
+class BlacklistMovieSubtitlesAdd(Resource):
+    @authenticate
+    def post(self):
+        radarr_id = int(request.form.get('radarr_id'))
+        provider = request.form.get('provider')
+        subs_id = request.form.get('subs_id')
+        language = request.form.get('language')
+        forced = request.form.get('forced')
+        language_str = language + ':forced' if forced == 'true' else language
+        media_path = request.form.get('video_path')
+        subtitles_path = request.form.get('subtitles_path')
+
+        blacklist_log_movie(radarr_id=radarr_id,
+                            provider=provider,
+                            subs_id=subs_id,
+                            language=language_str)
+        delete_subtitles(media_type='movie',
+                         language=alpha3_from_alpha2(language),
+                         forced=forced,
+                         media_path=path_mappings.path_replace_movie(media_path),
+                         subtitles_path=path_mappings.path_replace_movie(subtitles_path),
+                         radarr_id=radarr_id)
+        movies_download_subtitles(radarr_id)
+        event_stream(type='movieHistory')
+        return '', 200
+
+
+class BlacklistMovieSubtitlesRemove(Resource):
+    @authenticate
+    def delete(self):
+        provider = request.form.get('provider')
+        subs_id = request.form.get('subs_id')
+
+        blacklist_delete_movie(provider=provider, subs_id=subs_id)
+        return '', 200
+
+
+class BlacklistMovieSubtitlesRemoveAll(Resource):
+    @authenticate
+    def delete(self):
+        blacklist_delete_all_movie()
+        return '', 200
+
+
 class SyncSubtitles(Resource):
     @authenticate
     def post(self):
@@ -1528,6 +1800,15 @@ api.add_resource(WantedSeries, '/wanted_series')
 api.add_resource(WantedMovies, '/wanted_movies')
 api.add_resource(SearchWantedSeries, '/search_wanted_series')
 api.add_resource(SearchWantedMovies, '/search_wanted_movies')
+
+api.add_resource(BlacklistSeries, '/blacklist_series')
+api.add_resource(BlacklistEpisodeSubtitlesAdd, '/blacklist_episode_subtitles_add')
+api.add_resource(BlacklistEpisodeSubtitlesRemove, '/blacklist_episode_subtitles_remove')
+api.add_resource(BlacklistEpisodeSubtitlesRemoveAll, '/blacklist_episode_subtitles_remove_all')
+api.add_resource(BlacklistMovies, '/blacklist_movies')
+api.add_resource(BlacklistMovieSubtitlesAdd, '/blacklist_movie_subtitles_add')
+api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remove')
+api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
 

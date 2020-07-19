@@ -305,13 +305,14 @@
 							<th style="text-align: left;">Provider:</th>
 							<th style="text-align: left;">Score:</th>
 							<th style="text-align: left;">Date:</th>
+							<th style="text-align: left;">Actions:</th>
 						</tr>
 						</thead>
 					</table>
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 			</div>
 		</div>
 	</div>
@@ -370,6 +371,7 @@
 			const values = {
 				moviePath: movieDetails['mapped_path'],
 				language: $(this).data("language"),
+				forced: $(this).data("forced"),
 				subtitlesPath: $(this).data("subtitlespath"),
 				radarrId: movieDetails['radarrId'],
 				tmdbid: movieDetails['tmdbId']
@@ -694,6 +696,13 @@
 					movieDetailsRefresh();
 				}
 			}
+
+			if (event_json.type === 'movieBlacklist' || event_json.type === 'movieHistory') {
+				if ($('#movie_history_result').DataTable().ajax.json()) {
+					$('#movie_history_result').DataTable().ajax.reload(resetPaging = false);
+					$('[data-toggle="tooltip"]').tooltip({html: true});
+				}
+			}
 		});
 
 		$('#history_button').on('click', function(e){
@@ -715,25 +724,46 @@
 				searching: true,
 				ordering: false,
 				scrollX: true,
-				processing: false,
+				processing: true,
 				serverSide: false,
 				ajax: {
 					url: '{{ url_for( 'api.moviehistory' )}}?radarrid=' + radarrId
 				},
 				columns: [
-					{ data: 'action',
-						"render": function(data) {
+					{
+						data: 'action',
+						render: function(data) {
 							if (data === 0) {return "<i class='fas fa-trash' title='Subtitle file has been erased.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 1) {return "<i class='fas fa-download' title='Subtitle file has been downloaded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 2) {return "<i class='fas fa-user' title='Subtitle file has been manually downloaded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 3) {return "<i class='fas fa-recycle' title='Subtitle file has been upgraded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 4) {return "<i class='fas fa-cloud-upload-alt' title='Subtitle file has been manually uploaded.' data-toggle='tooltip' data-placement='right'></i>";}
 							else if (data === 5) {return "<i class='fas fa-clock' title='Subtitle file has been synced.' data-toggle='tooltip' data-placement='right'></i>";}
-						}},
-					{ data: 'language' },
+						}
+					},
+					{
+                        data: 'language',
+                        render: function (value) {
+                        	if (value) {
+                        		return value.name + ((value.forced) ? ' forced' : '')
+							} else {
+                        		return '<i>undefined</i>'
+							}
+                        }
+                    },
 					{ data: 'provider' },
 					{ data: 'score'},
-					{ data: 'timestamp' }
+					{ data: 'timestamp'},
+					{
+						data: null,
+						render: function (data) {
+							if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
+								return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+							} else {
+								return null;
+							}
+						}
+					}
 				]
 			} );
 
@@ -741,6 +771,30 @@
 					.modal({
 						focus: false
 					});
+		});
+
+		$('#movie_history_result').on('click', '.blacklist_subtitles', function (e) {
+			$(this).tooltip('dispose');
+			e.preventDefault();
+			const values = {
+				radarr_id: $(this).attr('data-radarrid'),
+				provider: $(this).attr('data-provider'),
+				subs_id: $(this).attr('data-subs_id'),
+				language: $(this).attr('data-language'),
+				forced: $(this).attr('data-forced'),
+				video_path: $(this).attr('data-video_path'),
+				subtitles_path: $(this).attr('data-subtitles_path')
+			};
+			var cell = $(this).parent();
+			$.ajax({
+				url: "{{ url_for('api.blacklistmoviesubtitlesadd') }}",
+				type: "POST",
+				dataType: "json",
+				data: values,
+				beforeSend: function () {
+					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				}
+			});
 		});
 
 		$('#tools_button').on('click', function (e) {
@@ -912,7 +966,7 @@
 					{ "data" : null,
 						"render": function(data) {
 							if (data['path']) {
-								return '<button type="button" class="remove_subtitles close" aria-label="Close" data-toggle="tooltip" data-placement="right" title="Delete Subtitles File" data-language='+data['code3']+' data-subtitlesPath="'+data['path']+'"><span aria-hidden="true">&times;</span></button>';
+								return '<button type="button" class="remove_subtitles close" aria-label="Close" data-toggle="tooltip" data-placement="right" title="Delete Subtitles File" data-language='+data['code3']+' data-forced='+data['forced']+' data-subtitlesPath="'+data['path']+'"><span aria-hidden="true">&times;</span></button>';
 							} else {
 								return '';
 							}

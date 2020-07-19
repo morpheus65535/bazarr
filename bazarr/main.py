@@ -274,6 +274,18 @@ def historystats():
                            data_languages=sorted(data_languages_list, key=lambda i: i['name']))
 
 
+@app.route('/blacklist/series/')
+@login_required
+def blacklistseries():
+    return render_template('blacklistseries.html')
+
+
+@app.route('/blacklist/movies/')
+@login_required
+def blacklistmovies():
+    return render_template('blacklistmovies.html')
+
+
 @app.route('/wanted/series/')
 @login_required
 def wantedseries():

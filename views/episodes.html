@@ -298,13 +298,14 @@
                                 <th style="text-align: left;">Provider:</th>
                                 <th style="text-align: left;">Score:</th>
                                 <th style="text-align: left;">Date:</th>
+                                <th style="text-align: left;">Actions:</th>
                             </tr>
                             </thead>
                         </table>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -434,7 +435,7 @@
                                 if (value[1] === null) {
                                     languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced' : '') + '">' + value[0].code2 + ((value[0].forced) ? ':forced' : '') + '</span> ';
                                 } else {
-                                    languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced' : '') + '" data-episodePath="' + data.mapped_path + '" data-language="' + value[0].code3 + '" data-subtitlesPath="' + value[1] + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '>' + value[0].code2 + ((value[0].forced) ? ':forced' : '') + ' <i class="far fa-trash-alt"></i></a> ';
+                                    languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + ((value[0].forced) ? ' forced' : '') + '" data-episodePath="' + data.mapped_path + '" data-language="' + value[0].code3 + '" data-forced="' + value[0].forced + '" data-subtitlesPath="' + value[1] + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '>' + value[0].code2 + ((value[0].forced) ? ':forced' : '') + ' <i class="far fa-trash-alt"></i></a> ';
                                 }
                             }
                         }
@@ -496,6 +497,7 @@
                 const values = {
                     episodePath: $(this).attr("data-episodePath"),
                     language: $(this).attr("data-language"),
+                    forced: $(this).attr("data-forced"),
                     subtitlesPath: $(this).attr("data-subtitlesPath"),
                     sonarrSeriesId: seriesDetails['sonarrSeriesId'],
                     sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
@@ -867,6 +869,13 @@
                         }
                     }
                 }
+
+                if (event_json.type === 'episodeBlacklist' || event_json.type === 'episodeHistory') {
+                    if ($('#episode_history_result').DataTable().ajax.json()) {
+                        $('#episode_history_result').DataTable().ajax.reload(resetPaging = false);
+                        $('[data-toggle="tooltip"]').tooltip({html: true});
+                    }
+                }
             });
 
             $('#episodes').on('click', '.episode_history', function (e) {
@@ -888,7 +897,7 @@
                     searching: true,
                     ordering: false,
                     scrollX: true,
-                    processing: false,
+                    processing: true,
                     serverSide: false,
                     ajax: {
                         url: '{{ url_for( 'api.episodeshistory' )}}?episodeid=' + sonarrEpisodeId
@@ -912,10 +921,29 @@
                                 }
                             }
                         },
-                        {data: 'language'},
+                        {
+                            data: 'language',
+                            render: function (value) {
+                                if (value) {
+                                    return value.name + ((value.forced) ? ' forced' : '')
+                                } else {
+                                    return '<i>undefined</i>'
+                                }
+                            }
+                        },
                         {data: 'provider'},
                         {data: 'score'},
-                        {data: 'timestamp'}
+                        {data: 'timestamp'},
+                        {
+                            data: null,
+                            render: function (data) {
+                                if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
+                                    return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-sonarrSeriesId="' + data.sonarrSeriesId + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.mapped_subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+                                } else {
+                                    return null;
+                                }
+                            }
+                        }
                     ]
                 });
 
@@ -923,6 +951,31 @@
                     .modal({
                         focus: false
                     });
+            });
+
+            $('#episode_history_result').on('click', '.blacklist_subtitles', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+                const values = {
+                    sonarr_series_id: $(this).attr('data-sonarrseriesid'),
+                    sonarr_episode_id: $(this).attr('data-sonarrepisodeid'),
+                    provider: $(this).attr('data-provider'),
+                    subs_id: $(this).attr('data-subs_id'),
+                    language: $(this).attr('data-language'),
+                    forced: $(this).attr('data-forced'),
+                    video_path: $(this).attr('data-video_path'),
+                    subtitles_path: $(this).attr('data-subtitles_path')
+                };
+                var cell = $(this).parent();
+                $.ajax({
+                    url: "{{ url_for('api.blacklistepisodesubtitlesadd') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    }
+                });
             });
 
             $('#episodes').on('click', '.episode_tools', function (e) {

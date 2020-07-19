@@ -105,11 +105,11 @@ class SubSyncer:
             if media_type == 'series':
                 history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
                             description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                            language=alpha2_from_alpha3(srt_lang))
+                            language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
             else:
                 history_log_movie(action=5, radarr_id=radarr_id, description=message,
                                   video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                  language=alpha2_from_alpha3(srt_lang))
+                                  language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
         else:
             logging.error('BAZARR unable to sync subtitles: ' + self.srtin)
 

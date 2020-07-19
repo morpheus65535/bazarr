@@ -4,14 +4,15 @@ import logging
 import os
 from knowit import api
 
-from utils import get_binary
-
 
 class EmbeddedSubsReader:
     def __init__(self):
-        self.ffprobe = get_binary("ffprobe")
+        self.ffprobe = None
     
     def list_languages(self, file):
+        from utils import get_binary
+        self.ffprobe = get_binary("ffprobe")
+
         subtitles_list = []
 
         if self.ffprobe:

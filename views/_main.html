@@ -232,6 +232,17 @@
                             </ul>
                         </li>
 
+                        <li><a href="#"><i class="fas fa-file-excel"></i><span class="hide-menu"> Blacklist</span></a>
+                            <ul aria-expanded="false" class="collapse">
+                                {% if settings.general.getboolean('use_sonarr') %}
+                                    <li><a href="{{ url_for('blacklistseries') }}"> Series</a></li>
+                                {% endif %}
+                                {% if settings.general.getboolean('use_radarr') %}
+                                    <li><a href="{{ url_for('blacklistmovies') }}"> Movies</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
                         <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
                                 class="hide-menu"> Wanted</span></a>
                             <ul aria-expanded="false" class="collapse">
