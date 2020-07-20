@@ -164,6 +164,18 @@ def get_sonarr_platform():
     return sonarr_platform
 
 
+def notify_sonarr(sonarr_series_id):
+    try:
+        url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        data = {
+            'name': 'RescanSeries',
+            'seriesId': int(sonarr_series_id)
+        }
+        requests.post(url, json=data, timeout=60, verify=False)
+    except Exception as e:
+        logging.debug('BAZARR notify Sonarr')
+
+
 def get_radarr_version():
     radarr_version = ''
     if settings.general.getboolean('use_radarr'):
@@ -190,6 +202,18 @@ def get_radarr_platform():
     return radarr_platform
 
 
+def notify_radarr(radarr_id):
+    try:
+        url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        data = {
+            'name': 'RescanMovie',
+            'movieId': int(radarr_id)
+        }
+        requests.post(url, json=data, timeout=60, verify=False)
+    except Exception as e:
+        logging.debug('BAZARR notify Radarr')
+
+
 def delete_subtitles(media_type, language, forced, media_path, subtitles_path, sonarr_series_id=None,
                      sonarr_episode_id=None, radarr_id=None):
     if not subtitles_path.endswith('.srt'):
@@ -211,6 +235,7 @@ def delete_subtitles(media_type, language, forced, media_path, subtitles_path, s
                         video_path=path_mappings.path_replace_reverse(media_path),
                         subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
             store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            notify_sonarr(sonarr_series_id)
     else:
         try:
             os.remove(path_mappings.path_replace_movie(subtitles_path))
@@ -223,4 +248,5 @@ def delete_subtitles(media_type, language, forced, media_path, subtitles_path, s
                               video_path=path_mappings.path_replace_reverse_movie(media_path),
                               subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            notify_radarr(radarr_id)
             return True

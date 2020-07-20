@@ -23,7 +23,7 @@ from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_
 from config import settings
 from helper import path_mappings, pp_replace, get_target_folder, force_unicode
 from list_subtitles import store_subtitles, list_missing_subtitles, store_subtitles_movie, list_missing_subtitles_movies
-from utils import history_log, history_log_movie, get_binary, get_blacklist
+from utils import history_log, history_log_movie, get_binary, get_blacklist, notify_sonarr, notify_radarr
 from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
@@ -264,10 +264,12 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         if media_type == 'series':
                             reversed_path = path_mappings.path_replace_reverse(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
+                            notify_sonarr(episode_metadata['sonarrSeriesId'])
 
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
+                            notify_radarr(movie_metadata['radarrId'])
 
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
@@ -516,9 +518,11 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         if media_type == 'series':
                             reversed_path = path_mappings.path_replace_reverse(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
+                            notify_sonarr(episode_metadata['sonarrSeriesId'])
                         else:
                             reversed_path = path_mappings.path_replace_reverse_movie(path)
                             reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
+                            notify_radarr(movie_metadata['radarrId'])
 
                         track_event(category=downloaded_provider, action="manually_downloaded",
                                     label=downloaded_language)
@@ -636,9 +640,11 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
+        notify_sonarr(episode_metadata['sonarrSeriesId'])
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
+        notify_radarr(movie_metadata['radarrId'])
 
     return message, reversed_path, reversed_subtitles_path
 
