@@ -4,13 +4,12 @@ import io
 import os
 import logging
 from urllib.parse import unquote
-from random import randint
 
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 
 from guessit import guessit
-from requests import Session
+import cloudscraper
 import chardet
 from bs4 import NavigableString, UnicodeDammit
 from subzero.language import Language
@@ -43,6 +42,7 @@ class SoustitreseuSubtitle(Subtitle):
         self.content = content
         self.hearing_impaired = None
         self.is_perfect_match = is_perfect_match
+        self._guessed_encoding = None
 
     @property
     def id(self):
@@ -110,8 +110,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
         self.is_perfect_match = False
 
     def initialize(self):
-        self.session = Session()
-        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
+        self.session = cloudscraper.create_scraper(debug=False)
         self.session.headers['Referer'] = self.server_url
 
     def terminate(self):
@@ -226,18 +225,13 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
         return subtitles
 
     def list_subtitles(self, video, languages):
-        if isinstance(video, Episode):
-            titles = [video.series] + video.alternative_series
-        else:
-            titles = [video.title] + video.alternative_titles
-
         subtitles = []
+
         # query for subtitles
-        for title in titles:
-            if isinstance(video, Episode):
-                subtitles += [s for s in self.query_series(video, title) if s.language in languages]
-            else:
-                subtitles += [s for s in self.query_movies(video, title) if s.language in languages]
+        if isinstance(video, Episode):
+            subtitles += [s for s in self.query_series(video, video.series) if s.language in languages]
+        else:
+            subtitles += [s for s in self.query_movies(video, video.title) if s.language in languages]
 
         return subtitles
 
