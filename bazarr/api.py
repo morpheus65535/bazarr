@@ -377,19 +377,38 @@ class SeriesEditSave(Resource):
         if lang == ['None']:
             lang = 'None'
 
+        seriesIdList = []
+        seriesidLangList = []
+        seriesidHiList = []
+        seriesidForcedList = []
         for item in request.form.getlist('seriesid[]'):
             seriesid = item.lstrip('row_')
-            try:
-                if len(lang):
-                    database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", (str(lang), seriesid))
-                if len(hi):
-                    database.execute("UPDATE table_shows SET hearing_impaired=? WHERE  sonarrSeriesId=?", (hi[0], seriesid))
-                if len(forced):
-                    database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", (forced[0], seriesid))
-            except:
-                pass
-            else:
-                list_missing_subtitles(no=seriesid)
+            seriesIdList.append(seriesid)
+            if len(lang):
+                seriesidLangList.append([str(lang), seriesid])
+            if len(hi):
+                seriesidHiList.append([hi[0], seriesid])
+            if len(forced):
+                seriesidForcedList.append([forced[0], seriesid])
+
+        try:
+            if len(lang):
+                database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", seriesidLangList,
+                                 execute_many=True)
+            if len(hi):
+                database.execute("UPDATE table_shows SET hearing_impaired=? WHERE  sonarrSeriesId=?", seriesidHiList,
+                                 execute_many=True)
+            if len(forced):
+                database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", seriesidForcedList,
+                                 execute_many=True)
+        except:
+            pass
+        else:
+            for seriesId in seriesIdList:
+                list_missing_subtitles(no=seriesId, update_wanted=False)
+
+        event_stream(type='series_editor', action='update')
+        event_stream(type='badges')
 
         return '', 204
 
@@ -884,19 +903,37 @@ class MoviesEditSave(Resource):
         if lang == ['None']:
             lang = 'None'
 
+        radarrIdList = []
+        radarrIdLangList = []
+        radarrIdHiList = []
+        radarrIdForcedList = []
         for item in request.form.getlist('radarrid[]'):
             radarrid = item.lstrip('row_')
-            try:
-                if len(lang):
-                    database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", (str(lang), radarrid))
-                if len(hi):
-                    database.execute("UPDATE table_movies SET hearing_impaired=? WHERE  radarrId=?", (hi[0], radarrid))
-                if len(forced):
-                    database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", (forced[0], radarrid))
-            except:
-                pass
-            else:
-                list_missing_subtitles_movies(no=radarrid)
+            radarrIdList.append(radarrid)
+            if len(lang):
+                radarrIdLangList.append([str(lang), radarrid])
+            if len(hi):
+                radarrIdHiList.append([hi[0], radarrid])
+            if len(forced):
+                radarrIdForcedList.append([forced[0], radarrid])
+        try:
+            if len(lang):
+                database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", radarrIdLangList,
+                                 execute_many=True)
+            if len(hi):
+                database.execute("UPDATE table_movies SET hearing_impaired=? WHERE  radarrId=?", radarrIdHiList,
+                                 execute_many=True)
+            if len(forced):
+                database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", radarrIdForcedList,
+                                 execute_many=True)
+        except:
+            pass
+        else:
+            for radarrId in radarrIdList:
+                list_missing_subtitles_movies(no=radarrId, update_wanted=False)
+
+        event_stream(type='movies_editor', action='update')
+        event_stream(type='badges')
 
         return '', 204
 

@@ -169,7 +169,7 @@ def store_subtitles_movie(original_path, reversed_path):
     return actual_subtitles
 
 
-def list_missing_subtitles(no=None, epno=None):
+def list_missing_subtitles(no=None, epno=None, update_wanted=True):
     if no is not None:
         episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
     elif epno is not None:
@@ -233,10 +233,11 @@ def list_missing_subtitles(no=None, epno=None):
 
         event_stream(type='episode', action='update', series=missing_subtitles_item[2],
                      episode=missing_subtitles_item[1])
-    event_stream(type='badges')
+    if update_wanted:
+        event_stream(type='badges')
 
 
-def list_missing_subtitles_movies(no=None):
+def list_missing_subtitles_movies(no=None, update_wanted=True):
     if no is not None:
         movies_subtitles_clause = " WHERE radarrId=" + str(no)
     else:
@@ -293,7 +294,8 @@ def list_missing_subtitles_movies(no=None):
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
         event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
-    event_stream(type='badges')
+    if update_wanted:
+        event_stream(type='badges')
 
 
 def series_full_scan_subtitles():

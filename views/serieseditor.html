@@ -65,37 +65,16 @@
 
             events.on('event', function (event) {
                 var event_json = JSON.parse(event);
-                if (event_json.type === 'series' && event_json.action === 'insert') {
+                if (event_json.type === 'series_editor' && event_json.action === 'update') {
                     $.ajax({
-                        url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
+                        url: "{{ url_for('api.series') }}",
                         success: function (data) {
                             if (data.data.length) {
-                                $('#series').DataTable().rows.add(data.data);
-                                $('#series').DataTable().columns.adjust().draw(false);
+                                $('#series').DataTable().ajax.reload(resetPaging = false);
                                 $('[data-toggle="tooltip"]').tooltip({html: true});
                             }
                         }
                     })
-                } else if (event_json.type === 'series' && event_json.action === 'update') {
-                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
-                    if (rowId.length) {
-                        $.ajax({
-                            url: "{{ url_for('api.series') }}?seriesid=" + event_json.series,
-                            success: function (data) {
-                                if (data.data.length) {
-                                    $('#series').DataTable().row(rowId).data(data.data[0]).draw('page');
-                                    $('[data-toggle="tooltip"]').tooltip({html: true});
-                                }
-                            }
-                        })
-                    }
-                } else if (event_json.type === 'series' && event_json.action === 'delete') {
-                    var rowId = $('#series').DataTable().row('#row_' + event_json.series);
-                    if (rowId.length) {
-                        $('#series').DataTable().row(rowId).remove();
-                        $('#series').DataTable().columns.adjust().draw(false);
-                        $('[data-toggle="tooltip"]').tooltip({html: true});
-                    }
                 }
             });
 
@@ -214,6 +193,13 @@
                     url: "{{ url_for('api.serieseditsave') }}",
                     method: "POST",
                     data: values,
+                    beforeSend: function () {
+                        $('.selectpicker').prop('disabled', true);
+                        $('.selectpicker').selectpicker('refresh');
+                        $('#save_button').prop('disabled', true);
+                        $('#save_button').addClass('disabled');
+                        $('#save_button').css('cursor', 'wait');
+                    },
                     success: function () {
                         table.rows().deselect();
                         $('#languages_select').selectpicker('val', '');
