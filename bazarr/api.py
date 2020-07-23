@@ -364,8 +364,6 @@ class Series(Resource):
 
         list_missing_subtitles(no=seriesId)
 
-        event_stream(type='series', action='update', series=seriesId)
-
         return '', 204
 
 
@@ -392,8 +390,6 @@ class SeriesEditSave(Resource):
                 pass
             else:
                 list_missing_subtitles(no=seriesid)
-
-                event_stream(type='series', action='update', series=seriesid)
 
         return '', 204
 
@@ -875,8 +871,6 @@ class Movies(Resource):
 
         list_missing_subtitles_movies(no=radarrId)
 
-        event_stream(type='movie', action='update', movie=radarrId)
-
         return '', 204
 
 
@@ -903,8 +897,6 @@ class MoviesEditSave(Resource):
                 pass
             else:
                 list_missing_subtitles_movies(no=radarrid)
-
-                event_stream(type='movie', action='update', movie=radarrid)
 
         return '', 204
 

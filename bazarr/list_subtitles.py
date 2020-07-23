@@ -233,7 +233,7 @@ def list_missing_subtitles(no=None, epno=None):
 
         event_stream(type='episode', action='update', series=missing_subtitles_item[2],
                      episode=missing_subtitles_item[1])
-        event_stream(type='badges')
+    event_stream(type='badges')
 
 
 def list_missing_subtitles_movies(no=None):
@@ -293,7 +293,7 @@ def list_missing_subtitles_movies(no=None):
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
         event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
-        event_stream(type='badges')
+    event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
