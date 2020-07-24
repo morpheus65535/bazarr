@@ -169,7 +169,7 @@ def store_subtitles_movie(original_path, reversed_path):
     return actual_subtitles
 
 
-def list_missing_subtitles(no=None, epno=None, update_wanted=True):
+def list_missing_subtitles(no=None, epno=None, send_event=True):
     if no is not None:
         episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
     elif epno is not None:
@@ -231,13 +231,13 @@ def list_missing_subtitles(no=None, epno=None, update_wanted=True):
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
+    if send_event:
         event_stream(type='episode', action='update', series=missing_subtitles_item[2],
                      episode=missing_subtitles_item[1])
-    if update_wanted:
         event_stream(type='badges')
 
 
-def list_missing_subtitles_movies(no=None, update_wanted=True):
+def list_missing_subtitles_movies(no=None, send_event=True):
     if no is not None:
         movies_subtitles_clause = " WHERE radarrId=" + str(no)
     else:
@@ -293,8 +293,8 @@ def list_missing_subtitles_movies(no=None, update_wanted=True):
         database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
+    if send_event:
         event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
-    if update_wanted:
         event_stream(type='badges')
 
 

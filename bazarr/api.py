@@ -405,7 +405,7 @@ class SeriesEditSave(Resource):
             pass
         else:
             for seriesId in seriesIdList:
-                list_missing_subtitles(no=seriesId, update_wanted=False)
+                list_missing_subtitles(no=seriesId, send_event=False)
 
         event_stream(type='series_editor', action='update')
         event_stream(type='badges')
@@ -930,7 +930,7 @@ class MoviesEditSave(Resource):
             pass
         else:
             for radarrId in radarrIdList:
-                list_missing_subtitles_movies(no=radarrId, update_wanted=False)
+                list_missing_subtitles_movies(no=radarrId, send_event=False)
 
         event_stream(type='movies_editor', action='update')
         event_stream(type='badges')
