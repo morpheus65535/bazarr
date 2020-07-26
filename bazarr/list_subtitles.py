@@ -5,9 +5,7 @@ import os
 import logging
 import ast
 from guess_language import guess_language
-import subliminal_patch
-from subliminal import core
-from subliminal_patch import search_external_subtitles
+from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
 
 from database import database
@@ -54,7 +52,7 @@ def store_subtitles(original_path, reversed_path):
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
             dest_folder = get_subtitle_destination_folder()
-            subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+            core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
             subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
@@ -130,7 +128,7 @@ def store_subtitles_movie(original_path, reversed_path):
         brazilian_portuguese_forced = [".pt-br.forced", ".pob.forced", "pb.forced"]
         try:
             dest_folder = get_subtitle_destination_folder() or ''
-            subliminal_patch.core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
+            core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
             subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
         except Exception as e:
