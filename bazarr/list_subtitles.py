@@ -231,10 +231,10 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
-    if send_event:
-        event_stream(type='episode', action='update', series=missing_subtitles_item[2],
-                     episode=missing_subtitles_item[1])
-        event_stream(type='badges')
+        if send_event:
+            event_stream(type='episode', action='update', series=missing_subtitles_item[2],
+                         episode=missing_subtitles_item[1])
+            event_stream(type='badges')
 
 
 def list_missing_subtitles_movies(no=None, send_event=True):
@@ -293,9 +293,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
         database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
                          (missing_subtitles_item[0], missing_subtitles_item[1]))
 
-    if send_event:
-        event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
-        event_stream(type='badges')
+        if send_event:
+            event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
+            event_stream(type='badges')
 
 
 def series_full_scan_subtitles():
