@@ -10,6 +10,7 @@ from get_args import args
 from config import settings
 from event_handler import event_stream
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked
+from subliminal.providers.opensubtitles import DownloadLimitReached
 from subliminal.exceptions import DownloadLimitExceeded, ServiceUnavailable
 from subliminal import region as subliminal_cache_region
 
@@ -40,6 +41,7 @@ PROVIDER_THROTTLE_MAP = {
     "opensubtitles": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
         DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+        DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
         APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
     },
     "addic7ed": {
