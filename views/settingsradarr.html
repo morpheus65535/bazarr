@@ -371,7 +371,11 @@
                 buttons: [{
                     text: 'Add',
                     action: function () {
-                        $('#addModal').modal('show');
+                        if (form_changed) {
+                            alert('You must save changes before adding a path mapping.')
+                        } else {
+                            $('#addModal').modal('show');
+                        }
                     }
                 },
                 {
