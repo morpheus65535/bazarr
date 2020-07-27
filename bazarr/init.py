@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import io
 import rarfile
 import json
 import hashlib
@@ -59,10 +60,14 @@ if not args.no_update:
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             logging.info('BAZARR requirements installed.')
             try:
-                from server import webserver
-                webserver.restart()
-            except:
-                logging.info('BAZARR unable to restart. Please do it manually.')
+                restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
+            except Exception as e:
+                logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+            else:
+                logging.info('Bazarr is being restarted...')
+                restart_file.write(str(''))
+                restart_file.close()
+                os._exit(0)
 
 # create random api_key if there's none in config.ini
 if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
