@@ -94,26 +94,32 @@ class SubSyncer:
             logging.debug('BAZARR FFmpeg used is %s', ffmpeg_exe)
 
         self.ffmpeg_path = os.path.dirname(ffmpeg_exe)
-        result = run(self)
-
-        if result['sync_was_successful']:
-            message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale factor" \
-                      " of {2} using {3} (0:{4}).".format(language_from_alpha3(srt_lang), result['offset_seconds'],
-                                                        result['framerate_scale_factor'], using_what,
-                                                        self.reference_stream)
-
-            if media_type == 'series':
-                history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
-                            description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                            language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
-            else:
-                history_log_movie(action=5, radarr_id=radarr_id, description=message,
-                                  video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                  language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+        try:
+            result = run(self)
+        except Exception as e:
+            logging.error('BAZARR an exception occurs during the synchronization process for this subtitles: ' +
+                          self.srtin)
         else:
-            logging.error('BAZARR unable to sync subtitles: ' + self.srtin)
+            if result['sync_was_successful']:
+                message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale " \
+                          "factor of {2} using {3} (0:{4}).".format(language_from_alpha3(srt_lang),
+                                                                    result['offset_seconds'],
+                                                                    result['framerate_scale_factor'],
+                                                                    using_what,
+                                                                    self.reference_stream)
 
-        return result
+                if media_type == 'series':
+                    history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                                description=message, video_path=path_mappings.path_replace_reverse(self.reference),
+                                language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+                else:
+                    history_log_movie(action=5, radarr_id=radarr_id, description=message,
+                                      video_path=path_mappings.path_replace_reverse_movie(self.reference),
+                                      language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+            else:
+                logging.error('BAZARR unable to sync subtitles: ' + self.srtin)
+
+            return result
 
 
 class NoAudioTrack(Exception):
