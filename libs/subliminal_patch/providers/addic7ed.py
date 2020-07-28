@@ -9,7 +9,7 @@ from random import randint
 
 from dogpile.cache.api import NO_VALUE
 from requests import Session
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, ConnectTimeout
 from subliminal.cache import region
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
@@ -102,7 +102,7 @@ class Addic7edProvider(_Addic7edProvider):
                         logger.info('Addic7ed: Re-using old login')
                         self.logged_in = True
                         return True
-                except ConnectionError as e:
+                except (ConnectionError, ConnectTimeout) as e:
                     logger.debug("Addic7ed: There was a problem reaching the server: %s." % e)
                     raise IPAddressBlocked("Addic7ed: Your IP is temporarily blocked.")
 
