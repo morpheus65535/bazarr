@@ -61,7 +61,8 @@ class SubSyncer:
                         break
             if not self.reference_stream:
                 using_what = "{0} embedded subtitle track".format(
-                    language_from_alpha3(embedded_subs['language'].alpha3) or 'unknown language audio track')
+                    language_from_alpha3(embedded_subs['language'].alpha3) or 'unknown language embedded subtitles '
+                                                                              'track')
                 self.reference_stream = "s:0"
         elif 'audio' in data:
             audio_tracks = data['audio']
@@ -69,7 +70,8 @@ class SubSyncer:
                 if 'language' in audio_track:
                     language = audio_track['language'].alpha3
                     if language == srt_lang:
-                        using_what = "{0} audio track".format(language_from_alpha3(audio_track['language'].alpha3))
+                        using_what = "{0} audio track".format(language_from_alpha3(audio_track['language'].alpha3) or
+                                                              'unknown language audio track')
                         self.reference_stream = "a:{}".format(i)
                         break
             if not self.reference_stream:
@@ -118,7 +120,9 @@ class SubSyncer:
                                       video_path=path_mappings.path_replace_reverse_movie(self.reference),
                                       language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
             else:
-                logging.error('BAZARR unable to sync subtitles: ' + self.srtin)
+                logging.error('BAZARR unable to sync subtitles using {0}({1}): {2}'.format(using_what,
+                                                                                           self.reference_stream,
+                                                                                           self.srtin))
 
             return result
 
