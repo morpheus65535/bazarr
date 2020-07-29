@@ -30,8 +30,8 @@ def store_subtitles(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS":
-                            logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
+                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS") or (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec == "VOBSUB"):
+                            logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
                         if alpha2_from_alpha3(subtitle_language) is not None:
@@ -106,8 +106,8 @@ def store_subtitles_movie(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS":
-                            logging.debug("BAZARR skipping pgs sub for language: " + str(alpha2_from_alpha3(subtitle_language)))
+                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS") or (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec == "VOBSUB"):
+                            logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
                         if alpha2_from_alpha3(subtitle_language) is not None:

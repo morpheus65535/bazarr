@@ -42,6 +42,7 @@ defaults = {
         'embedded_subs_show_desired': 'True',
         'utf8_encode': 'True',
         'ignore_pgs_subs': 'False',
+        'ignore_vobsub_subs': 'False',
         'adaptive_searching': 'False',
         'enabled_providers': '',
         'throtteled_providers': '{}',

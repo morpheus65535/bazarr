@@ -229,6 +229,20 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-4 text-right">
+                        <b>Ignore Embedded VobSub Subtitles</b>
+                    </div>
+                    <div class="form-group col-sm-8">
+                        <label class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="settings-general-ignore_vobsub_subs"
+                                name="settings-general-ignore_vobsub_subs">
+                            <span class="custom-control-label" for="settings-general-ignore_vobsub_subs"></span>
+                        </label>
+                        <label>Ignores VobSub Subtitles in Embedded Subtitles detection. Only relevant if 'Use embedded
+                            Subtitles' is enabled.</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 text-right">
                         <b>Show Only Desired Languages</b>
                     </div>
                     <div class="form-group col-sm-8">
@@ -541,6 +555,7 @@
             $('#settings-general-multithreading').prop('checked', {{'true' if settings.general.getboolean('multithreading') else 'false'}}).trigger('change');
             $('#settings-general-use_embedded_subs').prop('checked', {{'true' if settings.general.getboolean('use_embedded_subs') else 'false'}}).trigger('change');
             $('#settings-general-ignore_pgs_subs').prop('checked', {{'true' if settings.general.getboolean('ignore_pgs_subs') else 'false'}}).trigger('change');
+            $('#settings-general-ignore_vobsub_subs').prop('checked', {{ 'true' if settings.general.getboolean('ignore_vobsub_subs') else 'false' }}).trigger('change');
             $('#settings-general-embedded_subs_show_desired').prop('checked', {{'true' if settings.general.getboolean('embedded_subs_show_desired') else 'false'}}).trigger('change');
             $('#settings-general-utf8_encode').prop('checked', {{'true' if settings.general.getboolean('utf8_encode') else 'false'}}).trigger('change');
             $('#settings-general-chmod_enabled').prop('checked', {{'true' if settings.general.getboolean('chmod_enabled') else 'false'}}).trigger('change');
