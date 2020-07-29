@@ -577,7 +577,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if os.path.exists(subtitle_path):
         os.remove(subtitle_path)
 
-    if settings.general.utf8_encode:
+    if settings.general.getboolean('utf8_encode'):
         try:
             os.remove(subtitle_path + ".tmp")
         except:
