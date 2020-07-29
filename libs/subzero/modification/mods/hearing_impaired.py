@@ -3,7 +3,8 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import re
 
-from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, EmptyEntryError, TAG
+from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, TAG
+from subzero.modification.exc import EmptyEntryError
 from subzero.modification.processors.re_processor import NReProcessor
 from subzero.modification import registry
 
@@ -93,7 +94,7 @@ class HearingImpaired(SubtitleTextModification):
 
         # remove music entries
         NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)'),
-                     "", name="HI_music"),
+                     "", name="HI_music", entry=True),
     ]
 
 

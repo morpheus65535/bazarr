@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import re
 import logging
 
+from subzero.modification.exc import EmptyEntryError
 from subzero.modification.processors import Processor
 
 logger = logging.getLogger(__name__)
@@ -15,13 +16,22 @@ class ReProcessor(Processor):
     pattern = None
     replace_with = None
 
-    def __init__(self, pattern, replace_with, name=None, supported=None):
+    def __init__(self, pattern, replace_with, name=None, supported=None, entry=False, **kwargs):
         super(ReProcessor, self).__init__(name=name, supported=supported)
         self.pattern = pattern
         self.replace_with = replace_with
+        self.use_entry = entry
 
-    def process(self, content, debug=False, **kwargs):
-        return self.pattern.sub(self.replace_with, content)
+    def process(self, content, debug=False, entry=None, **kwargs):
+        if not self.use_entry:
+            return self.pattern.sub(self.replace_with, content)
+
+        ret = self.pattern.sub(self.replace_with, entry)
+        if not ret:
+            raise EmptyEntryError()
+        elif ret != entry:
+            return ret
+        return content
 
 
 class NReProcessor(ReProcessor):
@@ -37,7 +47,7 @@ class MultipleWordReProcessor(ReProcessor):
     }
     replaces found key in pattern with the corresponding value in data
     """
-    def __init__(self, snr_dict, name=None, parent=None, supported=None):
+    def __init__(self, snr_dict, name=None, parent=None, supported=None, **kwargs):
         super(ReProcessor, self).__init__(name=name, supported=supported)
         self.snr_dict = snr_dict
 
