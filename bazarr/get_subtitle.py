@@ -177,11 +177,15 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.info("BAZARR All providers are throttled")
             return None
 
+        subz_mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.items():
                 if not subtitles:
                     continue
+
+                for s in subtitles:
+                    s.mods = subz_mods
 
                 try:
                     fld = get_target_folder(path)
@@ -417,6 +421,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    subtitle.mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')

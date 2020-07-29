@@ -258,6 +258,78 @@
                     <label>Re-encode downloaded Subtitles to UTF8. Should be left enabled in most case.</label>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Hearing Impaired</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="remove_HI">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Removes HI-tags from subtitles (such as (SIRENS WAIL), DOCTOR: Rose!).</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Remove Tags</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="remove_tags">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Removes any font style tags from the subtitles (bold, italic, underline, colors, ...).</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>OCR Fixes</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="OCR_fixes">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Fixes problems in subtitles introduced by OCR (custom implementation of SubtitleEdit's dictionaries).</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Common Fixes</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="common">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label> Fixes common issues in subtitles, such as punctuation (-- I don't know! -> ... I don't know!; over 9 000! -> over 9000!).</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Fix Uppercase</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="fix_uppercase">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Tries to make subtitles that are completely uppercase readable.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Reverse RTL</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="reverse_rtl">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Reverses the punctuation in right-to-left subtitles for problematic playback devices.</label>
+                </div>
+            </div>
             {% if not os.startswith('win') %}
                 <div class="row">
                     <div class="col-sm-3 text-right">
@@ -551,8 +623,22 @@
             $('#settings-general-use_postprocessing_threshold').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing_threshold_movie').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold_movie') else 'false'}}).trigger('change');
 
+            $('.subzero_mods').prop('checked', false).trigger('change');
+            {% if settings.general.subzero_mods %}
+            $('{{settings.general.subzero_mods}}'.split(',')).each( function(i, item) {
+                $("[id=" + item + "]").prop('checked', true).trigger('change');
+            })
+            {% endif %}
+
             $('#save_button').on('click', function () {
                 var formdata = new FormData(document.getElementById("settings_form"));
+
+                var enabled_subzero_mods = $(".subzero_mods").map(function () {
+                    if ($(this).prop('checked')) {
+                        return $(this).attr('id');
+                    }
+                }).get().join(',');
+                formdata.append('settings-general-subzero_mods', enabled_subzero_mods)
 
                 // Make sure all checkbox input are sent with true/false value
                 $('input[type=checkbox]').each(function () {

@@ -48,7 +48,7 @@ class HearingImpaired(SubtitleTextModification):
                      name="HI_before_colon_noncaps"),
 
         # brackets (only remove if at least 3 chars in brackets)
-        NReProcessor(re.compile(r'(?sux)-?%(t)s[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]][\s:]*%(t)s' %
+        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s' %
                                 {"t": TAG}), "", name="HI_brackets"),
 
         #NReProcessor(re.compile(r'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),
@@ -92,7 +92,7 @@ class HearingImpaired(SubtitleTextModification):
                      "", name="HI_music_symbols_only"),
 
         # remove music entries
-        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[♫♪]+\s*.+|.+\s*[♫♪]+\s*$)'),
+        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)'),
                      "", name="HI_music"),
     ]
 
