@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.9.0.1'
+bazarr_version = '0.9.0.2'
 
 import os
 os.environ["BAZARR_VERSION"] = bazarr_version
