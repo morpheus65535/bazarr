@@ -7,15 +7,14 @@ import pysubs2
 import logging
 import time
 
-from .mods import EMPTY_TAG_PROCESSOR, EmptyEntryError
+from .mods import EMPTY_TAG_PROCESSOR
+from .exc import EmptyEntryError
 from .registry import registry
 from subzero.language import Language
 import six
 
 logger = logging.getLogger(__name__)
 
-
-lowercase_re = re.compile(r'(?sux)[a-zà-ž]')
 
 
 class SubtitleModifications(object):
@@ -189,7 +188,7 @@ class SubtitleModifications(object):
                     sub = processor.process(sub)
 
                 if sub.strip():
-                    if lowercase_re.search(sub):
+                    if not sub.isupper():
                         return False
 
                     entry_used = True
@@ -302,11 +301,11 @@ class SubtitleModifications(object):
                     mod = self.initialized_mods[identifier]
 
                     try:
-                        line = mod.modify(line.strip(), entry=entry.text, debug=self.debug, parent=self, index=index,
+                        line = mod.modify(line.strip(), entry=t, debug=self.debug, parent=self, index=index,
                                           **args)
                     except EmptyEntryError:
                         if self.debug:
-                            logger.debug(u"%d: %s: %r -> ''", index, identifier, entry.text)
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, t)
                         skip_entry = True
                         break
 
@@ -331,11 +330,11 @@ class SubtitleModifications(object):
                     mod = self.initialized_mods[identifier]
 
                     try:
-                        line = mod.modify(line.strip(), entry=entry.text, debug=self.debug, parent=self, index=index,
+                        line = mod.modify(line.strip(), entry=t, debug=self.debug, parent=self, index=index,
                                           procs=["last_process"], **args)
                     except EmptyEntryError:
                         if self.debug:
-                            logger.debug(u"%d: %s: %r -> ''", index, identifier, entry.text)
+                            logger.debug(u"%d: %s: %r -> ''", index, identifier, t)
                         skip_entry = True
                         break
 

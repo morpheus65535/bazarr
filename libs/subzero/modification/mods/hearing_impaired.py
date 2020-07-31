@@ -3,7 +3,8 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import re
 
-from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, EmptyEntryError, TAG
+from subzero.modification.mods import SubtitleTextModification, empty_line_post_processors, TAG
+from subzero.modification.exc import EmptyEntryError
 from subzero.modification.processors.re_processor import NReProcessor
 from subzero.modification import registry
 
@@ -41,14 +42,14 @@ class HearingImpaired(SubtitleTextModification):
         # possibly with a dash in front; try not breaking actual sentences with a colon at the end by not matching if
         # a space is inside the text; ignore anything ending with a quote
         NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"]))([\s\->~]*((?=[A-zÀ-ž&+]\s*[A-zÀ-ž&+]\s*[A-zÀ-ž&+])'
-                                r'[A-zÀ-ž-_0-9\s\"\'&+()\[\]]+:)(?![\"’ʼ❜‘‛”“‟„])\s*)(?![0-9])'),
+                                r'[A-zÀ-ž-_0-9\s\"\'&+()\[\]]+:)(?![\"’ʼ❜‘‛”“‟„])\s*)(?![0-9]|//)'),
                      lambda match:
                      match.group(1) if (match.group(2).count(" ") > 0 or match.group(1).count("-") > 0)
                      else "" if not match.group(1).startswith(" ") else " ",
                      name="HI_before_colon_noncaps"),
 
         # brackets (only remove if at least 3 chars in brackets)
-        NReProcessor(re.compile(r'(?sux)-?%(t)s[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]][\s:]*%(t)s' %
+        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s' %
                                 {"t": TAG}), "", name="HI_brackets"),
 
         #NReProcessor(re.compile(r'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),
@@ -92,8 +93,8 @@ class HearingImpaired(SubtitleTextModification):
                      "", name="HI_music_symbols_only"),
 
         # remove music entries
-        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[♫♪]+\s*.+|.+\s*[♫♪]+\s*$)'),
-                     "", name="HI_music"),
+        NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)'),
+                     "", name="HI_music", entry=True),
     ]
 
 

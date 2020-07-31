@@ -18,6 +18,7 @@ from subliminal import region, score as subliminal_scores, \
 from subliminal_patch.core import SZAsyncProviderPool, download_best_subtitles, save_subtitles, download_subtitles, \
     list_all_subtitles, get_subtitle_path
 from subliminal_patch.score import compute_score
+from subliminal_patch.subtitle import Subtitle
 from get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2, language_from_alpha2, \
     alpha2_from_language, alpha3_from_language
 from config import settings
@@ -177,11 +178,15 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             logging.info("BAZARR All providers are throttled")
             return None
 
+        subz_mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
         saved_any = False
         if downloaded_subtitles:
             for video, subtitles in downloaded_subtitles.items():
                 if not subtitles:
                     continue
+
+                for s in subtitles:
+                    s.mods = subz_mods
 
                 try:
                     fld = get_target_folder(path)
@@ -417,6 +422,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
     subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    subtitle.mods = settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
     use_postprocessing = settings.general.getboolean('use_postprocessing')
     postprocessing_cmd = settings.general.postprocessing_cmd
     single = settings.general.getboolean('single_language')
@@ -551,12 +557,6 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
         'win') and settings.general.getboolean('chmod_enabled') else None
 
-    dest_directory = get_target_folder(path)
-    fake_video_path = None
-    if dest_directory:
-        fake_video_path = os.path.join(dest_directory, os.path.split(path)[1])
-    _, ext = os.path.splitext(subtitle.filename)
-
     language = alpha3_from_alpha2(language)
 
     if language == 'pob':
@@ -567,48 +567,37 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
     if forced:
         lang_obj = Language.rebuild(lang_obj, forced=True)
 
-    subtitle_path = get_subtitle_path(video_path=force_unicode(fake_video_path if fake_video_path else path),
-                                      language=None if single else lang_obj,
-                                      extension=ext,
-                                      forced_tag=forced)
+    sub = Subtitle(
+        lang_obj,
+        mods=settings.general.subzero_mods.strip().split(',') if settings.general.subzero_mods.strip() else None
+    )
 
-    subtitle_path = force_unicode(subtitle_path)
-
-    if os.path.exists(subtitle_path):
-        os.remove(subtitle_path)
+    sub.content = subtitle.read()
+    if not sub.is_valid():
+        logging.exception('BAZARR Invalid subtitle file: ' + subtitle.filename)
+        sub.mods = None
 
     if settings.general.getboolean('utf8_encode'):
-        try:
-            os.remove(subtitle_path + ".tmp")
-        except:
-            pass
+        sub.set_encoding("utf-8")
 
-        subtitle.save(subtitle_path + ".tmp")
+    saved_subtitles = []
+    try:
+        saved_subtitles = save_subtitles(path,
+                                         [sub],
+                                         single=single,
+                                         tags=None,  # fixme
+                                         directory=get_target_folder(path),
+                                         chmod=chmod,
+                                         # formats=("srt", "vtt")
+                                         path_decoder=force_unicode)
+    except:
+        pass
 
-        with open(subtitle_path + ".tmp", 'rb') as fr:
-            text = fr.read()
+    if len(saved_subtitles) < 1:
+        logging.exception('BAZARR Error saving Subtitles file to disk for this file:' + path)
+        return
 
-        try:
-            guess = chardet.detect(text)
-            text = text.decode(guess["encoding"])
-            text = text.encode('utf-8')
-        except UnicodeError:
-            logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
-                              subtitle_path)
-        else:
-            with open(subtitle_path, 'wb') as fw:
-                fw.write(text)
-        finally:
-            try:
-                os.remove(subtitle_path + ".tmp")
-            except:
-                pass
-    else:
-        subtitle.save(subtitle_path)
-
-    if chmod:
-        os.chmod(subtitle_path, chmod)
-
+    subtitle_path = saved_subtitles[0].storage_path
     message = language_from_alpha3(language) + (" forced" if forced else "") + " Subtitles manually uploaded."
 
     uploaded_language_code3 = language
