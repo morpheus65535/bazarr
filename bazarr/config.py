@@ -59,7 +59,8 @@ defaults = {
         'anti_captcha_provider': 'None',
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
-        'subzero_mods': ''
+        'subzero_mods': '',
+        'dont_notify_manual_actions': 'False'
     },
     'auth': {
         'type': 'None',
