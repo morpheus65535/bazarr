@@ -124,6 +124,7 @@ class Notifications(Resource):
             database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
                              (item['enabled'], item['url'], item['name']))
 
+        save_settings(zip(request.form.keys(), request.form.listvalues()))
         return '', 204
 
 
@@ -606,7 +607,8 @@ class EpisodesSubtitlesManualDownload(Resource):
                 subs_id = result[6]
                 subs_path = result[7]
                 history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             return result, 201
         except OSError:
@@ -653,7 +655,8 @@ class EpisodesSubtitlesUpload(Resource):
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subtitles_path=subs_path)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
             return result, 201
@@ -1057,7 +1060,8 @@ class MovieSubtitlesManualDownload(Resource):
                 subs_id = result[6]
                 subs_path = result[7]
                 history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications_movie(radarrId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             return result, 201
         except OSError:
@@ -1103,7 +1107,8 @@ class MovieSubtitlesUpload(Resource):
                 provider = "manual"
                 score = 120
                 history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
-                send_notifications_movie(radarrId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
 
             return result, 201
