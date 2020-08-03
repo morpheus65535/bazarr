@@ -50,19 +50,39 @@ class SubSyncer:
         data = api.know(self.reference)
 
         using_what = None
+        first_embedded_subs = None
 
         if 'subtitle' in data:
             for i, embedded_subs in enumerate(data['subtitle']):
+                if i == 0:
+                    first_embedded_subs = embedded_subs
                 if 'language' in embedded_subs:
                     language = embedded_subs['language'].alpha3
+                    forced = False
+                    if 'forced' in embedded_subs:
+                        if embedded_subs['forced']:
+                            forced = True
+                    str_format = embedded_subs['format'].lower()
+                    if forced or str_format in ['pgs', 'vobsub']:
+                        pass
                     if language == "eng":
                         using_what = "English embedded subtitle track"
                         self.reference_stream = "s:{}".format(i)
                         break
             if not self.reference_stream:
-                using_what = "{0} embedded subtitle track".format(
-                    language_from_alpha3(embedded_subs['language'].alpha3) or 'unknown language embedded subtitles '
-                                                                              'track')
+                language = None
+                if 'language' in first_embedded_subs:
+                    language = language_from_alpha3(first_embedded_subs['language'].alpha3)
+                    forced = False
+                    if 'forced' in first_embedded_subs:
+                        if first_embedded_subs['forced']:
+                            forced = True
+                    str_format = first_embedded_subs['format'].lower()
+                    if forced or str_format in ['pgs', 'vobsub']:
+                        pass
+
+                using_what = "{0} embedded subtitle track".format(language or
+                                                                  'unknown language embedded subtitles track')
                 self.reference_stream = "s:0"
         elif 'audio' in data:
             audio_tracks = data['audio']
