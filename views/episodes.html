@@ -391,8 +391,15 @@
                             r.style.display = collapsed ? 'none' : '';
                         });
 
+                        if (collapsed) {
+                            var chevron_icon = '<i class="fas fa-chevron-circle-right"></i>';
+                        } else {
+                            var chevron_icon = '<i class="fas fa-chevron-circle-down"></i>';
+                        }
+
+
                         return $('<tr/>')
-                            .append('<td colspan=' + rows.columns()[0].length + '>Season ' + group + '</td>')
+                            .append('<td colspan=' + rows.columns()[0].length + '>Season ' + group + ' ' + chevron_icon + '</td>')
                             .attr('data-name', group)
                             .toggleClass('collapsed', collapsed);
                     }
