@@ -214,7 +214,7 @@
 					<input type="hidden" id="upload_audioLanguage" name="audioLanguage" value="" />
 				</div>
 				<div class="modal-footer">
-					<button type="submit" id="upload_save_button" class="btn btn-info">Save</button>
+					<span id="upload_save_button_span"><button type="submit" id="upload_save_button" class="btn btn-info">Save</button></span>
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				</div>
 			</form>
@@ -686,7 +686,9 @@
 		});
 
 		$('#uploadModal').on('hidden.bs.modal', function () {
-			$(this).find('form')[0].reset();
+			$(this).find('form').trigger('reset');
+			$('.custom-file-label').text('Choose file')
+			$('#upload_save_button_span').html('<button type="submit" id="upload_save_button" class="btn btn-info">Save</button>');
 		});
 
 		events.on('event', function(event) {
