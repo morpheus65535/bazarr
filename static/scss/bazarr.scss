@@ -157,24 +157,27 @@ a.link {
 
         &.active,
         &:hover {
-          color: $topbar;
+          color: $white;
           cursor: pointer;
+          background: $topbar;
         }
 
         &.active {
           font-weight: 400;
-          color: $topbar;
+          color: $white;
+          background: $themecolor-alt;
         }
       }
 
       ul {
-        padding-left: 60px;
+        padding-left: 0px;
         padding-top: 0;
         transition-delay: inherit;
         border-left: 3px solid $topbar;
 
         li a {
-          padding: 15px 35px 10px 15px;
+          //padding: 15px 35px 10px 15px;
+          padding-left: 60px;
         }
 
         ul {
@@ -197,7 +200,7 @@ a.link {
     margin-bottom: 0px;
 
     &.active > a {
-      color: $topbar;
+      color: $white;
       font-weight: 400;
       border-left: 3px solid $topbar;
       background: $themecolor-alt;
@@ -205,7 +208,7 @@ a.link {
       box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
 
       i {
-        color: $topbar;
+        color: $white;
         font-size: 14px;
       }
     }
@@ -217,7 +220,7 @@ a.link {
     &:hover {
 
       i {
-        color: $topbar;
+        color: $white;
       }
     }
 
@@ -237,8 +240,8 @@ a.link {
 
     &.active {
       font-weight: 400;
-      background: #242933;
-      color: $topbar;
+      background: $themecolor-alt;
+      color: $white;
     }
   }
 }
@@ -253,7 +256,7 @@ a.link {
     top: 45px;
     width: 200px;
     z-index: 1001;
-    background: $sidebar-alt;
+    background: $sidebar;
     display: none;
     padding-left: 1px;
   }
@@ -342,6 +345,9 @@ a.link {
         border-color: $topbar;
       }
     }
+    .sidebar-nav ul li ul li a {
+    padding-left: 15px;
+}
   }
 }
 
