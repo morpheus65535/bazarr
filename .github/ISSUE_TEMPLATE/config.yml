@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature suggestions
+    url: https://bazarr.featureupvote.com/
+    about: Share your suggestions or ideas to make Bazarr better!
+  - name: Discord Support
+    url: https://discord.gg/MH2e2eb
+    about: Ask questions and talk about bazarr
