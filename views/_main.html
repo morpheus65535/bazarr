@@ -94,16 +94,22 @@
                 margin-bottom: 0.5em;
             }
 
-            .card-no-border .sidebar-nav > ul > li > a.active,
-            .card-no-border .sidebar-nav > ul > li > a:hover,
             .sidebar-nav > ul > li.active > a,
-            .sidebar-nav > ul > li > a:hover,
-            .sidebar-nav ul li a.active,
-            .sidebar-nav ul li a:hover {
-                background: #e1e2e3;
+            .sidebar-nav > ul > li.active > a:hover,
+            .sidebar-nav > ul > li.active > a i {
+                color: white;
             }
 
+            .sidebar-nav ul li a.active,
+            .sidebar-nav ul li a.active:hover,
+            .sidebar-nav ul li a:hover {
+                color: white;
+                background-color: #911f93;
+            }
 
+            .sidebar-nav ul li a.active {
+                background-color: #252833;
+            }
         </style>
     {% endblock head %}
 
