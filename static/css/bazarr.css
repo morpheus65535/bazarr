@@ -111,18 +111,20 @@ a.link:hover, a.link:focus {
           color: #e1e2e3;
           font-size: 14px; }
         .sidebar-nav ul li a.active, .sidebar-nav ul li a:hover {
-          color: #911f93;
-          cursor: pointer; }
+          color: #ffffff;
+          cursor: pointer;
+          background: #911f93; }
         .sidebar-nav ul li a.active {
           font-weight: 400;
-          color: #911f93; }
+          color: #ffffff;
+          background: #252833; }
       .sidebar-nav ul li ul {
-        padding-left: 60px;
+        padding-left: 0px;
         padding-top: 0;
         transition-delay: inherit;
         border-left: 3px solid #911f93; }
         .sidebar-nav ul li ul li a {
-          padding: 15px 35px 10px 15px; }
+          padding-left: 60px; }
         .sidebar-nav ul li ul ul {
           padding-left: 35px; }
       .sidebar-nav ul li.nav-small-cap {
@@ -134,17 +136,17 @@ a.link:hover, a.link:focus {
   .sidebar-nav > ul > li {
     margin-bottom: 0px; }
     .sidebar-nav > ul > li.active > a {
-      color: #911f93;
+      color: #ffffff;
       font-weight: 400;
       border-left: 3px solid #911f93;
       background: #252833;
       padding: 8px 35px 8px 37px;
       box-shadow: 0 0 0 rgba(0, 0, 0, 0.2); }
       .sidebar-nav > ul > li.active > a i {
-        color: #911f93;
+        color: #ffffff;
         font-size: 14px; }
   .sidebar-nav > ul > li > a.active i, .sidebar-nav > ul > li > a:hover i {
-    color: #911f93; }
+    color: #ffffff; }
   .sidebar-nav > ul > li > a i {
     width: 27px;
     height: 27px;
@@ -157,8 +159,8 @@ a.link:hover, a.link:focus {
     margin-top: 6px; }
   .sidebar-nav > ul > li > a.active {
     font-weight: 400;
-    background: #242933;
-    color: #911f93; }
+    background: #252833;
+    color: #ffffff; }
 
 @media (min-width: 768px) {
   .mini-sidebar .sidebar-nav #sidebarnav li {
@@ -170,7 +172,7 @@ a.link:hover, a.link:focus {
     top: 45px;
     width: 200px;
     z-index: 1001;
-    background: #f2f6f8;
+    background: #3a3f51;
     display: none;
     padding-left: 1px; }
 
@@ -229,7 +231,9 @@ a.link:hover, a.link:focus {
   .mini-sidebar .sidebar-nav #sidebarnav > li.active > a {
     border-color: transparent; }
     .mini-sidebar .sidebar-nav #sidebarnav > li.active > a.active {
-      border-color: #911f93; } }
+      border-color: #911f93; }
+  .mini-sidebar .sidebar-nav ul li ul li a {
+    padding-left: 15px; } }
 /*******************
 /*Buttons
 *******************/
