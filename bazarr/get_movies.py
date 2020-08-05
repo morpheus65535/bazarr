@@ -41,7 +41,11 @@ def update_movies():
         tagsDict = get_tags()
         
         # Get movies data from radarr
-        url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
+        if radarr_version.startswith('0'):
+            url_radarr_api_movies = url_radarr() + "/api/movie?apikey=" + apikey_radarr
+        else:
+            url_radarr_api_movies = url_radarr() + "/api/v3/movie?apikey=" + apikey_radarr
+
         try:
             r = requests.get(url_radarr_api_movies, timeout=60, verify=False)
             r.raise_for_status()
@@ -98,10 +102,13 @@ def update_movies():
                             else:
                                 sceneName = None
 
-                            if 'alternativeTitles' in movie:
-                                alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
+                            alternativeTitles = None
+                            if radarr_version.startswith('0'):
+                                if 'alternativeTitles' in movie:
+                                    alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
                             else:
-                                alternativeTitles = None
+                                if 'alternateTitles' in movie:
+                                    alternativeTitles = str([item['title'] for item in movie['alternateTitles']])
 
                             if 'imdbId' in movie: imdbId = movie['imdbId']
                             else: imdbId = None
@@ -117,14 +124,20 @@ def update_movies():
 
                             if 'mediaInfo' in movie['movieFile']:
                                 videoFormat = videoCodecID = videoProfile = videoCodecLibrary = None
-                                if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
+                                if radarr_version.startswith('0'):
+                                    if 'videoFormat' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
+                                else:
+                                    if 'videoCodec' in movie['movieFile']['mediaInfo']: videoFormat = movie['movieFile']['mediaInfo']['videoCodec']
                                 if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
                                 if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
                                 if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
                                 videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
 
                                 audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
-                                if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
+                                if radarr_version.startswith('0'):
+                                    if 'audioFormat' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
+                                else:
+                                    if 'audioCodec' in movie['movieFile']['mediaInfo']: audioFormat = movie['movieFile']['mediaInfo']['audioCodec']
                                 if 'audioCodecID' in movie['movieFile']['mediaInfo']: audioCodecID = movie['movieFile']['mediaInfo']['audioCodecID']
                                 if 'audioProfile' in movie['movieFile']['mediaInfo']: audioProfile = movie['movieFile']['mediaInfo']['audioProfile']
                                 if 'audioAdditionalFeatures' in movie['movieFile']['mediaInfo']: audioAdditionalFeatures = movie['movieFile']['mediaInfo']['audioAdditionalFeatures']
@@ -133,7 +146,12 @@ def update_movies():
                                 videoCodec = None
                                 audioCodec = None
 
-                            audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
+                            audio_language = None
+                            if radarr_version.startswith('0'):
+                                audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
+                            else:
+                                if len(movie['movieFile']['languages']):
+                                    audio_language = movie['movieFile']['languages'][0]['name']
 
                             tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
 
