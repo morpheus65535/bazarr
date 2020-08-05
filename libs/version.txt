@@ -8,6 +8,7 @@ bottle-fdsend=0.1.1
 chardet=3.0.4
 dogpile.cache=0.6.5
 enzyme=0.4.1
+ffsubsync=2020-08-04
 Flask=1.1.1
 gevent-websocker=0.10.1
 gitpython=2.1.9
