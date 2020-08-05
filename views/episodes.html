@@ -331,7 +331,7 @@
                             <tr>
                                 <th style="text-align: left;">Language:</th>
                                 <th style="text-align: left;">Filename:</th>
-                                <th style="text-align: left;">Sync:</th>
+                                <th style="text-align: left;">Tools:</th>
                             </tr>
                             </thead>
                         </table>
@@ -1021,7 +1021,17 @@
                         {
                             data: null,
                             "render": function (data) {
-                                return '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '"><i class="far fa-play-circle"></i></a>';
+                                var tools = '';
+
+                                tools += '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title="Sync"><i class="far fa-play-circle"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_HI" data-toggle="tooltip" data-placement="right" title="Remove HI-tags"><i class="fa fa-deaf"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_tags" data-toggle="tooltip" data-placement="right" title="Remove style tags"><i class="fa fa-code"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "OCR_fixes" data-toggle="tooltip" data-placement="right" title="OCR Fixes"><i class="fa fa-image"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "common" data-toggle="tooltip" data-placement="right" title="Common Fixes"><i class="fas fa-magic"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "fix_uppercase" data-toggle="tooltip" data-placement="right" title="Fix Uppercase"><i class="fa fa-text-height"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "reverse_rtl" data-toggle="tooltip" data-placement="right" title="Reverse RTL"><i class="fa fa-exchange-alt"></i></a> ';
+
+                                return tools;
                             }
                         }
                     ]
@@ -1050,6 +1060,32 @@
                     dataType: "json",
                     data: values,
                     beforeSend: function () {
+                        $('.subtitles_sync').tooltip('hide')
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
+                        $('#episodeToolsModal').modal('hide');
+                    }
+                });
+            });
+
+            $('#episode_tools_result').on('click', '.subtitles_mod', function (e) {
+                e.preventDefault();
+                const values = {
+                    language: $(this).attr("data-language"),
+                    subtitlesPath: $(this).attr("data-path"),
+                    mod: $(this).attr("data-mod"),
+                };
+
+                var cell = $(this).parent();
+
+                $.ajax({
+                    url: "{{ url_for('api.submods') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        $('.subtitles_mod').tooltip('hide')
                         cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
                     },
                     complete: function () {

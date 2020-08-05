@@ -30,7 +30,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles
+    delete_subtitles, subtitles_apply_mods
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
@@ -1748,6 +1748,18 @@ class SyncSubtitles(Resource):
         return '', 200
 
 
+class SubMods(Resource):
+    @authenticate
+    def post(self):
+        language = request.form.get('language')
+        subtitles_path = request.form.get('subtitlesPath')
+        mod = request.form.get('mod')
+
+        subtitles_apply_mods(language, subtitles_path, [mod])
+
+        return '', 200
+
+
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
@@ -1844,6 +1856,7 @@ api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remo
 api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
+api.add_resource(SubMods, '/sub_mods')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
