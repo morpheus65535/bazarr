@@ -131,7 +131,7 @@ def update_movies():
                                 if 'videoCodecID' in movie['movieFile']['mediaInfo']: videoCodecID = movie['movieFile']['mediaInfo']['videoCodecID']
                                 if 'videoProfile' in movie['movieFile']['mediaInfo']: videoProfile = movie['movieFile']['mediaInfo']['videoProfile']
                                 if 'videoCodecLibrary' in movie['movieFile']['mediaInfo']: videoCodecLibrary = movie['movieFile']['mediaInfo']['videoCodecLibrary']
-                                videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary)
+                                videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
                                 audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
                                 if radarr_version.startswith('0'):
@@ -329,19 +329,19 @@ def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditio
     return audioFormat
 
 
-def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoProfile, videoCodecLibrary):
+def RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary):
     if videoFormat == "x264": return "h264"
     if videoFormat == "AVC" or videoFormat == "V.MPEG4/ISO/AVC": return "h264"
-    if videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC":
+    if videoCodecLibrary and (videoFormat == "HEVC" or videoFormat == "V_MPEGH/ISO/HEVC"):
         if videoCodecLibrary.startswith("x265"): return "h265"
-    if videoFormat == "MPEG Video":
+    if videoCodecID and videoFormat == "MPEG Video":
         if videoCodecID == "2" or videoCodecID == "V_MPEG2":
             return "Mpeg2"
         else:
             return "Mpeg"
     if videoFormat == "MPEG-1 Video": return "Mpeg"
     if videoFormat == "MPEG-2 Video": return "Mpeg2"
-    if videoFormat == "MPEG-4 Visual":
+    if videoCodecLibrary and videoCodecID and videoFormat == "MPEG-4 Visual":
         if videoCodecID.endswith("XVID") or videoCodecLibrary.startswith("XviD"): return "XviD"
         if videoCodecID.endswith("DIV3") or videoCodecID.endswith("DIVX") or videoCodecID.endswith(
             "DX50") or videoCodecLibrary.startswith("DivX"): return "DivX"
