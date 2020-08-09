@@ -27,6 +27,7 @@
             <th>Subtitles Languages</th>
             <th>Hearing-Impaired</th>
             <th>Forced</th>
+            <th>Missing Subtitles</th>
             <th></th>
         </tr>
         </thead>
@@ -208,6 +209,22 @@
                     {
                         data: "forced",
                         className: "dt-center"
+                    },
+                    {
+                        data: "missing_subtitles",
+                        render: function (data) {
+                            if (data && data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
                     },
                     {
                         data: null,
