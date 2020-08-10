@@ -114,10 +114,12 @@ class SZProviderPool(ProviderPool):
         try:
             logger.info('Terminating provider %s', name)
             self.initialized_providers[name].terminate()
-        except (requests.Timeout, socket.timeout):
+        except (requests.Timeout, socket.timeout) as e:
             logger.error('Provider %r timed out, improperly terminated', name)
-        except:
+            self.throttle_callback(name, e)
+        except Exception as e:
             logger.exception('Provider %r terminated unexpectedly', name)
+            self.throttle_callback(name, e)
 
         del self.initialized_providers[name]
 
@@ -189,8 +191,9 @@ class SZProviderPool(ProviderPool):
 
             return out
 
-        except (requests.Timeout, socket.timeout):
+        except (requests.Timeout, socket.timeout) as e:
             logger.error('Provider %r timed out', provider)
+            self.throttle_callback(provider, e)
 
         except Exception as e:
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
@@ -269,10 +272,11 @@ class SZProviderPool(ProviderPool):
                     requests.exceptions.ProxyError,
                     requests.exceptions.SSLError,
                     requests.Timeout,
-                    socket.timeout):
+                    socket.timeout) as e:
                 logger.error('Provider %r connection error', subtitle.provider_name)
+                self.throttle_callback(subtitle.provider_name, e)
 
-            except ResponseNotReady:
+            except ResponseNotReady as e:
                 logger.error('Provider %r response error, reinitializing', subtitle.provider_name)
                 try:
                     self[subtitle.provider_name].terminate()
@@ -280,6 +284,7 @@ class SZProviderPool(ProviderPool):
                 except:
                     logger.error('Provider %r reinitialization error: %s', subtitle.provider_name,
                                  traceback.format_exc())
+                    self.throttle_callback(subtitle.provider_name, e)
 
             except rarfile.BadRarFile:
                 logger.error('Malformed RAR file from provider %r, skipping subtitle.', subtitle.provider_name)
