@@ -374,7 +374,9 @@
     <script>
         {% if not request.endpoint == 'login_page' %}
         $(document).ready(function () {
-            BadgesAjax();
+            BadgesAjax('series');
+            BadgesAjax('movies');
+            BadgesAjax('providers');
 
             $(window).on( 'ready orientationchange resize', function() {
                 adjustResponsiveUI();
@@ -412,30 +414,43 @@
 
             events.on('event', function (event) {
                 var event_json_badges = JSON.parse(event);
-                if (event_json_badges.type === 'badges') {
-                    BadgesAjax();
+                if (event_json_badges.type === 'badges_series') {
+                    BadgesAjax('series');
+                } else if (event_json_badges.type === 'badges_movies') {
+                    BadgesAjax('movies');
+                } else if (event_json_badges.type === 'badges_providers') {
+                    BadgesAjax('providers');
                 }
             });
 
-            function BadgesAjax() {
+            function BadgesAjax(type) {
+                if (type=='series') {
+                    var url = "{{url_for('api.badgesseries')}}";
+                } else if (type=='movies') {
+                    var url = "{{url_for('api.badgesmovies')}}";
+                } else if (type=='providers') {
+                    var url = "{{url_for('api.badgesproviders')}}";
+                } else {
+                    return;
+                }
                 $.ajax({
-                    url: "{{url_for('api.badges')}}",
+                    url: url,
                     async: true,
                     success: function (data) {
-                        if (data['throttled_providers']) {
-                            $('.throttled_providers_count').html('<span class="badge badge-secondary">' + data['throttled_providers'] + '</span>');
-                        } else {
+                        if (data['throttled_providers'] == 0) {
                             $('.throttled_providers_count').html('');
+                        } else if (data['throttled_providers'] > 0) {
+                            $('.throttled_providers_count').html('<span class="badge badge-secondary">' + data['throttled_providers'] + '</span>');
                         }
-                        if (data['missing_episodes']) {
-                            $('.wanted_series_badge').html('<span class="badge badge-secondary">' + data['missing_episodes'] + '</span>');
-                        } else {
+                        if (data['missing_episodes'] == 0) {
                             $('.wanted_series_badge').html('');
+                        } else if (data['missing_episodes'] > 0) {
+                            $('.wanted_series_badge').html('<span class="badge badge-secondary">' + data['missing_episodes'] + '</span>');
                         }
-                        if (data['missing_movies']) {
-                            $('.wanted_movies_badge').html('<span class="badge badge-secondary">' + data['missing_movies'] + '</span>');
-                        } else {
+                        if (data['missing_movies'] == 0) {
                             $('.wanted_movies_badge').html('');
+                        } else if (data['missing_movies'] > 0) {
+                            $('.wanted_movies_badge').html('<span class="badge badge-secondary">' + data['missing_movies'] + '</span>');
                         }
 
                     },

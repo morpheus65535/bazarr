@@ -198,6 +198,7 @@ def provider_throttle(name, exception):
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
                          if exception.args else None)
+            update_throttled_provider()
 
 
 def throttled_count(name):
@@ -255,7 +256,7 @@ def update_throttled_provider():
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
                 settings.write(handle)
 
-        event_stream(type='badges')
+        event_stream(type='badges_providers')
 
 
 def list_throttled_providers():
