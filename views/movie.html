@@ -346,6 +346,57 @@
 		</div>
 	</div>
 </div>
+
+<div id="movieSubtitleModColorModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chose Color</h5><br>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+             <form class="form" name="subtitles_mod_color_form" id="subtitles_mod_color_form">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>Color Name</b>
+                            </div>
+                            <div class="form-group col">
+                                <select class="form-control selectpicker" id="subzero_color_name">
+                                    <option value="white">White</option>
+                                    <option value="light-grey">Light Grey</option>
+                                    <option value="red">Red</option>
+                                    <option value="green">Green</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="blue">Blue</option>
+                                    <option value="magenta">Magenta</option>
+                                    <option value="cyan">Cyan</option>
+                                    <option value="black">Black</option>
+                                    <option value="dark-red">Dark Red</option>
+                                    <option value="dark-green">Dark Green</option>
+                                    <option value="dark-yellow">Dark Yellow</option>
+                                    <option value="dark-blue">Dark Blue</option>
+                                    <option value="dark-magenta">Dark Magenta</option>
+                                    <option value="dark-cyan">Dark Cyan</option>
+                                    <option value="dark-grey">Dark Grey</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="subzero_color_data_language" value="" />
+                            <input type="hidden" id="subzero_color_data_path" value="" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span id="subtitles_mod_color_save_button_span"><button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button></span>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+             </form>
+        </div>
+    </div>
+</div>
+
 {% endblock body %}
 
 {% block tail %}
@@ -842,6 +893,7 @@
                             tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "common" data-toggle="tooltip" data-placement="right" title="Common Fixes"><i class="fas fa-magic"></i></a> ';
                             tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "fix_uppercase" data-toggle="tooltip" data-placement="right" title="Fix Uppercase"><i class="fa fa-text-height"></i></a> ';
                             tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "reverse_rtl" data-toggle="tooltip" data-placement="right" title="Reverse RTL"><i class="fa fa-exchange-alt"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
 
                             return tools;
 						}
@@ -903,6 +955,47 @@
                     $('#movieToolsModal').modal('hide');
                 }
             });
+        });
+
+        $('#movie_tools_result').on('click', '.subtitles_mod_color', function (e) {
+            e.preventDefault();
+
+            $('#subzero_color_data_language').val($(this).attr("data-language"))
+            $('#subzero_color_data_path').val($(this).attr("data-path"))
+
+            $('#movieToolsModal').modal('hide');
+            $('#movieSubtitleModColorModal')
+                .modal({
+                    focus: false
+                });
+        });
+
+        $('#subtitles_mod_color_form').on('submit', function (e) {
+            e.preventDefault();
+
+            const values = {
+                language: $('#subzero_color_data_language').val(),
+                subtitlesPath: $('#subzero_color_data_path').val(),
+                mod: 'color(name=' + $('#subzero_color_name').val() + ')',
+            };
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+
+                beforeSend: function () {
+                    $('#subtitles_mod_color_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieSubtitleModColorModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movieSubtitleModColorModal').on('hidden.bs.modal', function (e) {
+            $('#subtitles_mod_color_save_button_span').html('<button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button>');
         });
 	});
 
