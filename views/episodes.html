@@ -275,7 +275,7 @@
                         <input type="hidden" id="edit_sonarrSeriesId" name="sonarrSeriesId" value=""/>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="submit" id="edit_save_button" class="btn btn-info"><span id="edit_save_button_span">Save</span></button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </form>
@@ -829,9 +829,13 @@
                     processData: false,
                     contentType: false,
                     type: 'POST',
+                    beforeSend: function () {
+                        $('#edit_save_button_span').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
                     success: function () {
                         seriesDetailsRefresh();
                         $('#editModal').modal('hide');
+                        $('#edit_save_button_span').html('Save');
                     }
                 });
             });
