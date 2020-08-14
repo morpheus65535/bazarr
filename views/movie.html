@@ -397,6 +397,54 @@
     </div>
 </div>
 
+<div id="movieSubtitleModFpsModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Convert frame rate of subtitle</h5><br>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+             <form class="form" name="subtitles_mod_fps_form" id="subtitles_mod_fps_form">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>From frame rate</b>
+                            </div>
+                            <div class="form-group col">
+                                <input type="text" class="form-control" list="default_frame_rates" id="subzero_fps_from" minlength="2" maxlength="6" required autocomplete>
+                                <datalist id="default_frame_rates">
+                                    <option value="23.976">23.976</option>
+                                    <option value="24">24</option>
+                                    <option value="25">25</option>
+                                    <option value="29.97">29.97</option>
+                                    <option value="30">30</option>
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>To frame rate</b>
+                            </div>
+                            <div class="form-group col">
+                                <input type="text" class="form-control" list="default_frame_rates" id="subzero_fps_to" minlength="2" maxlength="6" required autocomplete>
+                            </div>
+                        </div>
+                        <input type="hidden" id="subzero_fps_data_language" value="" />
+                        <input type="hidden" id="subzero_fps_data_path" value="" />
+                   </div>
+                </div>
+                <div class="modal-footer">
+                    <span id="subtitles_mod_fps_save_button_span"><button type="submit" id="subtitles_mod_fps_save_button" class="btn btn-info">Save</button></span>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+             </form>
+        </div>
+    </div>
+</div>
+
 {% endblock body %}
 
 {% block tail %}
@@ -894,6 +942,7 @@
                             tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "fix_uppercase" data-toggle="tooltip" data-placement="right" title="Fix Uppercase"><i class="fa fa-text-height"></i></a> ';
                             tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "reverse_rtl" data-toggle="tooltip" data-placement="right" title="Reverse RTL"><i class="fa fa-exchange-alt"></i></a> ';
                             tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod_fps badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Change Frame Rate"><i class="fa fa-film"></i></a> ';
 
                             return tools;
 						}
@@ -997,6 +1046,48 @@
         $('#movieSubtitleModColorModal').on('hidden.bs.modal', function (e) {
             $('#subtitles_mod_color_save_button_span').html('<button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button>');
         });
+
+        $('#movie_tools_result').on('click', '.subtitles_mod_fps', function (e) {
+            e.preventDefault();
+
+            $('#subzero_fps_data_language').val($(this).attr("data-language"))
+            $('#subzero_fps_data_path').val($(this).attr("data-path"))
+
+            $('#movieToolsModal').modal('hide');
+            $('#movieSubtitleModFpsModal')
+                .modal({
+                    focus: false
+                });
+        });
+
+        $('#subtitles_mod_fps_form').on('submit', function (e) {
+            e.preventDefault();
+
+            const values = {
+                language: $('#subzero_fps_data_language').val(),
+                subtitlesPath: $('#subzero_fps_data_path').val(),
+                mod: 'change_FPS(from=' + $('#subzero_fps_from').val() + ',to=' + $('#subzero_fps_to').val() + ')',
+            };
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+
+                beforeSend: function () {
+                    $('#subtitles_mod_fps_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieSubtitleModFpsModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movieSubtitleModFpsModal').on('hidden.bs.modal', function (e) {
+            $('#subtitles_mod_fps_save_button_span').html('<button type="submit" id="subtitles_mod_fps_save_button" class="btn btn-info">Save</button>');
+        });
+
 	});
 
 	function movieDetailsRefresh() {
