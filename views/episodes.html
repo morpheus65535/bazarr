@@ -442,6 +442,55 @@
         </div>
     </div>
 
+    <div id="episodeSubtitleModOffsetModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adjust All Times</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                 <form class="form" name="subtitles_mod_offset_form" id="subtitles_mod_offset_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col text-right">
+                                    <b>Hour:min:sec:ms</b>
+                                </div>
+                                <div class="form-group col">
+                                    <input type="text" class="form-control" id="subzero_offset_time" minlength="12" maxlength="12" required value="00:00:00.100">
+                                </div>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="form-group col-sm-7">
+                                    <label class="custom-control custom-radio">
+                                        <input type="radio" class="custom-control-input" id="subzero_offset_show_earlier" name="subzero_offset_dir" checked value="0">
+                                        <span class="custom-control-label" for="subzero_offset_show_earlier">Show earlier</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row justify-content-center">
+                                <div class="form-group col-sm-7">
+                                    <label class="custom-control custom-radio">
+                                        <input type="radio" class="custom-control-input" id="subzero_offset_show_later" name="subzero_offset_dir" value="1">
+                                        <span class="custom-control-label" for="subzero_offset_show_later">Show later</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" id="subzero_offset_data_language" value="" />
+                            <input type="hidden" id="subzero_offset_data_path" value="" />
+                       </div>
+                    </div>
+                    <div class="modal-footer">
+                        <span id="subtitles_mod_offset_save_button_span"><button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button></span>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                 </form>
+            </div>
+        </div>
+    </div>
+
 {% endblock body %}
 
 {% block tail %}
@@ -1135,6 +1184,7 @@
                                 tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "reverse_rtl" data-toggle="tooltip" data-placement="right" title="Reverse RTL"><i class="fa fa-exchange-alt"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
                                 tools += '<a href="" class="subtitles_mod_fps badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Change Frame Rate"><i class="fa fa-film"></i></a> ';
+                                tools += '<a href="" class="subtitles_mod_offset badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adjust all times (show earlier/later)"><i class="fa fa-clock"></i></a> ';
 
                                 return tools;
                             }
@@ -1279,6 +1329,55 @@
 
             $('#episodeSubtitleModFpsModal').on('hidden.bs.modal', function (e) {
                 $('#subtitles_mod_fps_save_button_span').html('<button type="submit" id="subtitles_mod_fps_save_button" class="btn btn-info">Save</button>');
+            });
+
+            $('#episode_tools_result').on('click', '.subtitles_mod_offset', function (e) {
+                e.preventDefault();
+
+                $('#subzero_offset_data_language').val($(this).attr("data-language"))
+                $('#subzero_offset_data_path').val($(this).attr("data-path"))
+
+                $('#episodeToolsModal').modal('hide');
+                $('#episodeSubtitleModOffsetModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+            $('#subtitles_mod_offset_form').on('submit', function (e) {
+                e.preventDefault();
+
+                let times = $('#subzero_offset_time').val().match(/(\d\d):(\d\d):(\d\d)[\.,:](\d\d\d)/);
+                if (times == null || times.length != 5) return false;
+
+                let sign = '';
+                if ($('input[name="subzero_offset_dir"]:checked').val() == "0") {
+                    sign = '-';
+                }
+
+                const values = {
+                    language: $('#subzero_offset_data_language').val(),
+                    subtitlesPath: $('#subzero_offset_data_path').val(),
+                    mod: 'shift_offset(h='+sign+times[1]+',m='+sign+times[2]+',s='+sign+times[3]+',ms='+sign+times[4]+')',
+                };
+
+                $.ajax({
+                    url: "{{ url_for('api.submods') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+
+                    beforeSend: function () {
+                        $('#subtitles_mod_offset_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    },
+                    complete: function () {
+                        $('#episodeSubtitleModOffsetModal').modal('hide');
+                    }
+                });
+            });
+
+            $('#episodeSubtitleModOffsetModal').on('hidden.bs.modal', function (e) {
+                $('#subtitles_mod_offset_save_button_span').html('<button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button>');
             });
 
         });
