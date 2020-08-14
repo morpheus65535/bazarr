@@ -94,6 +94,8 @@ def get_binary(name):
             exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", dir_name, name))
         elif platform.system() == "Linux":  # Linux
             exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), dir_name, name))
+        elif platform.system() == "FreeBSD":  # FreeBSD
+            exe = os.path.abspath(os.path.join(binaries_dir, "Linux", "x86_64", dir_name, name))
 
     if exe and os.path.isfile(exe):
         return exe
