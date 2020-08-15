@@ -93,6 +93,7 @@
             #add_path_sonarr, #add_path_radarr, #add_path_bazarr {
                 margin-bottom: 0.5em;
             }
+
         </style>
     {% endblock head %}
 
@@ -243,16 +244,23 @@
                             </ul>
                         </li>
 
-                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i><span
-                                class="hide-menu"> Wanted</span></a>
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i>
+                            <span class="hide-menu"> Wanted </span>
+                            {% if settings.general.getboolean('use_sonarr') %}
+                            <span class="wanted_series_badge"></span>
+                            {% endif %}
+                            {% if settings.general.getboolean('use_radarr') %}
+                            <span class="wanted_movies_badge"></span>
+                            {% endif %}
+                        </a>
                             <ul aria-expanded="false" class="collapse">
                                 {% if settings.general.getboolean('use_sonarr') %}
                                     <li>
-                                        <a href="{{ url_for('wantedseries') }}"> Series <span id="wanted_series_badge"></span></a>
+                                        <a href="{{ url_for('wantedseries') }}"> Series <span class="wanted_series_badge"></span></a>
                                     </li>
                                 {% endif %}
                                 {% if settings.general.getboolean('use_radarr') %}
-                                    <li><a href="{{ url_for('wantedmovies') }}"> Movies <span id="wanted_movies_badge"></span></a></li>
+                                    <li><a href="{{ url_for('wantedmovies') }}"> Movies <span class="wanted_movies_badge"></span></a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -272,11 +280,11 @@
                         </li>
 
                         <li><a href="#"><i
-                                class="fas fa-laptop"></i><span class="hide-menu"> System</span></a>
+                                class="fas fa-laptop"></i><span class="hide-menu"> System </span><span class="throttled_providers_count"></span></a>
                             <ul aria-expanded="false" class="collapse">
                                 <li><a href="{{ url_for('systemtasks') }}"> Tasks</a></li>
                                 <li><a href="{{ url_for('systemlogs') }}"> Logs</a></li>
-                                <li><a href="{{ url_for('systemproviders') }}"> Providers <span id="throttled_providers_count"></span></a></li>
+                                <li><a href="{{ url_for('systemproviders') }}"> Providers <span class="throttled_providers_count"></span></a></li>
                                 <li><a href="{{ url_for('systemstatus') }}"> Status</a></li>
                                 <li><a href="{{ url_for('systemreleases') }}"> Releases</a></li>
                             </ul>
@@ -366,7 +374,9 @@
     <script>
         {% if not request.endpoint == 'login_page' %}
         $(document).ready(function () {
-            BadgesAjax();
+            BadgesAjax('series');
+            BadgesAjax('movies');
+            BadgesAjax('providers');
 
             $(window).on( 'ready orientationchange resize', function() {
                 adjustResponsiveUI();
@@ -404,30 +414,43 @@
 
             events.on('event', function (event) {
                 var event_json_badges = JSON.parse(event);
-                if (event_json_badges.type === 'badges') {
-                    BadgesAjax();
+                if (event_json_badges.type === 'badges_series') {
+                    BadgesAjax('series');
+                } else if (event_json_badges.type === 'badges_movies') {
+                    BadgesAjax('movies');
+                } else if (event_json_badges.type === 'badges_providers') {
+                    BadgesAjax('providers');
                 }
             });
 
-            function BadgesAjax() {
+            function BadgesAjax(type) {
+                if (type=='series') {
+                    var url = "{{url_for('api.badgesseries')}}";
+                } else if (type=='movies') {
+                    var url = "{{url_for('api.badgesmovies')}}";
+                } else if (type=='providers') {
+                    var url = "{{url_for('api.badgesproviders')}}";
+                } else {
+                    return;
+                }
                 $.ajax({
-                    url: "{{url_for('api.badges')}}",
+                    url: url,
                     async: true,
                     success: function (data) {
-                        if (data['throttled_providers']) {
-                            $('#throttled_providers_count').html('<span class="badge badge-secondary">' + data['throttled_providers'] + '</span>');
-                        } else {
-                            $('#throttled_providers_count').html('');
+                        if (data['throttled_providers'] == 0) {
+                            $('.throttled_providers_count').html('');
+                        } else if (data['throttled_providers'] > 0) {
+                            $('.throttled_providers_count').html('<span class="badge badge-secondary">' + data['throttled_providers'] + '</span>');
                         }
-                        if (data['missing_episodes']) {
-                            $('#wanted_series_badge').html('<span class="badge badge-secondary">' + data['missing_episodes'] + '</span>');
-                        } else {
-                            $('#wanted_series_badge').html('');
+                        if (data['missing_episodes'] == 0) {
+                            $('.wanted_series_badge').html('');
+                        } else if (data['missing_episodes'] > 0) {
+                            $('.wanted_series_badge').html('<span class="badge badge-secondary">' + data['missing_episodes'] + '</span>');
                         }
-                        if (data['missing_movies']) {
-                            $('#wanted_movies_badge').html('<span class="badge badge-secondary">' + data['missing_movies'] + '</span>');
-                        } else {
-                            $('#wanted_movies_badge').html('');
+                        if (data['missing_movies'] == 0) {
+                            $('.wanted_movies_badge').html('');
+                        } else if (data['missing_movies'] > 0) {
+                            $('.wanted_movies_badge').html('<span class="badge badge-secondary">' + data['missing_movies'] + '</span>');
                         }
 
                     },

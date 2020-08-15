@@ -30,7 +30,7 @@ from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_s
     list_missing_subtitles, list_missing_subtitles_movies
 from utils import history_log, history_log_movie, blacklist_log, blacklist_delete, blacklist_delete_all, \
     blacklist_log_movie, blacklist_delete_movie, blacklist_delete_all_movie, get_sonarr_version, get_radarr_version, \
-    delete_subtitles
+    delete_subtitles, subtitles_apply_mods
 from get_providers import get_providers, get_providers_auth, list_throttled_providers, reset_throttled_providers
 from event_handler import event_stream
 from scheduler import scheduler
@@ -77,7 +77,7 @@ class Restart(Resource):
         webserver.restart()
 
 
-class Badges(Resource):
+class BadgesSeries(Resource):
     @authenticate
     def get(self):
         missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored, table_shows.seriesType "
@@ -87,14 +87,30 @@ class Badges(Resource):
         missing_episodes = filter_exclusions(missing_episodes, 'series')
         missing_episodes = len(missing_episodes)
 
+        result = {
+            "missing_episodes": missing_episodes
+        }
+        return jsonify(result)
+
+
+class BadgesMovies(Resource):
+    @authenticate
+    def get(self):
         missing_movies = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles is not "
                                           "null AND missing_subtitles != '[]'")
         missing_movies = filter_exclusions(missing_movies, 'movie')
         missing_movies = len(missing_movies)
 
         result = {
-            "missing_episodes": missing_episodes,
-            "missing_movies": missing_movies,
+            "missing_movies": missing_movies
+        }
+        return jsonify(result)
+
+
+class BadgesProviders(Resource):
+    @authenticate
+    def get(self):
+        result = {
             "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
@@ -124,6 +140,7 @@ class Notifications(Resource):
             database.execute("UPDATE table_settings_notifier SET enabled = ?, url = ? WHERE name = ?",
                              (item['enabled'], item['url'], item['name']))
 
+        save_settings(zip(request.form.keys(), request.form.listvalues()))
         return '', 204
 
 
@@ -363,6 +380,8 @@ class Series(Resource):
                                   "sonarrSeriesId=?", (str(lang), hi, forced, seriesId))
 
         list_missing_subtitles(no=seriesId)
+
+        event_stream(type='series', action='update', series=seriesId)
 
         return '', 204
 
@@ -606,7 +625,8 @@ class EpisodesSubtitlesManualDownload(Resource):
                 subs_id = result[6]
                 subs_path = result[7]
                 history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
             return result, 201
         except OSError:
@@ -653,7 +673,8 @@ class EpisodesSubtitlesUpload(Resource):
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subtitles_path=subs_path)
-                send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
             return result, 201
@@ -890,6 +911,8 @@ class Movies(Resource):
 
         list_missing_subtitles_movies(no=radarrId)
 
+        event_stream(type='movies', action='update', movie=radarrId)
+
         return '', 204
 
 
@@ -1057,7 +1080,8 @@ class MovieSubtitlesManualDownload(Resource):
                 subs_id = result[6]
                 subs_path = result[7]
                 history_log_movie(2, radarrId, message, path, language_code, provider, score, subs_id, subs_path)
-                send_notifications_movie(radarrId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
             return result, 201
         except OSError:
@@ -1103,7 +1127,8 @@ class MovieSubtitlesUpload(Resource):
                 provider = "manual"
                 score = 120
                 history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
-                send_notifications_movie(radarrId, message)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
 
             return result, 201
@@ -1743,6 +1768,18 @@ class SyncSubtitles(Resource):
         return '', 200
 
 
+class SubMods(Resource):
+    @authenticate
+    def post(self):
+        language = request.form.get('language')
+        subtitles_path = request.form.get('subtitlesPath')
+        mod = request.form.get('mod')
+
+        subtitles_apply_mods(language, subtitles_path, [mod])
+
+        return '', 200
+
+
 class BrowseBazarrFS(Resource):
     @authenticate
     def get(self):
@@ -1779,7 +1816,9 @@ class BrowseRadarrFS(Resource):
 api.add_resource(Shutdown, '/shutdown')
 api.add_resource(Restart, '/restart')
 
-api.add_resource(Badges, '/badges')
+api.add_resource(BadgesSeries, '/badges_series')
+api.add_resource(BadgesMovies, '/badges_movies')
+api.add_resource(BadgesProviders, '/badges_providers')
 api.add_resource(Languages, '/languages')
 api.add_resource(Notifications, '/notifications')
 
@@ -1839,6 +1878,7 @@ api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remo
 api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
 
 api.add_resource(SyncSubtitles, '/sync_subtitles')
+api.add_resource(SubMods, '/sub_mods')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')

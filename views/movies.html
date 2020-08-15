@@ -27,6 +27,7 @@
             <th>Subtitles Languages</th>
             <th>Hearing-Impaired</th>
             <th>Forced</th>
+            <th>Missing Subtitles</th>
             <th></th>
         </tr>
         </thead>
@@ -89,7 +90,7 @@
                         <input type="hidden" id="edit_radarrId" name="radarrId" value=""/>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="submit" id="edit_save_button" class="btn btn-info"><span id="edit_save_button_span">Save</span></button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </form>
@@ -210,6 +211,22 @@
                         className: "dt-center"
                     },
                     {
+                        data: "missing_subtitles",
+                        render: function (data) {
+                            if (data && data !== 'None') {
+                                var languages = '';
+                                data.forEach(appendFunc);
+                                return languages;
+                            } else {
+                                return null
+                            }
+
+                            function appendFunc(value) {
+                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                            }
+                        }
+                    },
+                    {
                         data: null,
                         render: function (data) {
                             return '<a href="" class="edit_button badge badge-secondary" data-radarrId=' + data.radarrId + ' data-audiolanguage="' + data.audio_language.name + '" data-title="' + data.title + '" data-languages=' + JSON.stringify(data.languages) + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
@@ -261,8 +278,12 @@
                 processData: false,
                 contentType: false,
                 type: 'POST',
+                beforeSend: function () {
+                    $('#edit_save_button_span').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
                 success: function () {
                     $('#editModal').modal('hide');
+                    $('#edit_save_button_span').html('Save');
                 }
             });
         });

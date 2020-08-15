@@ -5,6 +5,8 @@ import logging
 import subliminal_patch
 import pretty
 import time
+import socket
+import requests
 
 from get_args import args
 from config import settings
@@ -28,7 +30,8 @@ hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError, IPAddressBlocked)
-VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled')
+VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.Timeout,
+                          requests.ReadTimeout, socket.timeout)
 
 PROVIDER_THROTTLE_MAP = {
     "default": {
@@ -37,6 +40,9 @@ PROVIDER_THROTTLE_MAP = {
         ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
         APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
         ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
+        requests.Timeout: (datetime.timedelta(hours=1), "1 hour"),
+        socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
+        requests.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
     },
     "opensubtitles": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),
@@ -48,7 +54,6 @@ PROVIDER_THROTTLE_MAP = {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),
         IPAddressBlocked: (datetime.timedelta(hours=1), "1 hours"),
-
     },
     "titulky": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours")
@@ -195,6 +200,7 @@ def provider_throttle(name, exception):
             logging.info("Throttling %s for %s, until %s, because of: %s. Exception info: %r", name,
                          throttle_description, throttle_until.strftime("%y/%m/%d %H:%M"), cls_name, exception.args[0]
                          if exception.args else None)
+            update_throttled_provider()
 
 
 def throttled_count(name):
@@ -252,7 +258,7 @@ def update_throttled_provider():
             with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
                 settings.write(handle)
 
-        event_stream(type='badges')
+        event_stream(type='badges_providers')
 
 
 def list_throttled_providers():

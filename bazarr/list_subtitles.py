@@ -30,7 +30,9 @@ def store_subtitles(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS") or (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec == "VOBSUB"):
+                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
+                                (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                                 "vobsub"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -106,7 +108,9 @@ def store_subtitles_movie(original_path, reversed_path):
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
                 for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
                     try:
-                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec == "PGS") or (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec == "VOBSUB"):
+                        if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
+                                (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
+                                 "vobsub"):
                             logging.debug("BAZARR skipping %s sub for language: %s" % (subtitle_codec, alpha2_from_alpha3(subtitle_language)))
                             continue
 
@@ -232,7 +236,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         if send_event:
             event_stream(type='episode', action='update', series=missing_subtitles_item[2],
                          episode=missing_subtitles_item[1])
-            event_stream(type='badges')
+            event_stream(type='badges_series')
 
 
 def list_missing_subtitles_movies(no=None, send_event=True):
@@ -293,7 +297,7 @@ def list_missing_subtitles_movies(no=None, send_event=True):
 
         if send_event:
             event_stream(type='movie', action='update', movie=missing_subtitles_item[1])
-            event_stream(type='badges')
+            event_stream(type='badges_movies')
 
 
 def series_full_scan_subtitles():

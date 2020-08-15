@@ -9,14 +9,13 @@ from random import randint
 
 from dogpile.cache.api import NO_VALUE
 from requests import Session
-from requests.exceptions import ConnectionError, ConnectTimeout
 from subliminal.cache import region
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError
 from subliminal.providers.addic7ed import Addic7edProvider as _Addic7edProvider, \
     Addic7edSubtitle as _Addic7edSubtitle, ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending
 from subliminal_patch.utils import sanitize
-from subliminal_patch.exceptions import TooManyRequests, IPAddressBlocked
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.pitcher import pitchers, load_verification, store_verification
 from subzero.language import Language
 
@@ -92,19 +91,15 @@ class Addic7edProvider(_Addic7edProvider):
         # login
         if self.username and self.password:
             def check_verification(cache_region):
-                try:
-                    rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
-                                          headers={"Referer": self.server_url})
-                    if rr.status_code == 302:
-                        logger.info('Addic7ed: Login expired')
-                        cache_region.delete("addic7ed_data")
-                    else:
-                        logger.info('Addic7ed: Re-using old login')
-                        self.logged_in = True
-                        return True
-                except (ConnectionError, ConnectTimeout) as e:
-                    logger.debug("Addic7ed: There was a problem reaching the server: %s." % e)
-                    raise IPAddressBlocked("Addic7ed: Your IP is temporarily blocked.")
+                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
+                                      headers={"Referer": self.server_url})
+                if rr.status_code == 302:
+                    logger.info('Addic7ed: Login expired')
+                    cache_region.delete("addic7ed_data")
+                else:
+                    logger.info('Addic7ed: Re-using old login')
+                    self.logged_in = True
+                    return True
 
             if load_verification("addic7ed", self.session, callback=check_verification):
                 return

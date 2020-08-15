@@ -214,7 +214,7 @@
 					<input type="hidden" id="upload_audioLanguage" name="audioLanguage" value="" />
 				</div>
 				<div class="modal-footer">
-					<button type="submit" id="upload_save_button" class="btn btn-info">Save</button>
+					<span id="upload_save_button_span"><button type="submit" id="upload_save_button" class="btn btn-info">Save</button></span>
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				</div>
 			</form>
@@ -278,7 +278,7 @@
 					<input type="hidden" id="edit_radarrId" name="radarrId" value="" />
 				</div>
 				<div class="modal-footer">
-					<button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+					<button type="submit" id="edit_save_button" class="btn btn-info"><span id="edit_save_button_span">Save</span></button>
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				</div>
 			</form>
@@ -334,7 +334,7 @@
 						<tr>
 							<th style="text-align: left;">Language:</th>
 							<th style="text-align: left;">Filename:</th>
-							<th style="text-align: left;">Sync:</th>
+							<th style="text-align: left;">Tools:</th>
 						</tr>
 						</thead>
 					</table>
@@ -346,6 +346,154 @@
 		</div>
 	</div>
 </div>
+
+<div id="movieSubtitleModColorModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chose Color</h5><br>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+             <form class="form" name="subtitles_mod_color_form" id="subtitles_mod_color_form">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>Color Name</b>
+                            </div>
+                            <div class="form-group col">
+                                <select class="form-control selectpicker" id="subzero_color_name">
+                                    <option value="white">White</option>
+                                    <option value="light-grey">Light Grey</option>
+                                    <option value="red">Red</option>
+                                    <option value="green">Green</option>
+                                    <option value="yellow">Yellow</option>
+                                    <option value="blue">Blue</option>
+                                    <option value="magenta">Magenta</option>
+                                    <option value="cyan">Cyan</option>
+                                    <option value="black">Black</option>
+                                    <option value="dark-red">Dark Red</option>
+                                    <option value="dark-green">Dark Green</option>
+                                    <option value="dark-yellow">Dark Yellow</option>
+                                    <option value="dark-blue">Dark Blue</option>
+                                    <option value="dark-magenta">Dark Magenta</option>
+                                    <option value="dark-cyan">Dark Cyan</option>
+                                    <option value="dark-grey">Dark Grey</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="subzero_color_data_language" value="" />
+                            <input type="hidden" id="subzero_color_data_path" value="" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <span id="subtitles_mod_color_save_button_span"><button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button></span>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+             </form>
+        </div>
+    </div>
+</div>
+
+<div id="movieSubtitleModFpsModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Convert frame rate of subtitle</h5><br>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+             <form class="form" name="subtitles_mod_fps_form" id="subtitles_mod_fps_form">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>From frame rate</b>
+                            </div>
+                            <div class="form-group col">
+                                <input type="text" class="form-control" list="default_frame_rates" id="subzero_fps_from" minlength="2" maxlength="6" required autocomplete>
+                                <datalist id="default_frame_rates">
+                                    <option value="23.976">23.976</option>
+                                    <option value="24">24</option>
+                                    <option value="25">25</option>
+                                    <option value="29.97">29.97</option>
+                                    <option value="30">30</option>
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>To frame rate</b>
+                            </div>
+                            <div class="form-group col">
+                                <input type="text" class="form-control" list="default_frame_rates" id="subzero_fps_to" minlength="2" maxlength="6" required autocomplete>
+                            </div>
+                        </div>
+                        <input type="hidden" id="subzero_fps_data_language" value="" />
+                        <input type="hidden" id="subzero_fps_data_path" value="" />
+                   </div>
+                </div>
+                <div class="modal-footer">
+                    <span id="subtitles_mod_fps_save_button_span"><button type="submit" id="subtitles_mod_fps_save_button" class="btn btn-info">Save</button></span>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+             </form>
+        </div>
+    </div>
+</div>
+
+<div id="movieSubtitleModOffsetModal" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adjust All Times</h5><br>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+             <form class="form" name="subtitles_mod_offset_form" id="subtitles_mod_offset_form">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col text-right">
+                                <b>Hour:min:sec:ms</b>
+                            </div>
+                            <div class="form-group col">
+                                <input type="text" class="form-control" id="subzero_offset_time" minlength="12" maxlength="12" required value="00:00:00.100">
+                            </div>
+                        </div>
+                        <div class="row justify-content-center">
+                            <div class="form-group col-sm-7">
+                                <label class="custom-control custom-radio">
+                                    <input type="radio" class="custom-control-input" id="subzero_offset_show_earlier" name="subzero_offset_dir" checked value="0">
+                                    <span class="custom-control-label" for="subzero_offset_show_earlier">Show earlier</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="row justify-content-center">
+                            <div class="form-group col-sm-7">
+                                <label class="custom-control custom-radio">
+                                    <input type="radio" class="custom-control-input" id="subzero_offset_show_later" name="subzero_offset_dir" value="1">
+                                    <span class="custom-control-label" for="subzero_offset_show_later">Show later</span>
+                                </label>
+                            </div>
+                        </div>
+                        <input type="hidden" id="subzero_offset_data_language" value="" />
+                        <input type="hidden" id="subzero_offset_data_path" value="" />
+                   </div>
+                </div>
+                <div class="modal-footer">
+                    <span id="subtitles_mod_offset_save_button_span"><button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button></span>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+             </form>
+        </div>
+    </div>
+</div>
+
 {% endblock body %}
 
 {% block tail %}
@@ -678,15 +826,21 @@
 				processData: false,
 				contentType: false,
 				type: 'POST',
+				beforeSend: function () {
+					$('#edit_save_button_span').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+				},
 				success: function(){
 					movieDetailsRefresh();
 					$('#editModal').modal('hide');
+					$('#edit_save_button_span').html('Save');
 				}
 			});
 		});
 
 		$('#uploadModal').on('hidden.bs.modal', function () {
-			$(this).find('form')[0].reset();
+			$(this).find('form').trigger('reset');
+			$('.custom-file-label').text('Choose file')
+			$('#upload_save_button_span').html('<button type="submit" id="upload_save_button" class="btn btn-info">Save</button>');
 		});
 
 		events.on('event', function(event) {
@@ -827,7 +981,20 @@
 					{
 						data: null,
 						"render": function (data) {
-							return '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '"><i class="far fa-play-circle"></i></a>';
+                            var tools = '';
+
+                            tools += '<a href="" class="subtitles_sync badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-videopath="' + data.videopath + '" data-toggle="tooltip" data-placement="right" title="Sync"><i class="far fa-play-circle"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_HI" data-toggle="tooltip" data-placement="right" title="Remove HI-tags"><i class="fa fa-deaf"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "remove_tags" data-toggle="tooltip" data-placement="right" title="Remove style tags"><i class="fa fa-code"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "OCR_fixes" data-toggle="tooltip" data-placement="right" title="OCR Fixes"><i class="fa fa-image"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "common" data-toggle="tooltip" data-placement="right" title="Common Fixes"><i class="fas fa-magic"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "fix_uppercase" data-toggle="tooltip" data-placement="right" title="Fix Uppercase"><i class="fa fa-text-height"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-mod = "reverse_rtl" data-toggle="tooltip" data-placement="right" title="Reverse RTL"><i class="fa fa-exchange-alt"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod_color badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adds color to your subtitles"><i class="fa fa-paint-brush"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod_fps badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Change Frame Rate"><i class="fa fa-film"></i></a> ';
+                            tools += '<a href="" class="subtitles_mod_offset badge badge-secondary" data-language="' + data.language.code3 + '" data-path="' + data.path + '" data-toggle="tooltip" data-placement="right" title = "Adjust all times (show earlier/later)"><i class="fa fa-clock"></i></a> ';
+
+                            return tools;
 						}
 					}
 				]
@@ -855,6 +1022,7 @@
 				dataType: "json",
 				data: values,
 				beforeSend: function () {
+				    $('.subtitles_sync').tooltip('hide')
 					cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
 				},
 				complete: function (data) {
@@ -862,6 +1030,163 @@
 				}
 			});
 		});
+
+        $('#movie_tools_result').on('click', '.subtitles_mod', function (e) {
+            e.preventDefault();
+            const values = {
+                language: $(this).attr("data-language"),
+                subtitlesPath: $(this).attr("data-path"),
+                mod: $(this).attr("data-mod"),
+            };
+
+            var cell = $(this).parent();
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+                beforeSend: function () {
+                    $('.subtitles_mod').tooltip('hide')
+                    cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieToolsModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movie_tools_result').on('click', '.subtitles_mod_color', function (e) {
+            e.preventDefault();
+
+            $('#subzero_color_data_language').val($(this).attr("data-language"))
+            $('#subzero_color_data_path').val($(this).attr("data-path"))
+
+            $('#movieToolsModal').modal('hide');
+            $('#movieSubtitleModColorModal')
+                .modal({
+                    focus: false
+                });
+        });
+
+        $('#subtitles_mod_color_form').on('submit', function (e) {
+            e.preventDefault();
+
+            const values = {
+                language: $('#subzero_color_data_language').val(),
+                subtitlesPath: $('#subzero_color_data_path').val(),
+                mod: 'color(name=' + $('#subzero_color_name').val() + ')',
+            };
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+
+                beforeSend: function () {
+                    $('#subtitles_mod_color_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieSubtitleModColorModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movieSubtitleModColorModal').on('hidden.bs.modal', function (e) {
+            $('#subtitles_mod_color_save_button_span').html('<button type="submit" id="subtitles_mod_color_save_button" class="btn btn-info">Save</button>');
+        });
+
+        $('#movie_tools_result').on('click', '.subtitles_mod_fps', function (e) {
+            e.preventDefault();
+
+            $('#subzero_fps_data_language').val($(this).attr("data-language"))
+            $('#subzero_fps_data_path').val($(this).attr("data-path"))
+
+            $('#movieToolsModal').modal('hide');
+            $('#movieSubtitleModFpsModal')
+                .modal({
+                    focus: false
+                });
+        });
+
+        $('#subtitles_mod_fps_form').on('submit', function (e) {
+            e.preventDefault();
+
+            const values = {
+                language: $('#subzero_fps_data_language').val(),
+                subtitlesPath: $('#subzero_fps_data_path').val(),
+                mod: 'change_FPS(from=' + $('#subzero_fps_from').val() + ',to=' + $('#subzero_fps_to').val() + ')',
+            };
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+
+                beforeSend: function () {
+                    $('#subtitles_mod_fps_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieSubtitleModFpsModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movieSubtitleModFpsModal').on('hidden.bs.modal', function (e) {
+            $('#subtitles_mod_fps_save_button_span').html('<button type="submit" id="subtitles_mod_fps_save_button" class="btn btn-info">Save</button>');
+        });
+
+        $('#movie_tools_result').on('click', '.subtitles_mod_offset', function (e) {
+            e.preventDefault();
+
+            $('#subzero_offset_data_language').val($(this).attr("data-language"))
+            $('#subzero_offset_data_path').val($(this).attr("data-path"))
+
+            $('#movieToolsModal').modal('hide');
+            $('#movieSubtitleModOffsetModal')
+                .modal({
+                    focus: false
+                });
+        });
+
+        $('#subtitles_mod_offset_form').on('submit', function (e) {
+            e.preventDefault();
+
+            let times = $('#subzero_offset_time').val().match(/(\d\d):(\d\d):(\d\d)[\.,:](\d\d\d)/);
+            if (times == null || times.length != 5) return false;
+
+            let sign = '';
+            if ($('input[name="subzero_offset_dir"]:checked').val() == "0") {
+                sign = '-';
+            }
+
+            const values = {
+                language: $('#subzero_offset_data_language').val(),
+                subtitlesPath: $('#subzero_offset_data_path').val(),
+                mod: 'shift_offset(h='+sign+times[1]+',m='+sign+times[2]+',s='+sign+times[3]+',ms='+sign+times[4]+')',
+            };
+
+            $.ajax({
+                url: "{{ url_for('api.submods') }}",
+                type: "POST",
+                dataType: "json",
+                data: values,
+
+                beforeSend: function () {
+                    $('#subtitles_mod_offset_save_button').html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                },
+                complete: function () {
+                    $('#movieSubtitleModOffsetModal').modal('hide');
+                }
+            });
+        });
+
+        $('#movieSubtitleModOffsetModal').on('hidden.bs.modal', function (e) {
+            $('#subtitles_mod_offset_save_button_span').html('<button type="submit" id="subtitles_mod_offset_save_button" class="btn btn-info">Save</button>');
+        });
+
 	});
 
 	function movieDetailsRefresh() {

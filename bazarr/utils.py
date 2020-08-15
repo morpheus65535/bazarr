@@ -11,10 +11,11 @@ from get_args import args
 from config import settings, url_sonarr, url_radarr
 from database import database
 from event_handler import event_stream
-from get_languages import alpha2_from_alpha3, language_from_alpha3
+from get_languages import alpha2_from_alpha3, language_from_alpha3, alpha3_from_alpha2
 from helper import path_mappings
 from list_subtitles import store_subtitles, store_subtitles_movie
-
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 import datetime
 import glob
@@ -250,3 +251,29 @@ def delete_subtitles(media_type, language, forced, media_path, subtitles_path, s
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
             notify_radarr(radarr_id)
             return True
+
+
+def subtitles_apply_mods(language, subtitle_path, mods):
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        lang_obj = Language(language)
+
+    sub = Subtitle(lang_obj, mods=mods)
+    with open(subtitle_path, 'rb') as f:
+        sub.content = f.read()
+
+    if not sub.is_valid():
+        logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        return
+
+    content = sub.get_modified_content()
+    if content:
+        if os.path.exists(subtitle_path):
+            os.remove(subtitle_path)
+
+        with open(subtitle_path, 'wb') as f:
+            f.write(content)
+
+

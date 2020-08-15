@@ -272,6 +272,117 @@
                     <label>Re-encode downloaded Subtitles to UTF8. Should be left enabled in most case.</label>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Hearing Impaired</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="remove_HI">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Removes tags, text and characters from subtitles that are meant for hearing impaired people.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Remove Tags</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="remove_tags">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Removes all possible style tags from the subtitle, such as font, bold, color etc.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>OCR Fixes</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="OCR_fixes">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Fix issues that happen when a subtitle gets converted from bitmap to text through OCR.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Common Fixes</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="common">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Fix common and whitespace/punctuation issues in subtitles.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Fix Uppercase</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="fix_uppercase">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Tries to make subtitles that are completely uppercase readable.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Color</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="subzero_color">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Adds color to your subtitles (for playback devices/software that don't ship their own color modes; only works for players that support color tags).</label>
+                </div>
+            </div>
+            <div id="subzero_color_div">
+                <div class="row">
+                    <div class="col-sm-4 text-right">
+                        <b>Color Name</b>
+                    </div>
+                    <div class="form-group col-sm-5">
+                        <select class="form-control selectpicker" id="subzero_color_name">
+                            <option value="white">White</option>
+                            <option value="light-grey">Light Grey</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="blue">Blue</option>
+                            <option value="magenta">Magenta</option>
+                            <option value="cyan">Cyan</option>
+                            <option value="black">Black</option>
+                            <option value="dark-red">Dark Red</option>
+                            <option value="dark-green">Dark Green</option>
+                            <option value="dark-yellow">Dark Yellow</option>
+                            <option value="dark-blue">Dark Blue</option>
+                            <option value="dark-magenta">Dark Magenta</option>
+                            <option value="dark-cyan">Dark Cyan</option>
+                            <option value="dark-grey">Dark Grey</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Reverse RTL</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input subzero_mods" id="reverse_rtl">
+                        <span class="custom-control-label"></span>
+                    </label>
+                    <label>Reverses the punctuation in right-to-left subtitles for problematic playback devices.</label>
+                </div>
+            </div>
             {% if not os.startswith('win') %}
                 <div class="row">
                     <div class="col-sm-3 text-right">
@@ -519,6 +630,14 @@
                 }
             });
 
+            $('#subzero_color').on('change', function () {
+                if ($(this).prop('checked')) {
+                    $('#subzero_color_div').show();
+                } else {
+                    $('#subzero_color_div').hide();
+                }
+            });
+
             $('#settings-general-chmod_enabled').on('change', function () {
                 if ($(this).prop('checked')) {
                     $('#chmod_div').show();
@@ -566,8 +685,34 @@
             $('#settings-general-use_postprocessing_threshold').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing_threshold_movie').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold_movie') else 'false'}}).trigger('change');
 
+            $('.subzero_mods').prop('checked', false).trigger('change');
+            {% if settings.general.subzero_mods %}
+            $('{{settings.general.subzero_mods}}'.split(',')).each( function(i, item) {
+                if (item.startsWith('color'))
+                {
+                    var color_name = 'white';
+                    var m = item.match(/color\(name=(.*)\)/);
+                    if (m != null && m.length > 1) color_name = m[1];
+                    $('#subzero_color_name').val(color_name).trigger('change');
+                    item = 'subzero_color';
+                }
+                $("[id=" + item + "]").prop('checked', true).trigger('change');
+            })
+            {% endif %}
+
             $('#save_button').on('click', function () {
                 var formdata = new FormData(document.getElementById("settings_form"));
+
+                var enabled_subzero_mods = $(".subzero_mods").map(function () {
+                    if ($(this).prop('checked')) {
+                        if ($(this).attr('id') == 'subzero_color')
+                        {
+                            return 'color(name=' + $('#subzero_color_name').val() + ')';
+                        }
+                        else return $(this).attr('id');
+                    }
+                }).get().join(',');
+                formdata.append('settings-general-subzero_mods', enabled_subzero_mods)
 
                 // Make sure all checkbox input are sent with true/false value
                 $('input[type=checkbox]').each(function () {
