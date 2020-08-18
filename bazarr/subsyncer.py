@@ -49,9 +49,11 @@ class SubSyncer:
                               '{0}'.format(self.srtin))
         else:
             if result['sync_was_successful']:
+                offset_seconds = result['offset_seconds'] or 0
+                framerate_scale_factor = result['framerate_scale_factor'] or 0
                 message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale " \
-                          "factor of {2}.".format(language_from_alpha3(srt_lang), result['offset_seconds'],
-                                                  "{:.2f}".format(result['framerate_scale_factor']))
+                          "factor of {2}.".format(language_from_alpha3(srt_lang), offset_seconds,
+                                                  "{:.2f}".format(framerate_scale_factor))
 
                 if media_type == 'series':
                     history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
