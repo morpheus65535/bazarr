@@ -151,7 +151,8 @@ def update_movies():
                                 audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
                             else:
                                 if len(movie['movieFile']['languages']):
-                                    audio_language = movie['movieFile']['languages'][0]['name']
+                                    if 'name' in movie['movieFile']['languages'][0]:
+                                        audio_language = movie['movieFile']['languages'][0]['name']
 
                             tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
 
