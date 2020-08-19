@@ -412,14 +412,26 @@
             {% endif %}
             <div class="row">
                 <div class="col-sm-3 text-right">
-                    <b>Subtitles synchronization</b>
+                    <b>Automatic subtitles synchronization</b>
                 </div>
                 <div class="form-group col-sm-8">
                     <label class="custom-control custom-checkbox">
                         <input type="checkbox" class="custom-control-input" id="settings-subsync-use_subsync" name="settings-subsync-use_subsync">
                         <span class="custom-control-label" for="settings-subsync-use_subsync"></span>
                     </label>
-                    <label>Enable the subtitles synchronization after downloading a subtitles.</label>
+                    <label>Enable the automatic subtitles synchronization after downloading a subtitles.</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-4 text-right">
+                    <b>Subtitles synchronization debugging</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-subsync-debug" name="settings-subsync-debug">
+                        <span class="custom-control-label" for="settings-subsync-debug"></span>
+                    </label>
+                    <label>Do not actually sync the subtitles but generate a .tar.gz file to be able to open an issue for ffsubsync. This file will reside alongside the media file.</label>
                 </div>
             </div>
             <div id="subsync_div">
@@ -680,6 +692,7 @@
             $('#settings-general-chmod_enabled').prop('checked', {{'true' if settings.general.getboolean('chmod_enabled') else 'false'}}).trigger('change');
             $('#settings-subsync-use_subsync').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync') else 'false'}}).trigger('change');
             $('#settings-subsync-use_subsync_threshold').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync_threshold') else 'false'}}).trigger('change');
+            $('#settings-subsync-debug').prop('checked', {{'true' if settings.subsync.getboolean('debug') else 'false'}}).trigger('change');
             $('#settings-subsync-use_subsync_movie_threshold').prop('checked', {{'true' if settings.subsync.getboolean('use_subsync_movie_threshold') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing') else 'false'}}).trigger('change');
             $('#settings-general-use_postprocessing_threshold').prop('checked', {{'true' if settings.general.getboolean('use_postprocessing_threshold') else 'false'}}).trigger('change');

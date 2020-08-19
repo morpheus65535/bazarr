@@ -162,7 +162,8 @@ defaults = {
         'use_subsync_threshold': 'False',
         'subsync_threshold': '90',
         'use_subsync_movie_threshold': 'False',
-        'subsync_movie_threshold': '70'
+        'subsync_movie_threshold': '70',
+        'debug': 'False'
     }
 }
 
