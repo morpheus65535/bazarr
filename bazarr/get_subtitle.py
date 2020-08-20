@@ -641,7 +641,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 def series_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
-                                        "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
+                                        "table_shows.seriesType, table_episodes.audio_language FROM table_episodes INNER JOIN table_shows on "
                                         "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                         "table_episodes.sonarrSeriesId=? and missing_subtitles!='[]'", (no,))
     episodes_details = filter_exclusions(episodes_details, 'series')
@@ -650,7 +650,7 @@ def series_download_subtitles(no):
         return
 
     series_details = database.execute(
-        "SELECT hearing_impaired, audio_language, title, forced FROM table_shows WHERE sonarrSeriesId=?",
+        "SELECT hearing_impaired, title, forced FROM table_shows WHERE sonarrSeriesId=?",
         (no,), only_one=True)
     if not series_details:
         logging.debug("BAZARR no series with that sonarrSeriesId can be found in database:", str(no))
@@ -667,7 +667,7 @@ def series_download_subtitles(no):
                 if language is not None:
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               series_details['audio_language'],
+                                               episode['audio_language'],
                                                series_details['hearing_impaired'],
                                                "True" if len(language.split(':')) > 1 else "False",
                                                providers_list,
@@ -697,7 +697,7 @@ def episode_download_subtitles(no):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, monitored, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                         "table_shows.hearing_impaired, table_shows.title, table_shows.sonarrSeriesId, "
-                                        "table_shows.forced, table_shows.audio_language, table_shows.seriesType FROM "
+                                        "table_shows.forced, table_episodes.audio_language, table_shows.seriesType FROM "
                                         "table_episodes LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
                                         "table_shows.sonarrSeriesId WHERE sonarrEpisodeId=?", (no,))
     episodes_details = filter_exclusions(episodes_details, 'series')
@@ -792,7 +792,7 @@ def movies_download_subtitles(no):
 def wanted_download_subtitles(path, l, count_episodes):
     episodes_details = database.execute("SELECT table_episodes.path, table_episodes.missing_subtitles, "
                                         "table_episodes.sonarrEpisodeId, table_episodes.sonarrSeriesId, "
-                                        "table_shows.hearing_impaired, table_shows.audio_language, table_episodes.scene_name,"
+                                        "table_shows.hearing_impaired, table_episodes.audio_language, table_episodes.scene_name,"
                                         "table_episodes.failedAttempts, table_shows.title, table_shows.forced "
                                         "FROM table_episodes LEFT JOIN table_shows on "
                                         "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId "
@@ -1071,7 +1071,7 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
                                                "table_history.score, table_shows.hearing_impaired, "
-                                               "table_shows.audio_language, table_episodes.scene_name, table_episodes.title,"
+                                               "table_episodes.audio_language, table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
                                                "table_shows.languages, table_shows.forced, table_shows.tags, "

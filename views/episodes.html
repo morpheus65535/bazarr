@@ -113,6 +113,7 @@
             <th></th>
             <th>Episode</th>
             <th>Title</th>
+            <th>Audio Language</th>
             <th>Existing Subtitles</th>
             <th>Missing Subtitles</th>
             <th>Manual Search</th>
@@ -232,7 +233,7 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Audio Language
+                                    Audio Profile
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
                                     <span id="edit_audio_language_span"></span>
@@ -580,6 +581,9 @@
                         }
                     },
                     {
+                        data: 'audio_language.name'
+                    },
+                    {
                         data: null,
                         render: function (data) {
                             if (data.subtitles !== 'None') {
@@ -629,7 +633,7 @@
                         data: null,
                         render: function (data) {
                             if (data.desired_languages !== '[]') {
-                                return '<a href="" class="upload_subtitle badge badge-secondary" data-episodePath="' + data.mapped_path + '" data-sceneName"' + data.scene_name + '" data-sonarrSeriesId="' + seriesDetails['sonarrSeriesId'] + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-season="' + data.season + '" data-episode="' + data.episode + '" data-episode_title="' + data.title + '"><i class="fas fa-cloud-upload-alt"></i></a>';
+                                return '<a href="" class="upload_subtitle badge badge-secondary" data-episodePath="' + data.mapped_path + '" data-sceneName"' + data.scene_name + '" data-sonarrSeriesId="' + seriesDetails['sonarrSeriesId'] + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-season="' + data.season + '" data-episode="' + data.episode + '" data-episode_title="' + data.title + '" data-audio_language="' + data.audio_language.name + '"><i class="fas fa-cloud-upload-alt"></i></a>';
                             } else {
                                 return ''
                             }
@@ -876,7 +880,7 @@
                 $('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
                 $('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
                 $('#upload_title').val($(this).data("episode_title"));
-                $('#upload_audioLanguage').val(seriesDetails['audio_language']['name']);
+                $('#upload_audioLanguage').val($(this).data("audio_language"));
 
                 $('#manual_language_select').empty();
                 $.each(enabledLanguages, function (i, item) {

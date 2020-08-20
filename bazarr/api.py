@@ -462,6 +462,11 @@ class Episodes(Resource):
             # Add Datatables rowId
             item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
 
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+
             # Parse subtitles
             if item['subtitles']:
                 item.update({"subtitles": ast.literal_eval(item['subtitles'])})
@@ -540,8 +545,8 @@ class EpisodesSubtitlesDownload(Resource):
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
-                                          (sonarrSeriesId,), only_one=True)['audio_language']
+        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
+                                          (sonarrEpisodeId,), only_one=True)['audio_language']
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -609,8 +614,8 @@ class EpisodesSubtitlesManualDownload(Resource):
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
         title = request.form.get('title')
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
-                                          (sonarrSeriesId,), only_one=True)['audio_language']
+        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
+                                          (sonarrEpisodeId,), only_one=True)['audio_language']
 
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,

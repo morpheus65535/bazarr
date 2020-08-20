@@ -99,6 +99,7 @@ def db_upgrade():
         ['table_episodes', 'video_codec', 'text'],
         ['table_episodes', 'audio_codec', 'text'],
         ['table_episodes', 'episode_file_id', 'integer'],
+        ['table_episodes', 'audio_language', 'text'],
         ['table_movies', 'sortTitle', 'text'],
         ['table_movies', 'year', 'text'],
         ['table_movies', 'alternativeTitles', 'text'],
