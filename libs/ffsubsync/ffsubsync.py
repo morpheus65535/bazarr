@@ -63,12 +63,12 @@ def make_test_case(args, npy_savename, sync_was_successful):
         preferred_formats = ['gztar', 'bztar', 'xztar', 'zip', 'tar']
         for archive_format in preferred_formats:
             if archive_format in supported_formats:
-                shutil.make_archive(tar_dir, 'gztar', os.curdir, tar_dir)
+                shutil.make_archive(tar_dir, archive_format, os.curdir, tar_dir)
                 break
-            else:
-                logger.error('failed to create test archive; no formats supported '
-                             '(this should not happen)')
-                return 1
+        else:
+            logger.error('failed to create test archive; no formats supported '
+                         '(this should not happen)')
+            return 1
         logger.info('...done')
     finally:
         shutil.rmtree(tar_dir)
