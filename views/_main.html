@@ -495,14 +495,7 @@
 
         // Add apikey to all AJAX requests.
         $.ajaxSetup({
-            data: {
-                apikey: "{{ settings.auth.apikey }}"
-            }
-        });
-        $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
-            if (originalOptions.data instanceof FormData) {
-                originalOptions.data.append("apikey", "{{ settings.auth.apikey }}");
-            }
+            headers: { 'X-Api-Key': "{{ settings.auth.apikey }}" }
         });
 
         $(window).on('beforeunload', function () {

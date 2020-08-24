@@ -54,8 +54,11 @@ def authenticate(actual_method):
         apikey_settings = settings.auth.apikey
         apikey_get = request.args.get('apikey')
         apikey_post = request.form.get('apikey')
+        apikey_header = None
+        if 'X-Api-Key' in request.headers:
+            apikey_header = request.headers['X-Api-Key']
 
-        if apikey_settings in [apikey_get, apikey_post]:
+        if apikey_settings in [apikey_get, apikey_post, apikey_header]:
             return actual_method(*args, **kwargs)
 
         return abort(401, message="Unauthorized")
