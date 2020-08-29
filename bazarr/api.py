@@ -478,7 +478,13 @@ class Episodes(Resource):
                     subs[0] = {"name": language_from_alpha2(subtitle[0]),
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
-                               "forced": True if len(subtitle) > 1 else False}
+                               "forced": False,
+                               "hi": False}
+                    if len(subtitle) > 1:
+                        subs[0].update({
+                            "forced": True if subtitle[1] == 'forced' else False,
+                            "hi": True if subtitle[1] == 'hi' else False
+                        })
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
                     item['subtitles'] = [x for x in item['subtitles'] if
@@ -494,7 +500,13 @@ class Episodes(Resource):
                     item['missing_subtitles'][i] = {"name": language_from_alpha2(subtitle[0]),
                                                     "code2": subtitle[0],
                                                     "code3": alpha3_from_alpha2(subtitle[0]),
-                                                    "forced": True if len(subtitle) > 1 else False}
+                                                    "forced": False,
+                                                    "hi": False}
+                    if len(subtitle) > 1:
+                        item['missing_subtitles'][i].update({
+                            "forced": True if subtitle[1] == 'forced' else False,
+                            "hi": True if subtitle[1] == 'hi' else False
+                        })
             else:
                 item.update({"missing_subtitles": []})
 
@@ -845,7 +857,13 @@ class Movies(Resource):
                                             "name": language_from_alpha2(language[0]),
                                             "code2": language[0],
                                             "code3": alpha3_from_alpha2(language[0]),
-                                            "forced": True if len(language) > 1 else False}
+                                            "forced": False,
+                                            "hi": False}
+                    if len(language) > 1:
+                        item['subtitles'][i].update({
+                            "forced": True if language[1] == 'forced' else False,
+                            "hi": True if language[1] == 'hi' else False
+                        })
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
                     desired_lang_list = []
@@ -865,7 +883,13 @@ class Movies(Resource):
                     item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),
                                                     "code2": language[0],
                                                     "code3": alpha3_from_alpha2(language[0]),
-                                                    "forced": True if len(language) > 1 else False}
+                                                    "forced": False,
+                                                    "hi": False}
+                    if len(language) > 1:
+                        item['missing_subtitles'][i].update({
+                            "forced": True if language[1] == 'forced' else False,
+                            "hi": True if language[1] == 'hi' else False
+                        })
             else:
                 item.update({"missing_subtitles": []})
 
@@ -1533,7 +1557,13 @@ class WantedSeries(Resource):
                     item['missing_subtitles'][i] = {"name": language_from_alpha2(splitted_subs[0]),
                                                     "code2": splitted_subs[0],
                                                     "code3": alpha3_from_alpha2(splitted_subs[0]),
-                                                    "forced": True if len(splitted_subs) > 1 else False}
+                                                    "forced": False,
+                                                    "hi": False}
+                    if len(splitted_subs) > 1:
+                        item['missing_subtitles'][i].update({
+                            "forced": True if splitted_subs[1] == 'forced' else False,
+                            "hi": True if splitted_subs[1] == 'hi' else False
+                        })
             else:
                 item.update({"missing_subtitles": []})
 
@@ -1571,7 +1601,13 @@ class WantedMovies(Resource):
                     item['missing_subtitles'][i] = {"name": language_from_alpha2(splitted_subs[0]),
                                                     "code2": splitted_subs[0],
                                                     "code3": alpha3_from_alpha2(splitted_subs[0]),
-                                                    "forced": True if len(splitted_subs) > 1 else False}
+                                                    "forced": False,
+                                                    "hi": False}
+                    if len(splitted_subs) > 1:
+                        item['missing_subtitles'][i].update({
+                            "forced": True if splitted_subs[1] == 'forced' else False,
+                            "hi": True if splitted_subs[1] == 'hi' else False
+                        })
             else:
                 item.update({"missing_subtitles": []})
 

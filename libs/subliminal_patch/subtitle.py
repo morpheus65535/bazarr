@@ -16,6 +16,7 @@ from pysubs2 import SSAStyle
 from pysubs2.subrip import parse_tags, MAX_REPRESENTABLE_TIME
 from pysubs2.time import ms_to_times
 from subzero.modification import SubtitleModifications
+from subzero.language import Language
 from subliminal import Subtitle as Subtitle_
 from subliminal.subtitle import Episode, Movie, sanitize_release_group, get_equivalent_release_groups
 from subliminal_patch.utils import sanitize
@@ -62,6 +63,10 @@ class Subtitle(Subtitle_):
     _is_valid = False
 
     def __init__(self, language, hearing_impaired=False, page_link=None, encoding=None, mods=None):
+        # set subtitle language to hi if it's hearing_impaired
+        if hearing_impaired:
+            language = Language.rebuild(language, hi=True)
+
         super(Subtitle, self).__init__(language, hearing_impaired=hearing_impaired, page_link=page_link,
                                        encoding=encoding)
         self.mods = mods

@@ -621,7 +621,10 @@
 							}
 
 							let text = '<div class="badge badge-secondary" style="margin:1px;">' + lng.toUpperCase() + '</div>';
-                            if (data.hearing_impaired == "True") {
+                            if (data.forced == "True") {
+								text += '<div class="badge badge-dark" style="margin:1px;">Forced</div>';
+							}
+							if (data.hearing_impaired == "True") {
 								text += '<div class="badge badge-dark" style="margin:1px;">HI</div>';
 							}
 
@@ -1237,6 +1240,8 @@
 			function missingAppendFunc(value) {
 				if (value.forced) {
 					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
+				} else if (value.hi) {
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
 				} else {
 					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ' <i class="fas fa-search"></i></button> ';
 				}
@@ -1283,6 +1288,8 @@
 						"render": function(data) {
 							if (data['forced']) {
 								return '<span class="badge badge-secondary">' + data['name'] + ' forced</span>';
+							} else if (data['hi']) {
+								return '<span class="badge badge-secondary">' + data['name'] + ' HI</span>';
 							} else {
 								return '<span class="badge badge-secondary">' + data['name'] + '</span>';
 							}

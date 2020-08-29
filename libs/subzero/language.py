@@ -62,14 +62,23 @@ def wrap_forced(f):
         args = args[1:]
         s = args.pop(0)
         forced = None
+        hi = None
         if isinstance(s, (str,)):
-            base, forced = s.split(":") if ":" in s else (s, False)
+            splited_s = s.split(":")
+            if len(splited_s) > 1:
+                if splited_s[1] == 'hi':
+                    base, forced, hi = (splited_s[0], False, True)
+                elif splited_s[1] == 'forced':
+                    base, forced, hi = (splited_s[0], True, False)
+            else:
+                base, forced, hi = (s, False, False)
         else:
             base = s
 
         instance = f(cls, base, *args, **kwargs)
         if isinstance(instance, Language):
             instance.forced = forced == "forced"
+            instance.hi = hi == "hi"
         return instance
 
     return inner
@@ -77,16 +86,18 @@ def wrap_forced(f):
 
 class Language(Language_):
     forced = False
+    hi = False
 
-    def __init__(self, language, country=None, script=None, unknown=None, forced=False):
+    def __init__(self, language, country=None, script=None, unknown=None, forced=False, hi=False):
         self.forced = forced
+        self.hi = hi
         super(Language, self).__init__(language, country=country, script=script, unknown=unknown)
 
     def __getstate__(self):
-        return self.alpha3, self.country, self.script, self.forced
+        return self.alpha3, self.country, self.script, self.hi, self.forced
 
-    def __setstate__(self, state):
-        self.alpha3, self.country, self.script, self.forced = state
+    def __setstate__(self, forced):
+        self.alpha3, self.country, self.script, self.hi, self.forced = forced
 
     def __hash__(self):
         return hash(str(self))
@@ -99,7 +110,8 @@ class Language(Language_):
         return (self.alpha3 == other.alpha3 and
                 self.country == other.country and
                 self.script == other.script and
-                bool(self.forced) == bool(other.forced))
+                bool(self.forced) == bool(other.forced) and
+                bool(self.hi) == bool(other.hi))
 
     def __str__(self):
         return super(Language, self).__str__() + (":forced" if self.forced else "")
@@ -112,12 +124,13 @@ class Language(Language_):
         ret = super(Language, self).__getattr__(name)
         if isinstance(ret, Language):
             ret.forced = self.forced
+            ret.hi = self.hi
         return ret
 
     @classmethod
     def rebuild(cls, instance, **replkw):
         state = instance.__getstate__()
-        attrs = ("country", "script", "forced")
+        attrs = ("country", "script", "forced", "hi")
         language = state[0]
         kwa = dict(list(zip(attrs, state[1:])))
         kwa.update(replkw)

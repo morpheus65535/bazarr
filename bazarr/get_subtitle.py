@@ -132,10 +132,14 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             lang_obj = Language('por', 'BR')
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
         else:
             lang_obj = Language(l)
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
         language_set.add(lang_obj)
 
     minimum_score = settings.general.minimum_score
@@ -315,11 +319,15 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
         lang = alpha3_from_alpha2(lang)
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
+            elif forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(lang)
-            if forced == "True":
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
+            elif forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
         language_set.add(lang_obj)
 
@@ -395,8 +403,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
-                         score_without_hash=score_without_hash,
-                         language=str(s.language), hearing_impaired=str(s.hearing_impaired),
+                         score_without_hash=score_without_hash, forced=str(s.language.forced),
+                         language=str(s.language.basename), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
@@ -669,7 +677,7 @@ def series_download_subtitles(no):
                                                str(alpha3_from_alpha2(language.split(':')[0])),
                                                episode['audio_language'],
                                                series_details['hearing_impaired'],
-                                               "True" if len(language.split(':')) > 1 else "False",
+                                               "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode['scene_name']),
@@ -716,7 +724,7 @@ def episode_download_subtitles(no):
                                                str(alpha3_from_alpha2(language.split(':')[0])),
                                                episode['audio_language'],
                                                episode['hearing_impaired'],
-                                               "True" if len(language.split(':')) > 1 else "False",
+                                               "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode['scene_name']),
@@ -766,7 +774,7 @@ def movies_download_subtitles(no):
                                            str(alpha3_from_alpha2(language.split(':')[0])),
                                            movie['audio_language'],
                                            movie['hearing_impaired'],
-                                           "True" if len(language.split(':')) > 1 else "False",
+                                           "True" if language.endswith(':forced') else "False",
                                            providers_list,
                                            providers_auth,
                                            str(movie['sceneName']),
@@ -825,7 +833,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    episode['audio_language'],
                                                    episode['hearing_impaired'],
-                                                   "True" if len(language.split(':')) > 1 else "False",
+                                                   "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(episode['scene_name']),
@@ -882,7 +890,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    movie['audio_language'],
                                                    movie['hearing_impaired'],
-                                                   "True" if len(language.split(':')) > 1 else "False",
+                                                   "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(movie['sceneName']),
