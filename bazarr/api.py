@@ -389,6 +389,36 @@ class Series(Resource):
         return '', 204
 
 
+class SeriesEditor(Resource):
+    @authenticate
+    def get(self, **kwargs):
+        draw = request.args.get('draw')
+
+        result = database.execute("SELECT sonarrSeriesId, title, languages, hearing_impaired, forced, audio_language "
+                                  "FROM table_shows ORDER BY sortTitle")
+
+        row_count = len(result)
+
+        for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
+
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+
+            # Parse desired languages
+            if item['languages'] and item['languages'] != 'None':
+                item.update({"languages": ast.literal_eval(item['languages'])})
+                for i, subs in enumerate(item['languages']):
+                    item['languages'][i] = {"name": language_from_alpha2(subs),
+                                            "code2": subs,
+                                            "code3": alpha3_from_alpha2(subs)}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+
 class SeriesEditSave(Resource):
     @authenticate
     def post(self):
@@ -922,6 +952,36 @@ class Movies(Resource):
         event_stream(type='movies', action='update', movie=radarrId)
 
         return '', 204
+
+
+class MoviesEditor(Resource):
+    @authenticate
+    def get(self):
+        draw = request.args.get('draw')
+
+        result = database.execute("SELECT radarrId, title, languages, hearing_impaired, forced, audio_language "
+                                  "FROM table_movies ORDER BY sortTitle")
+
+        row_count = len(result)
+
+        for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
+
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+
+            # Parse desired languages
+            if item['languages'] and item['languages'] != 'None':
+                item.update({"languages": ast.literal_eval(item['languages'])})
+                for i, subs in enumerate(item['languages']):
+                    item['languages'][i] = {"name": language_from_alpha2(subs),
+                                            "code2": subs,
+                                            "code3": alpha3_from_alpha2(subs)}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
 
 class MoviesEditSave(Resource):
@@ -1843,6 +1903,7 @@ api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')
 
 api.add_resource(Series, '/series')
+api.add_resource(SeriesEditor, '/series_editor')
 api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
@@ -1856,6 +1917,7 @@ api.add_resource(EpisodesHistory, '/episodes_history')
 api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')
+api.add_resource(MoviesEditor, '/movies_editor')
 api.add_resource(MoviesEditSave, '/movies_edit_save')
 api.add_resource(MovieSubtitlesDelete, '/movie_subtitles_delete')
 api.add_resource(MovieSubtitlesDownload, '/movie_subtitles_download')

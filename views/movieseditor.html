@@ -67,7 +67,7 @@
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'movies_editor' && event_json.action === 'update') {
                     $.ajax({
-                        url: "{{ url_for('api.movies') }}",
+                        url: "{{ url_for('api.movieseditor') }}",
                         success: function (data) {
                             if (data.data.length) {
                                 $('#movies').DataTable().ajax.reload(resetPaging = false);
@@ -96,7 +96,7 @@
                 lengthChange: true,
                 responsive: true,
                 paging: false,
-                ajax: "{{ url_for('api.movies') }}",
+                ajax: "{{ url_for('api.movieseditor') }}",
                 columnDefs: [{
                     orderable: false,
                     className: 'select-checkbox',

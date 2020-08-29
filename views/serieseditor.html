@@ -67,7 +67,7 @@
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'series_editor' && event_json.action === 'update') {
                     $.ajax({
-                        url: "{{ url_for('api.series') }}",
+                        url: "{{ url_for('api.serieseditor') }}",
                         success: function (data) {
                             if (data.data.length) {
                                 $('#series').DataTable().ajax.reload(resetPaging = false);
@@ -96,7 +96,7 @@
                 lengthChange: true,
                 responsive: true,
                 paging: false,
-                ajax: "{{ url_for('api.series') }}",
+                ajax: "{{ url_for('api.serieseditor') }}",
                 columnDefs: [{
                     orderable: false,
                     className: 'select-checkbox',
