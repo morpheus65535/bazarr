@@ -1,7 +1,7 @@
 # coding=utf-8
 import requests
 import logging
-from database import database, dict_converter
+from database import database, dict_converter, get_exclusion_clause
 
 from config import settings, url_sonarr
 from helper import path_mappings
@@ -180,11 +180,13 @@ def sync_episodes():
     if len(altered_episodes) <= 5:
         logging.debug("BAZARR No more than 5 episodes were added during this sync then we'll search for subtitles.")
         for altered_episode in altered_episodes:
-            if settings.sonarr.getboolean('only_monitored'):
-                if altered_episode[2] == 'True':
-                    episode_download_subtitles(altered_episode[0])
-            else:
-                episode_download_subtitles(altered_episode[0])
+            data = database.execute("SELECT table_episodes.sonarrEpisodeId, table_episodes.monitored, table_shows.tags,"
+                                    " table_shows.seriesType FROM table_episodes LEFT JOIN table_shows on "
+                                    "table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId WHERE "
+                                    "sonarrEpisodeId = ?" + get_exclusion_clause('series'), (altered_episode[0],),
+                                    only_one=True)
+
+            episode_download_subtitles(data['sonarrEpisodeId'])
     else:
         logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
 
