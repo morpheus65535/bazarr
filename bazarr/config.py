@@ -228,6 +228,11 @@ def save_settings(settings_items):
                    'settings-proxy-password']:
             configure_proxy = True
 
+        if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
+                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
+                   'settings-radarr-only_monitored']:
+            exclusion_updated = True
+
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
 
@@ -252,6 +257,11 @@ def save_settings(settings_items):
 
     if configure_proxy:
         configure_proxy_func()
+
+    if exclusion_updated:
+        from event_handler import event_stream
+        event_stream(type='badges_series')
+        event_stream(type='badges_movies')
 
 
 def url_sonarr():

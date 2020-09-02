@@ -149,28 +149,29 @@ def db_upgrade():
                      "provider text, subs_id text, language text)")
 
 
-def filter_exclusions(dicts_list, type):
+def get_exclusion_clause(type):
+    where_clause = ''
     if type == 'series':
         tagsList = ast.literal_eval(settings.sonarr.excluded_tags)
-        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+        for tag in tagsList:
+            where_clause += ' AND table_shows.tags NOT LIKE "%\'' + tag + '\'%"'
     else:
         tagsList = ast.literal_eval(settings.radarr.excluded_tags)
-        monitoredOnly = settings.radarr.getboolean('only_monitored')
+        for tag in tagsList:
+            where_clause += ' AND table_movies.tags NOT LIKE "%\'' + tag + '\'%"'
 
-    # Filter tags
-    dictsList_tags_filtered = [item for item in dicts_list if set(tagsList).isdisjoint(ast.literal_eval(item['tags']))]
-
-    # Filter monitored
-    if monitoredOnly:
-        dictsList_monitored_filtered = [item for item in dictsList_tags_filtered if item['monitored'] == 'True']
-    else:
-        dictsList_monitored_filtered = dictsList_tags_filtered
-
-    # Filter series type
     if type == 'series':
-        dictsList_types_filtered = [item for item in dictsList_monitored_filtered if item['seriesType'] not in
-                                    ast.literal_eval(settings.sonarr.excluded_series_types)]
+        monitoredOnly = settings.sonarr.getboolean('only_monitored')
+        if monitoredOnly:
+            where_clause += ' AND table_episodes.monitored = "True"'
     else:
-        dictsList_types_filtered = dictsList_monitored_filtered
+        monitoredOnly = settings.radarr.getboolean('only_monitored')
+        if monitoredOnly:
+            where_clause += ' AND table_movies.monitored = "True"'
 
-    return dictsList_types_filtered
+    if type == 'series':
+        typesList = ast.literal_eval(settings.sonarr.excluded_series_types)
+        for type in typesList:
+            where_clause += ' AND table_shows.seriesType != "' + type + '"'
+
+    return where_clause

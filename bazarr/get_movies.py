@@ -10,7 +10,7 @@ from utils import get_radarr_version
 from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
 
 from get_subtitle import movies_download_subtitles
-from database import database, dict_converter
+from database import database, dict_converter, get_exclusion_clause
 
 
 def update_all_movies():
@@ -265,11 +265,9 @@ def update_movies():
             if len(altered_movies) <= 5:
                 logging.debug("BAZARR No more than 5 movies were added during this sync then we'll search for subtitles.")
                 for altered_movie in altered_movies:
-                    if settings.radarr.getboolean('only_monitored'):
-                        if altered_movie[3] == 'True':
-                            movies_download_subtitles(altered_movie[2])
-                    else:
-                        movies_download_subtitles(altered_movie[2])
+                    data = database.execute("SELECT * FROM table_movies WHERE radarrId = ?" +
+                                            get_exclusion_clause('movie'), (altered_movie[2],), only_one=True)
+                    movies_download_subtitles(data['radarrId'])
             else:
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 
