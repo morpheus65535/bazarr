@@ -745,6 +745,7 @@ class EpisodesHistory(Resource):
                                            "sonarrEpisodeId, subs_id, video_path, subtitles_path FROM table_history "
                                            "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
         for item in episode_history:
+            item['raw_timestamp'] = item['timestamp']
             item['timestamp'] = "<div title='" + \
                                 time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
                                 "' data-toggle='tooltip' data-placement='left'>" + \
@@ -1229,6 +1230,7 @@ class MovieHistory(Resource):
                                          "video_path, subtitles_path FROM table_history_movie WHERE radarrId=? ORDER "
                                          "BY timestamp DESC", (radarrid,))
         for item in movie_history:
+            item['raw_timestamp'] = item['timestamp']
             item['timestamp'] = "<div title='" + \
                                 time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
                                 "' data-toggle='tooltip' data-placement='left'>" + \
@@ -1373,6 +1375,7 @@ class HistorySeries(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
+                item['raw_timestamp'] = item['timestamp']
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             if item['path']:
@@ -1472,6 +1475,7 @@ class HistoryMovies(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
+                item['raw_timestamp'] = item['timestamp']
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             if item['video_path']:
@@ -1674,6 +1678,7 @@ class BlacklistSeries(Resource):
                                 "OFFSET ?", (length, start))
 
         for item in data:
+            item['raw_timestamp'] = item['timestamp']
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
@@ -1751,6 +1756,7 @@ class BlacklistMovies(Resource):
                                 "OFFSET ?", (length, start))
 
         for item in data:
+            item['raw_timestamp'] = item['timestamp']
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
