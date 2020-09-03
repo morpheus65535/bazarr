@@ -182,6 +182,7 @@ def save_settings(settings_items):
     update_schedule = False
     update_path_map = False
     configure_proxy = False
+    exclusion_updated = False
 
     for key, value in settings_items:
         # Intercept database stored settings
