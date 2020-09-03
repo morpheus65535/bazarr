@@ -64,14 +64,7 @@ def wrap_forced(f):
         forced = None
         hi = None
         if isinstance(s, (str,)):
-            splited_s = s.split(":")
-            if len(splited_s) > 1:
-                if splited_s[1] == 'hi':
-                    base, forced, hi = (splited_s[0], False, True)
-                elif splited_s[1] == 'forced':
-                    base, forced, hi = (splited_s[0], True, False)
-            else:
-                base, forced, hi = (s, False, False)
+            base, forced = s.split(":") if ":" in s else (s, False)
         else:
             base = s
 
@@ -130,7 +123,7 @@ class Language(Language_):
     @classmethod
     def rebuild(cls, instance, **replkw):
         state = instance.__getstate__()
-        attrs = ("country", "script", "forced", "hi")
+        attrs = ("country", "script", "hi", "forced")
         language = state[0]
         kwa = dict(list(zip(attrs, state[1:])))
         kwa.update(replkw)

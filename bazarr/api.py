@@ -598,7 +598,12 @@ class EpisodesSubtitlesDownload(Resource):
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
@@ -667,7 +672,12 @@ class EpisodesSubtitlesManualDownload(Resource):
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
@@ -717,7 +727,10 @@ class EpisodesSubtitlesUpload(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                language_code = language + ":forced" if forced else language
+                if forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subtitles_path=subs_path)
@@ -1096,7 +1109,12 @@ class MovieSubtitlesDownload(Resource):
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
@@ -1164,7 +1182,12 @@ class MovieSubtitlesManualDownload(Resource):
                 message = result[0]
                 path = result[1]
                 forced = result[5]
-                language_code = result[2] + ":forced" if forced else result[2]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
                 provider = result[3]
                 score = result[4]
                 subs_id = result[6]
@@ -1213,7 +1236,10 @@ class MovieSubtitlesUpload(Resource):
                 message = result[0]
                 path = result[1]
                 subs_path = result[2]
-                language_code = language + ":forced" if forced else language
+                if forced:
+                    language_code = language + ":forced"
+                else:
+                    language_code = language
                 provider = "manual"
                 score = 120
                 history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
