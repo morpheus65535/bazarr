@@ -63,6 +63,7 @@ class Addic7edProvider(_Addic7edProvider):
         'heb', 'hrv', 'hun', 'hye', 'ind', 'ita', 'jpn', 'kor', 'mkd', 'msa', 'nld', 'nor', 'pol', 'por', 'ron', 'rus',
         'slk', 'slv', 'spa', 'sqi', 'srp', 'swe', 'tha', 'tur', 'ukr', 'vie', 'zho'
     ]} | {Language.fromietf(l) for l in ["sr-Latn", "sr-Cyrl"]}
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     USE_ADDICTED_RANDOM_AGENTS = False
     hearing_impaired_verifiable = True
@@ -380,6 +381,10 @@ class Addic7edProvider(_Addic7edProvider):
             title = cells[2].text
             version = cells[4].text
             download_link = cells[9].a['href'][1:]
+
+            # set subtitle language to hi if it's hearing_impaired
+            if hearing_impaired:
+                language = Language.rebuild(language, hi=True)
 
             subtitle = self.subtitle_class(language, hearing_impaired, page_link, series, season, episode, title,
                                            year,

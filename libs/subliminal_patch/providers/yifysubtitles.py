@@ -95,6 +95,7 @@ class YifySubtitlesProvider(Provider):
     ]
 
     languages = {Language(l, c) for (_, l, c) in YifyLanguages}
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
     server_urls = ['https://yifysubtitles.org', 'https://www.yifysubtitles.com']
     video_types = (Movie,)
 
@@ -125,6 +126,11 @@ class YifySubtitlesProvider(Provider):
 
         _, l, c = next(x for x in self.YifyLanguages if x[0] == sub_lang)
         lang = Language(l, c)
+
+        # set subtitle language to hi if it's hearing_impaired
+        if hi:
+            lang = Language.rebuild(lang, hi=True)
+
         if languages & {lang}:
             return [YifySubtitle(lang, page_link, release, uploader, sub_link, rating, hi)]
 

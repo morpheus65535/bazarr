@@ -215,13 +215,20 @@ def notify_radarr(radarr_id):
         logging.debug('BAZARR notify Radarr')
 
 
-def delete_subtitles(media_type, language, forced, media_path, subtitles_path, sonarr_series_id=None,
+def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
                      sonarr_episode_id=None, radarr_id=None):
     if not subtitles_path.endswith('.srt'):
         logging.error('BAZARR can only delete .srt files.')
         return False
-    language_log = alpha2_from_alpha3(language) + ':forced' if forced in [True, 'true'] else alpha2_from_alpha3(language)
-    language_string = language_from_alpha3(language) + ' forced' if forced in [True, 'true'] else language_from_alpha3(language)
+    if hi in [True, 'true', 'True']:
+        language_log = alpha2_from_alpha3(language) + ':hi'
+        language_string = language_from_alpha3(language) + ' HI'
+    elif forced in [True, 'true', 'True']:
+        language_log = alpha2_from_alpha3(language) + ':forced'
+        language_string = language_from_alpha3(language) + ' forced'
+    else:
+        language_log = alpha2_from_alpha3(language)
+        language_string = language_from_alpha3(language)
     result = language_string + " subtitles deleted from disk."
 
     if media_type == 'series':

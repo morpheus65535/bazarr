@@ -606,7 +606,7 @@
                                 if (value[1] === null) {
                                     languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + advtag + '">' + value[0].code2 + advtag + '</span> ';
                                 } else {
-                                    languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + advtag + '" data-episodePath="' + data.mapped_path + '" data-language="' + value[0].code3 + '" data-forced="' + value[0].forced + '" data-subtitlesPath="' + value[1] + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '>' + value[0].code2 + advtag + ' <i class="far fa-trash-alt"></i></a> ';
+                                    languages = languages + '<a href="" class="remove_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value[0].name + advtag + '" data-episodePath="' + data.mapped_path + '" data-language="' + value[0].code3 + '" data-forced="' + value[0].forced + '" data-hi="' + value[0].hi + '" data-subtitlesPath="' + value[1] + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '>' + value[0].code2 + advtag + ' <i class="far fa-trash-alt"></i></a> ';
                                 }
                             }
                         }
@@ -677,6 +677,7 @@
                     episodePath: $(this).attr("data-episodePath"),
                     language: $(this).attr("data-language"),
                     forced: $(this).attr("data-forced"),
+                    hi: $(this).attr("data-hi"),
                     subtitlesPath: $(this).attr("data-subtitlesPath"),
                     sonarrSeriesId: seriesDetails['sonarrSeriesId'],
                     sonarrEpisodeId: $(this).attr("data-sonarrEpisodeId"),
@@ -1113,7 +1114,13 @@
                             data: 'language',
                             render: function (value) {
                                 if (value) {
-                                    return value.name + ((value.forced) ? ' forced' : '')
+                                    var language_string = '';
+                                    if (value.hi) {
+                                        language_string = ' HI';
+                                    } else if (value.forced) {
+                                        language_string = ' forced';
+                                    }
+                                    return value.name + language_string;
                                 } else {
                                     return '<i>undefined</i>'
                                 }
@@ -1126,7 +1133,7 @@
                             data: null,
                             render: function (data) {
                                 if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
-                                    return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-sonarrSeriesId="' + data.sonarrSeriesId + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.mapped_subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+                                    return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-sonarrSeriesId="' + data.sonarrSeriesId + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.mapped_subtitles_path + '"><i class="far fa-file-excel"></i></a>';
                                 } else {
                                     return null;
                                 }
@@ -1152,7 +1159,8 @@
                     language: $(this).attr('data-language'),
                     forced: $(this).attr('data-forced'),
                     video_path: $(this).attr('data-video_path'),
-                    subtitles_path: $(this).attr('data-subtitles_path')
+                    subtitles_path: $(this).attr('data-subtitles_path'),
+                    hi: $(this).attr('data-hi')
                 };
                 var cell = $(this).parent();
                 $.ajax({

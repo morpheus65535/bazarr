@@ -119,6 +119,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
     subtitle_class = SubsceneSubtitle
     languages = supported_languages
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     session = None
     skip_wrong_fps = False
@@ -277,6 +278,10 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
             if self.only_foreign:
                 subtitle.language = Language.rebuild(subtitle.language, forced=True)
+
+            # set subtitle language to hi if it's hearing_impaired
+            if subtitle.hearing_impaired:
+                subtitle.language = Language.rebuild(subtitle.language, hi=True)
 
             subtitles.append(subtitle)
             logger.debug('Found subtitle %r', subtitle)
