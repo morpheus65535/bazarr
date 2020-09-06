@@ -428,4 +428,21 @@ def guess_external_subtitles(dest_folder, subtitles):
                             subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
                         except:
                             pass
+
+        # Detect hearing-impaired external subtitles not identified in filename
+        if not language.hi:
+            subtitle_path = os.path.join(dest_folder, subtitle)
+
+            with open(subtitle_path, 'rb') as f:
+                text = f.read()
+
+            try:
+                guess = chardet.detect(text)
+                logging.debug('BAZARR detected encoding %r', guess)
+                text = text.decode(guess["encoding"])
+            except (UnicodeDecodeError, TypeError):
+                logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                                  subtitle_path)
+            else:
+                print(guess["encoding"])
     return subtitles
