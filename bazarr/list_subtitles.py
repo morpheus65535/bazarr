@@ -4,6 +4,7 @@ import gc
 import os
 import logging
 import ast
+import re
 from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
@@ -243,7 +244,10 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 for i, missing_subtitle in enumerate(missing_subtitles):
                     for item in actual_subtitles_list:
                         if missing_subtitle == item[:2]:
-                            del(missing_subtitles[i])
+                            try:
+                                del(missing_subtitles[i])
+                            except:
+                                pass
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
                                                    episode_subtitles['sonarrSeriesId']]))
 
@@ -444,5 +448,24 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
                                   subtitle_path)
             else:
-                print(guess["encoding"])
+                HI_before_colon_caps = re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"\']))([\s\->~]*(?=[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+]'
+                                                  r'\s*[A-ZÀ-Ž&+])[A-zÀ-ž-_0-9\s\"\'&+()\[\],:]+:(?![\"\'’ʼ❜‘‛”“‟„])(?:'
+                                                  r'\s+|$))(?![0-9])')
+                HI_before_colon_noncaps = re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"]))([\s\->~]*((?=[A-zÀ-ž&+]\s*[A-zÀ-ž&'
+                                                     r'+]\s*[A-zÀ-ž&+])[A-zÀ-ž-_0-9\s\"\'&+()\[\]]+:)(?![\"’ʼ❜‘‛”“‟„])'
+                                                     r'\s*)(?![0-9]|//)')
+                HI_brackets = re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*['
+                                         r'\s:]*%(t)s')
+                HI_all_caps = re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)')
+                HI_remove_man = re.compile(r'(?suxi)(\b(?:WO)MAN:\s*)')
+                HI_starting_dash = re.compile(r'(?u)^\s*-\s*')
+                HI_starting_upper_then_sentence = re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)')
+
+                HI_list = [HI_before_colon_caps, HI_before_colon_noncaps, HI_brackets, HI_all_caps, HI_remove_man,
+                           HI_starting_dash, HI_starting_upper_then_sentence]
+
+                for item in HI_list:
+                    if item.search(text):
+                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], hi=True)
+                        break
     return subtitles
