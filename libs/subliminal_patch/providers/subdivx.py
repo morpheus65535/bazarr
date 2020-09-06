@@ -168,7 +168,8 @@ class SubdivxSubtitlesProvider(Provider):
             download_link = self._get_download_link(subtitle)
 
             # download zip / rar file with the subtitle
-            response = self.session.get(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
+            response = self.session.get(self.server_url + download_link, headers={'Referer': subtitle.page_link},
+                                        timeout=30)
             self._check_response(response)
 
             # open the compressed archive
