@@ -241,13 +241,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             if episode_subtitles['hearing_impaired'] == "False":
-                for i, missing_subtitle in enumerate(missing_subtitles):
-                    for item in actual_subtitles_list:
-                        if missing_subtitle == item[:2]:
-                            try:
-                                del(missing_subtitles[i])
-                            except:
-                                pass
+                for item in missing_subtitles:
+                    if item in actual_subtitles_list or (item + ':hi') in actual_subtitles_list:
+                        missing_subtitles.remove(item)
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
                                                    episode_subtitles['sonarrSeriesId']]))
 
@@ -320,10 +316,9 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             if movie_subtitles['hearing_impaired'] == "False":
-                for i, missing_subtitle in enumerate(missing_subtitles):
-                    for item in actual_subtitles_list:
-                        if missing_subtitle == item[:2]:
-                            del (missing_subtitles[i])
+                for item in missing_subtitles:
+                    if item in actual_subtitles_list or (item + ':hi') in actual_subtitles_list:
+                        missing_subtitles.remove(item)
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles['radarrId']]))
     
     for missing_subtitles_item in missing_subtitles_global:
