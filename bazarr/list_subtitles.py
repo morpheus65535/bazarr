@@ -443,21 +443,16 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
                                   subtitle_path)
             else:
-                HI_before_colon_caps = re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"\']))([\s\->~]*(?=[A-ZÀ-Ž&+]\s*[A-ZÀ-Ž&+]'
-                                                  r'\s*[A-ZÀ-Ž&+])[A-zÀ-ž-_0-9\s\"\'&+()\[\],:]+:(?![\"\'’ʼ❜‘‛”“‟„])(?:'
-                                                  r'\s+|$))(?![0-9])')
-                HI_before_colon_noncaps = re.compile(r'(?u)(?:(?<=^)|(?<=[.\-!?\"]))([\s\->~]*((?=[A-zÀ-ž&+]\s*[A-zÀ-ž&'
-                                                     r'+]\s*[A-zÀ-ž&+])[A-zÀ-ž-_0-9\s\"\'&+()\[\]]+:)(?![\"’ʼ❜‘‛”“‟„])'
-                                                     r'\s*)(?![0-9]|//)')
                 HI_brackets = re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*['
                                          r'\s:]*%(t)s')
+                HI_music = re.compile(r'(?um)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)')
                 HI_all_caps = re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)')
                 HI_remove_man = re.compile(r'(?suxi)(\b(?:WO)MAN:\s*)')
                 HI_starting_dash = re.compile(r'(?u)^\s*-\s*')
                 HI_starting_upper_then_sentence = re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)')
 
-                HI_list = [HI_before_colon_caps, HI_before_colon_noncaps, HI_brackets, HI_all_caps, HI_remove_man,
-                           HI_starting_dash, HI_starting_upper_then_sentence]
+                HI_list = [HI_brackets, HI_music, HI_all_caps, HI_remove_man, HI_starting_dash,
+                           HI_starting_upper_then_sentence]
 
                 for item in HI_list:
                     if item.search(text):
