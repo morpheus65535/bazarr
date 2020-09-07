@@ -30,8 +30,8 @@ hours_until_end_of_day = time_until_end_of_day().seconds // 3600 + 1
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError, IPAddressBlocked)
-VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.Timeout,
-                          requests.ReadTimeout, socket.timeout)
+VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.exceptions.Timeout,
+                          requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout, socket.timeout)
 
 PROVIDER_THROTTLE_MAP = {
     "default": {
@@ -40,9 +40,10 @@ PROVIDER_THROTTLE_MAP = {
         ServiceUnavailable: (datetime.timedelta(minutes=20), "20 minutes"),
         APIThrottled: (datetime.timedelta(minutes=10), "10 minutes"),
         ParseResponseError: (datetime.timedelta(hours=6), "6 hours"),
-        requests.Timeout: (datetime.timedelta(hours=1), "1 hour"),
+        requests.exceptions.Timeout: (datetime.timedelta(hours=1), "1 hour"),
         socket.timeout: (datetime.timedelta(hours=1), "1 hour"),
-        requests.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
+        requests.exceptions.ConnectTimeout: (datetime.timedelta(hours=1), "1 hour"),
+        requests.exceptions.ReadTimeout: (datetime.timedelta(hours=1), "1 hour"),
     },
     "opensubtitles": {
         TooManyRequests: (datetime.timedelta(hours=3), "3 hours"),

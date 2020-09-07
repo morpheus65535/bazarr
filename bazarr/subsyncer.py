@@ -5,6 +5,8 @@ from utils import get_binary
 from utils import history_log, history_log_movie
 from get_languages import alpha2_from_alpha3, language_from_alpha3
 from helper import path_mappings
+from config import settings
+from get_args import args
 
 
 class SubSyncer:
@@ -15,12 +17,13 @@ class SubSyncer:
         self.ffmpeg_path = None
         self.args = None
         self.vad = 'subs_then_auditok'
+        self.log_dir_path = os.path.join(args.config_dir, 'log')
 
     def sync(self, video_path, srt_path, srt_lang, media_type, sonarr_series_id=None, sonarr_episode_id=None,
              radarr_id=None):
         self.reference = video_path
         self.srtin = srt_path
-        self.srtout = None
+        self.srtout = '{}.synced.srt'.format(os.path.splitext(self.srtin)[0])
         self.args = None
 
         ffprobe_exe = get_binary('ffprobe')
@@ -39,8 +42,10 @@ class SubSyncer:
 
         self.ffmpeg_path = os.path.dirname(ffmpeg_exe)
         try:
-            unparsed_args = [self.reference, '-i', self.srtin, '--overwrite-input', '--ffmpegpath', self.ffmpeg_path,
-                             '--vad', self.vad]
+            unparsed_args = [self.reference, '-i', self.srtin, '-o', self.srtout, '--ffmpegpath', self.ffmpeg_path,
+                             '--vad', self.vad, '--log-dir-path', self.log_dir_path]
+            if settings.subsync.getboolean('debug'):
+                unparsed_args.append('--make-test-case')
             parser = make_parser()
             self.args = parser.parse_args(args=unparsed_args)
             result = run(self.args)
@@ -49,18 +54,24 @@ class SubSyncer:
                               '{0}'.format(self.srtin))
         else:
             if result['sync_was_successful']:
-                message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate scale " \
-                          "factor of {2}.".format(language_from_alpha3(srt_lang), result['offset_seconds'],
-                                                  "{:.2f}".format(result['framerate_scale_factor']))
+                if not settings.subsync.getboolean('debug'):
+                    os.remove(self.srtin)
+                    os.rename(self.srtout, self.srtin)
 
-                if media_type == 'series':
-                    history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
-                                description=message, video_path=path_mappings.path_replace_reverse(self.reference),
-                                language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
-                else:
-                    history_log_movie(action=5, radarr_id=radarr_id, description=message,
-                                      video_path=path_mappings.path_replace_reverse_movie(self.reference),
-                                      language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+                    offset_seconds = result['offset_seconds'] or 0
+                    framerate_scale_factor = result['framerate_scale_factor'] or 0
+                    message = "{0} subtitles synchronization ended with an offset of {1} seconds and a framerate " \
+                              "scale factor of {2}.".format(language_from_alpha3(srt_lang), offset_seconds,
+                                                            "{:.2f}".format(framerate_scale_factor))
+
+                    if media_type == 'series':
+                        history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                                    description=message, video_path=path_mappings.path_replace_reverse(self.reference),
+                                    language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
+                    else:
+                        history_log_movie(action=5, radarr_id=radarr_id, description=message,
+                                          video_path=path_mappings.path_replace_reverse_movie(self.reference),
+                                          language=alpha2_from_alpha3(srt_lang), subtitles_path=srt_path)
             else:
                 logging.error('BAZARR unable to sync subtitles: {0}'.format(self.srtin))
 

@@ -18,7 +18,7 @@ from config import settings, base_url, save_settings
 
 from init import *
 import logging
-from database import database, filter_exclusions
+from database import database, get_exclusion_clause
 from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
@@ -54,8 +54,11 @@ def authenticate(actual_method):
         apikey_settings = settings.auth.apikey
         apikey_get = request.args.get('apikey')
         apikey_post = request.form.get('apikey')
+        apikey_header = None
+        if 'X-Api-Key' in request.headers:
+            apikey_header = request.headers['X-Api-Key']
 
-        if apikey_settings in [apikey_get, apikey_post]:
+        if apikey_settings in [apikey_get, apikey_post, apikey_header]:
             return actual_method(*args, **kwargs)
 
         return abort(401, message="Unauthorized")
@@ -83,8 +86,7 @@ class BadgesSeries(Resource):
         missing_episodes = database.execute("SELECT table_shows.tags, table_episodes.monitored, table_shows.seriesType "
                                             "FROM table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId ="
                                             " table_episodes.sonarrSeriesId WHERE missing_subtitles is not null AND "
-                                            "missing_subtitles != '[]'")
-        missing_episodes = filter_exclusions(missing_episodes, 'series')
+                                            "missing_subtitles != '[]'" + get_exclusion_clause('series'))
         missing_episodes = len(missing_episodes)
 
         result = {
@@ -97,8 +99,7 @@ class BadgesMovies(Resource):
     @authenticate
     def get(self):
         missing_movies = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles is not "
-                                          "null AND missing_subtitles != '[]'")
-        missing_movies = filter_exclusions(missing_movies, 'movie')
+                                          "null AND missing_subtitles != '[]'" + get_exclusion_clause('movie'))
         missing_movies = len(missing_movies)
 
         result = {
@@ -327,8 +328,8 @@ class Series(Resource):
                                                    "table_shows.seriesType FROM table_episodes INNER JOIN table_shows "
                                                    "on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
                                                    "WHERE table_episodes.sonarrSeriesId=? AND missing_subtitles is not "
-                                                   "null AND missing_subtitles != '[]'", (item['sonarrSeriesId'],))
-            episodeMissingCount = filter_exclusions(episodeMissingCount, 'series')
+                                                   "null AND missing_subtitles != '[]'" + 
+                                                   get_exclusion_clause('series'), (item['sonarrSeriesId'],))
             episodeMissingCount = len(episodeMissingCount)
             item.update({"episodeMissingCount": episodeMissingCount})
 
@@ -336,8 +337,8 @@ class Series(Resource):
             episodeFileCount = database.execute("SELECT table_shows.tags, table_episodes.monitored, "
                                                 "table_shows.seriesType FROM table_episodes INNER JOIN table_shows on "
                                                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                                "table_episodes.sonarrSeriesId=?", (item['sonarrSeriesId'],))
-            episodeFileCount = filter_exclusions(episodeFileCount, 'series')
+                                                "table_episodes.sonarrSeriesId=?" + get_exclusion_clause('series'), 
+                                                (item['sonarrSeriesId'],))
             episodeFileCount = len(episodeFileCount)
             item.update({"episodeFileCount": episodeFileCount})
 
@@ -386,6 +387,36 @@ class Series(Resource):
         return '', 204
 
 
+class SeriesEditor(Resource):
+    @authenticate
+    def get(self, **kwargs):
+        draw = request.args.get('draw')
+
+        result = database.execute("SELECT sonarrSeriesId, title, languages, hearing_impaired, forced, audio_language "
+                                  "FROM table_shows ORDER BY sortTitle")
+
+        row_count = len(result)
+
+        for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
+
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+
+            # Parse desired languages
+            if item['languages'] and item['languages'] != 'None':
+                item.update({"languages": ast.literal_eval(item['languages'])})
+                for i, subs in enumerate(item['languages']):
+                    item['languages'][i] = {"name": language_from_alpha2(subs),
+                                            "code2": subs,
+                                            "code3": alpha3_from_alpha2(subs)}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+
 class SeriesEditSave(Resource):
     @authenticate
     def post(self):
@@ -427,7 +458,7 @@ class SeriesEditSave(Resource):
                 list_missing_subtitles(no=seriesId, send_event=False)
 
         event_stream(type='series_editor', action='update')
-        event_stream(type='badges')
+        event_stream(type='badges_series')
 
         return '', 204
 
@@ -461,6 +492,11 @@ class Episodes(Resource):
         for item in result:
             # Add Datatables rowId
             item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
+
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse subtitles
             if item['subtitles']:
@@ -540,8 +576,8 @@ class EpisodesSubtitlesDownload(Resource):
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
-                                          (sonarrSeriesId,), only_one=True)['audio_language']
+        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
+                                          (sonarrEpisodeId,), only_one=True)['audio_language']
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -609,8 +645,8 @@ class EpisodesSubtitlesManualDownload(Resource):
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
         title = request.form.get('title')
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
-                                          (sonarrSeriesId,), only_one=True)['audio_language']
+        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
+                                          (sonarrEpisodeId,), only_one=True)['audio_language']
 
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
@@ -709,6 +745,7 @@ class EpisodesHistory(Resource):
                                            "sonarrEpisodeId, subs_id, video_path, subtitles_path FROM table_history "
                                            "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
         for item in episode_history:
+            item['raw_timestamp'] = item['timestamp']
             item['timestamp'] = "<div title='" + \
                                 time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
                                 "' data-toggle='tooltip' data-placement='left'>" + \
@@ -916,6 +953,36 @@ class Movies(Resource):
         return '', 204
 
 
+class MoviesEditor(Resource):
+    @authenticate
+    def get(self):
+        draw = request.args.get('draw')
+
+        result = database.execute("SELECT radarrId, title, languages, hearing_impaired, forced, audio_language "
+                                  "FROM table_movies ORDER BY sortTitle")
+
+        row_count = len(result)
+
+        for item in result:
+            # Add Datatables rowId
+            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
+
+            # Parse audio language
+            item.update({"audio_language": {"name": item['audio_language'],
+                                            "code2": alpha2_from_language(item['audio_language']) or None,
+                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+
+            # Parse desired languages
+            if item['languages'] and item['languages'] != 'None':
+                item.update({"languages": ast.literal_eval(item['languages'])})
+                for i, subs in enumerate(item['languages']):
+                    item['languages'][i] = {"name": language_from_alpha2(subs),
+                                            "code2": subs,
+                                            "code3": alpha3_from_alpha2(subs)}
+
+        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+
+
 class MoviesEditSave(Resource):
     @authenticate
     def post(self):
@@ -956,7 +1023,7 @@ class MoviesEditSave(Resource):
                 list_missing_subtitles_movies(no=radarrId, send_event=False)
 
         event_stream(type='movies_editor', action='update')
-        event_stream(type='badges')
+        event_stream(type='badges_movies')
 
         return '', 204
 
@@ -1163,6 +1230,7 @@ class MovieHistory(Resource):
                                          "video_path, subtitles_path FROM table_history_movie WHERE radarrId=? ORDER "
                                          "BY timestamp DESC", (radarrid,))
         for item in movie_history:
+            item['raw_timestamp'] = item['timestamp']
             item['timestamp'] = "<div title='" + \
                                 time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
                                 "' data-toggle='tooltip' data-placement='left'>" + \
@@ -1261,9 +1329,9 @@ class HistorySeries(Resource):
                 "table_shows.seriesType FROM table_history INNER JOIN table_episodes on "
                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null GROUP BY "
-                "table_history.video_path, table_history.language", (minimum_timestamp,))
-            upgradable_episodes = filter_exclusions(upgradable_episodes, 'series')
+                ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" + 
+                get_exclusion_clause('series') + " GROUP BY table_history.video_path, table_history.language", 
+                (minimum_timestamp,))
 
             for upgradable_episode in upgradable_episodes:
                 if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1307,6 +1375,7 @@ class HistorySeries(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
+                item['raw_timestamp'] = item['timestamp']
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             if item['path']:
@@ -1364,9 +1433,8 @@ class HistoryMovies(Resource):
             upgradable_movies = database.execute(
                 "SELECT video_path, MAX(timestamp) as timestamp, score, tags, monitored FROM table_history_movie "
                 "INNER JOIN table_movies on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL  GROUP BY video_path, "
-                                                    "language", (minimum_timestamp,))
-            upgradable_movies = filter_exclusions(upgradable_movies, 'movie')
+                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" + 
+                get_exclusion_clause('movie') + " GROUP BY video_path, language", (minimum_timestamp,))
 
             for upgradable_movie in upgradable_movies:
                 if upgradable_movie['timestamp'] > minimum_timestamp:
@@ -1407,6 +1475,7 @@ class HistoryMovies(Resource):
 
             # Make timestamp pretty
             if item['timestamp']:
+                item['raw_timestamp'] = item['timestamp']
                 item['timestamp'] = pretty.date(int(item['timestamp']))
 
             if item['video_path']:
@@ -1503,8 +1572,8 @@ class WantedSeries(Resource):
 
         data_count = database.execute("SELECT table_episodes.monitored, table_shows.tags, table_shows.seriesType FROM "
                                       "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                      "table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'")
-        data_count = filter_exclusions(data_count, 'series')
+                                      "table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" +
+                                      get_exclusion_clause('series'))
         row_count = len(data_count)
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
@@ -1513,8 +1582,8 @@ class WantedSeries(Resource):
                                 "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                                "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC")
-        data = filter_exclusions(data, 'series')[int(start):int(start)+int(length)]
+                                "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
+                                " ORDER BY table_episodes._rowid_ DESC LIMIT " + length + " OFFSET " + start)
 
         for item in data:
             # Parse missing subtitles
@@ -1546,13 +1615,13 @@ class WantedMovies(Resource):
         length = request.args.get('length') or -1
         draw = request.args.get('draw')
 
-        data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'")
-        data_count = filter_exclusions(data_count, 'movie')
+        data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+                                      get_exclusion_clause('movie'))
         row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
-                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]' "
-                                "ORDER BY _rowid_ DESC")
-        data = filter_exclusions(data, 'movie')[int(start):int(start)+int(length)]
+                                "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
+                                start)
 
         for item in data:
             # Parse missing subtitles
@@ -1609,6 +1678,7 @@ class BlacklistSeries(Resource):
                                 "OFFSET ?", (length, start))
 
         for item in data:
+            item['raw_timestamp'] = item['timestamp']
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
@@ -1686,6 +1756,7 @@ class BlacklistMovies(Resource):
                                 "OFFSET ?", (length, start))
 
         for item in data:
+            item['raw_timestamp'] = item['timestamp']
             # Make timestamp pretty
             item.update({'timestamp': pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))})
 
@@ -1835,6 +1906,7 @@ api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')
 
 api.add_resource(Series, '/series')
+api.add_resource(SeriesEditor, '/series_editor')
 api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
@@ -1848,6 +1920,7 @@ api.add_resource(EpisodesHistory, '/episodes_history')
 api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')
+api.add_resource(MoviesEditor, '/movies_editor')
 api.add_resource(MoviesEditSave, '/movies_edit_save')
 api.add_resource(MovieSubtitlesDelete, '/movie_subtitles_delete')
 api.add_resource(MovieSubtitlesDownload, '/movie_subtitles_download')

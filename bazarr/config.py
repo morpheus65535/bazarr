@@ -162,7 +162,8 @@ defaults = {
         'use_subsync_threshold': 'False',
         'subsync_threshold': '90',
         'use_subsync_movie_threshold': 'False',
-        'subsync_movie_threshold': '70'
+        'subsync_movie_threshold': '70',
+        'debug': 'False'
     }
 }
 
@@ -181,6 +182,7 @@ def save_settings(settings_items):
     update_schedule = False
     update_path_map = False
     configure_proxy = False
+    exclusion_updated = False
 
     for key, value in settings_items:
         # Intercept database stored settings
@@ -227,6 +229,11 @@ def save_settings(settings_items):
                    'settings-proxy-password']:
             configure_proxy = True
 
+        if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
+                   'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
+                   'settings-radarr-only_monitored']:
+            exclusion_updated = True
+
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
 
@@ -251,6 +258,11 @@ def save_settings(settings_items):
 
     if configure_proxy:
         configure_proxy_func()
+
+    if exclusion_updated:
+        from event_handler import event_stream
+        event_stream(type='badges_series')
+        event_stream(type='badges_movies')
 
 
 def url_sonarr():

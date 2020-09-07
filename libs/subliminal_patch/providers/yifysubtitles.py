@@ -95,7 +95,7 @@ class YifySubtitlesProvider(Provider):
     ]
 
     languages = {Language(l, c) for (_, l, c) in YifyLanguages}
-    server_url = 'https://www.yifysubtitles.com'
+    server_urls = ['https://yifysubtitles.org', 'https://www.yifysubtitles.com']
     video_types = (Movie,)
 
     def initialize(self):
@@ -112,20 +112,20 @@ class YifySubtitlesProvider(Provider):
     def terminate(self):
         self.session.close()
 
-    def _parse_row(self, row, languages):
+    def _parse_row(self, row, languages, server_url):
         td = row.findAll('td')
         rating = int(td[0].text)
         sub_lang = td[1].text
         release = re.sub(r'^subtitle ', '', td[2].text)
         sub_link = td[2].find('a').get('href')
-        sub_link = re.sub(r'^/subtitles/', self.server_url + '/subtitle/', sub_link) + '.zip'
+        page_link = server_url + sub_link
+        sub_link = re.sub(r'^/subtitles/', server_url + '/subtitle/', sub_link) + '.zip'
         hi = True if td[3].find('span', {'class': 'hi-subtitle'}) else False
         uploader = td[4].text
-        page_link = self.server_url + td[5].find('a').get('href')
 
         _, l, c = next(x for x in self.YifyLanguages if x[0] == sub_lang)
         lang = Language(l, c)
-        if languages & set([lang]):
+        if languages & {lang}:
             return [YifySubtitle(lang, page_link, release, uploader, sub_link, rating, hi)]
 
         return []
@@ -134,9 +134,13 @@ class YifySubtitlesProvider(Provider):
         subtitles = []
 
         logger.info('Searching subtitle %r', imdb_id)
-        response = self.session.get(self.server_url + '/movie-imdb/' + imdb_id,
-                                    allow_redirects=False, timeout=10,
-                                    headers={'Referer': self.server_url})
+        for server_url in self.server_urls:
+            response = self.session.get(server_url + '/movie-imdb/' + imdb_id,
+                                        allow_redirects=False, timeout=10,
+                                        headers={'Referer': server_url})
+            if response.status_code == 200:
+                break
+
         response.raise_for_status()
 
         if response.status_code != 200:
@@ -150,7 +154,7 @@ class YifySubtitlesProvider(Provider):
 
         for row in rows:
             try:
-                subtitles = subtitles + self._parse_row(row, languages)
+                subtitles = subtitles + self._parse_row(row, languages, server_url)
             except Exception as e:
                 pass
 
