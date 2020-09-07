@@ -40,8 +40,13 @@ class WizdomSubtitle(Subtitle):
     def id(self):
         return str(self.subtitle_id)
 
+    @property
+    def release_info(self):
+        return self.release
+
     def get_matches(self, video):
         matches = set()
+        subtitle_filename = self.release.lower()
 
         # episode
         if isinstance(video, Episode):
@@ -69,6 +74,39 @@ class WizdomSubtitle(Subtitle):
             if video.title and (sanitize(self.title) in (
                     sanitize(name) for name in [video.title] + video.alternative_titles)):
                 matches.add('title')
+
+        # release_group
+        if video.release_group and video.release_group.lower() in subtitle_filename:
+            matches.add('release_group')
+
+        # resolution
+        if video.resolution and video.resolution.lower() in subtitle_filename:
+            matches.add('resolution')
+
+        # source
+        formats = []
+        if video.source:
+            formats = [video.source.lower()]
+            if formats[0] == "web":
+                formats.append("webdl")
+                formats.append("webrip")
+                formats.append("web ")
+            for frmt in formats:
+                if frmt.lower() in subtitle_filename:
+                    matches.add('source')
+                    break
+
+        # video_codec
+        if video.video_codec:
+            video_codecs = [video.video_codec.lower()]
+            if video_codecs[0] == "h.264":
+                formats.append("x264")
+            elif video_codecs[0] == "h.265":
+                formats.append("x265")
+            for vc in formats:
+                if vc.lower() in subtitle_filename:
+                    matches.add('video_codec')
+                    break
 
         return matches
 
