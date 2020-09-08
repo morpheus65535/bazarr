@@ -21,6 +21,7 @@ import chardet
 gc.enable()
 
 
+
 def store_subtitles(original_path, reversed_path):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
     actual_subtitles = []
@@ -443,19 +444,16 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
                                   subtitle_path)
             else:
-                HI_brackets = re.compile(r'(?sux)-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*['
-                                         r'\s:]*%(t)s')
-                HI_music = re.compile(r'(?um)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$)')
-                HI_all_caps = re.compile(r'(?u)(^(?=.*[A-ZÀ-Ž&+]{4,})[A-ZÀ-Ž-_\s&+]+$)')
-                HI_remove_man = re.compile(r'(?suxi)(\b(?:WO)MAN:\s*)')
-                HI_starting_dash = re.compile(r'(?u)^\s*-\s*')
-                HI_starting_upper_then_sentence = re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)')
+                TAG = r"(?:\s*{\\[iusb][0-1]}\s*)*"
+                music = re.compile(r'[-\s>~]*[*¶♫♪]+\s*.+|.+\s*[*¶♫♪]+\s*')
+                caps = re.compile(r'[A-ZÀ-Ž&+]{5,}')
+                brackets = re.compile(r'-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s'
+                                      % {"t": TAG})
 
-                HI_list = [HI_brackets, HI_music, HI_all_caps, HI_remove_man, HI_starting_dash,
-                           HI_starting_upper_then_sentence]
+                HI_list = [music, caps, brackets]
 
                 for item in HI_list:
-                    if item.search(text):
+                    if bool(re.search(item, text)):
                         subtitles[subtitle] = Language.rebuild(subtitles[subtitle], hi=True)
                         break
     return subtitles
