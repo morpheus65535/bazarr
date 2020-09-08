@@ -822,11 +822,10 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
     tags = tags or []
     if forced_tag:
         tags.append("forced")
-    # fixme when we'll be ready to add .hi to filename when saving a subtitles (replace 2 previous lines)
-    # if hi_tag:
+
+    # fixme when we'll be ready to add .hi to filename when saving a subtitles
+    # elif hi_tag:
     #     tags.append("hi")
-    # elif forced_tag:
-    #     tags.append("forced")
 
     if language:
         subtitle_root += '.' + str(language.basename)
