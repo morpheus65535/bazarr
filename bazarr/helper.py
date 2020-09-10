@@ -95,7 +95,7 @@ class PathMappings:
 path_mappings = PathMappings()
 
 
-def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced, score):
+def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language, episode_language_code2, episode_language_code3, forced, score, subtitle_id, provider, series_id, episode_id):
     is_forced = ":forced" if forced else ""
     is_forced_string = " forced" if forced else ""
     pp_command = pp_command.replace('{{directory}}', os.path.dirname(episode))
@@ -109,6 +109,10 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     pp_command = pp_command.replace('{{episode_language_code2}}', episode_language_code2)
     pp_command = pp_command.replace('{{episode_language_code3}}', episode_language_code3)
     pp_command = pp_command.replace('{{score}}', str(score))
+    pp_command = pp_command.replace('{{subtitle_id}}', str(subtitle_id))
+    pp_command = pp_command.replace('{{provider}}', str(provider))
+    pp_command = pp_command.replace('{{series_id}}', str(series_id))
+    pp_command = pp_command.replace('{{episode_id}}', str(episode_id))
     return pp_command
 
 
