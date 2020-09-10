@@ -91,6 +91,10 @@ def sync_episodes():
                                     if isinstance(item, dict):
                                         if 'name' in item:
                                             audio_language = item['name']
+                                else:
+                                    audio_language = database.execute("SELECT audio_language FROM table_shows WHERE "
+                                                                      "sonarrSeriesId=?", (episode['seriesId'],),
+                                                                      only_one=True)['audio_language']
 
                                 # Add episodes in sonarr to current episode list
                                 current_episodes_sonarr.append(episode['id'])

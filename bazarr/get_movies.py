@@ -148,7 +148,13 @@ def update_movies():
 
                             audio_language = None
                             if radarr_version.startswith('0'):
-                                audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
+                                if 'mediaInfo' in movie['movieFile']:
+                                    if 'audioLanguages' in movie['movieFile']['mediaInfo']:
+                                        audio_language_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
+                                        if len(audio_language_list):
+                                            audio_language = audio_language_list[0].strip()
+                                if not audio_language:
+                                    audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
                             else:
                                 if 'languages' in movie['movieFile'] and len(movie['movieFile']['languages']):
                                     for item in movie['movieFile']['languages']:
