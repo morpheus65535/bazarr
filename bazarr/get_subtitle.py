@@ -131,10 +131,14 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
             lang_obj = Language('por', 'BR')
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
         else:
             lang_obj = Language(l)
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
         language_set.add(lang_obj)
 
     minimum_score = settings.general.minimum_score
@@ -215,14 +219,19 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         audio_language_code2 = alpha2_from_language(audio_language)
                         audio_language_code3 = alpha3_from_language(audio_language)
                         downloaded_path = subtitle.storage_path
-                        is_forced_string = " forced" if subtitle.language.forced else ""
+                        if subtitle.language.hi:
+                            modifier_string = " HI"
+                        elif subtitle.language.forced:
+                            modifier_string = " forced"
+                        else:
+                            modifier_string = ""
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if is_upgrade:
                             action = "upgraded"
                         else:
                             action = "downloaded"
                         percent_score = round(subtitle.score * 100 / max_score, 2)
-                        message = downloaded_language + is_forced_string + " subtitles " + action + " from " + \
+                        message = downloaded_language + modifier_string + " subtitles " + action + " from " + \
                             downloaded_provider + " with a score of " + str(percent_score) + "%."
 
                         if media_type == 'series':
@@ -278,7 +287,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         track_event(category=downloaded_provider, action=action, label=downloaded_language)
 
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, reversed_subtitles_path
+                               subtitle.language.forced, subtitle.id, reversed_subtitles_path, subtitle.language.hi
 
         if not saved_any:
             logging.debug('BAZARR No Subtitles were found for this file: ' + path)
@@ -312,6 +321,7 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
 
     for lang in ast.literal_eval(language):
         lang = alpha3_from_alpha2(lang)
+
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
@@ -320,7 +330,12 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
             lang_obj = Language(lang)
             if forced == "True":
                 lang_obj = Language.rebuild(lang_obj, forced=True)
+
         language_set.add(lang_obj)
+
+        if forced != "True":
+            lang_obj_hi = Language.rebuild(lang_obj, hi=True)
+            language_set.add(lang_obj_hi)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
@@ -394,8 +409,8 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                 subtitles_list.append(
                     dict(score=round((score / max_score * 100), 2),
                          orig_score=score,
-                         score_without_hash=score_without_hash,
-                         language=str(s.language), hearing_impaired=str(s.hearing_impaired),
+                         score_without_hash=score_without_hash, forced=str(s.language.forced),
+                         language=str(s.language.basename), hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
                          subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
                          url=s.page_link, matches=list(matches), dont_matches=list(not_matched),
@@ -477,8 +492,13 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         audio_language_code3 = alpha3_from_language(audio_language)
                         downloaded_path = saved_subtitle.storage_path
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
-                        is_forced_string = " forced" if subtitle.language.forced else ""
-                        message = downloaded_language + is_forced_string + " subtitles downloaded from " + \
+                        if subtitle.language.hi:
+                            modifier_string = " HI"
+                        elif subtitle.language.forced:
+                            modifier_string = " forced"
+                        else:
+                            modifier_string = ""
+                        message = downloaded_language + modifier_string + " subtitles downloaded from " + \
                                   downloaded_provider + " with a score of " + str(score) + "% using manual search."
 
                         if media_type == 'series':
@@ -533,7 +553,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                     label=downloaded_language)
 
                         return message, reversed_path, downloaded_language_code2, downloaded_provider, subtitle.score, \
-                               subtitle.language.forced, subtitle.id, reversed_subtitles_path
+                               subtitle.language.forced, subtitle.id, reversed_subtitles_path, subtitle.language.hi
                 else:
                     logging.error(
                         "BAZARR Tried to manually download a Subtitles for file: " + path + " but we weren't able to do (probably throttled by " + str(
@@ -668,7 +688,7 @@ def series_download_subtitles(no):
                                                str(alpha3_from_alpha2(language.split(':')[0])),
                                                episode['audio_language'],
                                                series_details['hearing_impaired'],
-                                               "True" if len(language.split(':')) > 1 else "False",
+                                               "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode['scene_name']),
@@ -678,7 +698,12 @@ def series_download_subtitles(no):
                         message = result[0]
                         path = result[1]
                         forced = result[5]
-                        language_code = result[2] + ":forced" if forced else result[2]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
+                        else:
+                            language_code = result[2]
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
@@ -715,7 +740,7 @@ def episode_download_subtitles(no):
                                                str(alpha3_from_alpha2(language.split(':')[0])),
                                                episode['audio_language'],
                                                episode['hearing_impaired'],
-                                               "True" if len(language.split(':')) > 1 else "False",
+                                               "True" if language.endswith(':forced') else "False",
                                                providers_list,
                                                providers_auth,
                                                str(episode['scene_name']),
@@ -725,7 +750,12 @@ def episode_download_subtitles(no):
                         message = result[0]
                         path = result[1]
                         forced = result[5]
-                        language_code = result[2] + ":forced" if forced else result[2]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
+                        else:
+                            language_code = result[2]
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]
@@ -764,7 +794,7 @@ def movies_download_subtitles(no):
                                            str(alpha3_from_alpha2(language.split(':')[0])),
                                            movie['audio_language'],
                                            movie['hearing_impaired'],
-                                           "True" if len(language.split(':')) > 1 else "False",
+                                           "True" if language.endswith(':forced') else "False",
                                            providers_list,
                                            providers_auth,
                                            str(movie['sceneName']),
@@ -774,7 +804,12 @@ def movies_download_subtitles(no):
                     message = result[0]
                     path = result[1]
                     forced = result[5]
-                    language_code = result[2] + ":forced" if forced else result[2]
+                    if result[8]:
+                        language_code = result[2] + ":hi"
+                    elif forced:
+                        language_code = result[2] + ":forced"
+                    else:
+                        language_code = result[2]
                     provider = result[3]
                     score = result[4]
                     subs_id = result[6]
@@ -823,7 +858,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    episode['audio_language'],
                                                    episode['hearing_impaired'],
-                                                   "True" if len(language.split(':')) > 1 else "False",
+                                                   "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(episode['scene_name']),
@@ -833,7 +868,12 @@ def wanted_download_subtitles(path, l, count_episodes):
                             message = result[0]
                             path = result[1]
                             forced = result[5]
-                            language_code = result[2] + ":forced" if forced else result[2]
+                            if result[8]:
+                                language_code = result[2] + ":hi"
+                            elif forced:
+                                language_code = result[2] + ":forced"
+                            else:
+                                language_code = result[2]
                             provider = result[3]
                             score = result[4]
                             subs_id = result[6]
@@ -880,7 +920,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
                                                    movie['audio_language'],
                                                    movie['hearing_impaired'],
-                                                   "True" if len(language.split(':')) > 1 else "False",
+                                                   "True" if language.endswith(':forced') else "False",
                                                    providers_list,
                                                    providers_auth,
                                                    str(movie['sceneName']),
@@ -890,7 +930,12 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                             message = result[0]
                             path = result[1]
                             forced = result[5]
-                            language_code = result[2] + ":forced" if forced else result[2]
+                            if result[8]:
+                                language_code = result[2] + ":hi"
+                            elif forced:
+                                language_code = result[2] + ":forced"
+                            else:
+                                language_code = result[2]
                             provider = result[3]
                             score = result[4]
                             subs_id = result[6]
@@ -1172,7 +1217,12 @@ def upgrade_subtitles():
                         message = result[0]
                         path = result[1]
                         forced = result[5]
-                        language_code = result[2] + ":forced" if forced else result[2]
+                        if result[8]:
+                            language_code = result[2] + ":hi"
+                        elif forced:
+                            language_code = result[2] + ":forced"
+                        else:
+                            language_code = result[2]
                         provider = result[3]
                         score = result[4]
                         subs_id = result[6]

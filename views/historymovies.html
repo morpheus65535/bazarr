@@ -80,7 +80,7 @@
                         data: null,
                         render: function (data) {
                             if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
-                                return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+                                return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
                             } else {
                                 return null;
                             }
@@ -98,6 +98,7 @@
                     subs_id: $(this).attr('data-subs_id'),
                     language: $(this).attr('data-language'),
                     forced: $(this).attr('data-forced'),
+                    hi: $(this).attr('data-hi'),
                     video_path: $(this).attr('data-video_path'),
                     subtitles_path: $(this).attr('data-subtitles_path')
                 };

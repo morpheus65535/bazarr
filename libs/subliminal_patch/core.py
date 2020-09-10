@@ -352,7 +352,7 @@ class SZProviderPool(ProviderPool):
 
         for s in subtitles:
             # get the matches
-            if s.language not in languages:
+            if s.language.basename not in languages:
                 logger.debug("%r: Skipping, language not searched for", s)
                 continue
 
@@ -381,12 +381,12 @@ class SZProviderPool(ProviderPool):
                 break
 
             # stop when all languages are downloaded
-            if set(s.language for s in downloaded_subtitles) == languages:
+            if set(s.language.basename for s in downloaded_subtitles) == languages:
                 logger.debug('All languages downloaded')
                 break
 
             # check downloaded languages
-            if subtitle.language in set(s.language for s in downloaded_subtitles):
+            if subtitle.language in set(s.language.basename for s in downloaded_subtitles):
                 logger.debug('%r: Skipping subtitle: already downloaded', subtitle.language)
                 continue
 
@@ -615,18 +615,23 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             subtitles[p] = None
             continue
 
-        # extract potential forced/normal/default tag
+        # extract potential forced/normal/default/hi tag
         # fixme: duplicate from subtitlehelpers
         split_tag = p_root.rsplit('.', 1)
         adv_tag = None
         if len(split_tag) > 1:
             adv_tag = split_tag[1].lower()
-            if adv_tag in ['forced', 'normal', 'default', 'embedded', 'embedded-forced', 'custom']:
+            if adv_tag in ['forced', 'normal', 'default', 'embedded', 'embedded-forced', 'custom', 'hi', 'cc', 'sdh']:
                 p_root = split_tag[0]
 
         forced = False
         if adv_tag:
             forced = "forced" in adv_tag
+
+        hi = False
+        if adv_tag:
+            hi_tag = ["hi", "cc", "sdh"]
+            hi = any(i for i in hi_tag if i in adv_tag)
 
         # remove possible language code for matching
         p_root_bare = ENDSWITH_LANGUAGECODE_RE.sub(
@@ -649,6 +654,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             try:
                 language = Language.fromietf(language_code)
                 language.forced = forced
+                language.hi = hi
             except (ValueError, LanguageReverseError):
                 logger.error('Cannot parse language code %r', language_code)
                 language_code = None
@@ -656,7 +662,7 @@ def _search_external_subtitles(path, languages=None, only_one=False, scandir_gen
             language_code = None
 
         if not language and not language_code and only_one:
-            language = Language.rebuild(list(languages)[0], forced=forced)
+            language = Language.rebuild(list(languages)[0], forced=forced, hi=hi)
 
         subtitles[p] = language
 
@@ -801,7 +807,7 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
     return downloaded_subtitles
 
 
-def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=False, tags=None):
+def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=False, hi_tag=False, tags=None):
     """Get the subtitle path using the `video_path` and `language`.
 
     :param str video_path: path to the video.
@@ -816,6 +822,10 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
     tags = tags or []
     if forced_tag:
         tags.append("forced")
+
+    # fixme when we'll be ready to add .hi to filename when saving a subtitles
+    # elif hi_tag:
+    #     tags.append("hi")
 
     if language:
         subtitle_root += '.' + str(language.basename)
@@ -858,13 +868,13 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # check language
-        if subtitle.language in set(s.language for s in saved_subtitles):
+        if subtitle.language in set(s.language.basename for s in saved_subtitles):
             logger.debug('Skipping subtitle %r: language already saved', subtitle)
             continue
 
         # create subtitle path
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
-                                          forced_tag=subtitle.language.forced, tags=tags)
+                                          forced_tag=subtitle.language.forced, hi_tag=subtitle.language.hi, tags=tags)
         if directory is not None:
             subtitle_path = os.path.join(directory, os.path.split(subtitle_path)[1])
 
