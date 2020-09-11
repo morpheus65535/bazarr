@@ -424,12 +424,12 @@ def guess_external_subtitles(dest_folder, subtitles):
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
                             detected_language))
                         try:
-                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
+                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), hi=False)
                         except:
                             pass
 
         # Detect hearing-impaired external subtitles not identified in filename
-        if not language.hi:
+        if not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
             with open(subtitle_path, 'rb') as f:
