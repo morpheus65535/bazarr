@@ -241,10 +241,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-            if episode_subtitles['hearing_impaired'] == "False":
-                for item in missing_subtitles:
-                    if item in actual_subtitles_list or (item + ':hi') in actual_subtitles_list:
-                        missing_subtitles.remove(item)
+            for item in missing_subtitles:
+                if item in actual_subtitles_list or (item + ':hi') in actual_subtitles_list:
+                    missing_subtitles.remove(item)
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
                                                    episode_subtitles['sonarrSeriesId']]))
 
