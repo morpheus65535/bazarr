@@ -242,7 +242,7 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
             for item in missing_subtitles:
-                if item in actual_subtitles_list or (item + ':hi') in actual_subtitles_list:
+                if item + ':hi' in actual_subtitles_list:
                     missing_subtitles.remove(item)
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
                                                    episode_subtitles['sonarrSeriesId']]))
@@ -424,7 +424,8 @@ def guess_external_subtitles(dest_folder, subtitles):
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
                             detected_language))
                         try:
-                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), hi=False)
+                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=False,
+                                                                   hi=False)
                         except:
                             pass
 
@@ -450,9 +451,10 @@ def guess_external_subtitles(dest_folder, subtitles):
                                       % {"t": TAG})
 
                 HI_list = [music, caps, brackets]
+                # HI_list = [music, brackets]
 
                 for item in HI_list:
                     if bool(re.search(item, text)):
-                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], hi=True)
+                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
                         break
     return subtitles
