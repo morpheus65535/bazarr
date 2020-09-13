@@ -449,12 +449,10 @@ def guess_external_subtitles(dest_folder, subtitles):
             else:
                 TAG = r"(?:\s*{\\[iusb][0-1]}\s*)*"
                 music = re.compile(r'[-\s>~]*[*¶♫♪]+\s*.+|.+\s*[*¶♫♪]+\s*')
-                caps = re.compile(r'[A-ZÀ-Ž&+]{5,}')
                 brackets = re.compile(r'-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s'
                                       % {"t": TAG})
 
-                HI_list = [music, caps, brackets]
-                # HI_list = [music, brackets]
+                HI_list = [music, brackets]
 
                 for item in HI_list:
                     if bool(re.search(item, text)):
