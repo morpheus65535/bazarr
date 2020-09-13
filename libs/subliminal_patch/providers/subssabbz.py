@@ -43,6 +43,11 @@ def fix_tv_naming(title):
                                            }, True)
 
 
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {"Back to the Future Part": "Back to the Future",
+                                           }, True)
+
+
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
@@ -147,7 +152,7 @@ class SubsSabBzProvider(Provider):
             params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['yr'] = video.year
-            params['movie'] = sanitize(video.title, {'\''})
+            params['movie'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if language == 'en' or language == 'eng':
             params['select-language'] = 1

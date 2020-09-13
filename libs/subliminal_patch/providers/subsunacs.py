@@ -43,6 +43,12 @@ def fix_tv_naming(title):
                                            }, True)
 
 
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {"Back to the Future Part III": "Back to the Future 3",
+                                           "Back to the Future Part II": "Back to the Future 2",
+                                           }, True)
+
+
 class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
     provider_name = 'subsunacs'
@@ -147,7 +153,7 @@ class SubsUnacsProvider(Provider):
             params['m'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['y'] = video.year
-            params['m'] = sanitize(video.title, {'\''})
+            params['m'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if language == 'en' or language == 'eng':
             params['l'] = 1
