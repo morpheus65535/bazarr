@@ -36,7 +36,7 @@ from ..URLBase import PrivacyMode
 from ..common import NotifyFormat
 from ..common import NotifyType
 from ..utils import parse_list
-from ..utils import GET_EMAIL_RE
+from ..utils import is_email
 from ..AppriseLocale import gettext_lazy as _
 
 
@@ -140,12 +140,6 @@ class NotifyTwist(NotifyBase):
         #   <workspace_id>:<channel_id>
         self.channel_ids = set()
 
-        # Initialize our Email Object
-        self.email = email if email else '{}@{}'.format(
-            self.user,
-            self.host,
-        )
-
         # The token is None if we're not logged in and False if we
         # failed to log in.  Otherwise it is set to the actual token
         self.token = None
@@ -171,25 +165,30 @@ class NotifyTwist(NotifyBase):
         #  }
         self._cached_channels = dict()
 
-        try:
-            result = GET_EMAIL_RE.match(self.email)
-            if not result:
-                # let outer exception handle this
-                raise TypeError
+        # Initialize our Email Object
+        self.email = email if email else '{}@{}'.format(
+            self.user,
+            self.host,
+        )
 
-            if email:
-                # Force user/host to be that of the defined email for
-                # consistency. This is very important for those initializing
-                # this object with the the email object would could potentially
-                # cause inconsistency to contents in the NotifyBase() object
-                self.user = result.group('fulluser')
-                self.host = result.group('domain')
-
-        except (TypeError, AttributeError):
+        # Check if it is valid
+        result = is_email(self.email)
+        if not result:
+            # let outer exception handle this
             msg = 'The Twist Auth email specified ({}) is invalid.'\
                 .format(self.email)
             self.logger.warning(msg)
             raise TypeError(msg)
+
+        # Re-assign email based on what was parsed
+        self.email = result['full_email']
+        if email:
+            # Force user/host to be that of the defined email for
+            # consistency. This is very important for those initializing
+            # this object with the the email object would could potentially
+            # cause inconsistency to contents in the NotifyBase() object
+            self.user = result['user']
+            self.host = result['domain']
 
         if not self.password:
             msg = 'No Twist password was specified with account: {}'\
@@ -229,28 +228,25 @@ class NotifyTwist(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{password}:{user}@{host}/{targets}/?{args}'.format(
-            schema=self.secure_protocol,
-            password=self.pprint(
-                self.password, privacy, mode=PrivacyMode.Secret, safe=''),
-            user=self.quote(self.user, safe=''),
-            host=self.host,
-            targets='/'.join(
-                [NotifyTwist.quote(x, safe='') for x in chain(
-                    # Channels are prefixed with a pound/hashtag symbol
-                    ['#{}'.format(x) for x in self.channels],
-                    # Channel IDs
-                    self.channel_ids,
-                )]),
-            args=NotifyTwist.urlencode(args),
-        )
+        return '{schema}://{password}:{user}@{host}/{targets}/' \
+            '?{params}'.format(
+                schema=self.secure_protocol,
+                password=self.pprint(
+                    self.password, privacy, mode=PrivacyMode.Secret, safe=''),
+                user=self.quote(self.user, safe=''),
+                host=self.host,
+                targets='/'.join(
+                    [NotifyTwist.quote(x, safe='') for x in chain(
+                        # Channels are prefixed with a pound/hashtag symbol
+                        ['#{}'.format(x) for x in self.channels],
+                        # Channel IDs
+                        self.channel_ids,
+                    )]),
+                params=NotifyTwist.urlencode(params),
+            )
 
     def login(self):
         """
@@ -640,7 +636,9 @@ class NotifyTwist(NotifyBase):
                 api_url,
                 data=payload,
                 headers=headers,
-                verify=self.verify_certificate)
+                verify=self.verify_certificate,
+                timeout=self.request_timeout,
+            )
 
             # Get our JSON content if it's possible
             try:
@@ -679,7 +677,9 @@ class NotifyTwist(NotifyBase):
                         api_url,
                         data=payload,
                         headers=headers,
-                        verify=self.verify_certificate)
+                        verify=self.verify_certificate,
+                        timeout=self.request_timeout
+                    )
 
                     # Get our JSON content if it's possible
                     try:
@@ -725,11 +725,10 @@ class NotifyTwist(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

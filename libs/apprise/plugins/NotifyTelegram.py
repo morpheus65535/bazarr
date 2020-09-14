@@ -229,22 +229,18 @@ class NotifyTelegram(NotifyBase):
         # Parse our list
         self.targets = parse_list(targets)
 
+        # if detect_owner is set to True, we will attempt to determine who
+        # the bot owner is based on the first person who messaged it.  This
+        # is not a fool proof way of doing things as over time Telegram removes
+        # the message history for the bot.  So what appears (later on) to be
+        # the first message to it, maybe another user who sent it a message
+        # much later.  Users who set this flag should update their Apprise
+        # URL later to directly include the user that we should message.
         self.detect_owner = detect_owner
 
         if self.user:
             # Treat this as a channel too
             self.targets.append(self.user)
-
-        if len(self.targets) == 0 and self.detect_owner:
-            _id = self.detect_bot_owner()
-            if _id:
-                # Store our id
-                self.targets.append(str(_id))
-
-        if len(self.targets) == 0:
-            err = 'No chat_id(s) were specified.'
-            self.logger.warning(err)
-            raise TypeError(err)
 
         # Track whether or not we want to send an image with our notification
         # or not.
@@ -325,6 +321,7 @@ class NotifyTelegram(NotifyBase):
                     files=files,
                     data=payload,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -349,7 +346,7 @@ class NotifyTelegram(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A connection error occured posting Telegram '
+                'A connection error occurred posting Telegram '
                 'attachment.')
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -393,6 +390,7 @@ class NotifyTelegram(NotifyBase):
                 url,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -436,12 +434,12 @@ class NotifyTelegram(NotifyBase):
             # - TypeError = r.content is None
             # - AttributeError = r is None
             self.logger.warning(
-                'A communication error occured detecting the Telegram User.')
+                'A communication error occurred detecting the Telegram User.')
             return 0
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A connection error occured detecting the Telegram User.')
+                'A connection error occurred detecting the Telegram User.')
             self.logger.debug('Socket Exception: %s' % str(e))
             return 0
 
@@ -472,7 +470,7 @@ class NotifyTelegram(NotifyBase):
             entry = response['result'][0]
             _id = entry['message']['from'].get('id', 0)
             _user = entry['message']['from'].get('first_name')
-            self.logger.info('Detected telegram user %s (userid=%d)' % (
+            self.logger.info('Detected Telegram user %s (userid=%d)' % (
                 _user, _id))
             # Return our detected userid
             return _id
@@ -487,6 +485,19 @@ class NotifyTelegram(NotifyBase):
         """
         Perform Telegram Notification
         """
+
+        if len(self.targets) == 0 and self.detect_owner:
+            _id = self.detect_bot_owner()
+            if _id:
+                # Permanently store our id in our target list for next time
+                self.targets.append(str(_id))
+                self.logger.info(
+                    'Update your Telegram Apprise URL to read: '
+                    '{}'.format(self.url(privacy=True)))
+
+        if len(self.targets) == 0:
+            self.logger.warning('There were not Telegram chat_ids to notify.')
+            return False
 
         headers = {
             'User-Agent': self.app_id,
@@ -597,6 +608,7 @@ class NotifyTelegram(NotifyBase):
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -631,7 +643,7 @@ class NotifyTelegram(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A connection error occured sending Telegram:%s ' % (
+                    'A connection error occurred sending Telegram:%s ' % (
                         payload['chat_id']) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -663,29 +675,29 @@ class NotifyTelegram(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': self.include_image,
-            'verify': 'yes' if self.verify_certificate else 'no',
             'detect': 'yes' if self.detect_owner else 'no',
         }
 
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
         # No need to check the user token because the user automatically gets
         # appended into the list of chat ids
-        return '{schema}://{bot_token}/{targets}/?{args}'.format(
+        return '{schema}://{bot_token}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             bot_token=self.pprint(self.bot_token, privacy, safe=''),
             targets='/'.join(
                 [NotifyTelegram.quote('@{}'.format(x)) for x in self.targets]),
-            args=NotifyTelegram.urlencode(args))
+            params=NotifyTelegram.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         # This is a dirty hack; but it's the only work around to tgram://
@@ -718,17 +730,14 @@ class NotifyTelegram(NotifyBase):
                 tgram.group('protocol'),
                 tgram.group('prefix'),
                 tgram.group('btoken_a'),
-                tgram.group('remaining')))
+                tgram.group('remaining')), verify_host=False)
 
         else:
             # Try again
-            results = NotifyBase.parse_url(
-                '%s%s/%s' % (
-                    tgram.group('protocol'),
-                    tgram.group('btoken_a'),
-                    tgram.group('remaining'),
-                ),
-            )
+            results = NotifyBase.parse_url('%s%s/%s' % (
+                tgram.group('protocol'),
+                tgram.group('btoken_a'),
+                tgram.group('remaining')), verify_host=False)
 
         # The first token is stored in the hostname
         bot_token_a = NotifyTelegram.unquote(results['host'])

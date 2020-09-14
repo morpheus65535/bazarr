@@ -128,15 +128,11 @@ class NotifyJSON(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        # Append our headers into our args
-        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+        # Append our headers into our parameters
+        params.update({'+{}'.format(k): v for k, v in self.headers.items()})
 
         # Determine Authentication
         auth = ''
@@ -153,14 +149,15 @@ class NotifyJSON(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
-            hostname=NotifyJSON.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
             fullpath=NotifyJSON.quote(self.fullpath, safe='/'),
-            args=NotifyJSON.urlencode(args),
+            params=NotifyJSON.urlencode(params),
         )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
@@ -215,6 +212,7 @@ class NotifyJSON(NotifyBase):
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -238,7 +236,7 @@ class NotifyJSON(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending JSON '
+                'A Connection error occurred sending JSON '
                 'notification to %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -251,11 +249,10 @@ class NotifyJSON(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

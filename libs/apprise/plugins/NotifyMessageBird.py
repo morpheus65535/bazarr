@@ -234,6 +234,7 @@ class NotifyMessageBird(NotifyBase):
                     data=payload,
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 # Sample output of a successful transmission
@@ -297,7 +298,7 @@ class NotifyMessageBird(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending MessageBird:%s ' % (
+                    'A Connection error occurred sending MessageBird:%s ' % (
                         target) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -313,31 +314,26 @@ class NotifyMessageBird(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{apikey}/{source}/{targets}/?{args}'.format(
+        return '{schema}://{apikey}/{source}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             apikey=self.pprint(self.apikey, privacy, safe=''),
             source=self.source,
             targets='/'.join(
                 [NotifyMessageBird.quote(x, safe='') for x in self.targets]),
-            args=NotifyMessageBird.urlencode(args))
+            params=NotifyMessageBird.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
 
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results
@@ -352,7 +348,7 @@ class NotifyMessageBird(NotifyBase):
         except IndexError:
             # No path specified... this URL is potentially un-parseable; we can
             # hope for a from= entry
-            pass
+            results['source'] = None
 
         # The hostname is our authentication key
         results['apikey'] = NotifyMessageBird.unquote(results['host'])

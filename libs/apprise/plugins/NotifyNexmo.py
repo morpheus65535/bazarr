@@ -82,7 +82,7 @@ class NotifyNexmo(NotifyBase):
             'name': _('API Key'),
             'type': 'string',
             'required': True,
-            'regex': (r'^AC[a-z0-9]{8}$', 'i'),
+            'regex': (r'^[a-z0-9]+$', 'i'),
             'private': True,
         },
         'secret': {
@@ -90,7 +90,7 @@ class NotifyNexmo(NotifyBase):
             'type': 'string',
             'private': True,
             'required': True,
-            'regex': (r'^[a-z0-9]{16}$', 'i'),
+            'regex': (r'^[a-z0-9]+$', 'i'),
         },
         'from_phone': {
             'name': _('From Phone No'),
@@ -280,6 +280,7 @@ class NotifyNexmo(NotifyBase):
                     data=payload,
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -308,7 +309,7 @@ class NotifyNexmo(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Nexmo:%s '
+                    'A Connection error occurred sending Nexmo:%s '
                     'notification.' % target
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -324,15 +325,15 @@ class NotifyNexmo(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
+        # Define any URL parameters
+        params = {
             'ttl': str(self.ttl),
         }
 
-        return '{schema}://{key}:{secret}@{source}/{targets}/?{args}'.format(
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://{key}:{secret}@{source}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             key=self.pprint(self.apikey, privacy, safe=''),
             secret=self.pprint(
@@ -340,17 +341,16 @@ class NotifyNexmo(NotifyBase):
             source=NotifyNexmo.quote(self.source, safe=''),
             targets='/'.join(
                 [NotifyNexmo.quote(x, safe='') for x in self.targets]),
-            args=NotifyNexmo.urlencode(args))
+            params=NotifyNexmo.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

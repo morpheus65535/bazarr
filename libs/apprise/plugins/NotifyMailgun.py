@@ -269,6 +269,7 @@ class NotifyMailgun(NotifyBase):
                     data=payload,
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -298,7 +299,7 @@ class NotifyMailgun(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Mailgun:%s ' % (
+                    'A Connection error occurred sending Mailgun:%s ' % (
                         email) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -314,36 +315,35 @@ class NotifyMailgun(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
+        # Define any URL parameters
+        params = {
             'region': self.region_name,
         }
 
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
         if self.from_name is not None:
             # from_name specified; pass it back on the url
-            args['name'] = self.from_name
+            params['name'] = self.from_name
 
-        return '{schema}://{user}@{host}/{apikey}/{targets}/?{args}'.format(
+        return '{schema}://{user}@{host}/{apikey}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             host=self.host,
             user=NotifyMailgun.quote(self.user, safe=''),
             apikey=self.pprint(self.apikey, privacy, safe=''),
             targets='/'.join(
                 [NotifyMailgun.quote(x, safe='') for x in self.targets]),
-            args=NotifyMailgun.urlencode(args))
+            params=NotifyMailgun.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results

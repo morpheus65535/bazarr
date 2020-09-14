@@ -23,17 +23,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import os
 import six
 import re
 import copy
 
-from os import listdir
 from os.path import dirname
 from os.path import abspath
 
 # Used for testing
 from . import NotifyEmail as NotifyEmailBase
-from .NotifyGrowl import gntp
 from .NotifyXMPP import SleekXmppAdapter
 
 # NotifyBase object is passed in as a module not class
@@ -45,6 +44,7 @@ from ..common import NotifyType
 from ..common import NOTIFY_TYPES
 from ..utils import parse_list
 from ..utils import GET_SCHEMA_RE
+from ..logger import logger
 from ..AppriseLocale import gettext_lazy as _
 from ..AppriseLocale import LazyTranslation
 
@@ -61,9 +61,6 @@ __all__ = [
 
     # Tokenizer
     'url_to_dict',
-
-    # gntp (used for NotifyGrowl Testing)
-    'gntp',
 
     # sleekxmpp access points (used for NotifyXMPP Testing)
     'SleekXmppAdapter',
@@ -85,7 +82,7 @@ def __load_matrix(path=abspath(dirname(__file__)), name='apprise.plugins'):
     # The .py extension is optional as we support loading directories too
     module_re = re.compile(r'^(?P<name>Notify[a-z0-9]+)(\.py)?$', re.I)
 
-    for f in listdir(path):
+    for f in os.listdir(path):
         match = module_re.match(f)
         if not match:
             # keep going
@@ -131,29 +128,39 @@ def __load_matrix(path=abspath(dirname(__file__)), name='apprise.plugins'):
         # Load our module into memory so it's accessible to all
         globals()[plugin_name] = plugin
 
-        # Load protocol(s) if defined
-        proto = getattr(plugin, 'protocol', None)
-        if isinstance(proto, six.string_types):
-            if proto not in SCHEMA_MAP:
-                SCHEMA_MAP[proto] = plugin
+        fn = getattr(plugin, 'schemas', None)
+        try:
+            schemas = set([]) if not callable(fn) else fn(plugin)
 
-        elif isinstance(proto, (set, list, tuple)):
-            # Support iterables list types
-            for p in proto:
-                if p not in SCHEMA_MAP:
-                    SCHEMA_MAP[p] = plugin
+        except TypeError:
+            # Python v2.x support where functions associated with classes
+            # were considered bound to them and could not be called prior
+            # to the classes initialization.  This code can be dropped
+            # once Python v2.x support is dropped. The below code introduces
+            # replication as it already exists and is tested in
+            # URLBase.schemas()
+            schemas = set([])
+            for key in ('protocol', 'secure_protocol'):
+                schema = getattr(plugin, key, None)
+                if isinstance(schema, six.string_types):
+                    schemas.add(schema)
 
-        # Load secure protocol(s) if defined
-        protos = getattr(plugin, 'secure_protocol', None)
-        if isinstance(protos, six.string_types):
-            if protos not in SCHEMA_MAP:
-                SCHEMA_MAP[protos] = plugin
+                elif isinstance(schema, (set, list, tuple)):
+                    # Support iterables list types
+                    for s in schema:
+                        if isinstance(s, six.string_types):
+                            schemas.add(s)
 
-        if isinstance(protos, (set, list, tuple)):
-            # Support iterables list types
-            for p in protos:
-                if p not in SCHEMA_MAP:
-                    SCHEMA_MAP[p] = plugin
+        # map our schema to our plugin
+        for schema in schemas:
+            if schema in SCHEMA_MAP:
+                logger.error(
+                    "Notification schema ({}) mismatch detected - {} to {}"
+                    .format(schema, SCHEMA_MAP[schema], plugin))
+                continue
+
+            # Assign plugin
+            SCHEMA_MAP[schema] = plugin
 
     return SCHEMA_MAP
 
@@ -452,6 +459,7 @@ def url_to_dict(url):
     schema = GET_SCHEMA_RE.match(_url)
     if schema is None:
         # Not a valid URL; take an early exit
+        logger.error('Unsupported URL: {}'.format(url))
         return None
 
     # Ensure our schema is always in lower case
@@ -466,10 +474,28 @@ def url_to_dict(url):
                   for r in MODULE_MAP.values()
                   if r['plugin'].parse_native_url(_url) is not None),
                  None)
+
+        if not results:
+            logger.error('Unparseable URL {}'.format(url))
+            return None
+
+        logger.trace('URL {} unpacked as:{}{}'.format(
+            url, os.linesep, os.linesep.join(
+                ['{}="{}"'.format(k, v) for k, v in results.items()])))
+
     else:
         # Parse our url details of the server object as dictionary
         # containing all of the information parsed from our URL
         results = SCHEMA_MAP[schema].parse_url(_url)
+        if not results:
+            logger.error('Unparseable {} URL {}'.format(
+                SCHEMA_MAP[schema].service_name, url))
+            return None
+
+        logger.trace('{} URL {} unpacked as:{}{}'.format(
+            SCHEMA_MAP[schema].service_name, url,
+            os.linesep, os.linesep.join(
+                ['{}="{}"'.format(k, v) for k, v in results.items()])))
 
     # Return our results
     return results

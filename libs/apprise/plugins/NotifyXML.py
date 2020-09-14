@@ -143,15 +143,11 @@ class NotifyXML(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Store our defined headers into our URL parameters
+        params = {'+{}'.format(k): v for k, v in self.headers.items()}
 
-        # Append our headers into our args
-        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Determine Authentication
         auth = ''
@@ -168,14 +164,15 @@ class NotifyXML(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
-            hostname=NotifyXML.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
             fullpath=NotifyXML.quote(self.fullpath, safe='/'),
-            args=NotifyXML.urlencode(args),
+            params=NotifyXML.urlencode(params),
         )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
@@ -234,6 +231,7 @@ class NotifyXML(NotifyBase):
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -257,7 +255,7 @@ class NotifyXML(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending XML '
+                'A Connection error occurred sending XML '
                 'notification to %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -270,11 +268,10 @@ class NotifyXML(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

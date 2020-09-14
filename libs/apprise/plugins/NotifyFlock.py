@@ -100,7 +100,7 @@ class NotifyFlock(NotifyBase):
         'token': {
             'name': _('Access Key'),
             'type': 'string',
-            'regex': (r'^[a-z0-9-]{24}$', 'i'),
+            'regex': (r'^[a-z0-9-]+$', 'i'),
             'private': True,
             'required': True,
         },
@@ -112,14 +112,14 @@ class NotifyFlock(NotifyBase):
             'name': _('To User ID'),
             'type': 'string',
             'prefix': '@',
-            'regex': (r'^[A-Z0-9_]{12}$', 'i'),
+            'regex': (r'^[A-Z0-9_]+$', 'i'),
             'map_to': 'targets',
         },
         'to_channel': {
             'name': _('To Channel ID'),
             'type': 'string',
             'prefix': '#',
-            'regex': (r'^[A-Z0-9_]{12}$', 'i'),
+            'regex': (r'^[A-Z0-9_]+$', 'i'),
             'map_to': 'targets',
         },
         'targets': {
@@ -269,6 +269,7 @@ class NotifyFlock(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -294,7 +295,7 @@ class NotifyFlock(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Flock notification.'
+                'A Connection error occurred sending Flock notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -308,31 +309,31 @@ class NotifyFlock(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
-        return '{schema}://{token}/{targets}?{args}'\
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://{token}/{targets}?{params}'\
             .format(
                 schema=self.secure_protocol,
                 token=self.pprint(self.token, privacy, safe=''),
                 targets='/'.join(
                     [NotifyFlock.quote(target, safe='')
                      for target in self.targets]),
-                args=NotifyFlock.urlencode(args),
+                params=NotifyFlock.urlencode(params),
             )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results
@@ -363,14 +364,14 @@ class NotifyFlock(NotifyBase):
         result = re.match(
             r'^https?://api\.flock\.com/hooks/sendMessage/'
             r'(?P<token>[a-z0-9-]{24})/?'
-            r'(?P<args>\?.+)?$', url, re.I)
+            r'(?P<params>\?.+)?$', url, re.I)
 
         if result:
             return NotifyFlock.parse_url(
-                '{schema}://{token}/{args}'.format(
+                '{schema}://{token}/{params}'.format(
                     schema=NotifyFlock.secure_protocol,
                     token=result.group('token'),
-                    args='' if not result.group('args')
-                    else result.group('args')))
+                    params='' if not result.group('params')
+                    else result.group('params')))
 
         return None

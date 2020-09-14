@@ -28,6 +28,7 @@ import six
 import requests
 from .ConfigBase import ConfigBase
 from ..common import ConfigFormat
+from ..common import ConfigIncludeMode
 from ..URLBase import PrivacyMode
 from ..AppriseLocale import gettext_lazy as _
 
@@ -58,15 +59,14 @@ class ConfigHTTP(ConfigBase):
     # The default secure protocol
     secure_protocol = 'https'
 
-    # The maximum number of seconds to wait for a connection to be established
-    # before out-right just giving up
-    connection_timeout_sec = 5.0
-
     # If an HTTP error occurs, define the number of characters you still want
     # to read back.  This is useful for debugging purposes, but nothing else.
     # The idea behind enforcing this kind of restriction is to prevent abuse
     # from queries to services that may be untrusted.
     max_error_buffer_size = 2048
+
+    # Configuration file inclusion can always include this type
+    allow_cross_includes = ConfigIncludeMode.ALWAYS
 
     def __init__(self, headers=None, **kwargs):
         """
@@ -104,18 +104,20 @@ class ConfigHTTP(ConfigBase):
             cache = int(self.cache)
 
         # Define any arguments set
-        args = {
-            'verify': 'yes' if self.verify_certificate else 'no',
+        params = {
             'encoding': self.encoding,
             'cache': cache,
         }
 
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
         if self.config_format:
             # A format was enforced; make sure it's passed back with the url
-            args['format'] = self.config_format
+            params['format'] = self.config_format
 
         # Append our headers into our args
-        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+        params.update({'+{}'.format(k): v for k, v in self.headers.items()})
 
         # Determine Authentication
         auth = ''
@@ -132,14 +134,14 @@ class ConfigHTTP(ConfigBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}{fullpath}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             hostname=self.quote(self.host, safe=''),
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
             fullpath=self.quote(self.fullpath, safe='/'),
-            args=self.urlencode(args),
+            params=self.urlencode(params),
         )
 
     def read(self, **kwargs):
@@ -185,7 +187,7 @@ class ConfigHTTP(ConfigBase):
                     headers=headers,
                     auth=auth,
                     verify=self.verify_certificate,
-                    timeout=self.connection_timeout_sec,
+                    timeout=self.request_timeout,
                     stream=True) as r:
 
                 # Handle Errors
@@ -211,7 +213,7 @@ class ConfigHTTP(ConfigBase):
                     return None
 
                 # Store our result (but no more than our buffer length)
-                response = r.content[:self.max_buffer_size + 1]
+                response = r.text[:self.max_buffer_size + 1]
 
                 # Verify that our content did not exceed the buffer size:
                 if len(response) > self.max_buffer_size:
@@ -240,7 +242,7 @@ class ConfigHTTP(ConfigBase):
 
         except requests.RequestException as e:
             self.logger.error(
-                'A Connection error occured retrieving HTTP '
+                'A Connection error occurred retrieving HTTP '
                 'configuration from %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -254,7 +256,7 @@ class ConfigHTTP(ConfigBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = ConfigBase.parse_url(url)
