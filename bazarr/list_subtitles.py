@@ -20,6 +20,8 @@ import chardet
 
 gc.enable()
 
+global hi_regex
+hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}]')
 
 
 def store_subtitles(original_path, reversed_path):
@@ -447,15 +449,6 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
                                   subtitle_path)
             else:
-                TAG = r"(?:\s*{\\[iusb][0-1]}\s*)*"
-                music = re.compile(r'[-\s>~]*[*¶♫♪]+\s*.+|.+\s*[*¶♫♪]+\s*')
-                brackets = re.compile(r'-?%(t)s["\']*[([][^([)\]]+?(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+[)\]]["\']*[\s:]*%(t)s'
-                                      % {"t": TAG})
-
-                HI_list = [music, brackets]
-
-                for item in HI_list:
-                    if bool(re.search(item, text)):
-                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
-                        break
+                if bool(re.search(hi_regex, text)):
+                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles
