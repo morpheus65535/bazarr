@@ -16,7 +16,12 @@ class SubSyncer:
         self.srtout = None
         self.ffmpeg_path = None
         self.args = None
-        self.vad = 'subs_then_auditok'
+        try:
+            import webrtcvad
+        except ImportError:
+            self.vad = 'subs_then_auditok'
+        else:
+            self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
 
     def sync(self, video_path, srt_path, srt_lang, media_type, sonarr_series_id=None, sonarr_episode_id=None,

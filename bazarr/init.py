@@ -47,7 +47,7 @@ import logging
 # deploy requirements.txt
 if not args.no_update:
     try:
-        import lxml, numpy
+        import lxml, numpy, webrtcvad
     except ImportError:
         try:
             import pip
