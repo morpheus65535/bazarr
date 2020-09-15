@@ -1033,12 +1033,13 @@ def refine_from_db(path, video):
             "WHERE table_episodes.path = ?", (path_mappings.path_replace_reverse(path),), only_one=True)
 
         if data:
-            video.series = data['seriesTitle']
+            video.series = re.sub(r'(\(\d\d\d\d\))', '', data['seriesTitle'])
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
-            if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+            # Commented out because Sonarr provided so much bad year
+            # if data['year']:
+            #     if int(data['year']) > 0: video.year = int(data['year'])
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
             if not video.source:
@@ -1056,8 +1057,9 @@ def refine_from_db(path, video):
 
         if data:
             video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
-            if data['year']:
-                if int(data['year']) > 0: video.year = int(data['year'])
+            # Commented out because Radarr provided so much bad year
+            # if data['year']:
+            #     if int(data['year']) > 0: video.year = int(data['year'])
             if data['imdbId']: video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
