@@ -78,7 +78,7 @@ def store_subtitles(original_path, reversed_path):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append(
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
-                elif not language.basename:
+                elif not language:
                     continue
                 elif str(language.basename) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language.basename))
