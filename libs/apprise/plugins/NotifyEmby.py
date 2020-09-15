@@ -61,9 +61,6 @@ class NotifyEmby(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_emby'
 
-    # Emby uses the http protocol with JSON requests
-    emby_default_port = 8096
-
     # By default Emby requires you to provide it a device id
     # The following was just a random uuid4 generated one.  There
     # is no real reason to change this, but hey; that's what open
@@ -94,6 +91,7 @@ class NotifyEmby(NotifyBase):
             'type': 'int',
             'min': 1,
             'max': 65535,
+            'default': 8096
         },
         'user': {
             'name': _('Username'),
@@ -136,6 +134,10 @@ class NotifyEmby(NotifyBase):
         # Whether or not our popup dialog is a timed notification
         # or a modal type box (requires an Okay acknowledgement)
         self.modal = modal
+
+        if not self.port:
+            # Assign default port if one isn't otherwise specified:
+            self.port = self.template_tokens['port']['default']
 
         if not self.user:
             # User was not specified
@@ -207,6 +209,7 @@ class NotifyEmby(NotifyBase):
                 headers=headers,
                 data=dumps(payload),
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -229,7 +232,7 @@ class NotifyEmby(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured authenticating a user with Emby '
+                'A Connection error occurred authenticating a user with Emby '
                 'at %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -370,6 +373,7 @@ class NotifyEmby(NotifyBase):
                 url,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -392,7 +396,7 @@ class NotifyEmby(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured querying Emby '
+                'A Connection error occurred querying Emby '
                 'for session information at %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -449,6 +453,7 @@ class NotifyEmby(NotifyBase):
                 url,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code not in (
@@ -477,7 +482,7 @@ class NotifyEmby(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured querying Emby '
+                'A Connection error occurred querying Emby '
                 'to logoff user %s at %s.' % (self.user, self.host))
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -550,6 +555,7 @@ class NotifyEmby(NotifyBase):
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
                 if r.status_code not in (
                         requests.codes.ok,
@@ -577,7 +583,7 @@ class NotifyEmby(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Emby '
+                    'A Connection error occurred sending Emby '
                     'notification to %s.' % self.host)
                 self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -592,13 +598,13 @@ class NotifyEmby(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'modal': 'yes' if self.modal else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Determine Authentication
         auth = ''
@@ -613,13 +619,14 @@ class NotifyEmby(NotifyBase):
                 user=NotifyEmby.quote(self.user, safe=''),
             )
 
-        return '{schema}://{auth}{hostname}{port}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
-            hostname=NotifyEmby.quote(self.host, safe=''),
-            port='' if self.port is None or self.port == self.emby_default_port
+            hostname=self.host,
+            port='' if self.port is None
+                 or self.port == self.template_tokens['port']['default']
                  else ':{}'.format(self.port),
-            args=NotifyEmby.urlencode(args),
+            params=NotifyEmby.urlencode(params),
         )
 
     @property
@@ -655,17 +662,13 @@ class NotifyEmby(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
         if not results:
             # We're done early
             return results
-
-        # Assign Default Emby Port
-        if not results['port']:
-            results['port'] = NotifyEmby.emby_default_port
 
         # Modal type popup (default False)
         results['modal'] = parse_bool(results['qsd'].get('modal', False))
@@ -679,7 +682,7 @@ class NotifyEmby(NotifyBase):
         try:
             self.logout()
 
-        except LookupError:
+        except LookupError:  # pragma: no cover
             # Python v3.5 call to requests can sometimes throw the exception
             #   "/usr/lib64/python3.7/socket.py", line 748, in getaddrinfo
             #   LookupError: unknown encoding: idna

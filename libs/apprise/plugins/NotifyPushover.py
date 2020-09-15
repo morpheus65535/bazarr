@@ -434,6 +434,7 @@ class NotifyPushover(NotifyBase):
                 files=files,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -461,7 +462,7 @@ class NotifyPushover(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Pushover:%s ' % (
+                'A Connection error occurred sending Pushover:%s ' % (
                     payload['device']) + 'notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
@@ -470,7 +471,7 @@ class NotifyPushover(NotifyBase):
 
         except (OSError, IOError) as e:
             self.logger.warning(
-                'An I/O error occured while reading {}.'.format(
+                'An I/O error occurred while reading {}.'.format(
                     attach.name if attach else 'attachment'))
             self.logger.debug('I/O Exception: %s' % str(e))
             return False
@@ -496,19 +497,20 @@ class NotifyPushover(NotifyBase):
             PushoverPriority.EMERGENCY: 'emergency',
         }
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'priority':
                 _map[self.template_args['priority']['default']]
                 if self.priority not in _map else _map[self.priority],
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
+
         # Only add expire and retry for emergency messages,
         # pushover ignores for all other priorities
         if self.priority == PushoverPriority.EMERGENCY:
-            args.update({'expire': self.expire, 'retry': self.retry})
+            params.update({'expire': self.expire, 'retry': self.retry})
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Escape our devices
         devices = '/'.join([NotifyPushover.quote(x, safe='')
@@ -519,22 +521,21 @@ class NotifyPushover(NotifyBase):
             # it from the devices list
             devices = ''
 
-        return '{schema}://{user_key}@{token}/{devices}/?{args}'.format(
+        return '{schema}://{user_key}@{token}/{devices}/?{params}'.format(
             schema=self.secure_protocol,
             user_key=self.pprint(self.user_key, privacy, safe=''),
             token=self.pprint(self.token, privacy, safe=''),
             devices=devices,
-            args=NotifyPushover.urlencode(args))
+            params=NotifyPushover.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results

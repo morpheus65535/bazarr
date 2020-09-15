@@ -185,6 +185,7 @@ class NotifyNextcloud(NotifyBase):
                     headers=headers,
                     auth=auth,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
@@ -210,7 +211,7 @@ class NotifyNextcloud(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Nextcloud '
+                    'A Connection error occurred sending Nextcloud '
                     'notification.',
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -226,15 +227,11 @@ class NotifyNextcloud(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Create URL parameters from our headers
+        params = {'+{}'.format(k): v for k, v in self.headers.items()}
 
-        # Append our headers into our args
-        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         # Determine Authentication
         auth = ''
@@ -251,24 +248,26 @@ class NotifyNextcloud(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}/{targets}?{args}' \
+        return '{schema}://{auth}{hostname}{port}/{targets}?{params}' \
                .format(
                    schema=self.secure_protocol
                    if self.secure else self.protocol,
                    auth=auth,
-                   hostname=NotifyNextcloud.quote(self.host, safe=''),
+                   # never encode hostname since we're expecting it to be a
+                   # valid one
+                   hostname=self.host,
                    port='' if self.port is None or self.port == default_port
                         else ':{}'.format(self.port),
                    targets='/'.join([NotifyNextcloud.quote(x)
                                      for x in self.targets]),
-                   args=NotifyNextcloud.urlencode(args),
+                   params=NotifyNextcloud.urlencode(params),
                )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
 

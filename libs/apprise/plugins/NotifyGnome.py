@@ -113,7 +113,7 @@ class NotifyGnome(NotifyBase):
 
     # Define object templates
     templates = (
-        '{schema}://_/',
+        '{schema}://',
     )
 
     # Define our template arguments
@@ -141,7 +141,7 @@ class NotifyGnome(NotifyBase):
 
         # The urgency of the message
         if urgency not in GNOME_URGENCIES:
-            self.urgency = GnomeUrgency.NORMAL
+            self.urgency = self.template_args['urgency']['default']
 
         else:
             self.urgency = urgency
@@ -214,19 +214,19 @@ class NotifyGnome(NotifyBase):
             GnomeUrgency.HIGH: 'high',
         }
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
             'urgency': 'normal' if self.urgency not in _map
                        else _map[self.urgency],
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
-        return '{schema}://_/?{args}'.format(
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://?{params}'.format(
             schema=self.protocol,
-            args=NotifyGnome.urlencode(args),
+            params=NotifyGnome.urlencode(params),
         )
 
     @staticmethod
@@ -238,19 +238,7 @@ class NotifyGnome(NotifyBase):
 
         """
 
-        results = NotifyBase.parse_url(url)
-        if not results:
-            results = {
-                'schema': NotifyGnome.protocol,
-                'user': None,
-                'password': None,
-                'port': None,
-                'host': '_',
-                'fullpath': None,
-                'path': None,
-                'url': url,
-                'qsd': {},
-            }
+        results = NotifyBase.parse_url(url, verify_host=False)
 
         # Include images with our message
         results['include_image'] = \

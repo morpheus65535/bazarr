@@ -53,7 +53,13 @@
                     {
                         data: 'language',
                         render: function (value) {
-                            return value.name + ((value.forced) ? ' forced' : '')
+                            var language_string = '';
+                            if (value.hi) {
+                                language_string = ' HI';
+                            } else if (value.forced) {
+                                language_string = ' forced';
+                            }
+                            return value.name + language_string;
                         }
                     },
                     {data: "provider"},

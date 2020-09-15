@@ -48,7 +48,7 @@ try:
 
 except ImportError:
     # No problem; we just simply can't support this plugin because we're
-    # either using Linux, or simply do not have pypiwin32 installed.
+    # either using Linux, or simply do not have pywin32 installed.
     pass
 
 
@@ -91,7 +91,7 @@ class NotifyWindows(NotifyBase):
 
     # Define object templates
     templates = (
-        '{schema}://_/',
+        '{schema}://',
     )
 
     # Define our template arguments
@@ -146,7 +146,8 @@ class NotifyWindows(NotifyBase):
 
         if not self._enabled:
             self.logger.warning(
-                "Windows Notifications are not supported by this system.")
+                "Windows Notifications are not supported by this system; "
+                "`pip install pywin32`.")
             return False
 
         # Always call throttle before any remote server i/o is made
@@ -222,18 +223,18 @@ class NotifyWindows(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
             'duration': str(self.duration),
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
-        return '{schema}://_/?{args}'.format(
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://?{params}'.format(
             schema=self.protocol,
-            args=NotifyWindows.urlencode(args),
+            params=NotifyWindows.urlencode(params),
         )
 
     @staticmethod
@@ -245,19 +246,7 @@ class NotifyWindows(NotifyBase):
 
         """
 
-        results = NotifyBase.parse_url(url)
-        if not results:
-            results = {
-                'schema': NotifyWindows.protocol,
-                'user': None,
-                'password': None,
-                'port': None,
-                'host': '_',
-                'fullpath': None,
-                'path': None,
-                'url': url,
-                'qsd': {},
-            }
+        results = NotifyBase.parse_url(url, verify_host=False)
 
         # Include images with our message
         results['include_image'] = \

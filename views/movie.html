@@ -520,6 +520,7 @@
 				moviePath: movieDetails['mapped_path'],
 				language: $(this).data("language"),
 				forced: $(this).data("forced"),
+				hi: $(this).data("hi"),
 				subtitlesPath: $(this).data("subtitlespath"),
 				radarrId: movieDetails['radarrId'],
 				tmdbid: movieDetails['tmdbId']
@@ -621,7 +622,10 @@
 							}
 
 							let text = '<div class="badge badge-secondary" style="margin:1px;">' + lng.toUpperCase() + '</div>';
-                            if (data.hearing_impaired == "True") {
+                            if (data.forced == "True") {
+								text += '<div class="badge badge-dark" style="margin:1px;">Forced</div>';
+							}
+							if (data.hearing_impaired == "True") {
 								text += '<div class="badge badge-dark" style="margin:1px;">HI</div>';
 							}
 
@@ -899,7 +903,13 @@
                         data: 'language',
                         render: function (value) {
                         	if (value) {
-                        		return value.name + ((value.forced) ? ' forced' : '')
+                        		var language_string = '';
+								if (value.hi) {
+									language_string = ' HI';
+								} else if (value.forced) {
+									language_string = ' forced';
+								}
+								return value.name + language_string;
 							} else {
                         		return '<i>undefined</i>'
 							}
@@ -912,7 +922,7 @@
 						data: null,
 						render: function (data) {
 							if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
-								return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+								return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
 							} else {
 								return null;
 							}
@@ -936,6 +946,7 @@
 				subs_id: $(this).attr('data-subs_id'),
 				language: $(this).attr('data-language'),
 				forced: $(this).attr('data-forced'),
+				hi: $(this).attr('data-hi'),
 				video_path: $(this).attr('data-video_path'),
 				subtitles_path: $(this).attr('data-subtitles_path')
 			};
@@ -1237,6 +1248,8 @@
 			function missingAppendFunc(value) {
 				if (value.forced) {
 					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
+				} else if (value.hi) {
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
 				} else {
 					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ' <i class="fas fa-search"></i></button> ';
 				}
@@ -1283,6 +1296,8 @@
 						"render": function(data) {
 							if (data['forced']) {
 								return '<span class="badge badge-secondary">' + data['name'] + ' forced</span>';
+							} else if (data['hi']) {
+								return '<span class="badge badge-secondary">' + data['name'] + ' HI</span>';
 							} else {
 								return '<span class="badge badge-secondary">' + data['name'] + '</span>';
 							}
@@ -1291,7 +1306,7 @@
 					{ "data" : null,
 						"render": function(data) {
 							if (data['path']) {
-								return '<button type="button" class="remove_subtitles close" aria-label="Close" data-toggle="tooltip" data-placement="right" title="Delete Subtitles File" data-language='+data['code3']+' data-forced='+data['forced']+' data-subtitlesPath="'+data['path']+'"><span aria-hidden="true">&times;</span></button>';
+								return '<button type="button" class="remove_subtitles close" aria-label="Close" data-toggle="tooltip" data-placement="right" title="Delete Subtitles File" data-language='+data['code3']+' data-forced='+data['forced']+' data-hi='+data['hi']+' data-subtitlesPath="'+data['path']+'"><span aria-hidden="true">&times;</span></button>';
 							} else {
 								return '';
 							}

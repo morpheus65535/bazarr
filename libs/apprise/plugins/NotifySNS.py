@@ -342,6 +342,7 @@ class NotifySNS(NotifyBase):
                 data=payload,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -368,7 +369,7 @@ class NotifySNS(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending AWS '
+                'A Connection error occurred sending AWS '
                 'notification to "%s".' % (to),
             )
             self.logger.debug('Socket Exception: %s' % str(e))
@@ -579,15 +580,11 @@ class NotifySNS(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         return '{schema}://{key_id}/{key_secret}/{region}/{targets}/'\
-            '?{args}'.format(
+            '?{params}'.format(
                 schema=self.secure_protocol,
                 key_id=self.pprint(self.aws_access_key_id, privacy, safe=''),
                 key_secret=self.pprint(
@@ -601,18 +598,17 @@ class NotifySNS(NotifyBase):
                         # Topics are prefixed with a pound/hashtag symbol
                         ['#{}'.format(x) for x in self.topics],
                     )]),
-                args=NotifySNS.urlencode(args),
+                params=NotifySNS.urlencode(params),
             )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results

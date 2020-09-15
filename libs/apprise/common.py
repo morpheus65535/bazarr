@@ -31,15 +31,15 @@ class NotifyType(object):
     """
     INFO = 'info'
     SUCCESS = 'success'
-    FAILURE = 'failure'
     WARNING = 'warning'
+    FAILURE = 'failure'
 
 
 NOTIFY_TYPES = (
     NotifyType.INFO,
     NotifyType.SUCCESS,
-    NotifyType.FAILURE,
     NotifyType.WARNING,
+    NotifyType.FAILURE,
 )
 
 
@@ -127,6 +127,31 @@ class ConfigFormat(object):
 CONFIG_FORMATS = (
     ConfigFormat.TEXT,
     ConfigFormat.YAML,
+)
+
+
+class ConfigIncludeMode(object):
+    """
+    The different Cofiguration inclusion modes.  All Configuration
+    plugins will have one of these associated with it.
+    """
+    # - Configuration inclusion of same type only; hence a file:// can include
+    #   a file://
+    # - Cross file inclusion is not allowed unless insecure_includes (a flag)
+    #   is set to True. In these cases STRICT acts as type ALWAYS
+    STRICT = 'strict'
+
+    # This configuration type can never be included
+    NEVER = 'never'
+
+    # File configuration can always be included
+    ALWAYS = 'always'
+
+
+CONFIG_INCLUDE_MODES = (
+    ConfigIncludeMode.STRICT,
+    ConfigIncludeMode.NEVER,
+    ConfigIncludeMode.ALWAYS,
 )
 
 # This is a reserved tag that is automatically assigned to every

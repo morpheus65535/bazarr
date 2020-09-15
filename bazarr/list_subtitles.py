@@ -4,6 +4,7 @@ import gc
 import os
 import logging
 import ast
+import re
 from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
@@ -19,6 +20,9 @@ import chardet
 
 gc.enable()
 
+global hi_regex
+hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}]')
+
 
 def store_subtitles(original_path, reversed_path):
     logging.debug('BAZARR started subtitles indexing for this file: ' + reversed_path)
@@ -28,7 +32,7 @@ def store_subtitles(original_path, reversed_path):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
-                for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
+                for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
@@ -40,6 +44,8 @@ def store_subtitles(original_path, reversed_path):
                             lang = str(alpha2_from_alpha3(subtitle_language))
                             if subtitle_forced:
                                 lang = lang + ":forced"
+                            if subtitle_hi:
+                                lang = lang + ":hi"
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
                     except:
@@ -74,10 +80,10 @@ def store_subtitles(original_path, reversed_path):
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
                 elif not language:
                     continue
-                elif str(language) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language))
-                    actual_subtitles.append(
-                        [str(language), path_mappings.path_replace_reverse(subtitle_path)])
+                elif str(language.basename) != 'und':
+                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
+                    actual_subtitles.append([str(language.basename + (':hi' if language.hi else '')),
+                                             path_mappings.path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -106,7 +112,7 @@ def store_subtitles_movie(original_path, reversed_path):
             logging.debug("BAZARR is trying to index embedded subtitles.")
             try:
                 subtitle_languages = embedded_subs_reader.list_languages(reversed_path)
-                for subtitle_language, subtitle_forced, subtitle_codec in subtitle_languages:
+                for subtitle_language, subtitle_forced, subtitle_hi, subtitle_codec in subtitle_languages:
                     try:
                         if (settings.general.getboolean("ignore_pgs_subs") and subtitle_codec.lower() == "pgs") or \
                                 (settings.general.getboolean("ignore_vobsub_subs") and subtitle_codec.lower() ==
@@ -118,6 +124,8 @@ def store_subtitles_movie(original_path, reversed_path):
                             lang = str(alpha2_from_alpha3(subtitle_language))
                             if subtitle_forced:
                                 lang = lang + ':forced'
+                            if subtitle_hi:
+                                lang = lang + ':hi'
                             logging.debug("BAZARR embedded subtitles detected: " + lang)
                             actual_subtitles.append([lang, None])
                     except:
@@ -149,9 +157,10 @@ def store_subtitles_movie(original_path, reversed_path):
                     actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
                 elif not language:
                     continue
-                elif str(language) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language))
-                    actual_subtitles.append([str(language), path_mappings.path_replace_reverse_movie(subtitle_path)])
+                elif str(language.basename) != 'und':
+                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
+                    actual_subtitles.append([str(language) + (':hi' if language.hi else ''),
+                                             path_mappings.path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -179,8 +188,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
     else:
         episodes_subtitles_clause = ""
     episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
-                                          "table_episodes.subtitles, table_shows.languages, table_shows.forced "
-                                          "FROM table_episodes LEFT JOIN table_shows "
+                                          "table_episodes.subtitles, table_shows.languages, table_shows.forced, "
+                                          "table_shows.hearing_impaired FROM table_episodes LEFT JOIN table_shows "
                                           "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
                                           episodes_subtitles_clause)
     if isinstance(episodes_subtitles, str):
@@ -205,8 +214,16 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                         actual_subtitles.append(subtitle)
         if episode_subtitles['languages'] is not None:
             desired_subtitles = ast.literal_eval(episode_subtitles['languages'])
-            if episode_subtitles['forced'] == "True" and desired_subtitles is not None:
-                for i, desired_subtitle in enumerate(desired_subtitles):
+            if desired_subtitles:
+                desired_subtitles_enum = enumerate(desired_subtitles)
+            else:
+                desired_subtitles_enum = None
+
+            if episode_subtitles['hearing_impaired'] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in desired_subtitles_enum:
+                    desired_subtitles[i] = desired_subtitle + ":hi"
+            elif episode_subtitles['forced'] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in desired_subtitles_enum:
                     desired_subtitles[i] = desired_subtitle + ":forced"
             elif episode_subtitles['forced'] == "Both" and desired_subtitles is not None:
                 for desired_subtitle in desired_subtitles:
@@ -226,6 +243,11 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
+            hi_subs_to_remove = []
+            for item in missing_subtitles:
+                if item + ':hi' in actual_subtitles_list:
+                    hi_subs_to_remove.append(item)
+            missing_subtitles = list(set(missing_subtitles) - set(hi_subs_to_remove))
             missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
                                                    episode_subtitles['sonarrSeriesId']]))
 
@@ -245,8 +267,8 @@ def list_missing_subtitles_movies(no=None, send_event=True):
     else:
         movies_subtitles_clause = ""
 
-    movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced FROM table_movies" +
-                                        movies_subtitles_clause)
+    movies_subtitles = database.execute("SELECT radarrId, subtitles, languages, forced, hearing_impaired FROM "
+                                        "table_movies" + movies_subtitles_clause)
     if isinstance(movies_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
         return
@@ -269,8 +291,16 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                         actual_subtitles.append(subtitle)
         if movie_subtitles['languages'] is not None:
             desired_subtitles = ast.literal_eval(movie_subtitles['languages'])
-            if movie_subtitles['forced'] == "True" and desired_subtitles is not None:
-                for i, desired_subtitle in enumerate(desired_subtitles):
+            if desired_subtitles:
+                desired_subtitles_enum = enumerate(desired_subtitles)
+            else:
+                desired_subtitles_enum = None
+
+            if movie_subtitles['hearing_impaired'] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in desired_subtitles_enum:
+                    desired_subtitles[i] = desired_subtitle + ":hi"
+            elif movie_subtitles['forced'] == "True" and desired_subtitles is not None:
+                for i, desired_subtitle in desired_subtitles_enum:
                     desired_subtitles[i] = desired_subtitle + ":forced"
             elif movie_subtitles['forced'] == "Both" and desired_subtitles is not None:
                 for desired_subtitle in desired_subtitles:
@@ -289,6 +319,11 @@ def list_missing_subtitles_movies(no=None, send_event=True):
                 else:
                     actual_subtitles_list.append(item[0])
             missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
+            hi_subs_to_remove = []
+            for item in missing_subtitles:
+                if item + ':hi' in actual_subtitles_list:
+                    hi_subs_to_remove.append(item)
+            missing_subtitles = list(set(missing_subtitles) - set(hi_subs_to_remove))
             missing_subtitles_global.append(tuple([str(missing_subtitles), movie_subtitles['radarrId']]))
     
     for missing_subtitles_item in missing_subtitles_global:
@@ -394,7 +429,26 @@ def guess_external_subtitles(dest_folder, subtitles):
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
                             detected_language))
                         try:
-                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language))
+                            subtitles[subtitle] = Language.rebuild(Language.fromietf(detected_language), forced=False,
+                                                                   hi=False)
                         except:
                             pass
+
+        # Detect hearing-impaired external subtitles not identified in filename
+        if not subtitles[subtitle].hi:
+            subtitle_path = os.path.join(dest_folder, subtitle)
+
+            with open(subtitle_path, 'rb') as f:
+                text = f.read()
+
+            try:
+                guess = chardet.detect(text)
+                logging.debug('BAZARR detected encoding %r', guess)
+                text = text.decode(guess["encoding"])
+            except (UnicodeDecodeError, TypeError):
+                logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
+                                  subtitle_path)
+            else:
+                if bool(re.search(hi_regex, text)):
+                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles

@@ -272,20 +272,16 @@ class NotifyXMPP(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         if self.jid:
-            args['jid'] = self.jid
+            params['jid'] = self.jid
 
         if self.xep:
             # xep are integers, so we need to just iterate over a list and
             # switch them to a string
-            args['xep'] = ','.join([str(xep) for xep in self.xep])
+            params['xep'] = ','.join([str(xep) for xep in self.xep])
 
         # Target JID(s) can clash with our existing paths, so we just use comma
         # and/or space as a delimiters - %20 = space
@@ -307,25 +303,25 @@ class NotifyXMPP(NotifyBase):
                 self.password if self.password else self.user, privacy,
                 mode=PrivacyMode.Secret, safe='')
 
-        return '{schema}://{auth}@{hostname}{port}/{jids}?{args}'.format(
+        return '{schema}://{auth}@{hostname}{port}/{jids}?{params}'.format(
             auth=auth,
             schema=default_schema,
-            hostname=NotifyXMPP.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if not self.port or self.port == default_port
                  else ':{}'.format(self.port),
             jids=jids,
-            args=NotifyXMPP.urlencode(args),
+            params=NotifyXMPP.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

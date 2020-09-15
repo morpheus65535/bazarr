@@ -23,15 +23,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# To use this service you will need a Kavenegar account from their website
-# at https://kavenegar.com/
+# To use this service you will need a Spontit account from their website
+# at https://spontit.com/
 #
-# After you've established your account you can get your API Key from your
-# account profile: https://panel.kavenegar.com/client/setting/account
-#
-# This provider does not accept +1 (for example) as a country code. You need
-# to specify 001 instead.
-#
+# After you have an account created:
+#   - Visit your profile at https://spontit.com/profile and take note of your
+#     {username}.  It might look something like: user12345678901
+#   - Next generate an API key at https://spontit.com/secret_keys. This will
+#     generate a very long alpha-numeric string we'll refer to as the
+#     {apikey}
+
+# The Spontit Syntax is as follows:
+# spontit://{username}@{apikey}
+
 import re
 import requests
 from json import loads
@@ -42,75 +46,68 @@ from ..utils import parse_list
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
-# Extend HTTP Error Messages
-# Based on https://kavenegar.com/rest.html
-KAVENEGAR_HTTP_ERROR_MAP = {
-    200: 'The request was approved',
-    400: 'Parameters are incomplete',
-    401: 'Account has been disabled',
-    402: 'The operation failed',
-    403: 'The API Key is invalid',
-    404: 'The method is unknown',
-    405: 'The GET/POST request is wrong',
-    406: 'Invalid mandatory parameters sent',
-    407: 'You canot access the information you want',
-    409: 'The server is unable to response',
-    411: 'The recipient is invalid',
-    412: 'The sender is invalid',
-    413: 'Message empty or message length exceeded',
-    414: 'The number of recipients is more than 200',
-    415: 'The start index is larger then the total',
-    416: 'The source IP of the service does not match the settings',
-    417: 'The submission date is incorrect, '
-         'either expired or not in the correct format',
-    418: 'Your account credit is insufficient',
-    422: 'Data cannot be processed due to invalid characters',
-    501: 'SMS can only be sent to the account holder number',
-}
-
-# Some Phone Number Detection
-IS_PHONE_NO = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
+# Syntax suggests you use a hashtag '#' to help distinguish we're dealing
+# with a channel.
+# Secondly we extract the user information only if it's
+# specified.  If not, we use the user of the person sending the notification
+# Finally the channel identifier is detected
+CHANNEL_REGEX = re.compile(
+    r'^\s*(#|%23)?((@|%40)?(?P<user>[a-z0-9_]+)([/\\]|%2F))?'
+    r'(?P<channel>[a-z0-9_-]+)\s*$', re.I)
 
 
-class NotifyKavenegar(NotifyBase):
+class NotifySpontit(NotifyBase):
     """
-    A wrapper for Kavenegar Notifications
+    A wrapper for Spontit Notifications
     """
 
     # The default descriptive name associated with the Notification
-    service_name = 'Kavenegar'
+    service_name = 'Spontit'
 
     # The services URL
-    service_url = 'https://kavenegar.com/'
+    service_url = 'https://spontit.com/'
 
     # All notification requests are secure
-    secure_protocol = 'kavenegar'
+    secure_protocol = 'spontit'
 
     # Allow 300 requests per minute.
     # 60/300 = 0.2
     request_rate_per_sec = 0.20
 
     # A URL that takes you to the setup/help of the specific protocol
-    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_kavenegar'
+    setup_url = 'https://github.com/caronc/apprise/wiki/Notify_spontit'
 
-    # Kavenegar single notification URL
-    notify_url = 'http://api.kavenegar.com/v1/{apikey}/sms/send.json'
+    # Spontit single notification URL
+    notify_url = 'https://api.spontit.com/v3/push'
 
     # The maximum length of the body
-    body_maxlen = 160
+    body_maxlen = 5000
 
-    # A title can not be used for SMS Messages.  Setting this to zero will
-    # cause any title (if defined) to get placed into the message body.
-    title_maxlen = 0
+    # The maximum length of the title
+    title_maxlen = 100
+
+    # If we don't have the specified min length, then we don't bother using
+    # the body directive
+    spontit_body_minlen = 100
+
+    # Subtitle support; this is the maximum allowed characters defined by
+    # the API page
+    spontit_subtitle_maxlen = 20
 
     # Define object templates
     templates = (
-        '{schema}://{apikey}/{targets}',
-        '{schema}://{source}@{apikey}/{targets}',
+        '{schema}://{user}@{apikey}',
+        '{schema}://{user}@{apikey}/{targets}',
     )
 
     # Define our template tokens
     template_tokens = dict(NotifyBase.template_tokens, **{
+        'user': {
+            'name': _('User ID'),
+            'type': 'string',
+            'required': True,
+            'regex': (r'^[a-z0-9_-]+$', 'i'),
+        },
         'apikey': {
             'name': _('API Key'),
             'type': 'string',
@@ -118,16 +115,13 @@ class NotifyKavenegar(NotifyBase):
             'private': True,
             'regex': (r'^[a-z0-9]+$', 'i'),
         },
-        'source': {
-            'name': _('Source Phone No'),
+        # Target Channel ID's
+        # If a slash is used; you must escape it
+        # If no slash is used; channel is presumed to be your own
+        'target_channel': {
+            'name': _('Target Channel ID'),
             'type': 'string',
-            'prefix': '+',
-            'regex': (r'^[0-9\s)(+-]+$', 'i'),
-        },
-        'target_phone': {
-            'name': _('Target Phone No'),
-            'type': 'string',
-            'prefix': '+',
+            'prefix': '#',
             'regex': (r'^[0-9\s)(+-]+$', 'i'),
             'map_to': 'targets',
         },
@@ -143,81 +137,62 @@ class NotifyKavenegar(NotifyBase):
         'to': {
             'alias_of': 'targets',
         },
-        'from': {
-            'alias_of': 'source',
+        'subtitle': {
+            # Subtitle is available for MacOS users
+            'name': _('Subtitle'),
+            'type': 'string',
         },
     })
 
-    def __init__(self, apikey, source=None, targets=None, **kwargs):
+    def __init__(self, apikey, targets=None, subtitle=None, **kwargs):
         """
-        Initialize Kavenegar Object
+        Initialize Spontit Object
         """
-        super(NotifyKavenegar, self).__init__(**kwargs)
+        super(NotifySpontit, self).__init__(**kwargs)
+
+        # User ID (associated with project)
+        user = validate_regex(
+            self.user, *self.template_tokens['user']['regex'])
+        if not user:
+            msg = 'An invalid Spontit User ID ' \
+                  '({}) was specified.'.format(self.user)
+            self.logger.warning(msg)
+            raise TypeError(msg)
+        # use cleaned up version
+        self.user = user
 
         # API Key (associated with project)
         self.apikey = validate_regex(
             apikey, *self.template_tokens['apikey']['regex'])
         if not self.apikey:
-            msg = 'An invalid Kavenegar API Key ' \
+            msg = 'An invalid Spontit API Key ' \
                   '({}) was specified.'.format(apikey)
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        self.source = None
-        if source is not None:
-            result = IS_PHONE_NO.match(source)
-            if not result:
-                msg = 'The Kavenegar source specified ({}) is invalid.'\
-                    .format(source)
-                self.logger.warning(msg)
-                raise TypeError(msg)
-
-            # Further check our phone # for it's digit count
-            result = ''.join(re.findall(r'\d+', result.group('phone')))
-            if len(result) < 11 or len(result) > 14:
-                msg = 'The MessageBird source # specified ({}) is invalid.'\
-                    .format(source)
-                self.logger.warning(msg)
-                raise TypeError(msg)
-
-            # Store our source
-            self.source = result
+        # Save our subtitle information
+        self.subtitle = subtitle
 
         # Parse our targets
         self.targets = list()
 
         for target in parse_list(targets):
             # Validate targets and drop bad ones:
-            result = IS_PHONE_NO.match(target)
+            result = CHANNEL_REGEX.match(target)
             if result:
-                # Further check our phone # for it's digit count
-                # if it's less than 10, then we can assume it's
-                # a poorly specified phone no and spit a warning
-                result = ''.join(re.findall(r'\d+', result.group('phone')))
-                if len(result) < 11 or len(result) > 14:
-                    self.logger.warning(
-                        'Dropped invalid phone # '
-                        '({}) specified.'.format(target),
-                    )
-                    continue
-
-                # store valid phone number
-                self.targets.append(result)
+                # Just extract the channel
+                self.targets.append(
+                    '{}'.format(result.group('channel')))
                 continue
 
             self.logger.warning(
-                'Dropped invalid phone # ({}) specified.'.format(target))
-
-        if len(self.targets) == 0:
-            msg = 'There are no valid targets identified to notify.'
-            self.logger.warning(msg)
-            raise TypeError(msg)
+                'Dropped invalid channel/user ({}) specified.'.format(target))
 
         return
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
         """
-        Sends SMS Message
+        Sends Message
         """
 
         # error tracking (used for function return)
@@ -226,14 +201,19 @@ class NotifyKavenegar(NotifyBase):
         # Prepare our headers
         headers = {
             'User-Agent': self.app_id,
-            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Authorization': self.apikey,
+            'X-UserId': self.user,
         }
-
-        # Our URL
-        url = self.notify_url.format(apikey=self.apikey)
 
         # use the list directly
         targets = list(self.targets)
+
+        if not len(targets):
+            # The user did not specify a channel and therefore wants to notify
+            # the main account only.  We just set a substitute marker of
+            # None so that our while loop below can still process one iteration
+            targets = [None, ]
 
         while len(targets):
             # Get our target(s) to notify
@@ -241,25 +221,49 @@ class NotifyKavenegar(NotifyBase):
 
             # Prepare our payload
             payload = {
-                'receptor': target,
                 'message': body,
             }
 
-            if self.source:
-                # Only set source if specified
-                payload['sender'] = self.source
+            # Use our body directive if we exceed the minimum message
+            # limitation
+            if len(body) > self.spontit_body_minlen:
+                payload['message'] = '{}...'.format(
+                    body[:self.spontit_body_minlen - 3])
+                payload['body'] = body
+
+            if self.subtitle:
+                # Set title if specified
+                payload['subtitle'] = \
+                    self.subtitle[:self.spontit_subtitle_maxlen]
+
+            elif self.app_desc:
+                # fall back to app description
+                payload['subtitle'] = \
+                    self.app_desc[:self.spontit_subtitle_maxlen]
+
+            elif self.app_id:
+                # fall back to app id
+                payload['subtitle'] = \
+                    self.app_id[:self.spontit_subtitle_maxlen]
+
+            if title:
+                # Set title if specified
+                payload['pushTitle'] = title
+
+            if target is not None:
+                payload['channelName'] = target
 
             # Some Debug Logging
             self.logger.debug(
-                'Kavenegar POST URL: {} (cert_verify={})'.format(
-                    url, self.verify_certificate))
-            self.logger.debug('Kavenegar Payload: {}' .format(payload))
+                'Spontit POST URL: {} (cert_verify={})'.format(
+                    self.notify_url, self.verify_certificate))
+            self.logger.debug('Spontit Payload: {}' .format(payload))
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
             try:
                 r = requests.post(
-                    url,
+                    self.notify_url,
                     params=payload,
                     headers=headers,
                     verify=self.verify_certificate,
@@ -268,10 +272,9 @@ class NotifyKavenegar(NotifyBase):
 
                 if r.status_code not in (
                         requests.codes.created, requests.codes.ok):
-                    # We had a problem
                     status_str = \
                         NotifyBase.http_response_code_lookup(
-                            r.status_code, KAVENEGAR_HTTP_ERROR_MAP)
+                            r.status_code)
 
                     try:
                         # Update our status response if we can
@@ -288,7 +291,7 @@ class NotifyKavenegar(NotifyBase):
                         pass
 
                     self.logger.warning(
-                        'Failed to send Kavenegar SMS notification to {}: '
+                        'Failed to send Spontit notification to {}: '
                         '{}{}error={}.'.format(
                             target,
                             status_str,
@@ -304,14 +307,14 @@ class NotifyKavenegar(NotifyBase):
 
                 # If we reach here; the message was sent
                 self.logger.info(
-                    'Sent Kavenegar SMS notification to {}.'.format(target))
+                    'Sent Spontit notification to {}.'.format(target))
 
                 self.logger.debug(
                     'Response Details:\r\n{}'.format(r.content))
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occurred sending Kavenegar:%s ' % (
+                    'A Connection error occurred sending Spontit:%s ' % (
                         ', '.join(self.targets)) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -329,13 +332,16 @@ class NotifyKavenegar(NotifyBase):
         # Our URL parameters
         params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{source}{apikey}/{targets}?{params}'.format(
+        if self.subtitle:
+            params['subtitle'] = self.subtitle
+
+        return '{schema}://{userid}@{apikey}/{targets}?{params}'.format(
             schema=self.secure_protocol,
-            source='' if not self.source else '{}@'.format(self.source),
+            userid=self.user,
             apikey=self.pprint(self.apikey, privacy, safe=''),
             targets='/'.join(
-                [NotifyKavenegar.quote(x, safe='') for x in self.targets]),
-            params=NotifyKavenegar.urlencode(params))
+                [NotifySpontit.quote(x, safe='') for x in self.targets]),
+            params=NotifySpontit.urlencode(params))
 
     @staticmethod
     def parse_url(url):
@@ -344,30 +350,27 @@ class NotifyKavenegar(NotifyBase):
         us to re-instantiate this object.
 
         """
+
         results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results
 
-        # Store the source if specified
-        if results.get('user', None):
-            results['source'] = results['user']
-
         # Get our entries; split_path() looks after unquoting content for us
         # by default
-        results['targets'] = NotifyKavenegar.split_path(results['fullpath'])
+        results['targets'] = NotifySpontit.split_path(results['fullpath'])
 
         # The hostname is our authentication key
-        results['apikey'] = NotifyKavenegar.unquote(results['host'])
+        results['apikey'] = NotifySpontit.unquote(results['host'])
+
+        # Support MacOS subtitle option
+        if 'subtitle' in results['qsd'] and len(results['qsd']['subtitle']):
+            results['subtitle'] = results['qsd']['subtitle']
 
         # Support the 'to' variable so that we can support targets this way too
         # The 'to' makes it easier to use yaml configuration
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
-                NotifyKavenegar.parse_list(results['qsd']['to'])
-
-        if 'from' in results['qsd'] and len(results['qsd']['from']):
-            results['source'] = \
-                NotifyKavenegar.unquote(results['qsd']['from'])
+                NotifySpontit.parse_list(results['qsd']['to'])
 
         return results

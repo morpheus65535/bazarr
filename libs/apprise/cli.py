@@ -32,17 +32,23 @@ from os.path import expanduser
 from os.path import expandvars
 
 from . import NotifyType
+from . import NotifyFormat
 from . import Apprise
 from . import AppriseAsset
 from . import AppriseConfig
 from .utils import parse_list
 from .common import NOTIFY_TYPES
+from .common import NOTIFY_FORMATS
 from .logger import logger
 
 from . import __title__
 from . import __version__
 from . import __license__
 from . import __copywrite__
+
+# By default we allow looking 1 level down recursivly in Apprise configuration
+# files.
+DEFAULT_RECURSION_DEPTH = 1
 
 # Defines our click context settings adding -h to the additional options that
 # can be specified to get the help menu to come up
@@ -101,12 +107,19 @@ def print_version_msg():
               help='Specify one or more configuration locations.')
 @click.option('--attach', '-a', default=None, type=str, multiple=True,
               metavar='ATTACHMENT_URL',
-              help='Specify one or more configuration locations.')
+              help='Specify one or more attachment.')
 @click.option('--notification-type', '-n', default=NotifyType.INFO, type=str,
               metavar='TYPE',
-              help='Specify the message type (default=info). Possible values'
-              ' are "{}", and "{}".'.format(
-                  '", "'.join(NOTIFY_TYPES[:-1]), NOTIFY_TYPES[-1]))
+              help='Specify the message type (default={}). '
+              'Possible values are "{}", and "{}".'.format(
+                  NotifyType.INFO, '", "'.join(NOTIFY_TYPES[:-1]),
+                  NOTIFY_TYPES[-1]))
+@click.option('--input-format', '-i', default=NotifyFormat.TEXT, type=str,
+              metavar='FORMAT',
+              help='Specify the message input format (default={}). '
+              'Possible values are "{}", and "{}".'.format(
+                  NotifyFormat.TEXT, '", "'.join(NOTIFY_FORMATS[:-1]),
+                  NOTIFY_FORMATS[-1]))
 @click.option('--theme', '-T', default='default', type=str, metavar='THEME',
               help='Specify the default theme.')
 @click.option('--tag', '-g', default=None, type=str, multiple=True,
@@ -114,19 +127,28 @@ def print_version_msg():
               'which services to notify. Use multiple --tag (-g) entries to '
               '"OR" the tags together and comma separated to "AND" them. '
               'If no tags are specified then all services are notified.')
+@click.option('--disable-async', '-Da', is_flag=True,
+              help='Send all notifications sequentially')
 @click.option('--dry-run', '-d', is_flag=True,
               help='Perform a trial run but only prints the notification '
               'services to-be triggered to stdout. Notifications are never '
               'sent using this mode.')
+@click.option('--recursion-depth', '-R', default=DEFAULT_RECURSION_DEPTH,
+              type=int,
+              help='The number of recursive import entries that can be '
+              'loaded from within Apprise configuration. By default '
+              'this is set to {}.'.format(DEFAULT_RECURSION_DEPTH))
 @click.option('--verbose', '-v', count=True,
               help='Makes the operation more talkative. Use multiple v to '
               'increase the verbosity. I.e.: -vvvv')
+@click.option('--debug', '-D', is_flag=True, help='Debug mode')
 @click.option('--version', '-V', is_flag=True,
               help='Display the apprise version and exit.')
 @click.argument('urls', nargs=-1,
                 metavar='SERVER_URL [SERVER_URL2 [SERVER_URL3]]',)
 def main(body, title, config, attach, urls, notification_type, theme, tag,
-         dry_run, verbose, version):
+         input_format, dry_run, recursion_depth, verbose, disable_async,
+         debug, version):
     """
     Send a notification to all of the specified servers identified by their
     URLs the content provided within the title, body and notification-type.
@@ -137,6 +159,11 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
     # Note: Click ignores the return values of functions it wraps, If you
     #       want to return a specific error code, you must call sys.exit()
     #       as you will see below.
+
+    debug = True if debug else False
+    if debug:
+        # Verbosity must be a minimum of 3
+        verbose = 3 if verbose < 3 else verbose
 
     # Logging
     ch = logging.StreamHandler(sys.stdout)
@@ -166,21 +193,55 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+    # Update our asyncio logger
+    asyncio_logger = logging.getLogger('asyncio')
+    for handler in logger.handlers:
+        asyncio_logger.addHandler(handler)
+    asyncio_logger.setLevel(logger.level)
+
     if version:
         print_version_msg()
         sys.exit(0)
 
-    # Prepare our asset
-    asset = AppriseAsset(theme=theme)
+    # Simple Error Checking
+    notification_type = notification_type.strip().lower()
+    if notification_type not in NOTIFY_TYPES:
+        logger.error(
+            'The --notification-type (-n) value of {} is not supported.'
+            .format(notification_type))
+        # 2 is the same exit code returned by Click if there is a parameter
+        # issue.  For consistency, we also return a 2
+        sys.exit(2)
 
-    # Create our object
-    a = Apprise(asset=asset)
+    input_format = input_format.strip().lower()
+    if input_format not in NOTIFY_FORMATS:
+        logger.error(
+            'The --input-format (-i) value of {} is not supported.'
+            .format(input_format))
+        # 2 is the same exit code returned by Click if there is a parameter
+        # issue.  For consistency, we also return a 2
+        sys.exit(2)
+
+    # Prepare our asset
+    asset = AppriseAsset(
+        body_format=input_format,
+        theme=theme,
+        # Async mode is only used for Python v3+ and allows a user to send
+        # all of their notifications asyncronously.  This was made an option
+        # incase there are problems in the future where it's better that
+        # everything run sequentially/syncronously instead.
+        async_mode=disable_async is not True,
+    )
+
+    # Create our Apprise object
+    a = Apprise(asset=asset, debug=debug)
 
     # Load our configuration if no URLs or specified configuration was
     # identified on the command line
     a.add(AppriseConfig(
         paths=[f for f in DEFAULT_SEARCH_PATHS if isfile(expanduser(f))]
-        if not (config or urls) else config), asset=asset)
+        if not (config or urls) else config,
+        asset=asset, recursion=recursion_depth))
 
     # Load our inventory up
     for url in urls:
@@ -234,7 +295,10 @@ def main(body, title, config, attach, urls, notification_type, theme, tag,
         # There were no notifications set.  This is a result of just having
         # empty configuration files and/or being to restrictive when filtering
         # by specific tag(s)
-        sys.exit(2)
+
+        # Exit code 3 is used since Click uses exit code 2 if there is an
+        # error with the parameters specified
+        sys.exit(3)
 
     elif result is False:
         # At least 1 notification service failed to send

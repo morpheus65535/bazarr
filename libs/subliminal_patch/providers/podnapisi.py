@@ -107,6 +107,7 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
     languages = ({Language('por', 'BR'), Language('srp', script='Latn'), Language('srp', script='Cyrl')} |
                  {Language.fromalpha2(l) for l in language_converters['alpha2'].codes})
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     server_url = 'https://podnapisi.net/subtitles/'
     only_foreign = False
@@ -203,6 +204,10 @@ class PodnapisiProvider(_PodnapisiProvider, ProviderSubtitleArchiveMixin):
 
                 elif also_foreign and foreign:
                     _language = Language.rebuild(_language, forced=True)
+
+                # set subtitle language to hi if it's hearing_impaired
+                if hearing_impaired:
+                    _language = Language.rebuild(_language, hi=True)
 
                 if language != _language:
                     continue

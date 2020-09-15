@@ -77,10 +77,15 @@ class NotifyGotify(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_gotify'
 
+    # Disable throttle rate
+    request_rate_per_sec = 0
+
     # Define object templates
     templates = (
         '{schema}://{host}/{token}',
         '{schema}://{host}:{port}/{token}',
+        '{schema}://{host}{path}{token}',
+        '{schema}://{host}:{port}{path}{token}',
     )
 
     # Define our template tokens
@@ -94,6 +99,13 @@ class NotifyGotify(NotifyBase):
         'host': {
             'name': _('Hostname'),
             'type': 'string',
+            'required': True,
+        },
+        'path': {
+            'name': _('Path'),
+            'type': 'string',
+            'map_to': 'fullpath',
+            'default': '/',
             'required': True,
         },
         'port': {
@@ -129,6 +141,9 @@ class NotifyGotify(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
+        # prepare our fullpath
+        self.fullpath = kwargs.get('fullpath', '/')
+
         if priority not in GOTIFY_PRIORITIES:
             self.priority = GotifyPriority.NORMAL
 
@@ -153,7 +168,7 @@ class NotifyGotify(NotifyBase):
             url += ':%d' % self.port
 
         # Append our remaining path
-        url += '/message'
+        url += '{fullpath}message'.format(fullpath=self.fullpath)
 
         # Define our parameteers
         params = {
@@ -188,6 +203,7 @@ class NotifyGotify(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -212,7 +228,7 @@ class NotifyGotify(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Gotify '
+                'A Connection error occurred sending Gotify '
                 'notification to %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -226,30 +242,33 @@ class NotifyGotify(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'priority': self.priority,
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        # Our default port
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{hostname}{port}/{token}/?{args}'.format(
+        return '{schema}://{hostname}{port}{fullpath}{token}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
-            hostname=NotifyGotify.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
+            fullpath=NotifyGotify.quote(self.fullpath, safe='/'),
             token=self.pprint(self.token, privacy, safe=''),
-            args=NotifyGotify.urlencode(args),
+            params=NotifyGotify.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
@@ -262,12 +281,16 @@ class NotifyGotify(NotifyBase):
 
         # optionally find the provider key
         try:
-            # The first entry is our token
-            results['token'] = entries.pop(0)
+            # The last entry is our token
+            results['token'] = entries.pop()
 
         except IndexError:
             # No token was set
             results['token'] = None
+
+        # Re-assemble our full path
+        results['fullpath'] = \
+            '/' if not entries else '/{}/'.format('/'.join(entries))
 
         if 'priority' in results['qsd'] and len(results['qsd']['priority']):
             _map = {

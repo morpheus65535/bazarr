@@ -319,6 +319,7 @@ class NotifyMatrix(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -343,7 +344,7 @@ class NotifyMatrix(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Matrix notification.'
+                'A Connection error occurred sending Matrix notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
             # Return; we're done
@@ -927,6 +928,7 @@ class NotifyMatrix(NotifyBase):
                     params=params,
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 response = loads(r.content)
@@ -986,7 +988,7 @@ class NotifyMatrix(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured while registering with Matrix'
+                    'A Connection error occurred while registering with Matrix'
                     ' server.')
                 self.logger.debug('Socket Exception: %s' % str(e))
                 # Return; we're done
@@ -1009,14 +1011,14 @@ class NotifyMatrix(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
             'mode': self.mode,
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Determine Authentication
         auth = ''
@@ -1034,21 +1036,21 @@ class NotifyMatrix(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}/{rooms}?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}/{rooms}?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
             hostname=NotifyMatrix.quote(self.host, safe=''),
             port='' if self.port is None
             or self.port == default_port else ':{}'.format(self.port),
             rooms=NotifyMatrix.quote('/'.join(self.rooms)),
-            args=NotifyMatrix.urlencode(args),
+            params=NotifyMatrix.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
@@ -1067,34 +1069,12 @@ class NotifyMatrix(NotifyBase):
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += NotifyMatrix.parse_list(results['qsd']['to'])
 
-        # Thumbnail (old way)
-        if 'thumbnail' in results['qsd']:
-            # Deprication Notice issued for v0.7.5
-            NotifyMatrix.logger.deprecate(
-                'The Matrix URL contains the parameter '
-                '"thumbnail=" which will be deprecated in an upcoming '
-                'release. Please use "image=" instead.'
-            )
+        # Boolean to include an image or not
+        results['include_image'] = parse_bool(results['qsd'].get(
+            'image', NotifyMatrix.template_args['image']['default']))
 
-        # use image= for consistency with the other plugins but we also
-        # support thumbnail= for backwards compatibility.
-        results['include_image'] = \
-            parse_bool(results['qsd'].get(
-                'image', results['qsd'].get('thumbnail', False)))
-
-        # Webhook (old way)
-        if 'webhook' in results['qsd']:
-            # Deprication Notice issued for v0.7.5
-            NotifyMatrix.logger.deprecate(
-                'The Matrix URL contains the parameter '
-                '"webhook=" which will be deprecated in an upcoming '
-                'release. Please use "mode=" instead.'
-            )
-
-        # use mode= for consistency with the other plugins but we also
-        # support webhook= for backwards compatibility.
-        results['mode'] = results['qsd'].get(
-            'mode', results['qsd'].get('webhook'))
+        # Get our mode
+        results['mode'] = results['qsd'].get('mode')
 
         # t2bot detection... look for just a hostname, and/or just a user/host
         # if we match this; we can go ahead and set the mode (but only if
@@ -1117,16 +1097,16 @@ class NotifyMatrix(NotifyBase):
         result = re.match(
             r'^https?://webhooks\.t2bot\.io/api/v1/matrix/hook/'
             r'(?P<webhook_token>[A-Z0-9_-]+)/?'
-            r'(?P<args>\?.+)?$', url, re.I)
+            r'(?P<params>\?.+)?$', url, re.I)
 
         if result:
             mode = 'mode={}'.format(MatrixWebhookMode.T2BOT)
 
             return NotifyMatrix.parse_url(
-                '{schema}://{webhook_token}/{args}'.format(
+                '{schema}://{webhook_token}/{params}'.format(
                     schema=NotifyMatrix.secure_protocol,
                     webhook_token=result.group('webhook_token'),
-                    args='?{}'.format(mode) if not result.group('args')
-                    else '{}&{}'.format(result.group('args'), mode)))
+                    params='?{}'.format(mode) if not result.group('params')
+                    else '{}&{}'.format(result.group('params'), mode)))
 
         return None

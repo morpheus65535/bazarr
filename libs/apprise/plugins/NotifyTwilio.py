@@ -304,6 +304,7 @@ class NotifyTwilio(NotifyBase):
                     data=payload,
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code not in (
@@ -351,7 +352,7 @@ class NotifyTwilio(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending Twilio:%s ' % (
+                    'A Connection error occurred sending Twilio:%s ' % (
                         target) + 'notification.'
                 )
                 self.logger.debug('Socket Exception: %s' % str(e))
@@ -367,14 +368,10 @@ class NotifyTwilio(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{sid}:{token}@{source}/{targets}/?{args}'.format(
+        return '{schema}://{sid}:{token}@{source}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             sid=self.pprint(
                 self.account_sid, privacy, mode=PrivacyMode.Tail, safe=''),
@@ -382,13 +379,13 @@ class NotifyTwilio(NotifyBase):
             source=NotifyTwilio.quote(self.source, safe=''),
             targets='/'.join(
                 [NotifyTwilio.quote(x, safe='') for x in self.targets]),
-            args=NotifyTwilio.urlencode(args))
+            params=NotifyTwilio.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)

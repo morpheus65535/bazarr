@@ -50,7 +50,7 @@ from .NotifyBase import NotifyBase
 from ..common import NotifyFormat
 from ..common import NotifyType
 from ..utils import parse_list
-from ..utils import GET_EMAIL_RE
+from ..utils import is_email
 from ..utils import validate_regex
 from ..AppriseLocale import gettext_lazy as _
 
@@ -170,17 +170,14 @@ class NotifySendGrid(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        self.from_email = from_email
-        try:
-            result = GET_EMAIL_RE.match(self.from_email)
-            if not result:
-                # let outer exception handle this
-                raise TypeError
-
-        except (TypeError, AttributeError):
-            msg = 'Invalid ~From~ email specified: {}'.format(self.from_email)
+        result = is_email(from_email)
+        if not result:
+            msg = 'Invalid ~From~ email specified: {}'.format(from_email)
             self.logger.warning(msg)
             raise TypeError(msg)
+
+        # Store email address
+        self.from_email = result['full_email']
 
         # Acquire Targets (To Emails)
         self.targets = list()
@@ -201,8 +198,9 @@ class NotifySendGrid(NotifyBase):
         # Validate recipients (to:) and drop bad ones:
         for recipient in parse_list(targets):
 
-            if GET_EMAIL_RE.match(recipient):
-                self.targets.append(recipient)
+            result = is_email(recipient)
+            if result:
+                self.targets.append(result['full_email'])
                 continue
 
             self.logger.warning(
@@ -213,8 +211,9 @@ class NotifySendGrid(NotifyBase):
         # Validate recipients (cc:) and drop bad ones:
         for recipient in parse_list(cc):
 
-            if GET_EMAIL_RE.match(recipient):
-                self.cc.add(recipient)
+            result = is_email(recipient)
+            if result:
+                self.cc.add(result['full_email'])
                 continue
 
             self.logger.warning(
@@ -225,8 +224,9 @@ class NotifySendGrid(NotifyBase):
         # Validate recipients (bcc:) and drop bad ones:
         for recipient in parse_list(bcc):
 
-            if GET_EMAIL_RE.match(recipient):
-                self.bcc.add(recipient)
+            result = is_email(recipient)
+            if result:
+                self.bcc.add(result['full_email'])
                 continue
 
             self.logger.warning(
@@ -245,41 +245,38 @@ class NotifySendGrid(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         if len(self.cc) > 0:
             # Handle our Carbon Copy Addresses
-            args['cc'] = ','.join(self.cc)
+            params['cc'] = ','.join(self.cc)
 
         if len(self.bcc) > 0:
             # Handle our Blind Carbon Copy Addresses
-            args['bcc'] = ','.join(self.bcc)
+            params['bcc'] = ','.join(self.bcc)
 
         if self.template:
             # Handle our Template ID if if was specified
-            args['template'] = self.template
+            params['template'] = self.template
 
-        # Append our template_data into our args
-        args.update({'+{}'.format(k): v
-                    for k, v in self.template_data.items()})
+        # Append our template_data into our parameter list
+        params.update(
+            {'+{}'.format(k): v for k, v in self.template_data.items()})
 
         # a simple boolean check as to whether we display our target emails
         # or not
         has_targets = \
             not (len(self.targets) == 1 and self.targets[0] == self.from_email)
 
-        return '{schema}://{apikey}:{from_email}/{targets}?{args}'.format(
+        return '{schema}://{apikey}:{from_email}/{targets}?{params}'.format(
             schema=self.secure_protocol,
             apikey=self.pprint(self.apikey, privacy, safe=''),
-            from_email=self.quote(self.from_email, safe='@'),
+            # never encode email since it plays a huge role in our hostname
+            from_email=self.from_email,
             targets='' if not has_targets else '/'.join(
                 [NotifySendGrid.quote(x, safe='') for x in self.targets]),
-            args=NotifySendGrid.urlencode(args),
+            params=NotifySendGrid.urlencode(params),
         )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
@@ -361,6 +358,7 @@ class NotifySendGrid(NotifyBase):
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
                 if r.status_code not in (
                         requests.codes.ok, requests.codes.accepted):
@@ -390,7 +388,7 @@ class NotifySendGrid(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending SendGrid '
+                    'A Connection error occurred sending SendGrid '
                     'notification to {}.'.format(target))
                 self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -404,7 +402,7 @@ class NotifySendGrid(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
 
