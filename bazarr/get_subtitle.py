@@ -219,16 +219,13 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         audio_language_code2 = alpha2_from_language(audio_language)
                         audio_language_code3 = alpha3_from_language(audio_language)
                         downloaded_path = subtitle.storage_path
-
                         subtitle_id = subtitle.id
-
                         if subtitle.language.hi:
                             modifier_string = " HI"
                         elif subtitle.language.forced:
                             modifier_string = " forced"
                         else:
                             modifier_string = ""
-
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if is_upgrade:
                             action = "upgraded"
