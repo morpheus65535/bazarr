@@ -36,7 +36,7 @@ class Addic7edSubtitle(_Addic7edSubtitle):
                  download_link):
         super(Addic7edSubtitle, self).__init__(language, hearing_impaired, page_link, series, season, episode,
                                                title, year, version, download_link)
-        self.release_info = version
+        self.release_info = version.replace('+', ',')
 
     def get_matches(self, video):
         matches = super(Addic7edSubtitle, self).get_matches(video)
