@@ -155,7 +155,7 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif str(os.path.splitext(subtitle)[0]).lower().endswith(tuple(brazilian_portuguese_forced)):
                     logging.debug("BAZARR external subtitles detected: " + "pb:forced")
                     actual_subtitles.append([str("pb:forced"), path_mappings.path_replace_reverse_movie(subtitle_path)])
-                elif not language.basename:
+                elif not language:
                     continue
                 elif str(language.basename) != 'und':
                     logging.debug("BAZARR external subtitles detected: " + str(language.basename))
