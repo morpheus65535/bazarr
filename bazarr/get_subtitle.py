@@ -219,6 +219,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         audio_language_code2 = alpha2_from_language(audio_language)
                         audio_language_code3 = alpha3_from_language(audio_language)
                         downloaded_path = subtitle.storage_path
+                        subtitle_id = subtitle.id
                         if subtitle.language.hi:
                             modifier_string = " HI"
                         elif subtitle.language.forced:
@@ -239,6 +240,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                                 "table_episodes WHERE path = ?",
                                                                 (path_mappings.path_replace_reverse(path),),
                                                                 only_one=True)
+                            series_id = episode_metadata['sonarrSeriesId']
+                            episode_id = episode_metadata['sonarrEpisodeId']                                                                
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=percent_score,
@@ -248,6 +251,8 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
                                                               (path_mappings.path_replace_reverse_movie(path),),
                                                               only_one=True)
+                            series_id = ""
+                            episode_id = movie_metadata['radarrId']                                  
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=percent_score,
@@ -257,7 +262,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced,
-                                                 percent_score)
+                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -491,6 +496,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         audio_language_code2 = alpha2_from_language(audio_language)
                         audio_language_code3 = alpha3_from_language(audio_language)
                         downloaded_path = saved_subtitle.storage_path
+                        subtitle_id = subtitle.id
                         logging.debug('BAZARR Subtitles file saved to disk: ' + downloaded_path)
                         if subtitle.language.hi:
                             modifier_string = " HI"
@@ -506,6 +512,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                                                                 "table_episodes WHERE path = ?",
                                                                 (path_mappings.path_replace_reverse(path),),
                                                                 only_one=True)
+                            series_id = episode_metadata['sonarrSeriesId']
+                            episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=score,
@@ -515,6 +523,8 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
                                                               (path_mappings.path_replace_reverse_movie(path),),
                                                               only_one=True)
+                            series_id = ""
+                            episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=score, radarr_id=movie_metadata['radarrId'])
@@ -524,7 +534,7 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                             command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language,
                                                  downloaded_language_code2, downloaded_language_code3, audio_language,
                                                  audio_language_code2, audio_language_code3, subtitle.language.forced,
-                                                 percent_score)
+                                                 percent_score, subtitle_id, downloaded_provider, series_id, episode_id)
 
                             if media_type == 'series':
                                 use_pp_threshold = settings.general.getboolean('use_postprocessing_threshold')
@@ -629,6 +639,8 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
         episode_metadata = database.execute("SELECT sonarrSeriesId, sonarrEpisodeId FROM table_episodes WHERE path = ?",
                                             (path_mappings.path_replace_reverse(path),),
                                             only_one=True)
+        series_id = episode_metadata['sonarrSeriesId']
+        episode_id = episode_metadata['sonarrEpisodeId']   
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -636,13 +648,15 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
         movie_metadata = database.execute("SELECT radarrId FROM table_movies WHERE path = ?",
                                           (path_mappings.path_replace_reverse_movie(path),),
                                           only_one=True)
+        series_id = ""
+        episode_id = movie_metadata['radarrId']   
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
     if use_postprocessing :
         command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language,
                              uploaded_language_code2, uploaded_language_code3, audio_language,
-                             audio_language_code2, audio_language_code3, forced, 100)
+                             audio_language_code2, audio_language_code3, forced, 100, "1", "manual", series_id, episode_id)
         postprocessing(command, path)
 
     if media_type == 'series':
