@@ -54,20 +54,23 @@ if not args.no_update:
         except ImportError:
             logging.info('BAZARR unable to install requirements (pip not installed).')
         else:
-            logging.info('BAZARR installing requirements...')
-            subprocess.call([sys.executable, '-m', 'pip', 'install', '--user', '-r',
-                             os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            logging.info('BAZARR requirements installed.')
-            try:
-                restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
-            except Exception as e:
-                logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+            if os.path.expanduser("~") == '/':
+                logging.info('BAZARR unable to install requirements (user without home directory).')
             else:
-                logging.info('Bazarr is being restarted...')
-                restart_file.write(str(''))
-                restart_file.close()
-                os._exit(0)
+                logging.info('BAZARR installing requirements...')
+                subprocess.call([sys.executable, '-m', 'pip', 'install', '--user', '-r',
+                                 os.path.join(os.path.dirname(__file__), '..', 'requirements.txt')],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                logging.info('BAZARR requirements installed.')
+                try:
+                    restart_file = io.open(os.path.join(args.config_dir, "bazarr.restart"), "w", encoding='UTF-8')
+                except Exception as e:
+                    logging.error('BAZARR Cannot create bazarr.restart file: ' + repr(e))
+                else:
+                    logging.info('Bazarr is being restarted...')
+                    restart_file.write(str(''))
+                    restart_file.close()
+                    os._exit(0)
 
 # create random api_key if there's none in config.ini
 if not settings.auth.apikey or settings.auth.apikey.startswith("b'"):
