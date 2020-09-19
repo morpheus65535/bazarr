@@ -730,9 +730,9 @@ class EpisodesSubtitlesUpload(Resource):
                 path = result[1]
                 subs_path = result[2]
                 if forced:
-                    language_code = result[2] + ":forced"
+                    language_code = language + ":forced"
                 else:
-                    language_code = result[2]
+                    language_code = language
                 provider = "manual"
                 score = 360
                 history_log(4, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subtitles_path=subs_path)
