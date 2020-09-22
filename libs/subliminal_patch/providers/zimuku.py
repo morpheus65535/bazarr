@@ -60,6 +60,10 @@ class ZimukuSubtitle(Subtitle):
             info = guessit(self.version, {"type": "episode"})
             # other properties
             matches |= guess_matches(video, info, partial=True)
+
+            # add year to matches if video doesn't have a year but series, season and episode are matched
+            if not video.year and all(item in matches for item in ['series', 'season', 'episode']):
+                matches |= {'year'}
         # movie
         elif isinstance(video, Movie):
             # other properties
