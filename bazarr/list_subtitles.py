@@ -414,6 +414,7 @@ def guess_external_subtitles(dest_folder, subtitles):
 
                 try:
                     text = text.decode('utf-8')
+                    detected_language = guess_language(text)
                 except UnicodeDecodeError:
                     detector = Detector()
                     guess = detector.detect(text)
@@ -421,7 +422,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                     text = text.decode(guess)
                     detected_language = guess_language(text)
                 except:
-                    pass
+                    logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
                 finally:
                     if detected_language:
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
@@ -447,7 +448,7 @@ def guess_external_subtitles(dest_folder, subtitles):
                 logging.debug('BAZARR detected encoding %r', guess)
                 text = text.decode(guess)
             except:
-                pass
+                logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
             finally:
                 if bool(re.search(hi_regex, text)):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
