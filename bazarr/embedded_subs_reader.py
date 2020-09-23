@@ -14,8 +14,7 @@ class EmbeddedSubsReader:
         self.ffprobe = get_binary("ffprobe")
 
         subtitles_list = []
-        toto = False
-        if self.ffprobe and toto:
+        if self.ffprobe:
             api.initialize({'provider': 'ffmpeg', 'ffmpeg': self.ffprobe})
             data = api.know(file)
 
