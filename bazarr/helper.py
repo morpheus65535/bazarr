@@ -4,7 +4,7 @@ import os
 import re
 import logging
 
-import chardet
+from charamel import Detector
 from bs4 import UnicodeDammit
 
 from config import settings
@@ -163,9 +163,10 @@ def force_unicode(s):
         try:
             s = s.decode("utf-8")
         except UnicodeDecodeError:
-            t = chardet.detect(s)
+            detector = Detector()
+            t = detector.detect(s)
             try:
-                s = s.decode(t["encoding"])
+                s = s.decode(t)
             except UnicodeDecodeError:
                 s = UnicodeDammit(s).unicode_markup
     return s

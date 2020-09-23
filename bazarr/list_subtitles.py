@@ -16,7 +16,7 @@ from helper import path_mappings, get_subtitle_destination_folder
 
 from embedded_subs_reader import embedded_subs_reader
 from event_handler import event_stream
-import chardet
+from charamel import Detector
 
 gc.enable()
 
@@ -413,18 +413,16 @@ def guess_external_subtitles(dest_folder, subtitles):
                     text = f.read()
 
                 try:
-                    guess = chardet.detect(text)
+                    text = text.decode('utf-8')
+                except UnicodeDecodeError:
+                    detector = Detector()
+                    guess = detector.detect(text)
                     logging.debug('BAZARR detected encoding %r', guess)
-                    text = text.decode(guess["encoding"])
+                    text = text.decode(guess)
                     detected_language = guess_language(text)
-                except (UnicodeDecodeError, TypeError):
-                    logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
-                                      subtitle_path)
                 except:
-                    logging.exception('BAZARR Error trying to detect language for this subtitles file: ' +
-                                      subtitle_path + ' You should try to delete this subtitles file manually and ask '
-                                                      'Bazarr to download it again.')
-                else:
+                    pass
+                finally:
                     if detected_language:
                         logging.debug("BAZARR external subtitles detected and guessed this language: " + str(
                             detected_language))
@@ -442,13 +440,15 @@ def guess_external_subtitles(dest_folder, subtitles):
                 text = f.read()
 
             try:
-                guess = chardet.detect(text)
+                text = text.decode('utf-8')
+            except UnicodeDecodeError:
+                detector = Detector()
+                guess = detector.detect(text)
                 logging.debug('BAZARR detected encoding %r', guess)
-                text = text.decode(guess["encoding"])
-            except (UnicodeDecodeError, TypeError):
-                logging.exception("BAZARR subtitles file doesn't seems to be text based. Skipping this file: " +
-                                  subtitle_path)
-            else:
+                text = text.decode(guess)
+            except:
+                pass
+            finally:
                 if bool(re.search(hi_regex, text)):
                     subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles
