@@ -37,15 +37,17 @@ def create_languages_dict():
 
 
 def language_from_alpha2(lang):
-    return next((item["name"] for item in languages_dict if item["code2"] == lang), None)
+    return next((item["name"] for item in languages_dict if item["code2"] == lang[:2]), None)
 
 
 def language_from_alpha3(lang):
-    return next((item["name"] for item in languages_dict if item["code3"] == lang or item["code3b"] == lang), None)
+    return next((item["name"] for item in languages_dict if item["code3"] == lang[:3] or item["code3b"] == lang[:3]),
+                None)
 
 
 def alpha2_from_alpha3(lang):
-    return next((item["code2"] for item in languages_dict if item["code3"] == lang or item["code3b"] == lang), None)
+    return next((item["code2"] for item in languages_dict if item["code3"] == lang[:3] or item["code3b"] == lang[:3]),
+                None)
 
 
 def alpha2_from_language(lang):
@@ -53,7 +55,7 @@ def alpha2_from_language(lang):
 
 
 def alpha3_from_alpha2(lang):
-    return next((item["code3"] for item in languages_dict if item["code2"] == lang), None)
+    return next((item["code3"] for item in languages_dict if item["code2"] == lang[:2]), None)
 
 
 def alpha3_from_language(lang):

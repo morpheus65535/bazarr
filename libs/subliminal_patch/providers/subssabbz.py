@@ -43,6 +43,11 @@ def fix_tv_naming(title):
                                            }, True)
 
 
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {"Back to the Future Part": "Back to the Future",
+                                           }, True)
+
+
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
@@ -55,7 +60,12 @@ class SubsSabBzSubtitle(Subtitle):
         self.video = video
         self.fps = fps
         self.num_cds = num_cds
-        self.release_info = os.path.splitext(filename)[0]
+        self.release_info = filename
+        if fps:
+            if video.fps and float(video.fps) == fps:
+                self.release_info += " <b>[{:.3f}]</b>".format(fps)
+            else:
+                self.release_info += " [{:.3f}]".format(fps)
 
     @property
     def id(self):
@@ -142,7 +152,7 @@ class SubsSabBzProvider(Provider):
             params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['yr'] = video.year
-            params['movie'] = sanitize(video.title, {'\''})
+            params['movie'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if language == 'en' or language == 'eng':
             params['select-language'] = 1
@@ -168,7 +178,7 @@ class SubsSabBzProvider(Provider):
                 element = a_element_wrapper.find('a')
                 if element:
                     link = element.get('href')
-                    notes = element.get('onmouseover')
+                    notes = re.sub(r'ddrivetip\(\'<div.*/></div>(.*)\',\'#[0-9]+\'\)', r'\1', element.get('onmouseover'))
                     title = element.get_text()
 
                     try:
@@ -248,12 +258,15 @@ class SubsSabBzProvider(Provider):
         else:
             logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
 
-        archive_stream = io.BytesIO(request.content)
-        if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
-        elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
-        else:
-            logger.error('Ignore unsupported archive %r', request.headers)
-            region.delete(cache_key)
-            return []
+        try:
+            archive_stream = io.BytesIO(request.content)
+            if is_rarfile(archive_stream):
+                return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
+            elif is_zipfile(archive_stream):
+                return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
+        except:
+            pass
+
+        logger.error('Ignore unsupported archive %r', request.headers)
+        region.delete(cache_key)
+        return []

@@ -168,6 +168,7 @@ class NotifyWebexTeams(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code not in (
                     requests.codes.ok, requests.codes.no_content):
@@ -194,7 +195,7 @@ class NotifyWebexTeams(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Webex Teams '
+                'A Connection error occurred sending Webex Teams '
                 'notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
@@ -208,28 +209,23 @@ class NotifyWebexTeams(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{token}/?{args}'.format(
+        return '{schema}://{token}/?{params}'.format(
             schema=self.secure_protocol,
             token=self.pprint(self.token, privacy, safe=''),
-            args=NotifyWebexTeams.urlencode(args),
+            params=NotifyWebexTeams.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
-
         if not results:
             # We're done early as we couldn't load the results
             return results
@@ -248,14 +244,14 @@ class NotifyWebexTeams(NotifyBase):
         result = re.match(
             r'^https?://api\.ciscospark\.com/v[1-9][0-9]*/webhooks/incoming/'
             r'(?P<webhook_token>[A-Z0-9_-]+)/?'
-            r'(?P<args>\?.+)?$', url, re.I)
+            r'(?P<params>\?.+)?$', url, re.I)
 
         if result:
             return NotifyWebexTeams.parse_url(
-                '{schema}://{webhook_token}/{args}'.format(
+                '{schema}://{webhook_token}/{params}'.format(
                     schema=NotifyWebexTeams.secure_protocol,
                     webhook_token=result.group('webhook_token'),
-                    args='' if not result.group('args')
-                    else result.group('args')))
+                    params='' if not result.group('params')
+                    else result.group('params')))
 
         return None

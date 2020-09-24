@@ -36,27 +36,34 @@ class ZimukuSubtitle(Subtitle):
 
     provider_name = "zimuku"
 
-    def __init__(self, language, page_link, version, session):
+    def __init__(self, language, page_link, version, session, year):
         super(ZimukuSubtitle, self).__init__(language, page_link=page_link)
         self.version = version
+        self.release_info = version
         self.hearing_impaired = False
         self.encoding = "utf-8"
         self.session = session
+        self.year = year
 
     @property
     def id(self):
-        return self.version
+        return self.page_link
 
     def get_matches(self, video):
         matches = set()
 
+        if video.year == self.year:
+            matches.add('year')
+
         # episode
         if isinstance(video, Episode):
-            # always make year a match
             info = guessit(self.version, {"type": "episode"})
-            info["year"] = video.year
             # other properties
             matches |= guess_matches(video, info, partial=True)
+
+            # add year to matches if video doesn't have a year but series, season and episode are matched
+            if not video.year and all(item in matches for item in ['series', 'season', 'episode']):
+                matches |= {'year'}
         # movie
         elif isinstance(video, Movie):
             # other properties
@@ -90,7 +97,7 @@ class ZimukuProvider(Provider):
     def terminate(self):
         self.session.close()
 
-    def _parse_episode_page(self, link):
+    def _parse_episode_page(self, link, year):
         r = self.session.get(link)
         bs_obj = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["html.parser"]
@@ -118,7 +125,7 @@ class ZimukuProvider(Provider):
             backup_session.headers["Referer"] = link
 
             subs.append(
-                self.subtitle_class(language, sub_page_link, name, backup_session)
+                self.subtitle_class(language, sub_page_link, name, backup_session, year)
             )
 
         return subs
@@ -141,6 +148,19 @@ class ZimukuProvider(Provider):
             logger.debug("No data returned from provider")
             return []
 
+        html = r.content.decode("utf-8", "ignore")
+        # parse window location
+        pattern = r"url\s*=\s*'([^']*)'\s*\+\s*url"
+        parts = re.findall(pattern, html)
+        redirect_url = search_link
+        while parts:
+            parts.reverse()
+            redirect_url = urljoin(self.server_url, "".join(parts))
+            r = self.session.get(redirect_url, timeout=30)
+            html = r.content.decode("utf-8", "ignore")
+            parts = re.findall(pattern, html)
+        logger.debug("search url located: " + redirect_url)
+
         soup = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["lxml", "html.parser"]
         )
@@ -150,7 +170,12 @@ class ZimukuProvider(Provider):
             logger.debug("enter a non-shooter page")
             for item in soup.find_all("div", {"class": "item"}):
                 title_a = item.find("p", class_="tt clearfix").find("a")
+                subs_year = year
                 if season:
+                    # episode year in zimuku is the season's year not show's year
+                    actual_subs_year = re.findall(r"\d{4}", title_a.text) or None
+                    if actual_subs_year:
+                        subs_year = int(actual_subs_year[0]) - season + 1
                     title = title_a.text
                     season_cn1 = re.search("第(.*)季", title)
                     if not season_cn1:
@@ -161,7 +186,7 @@ class ZimukuProvider(Provider):
                     if season_cn1 != season_cn2:
                         continue
                 episode_link = self.server_url + title_a.attrs["href"]
-                new_subs = self._parse_episode_page(episode_link)
+                new_subs = self._parse_episode_page(episode_link, subs_year)
                 subtitles += new_subs
 
         # NOTE: shooter result pages are ignored due to the existence of assrt provider
@@ -331,7 +356,6 @@ def _extract_name(name):
                 end += 1
             if end - start > result[1] - result[0]:
                 result = [start, end]
-                print(result)
             start = end
             end += 1
         new_name = name[result[0] : result[1]]

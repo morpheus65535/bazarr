@@ -43,6 +43,12 @@ def fix_tv_naming(title):
                                            }, True)
 
 
+def fix_movie_naming(title):
+    return fix_inconsistent_naming(title, {"Back to the Future Part III": "Back to the Future 3",
+                                           "Back to the Future Part II": "Back to the Future 2",
+                                           }, True)
+
+
 class SubsUnacsSubtitle(Subtitle):
     """SubsUnacs Subtitle."""
     provider_name = 'subsunacs'
@@ -55,7 +61,12 @@ class SubsUnacsSubtitle(Subtitle):
         self.video = video
         self.fps = fps
         self.num_cds = num_cds
-        self.release_info = os.path.splitext(filename)[0]
+        self.release_info = filename
+        if fps:
+            if video.fps and float(video.fps) == fps:
+                self.release_info += " <b>[{:.3f}]</b>".format(fps)
+            else:
+                self.release_info += " [{:.3f}]".format(fps)
 
     @property
     def id(self):
@@ -142,7 +153,7 @@ class SubsUnacsProvider(Provider):
             params['m'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
         else:
             params['y'] = video.year
-            params['m'] = sanitize(video.title, {'\''})
+            params['m'] = sanitize(fix_movie_naming(video.title), {'\''})
 
         if language == 'en' or language == 'eng':
             params['l'] = 1
@@ -168,7 +179,7 @@ class SubsUnacsProvider(Provider):
                 element = a_element_wrapper.find('a', {'class': 'tooltip'})
                 if element:
                     link = element.get('href')
-                    notes = element.get('title')
+                    notes = re.sub(r'(<img.*)(src=")(/)(.*.jpg">)', r"", element.get('title'))
                     title = element.get_text()
 
                     try:
@@ -230,11 +241,8 @@ class SubsUnacsProvider(Provider):
 
         is_7zip = isinstance(archiveStream, SevenZipFile)
         if is_7zip:
-            try:
-                file_content = archiveStream.readall()
-                file_list = sorted(file_content)
-            except:
-                return []
+            file_content = archiveStream.readall()
+            file_list = sorted(file_content)
         else:
             file_list = sorted(archiveStream.namelist())
 
@@ -268,14 +276,17 @@ class SubsUnacsProvider(Provider):
         else:
             logger.info('Cache file: %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'))
 
-        archive_stream = io.BytesIO(request.content)
-        if is_rarfile(archive_stream):
-            return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
-        elif is_zipfile(archive_stream):
-            return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
-        elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream):
-            return self.process_archive_subtitle_files(SevenZipFile(archive_stream), language, video, link, fps, num_cds)
-        else:
-            logger.error('Ignore unsupported archive %r', request.headers)
-            region.delete(cache_key)
-            return []
+        try:
+            archive_stream = io.BytesIO(request.content)
+            if is_rarfile(archive_stream):
+                return self.process_archive_subtitle_files(RarFile(archive_stream), language, video, link, fps, num_cds)
+            elif is_zipfile(archive_stream):
+                return self.process_archive_subtitle_files(ZipFile(archive_stream), language, video, link, fps, num_cds)
+            elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream):
+                return self.process_archive_subtitle_files(SevenZipFile(archive_stream), language, video, link, fps, num_cds)
+        except:
+            pass
+
+        logger.error('Ignore unsupported archive %r', request.headers)
+        region.delete(cache_key)
+        return []

@@ -227,6 +227,7 @@ class NotifyMatterMost(NotifyBase):
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -259,7 +260,7 @@ class NotifyMatterMost(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending MatterMost '
+                    'A Connection error occurred sending MatterMost '
                     'notification{}.'.format(
                         '' if not channel
                         else ' to channel {}'.format(channel)))
@@ -277,19 +278,19 @@ class NotifyMatterMost(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         if self.channels:
             # historically the value only accepted one channel and is
             # therefore identified as 'channel'. Channels have always been
             # optional, so that is why this setting is nested in an if block
-            args['channel'] = ','.join(self.channels)
+            params['channel'] = ','.join(self.channels)
 
         default_port = 443 if self.secure else self.default_port
         default_schema = self.secure_protocol if self.secure else self.protocol
@@ -303,27 +304,28 @@ class NotifyMatterMost(NotifyBase):
 
         return \
             '{schema}://{botname}{hostname}{port}{fullpath}{authtoken}' \
-            '/?{args}'.format(
+            '/?{params}'.format(
                 schema=default_schema,
                 botname=botname,
-                hostname=NotifyMatterMost.quote(self.host, safe=''),
+                # never encode hostname since we're expecting it to be a valid
+                # one
+                hostname=self.host,
                 port='' if not self.port or self.port == default_port
                      else ':{}'.format(self.port),
                 fullpath='/' if not self.fullpath else '{}/'.format(
                     NotifyMatterMost.quote(self.fullpath, safe='/')),
                 authtoken=self.pprint(self.authtoken, privacy, safe=''),
-                args=NotifyMatterMost.urlencode(args),
+                params=NotifyMatterMost.urlencode(params),
             )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

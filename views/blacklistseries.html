@@ -1,0 +1,117 @@
+{% extends '_main.html' %}
+
+{% block title %}Blacklist (Series) - Bazarr{% endblock %}
+
+{% block bcleft %}
+    <button class="btn btn-outline" id="remove_all_button">
+        <div><i class="fas fa-trash-alt align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+        <div class="align-bottom text-themecolor small text-center">Remove All</div>
+    </button>
+{% endblock bcleft %}
+
+{% block bcright %}
+
+{% endblock bcright %}
+
+{% block body %}
+    <table id="blacklist_series" class="table table-striped" style="width:100%">
+        <thead>
+        <tr>
+            <th>Series</th>
+            <th>Episode</th>
+            <th>Episode Title</th>
+            <th>Language</th>
+            <th>Provider</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+    </table>
+{% endblock body %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+            var table = $('#blacklist_series').DataTable({
+                processing: true,
+                serverSide: true,
+                language: {
+                    zeroRecords: 'No Blacklisted Series Subtitles',
+                    processing: "Loading Blacklisted Series Subtitles..."
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: false,
+                responsive: true,
+                pageLength: {{ settings.general.page_size }},
+                ajax: "{{ url_for('api.blacklistseries') }}",
+                columns: [
+                    {
+                        data: null,
+                        render: function (data) {
+                            return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.seriesTitle + '</a>';
+                        }
+                    },
+                    {data: "episode_number"},
+                    {data: "episodeTitle"},
+                    {
+                        data: 'language',
+                        render: function (value) {
+                            var language_string = '';
+                            if (value.hi) {
+                                language_string = ' HI';
+                            } else if (value.forced) {
+                                language_string = ' forced';
+                            }
+                            return value.name + language_string;
+                        }
+                    },
+                    {data: "provider"},
+                    {data: "timestamp"},
+                    {data: null,
+                        render: function (data) {
+                            return '<a href="" class="blacklist_delete badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Remove this subtitles from blacklist" data-provider="' + data.provider + '" data-subs_id=' + data.subs_id + '><i class="fas fa-trash-alt"></i></a>';
+                        }
+                    }
+                ]
+            });
+
+            $('#remove_all_button').on('click', function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: "{{ url_for('api.blacklistepisodesubtitlesremoveall') }}",
+                    type: 'DELETE',
+                    beforeSend: function () {
+                        $('#remove_all_button').find("i").addClass('fa-spin');
+                    },
+                    complete: function () {
+                        $('#remove_all_button').find("i").removeClass('fa-spin');
+                    }
+                });
+            });
+
+            $('#blacklist_series').on('click', '.blacklist_delete', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+                const values = {
+                    provider: $(this).attr('data-provider'),
+                    subs_id: $(this).attr('data-subs_id')
+                };
+                $.ajax({
+                    url: "{{ url_for('api.blacklistepisodesubtitlesremove') }}",
+                    type: "DELETE",
+                    dataType: "json",
+                    data: values
+                });
+            });
+
+            events.on('event', function (event) {
+                var event_json = JSON.parse(event);
+                if (event_json.type === 'episodeBlacklist') {
+                    $('#blacklist_series').DataTable().ajax.reload(resetPaging = false);
+                    $('[data-toggle="tooltip"]').tooltip({html: true});
+                }
+            });
+        });
+    </script>
+{% endblock tail %}

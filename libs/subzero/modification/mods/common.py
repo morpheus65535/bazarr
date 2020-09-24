@@ -9,6 +9,7 @@ from subzero.modification.mods import SubtitleTextModification, empty_line_post_
 from subzero.modification.processors import FuncProcessor
 from subzero.modification.processors.re_processor import NReProcessor
 from subzero.modification import registry
+from tld import get_tld
 
 
 ENGLISH = Language("eng")
@@ -30,7 +31,7 @@ class CommonFixes(SubtitleTextModification):
         NReProcessor(re.compile(r'(?u)(\w|\b|\s|^)(-\s?-{1,2})'), r"\1—", name="CM_multidash"),
 
         # line = _/-/\s
-        NReProcessor(re.compile(r'(?u)(^\W*[-_.:>~]+\W*$)'), "", name="<CM_non_word_only"),
+        NReProcessor(re.compile(r'(?u)(^\W*[-_.:<>~"\']+\W*$)'), "", name="CM_non_word_only"),
 
         # remove >>
         NReProcessor(re.compile(r'(?u)^\s?>>\s*'), "", name="CM_leading_crocodiles"),
@@ -115,7 +116,9 @@ class CommonFixes(SubtitleTextModification):
         NReProcessor(re.compile(r'(?u)(?:(?<=^)|(?<=\w)) +([!?.,](?![!?.,]| \.))'), r"\1", name="CM_punctuation_space"),
 
         # add space after punctuation
-        NReProcessor(re.compile(r'(?u)([!?.,:])([A-zÀ-ž]{2,})'), r"\1 \2", name="CM_punctuation_space2"),
+        NReProcessor(re.compile(r'(?u)(([^\s]*)([!?.,:])([A-zÀ-ž]{2,}))'),
+                     lambda match: u"%s%s %s" % (match.group(2), match.group(3), match.group(4)) if not get_tld(match.group(1), fail_silently=True, fix_protocol=True) else match.group(1),
+                     name="CM_punctuation_space2"),
 
         # fix lowercase I in english
         NReProcessor(re.compile(r'(?u)(\b)i(\b)'), r"\1I\2", name="CM_EN_lowercase_i",

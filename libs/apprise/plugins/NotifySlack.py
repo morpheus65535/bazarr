@@ -505,6 +505,7 @@ class NotifySlack(NotifyBase):
                 headers=headers,
                 files=files,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -622,14 +623,14 @@ class NotifySlack(NotifyBase):
             # }
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured posting {}to Slack.'.format(
+                'A Connection error occurred posting {}to Slack.'.format(
                     attach.name if attach else ''))
             self.logger.debug('Socket Exception: %s' % str(e))
             return False
 
         except (OSError, IOError) as e:
             self.logger.warning(
-                'An I/O error occured while reading {}.'.format(
+                'An I/O error occurred while reading {}.'.format(
                     attach.name if attach else 'attachment'))
             self.logger.debug('I/O Exception: %s' % str(e))
             return False
@@ -648,14 +649,14 @@ class NotifySlack(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
             'footer': 'yes' if self.include_footer else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         if self.mode == SlackMode.WEBHOOK:
             # Determine if there is a botname present
@@ -666,7 +667,7 @@ class NotifySlack(NotifyBase):
                 )
 
             return '{schema}://{botname}{token_a}/{token_b}/{token_c}/'\
-                '{targets}/?{args}'.format(
+                '{targets}/?{params}'.format(
                     schema=self.secure_protocol,
                     botname=botname,
                     token_a=self.pprint(self.token_a, privacy, safe=''),
@@ -675,23 +676,23 @@ class NotifySlack(NotifyBase):
                     targets='/'.join(
                         [NotifySlack.quote(x, safe='')
                             for x in self.channels]),
-                    args=NotifySlack.urlencode(args),
+                    params=NotifySlack.urlencode(params),
                 )
         # else -> self.mode == SlackMode.BOT:
         return '{schema}://{access_token}/{targets}/'\
-            '?{args}'.format(
+            '?{params}'.format(
                 schema=self.secure_protocol,
                 access_token=self.pprint(self.access_token, privacy, safe=''),
                 targets='/'.join(
                     [NotifySlack.quote(x, safe='') for x in self.channels]),
-                args=NotifySlack.urlencode(args),
+                params=NotifySlack.urlencode(params),
             )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
@@ -760,16 +761,16 @@ class NotifySlack(NotifyBase):
             r'(?P<token_a>[A-Z0-9]+)/'
             r'(?P<token_b>[A-Z0-9]+)/'
             r'(?P<token_c>[A-Z0-9]+)/?'
-            r'(?P<args>\?.+)?$', url, re.I)
+            r'(?P<params>\?.+)?$', url, re.I)
 
         if result:
             return NotifySlack.parse_url(
-                '{schema}://{token_a}/{token_b}/{token_c}/{args}'.format(
+                '{schema}://{token_a}/{token_b}/{token_c}/{params}'.format(
                     schema=NotifySlack.secure_protocol,
                     token_a=result.group('token_a'),
                     token_b=result.group('token_b'),
                     token_c=result.group('token_c'),
-                    args='' if not result.group('args')
-                    else result.group('args')))
+                    params='' if not result.group('params')
+                    else result.group('params')))
 
         return None

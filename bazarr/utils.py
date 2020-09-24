@@ -11,7 +11,11 @@ from get_args import args
 from config import settings, url_sonarr, url_radarr
 from database import database
 from event_handler import event_stream
-
+from get_languages import alpha2_from_alpha3, language_from_alpha3, alpha3_from_alpha2
+from helper import path_mappings
+from list_subtitles import store_subtitles, store_subtitles_movie
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
 from subliminal import region as subliminal_cache_region
 import datetime
 import glob
@@ -22,19 +26,53 @@ class BinaryNotFound(Exception):
 
 
 def history_log(action, sonarr_series_id, sonarr_episode_id, description, video_path=None, language=None, provider=None,
-                score=None):
+                score=None, subs_id=None, subtitles_path=None):
     database.execute("INSERT INTO table_history (action, sonarrSeriesId, sonarrEpisodeId, timestamp, description,"
-                     "video_path, language, provider, score) VALUES (?,?,?,?,?,?,?,?,?)",
+                     "video_path, language, provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                      (action, sonarr_series_id, sonarr_episode_id, time.time(), description, video_path, language,
-                      provider, score))
+                      provider, score, subs_id, subtitles_path))
     event_stream(type='episodeHistory')
 
 
-def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None):
+def blacklist_log(sonarr_series_id, sonarr_episode_id, provider, subs_id, language):
+    database.execute("INSERT INTO table_blacklist (sonarr_series_id, sonarr_episode_id, timestamp, provider, "
+                     "subs_id, language) VALUES (?,?,?,?,?,?)",
+                     (sonarr_series_id, sonarr_episode_id, time.time(), provider, subs_id, language))
+    event_stream(type='episodeBlacklist')
+
+
+def blacklist_delete(provider, subs_id):
+    database.execute("DELETE FROM table_blacklist WHERE provider=? AND subs_id=?", (provider, subs_id))
+    event_stream(type='episodeBlacklist')
+
+
+def blacklist_delete_all():
+    database.execute("DELETE FROM table_blacklist")
+    event_stream(type='episodeBlacklist')
+
+
+def history_log_movie(action, radarr_id, description, video_path=None, language=None, provider=None, score=None,
+                      subs_id=None, subtitles_path=None):
     database.execute("INSERT INTO table_history_movie (action, radarrId, timestamp, description, video_path, language, "
-                     "provider, score) VALUES (?,?,?,?,?,?,?,?)",
-                     (action, radarr_id, time.time(), description, video_path, language, provider, score))
+                     "provider, score, subs_id, subtitles_path) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (action, radarr_id, time.time(), description, video_path, language, provider, score, subs_id, subtitles_path))
     event_stream(type='movieHistory')
+
+
+def blacklist_log_movie(radarr_id, provider, subs_id, language):
+    database.execute("INSERT INTO table_blacklist_movie (radarr_id, timestamp, provider, subs_id, language) "
+                     "VALUES (?,?,?,?,?)", (radarr_id, time.time(), provider, subs_id, language))
+    event_stream(type='movieBlacklist')
+
+
+def blacklist_delete_movie(provider, subs_id):
+    database.execute("DELETE FROM table_blacklist_movie WHERE provider=? AND subs_id=?", (provider, subs_id))
+    event_stream(type='movieBlacklist')
+
+
+def blacklist_delete_all_movie():
+    database.execute("DELETE FROM table_blacklist_movie")
+    event_stream(type='movieBlacklist')
 
 
 def get_binary(name):
@@ -62,6 +100,19 @@ def get_binary(name):
         return exe
     else:
         raise BinaryNotFound
+
+
+def get_blacklist(media_type):
+    if media_type == 'series':
+        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist")
+    else:
+        blacklist_db = database.execute("SELECT provider, subs_id FROM table_blacklist_movie")
+
+    blacklist_list = []
+    for item in blacklist_db:
+        blacklist_list.append((item['provider'], item['subs_id']))
+
+    return blacklist_list
 
 
 def cache_maintenance():
@@ -114,6 +165,18 @@ def get_sonarr_platform():
     return sonarr_platform
 
 
+def notify_sonarr(sonarr_series_id):
+    try:
+        url = url_sonarr() + "/api/command?apikey=" + settings.sonarr.apikey
+        data = {
+            'name': 'RescanSeries',
+            'seriesId': int(sonarr_series_id)
+        }
+        requests.post(url, json=data, timeout=60, verify=False)
+    except Exception as e:
+        logging.debug('BAZARR notify Sonarr')
+
+
 def get_radarr_version():
     radarr_version = ''
     if settings.general.getboolean('use_radarr'):
@@ -138,3 +201,86 @@ def get_radarr_platform():
         except Exception:
             logging.debug('BAZARR cannot get Radarr platform')
     return radarr_platform
+
+
+def notify_radarr(radarr_id):
+    try:
+        url = url_radarr() + "/api/command?apikey=" + settings.radarr.apikey
+        data = {
+            'name': 'RescanMovie',
+            'movieId': int(radarr_id)
+        }
+        requests.post(url, json=data, timeout=60, verify=False)
+    except Exception as e:
+        logging.debug('BAZARR notify Radarr')
+
+
+def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
+                     sonarr_episode_id=None, radarr_id=None):
+    if not subtitles_path.endswith('.srt'):
+        logging.error('BAZARR can only delete .srt files.')
+        return False
+    if hi in [True, 'true', 'True']:
+        language_log = alpha2_from_alpha3(language) + ':hi'
+        language_string = language_from_alpha3(language) + ' HI'
+    elif forced in [True, 'true', 'True']:
+        language_log = alpha2_from_alpha3(language) + ':forced'
+        language_string = language_from_alpha3(language) + ' forced'
+    else:
+        language_log = alpha2_from_alpha3(language)
+        language_string = language_from_alpha3(language)
+    result = language_string + " subtitles deleted from disk."
+
+    if media_type == 'series':
+        try:
+            os.remove(path_mappings.path_replace(subtitles_path))
+        except OSError:
+            logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
+            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            return False
+        else:
+            history_log(0, sonarr_series_id, sonarr_episode_id, result, language=language_log,
+                        video_path=path_mappings.path_replace_reverse(media_path),
+                        subtitles_path=path_mappings.path_replace_reverse(subtitles_path))
+            store_subtitles(path_mappings.path_replace_reverse(media_path), media_path)
+            notify_sonarr(sonarr_series_id)
+    else:
+        try:
+            os.remove(path_mappings.path_replace_movie(subtitles_path))
+        except OSError:
+            logging.exception('BAZARR cannot delete subtitles file: ' + subtitles_path)
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            return False
+        else:
+            history_log_movie(0, radarr_id, result, language=language_log,
+                              video_path=path_mappings.path_replace_reverse_movie(media_path),
+                              subtitles_path=path_mappings.path_replace_reverse_movie(subtitles_path))
+            store_subtitles_movie(path_mappings.path_replace_reverse_movie(media_path), media_path)
+            notify_radarr(radarr_id)
+            return True
+
+
+def subtitles_apply_mods(language, subtitle_path, mods):
+
+    if language == 'pob':
+        lang_obj = Language('por', 'BR')
+    else:
+        lang_obj = Language(language)
+
+    sub = Subtitle(lang_obj, mods=mods)
+    with open(subtitle_path, 'rb') as f:
+        sub.content = f.read()
+
+    if not sub.is_valid():
+        logging.exception('BAZARR Invalid subtitle file: ' + subtitle_path)
+        return
+
+    content = sub.get_modified_content()
+    if content:
+        if os.path.exists(subtitle_path):
+            os.remove(subtitle_path)
+
+        with open(subtitle_path, 'wb') as f:
+            f.write(content)
+
+

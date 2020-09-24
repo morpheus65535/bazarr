@@ -63,7 +63,15 @@
                             }
 
                             function appendFunc(value) {
-                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + ((value.forced) ? ' forced' : '') + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-seriestitle="' + data.seriesTitle + '" data-language="' + value.code3 + '" data-hi="' + data.hearing_impaired + '" data-forced="' + value.forced + '" data-sonarrseriesid=' + data.sonarrSeriesId + ' data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + ((value.forced) ? ':forced' : '') + ' <i class="fas fa-search"></i></a> ';
+                                if (value.forced) {
+                        			var advtag = ':forced';
+								} else if (value.hi) {
+                        			var advtag = ':HI';
+								} else {
+                        			var advtag = '';
+								}
+
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + advtag + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-seriestitle="' + data.seriesTitle + '" data-language="' + value.code3 + '" data-hi="' + data.hearing_impaired + '" data-forced="' + value.forced + '" data-sonarrseriesid=' + data.sonarrSeriesId + ' data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + advtag + ' <i class="fas fa-search"></i></a> ';
                             }
                         }
                     }

@@ -60,10 +60,6 @@ class NotifyPushjet(NotifyBase):
         '{schema}://{host}/{secret_key}',
         '{schema}://{user}:{password}@{host}:{port}/{secret_key}',
         '{schema}://{user}:{password}@{host}/{secret_key}',
-
-        # Kept for backwards compatibility; will be depricated eventually
-        '{schema}://{secret_key}@{host}',
-        '{schema}://{secret_key}@{host}:{port}',
     )
 
     # Define our tokens
@@ -123,12 +119,8 @@ class NotifyPushjet(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         default_port = 443 if self.secure else 80
 
@@ -141,15 +133,16 @@ class NotifyPushjet(NotifyBase):
                     self.password, privacy, mode=PrivacyMode.Secret, safe=''),
             )
 
-        return '{schema}://{auth}{hostname}{port}/{secret}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}/{secret}/?{params}'.format(
             schema=self.secure_protocol if self.secure else self.protocol,
             auth=auth,
-            hostname=NotifyPushjet.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if self.port is None or self.port == default_port
                  else ':{}'.format(self.port),
             secret=self.pprint(
                 self.secret_key, privacy, mode=PrivacyMode.Secret, safe=''),
-            args=NotifyPushjet.urlencode(args),
+            params=NotifyPushjet.urlencode(params),
         )
 
     def send(self, body, title='', notify_type=NotifyType.INFO, **kwargs):
@@ -199,6 +192,7 @@ class NotifyPushjet(NotifyBase):
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -222,7 +216,7 @@ class NotifyPushjet(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Pushjet '
+                'A Connection error occurred sending Pushjet '
                 'notification to %s.' % self.host)
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -235,7 +229,7 @@ class NotifyPushjet(NotifyBase):
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         Syntax:
            pjet://hostname/secret_key
@@ -246,16 +240,8 @@ class NotifyPushjet(NotifyBase):
            pjets://hostname:port/secret_key
            pjets://user:pass@hostname/secret_key
            pjets://user:pass@hostname:port/secret_key
-
-        Legacy (Depricated) Syntax:
-           pjet://secret_key@hostname
-           pjet://secret_key@hostname:port
-           pjets://secret_key@hostname
-           pjets://secret_key@hostname:port
-
         """
         results = NotifyBase.parse_url(url)
-
         if not results:
             # We're done early as we couldn't load the results
             return results
@@ -275,23 +261,5 @@ class NotifyPushjet(NotifyBase):
         if 'secret' in results['qsd'] and len(results['qsd']['secret']):
             results['secret_key'] = \
                 NotifyPushjet.unquote(results['qsd']['secret'])
-
-        if results.get('secret_key') is None:
-            # Deprication Notice issued for v0.7.9
-            NotifyPushjet.logger.deprecate(
-                'The Pushjet URL contains secret_key in the user field'
-                ' which will be deprecated in an upcoming '
-                'release. Please place this in the path of the URL instead.'
-            )
-
-            # Store it as it's value based on the user field
-            results['secret_key'] = \
-                NotifyPushjet.unquote(results.get('user'))
-
-            # there is no way http-auth is enabled, be sure to unset the
-            # current defined user (if present). This is done due to some
-            # logic that takes place in the send() since we support http-auth.
-            results['user'] = None
-            results['password'] = None
 
         return results

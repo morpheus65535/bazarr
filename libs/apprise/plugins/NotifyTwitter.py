@@ -73,9 +73,8 @@ class NotifyTwitter(NotifyBase):
     # The services URL
     service_url = 'https://twitter.com/'
 
-    # The default secure protocol is twitter.  'tweet' is left behind
-    # for backwards compatibility of older apprise usage
-    secure_protocol = ('twitter', 'tweet')
+    # The default secure protocol is twitter.
+    secure_protocol = 'twitter'
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = 'https://github.com/caronc/apprise/wiki/Notify_twitter'
@@ -510,7 +509,9 @@ class NotifyTwitter(NotifyBase):
                 data=payload,
                 headers=headers,
                 auth=auth,
-                verify=self.verify_certificate)
+                verify=self.verify_certificate,
+                timeout=self.request_timeout,
+            )
 
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -577,21 +578,21 @@ class NotifyTwitter(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'mode': self.mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
         if len(self.targets) > 0:
-            args['to'] = ','.join([NotifyTwitter.quote(x, safe='')
-                                   for x in self.targets])
+            params['to'] = ','.join(
+                [NotifyTwitter.quote(x, safe='') for x in self.targets])
 
         return '{schema}://{ckey}/{csecret}/{akey}/{asecret}' \
-            '/{targets}/?{args}'.format(
-                schema=self.secure_protocol[0],
+            '/{targets}/?{params}'.format(
+                schema=self.secure_protocol,
                 ckey=self.pprint(self.ckey, privacy, safe=''),
                 csecret=self.pprint(
                     self.csecret, privacy, mode=PrivacyMode.Secret, safe=''),
@@ -601,17 +602,16 @@ class NotifyTwitter(NotifyBase):
                 targets='/'.join(
                     [NotifyTwitter.quote('@{}'.format(target), safe='')
                      for target in self.targets]),
-                args=NotifyTwitter.urlencode(args))
+                params=NotifyTwitter.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
-
         if not results:
             # We're done early as we couldn't load the results
             return results
@@ -661,10 +661,5 @@ class NotifyTwitter(NotifyBase):
         if 'to' in results['qsd'] and len(results['qsd']['to']):
             results['targets'] += \
                 NotifyTwitter.parse_list(results['qsd']['to'])
-
-        if results.get('schema', 'twitter').lower() == 'tweet':
-            # Deprication Notice issued for v0.7.9
-            NotifyTwitter.logger.deprecate(
-                'tweet:// has been replaced by twitter://')
 
         return results

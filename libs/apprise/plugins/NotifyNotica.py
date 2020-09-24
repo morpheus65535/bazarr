@@ -103,6 +103,14 @@ class NotifyNotica(NotifyBase):
         '{schema}://{user}@{host}:{port}/{token}',
         '{schema}://{user}:{password}@{host}/{token}',
         '{schema}://{user}:{password}@{host}:{port}/{token}',
+
+        # Self-hosted notica servers (with custom path)
+        '{schema}://{host}{path}{token}',
+        '{schema}://{host}:{port}{path}{token}',
+        '{schema}://{user}@{host}{path}{token}',
+        '{schema}://{user}@{host}:{port}{path}{token}',
+        '{schema}://{user}:{password}@{host}{path}{token}',
+        '{schema}://{user}:{password}@{host}:{port}{path}{token}',
     )
 
     # Define our template tokens
@@ -132,6 +140,12 @@ class NotifyNotica(NotifyBase):
             'name': _('Password'),
             'type': 'string',
             'private': True,
+        },
+        'path': {
+            'name': _('Path'),
+            'type': 'string',
+            'map_to': 'fullpath',
+            'default': '/',
         },
     })
 
@@ -228,6 +242,7 @@ class NotifyNotica(NotifyBase):
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -251,7 +266,7 @@ class NotifyNotica(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Notica notification.',
+                'A Connection error occurred sending Notica notification.',
             )
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -265,25 +280,21 @@ class NotifyNotica(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         if self.mode == NoticaMode.OFFICIAL:
             # Official URLs are easy to assemble
-            return '{schema}://{token}/?{args}'.format(
+            return '{schema}://{token}/?{params}'.format(
                 schema=self.protocol,
                 token=self.pprint(self.token, privacy, safe=''),
-                args=NotifyNotica.urlencode(args),
+                params=NotifyNotica.urlencode(params),
             )
 
         # If we reach here then we are assembling a self hosted URL
 
-        # Append our headers into our args
-        args.update({'+{}'.format(k): v for k, v in self.headers.items()})
+        # Append URL parameters from our headers
+        params.update({'+{}'.format(k): v for k, v in self.headers.items()})
 
         # Authorization can be used for self-hosted sollutions
         auth = ''
@@ -302,7 +313,7 @@ class NotifyNotica(NotifyBase):
 
         default_port = 443 if self.secure else 80
 
-        return '{schema}://{auth}{hostname}{port}{fullpath}{token}/?{args}' \
+        return '{schema}://{auth}{hostname}{port}{fullpath}{token}/?{params}' \
                .format(
                    schema=self.secure_protocol
                    if self.secure else self.protocol,
@@ -313,14 +324,14 @@ class NotifyNotica(NotifyBase):
                    fullpath=NotifyNotica.quote(
                        self.fullpath, safe='/'),
                    token=self.pprint(self.token, privacy, safe=''),
-                   args=NotifyNotica.urlencode(args),
+                   params=NotifyNotica.urlencode(params),
                )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
@@ -367,14 +378,14 @@ class NotifyNotica(NotifyBase):
 
         result = re.match(
             r'^https?://notica\.us/?'
-            r'\??(?P<token>[^&]+)([&\s]*(?P<args>.+))?$', url, re.I)
+            r'\??(?P<token>[^&]+)([&\s]*(?P<params>.+))?$', url, re.I)
 
         if result:
             return NotifyNotica.parse_url(
-                '{schema}://{token}/{args}'.format(
+                '{schema}://{token}/{params}'.format(
                     schema=NotifyNotica.protocol,
                     token=result.group('token'),
-                    args='' if not result.group('args')
-                    else '?{}'.format(result.group('args'))))
+                    params='' if not result.group('params')
+                    else '?{}'.format(result.group('params'))))
 
         return None

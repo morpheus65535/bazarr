@@ -221,6 +221,7 @@ class NotifyClickSend(NotifyBase):
                     data=dumps(payload),
                     headers=headers,
                     verify=self.verify_certificate,
+                    timeout=self.request_timeout,
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
@@ -256,7 +257,7 @@ class NotifyClickSend(NotifyBase):
 
             except requests.RequestException as e:
                 self.logger.warning(
-                    'A Connection error occured sending {} ClickSend '
+                    'A Connection error occurred sending {} ClickSend '
                     'notification(s).'.format(len(payload['messages'])))
                 self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -271,13 +272,13 @@ class NotifyClickSend(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
+        # Define any URL parameters
+        params = {
             'batch': 'yes' if self.batch else 'no',
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Setup Authentication
         auth = '{user}:{password}@'.format(
@@ -286,19 +287,19 @@ class NotifyClickSend(NotifyBase):
                 self.password, privacy, mode=PrivacyMode.Secret, safe=''),
         )
 
-        return '{schema}://{auth}{targets}?{args}'.format(
+        return '{schema}://{auth}{targets}?{params}'.format(
             schema=self.secure_protocol,
             auth=auth,
             targets='/'.join(
                 [NotifyClickSend.quote(x, safe='') for x in self.targets]),
-            args=NotifyClickSend.urlencode(args),
+            params=NotifyClickSend.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)

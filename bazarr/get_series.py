@@ -3,6 +3,7 @@
 import os
 import requests
 import logging
+import ast
 
 from config import settings, url_sonarr
 from list_subtitles import list_missing_subtitles
@@ -30,6 +31,7 @@ def update_series():
         serie_default_forced = 'False'
 
     audio_profiles = get_profile_list()
+    tagsDict = get_tags()
 
     # Get shows data from Sonarr
     url_sonarr_api_series = url_sonarr() + "/api/series?apikey=" + apikey_sonarr
@@ -79,6 +81,8 @@ def update_series():
         else:
             audio_language = profile_id_to_language(show['languageProfileId'], audio_profiles)
 
+        tags = [d['label'] for d in tagsDict if d['id'] in show['tags']]
+
         # Add shows in Sonarr to current shows list
         current_shows_sonarr.append(show['id'])
 
@@ -93,7 +97,9 @@ def update_series():
                                      'audio_language': audio_language,
                                      'sortTitle': show['sortTitle'],
                                      'year': str(show['year']),
-                                     'alternateTitles': alternate_titles})
+                                     'alternateTitles': alternate_titles,
+                                     'tags': str(tags),
+                                     'seriesType': show['seriesType']})
         else:
             series_to_add.append({'title': show["title"],
                                   'path': show["path"],
@@ -108,7 +114,9 @@ def update_series():
                                   'sortTitle': show['sortTitle'],
                                   'year': str(show['year']),
                                   'alternateTitles': alternate_titles,
-                                  'forced': serie_default_forced})
+                                  'forced': serie_default_forced,
+                                  'tags': str(tags),
+                                  'seriesType': show['seriesType']})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
@@ -120,7 +128,7 @@ def update_series():
     # Update existing series in DB
     series_in_db_list = []
     series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
-                                    "audio_language, sortTitle, year, alternateTitles FROM table_shows")
+                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType FROM table_shows")
 
     for item in series_in_db:
         series_in_db_list.append(item)
@@ -188,3 +196,25 @@ def profile_id_to_language(id_, profiles):
     for profile in profiles:
         if id_ == profile[0]:
             return profile[1]
+
+
+def get_tags():
+    apikey_sonarr = settings.sonarr.apikey
+    tagsDict = []
+
+    # Get tags data from Sonarr
+    url_sonarr_api_series = url_sonarr() + "/api/tag?apikey=" + apikey_sonarr
+
+    try:
+        tagsDict = requests.get(url_sonarr_api_series, timeout=60, verify=False)
+    except requests.exceptions.ConnectionError:
+        logging.exception("BAZARR Error trying to get tags from Sonarr. Connection Error.")
+        return []
+    except requests.exceptions.Timeout:
+        logging.exception("BAZARR Error trying to get tags from Sonarr. Timeout Error.")
+        return []
+    except requests.exceptions.RequestException:
+        logging.exception("BAZARR Error trying to get tags from Sonarr.")
+        return []
+    else:
+        return tagsDict.json()

@@ -45,7 +45,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Argenteam
 * Assrt
 * BetaSeries
-* BSPlayer
+* BSplayer
 * GreekSubtitles
 * Hosszupuska
 * LegendasDivx
@@ -53,20 +53,22 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Napiprojekt
 * Napisy24
 * Nekur
-* OpenSubtitles
+* OpenSubtitles.org
 * Podnapisi
+* RegieLive
+* Sous-Titres.eu
 * Subdivx
 * Subs.sab.bz
+* Subs4Free
+* Subs4Series
 * Subscene
 * Subscenter
 * Subsunacs.net
-* Subs4Free
-* Subs4Series
-* Subtitri.id.lv
-* Subtitri.nekur.net
-* SubZ
+* subtitri.id.lv
+* Subtitulamos.tv
 * Supersubtitles
 * Titlovi
+* Titrari.ro
 * TVSubtitles
 * Wizdom
 * XSubs
@@ -76,9 +78,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 
 ## Screenshot
 
-You can get more in the [screenshot](https://github.com/morpheus65535/bazarr/tree/master/screenshot) directory but it should look familiar:
-
-![Series](/screenshot/1-series/series-2-episodes.png?raw=true "Series")
+![Bazarr](/screenshot/bazarr-screenshot.png?raw=true "Bazarr")
 
 ### License
 

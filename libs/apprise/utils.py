@@ -104,40 +104,129 @@ GET_SCHEMA_RE = re.compile(r'\s*(?P<schema>[a-z0-9]{2,9})://.*$', re.I)
 
 # Regular expression based and expanded from:
 # http://www.regular-expressions.info/email.html
+# Extended to support colon (:) delimiter for parsing names from the URL
+# such as:
+#   - 'Optional Name':user@example.com
+#   - 'Optional Name' <user@example.com>
+#
+# The expression also parses the general email as well such as:
+#   - user@example.com
+#   - label+user@example.com
 GET_EMAIL_RE = re.compile(
-    r"(?P<fulluser>((?P<label>[^+]+)\+)?"
-    r"(?P<userid>[a-z0-9$%=_~-]+"
-    r"(?:\.[a-z0-9$%+=_~-]+)"
-    r"*))@(?P<domain>(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+"
-    r"[a-z0-9](?:[a-z0-9-]*"
-    r"[a-z0-9]))?",
-    re.IGNORECASE,
-)
+    r'((?P<name>[^:<]+)?[:<\s]+)?'
+    r'(?P<full_email>((?P<label>[^+]+)\+)?'
+    r'(?P<email>(?P<userid>[a-z0-9$%=_~-]+'
+    r'(?:\.[a-z0-9$%+=_~-]+)'
+    r'*)@(?P<domain>('
+    r'(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+'
+    r'[a-z0-9](?:[a-z0-9-]*[a-z0-9]))|'
+    r'[a-z0-9][a-z0-9-]{5,})))'
+    r'\s*>?', re.IGNORECASE)
 
 # Regular expression used to extract a phone number
 GET_PHONE_NO_RE = re.compile(r'^\+?(?P<phone>[0-9\s)(+-]+)\s*$')
 
 # Regular expression used to destinguish between multiple URLs
 URL_DETECTION_RE = re.compile(
-    r'([a-z0-9]+?:\/\/.*?)[\s,]*(?=$|[a-z0-9]+?:\/\/)', re.I)
+    r'([a-z0-9]+?:\/\/.*?)(?=$|[\s,]+[a-z0-9]{2,9}?:\/\/)', re.I)
+
+EMAIL_DETECTION_RE = re.compile(
+    r'[\s,]*([^@]+@.*?)(?=$|[\s,]+'
+    + r'(?:[^:<]+?[:<\s]+?)?'
+    r'[^@\s,]+@[^\s,]+)',
+    re.IGNORECASE)
 
 # validate_regex() utilizes this mapping to track and re-use pre-complied
 # regular expressions
 REGEX_VALIDATE_LOOKUP = {}
 
 
-def is_hostname(hostname):
+def is_ipaddr(addr, ipv4=True, ipv6=True):
+    """
+    Validates against IPV4 and IPV6 IP Addresses
+    """
+
+    if ipv4:
+        # Based on https://stackoverflow.com/questions/5284147/\
+        #       validating-ipv4-addresses-with-regexp
+        re_ipv4 = re.compile(
+            r'^(?P<ip>((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}'
+            r'(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$'
+        )
+        match = re_ipv4.match(addr)
+        if match is not None:
+            # Return our matched IP
+            return match.group('ip')
+
+    if ipv6:
+        # Based on https://stackoverflow.com/questions/53497/\
+        #              regular-expression-that-matches-valid-ipv6-addresses
+        #
+        # IPV6 URLs should be enclosed in square brackets when placed on a URL
+        #   Source: https://tools.ietf.org/html/rfc2732
+        #   - For this reason, they are additionally checked for existance
+        re_ipv6 = re.compile(
+            r'\[?(?P<ip>(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:)'
+            r'{1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}'
+            r'(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}'
+            r'(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}'
+            r'(:[0-9a-f]{1,4}){1,4}|([0-9a-f]{1,4}:){1,2}'
+            r'(:[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:'
+            r'((:[0-9a-f]{1,4}){1,6})|:((:[0-9a-f]{1,4}){1,7}|:)|'
+            r'fe80:(:[0-9a-f]{0,4}){0,4}%[0-9a-z]{1,}|::'
+            r'(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]'
+            r'|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|'
+            r'1{0,1}[0-9]){0,1}[0-9])|([0-9a-f]{1,4}:){1,4}:((25[0-5]|'
+            r'(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|'
+            r'1{0,1}[0-9]){0,1}[0-9])))\]?', re.I,
+        )
+
+        match = re_ipv6.match(addr)
+        if match is not None:
+            # Return our matched IP between square brackets since that is
+            # required for URL formatting as per RFC 2732.
+            return '[{}]'.format(match.group('ip'))
+
+    # There was no match
+    return False
+
+
+def is_hostname(hostname, ipv4=True, ipv6=True):
     """
     Validate hostname
     """
-    if len(hostname) > 255 or len(hostname) == 0:
+    # The entire hostname, including the delimiting dots, has a maximum of 253
+    # ASCII characters.
+    if len(hostname) > 253 or len(hostname) == 0:
         return False
 
+    # Strip trailling period on hostname (if one exists)
     if hostname[-1] == ".":
         hostname = hostname[:-1]
 
-    allowed = re.compile(r'(?!-)[A-Z\d_-]{1,63}(?<!-)$', re.IGNORECASE)
-    return all(allowed.match(x) for x in hostname.split("."))
+    # Split our hostname up
+    labels = hostname.split(".")
+
+    # ipv4 check
+    if len(labels) == 4 and re.match(r'[0-9.]+', hostname):
+        return is_ipaddr(hostname, ipv4=ipv4, ipv6=False)
+
+    # - RFC 1123 permits hostname labels to start with digits
+    #     - digit must be followed by alpha/numeric so we don't end up
+    #       processing IP addresses here
+    # - Hostnames can ony be comprised of alpha-numeric characters and the
+    #   hyphen (-) character.
+    # - Hostnames can not start with the hyphen (-) character.
+    # - labels can not exceed 63 characters
+    allowed = re.compile(
+        r'(?!-)[a-z0-9][a-z0-9-]{1,62}(?<!-)$',
+        re.IGNORECASE,
+    )
+
+    if not all(allowed.match(x) for x in labels):
+        return is_ipaddr(hostname, ipv4=ipv4, ipv6=ipv6)
+
+    return hostname
 
 
 def is_email(address):
@@ -152,10 +241,32 @@ def is_email(address):
     """
 
     try:
-        return GET_EMAIL_RE.match(address) is not None
+        match = GET_EMAIL_RE.match(address)
+
     except TypeError:
-        # invalid syntax
+        # not parseable content
         return False
+
+    if match:
+        return {
+            # The name parsed from the URL (if one exists)
+            'name': '' if match.group('name') is None
+            else match.group('name').strip(),
+            # The email address
+            'email': match.group('email'),
+            # The full email address (includes label if specified)
+            'full_email': match.group('full_email'),
+            # The label (if specified) e.g: label+user@example.com
+            'label': '' if match.group('label') is None
+            else match.group('label').strip(),
+            # The user (which does not include the label) from the email
+            # parsed.
+            'user': match.group('userid'),
+            # The domain associated with the email address
+            'domain': match.group('domain'),
+        }
+
+    return False
 
 
 def tidy_path(path):
@@ -384,29 +495,21 @@ def parse_url(url, default_schema='http', verify_host=True):
             # and it's already assigned
             pass
 
-    try:
-        (result['host'], result['port']) = \
-            re.split(r'[:]+', result['host'])[:2]
+    # Max port is 65535 so (1,5 digits)
+    match = re.search(
+        r'^(?P<host>.+):(?P<port>[1-9][0-9]{0,4})$', result['host'])
+    if match:
+        # Separate our port from our hostname (if port is detected)
+        result['host'] = match.group('host')
+        result['port'] = int(match.group('port'))
 
-    except ValueError:
-        # no problem then, user only exists
-        # and it's already assigned
-        pass
-
-    if result['port']:
-        try:
-            result['port'] = int(result['port'])
-
-        except (ValueError, TypeError):
-            # Invalid Port Specified
+    if verify_host:
+        # Verify and Validate our hostname
+        result['host'] = is_hostname(result['host'])
+        if not result['host']:
+            # Nothing more we can do without a hostname; give the user
+            # some indication as to what went wrong
             return None
-
-        if result['port'] == 0:
-            result['port'] = None
-
-    if verify_host and not is_hostname(result['host']):
-        # Nothing more we can do without a hostname
-        return None
 
     # Re-assemble cleaned up version of the url
     result['url'] = '%s://' % result['schema']
@@ -469,26 +572,76 @@ def parse_bool(arg, default=False):
     return bool(arg)
 
 
-def split_urls(urls):
+def parse_emails(*args, **kwargs):
     """
     Takes a string containing URLs separated by comma's and/or spaces and
     returns a list.
     """
 
-    try:
-        results = URL_DETECTION_RE.findall(urls)
+    # for Python 2.7 support, store_unparsable is not in the url above
+    # as just parse_emails(*args, store_unparseable=True) since it is
+    # an invalid syntax.  This is the workaround to be backards compatible:
+    store_unparseable = kwargs.get('store_unparseable', True)
 
-    except TypeError:
-        results = []
+    result = []
+    for arg in args:
+        if isinstance(arg, six.string_types) and arg:
+            _result = EMAIL_DETECTION_RE.findall(arg)
+            if _result:
+                result += _result
 
-    if len(results) > 0 and results[len(results) - 1][-1] != urls[-1]:
-        # we always want to save the end of url URL if we can; This handles
-        # cases where there is actually a comma (,) at the end of a single URL
-        # that would have otherwise got lost when our regex passed over it.
-        results[len(results) - 1] += \
-            re.match(r'.*?([\s,]+)?$', urls).group(1).rstrip()
+            elif not _result and store_unparseable:
+                # we had content passed into us that was lost because it was
+                # so poorly formatted that it didn't even come close to
+                # meeting the regular expression we defined. We intentially
+                # keep it as part of our result set so that parsing done
+                # at a higher level can at least report this to the end user
+                # and hopefully give them some indication as to what they
+                # may have done wrong.
+                result += \
+                    [x for x in filter(bool, re.split(STRING_DELIMITERS, arg))]
 
-    return results
+        elif isinstance(arg, (set, list, tuple)):
+            # Use recursion to handle the list of Emails
+            result += parse_emails(*arg, store_unparseable=store_unparseable)
+
+    return result
+
+
+def parse_urls(*args, **kwargs):
+    """
+    Takes a string containing URLs separated by comma's and/or spaces and
+    returns a list.
+    """
+
+    # for Python 2.7 support, store_unparsable is not in the url above
+    # as just parse_urls(*args, store_unparseable=True) since it is
+    # an invalid syntax.  This is the workaround to be backards compatible:
+    store_unparseable = kwargs.get('store_unparseable', True)
+
+    result = []
+    for arg in args:
+        if isinstance(arg, six.string_types) and arg:
+            _result = URL_DETECTION_RE.findall(arg)
+            if _result:
+                result += _result
+
+            elif not _result and store_unparseable:
+                # we had content passed into us that was lost because it was
+                # so poorly formatted that it didn't even come close to
+                # meeting the regular expression we defined. We intentially
+                # keep it as part of our result set so that parsing done
+                # at a higher level can at least report this to the end user
+                # and hopefully give them some indication as to what they
+                # may have done wrong.
+                result += \
+                    [x for x in filter(bool, re.split(STRING_DELIMITERS, arg))]
+
+        elif isinstance(arg, (set, list, tuple)):
+            # Use recursion to handle the list of URLs
+            result += parse_urls(*arg, store_unparseable=store_unparseable)
+
+    return result
 
 
 def parse_list(*args):

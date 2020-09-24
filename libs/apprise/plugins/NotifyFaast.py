@@ -29,6 +29,7 @@ from ..common import NotifyImageSize
 from ..common import NotifyType
 from ..utils import parse_bool
 from ..AppriseLocale import gettext_lazy as _
+from ..utils import validate_regex
 
 
 class NotifyFaast(NotifyBase):
@@ -86,7 +87,12 @@ class NotifyFaast(NotifyBase):
         super(NotifyFaast, self).__init__(**kwargs)
 
         # Store the Authentication Token
-        self.authtoken = authtoken
+        self.authtoken = validate_regex(authtoken)
+        if not self.authtoken:
+            msg = 'An invalid Faast Authentication Token ' \
+                  '({}) was specified.'.format(authtoken)
+            self.logger.warning(msg)
+            raise TypeError(msg)
 
         # Associate an image with our post
         self.include_image = include_image
@@ -131,6 +137,7 @@ class NotifyFaast(NotifyBase):
                 data=payload,
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -154,7 +161,7 @@ class NotifyFaast(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Faast notification.',
+                'A Connection error occurred sending Faast notification.',
             )
             self.logger.debug('Socket Exception: %s' % str(e))
 
@@ -168,29 +175,28 @@ class NotifyFaast(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
 
-        return '{schema}://{authtoken}/?{args}'.format(
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        return '{schema}://{authtoken}/?{params}'.format(
             schema=self.protocol,
             authtoken=self.pprint(self.authtoken, privacy, safe=''),
-            args=NotifyFaast.urlencode(args),
+            params=NotifyFaast.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results

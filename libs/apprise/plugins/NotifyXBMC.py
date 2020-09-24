@@ -73,9 +73,6 @@ class NotifyXBMC(NotifyBase):
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_128
 
-    # The number of seconds to display the popup for
-    default_popup_duration_sec = 12
-
     # XBMC default protocol version (v2)
     xbmc_remote_protocol = 2
 
@@ -137,8 +134,9 @@ class NotifyXBMC(NotifyBase):
         super(NotifyXBMC, self).__init__(**kwargs)
 
         # Number of seconds to display notification for
-        self.duration = self.default_popup_duration_sec \
-            if not (isinstance(duration, int) and duration > 0) else duration
+        self.duration = self.template_args['duration']['default'] \
+            if not (isinstance(duration, int) and
+                    self.template_args['duration']['min'] > 0) else duration
 
         # Build our schema
         self.schema = 'https' if self.secure else 'http'
@@ -264,6 +262,7 @@ class NotifyXBMC(NotifyBase):
                 headers=headers,
                 auth=auth,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -287,7 +286,7 @@ class NotifyXBMC(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending XBMC/KODI '
+                'A Connection error occurred sending XBMC/KODI '
                 'notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
@@ -302,14 +301,14 @@ class NotifyXBMC(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
+        # Define any URL parameters
+        params = {
             'image': 'yes' if self.include_image else 'no',
             'duration': str(self.duration),
-            'verify': 'yes' if self.verify_certificate else 'no',
         }
+
+        # Extend our parameters
+        params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         # Determine Authentication
         auth = ''
@@ -331,20 +330,21 @@ class NotifyXBMC(NotifyBase):
             # Append 's' to schema
             default_schema += 's'
 
-        return '{schema}://{auth}{hostname}{port}/?{args}'.format(
+        return '{schema}://{auth}{hostname}{port}/?{params}'.format(
             schema=default_schema,
             auth=auth,
-            hostname=NotifyXBMC.quote(self.host, safe=''),
+            # never encode hostname since we're expecting it to be a valid one
+            hostname=self.host,
             port='' if not self.port or self.port == default_port
                  else ':{}'.format(self.port),
-            args=NotifyXBMC.urlencode(args),
+            params=NotifyXBMC.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url)

@@ -18,6 +18,7 @@
             <th>title</th>
             <th>timestamp</th>
             <th style="max-width: 60%;">description</th>
+            <th>Actions</th>
         </tr>
         </thead>
     </table>
@@ -74,13 +75,48 @@
                                 return data.description;
                             }
                         }
+                    },
+                    {
+                        data: null,
+                        render: function (data) {
+                            if (data.subs_id  && data.subtitles_path && !data.blacklisted) {
+                                return '<a href="" class="blacklist_subtitles badge badge-secondary" data-toggle="tooltip" data-placement="right" title="Blacklist this subtitles" data-radarrid="' + data.radarrId + '" data-language="' + data.language.code2 + '" data-forced="' + data.language.forced + '" data-hi="' + data.language.hi + '" data-provider="' + data.provider + '" data-subs_id="' + data.subs_id + '" data-video_path="' + data.video_path + '" data-subtitles_path="' + data.subtitles_path + '"><i class="far fa-file-excel"></i></a>';
+                            } else {
+                                return null;
+                            }
+                        }
                     }
                 ]
             });
 
+            $('#history_movies').on('click', '.blacklist_subtitles', function (e) {
+                $(this).tooltip('dispose');
+                e.preventDefault();
+                const values = {
+                    radarr_id: $(this).attr('data-radarrid'),
+                    provider: $(this).attr('data-provider'),
+                    subs_id: $(this).attr('data-subs_id'),
+                    language: $(this).attr('data-language'),
+                    forced: $(this).attr('data-forced'),
+                    hi: $(this).attr('data-hi'),
+                    video_path: $(this).attr('data-video_path'),
+                    subtitles_path: $(this).attr('data-subtitles_path')
+                };
+                var cell = $(this).parent();
+                $.ajax({
+                    url: "{{ url_for('api.blacklistmoviesubtitlesadd') }}",
+                    type: "POST",
+                    dataType: "json",
+                    data: values,
+                    beforeSend: function () {
+                        cell.html('<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div>');
+                    }
+                });
+            });
+
             events.on('event', function (event) {
                 var event_json = JSON.parse(event);
-                if (event_json.type === 'movieHistory') {
+                if (event_json.type === 'movieHistory' || event_json.type === 'movieBlacklist') {
                     $('#history_movies').DataTable().ajax.reload(resetPaging = false);
                     $('[data-toggle="tooltip"]').tooltip({html: true});
                 }

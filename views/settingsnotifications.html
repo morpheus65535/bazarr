@@ -48,6 +48,22 @@
                     </table>
                 </div>
             </div>
+            <br>
+            <h4>Options</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-3 text-right">
+                    <b>Do not notify for manual actions</b>
+                </div>
+                <div class="form-group col-sm-8">
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="settings-general-dont_notify_manual_actions"
+                               name="settings-general-dont_notify_manual_actions">
+                        <span class="custom-control-label" for="settings-general-dont_notify_manual_actions"></span>
+                    </label>
+                    <label>Suppress notifications when manually download/upload subtitles.</label>
+                </div>
+            </div>
         </form>
     </div>
 
@@ -120,6 +136,9 @@
             $('#save_button_checkmark').hide();
             $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
 
+            // Set Checkbox input values
+            $('#settings-general-dont_notify_manual_actions').prop('checked', {{'true' if settings.general.getboolean('dont_notify_manual_actions') else 'false'}});
+
             var table = $('#notification_providers').DataTable({
                 select: {
                     style: 'single'
@@ -191,6 +210,11 @@
 
             $('#save_button').on('click', function() {
                 var formdata = new FormData(document.getElementById("settings_form"));
+
+                // Make sure all checkbox input are sent with true/false value
+                $('input[type=checkbox]').each(function () {
+                    formdata.set($(this).prop('id'), $(this).prop('checked'));
+                });
 
                 formdata.append('notification_providers', JSON.stringify(table.rows().data().toArray()));
 

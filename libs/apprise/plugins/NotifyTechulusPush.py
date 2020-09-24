@@ -145,6 +145,7 @@ class NotifyTechulusPush(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
             if r.status_code not in (
                     requests.codes.ok, requests.codes.no_content):
@@ -171,7 +172,7 @@ class NotifyTechulusPush(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Techulus Push '
+                'A Connection error occurred sending Techulus Push '
                 'notification.'
             )
             self.logger.debug('Socket Exception: %s' % str(e))
@@ -185,28 +186,23 @@ class NotifyTechulusPush(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{apikey}/?{args}'.format(
+        return '{schema}://{apikey}/?{params}'.format(
             schema=self.secure_protocol,
             apikey=self.pprint(self.apikey, privacy, safe=''),
-            args=NotifyTechulusPush.urlencode(args),
+            params=NotifyTechulusPush.urlencode(params),
         )
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
         results = NotifyBase.parse_url(url, verify_host=False)
-
         if not results:
             # We're done early as we couldn't load the results
             return results

@@ -267,6 +267,7 @@ class NotifyPushed(NotifyBase):
                 data=dumps(payload),
                 headers=headers,
                 verify=self.verify_certificate,
+                timeout=self.request_timeout,
             )
 
             if r.status_code != requests.codes.ok:
@@ -291,7 +292,7 @@ class NotifyPushed(NotifyBase):
 
         except requests.RequestException as e:
             self.logger.warning(
-                'A Connection error occured sending Pushed notification.')
+                'A Connection error occurred sending Pushed notification.')
             self.logger.debug('Socket Exception: %s' % str(e))
 
             # Return; we're done
@@ -304,14 +305,10 @@ class NotifyPushed(NotifyBase):
         Returns the URL built dynamically based on specified arguments.
         """
 
-        # Define any arguments set
-        args = {
-            'format': self.notify_format,
-            'overflow': self.overflow_mode,
-            'verify': 'yes' if self.verify_certificate else 'no',
-        }
+        # Our URL parameters
+        params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
-        return '{schema}://{app_key}/{app_secret}/{targets}/?{args}'.format(
+        return '{schema}://{app_key}/{app_secret}/{targets}/?{params}'.format(
             schema=self.secure_protocol,
             app_key=self.pprint(self.app_key, privacy, safe=''),
             app_secret=self.pprint(
@@ -323,17 +320,16 @@ class NotifyPushed(NotifyBase):
                     # Users are prefixed with an @ symbol
                     ['@{}'.format(x) for x in self.users],
                 )]),
-            args=NotifyPushed.urlencode(args))
+            params=NotifyPushed.urlencode(params))
 
     @staticmethod
     def parse_url(url):
         """
         Parses the URL and returns enough arguments that can allow
-        us to substantiate this object.
+        us to re-instantiate this object.
 
         """
-        results = NotifyBase.parse_url(url)
-
+        results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
             return results

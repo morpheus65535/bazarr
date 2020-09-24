@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.9'
+bazarr_version = '0.9.0.4'
 
 import os
 os.environ["BAZARR_VERSION"] = bazarr_version
@@ -272,6 +272,18 @@ def historystats():
 
     return render_template('historystats.html', data_providers=data_providers_list,
                            data_languages=sorted(data_languages_list, key=lambda i: i['name']))
+
+
+@app.route('/blacklist/series/')
+@login_required
+def blacklistseries():
+    return render_template('blacklistseries.html')
+
+
+@app.route('/blacklist/movies/')
+@login_required
+def blacklistmovies():
+    return render_template('blacklistmovies.html')
 
 
 @app.route('/wanted/series/')

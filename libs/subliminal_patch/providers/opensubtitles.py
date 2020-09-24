@@ -109,6 +109,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
 
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
 
     def __init__(self, username=None, password=None, use_tag_search=False, only_foreign=False, also_foreign=False,
                  skip_wrong_fps=True, is_vip=False, use_ssl=True, timeout=15):
@@ -312,6 +313,10 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             # set subtitle language to forced if it's foreign_parts_only
             elif (also_foreign or only_foreign) and foreign_parts_only:
                 language = Language.rebuild(language, forced=True)
+
+            # set subtitle language to hi if it's hearing_impaired
+            if hearing_impaired:
+                language = Language.rebuild(language, hi=True)
 
             if language not in languages:
                 continue
