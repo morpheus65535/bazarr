@@ -165,11 +165,12 @@ class OpenSubtitlesComProvider(Provider):
             # loop over results
             for result in results_dict:
                 if title.lower() == result['attributes']['title'].lower() and \
-                        video.year == int(result['attributes']['year']):
+                        (not video.year or video.year == int(result['attributes']['year'])):
                     title_id = result['id']
                     break
 
             if title_id:
+                return title_id
                 return title_id
         finally:
             if not title_id:
@@ -193,12 +194,12 @@ class OpenSubtitlesComProvider(Provider):
         # query the server
         result = None
         if isinstance(video, Episode):
-            res = self.session.get(self.server_url + 'find/tv', params={'parent_id': title_id, 'languages': langs,
+            res = self.session.get(self.server_url + 'find', params={'parent_id': title_id, 'languages': langs,
                                                                         'episode_number': video.episode,
                                                                         'season_number': video.season,
                                                                         'moviehash': hash}, timeout=10)
         else:
-            res = self.session.get(self.server_url + 'find/movie', params={'id': title_id, 'languages': langs,
+            res = self.session.get(self.server_url + 'find', params={'id': title_id, 'languages': langs,
                                                                            'moviehash': hash}, timeout=10)
         res.raise_for_status()
         result = res.json()
