@@ -14,6 +14,7 @@ from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, Co
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
+from subliminal.cache import region
 from guessit import guessit
 
 logger = logging.getLogger(__name__)
@@ -114,12 +115,12 @@ class OpenSubtitlesComProvider(Provider):
         self.use_hash = use_hash
 
     def initialize(self):
+        self.token = region.get("oscom_token")
         if self.token:
+            self.session.headers.update({'Authorization': self.token})
             return True
         else:
             self.login()
-
-        self.session.headers.update({'Authorization': self.token})
 
     def terminate(self):
         self.session.close()
@@ -139,6 +140,8 @@ class OpenSubtitlesComProvider(Provider):
                 except ValueError:
                     raise ProviderError('Invalid JSON returned by provider')
                 else:
+                    self.session.headers.update({'Authorization': self.token})
+                    region.set("oscom_token", self.token)
                     return True
             elif r.status_code == 401:
                 raise AuthenticationError('Login failed: %s' % r.reason)
@@ -170,7 +173,6 @@ class OpenSubtitlesComProvider(Provider):
                     break
 
             if title_id:
-                return title_id
                 return title_id
         finally:
             if not title_id:
