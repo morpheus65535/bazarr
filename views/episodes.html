@@ -224,7 +224,7 @@
     </div>
 
     <div id="massUploadModal" class="modal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><span id="mass_upload_title_span"></span></h5><br>
@@ -251,7 +251,7 @@
                                     <th style="text-align: left;">Filename</th>
                                     <th style="text-align: left;">Season</th>
                                     <th style="text-align: left;">Episode</th>
-                                    <th style="text-align: left;">Action</th>
+                                    <th style="text-align: center;">Action</th>
                                 </tr>
                                 </thead>
                             </table>
@@ -1073,7 +1073,7 @@
                                     }
                                 }
                                 return `<input type="text" ${readonly ? 'readonly' : ''} \
-                                    class="mass-upload-season-input form-control w-50 ${cls.join(' ')}" \
+                                    class="mass-upload-season-input form-control ${cls.join(' ')}" \
                                     value="${data}" />`
                             }
                         },
@@ -1094,7 +1094,7 @@
                                     }
                                 }
                                 return `<input type="text" ${readonly ? 'readonly' : ''} \
-                                    class="mass-upload-episode-input form-control w-50 ${cls.join(' ')}" \
+                                    class="mass-upload-episode-input form-control ${cls.join(' ')}" \
                                     value="${data}" />`
                             }
                         },

@@ -554,7 +554,11 @@ class SubtitleNameInfo(Resource):
     def get(self):
         name = request.args.get('filename')
         if name is not None:
-            result = guessit(name, options=None)
+            opts = dict()
+            opts['type'] = 'episode'
+            result = guessit(name, options=opts)
+            if 'subtitle_language' in result:
+                result['subtitle_language'] = str(result['subtitle_language'])
             return jsonify(data=result)
         else:
             return '', 400
