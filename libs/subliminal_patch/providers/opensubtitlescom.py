@@ -11,6 +11,7 @@ from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group, sanitize
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
+from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
@@ -96,7 +97,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         return matches
 
 
-class OpenSubtitlesComProvider(Provider):
+class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     """OpenSubtitlesCom Provider"""
     server_url = 'https://www.opensubtitles.com/api/v1/'
 
@@ -150,14 +151,27 @@ class OpenSubtitlesComProvider(Provider):
         finally:
             return False
 
+    def use_token_or_login(self, func):
+        if not self.token:
+            self.login()
+            return func()
+        try:
+            return func()
+        except AuthenticationError:
+            self.login()
+            return func()
+
     def search_titles(self, title, video):
         title_id = None
 
         if isinstance(video, Episode):
-            results = self.session.get(self.server_url + 'search/tv', params={'query': title}, timeout=10)
+            results = self.use_token_or_login(
+                lambda: self.retry(lambda: self.session.get(self.server_url + 'search/tv', params={'query': title},
+                                                            timeout=10)))
         else:
-            results = self.session.get(self.server_url + 'search/movie', params={'query': title}, timeout=10)
-        results.raise_for_status()
+            results = self.use_token_or_login(
+                lambda: self.retry(lambda: self.session.get(self.server_url + 'search/movie', params={'query': title},
+                                                            timeout=10)))
 
         # deserialize results
         try:
@@ -176,7 +190,7 @@ class OpenSubtitlesComProvider(Provider):
                 return title_id
         finally:
             if not title_id:
-                logger.debug('No match found for "%s" and "%d"' % (title, video.year))
+                logger.debug('No match found for "%s"' % title)
 
     def query(self, languages, video):
         if self.use_hash:
@@ -196,13 +210,18 @@ class OpenSubtitlesComProvider(Provider):
         # query the server
         result = None
         if isinstance(video, Episode):
-            res = self.session.get(self.server_url + 'find', params={'parent_id': title_id, 'languages': langs,
-                                                                        'episode_number': video.episode,
-                                                                        'season_number': video.season,
-                                                                        'moviehash': hash}, timeout=10)
+            res = self.use_token_or_login(
+                lambda: self.retry(lambda: self.session.get(self.server_url + 'find',
+                                                            params={'parent_id': title_id,
+                                                                    'languages': langs,
+                                                                    'episode_number': video.episode,
+                                                                    'season_number': video.season,
+                                                                    'moviehash': hash}, timeout=10)))
         else:
-            res = self.session.get(self.server_url + 'find', params={'id': title_id, 'languages': langs,
-                                                                           'moviehash': hash}, timeout=10)
+            res = self.use_token_or_login(
+                lambda: self.retry(lambda: self.session.get(self.server_url + 'find',
+                                                            params={'id': title_id, 'languages': langs,
+                                                                    'moviehash': hash}, timeout=10)))
         res.raise_for_status()
         result = res.json()
 
@@ -235,13 +254,16 @@ class OpenSubtitlesComProvider(Provider):
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        res = self.session.post(self.server_url + 'download', json={'file_id': subtitle.file_id}, headers=headers,
-                                timeout=10)
+        res = self.use_token_or_login(
+            lambda: self.retry(lambda: self.session.post(self.server_url + 'download',
+                                                         json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
+                                                         headers=headers,
+                                                         timeout=10)))
         res.raise_for_status()
         subtitle.download_link = res.json()['link']
 
-        r = self.session.get(subtitle.download_link, timeout=10)
-        r.raise_for_status()
+        r = self.use_token_or_login(
+            lambda: self.retry(lambda: self.session.get(subtitle.download_link, timeout=10)))
 
         subtitle_content = r.content
 
