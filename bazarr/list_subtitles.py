@@ -437,6 +437,12 @@ def guess_external_subtitles(dest_folder, subtitles):
         if not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
+            # to improve performance, skip detection of files larger that 1M
+            if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
+                logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
+                              subtitle_path)
+                continue
+
             with open(subtitle_path, 'rb') as f:
                 text = f.read()
 
@@ -447,9 +453,10 @@ def guess_external_subtitles(dest_folder, subtitles):
                 guess = detector.detect(text)
                 logging.debug('BAZARR detected encoding %r', guess)
                 text = text.decode(guess)
-            except:
-                logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
             finally:
-                if bool(re.search(hi_regex, text)):
-                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
+                try:
+                    if bool(re.search(hi_regex, text)):
+                        subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
+                except TypeError:
+                    continue
     return subtitles
