@@ -37,7 +37,7 @@ from scheduler import scheduler
 from subsyncer import subsync
 from filesystem import browse_bazarr_filesystem, browse_sonarr_filesystem, browse_radarr_filesystem
 
-from subliminal_patch.core import SUBTITLE_EXTENSIONS
+from subliminal_patch.core import SUBTITLE_EXTENSIONS, guessit
 
 from flask import Flask, jsonify, request, Response, Blueprint, url_for, make_response
 
@@ -549,6 +549,19 @@ class Episodes(Resource):
             item.update({"desired_languages": desired_languages})
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
+class SubtitleNameInfo(Resource):
+    @authenticate
+    def get(self):
+        name = request.args.get('filename')
+        if name is not None:
+            opts = dict()
+            opts['type'] = 'episode'
+            result = guessit(name, options=opts)
+            if 'subtitle_language' in result:
+                result['subtitle_language'] = str(result['subtitle_language'])
+            return jsonify(data=result)
+        else:
+            return '', 400
 
 class EpisodesSubtitlesDelete(Resource):
     @authenticate
@@ -1989,6 +2002,8 @@ api.add_resource(SystemLogs, '/systemlogs')
 api.add_resource(SystemProviders, '/systemproviders')
 api.add_resource(SystemStatus, '/systemstatus')
 api.add_resource(SystemReleases, '/systemreleases')
+
+api.add_resource(SubtitleNameInfo, '/subtitle_name_info')
 
 api.add_resource(Series, '/series')
 api.add_resource(SeriesEditor, '/series_editor')

@@ -62,6 +62,10 @@
 
 {% block bcright %}
     <div class="d-flex m-t-5 justify-content-end">
+        <button class="btn btn-outline" id="mass_upload_button">
+            <div><i class="fas fa-cloud-upload-alt align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
+            <div class="align-bottom text-themecolor small text-center">Upload</div>
+        </button>
         <button class="btn btn-outline" id="edit_button">
             <div><i class="fas fa-wrench align-top text-themecolor text-center font-20" aria-hidden="true"></i></div>
             <div class="align-bottom text-themecolor small text-center">Edit Series</div>
@@ -213,6 +217,56 @@
                     <div class="modal-footer">
                         <span id="upload_save_button_span"><button type="submit" id="upload_save_button" class="btn btn-info">Save</button></span>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="massUploadModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="mass_upload_title_span"></span></h5><br>
+                    <button type="button" class="close" id="mass_upload_close_btn" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="mass_upload_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row form-group">
+                                <div class="custom-file">
+                                    <input type="file" multiple class="custom-file-input" id="mass_upload_file_list">
+                                    <label id="mass-upload-file-label" class="custom-file-label" for="upload">Choose files</label>
+                                </div>
+                            </div>
+                            <!-- Store episodes we previous collect -->
+                            <input type="hidden" id="mass-upload-exist-episodes" value=""/>
+
+                            <table id="upload_table" class="table table-striped" style="width:100%">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th style="text-align: left;">Filename</th>
+                                    <th style="text-align: left;">Season</th>
+                                    <th style="text-align: left;">Episode</th>
+                                    <th style="text-align: center;">Action</th>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <div>
+                            <div>
+                                <select class="selectpicker" id="mass_upload_language_select" name="language"></select>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" id="mass_upload_save_button" class="btn btn-info">Upload</button>
+                            <button type="button" class="btn btn-secondary" id="mass_upload_cancel_btn" data-dismiss="modal">Cancel</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -507,6 +561,7 @@
             $('#series_nav').addClass("active");
 
             seriesDetailsRefresh();
+            episodesDetailsRefresh();
             getLanguages();
             getEnabledLanguages();
 
@@ -961,6 +1016,326 @@
                 });
             });
 
+            const UploadStatus = {
+                ERROR: 0,
+                VALID: 1,
+                UPLOAD: 2,
+                DONE: 3
+            }
+
+            $('#mass_upload_button').on('click', function (e) {
+                e.preventDefault();
+
+                $('#upload_table').DataTable({
+                    destroy: true,
+                    processing: true,
+                    language: {
+                        zeroRecords: 'Select Subtitles to Get Started',
+                        processing: "Loading Subtitle..."
+                    },
+                    searching: false,
+                    ordering: false,
+                    lengthChange: false,
+                    serverSide: false,
+                    responsive: true,
+                    columns: [
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                switch (data.status) {
+                                    case UploadStatus.VALID:
+                                        return '<i class="fas fa-check px-1"></i>'
+                                    case UploadStatus.UPLOAD:
+                                        return '<i class="spinner-border spinner-border-sm px-1" role="status" />'
+                                    case UploadStatus.DONE:
+                                        return '<i class="far fa-check-circle px-1"></i>'
+                                    case UploadStatus.ERROR:
+                                    default:
+                                        return '<i class="fas fa-exclamation-triangle px-1"></i>'
+                                }
+                            }
+                        },
+                        {data: 'filename'},
+                        {
+                            data: "season",
+                            render: function(data, type, row) {
+                                let cls = []
+                                let readonly = false
+                                if (data <= 0) {
+                                    if (row.status !== UploadStatus.UPLOAD) {
+                                        cls.push('is-invalid');
+                                    } else {
+                                        readonly = true
+                                    }
+                                } else {
+                                    if (row.status === UploadStatus.UPLOAD) {
+                                        readonly = true;
+                                    }
+                                }
+                                return `<input type="text" ${readonly ? 'readonly' : ''} \
+                                    class="mass-upload-season-input form-control ${cls.join(' ')}" \
+                                    value="${data}" />`
+                            }
+                        },
+                        {
+                            data: "episode",
+                            render: function(data, type, row) {
+                                let cls = []
+                                let readonly = false
+                                if (data <= 0) {
+                                    if (row.status !== UploadStatus.UPLOAD) {
+                                        cls.push('is-invalid');
+                                    } else {
+                                        readonly = true
+                                    }
+                                } else {
+                                    if (row.status === UploadStatus.UPLOAD) {
+                                        readonly = true;
+                                    }
+                                }
+                                return `<input type="text" ${readonly ? 'readonly' : ''} \
+                                    class="mass-upload-episode-input form-control ${cls.join(' ')}" \
+                                    value="${data}" />`
+                            }
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<a href="" class="mass-upload-del-button badge badge-secondary"><i class="far fa-trash-alt"></i></a>`
+                            }
+                        }
+                    ]
+                })
+
+                // reset
+                $('#upload_table').DataTable().table().clear().draw();
+                $('#mass_upload_file_list').val("")
+                $('#mass-upload-file-label').text('Choose files')
+
+                $("#mass_upload_title_span")
+                    .html(`${seriesDetails['title']} - Upload`);
+
+                $('#mass_upload_language_select')
+                    .empty();
+                $.each(enabledLanguages, function (i, item) {
+                    $('#mass_upload_language_select')
+                        .append(`<option value="${item.code2}">${item.name}</option>`);
+                });
+                $("#mass_upload_language_select")
+                    .selectpicker("refresh");
+
+                $('#mass_upload_forced_checkbox')
+                    .val(seriesDetails['forced'])
+                    .change();
+
+                $('#massUploadModal')
+                    .modal({
+                        focus: false
+                    });
+            });
+
+            $('#upload_table').on('click', '.mass-upload-del-button', function(e) {
+                e.preventDefault();
+                $('#upload_table').DataTable()
+                    .row($(this).parents('tr'))
+                    .remove()
+                    .draw();
+            });
+
+            $('#upload_table').on('change', '.mass-upload-season-input', function(e) {
+                const value = $(this).val();
+
+                let row = $('#upload_table').DataTable().row($(this).parents('tr'));
+                let data = row.data();
+                data.season = value;
+
+                data.status = UploadStatus.ERROR;
+                for(const exist of episodesDetails.data) {
+                    if (exist.episode == data.episode && exist.season == data.season) {
+                        data.status = UploadStatus.VALID;
+                        data.exist = exist
+                        break;
+                    }
+                }
+
+                row.data(data).draw()
+            })
+
+            $('#upload_table').on('change', '.mass-upload-episode-input', function(e) {
+                const value = $(this).val();
+
+                let row = $('#upload_table').DataTable().row($(this).parents('tr'));
+                let data = row.data();
+                data.episode = value;
+
+                data.status = UploadStatus.ERROR;
+                for(const exist of episodesDetails.data) {
+                    if (exist.episode == data.episode && exist.season == data.season) {
+                        data.status = UploadStatus.VALID;
+                        data.exist = exist
+                        break;
+                    }
+                }
+
+                row.data(data).draw()
+            })
+
+            $('#mass_upload_file_list').change(function() {
+                let filelist = $('#mass_upload_file_list').get(0).files
+                $('#mass-upload-file-label').text(`${filelist.length} Files`)
+
+                $('#mass_upload_save_button').prop('disabled', true)
+                $('#mass_upload_close_btn').prop('disabled', true);
+                $('#mass_upload_cancel_btn').prop('disabled', true);
+
+                let table = $('#upload_table').DataTable();
+
+                table.table().clear().draw();
+
+                const episodes = episodesDetails.data
+
+                let promiselist = []
+
+                for (const file of filelist) {
+                    const name = file.name;
+
+                    const object = {
+                        file: file,
+                        filename: name,
+                        season: 0,
+                        episode: 0,
+                        status: UploadStatus.UPLOAD,
+                        exist: null
+                    }
+
+                    const cacheRow = table.row.add(object)
+
+                    promiselist.push(Promise.resolve($.ajax({
+                        url: "{{ url_for('api.subtitlenameinfo') }}",
+                        type: "GET",
+                        dataType: "json",
+                        data: {
+                            filename: name
+                        },
+                        complete: function(data) {
+                            const response = data.responseJSON.data;
+                            const season = (response.season ?? 1);
+
+                            let existdata = null
+                            for(const exist of episodes) {
+                                if (exist.episode == response.episode && exist.season == season) {
+                                    existdata = exist;
+                                    break;
+                                }
+                            }
+
+                            let complete = {
+                                file: file,
+                                filename: name,
+                                season: season,
+                                episode: response.episode ?? 0,
+                                status: existdata != null ? UploadStatus.VALID : UploadStatus.ERROR,
+                                exist: existdata,
+                                row: cacheRow
+                            };
+                            table.row(cacheRow).data(complete)
+                                .draw();
+
+                        },
+                        error: function(data) {
+                            let error = {
+                                file: file,
+                                filename: name,
+                                season: 0,
+                                episode: 0,
+                                status: UploadStatus.ERROR,
+                                exist: null,
+                                row: cacheRow
+                            };
+                            table.row(cacheRow).data(error)
+                                .draw();
+                        }
+                    }))) 
+                }
+
+                table.table().draw();
+
+                Promise.all(promiselist)
+                    .then(function(){
+                        $('#mass_upload_save_button').prop('disabled', false)
+                        $('#mass_upload_close_btn').prop('disabled', false);
+                        $('#mass_upload_cancel_btn').prop('disabled', false);
+                    })
+            })
+
+            $('#mass_upload_form').on('submit', function(e) {
+                e.preventDefault();
+                $('#mass_upload_save_button').html('<div class="spinner-border spinner-border-sm" role="status"></div>');
+
+                const formdata = new FormData(document.getElementById("mass_upload_form"));
+
+                const language = formdata.get("language");
+
+                let table = $('#upload_table').DataTable();
+
+                const uploadlist = table.data().toArray().filter(function(item) {
+                        return item.status === UploadStatus.VALID
+                    });
+
+                const promiselist = uploadlist.map(function(item) {
+                    const data = {
+                            sonarrSeriesId: item.exist.sonarrSeriesId,
+                            sonarrEpisodeId: item.exist.sonarrEpisodeId,
+                            language: language,
+                            upload: item.file,
+                            episodePath: item.exist.mapped_path,
+                            // sceneName,
+                            title: item.exist.title,
+                            audioLanguage: item.exist.audio_language.name,
+                            forced: false
+                        }
+
+                    const form = new FormData()
+                    for(const key in data) {
+                        form.append(key, data[key])
+                    }
+
+                    const cacheRow = item.row ?? null
+                    
+                    item.status = UploadStatus.UPLOAD;
+
+                    let row = table.row(cacheRow);
+
+                    row.data(item).draw()
+
+                    return Promise.resolve($.ajax({
+                            url: "{{ url_for('api.episodessubtitlesupload') }}",
+                            data: form,
+                            processData: false,
+                            contentType: false,
+                            type: 'POST',
+                            complete: function(e) {
+                                item.status = UploadStatus.DONE;
+                                row.data(item).draw()
+                            },
+                            error: function(e) {
+                                item.status = UploadStatus.ERROR;
+                                row.data(item).draw()
+                            }
+                        }));
+                })
+
+                Promise.all(promiselist)
+                    .then(function(){
+                        $('#massUploadModal').modal('hide');
+                    })
+                    .catch(function() {
+                    })
+                    .finally(function() {
+                        $('#mass_upload_save_button').html('Upload');
+                    })
+            })
+
             $('#edit_button').on('click', function (e) {
                 e.preventDefault();
                 $("#edit_series_title_span").html(seriesDetails['title']);
@@ -1412,6 +1787,21 @@
             });
 
         });
+
+        function episodesDetailsRefresh() {
+            $.ajax({
+                url: "{{ url_for('api.episodes') }}",
+                type: "GET",
+                dataType: "json",
+                data: {
+                    seriesid: "{{id}}",
+                },
+                complete: function(data) {
+                    const response = data.responseJSON;
+                    episodesDetails = response
+                }
+            })
+        }
 
         function seriesDetailsRefresh() {
             $.ajax({
