@@ -478,7 +478,11 @@ def test_url(protocol, url):
 def test_notification(protocol, provider):
 
     provider = unquote(provider)
-    apobj = apprise.Apprise()
+
+    asset = apprise.AppriseAsset(async_mode=False)
+
+    apobj = apprise.Apprise(asset=asset)
+
     apobj.add(protocol + "://" + provider)
 
     apobj.notify(
