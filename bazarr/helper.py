@@ -117,7 +117,8 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
 
 
 def get_subtitle_destination_folder():
-    fld_custom = str(settings.general.subfolder_custom).strip() if settings.general.subfolder_custom else None
+    fld_custom = str(settings.general.subfolder_custom).strip() if (settings.general.subfolder_custom and
+                                                                    settings.general.subfolder != 'current') else None
     return fld_custom
 
 

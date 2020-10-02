@@ -63,7 +63,13 @@ def store_subtitles(original_path, reversed_path):
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -142,7 +148,13 @@ def store_subtitles_movie(original_path, reversed_path):
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
