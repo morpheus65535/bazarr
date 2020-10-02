@@ -151,27 +151,24 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         finally:
             return False
 
-    def use_token_or_login(self, func):
-        if not self.token:
-            self.login()
-            return func()
-        try:
-            return func()
-        except AuthenticationError:
-            self.login()
-            return func()
-
     def search_titles(self, title, video):
         title_id = None
 
         if isinstance(video, Episode):
-            results = self.use_token_or_login(
-                lambda: self.retry(lambda: self.session.get(self.server_url + 'search/tv', params={'query': title},
-                                                            timeout=10)))
+            results = self.session.get(self.server_url + 'search/tv', params={'query': title}, timeout=10)
         else:
-            results = self.use_token_or_login(
-                lambda: self.retry(lambda: self.session.get(self.server_url + 'search/movie', params={'query': title},
-                                                            timeout=10)))
+            results = self.session.get(self.server_url + 'search/movie', params={'query': title}, timeout=10)
+
+        if results.status_code == 401:
+            region.delete("oscom_token")
+            self.login()
+
+            if isinstance(video, Episode):
+                results = self.session.get(self.server_url + 'search/tv', params={'query': title}, timeout=10)
+            else:
+                results = self.session.get(self.server_url + 'search/movie', params={'query': title}, timeout=10)
+
+        results.raise_for_status()
 
         # deserialize results
         try:
@@ -210,18 +207,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         # query the server
         result = None
         if isinstance(video, Episode):
-            res = self.use_token_or_login(
-                lambda: self.retry(lambda: self.session.get(self.server_url + 'find',
-                                                            params={'parent_id': title_id,
-                                                                    'languages': langs,
-                                                                    'episode_number': video.episode,
-                                                                    'season_number': video.season,
-                                                                    'moviehash': hash}, timeout=10)))
+            res = self.session.get(self.server_url + 'find',
+                                   params={'parent_id': title_id,
+                                           'languages': langs,
+                                           'episode_number': video.episode,
+                                           'season_number': video.season,
+                                           'moviehash': hash}, timeout=10)
         else:
-            res = self.use_token_or_login(
-                lambda: self.retry(lambda: self.session.get(self.server_url + 'find',
-                                                            params={'id': title_id, 'languages': langs,
-                                                                    'moviehash': hash}, timeout=10)))
+            res = self.session.get(self.server_url + 'find',
+                                   params={'id': title_id, 'languages': langs,
+                                           'moviehash': hash}, timeout=10)
         res.raise_for_status()
         result = res.json()
 
@@ -254,16 +249,15 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         logger.info('Downloading subtitle %r', subtitle)
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        res = self.use_token_or_login(
-            lambda: self.retry(lambda: self.session.post(self.server_url + 'download',
-                                                         json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
-                                                         headers=headers,
-                                                         timeout=10)))
+        res = self.session.post(self.server_url + 'download',
+                                json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
+                                headers=headers,
+                                timeout=10)
         res.raise_for_status()
         subtitle.download_link = res.json()['link']
 
-        r = self.use_token_or_login(
-            lambda: self.retry(lambda: self.session.get(subtitle.download_link, timeout=10)))
+        r = self.session.get(subtitle.download_link, timeout=10)
+        r.raise_for_status()
 
         subtitle_content = r.content
 
