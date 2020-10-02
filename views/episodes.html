@@ -1018,7 +1018,7 @@
 
             const UploadStatus = {
                 ERROR: 0,
-                VAILD: 1,
+                VALID: 1,
                 UPLOAD: 2,
                 DONE: 3
             }
@@ -1043,7 +1043,7 @@
                             data: null,
                             render: function(data, type, row) {
                                 switch (data.status) {
-                                    case UploadStatus.VAILD:
+                                    case UploadStatus.VALID:
                                         return '<i class="fas fa-check px-1"></i>'
                                     case UploadStatus.UPLOAD:
                                         return '<i class="spinner-border spinner-border-sm px-1" role="status" />'
@@ -1152,7 +1152,7 @@
                 data.status = UploadStatus.ERROR;
                 for(const exist of episodesDetails.data) {
                     if (exist.episode == data.episode && exist.season == data.season) {
-                        data.status = UploadStatus.VAILD;
+                        data.status = UploadStatus.VALID;
                         data.exist = exist
                         break;
                     }
@@ -1171,7 +1171,7 @@
                 data.status = UploadStatus.ERROR;
                 for(const exist of episodesDetails.data) {
                     if (exist.episode == data.episode && exist.season == data.season) {
-                        data.status = UploadStatus.VAILD;
+                        data.status = UploadStatus.VALID;
                         data.exist = exist
                         break;
                     }
@@ -1234,7 +1234,7 @@
                                 filename: name,
                                 season: season,
                                 episode: response.episode ?? 0,
-                                status: existdata != null ? UploadStatus.VAILD : UploadStatus.ERROR,
+                                status: existdata != null ? UploadStatus.VALID : UploadStatus.ERROR,
                                 exist: existdata,
                                 row: cacheRow
                             };
@@ -1279,7 +1279,7 @@
                 let table = $('#upload_table').DataTable();
 
                 const uploadlist = table.data().toArray().filter(function(item) {
-                        return item.status === UploadStatus.VAILD
+                        return item.status === UploadStatus.VALID
                     });
 
                 const promiselist = uploadlist.map(function(item) {
