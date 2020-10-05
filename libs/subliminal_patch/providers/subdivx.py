@@ -9,11 +9,6 @@ import zipfile
 import rarfile
 from subzero.language import Language
 from requests import Session
-from six import PY2
-if PY2:
-    from urlparse import urlparse
-else:
-    from urllib.parse import urlparse
 
 from subliminal import __short_version__
 from subliminal.exceptions import ServiceUnavailable
@@ -74,22 +69,25 @@ class SubdivxSubtitle(Subtitle):
             formats = [video.source.lower()]
             if formats[0] == "web":
                 formats.append("webdl")
+                formats.append("web-dl")
                 formats.append("webrip")
                 formats.append("web ")
             for frmt in formats:
-                if frmt.lower() in self.description:
+                if frmt in self.description:
                     matches.add('source')
                     break
 
         # video_codec
         if video.video_codec:
             video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "H.264":
-                formats.append("x264")
-            elif video_codecs[0] == "H.265":
-                formats.append("x265")
-            for vc in formats:
-                if vc.lower() in self.description:
+            if video_codecs[0] == "h.264":
+                video_codecs.append("h264")
+                video_codecs.append("x264")
+            elif video_codecs[0] == "h.265":
+                video_codecs.append("h265")
+                video_codecs.append("x265")
+            for vc in video_codecs:
+                if vc in self.description:
                     matches.add('video_codec')
                     break
 
@@ -99,7 +97,7 @@ class SubdivxSubtitle(Subtitle):
 class SubdivxSubtitlesProvider(Provider):
     provider_name = 'subdivx'
     hash_verifiable = False
-    languages = {Language.fromalpha2(l) for l in ['es']}
+    languages = {Language.fromalpha2(lang) for lang in ['es']}
     subtitle_class = SubdivxSubtitle
 
     server_url = 'https://www.subdivx.com/'
@@ -117,7 +115,6 @@ class SubdivxSubtitlesProvider(Provider):
         self.session.close()
 
     def query(self, video, languages):
-        
         if isinstance(video, Episode):
             query = "{} S{:02d}E{:02d}".format(video.series, video.season, video.episode)
         else:
@@ -179,14 +176,10 @@ class SubdivxSubtitlesProvider(Provider):
             subtitle_content = self._get_subtitle_from_archive(archive, subtitle)
             subtitle.content = fix_line_ending(subtitle_content)
 
-    def _check_response(self, response):
-        if response.status_code != 200:
-            raise ServiceUnavailable('Bad status code: ' + str(response.status_code))
-
     def _parse_subtitles_page(self, video, response, language):
         subtitles = []
 
-        page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
+        page_soup = ParserBeautifulSoup(response.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
         title_soups = page_soup.find_all("div", {'id': 'menu_detalle_buscador'})
         body_soups = page_soup.find_all("div", {'id': 'buscador_detalle'})
 
@@ -215,7 +208,7 @@ class SubdivxSubtitlesProvider(Provider):
         response = self.session.get(subtitle.page_link, timeout=20)
         self._check_response(response)
         try:
-            page_soup = ParserBeautifulSoup(response.content.decode('iso-8859-1', 'ignore'), ['lxml', 'html.parser'])
+            page_soup = ParserBeautifulSoup(response.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
             links_soup = page_soup.find_all("a", {'class': 'detalle_link'})
             for link_soup in links_soup:
                 if link_soup['href'].startswith('bajar'):
@@ -229,7 +222,13 @@ class SubdivxSubtitlesProvider(Provider):
 
         raise APIThrottled('Download link not found')
 
-    def _get_archive(self, content):
+    @staticmethod
+    def _check_response(response):
+        if response.status_code != 200:
+            raise ServiceUnavailable('Bad status code: ' + str(response.status_code))
+
+    @staticmethod
+    def _get_archive(content):
         # open the archive
         archive_stream = io.BytesIO(content)
         if rarfile.is_rarfile(archive_stream):
@@ -243,35 +242,47 @@ class SubdivxSubtitlesProvider(Provider):
 
         return archive
 
-    def _get_subtitle_from_archive(self, archive, subtitle):
-        _max_score = 0
-        _scores = get_scores (subtitle.video)
-
+    @staticmethod
+    def _get_subtitle_from_archive(archive, subtitle):
+        _valid_names = []
         for name in archive.namelist():
             # discard hidden files
-            if os.path.split(name)[-1].startswith('.'):
-                continue
-
             # discard non-subtitle files
-            if not name.lower().endswith(SUBTITLE_EXTENSIONS):
-                continue
+            if not os.path.split(name)[-1].startswith('.') and name.lower().endswith(SUBTITLE_EXTENSIONS):
+                _valid_names.append(name)
 
-            _guess = guessit (name)
+        # archive with only 1 subtitle
+        if len(_valid_names) == 1:
+            logger.debug("returning from archive: {} (single subtitle file)".format(_valid_names[0]))
+            return archive.read(_valid_names[0])
+
+        # in archives with more than 1 subtitle (season pack) we try to guess the best subtitle file
+        _scores = get_scores(subtitle.video)
+        _max_score = 0
+        _max_name = ""
+        for name in _valid_names:
+            _guess = guessit(name)
+            if 'season' not in _guess:
+                _guess['season'] = -1
+            if 'episode' not in _guess:
+                _guess['episode'] = -1
+
             if isinstance(subtitle.video, Episode):
-                logger.debug ("guessing %s" % name)
-                logger.debug("subtitle S{}E{} video S{}E{}".format(_guess['season'],_guess['episode'],subtitle.video.season,subtitle.video.episode))
+                logger.debug("guessing %s" % name)
+                logger.debug("subtitle S{}E{} video S{}E{}".format(
+                    _guess['season'], _guess['episode'], subtitle.video.season, subtitle.video.episode))
 
                 if subtitle.video.episode != _guess['episode'] or subtitle.video.season != _guess['season']:
                     logger.debug('subtitle does not match video, skipping')
                     continue
 
             matches = set()
-            matches |= guess_matches (subtitle.video, _guess)
-            _score = sum ((_scores.get (match, 0) for match in matches))
+            matches |= guess_matches(subtitle.video, _guess)
+            _score = sum((_scores.get(match, 0) for match in matches))
             logger.debug('srt matches: %s, score %d' % (matches, _score))
             if _score > _max_score:
-                _max_name = name
                 _max_score = _score
+                _max_name = name
                 logger.debug("new max: {} {}".format(name, _score))
 
         if _max_score > 0:
