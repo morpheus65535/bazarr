@@ -14,6 +14,10 @@
         .table tbody tr {
             cursor: pointer;
         }
+
+        td.dt-nowrap {
+            white-space: nowrap;
+        }
     </style>
 {% endblock page_head %}
 
@@ -159,6 +163,10 @@
                         "targets": [ 0 ],
                         "visible": false,
                         "searchable": true
+                    },
+                    {
+                        "targets": [ 3 ],
+                        "className": "dt-nowrap"
                     },
                     {
                         "targets": [ 4 ],
