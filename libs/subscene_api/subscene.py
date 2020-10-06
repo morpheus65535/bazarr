@@ -243,20 +243,14 @@ def get_first_film(soup, section, year=None, session=None):
 
     url = None
 
-    if not year:
-        url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
-    else:
-        for t in tag.findNext("ul").findAll("li"):
-            if isinstance(t, NavigableString) or not t.div:
-                continue
+    url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
+    for t in tag.findNext("ul").findAll("li"):
+        if isinstance(t, NavigableString) or not t.div:
+            continue
 
-            if str(year) in t.div.a.string:
-                url = SITE_DOMAIN + t.div.a.get("href")
-                break
-        if not url:
-            # fallback to non-year results
-            logger.info("Falling back to non-year results as year wasn't found (%s)", year)
-            url = SITE_DOMAIN + tag.findNext("ul").find("li").div.a.get("href")
+        if str(year) in t.div.a.string:
+            url = SITE_DOMAIN + t.div.a.get("href")
+            break
 
     return Film.from_url(url, session=session)
 
