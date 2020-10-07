@@ -1027,7 +1027,7 @@ def refine_from_db(path, video):
             "SELECT table_shows.title as seriesTitle, table_episodes.season, table_episodes.episode, "
             "table_episodes.title as episodeTitle, table_shows.year, table_shows.tvdbId, "
             "table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, "
-            "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
+            "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path, table_shows.imdbId "
             "FROM table_episodes INNER JOIN table_shows on "
             "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
             "WHERE table_episodes.path = ?", (path_mappings.path_replace_reverse(path),), only_one=True)
@@ -1042,6 +1042,8 @@ def refine_from_db(path, video):
             #     if int(data['year']) > 0: video.year = int(data['year'])
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
+            if data['imdbId'] and not video.series_imdb_id:
+                video.series_imdb_id = data['imdbId']
             if not video.source:
                 video.source = str(data['format'])
             if not video.resolution:

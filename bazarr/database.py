@@ -94,6 +94,7 @@ def db_upgrade():
         ['table_shows', 'forced', 'text', 'False'],
         ['table_shows', 'tags', 'text', '[]'],
         ['table_shows', 'seriesType', 'text', ''],
+        ['table_shows', 'imdbId', 'text', ''],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
