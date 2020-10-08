@@ -193,7 +193,7 @@ def sync_episodes():
             if data:
                 episode_download_subtitles(data['sonarrEpisodeId'])
             else:
-                logging.debug("BAZARR skipping download for this movie as it is excluded.")
+                logging.debug("BAZARR skipping download for this episode as it is excluded.")
     else:
         logging.debug("BAZARR More than 5 episodes were added during this sync then we wont search for subtitles right now.")
 
