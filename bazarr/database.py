@@ -161,13 +161,27 @@ def db_upgrade():
                          "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
                          "cutoff INTEGER NOT NULL, items TEXT NOT NULL)")
 
-    # if not lang_table_exist:
-    if True:
+    if not lang_table_exist:
         profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
                                               "FROM (SELECT languages, hearing_impaired, forced FROM table_shows "
                                               "UNION ALL SELECT languages, hearing_impaired, forced FROM table_movies) "
                                               "a WHERE languages NOT null and languages NOT IN ('None', '[]')")
-    print('toto')
+        for profile in profiles_to_create:
+            profile_items = []
+            languages_list = ast.literal_eval(profile['languages'])
+            for i, language in enumerate(languages_list):
+                profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
+                                      'hi': profile['hearing_impaired']})
+            # Create profiles
+            database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
+                             "?,0,?)", (profile['languages'], str(profile_items),))
+            created_profile_id = database.execute("SELECT profileId FROM table_languages_profiles WHERE name = ?",
+                                                  (profile['languages'],), only_one=True)['profileId']
+            # Assign profiles to series and movies
+            database.execute("UPDATE table_shows SET profileId = ? WHERE languages = ?",
+                             (created_profile_id, profile['languages'],))
+            database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ?",
+                             (created_profile_id, profile['languages'],))
 
 
 def get_exclusion_clause(type):
