@@ -149,6 +149,11 @@ def db_upgrade():
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist_movie (radarr_id integer, timestamp integer, "
                      "provider text, subs_id text, language text)")
 
+    # Create languages profiles table
+    database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
+                     "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
+                     "cutoff INTEGER NOT NULL, items TEXT NOT NULL)")
+
 
 def get_exclusion_clause(type):
     where_clause = ''
