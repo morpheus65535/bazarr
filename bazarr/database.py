@@ -95,6 +95,7 @@ def db_upgrade():
         ['table_shows', 'tags', 'text', '[]'],
         ['table_shows', 'seriesType', 'text', ''],
         ['table_shows', 'imdbId', 'text', ''],
+        ['table_shows', 'profileId', 'integer'],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
@@ -112,6 +113,7 @@ def db_upgrade():
         ['table_movies', 'forced', 'text', 'False'],
         ['table_movies', 'movie_file_id', 'integer'],
         ['table_movies', 'tags', 'text', '[]'],
+        ['table_movies', 'profileId', 'integer'],
         ['table_history', 'video_path', 'text'],
         ['table_history', 'language', 'text'],
         ['table_history', 'provider', 'text'],
@@ -149,10 +151,23 @@ def db_upgrade():
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist_movie (radarr_id integer, timestamp integer, "
                      "provider text, subs_id text, language text)")
 
-    # Create languages profiles table
-    database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
-                     "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
-                     "cutoff INTEGER NOT NULL, items TEXT NOT NULL)")
+    # Create languages profiles table and populate it
+    lang_table_content = database.execute("SELECT * FROM table_languages_profiles")
+    if isinstance(lang_table_content, list):
+        lang_table_exist = True
+    else:
+        lang_table_exist = False
+        database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
+                         "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
+                         "cutoff INTEGER NOT NULL, items TEXT NOT NULL)")
+
+    # if not lang_table_exist:
+    if True:
+        profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
+                                              "FROM (SELECT languages, hearing_impaired, forced FROM table_shows "
+                                              "UNION ALL SELECT languages, hearing_impaired, forced FROM table_movies) "
+                                              "a WHERE languages NOT null and languages NOT IN ('None', '[]')")
+    print('toto')
 
 
 def get_exclusion_clause(type):
