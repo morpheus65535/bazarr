@@ -2,6 +2,8 @@
 import hashlib
 import os
 
+from subliminal.cache import region
+
 from simpleconfigparser import simpleconfigparser
 
 from get_args import args
@@ -233,6 +235,26 @@ def save_settings(settings_items):
                    'settings-sonarr-excluded_series_types', 'settings.radarr.excluded_tags',
                    'settings-radarr-only_monitored']:
             exclusion_updated = True
+
+        if key == 'settings-addic7ed-username':
+            if key != settings.addic7ed.username:
+                region.delete('addic7ed_data')
+
+        if key == 'settings-legendasdivx-username':
+            if key != settings.legendasdivx.username:
+                region.delete('legendasdivx_cookies2')
+
+        if key == 'settings-opensubtitles-username':
+            if key != settings.opensubtitles.username:
+                region.delete('os_token')
+
+        if key == 'settings-subscene-username':
+            if key != settings.subscene.username:
+                region.delete('subscene_cookies2')
+
+        if key == 'settings-titlovi-username':
+            if key != settings.titlovi.username:
+                region.delete('titlovi_token')
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
