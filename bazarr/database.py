@@ -183,6 +183,10 @@ def db_upgrade():
             database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ?",
                              (created_profile_id, profile['languages'],))
 
+            # null languages, forced and hearing_impaired for all series and movies
+            database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
+            database.execute("UPDATE table_movies SET languages = null, forced = null, hearing_impaired = null")
+
 
 def get_exclusion_clause(type):
     where_clause = ''
@@ -210,3 +214,15 @@ def get_exclusion_clause(type):
             where_clause += ' AND table_shows.seriesType != "' + type + '"'
 
     return where_clause
+
+
+def get_desired_languages(profileId):
+    if profileId:
+        items = database.execute("SELECT items FROM table_languages_profiles WHERE profileId = ?", (profileId,),
+                                 only_one=True)['items']
+        items_list = ast.literal_eval(items)
+        languages = [x['language'] for x in items_list]
+    else:
+        languages = 'None'
+
+    return languages

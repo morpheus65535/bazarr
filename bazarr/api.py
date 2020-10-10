@@ -18,7 +18,7 @@ from config import settings, base_url, save_settings
 
 from init import *
 import logging
-from database import database, get_exclusion_clause
+from database import database, get_exclusion_clause, get_desired_languages
 from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
@@ -299,6 +299,7 @@ class Series(Resource):
                                             "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
