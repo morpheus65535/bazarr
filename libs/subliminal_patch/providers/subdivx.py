@@ -153,7 +153,7 @@ class SubdivxSubtitlesProvider(Provider):
 
             subtitles += page_subtitles
 
-            if len(page_subtitles) < 20:
+            if len(page_subtitles) < 100:
                 break  # this is the last page
 
             params['pg'] += 1  # search next page
