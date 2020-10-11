@@ -86,6 +86,8 @@ class SubdivxSubtitle(Subtitle):
             elif video_codecs[0] == "h.265":
                 video_codecs.append("h265")
                 video_codecs.append("x265")
+            elif video_codecs[0] == "divx":
+                video_codecs.append("divx")
             for vc in video_codecs:
                 if vc in self.description:
                     matches.add('video_codec')
@@ -118,9 +120,15 @@ class SubdivxSubtitlesProvider(Provider):
         if isinstance(video, Episode):
             query = "{} S{:02d}E{:02d}".format(video.series, video.season, video.episode)
         else:
+            # Subdvix has problems searching foreign movies if the year is
+            # appended. For example: if we search "Memories of Murder 2003",
+            # Subdix won't return any results; but if we search "Memories of
+            # Murder", it will. That's because in Subdvix foreign titles have
+            # the year after the original title ("Salinui chueok (2003) aka
+            # Memories of Murder").
+            # A proper solution would be filtering results with the year in
+            # _parse_subtitles_page.
             query = video.title
-            if video.year:
-                query += ' {:4d}'.format(video.year)
 
         params = {
             'q': query,  # search string
@@ -188,6 +196,11 @@ class SubdivxSubtitlesProvider(Provider):
 
             # title
             title = title_soup.find("a").text.replace("Subtitulos de ", "")
+
+            # filter by year
+            if video.year and str(video.year) not in title:
+                continue
+
             page_link = title_soup.find("a")["href"]
 
             # description
