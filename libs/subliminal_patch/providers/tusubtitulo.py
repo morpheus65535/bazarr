@@ -21,6 +21,7 @@ BASE = "https://www.tusubtitulo.com/series.php?/"
 
 class TuSubtituloSubtitle(Subtitle):
     provider_name = "tusubtitulo"
+    hash_verifiable = False
 
     def __init__(self, language, filename, download_link, page_link, matches):
         super(TuSubtituloSubtitle, self).__init__(
@@ -52,9 +53,16 @@ class TuSubtituloSubtitle(Subtitle):
             elif video.video_codec.lower() in self.release_info.lower():
                 self.found_matches.add("video_codec")
 
+        if (
+            video.release_group
+            and video.release_group.lower() in self.release_info.lower()
+        ):
+            self.found_matches.add("release_group")
+
         if video.audio_codec:
             if video.audio_codec.lower().replace(" ", ".") in self.release_info.lower():
                 self.found_matches.add("audio_codec")
+
         return self.found_matches
 
 
@@ -62,8 +70,7 @@ class TuSubtituloProvider(Provider):
     """TuSubtitulo.com Provider"""
 
     BASE = "https://www.tusubtitulo.com/series.php?/"
-    languages = {Language.fromalpha2(l) for l in ["es"]}
-    language_list = list(languages)
+    languages = {Language.fromietf(lang) for lang in ["en", "es"]}
     logger.debug(languages)
     video_types = (Episode,)
 
@@ -146,7 +153,13 @@ class TuSubtituloProvider(Provider):
                     try:
                         content = tables[tr + inc].find_all("td")
                         language = content[4].text
-                        completed = content[5]
+                        if "eng" in language.lower():
+                            language = "en"
+                        elif "esp" in language.lower():
+                            language = "es"
+                        else:
+                            language = None
+                        completed = True if not "%" in content[5].text else False
                         url = content[6].find_all("a")[0].get("href")
                         sub_id = parse.parse_qs(parse.urlparse(url).query)["id"][0]
                         lang_id = parse.parse_qs(parse.urlparse(url).query)["lang"][0]
@@ -158,12 +171,13 @@ class TuSubtituloProvider(Provider):
                                 lang_id, sub_id, version_
                             )
                         )
-                        if "esp" in language.lower():
+                        if language and completed:
                             season_subs.append(
                                 {
                                     "episode_id": sub_id,
                                     "metadata": source_var,
                                     "download_url": download_url,
+                                    "language": language,
                                 }
                             )
                         inc += 1
@@ -180,6 +194,7 @@ class TuSubtituloProvider(Provider):
                             "episode_url": i["episode_url"],
                             "metadata": t["metadata"],
                             "download_url": t["download_url"],
+                            "language": t["language"],
                         }
                     )
         return final_list
@@ -206,7 +221,6 @@ class TuSubtituloProvider(Provider):
         logger.debug("Episode not found")
 
     def query(self, languages, video):
-        language = self.language_list[0]
         query = "{} {} {}".format(video.series, video.season, video.episode)
         logger.debug("Searching subtitles: {}".format(query))
         results = self.search(video.series, str(video.season), str(video.episode))
@@ -223,7 +237,7 @@ class TuSubtituloProvider(Provider):
                 matches.add("year")
                 subtitles.append(
                     TuSubtituloSubtitle(
-                        language,
+                        Language.fromietf(i["language"]),
                         i["metadata"],
                         i["download_url"],
                         i["episode_url"],
