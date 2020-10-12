@@ -183,9 +183,9 @@ def db_upgrade():
             database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ?",
                              (created_profile_id, profile['languages'],))
 
-            # null languages, forced and hearing_impaired for all series and movies
-            database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
-            database.execute("UPDATE table_movies SET languages = null, forced = null, hearing_impaired = null")
+        # null languages, forced and hearing_impaired for all series and movies
+        database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
+        database.execute("UPDATE table_movies SET languages = null, forced = null, hearing_impaired = null")
 
 
 def get_exclusion_clause(type):
