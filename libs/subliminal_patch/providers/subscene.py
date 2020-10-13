@@ -310,7 +310,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
         # re-search for episodes without explicit release name
         if isinstance(video, Episode):
-            titles = list(set([video.series] + video.alternative_series))[:2]
+            titles = list(set([video.series] + video.alternative_series[:1]))
             # term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
             more_than_one = len(titles) > 1
             for series in titles:
@@ -339,7 +339,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                 if more_than_one:
                     time.sleep(self.search_throttle)
         else:
-            titles = list(set([video.title] + video.alternative_titles))[:2]
+            titles = list(set([video.title] + video.alternative_titles[:1]))
             more_than_one = len(titles) > 1
             for title in titles:
                 logger.debug('Searching for movie results: %r', title)

@@ -1033,7 +1033,7 @@ def refine_from_db(path, video):
             "WHERE table_episodes.path = ?", (path_mappings.path_replace_reverse(path),), only_one=True)
 
         if data:
-            video.series = re.sub(r'(\(\d\d\d\d\))', '', data['seriesTitle'])
+            video.series = re.sub(r'\s(\(\d\d\d\d\))', '', data['seriesTitle'])
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
@@ -1058,7 +1058,7 @@ def refine_from_db(path, video):
                                 (path_mappings.path_replace_reverse_movie(path),), only_one=True)
 
         if data:
-            video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
+            video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
             # Commented out because Radarr provided so much bad year
             # if data['year']:
             #     if int(data['year']) > 0: video.year = int(data['year'])

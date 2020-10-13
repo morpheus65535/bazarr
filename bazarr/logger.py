@@ -93,6 +93,7 @@ def configure_logging(debug=False):
     else:
         logging.getLogger("sqlite3worker").setLevel(logging.CRITICAL)
         logging.getLogger("apscheduler").setLevel(logging.WARNING)
+        logging.getLogger("apprise").setLevel(logging.WARNING)
         logging.getLogger("subliminal").setLevel(logging.CRITICAL)
         logging.getLogger("subliminal_patch").setLevel(logging.CRITICAL)
         logging.getLogger("subzero").setLevel(logging.ERROR)

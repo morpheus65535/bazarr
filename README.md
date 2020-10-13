@@ -66,9 +66,11 @@ If you need something that is not already part of Bazarr, feel free to create a 
 * Subsunacs.net
 * subtitri.id.lv
 * Subtitulamos.tv
+* Sucha
 * Supersubtitles
 * Titlovi
 * Titrari.ro
+* TuSubtitulo
 * TVSubtitles
 * Wizdom
 * XSubs

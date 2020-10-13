@@ -63,7 +63,13 @@ def store_subtitles(original_path, reversed_path):
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -142,7 +148,13 @@ def store_subtitles_movie(original_path, reversed_path):
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -417,9 +429,21 @@ def guess_external_subtitles(dest_folder, subtitles):
                     detected_language = guess_language(text)
                 except UnicodeDecodeError:
                     detector = Detector()
-                    guess = detector.detect(text)
-                    logging.debug('BAZARR detected encoding %r', guess)
-                    text = text.decode(guess)
+                    try:
+                        guess = detector.detect(text)
+                    except:
+                        logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                      "It's probably a binary file: " + subtitle_path)
+                        continue
+                    else:
+                        logging.debug('BAZARR detected encoding %r', guess)
+                        try:
+                            text = text.decode(guess)
+                        except:
+                            logging.debug(
+                                "BAZARR skipping this subtitles because we can't decode the file using the "
+                                "guessed encoding. It's probably a binary file: " + subtitle_path)
+                            continue
                     detected_language = guess_language(text)
                 except:
                     logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
@@ -437,6 +461,12 @@ def guess_external_subtitles(dest_folder, subtitles):
         if not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
+            # to improve performance, skip detection of files larger that 1M
+            if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
+                logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
+                              subtitle_path)
+                continue
+
             with open(subtitle_path, 'rb') as f:
                 text = f.read()
 
@@ -444,12 +474,21 @@ def guess_external_subtitles(dest_folder, subtitles):
                 text = text.decode('utf-8')
             except UnicodeDecodeError:
                 detector = Detector()
-                guess = detector.detect(text)
-                logging.debug('BAZARR detected encoding %r', guess)
-                text = text.decode(guess)
-            except:
-                logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
-            finally:
-                if bool(re.search(hi_regex, text)):
-                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
+                try:
+                    guess = detector.detect(text)
+                except:
+                    logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                  "It's probably a binary file: " + subtitle_path)
+                    continue
+                else:
+                    logging.debug('BAZARR detected encoding %r', guess)
+                    try:
+                        text = text.decode(guess)
+                    except:
+                        logging.debug("BAZARR skipping this subtitles because we can't decode the file using the "
+                                      "guessed encoding. It's probably a binary file: " + subtitle_path)
+                        continue
+
+            if bool(re.search(hi_regex, text)):
+                subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles
