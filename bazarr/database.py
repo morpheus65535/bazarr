@@ -9,6 +9,9 @@ from get_args import args
 from helper import path_mappings
 from config import settings
 
+global profile_id_list
+profile_id_list = []
+
 
 def db_init():
     if not os.path.exists(os.path.join(args.config_dir, 'db', 'bazarr.db')):
@@ -170,8 +173,14 @@ def db_upgrade():
             profile_items = []
             languages_list = ast.literal_eval(profile['languages'])
             for i, language in enumerate(languages_list):
-                profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
-                                      'hi': profile['hearing_impaired']})
+                if profile['forced'] == 'Both':
+                    profile_items.append({'id': i, 'language': language, 'forced': 'True',
+                                          'hi': profile['hearing_impaired']})
+                    profile_items.append({'id': i, 'language': language, 'forced': 'False',
+                                          'hi': profile['hearing_impaired']})
+                else:
+                    profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
+                                          'hi': profile['hearing_impaired']})
             # Create profiles
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
                              "?,0,?)", (profile['languages'], str(profile_items),))
@@ -216,13 +225,39 @@ def get_exclusion_clause(type):
     return where_clause
 
 
-def get_desired_languages(profileId):
-    if profileId:
-        items = database.execute("SELECT items FROM table_languages_profiles WHERE profileId = ?", (profileId,),
-                                 only_one=True)['items']
-        items_list = ast.literal_eval(items)
-        languages = [x['language'] for x in items_list]
-    else:
-        languages = 'None'
+def update_profile_id_list():
+    global profile_id_list
+    profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
+
+
+def get_desired_languages(profile_id):
+    languages = []
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if profileId == int(profile_id):
+                items_list = ast.literal_eval(items)
+                languages = [x['language'] for x in items_list]
+                break
 
     return languages
+
+
+def get_profile_id_name(profile_id):
+    name_from_id = None
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if profileId == int(profile_id):
+                name_from_id = name
+                break
+
+    return name_from_id

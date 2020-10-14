@@ -17,9 +17,7 @@
             <th></th>
             <th>Name</th>
             <th>Audio Language</th>
-            <th>Subtitles Languages</th>
-            <th>Hearing-Impaired</th>
-            <th>Forced</th>
+            <th>Languages Profile</th>
         </tr>
         </thead>
     </table>
@@ -116,27 +114,7 @@
                     },
                     {data: "audio_language.name"},
                     {
-                        data: "languages",
-                        render: function (data) {
-                            if (data && data !== 'None') {
-                                var languages = '';
-                                data.forEach(appendFunc);
-                                return languages;
-                            } else {
-                                return null;
-                            }
-
-                            function appendFunc(value) {
-                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-                            }
-                        }
-                    },
-                    {
-                        data: "hearing_impaired",
-                        className: "dt-center"
-                    },
-                    {
-                        data: "forced",
+                        data: "profileId.name",
                         className: "dt-center"
                     }
                 ]

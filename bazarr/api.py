@@ -18,7 +18,7 @@ from config import settings, base_url, save_settings
 
 from init import *
 import logging
-from database import database, get_exclusion_clause, get_desired_languages
+from database import database, get_exclusion_clause, get_desired_languages, get_profile_id_name
 from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
@@ -307,6 +307,9 @@ class Series(Resource):
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
 
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
+
             # Parse alternate titles
             if item['alternateTitles']:
                 item.update({"alternateTitles": ast.literal_eval(item['alternateTitles'])})
@@ -393,7 +396,7 @@ class SeriesEditor(Resource):
     def get(self, **kwargs):
         draw = request.args.get('draw')
 
-        result = database.execute("SELECT sonarrSeriesId, title, languages, hearing_impaired, forced, audio_language "
+        result = database.execute("SELECT sonarrSeriesId, title, audio_language, profileId "
                                   "FROM table_shows ORDER BY sortTitle")
 
         row_count = len(result)
@@ -408,12 +411,16 @@ class SeriesEditor(Resource):
                                             "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
@@ -892,12 +899,16 @@ class Movies(Resource):
                                             "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
             # Parse alternate titles
             if item['alternativeTitles']:
@@ -1012,7 +1023,7 @@ class MoviesEditor(Resource):
     def get(self):
         draw = request.args.get('draw')
 
-        result = database.execute("SELECT radarrId, title, languages, hearing_impaired, forced, audio_language "
+        result = database.execute("SELECT radarrId, title, audio_language, profileId "
                                   "FROM table_movies ORDER BY sortTitle")
 
         row_count = len(result)
@@ -1027,12 +1038,16 @@ class MoviesEditor(Resource):
                                             "code3": alpha3_from_language(item['audio_language']) or None}})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
         return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
 
