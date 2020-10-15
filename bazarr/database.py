@@ -182,15 +182,18 @@ def db_upgrade():
                     profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
                                           'hi': profile['hearing_impaired']})
             # Create profiles
+            new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
-                             "?,0,?)", (profile['languages'], str(profile_items),))
+                             "?,0,?)", (new_profile_name, str(profile_items),))
             created_profile_id = database.execute("SELECT profileId FROM table_languages_profiles WHERE name = ?",
-                                                  (profile['languages'],), only_one=True)['profileId']
+                                                  (new_profile_name,), only_one=True)['profileId']
             # Assign profiles to series and movies
-            database.execute("UPDATE table_shows SET profileId = ? WHERE languages = ?",
-                             (created_profile_id, profile['languages'],))
-            database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ?",
-                             (created_profile_id, profile['languages'],))
+            database.execute("UPDATE table_shows SET profileId = ? WHERE languages = ? AND hearing_impaired = ? AND "
+                             "forced = ?", (created_profile_id, profile['languages'], profile['hearing_impaired'],
+                                            profile['forced']))
+            database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ? AND hearing_impaired = ? AND "
+                             "forced = ?", (created_profile_id, profile['languages'], profile['hearing_impaired'],
+                                            profile['forced']))
 
         # null languages, forced and hearing_impaired for all series and movies
         database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
@@ -228,6 +231,13 @@ def get_exclusion_clause(type):
 def update_profile_id_list():
     global profile_id_list
     profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
+
+
+def get_profiles_list():
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    return profile_id_list
 
 
 def get_desired_languages(profile_id):
