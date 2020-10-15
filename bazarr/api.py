@@ -410,21 +410,19 @@ class SeriesEditSave(Resource):
     def post(self):
         lang = request.form.get('languages')
 
-        if lang == ['None']:
-            lang = 'None'
+        if lang == 'None':
+            lang = None
 
         seriesIdList = []
         seriesidLangList = []
         for item in request.form.getlist('seriesid[]'):
             seriesid = item.lstrip('row_')
             seriesIdList.append(seriesid)
-            if len(lang):
-                seriesidLangList.append([str(lang), seriesid])
+            seriesidLangList.append([lang, seriesid])
 
         try:
-            if len(lang):
-                database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", seriesidLangList,
-                                 execute_many=True)
+            database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", seriesidLangList,
+                             execute_many=True)
         except:
             pass
         else:
@@ -997,20 +995,18 @@ class MoviesEditSave(Resource):
     def post(self):
         lang = request.form.get('languages')
 
-        if lang == ['None']:
-            lang = 'None'
+        if lang == 'None':
+            lang = None
 
         radarrIdList = []
         radarrIdLangList = []
         for item in request.form.getlist('radarrid[]'):
             radarrid = item.lstrip('row_')
             radarrIdList.append(radarrid)
-            if len(lang):
-                radarrIdLangList.append([str(lang), radarrid])
+            radarrIdLangList.append([lang, radarrid])
         try:
-            if len(lang):
-                database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", radarrIdLangList,
-                                 execute_many=True)
+            database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", radarrIdLangList,
+                             execute_many=True)
         except:
             pass
         else:
