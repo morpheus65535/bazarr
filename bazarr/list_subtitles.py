@@ -21,7 +21,7 @@ from charamel import Detector
 gc.enable()
 
 global hi_regex
-hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}]')
+hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
 
 def store_subtitles(original_path, reversed_path):
