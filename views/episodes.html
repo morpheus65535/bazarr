@@ -95,7 +95,7 @@
                                   title="None" data-html="true">Tags</span></h5>
                     </div>
                     <div class="row">
-                        <h5><span id="seriesSubtitlesLanguages"></span></h5>
+                        <h5><span id="seriesSubtitlesLanguagesProfile" class="badge badge-secondary"></span></h5>
                     </div>
                     <div class="row">
                         <h5><span id="seriesHearingImpaired" class="badge badge-secondary"></span></h5>
@@ -1799,24 +1799,14 @@
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
                 $('#seriesType').text(seriesDetails['seriesType']);
 
-                var languages = '';
-                if (seriesDetails['languages'] && seriesDetails['languages'] !== 'None') {
-                    seriesDetails['languages'].forEach(appendFunc);
-                }
+                $('#seriesSubtitlesLanguagesProfile').text(seriesDetails['profileId'].name);
 
-                function appendFunc(value) {
-                    languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-                }
-
-                $('#seriesSubtitlesLanguages').html(languages);
-                $('#seriesHearingImpaired').text('Hearing-Impaired: ' + seriesDetails['hearing_impaired']);
-                $('#seriesForced').text('Forced: ' + seriesDetails['forced']);
                 $('#seriesDescription').text(seriesDetails['overview']);
 
-                if (seriesDetails['desired_languages'] == '[]') {
-                    $('#search_button').hide();
-                } else {
+                if (seriesDetails['profileId'].id) {
                     $('#search_button').show();
+                } else {
+                    $('#search_button').hide();
                 }
 
                 $('[data-toggle="tooltip"]').tooltip({html: true});

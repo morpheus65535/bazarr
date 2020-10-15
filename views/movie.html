@@ -100,11 +100,7 @@
 							  title="None" data-html="true">Tags</span></h5>
 				</div>
 				<div class="row">
-					<h5><span id="movieSubtitlesLanguages"></span></h5>
-				</div>
-				<div class="row">
-					<h5><span id="movieHearingImpaired" class="badge badge-secondary"></span></h5>
-					<h5><span id="movieForced" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieSubtitlesLanguagesProfile" class="badge badge-secondary"></span></h5>
 				</div>
 				<div class="row">
 					<span id="movieDescription"></span>
@@ -1195,18 +1191,8 @@
 			$('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
-			var languages = '';
-			if (movieDetails['languages'] && movieDetails['languages'] !== 'None') {
-				movieDetails['languages'].forEach(appendFunc);
-			}
+			$('#movieSubtitlesLanguagesProfile').text(movieDetails['profileId'].name);
 
-			function appendFunc(value) {
-				languages += '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-			}
-
-			$('#movieSubtitlesLanguages').html(languages);
-			$('#movieHearingImpaired').text('Hearing-Impaired: ' + movieDetails['hearing_impaired']);
-			$('#movieForced').text('Forced: ' + movieDetails['forced']);
 			$('#movieDescription').text(movieDetails['overview']);
 
 			var missing_languages = '';
@@ -1228,14 +1214,14 @@
 
 			$('[data-toggle="tooltip"]').tooltip({html: true});
 
-			if (movieDetails['desired_languages'] == '[]') {
-				$('#search_button').hide();
-				$('#manual_button').hide();
-				$('#upload_button').hide();
-			} else {
+			if (movieDetails['profileId'].id) {
 				$('#search_button').show();
 				$('#manual_button').show();
 				$('#upload_button').show();
+			} else {
+				$('#search_button').hide();
+				$('#manual_button').hide();
+				$('#upload_button').hide();
 			}
 
 
