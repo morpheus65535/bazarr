@@ -266,18 +266,14 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def list_subtitles(self, video, languages):
         if isinstance(video, Episode):
-            titles = [video.series] + video.alternative_series
+            titles = [video.series] + video.alternative_series[:2]
         else:
-            titles = [video.title] + video.alternative_titles
+            titles = [video.title] + video.alternative_titles[:2]
 
-        inc = 0
         for title in titles:
             subs = self.query(title, video, titles=titles)
             if subs:
                 return subs
-            inc += 1
-            if inc > 2:
-                break
             time.sleep(self.multi_result_throttle)
 
         return []
