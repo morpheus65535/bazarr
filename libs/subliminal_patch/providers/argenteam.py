@@ -270,11 +270,14 @@ class ArgenteamProvider(Provider, ProviderSubtitleArchiveMixin):
         else:
             titles = [video.title] + video.alternative_titles
 
+        inc = 0
         for title in titles:
             subs = self.query(title, video, titles=titles)
             if subs:
                 return subs
-
+            inc += 1
+            if inc > 2:
+                break
             time.sleep(self.multi_result_throttle)
 
         return []
