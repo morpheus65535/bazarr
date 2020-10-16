@@ -1,0 +1,63 @@
+{
+  "name": "bazarr",
+  "version": "1.0.0",
+  "description": "Bazarr is a companion application to Sonarr and Radarr. It manages and downloads subtitles based on your requirements. You define your preferences by TV show or movie and Bazarr takes care of everything for you.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morpheus65535/bazarr.git"
+  },
+  "author": "morpheus65535",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/morpheus65535/bazarr/issues"
+  },
+  "homepage": "https://bazarr.media",
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.32",
+    "@fortawesome/free-solid-svg-icons": "^5.15.1",
+    "@fortawesome/react-fontawesome": "^0.1.11",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.5.0",
+    "@testing-library/user-event": "^7.2.1",
+    "@types/jest": "^24.9.1",
+    "@types/node": "^12.12.67",
+    "@types/react": "^16.9.52",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-redux": "^7.1.9",
+    "bootstrap": "^4.5.3",
+    "jquery": "^3.5.1",
+    "react": "^16.14.0",
+    "react-bootstrap": "^1.3.0",
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.1",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "3.4.3",
+    "typescript": "^3.8.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.0.0",
+    "@types/react-bootstrap": "^0.32.24",
+    "@types/react-router-dom": "^5.1.6"
+  }
+}
