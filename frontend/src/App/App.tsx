@@ -5,9 +5,38 @@ import Router from "./Router";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-import './App.css'
+import "./App.css";
 
-class App extends React.Component {
+import apis from "../apis";
+
+import {
+  updateEpisodes,
+  updateMovies,
+  updateProviders,
+} from "../redux/actions/badges";
+import { connect } from "react-redux";
+
+interface Props {
+  updateEpisodes: (val: number) => void;
+  updateMovies: (val: number) => void;
+  updateProviders: (val: number) => void;
+}
+
+class App extends React.Component<Props, {}> {
+  componentDidMount() {
+    apis.badges.movies().then((val) => {
+      this.props.updateMovies(val);
+    });
+
+    apis.badges.series().then((val) => {
+      this.props.updateEpisodes(val);
+    });
+
+    apis.badges.providers().then((val) => {
+      this.props.updateProviders(val);
+    });
+  }
+
   render() {
     return (
       <div id="app">
@@ -15,8 +44,8 @@ class App extends React.Component {
           <Container fluid className="p-0 d-flex">
             <Sidebar></Sidebar>
             <div id="content-wrapper">
-            <Header></Header>
-            <Router></Router>
+              <Header></Header>
+              <Router></Router>
             </div>
           </Container>
         </BrowserRouter>
@@ -25,4 +54,6 @@ class App extends React.Component {
   }
 }
 
-export default App;
+export default connect(null, { updateEpisodes, updateMovies, updateProviders })(
+  App
+);

@@ -18,3 +18,4 @@ static/scss/.sass-cache
 node_modules
 frontend/build
 frontend/dist
+frontend/*.local

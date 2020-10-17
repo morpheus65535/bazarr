@@ -1,5 +1,6 @@
 import React from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
+import { connect } from "react-redux"
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -21,4 +22,4 @@ class Router extends React.Component {
   }
 }
 
-export default Router;
+export default connect()(Router);
