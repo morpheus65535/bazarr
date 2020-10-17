@@ -448,19 +448,16 @@ class Episodes(Resource):
                                      (seriesId,), only_one=True)['count']
         if episodeId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
-            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
-                                                 (seriesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         elif seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
                                       "episode DESC", (seriesId,))
-            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
-                                                 (seriesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         else:
             return "Series ID not provided", 400
+
+        profileId = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId = ?", (seriesId,),
+                                     only_one=True)['profileId']
+        desired_languages = str(get_desired_languages(profileId))
+
         for item in result:
             # Add Datatables rowId
             item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})

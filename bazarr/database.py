@@ -233,11 +233,16 @@ def update_profile_id_list():
     profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
 
 
-def get_profiles_list():
+def get_profiles_list(profile_id=None):
     if not len(profile_id_list):
         update_profile_id_list()
 
-    return profile_id_list
+    if profile_id:
+        for profile in profile_id_list:
+            if profile['profileId'] == profile_id:
+                return profile
+    else:
+        return profile_id_list
 
 
 def get_desired_languages(profile_id):

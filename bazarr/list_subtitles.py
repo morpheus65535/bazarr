@@ -9,7 +9,7 @@ from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
 
-from database import database
+from database import database, get_profiles_list
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
@@ -193,83 +193,86 @@ def store_subtitles_movie(original_path, reversed_path):
 
 
 def list_missing_subtitles(no=None, epno=None, send_event=True):
-    if no is not None:
-        episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
-    elif epno is not None:
+    if epno is not None:
         episodes_subtitles_clause = " WHERE table_episodes.sonarrEpisodeId=" + str(epno)
+    elif no is not None:
+        episodes_subtitles_clause = " WHERE table_episodes.sonarrSeriesId=" + str(no)
     else:
         episodes_subtitles_clause = ""
     episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
-                                          "table_episodes.subtitles, table_shows.languages, table_shows.forced, "
-                                          "table_shows.hearing_impaired FROM table_episodes LEFT JOIN table_shows "
-                                          "on table_episodes.sonarrSeriesId = table_shows.sonarrSeriesId" +
-                                          episodes_subtitles_clause)
+                                          "table_episodes.subtitles, table_shows.profileId FROM table_episodes "
+                                          "LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
+                                          "table_shows.sonarrSeriesId" + episodes_subtitles_clause)
     if isinstance(episodes_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
         return
 
-    missing_subtitles_global = []
+    missing_subtitles = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
+
     for episode_subtitles in episodes_subtitles:
-        actual_subtitles_temp = []
-        desired_subtitles_temp = []
-        actual_subtitles = []
-        desired_subtitles = []
-        missing_subtitles = []
-        if episode_subtitles['subtitles'] is not None:
-            if use_embedded_subs:
-                actual_subtitles = ast.literal_eval(episode_subtitles['subtitles'])
-            else:
-                actual_subtitles_temp = ast.literal_eval(episode_subtitles['subtitles'])
-                for subtitle in actual_subtitles_temp:
-                    if subtitle[1] is not None:
-                        actual_subtitles.append(subtitle)
-        if episode_subtitles['languages'] is not None:
-            desired_subtitles = ast.literal_eval(episode_subtitles['languages'])
-            if desired_subtitles:
-                desired_subtitles_enum = enumerate(desired_subtitles)
-            else:
-                desired_subtitles_enum = None
+        missing_subtitles_text = '[]'
+        if episode_subtitles['profileId']:
+            # get desired subtitles
+            desired_subtitles_temp = get_profiles_list(profile_id=episode_subtitles['profileId'])
+            desired_subtitles_list = []
+            if desired_subtitles_temp:
+                for language in ast.literal_eval(desired_subtitles_temp['items']):
+                    desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
 
-            if episode_subtitles['hearing_impaired'] == "True" and desired_subtitles is not None:
-                for i, desired_subtitle in desired_subtitles_enum:
-                    desired_subtitles[i] = desired_subtitle + ":hi"
-            elif episode_subtitles['forced'] == "True" and desired_subtitles is not None:
-                for i, desired_subtitle in desired_subtitles_enum:
-                    desired_subtitles[i] = desired_subtitle + ":forced"
-            elif episode_subtitles['forced'] == "Both" and desired_subtitles is not None:
-                for desired_subtitle in desired_subtitles:
-                    desired_subtitles_temp.append(desired_subtitle)
-                    desired_subtitles_temp.append(desired_subtitle + ":forced")
-                desired_subtitles = desired_subtitles_temp
-        actual_subtitles_list = []
-        if desired_subtitles is None:
-            missing_subtitles_global.append(tuple(['[]', episode_subtitles['sonarrEpisodeId'],
-                                                   episode_subtitles['sonarrSeriesId']]))
-        else:
-            for item in actual_subtitles:
-                if item[0] == "pt-BR":
-                    actual_subtitles_list.append("pb")
-                elif item[0] == "pt-BR:forced":
-                    actual_subtitles_list.append("pb:forced")
+            # get existing subtitles
+            actual_subtitles_list = []
+            if episode_subtitles['subtitles'] is not None:
+                if use_embedded_subs:
+                    actual_subtitles_temp = ast.literal_eval(episode_subtitles['subtitles'])
                 else:
-                    actual_subtitles_list.append(item[0])
-            missing_subtitles = list(set(desired_subtitles) - set(actual_subtitles_list))
-            hi_subs_to_remove = []
-            for item in missing_subtitles:
-                if item + ':hi' in actual_subtitles_list:
-                    hi_subs_to_remove.append(item)
-            missing_subtitles = list(set(missing_subtitles) - set(hi_subs_to_remove))
-            missing_subtitles_global.append(tuple([str(missing_subtitles), episode_subtitles['sonarrEpisodeId'],
-                                                   episode_subtitles['sonarrSeriesId']]))
+                    actual_subtitles_temp = [x for x in ast.literal_eval(episode_subtitles['subtitles']) if x[1]]
 
-    for missing_subtitles_item in missing_subtitles_global:
+                for subtitles in actual_subtitles_temp:
+                    subtitles = subtitles[0].split(':')
+                    lang = subtitles[0]
+                    forced = False
+                    hi = False
+                    if len(subtitles) > 1:
+                        if subtitles[1] == 'forced':
+                            forced = True
+                            hi = False
+                        elif subtitles[1] == 'hi':
+                            forced = False
+                            hi = True
+                    actual_subtitles_list.append([lang, str(forced), str(hi)])
+
+            # get diffrence between desired and existing subtitles
+            missing_subtitles_list = []
+            for item in desired_subtitles_list:
+                if item not in actual_subtitles_list:
+                    missing_subtitles_list.append(item)
+
+            # remove missing that have forced or hi subtitles for this language in existing
+            for item in actual_subtitles_list:
+                if item[1] == 'True' or item[2] == 'True':
+                    try:
+                        missing_subtitles_list.remove([item[0], 'False', 'False'])
+                    except ValueError:
+                        pass
+
+            missing_subtitles_output_list = []
+            for item in missing_subtitles_list:
+                lang = item[0]
+                if item[1] == 'True':
+                    lang += ':forced'
+                elif item[2] == 'True':
+                    lang += ':hi'
+                missing_subtitles_output_list.append(lang)
+
+            missing_subtitles_text = str(missing_subtitles_output_list)
+
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
-                         (missing_subtitles_item[0], missing_subtitles_item[1]))
+                         (missing_subtitles_text, episode_subtitles['sonarrEpisodeId']))
 
         if send_event:
-            event_stream(type='episode', action='update', series=missing_subtitles_item[2],
-                         episode=missing_subtitles_item[1])
+            event_stream(type='episode', action='update', series=episode_subtitles['sonarrSeriesId'],
+                         episode=episode_subtitles['sonarrEpisodeId'])
             event_stream(type='badges_series')
 
 
