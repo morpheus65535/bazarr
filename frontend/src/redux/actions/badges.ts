@@ -1,11 +1,19 @@
-import { UpdateEpisodesAction, UpdateMoviesAction, UpdateProvidersAction } from "../types/actions"
-import { UPDATE_BADGE_EPISODES, UPDATE_BADGE_MOVIES, UPDATE_BADGE_PROVIDERS } from "../constants";
+import {
+  UpdateEpisodesAction,
+  UpdateMoviesAction,
+  UpdateProvidersAction,
+} from "../types/actions";
+import {
+  UPDATE_BADGE_EPISODES,
+  UPDATE_BADGE_MOVIES,
+  UPDATE_BADGE_PROVIDERS,
+} from "../constants";
 
 export function updateEpisodes(val: number): UpdateEpisodesAction {
   return {
     type: UPDATE_BADGE_EPISODES,
-    value: val
-  }
+    value: val,
+  };
 }
 
 export function updateMovies(val: number): UpdateMoviesAction {

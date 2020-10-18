@@ -5,6 +5,7 @@ import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faPlay,
   faFilm,
+  faExclamationTriangle,
   faCogs,
   faLaptop,
 } from "@fortawesome/free-solid-svg-icons";
@@ -63,10 +64,7 @@ class Sidebar extends React.Component<SidebarProps, {}> {
     const totalWanted = movies_badge + episodes_badge;
 
     return (
-      <aside
-        id="sidebar-wrapper"
-        className="border-right px-0 col-md-3 col-xl-2"
-      >
+      <aside id="sidebar-wrapper" className="px-0 col-md-3 col-xl-2">
         <Navbar bg="light" expand="lg" className="header">
           <Navbar.Brand href="#home">
             <img
@@ -83,7 +81,7 @@ class Sidebar extends React.Component<SidebarProps, {}> {
           <ListItem name="Movie" icon={faFilm} href="/movie"></ListItem>
           <ListItem
             name="Wanted"
-            icon={faFilm}
+            icon={faExclamationTriangle}
             href="/wanted"
             badge={totalWanted === 0 ? undefined : totalWanted.toString()}
           ></ListItem>

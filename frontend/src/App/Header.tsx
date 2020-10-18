@@ -6,7 +6,7 @@ import { Dropdown, Form, Nav, Navbar, NavLink, NavItem } from "react-bootstrap";
 class Header extends React.Component {
   render() {
     return (
-        <Navbar bg="light" expand="sm" className="header">
+      <Navbar bg="light" className="header">
         <Nav className="mr-auto">
           <Form inline className="mr-4">
             <Form.Control
