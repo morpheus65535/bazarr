@@ -4,6 +4,7 @@ import base64
 import logging
 import os
 import traceback
+import re
 import zlib
 import time
 import requests
@@ -329,7 +330,7 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             if language not in languages:
                 continue
 
-            if video.imdb_id and (movie_imdb_id != video.imdb_id):
+            if video.imdb_id and (movie_imdb_id != re.sub("(?<![^a-zA-Z])0+","", video.imdb_id)):
                 continue
 
             query_parameters = _subtitle_item.get("QueryParameters")
