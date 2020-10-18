@@ -162,7 +162,7 @@ def db_upgrade():
         lang_table_exist = False
         database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
                          "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
-                         "cutoff INTEGER NOT NULL, items TEXT NOT NULL)")
+                         "cutoff INTEGER, items TEXT NOT NULL)")
 
     if not lang_table_exist:
         profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
@@ -172,7 +172,7 @@ def db_upgrade():
         for profile in profiles_to_create:
             profile_items = []
             languages_list = ast.literal_eval(profile['languages'])
-            for i, language in enumerate(languages_list):
+            for i, language in enumerate(languages_list, 1):
                 if profile['forced'] == 'Both':
                     profile_items.append({'id': i, 'language': language, 'forced': 'True',
                                           'hi': profile['hearing_impaired']})
@@ -184,7 +184,7 @@ def db_upgrade():
             # Create profiles
             new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
-                             "?,0,?)", (new_profile_name, str(profile_items),))
+                             "?,null,?)", (new_profile_name, str(profile_items),))
             created_profile_id = database.execute("SELECT profileId FROM table_languages_profiles WHERE name = ?",
                                                   (new_profile_name,), only_one=True)['profileId']
             # Assign profiles to series and movies
@@ -276,3 +276,22 @@ def get_profile_id_name(profile_id):
                 break
 
     return name_from_id
+
+
+def get_profile_cutoff(profile_id):
+    cutoff_language = None
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if cutoff:
+                if profileId == int(profile_id):
+                    for item in ast.literal_eval(items):
+                        if item['id'] == cutoff:
+                            cutoff_language = item
+                            break
+
+    return cutoff_language

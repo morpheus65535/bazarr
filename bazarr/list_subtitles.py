@@ -9,7 +9,7 @@ from guess_language import guess_language
 from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
 
-from database import database, get_profiles_list
+from database import database, get_profiles_list, get_profile_cutoff
 from get_languages import alpha2_from_alpha3, get_language_set
 from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
@@ -242,30 +242,46 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                             hi = True
                     actual_subtitles_list.append([lang, str(forced), str(hi)])
 
-            # get diffrence between desired and existing subtitles
-            missing_subtitles_list = []
-            for item in desired_subtitles_list:
-                if item not in actual_subtitles_list:
-                    missing_subtitles_list.append(item)
+            # check if cutoff is reached and skip any further check
+            cutoff_temp = get_profile_cutoff(profile_id=episode_subtitles['profileId'])
+            if cutoff_temp:
+                cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
+            else:
+                cutoff_language = None
+            if cutoff_language and cutoff_language in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            else:
+                # if cutoff isn't met or None, we continue
 
-            # remove missing that have forced or hi subtitles for this language in existing
-            for item in actual_subtitles_list:
-                if item[1] == 'True' or item[2] == 'True':
-                    try:
-                        missing_subtitles_list.remove([item[0], 'False', 'False'])
-                    except ValueError:
-                        pass
+                # get difference between desired and existing subtitles
+                missing_subtitles_list = []
+                for item in desired_subtitles_list:
+                    if item not in actual_subtitles_list:
+                        missing_subtitles_list.append(item)
 
-            missing_subtitles_output_list = []
-            for item in missing_subtitles_list:
-                lang = item[0]
-                if item[1] == 'True':
-                    lang += ':forced'
-                elif item[2] == 'True':
-                    lang += ':hi'
-                missing_subtitles_output_list.append(lang)
+                # remove missing that have forced or hi subtitles for this language in existing
+                for item in actual_subtitles_list:
+                    if item[1] == 'True' or item[2] == 'True':
+                        try:
+                            missing_subtitles_list.remove([item[0], 'False', 'False'])
+                        except ValueError:
+                            pass
 
-            missing_subtitles_text = str(missing_subtitles_output_list)
+                # make the missing languages list looks like expected
+                missing_subtitles_output_list = []
+                for item in missing_subtitles_list:
+                    lang = item[0]
+                    if item[1] == 'True':
+                        lang += ':forced'
+                    elif item[2] == 'True':
+                        lang += ':hi'
+                    missing_subtitles_output_list.append(lang)
+
+                missing_subtitles_text = str(missing_subtitles_output_list)
 
         database.execute("UPDATE table_episodes SET missing_subtitles=? WHERE sonarrEpisodeId=?",
                          (missing_subtitles_text, episode_subtitles['sonarrEpisodeId']))
