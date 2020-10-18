@@ -3,6 +3,7 @@
 bazarr_version = '0.9.0.6'
 
 import os
+
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 import gc
@@ -13,7 +14,6 @@ import hashlib
 import apprise
 import requests
 import calendar
-
 
 from get_args import args
 from logger import empty_log
@@ -82,6 +82,7 @@ def login_required(f):
                 return redirect(url_for('login_page'))
         else:
             return f(*args, **kwargs)
+
     return wrap
 
 
@@ -103,7 +104,11 @@ def login_page():
                 error = "Invalid credentials, try again."
         gc.collect()
 
-        return render_template("login.html", error=error, password_reset=password_reset)
+        if settings.auth.type == 'form' and not 'logged_in' in session:
+            return render_template("login.html", error=error, password_reset=password_reset)
+        else:
+            return redirect(url_for("redirect_root"))
+
 
     except Exception as e:
         # flash(e)
@@ -476,7 +481,6 @@ def test_url(protocol, url):
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
 @login_required
 def test_notification(protocol, provider):
-
     provider = unquote(provider)
 
     asset = apprise.AppriseAsset(async_mode=False)
