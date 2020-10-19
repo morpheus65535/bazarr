@@ -12,6 +12,7 @@
     "url": "https://github.com/morpheus65535/bazarr/issues"
   },
   "homepage": "https://bazarr.media",
+  "proxy": "http://localhost:6767",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.32",
     "@fortawesome/free-solid-svg-icons": "^5.15.1",
