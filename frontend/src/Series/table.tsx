@@ -57,7 +57,7 @@ function Table(props: Props) {
           const { languages } = row.row.original;
           const items = languages.map(
             (val: SeriesLanguage, idx: number): JSX.Element => (
-              <Badge key={idx} variant="secondary">
+              <Badge className="mx-1" key={idx} variant="secondary">
                 {val.code2}
               </Badge>
             )
