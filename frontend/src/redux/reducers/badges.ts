@@ -1,36 +1,41 @@
 import { BadgeState } from "../types";
-import { UpdateBadgeAction } from "../types/actions";
 import {
   UPDATE_BADGE_EPISODES,
   UPDATE_BADGE_MOVIES,
   UPDATE_BADGE_PROVIDERS,
 } from "../constants";
 
-export default function badges(
-  state: BadgeState,
-  action: UpdateBadgeAction
-): BadgeState {
-  switch (action.type) {
-    case UPDATE_BADGE_EPISODES:
+import {handleActions} from "redux-actions"
+
+const reducer = handleActions<BadgeState, number>({
+  [UPDATE_BADGE_EPISODES]: {
+    next(state, action) {
       return {
         ...state,
-        episodes: action.value,
-      };
-    case UPDATE_BADGE_MOVIES:
+        episodes: action.payload,
+      }
+    }
+  },
+  [UPDATE_BADGE_MOVIES]: {
+    next(state, action) {
       return {
         ...state,
-        movies: action.value,
-      };
-    case UPDATE_BADGE_PROVIDERS:
+        movies: action.payload,
+      }
+    }
+  },
+  [UPDATE_BADGE_PROVIDERS]: {
+    next(state, action) {
       return {
         ...state,
-        providers: action.value,
-      };
-    default:
-      return {
-        movies: 0,
-        episodes: 0,
-        providers: 0,
-      };
+        providers: action.payload,
+      }
+    }
   }
-}
+}, {
+  movies: 0,
+  episodes: 0,
+  providers: 0,
+});
+
+export default reducer;

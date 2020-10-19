@@ -7,34 +7,27 @@ import Header from "./Header";
 
 import "./App.css";
 
-import apis from "../apis";
-
 import {
   updateEpisodes,
   updateMovies,
   updateProviders,
 } from "../redux/actions/badges";
+import {updateLanguagesList} from "../redux/actions/common"
 import { connect } from "react-redux";
 
 interface Props {
-  updateEpisodes: (val: number) => void;
-  updateMovies: (val: number) => void;
-  updateProviders: (val: number) => void;
+  updateEpisodes: () => void;
+  updateMovies: () => void;
+  updateProviders: () => void;
+  updateLanguagesList: () => void
 }
 
 class App extends React.Component<Props, {}> {
   componentDidMount() {
-    apis.badges.movies().then((val) => {
-      this.props.updateMovies(val);
-    });
-
-    apis.badges.series().then((val) => {
-      this.props.updateEpisodes(val);
-    });
-
-    apis.badges.providers().then((val) => {
-      this.props.updateProviders(val);
-    });
+    this.props.updateEpisodes();
+    this.props.updateMovies();
+    this.props.updateProviders();
+    this.props.updateLanguagesList();
   }
 
   render() {
@@ -54,6 +47,6 @@ class App extends React.Component<Props, {}> {
   }
 }
 
-export default connect(null, { updateEpisodes, updateMovies, updateProviders })(
+export default connect(null, { updateEpisodes, updateMovies, updateProviders, updateLanguagesList })(
   App
 );

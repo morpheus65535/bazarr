@@ -1,6 +1,8 @@
 import React from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
-import { connect } from "react-redux"
+import { connect } from "react-redux";
+
+import Series from "../Series";
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -11,7 +13,7 @@ class Router extends React.Component {
             <Redirect exact to="/series"></Redirect>
           </Route>
           <Route exact path="/series">
-            <span>Series</span>
+            <Series />
           </Route>
           <Route exact path="/settings">
             <span>Settings</span>

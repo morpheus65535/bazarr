@@ -1,31 +1,20 @@
 import {
-  UpdateEpisodesAction,
-  UpdateMoviesAction,
-  UpdateProvidersAction,
-} from "../types/actions";
-import {
   UPDATE_BADGE_EPISODES,
   UPDATE_BADGE_MOVIES,
   UPDATE_BADGE_PROVIDERS,
 } from "../constants";
 
-export function updateEpisodes(val: number): UpdateEpisodesAction {
-  return {
-    type: UPDATE_BADGE_EPISODES,
-    value: val,
-  };
-}
+import { createAction } from "redux-actions";
+import apis from "../../apis";
 
-export function updateMovies(val: number): UpdateMoviesAction {
-  return {
-    type: UPDATE_BADGE_MOVIES,
-    value: val,
-  };
-}
+export const updateEpisodes = createAction(UPDATE_BADGE_EPISODES, () =>
+  apis.badges.series()
+);
 
-export function updateProviders(val: number): UpdateProvidersAction {
-  return {
-    type: UPDATE_BADGE_PROVIDERS,
-    value: val,
-  };
-}
+export const updateMovies = createAction(UPDATE_BADGE_MOVIES, () =>
+  apis.badges.movies()
+);
+
+export const updateProviders = createAction(UPDATE_BADGE_PROVIDERS, () =>
+  apis.badges.providers()
+);

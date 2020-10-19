@@ -44,13 +44,13 @@ class ListItem extends React.Component<ListItemProps, object> {
   }
 }
 
-interface SidebarProps {
+interface Props {
   movies_badge: number;
   episodes_badge: number;
   providers_badge: number;
 }
 
-export function mapStateToProps({ badges }: StoreState): SidebarProps {
+function mapStateToProps({ badges }: StoreState): Props {
   return {
     movies_badge: badges.movies,
     episodes_badge: badges.episodes,
@@ -58,7 +58,7 @@ export function mapStateToProps({ badges }: StoreState): SidebarProps {
   };
 }
 
-class Sidebar extends React.Component<SidebarProps, {}> {
+class Sidebar extends React.Component<Props, {}> {
   render() {
     const { movies_badge, episodes_badge, providers_badge } = this.props;
     const totalWanted = movies_badge + episodes_badge;

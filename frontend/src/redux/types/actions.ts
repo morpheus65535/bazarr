@@ -1,20 +1,9 @@
-export interface BaseAction {
-  type: string;
+import { Action } from "redux-actions";
+
+export interface AsyncPayload<Payload> {
+  loading: boolean;
+  item?: Payload | string;
 }
 
-export interface UpdateMoviesAction extends BaseAction {
-  value: number;
-}
+export type AsyncAction<Payload> = Action<AsyncPayload<Payload>>;
 
-export interface UpdateEpisodesAction extends BaseAction {
-  value: number;
-}
-
-export interface UpdateProvidersAction extends BaseAction {
-  value: number;
-}
-
-export type UpdateBadgeAction =
-  | UpdateMoviesAction
-  | UpdateEpisodesAction
-  | UpdateProvidersAction;
