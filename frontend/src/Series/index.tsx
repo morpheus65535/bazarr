@@ -5,7 +5,7 @@ import { Button, Container, Nav, Navbar } from "react-bootstrap";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import { updateSeriesList } from "../redux/actions/common";
+import { updateSeriesList } from "../redux/actions/series";
 
 import Table from "./table";
 

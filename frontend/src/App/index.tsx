@@ -12,7 +12,7 @@ import {
   updateMovies,
   updateProviders,
 } from "../redux/actions/badges";
-import {updateLanguagesList} from "../redux/actions/common"
+import {updateLanguagesList} from "../redux/actions/system"
 import { connect } from "react-redux";
 
 interface Props {

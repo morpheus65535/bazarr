@@ -1,7 +1,8 @@
 // State
 export interface StoreState {
   badges: BadgeState;
-  common: CommonState;
+  system: SystemState;
+  series: SeriesState;
 }
 
 export interface BadgeState {
@@ -16,7 +17,11 @@ export interface AsyncState<T> {
   items: T;
 }
 
-export interface CommonState {
+export interface SystemState {
   languages: AsyncState<Array<Language>>;
-  series: AsyncState<Array<Series>>;
+  status: AsyncState<SystemStatusResult>;
+}
+
+export interface SeriesState {
+  seriesList: AsyncState<Array<Series>>;
 }

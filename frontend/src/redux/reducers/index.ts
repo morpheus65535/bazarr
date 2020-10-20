@@ -1,8 +1,10 @@
 import { combineReducers } from "redux";
 import badges from "./badges";
-import common from "./common";
+import system from "./system";
+import series from "./series"
 
 export default combineReducers({
   badges,
-  common,
+  system,
+  series
 });

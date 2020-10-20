@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge, ListGroup, Navbar } from "react-bootstrap";
+import { Accordion, Badge, ListGroup, Navbar } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
@@ -14,14 +14,28 @@ import { NavLink } from "react-router-dom";
 import { StoreState } from "../redux/types";
 import { connect } from "react-redux";
 
-interface ListItemProps {
+interface BaseItemProps {
   name: string;
-  icon: IconDefinition;
-  href: string;
   badge?: string;
 }
 
-class ListItem extends React.Component<ListItemProps, object> {
+interface ListItemProps extends BaseItemProps {
+  icon: IconDefinition;
+}
+
+interface ToggleItemProps extends ListItemProps {
+  eventKey: string;
+}
+
+interface LinkListItemProps extends ListItemProps {
+  href: string;
+}
+
+interface CollapseItemProps extends BaseItemProps {
+  href: string;
+}
+
+class LinkListItem extends React.Component<LinkListItemProps, {}> {
   render(): JSX.Element {
     const { name, icon, href, badge } = this.props;
     return (
@@ -36,6 +50,48 @@ class ListItem extends React.Component<ListItemProps, object> {
           icon={icon}
         ></FontAwesomeIcon>
         <span>{name}</span>
+        <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+          {badge}
+        </Badge>
+      </NavLink>
+    );
+  }
+}
+
+class ToggleListItem extends React.Component<ToggleItemProps, {}> {
+  render(): JSX.Element {
+    const { name, icon, badge, eventKey } = this.props;
+    return (
+      <Accordion.Toggle
+        as={ListGroup.Item}
+        action
+        eventKey={eventKey}
+        className="d-flex align-items-center py-2"
+      >
+        <FontAwesomeIcon
+          size="1x"
+          className="mr-3"
+          icon={icon}
+        ></FontAwesomeIcon>
+        <span>{name}</span>
+        <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+          {badge}
+        </Badge>
+      </Accordion.Toggle>
+    );
+  }
+}
+
+class ListCollapseItem extends React.Component<CollapseItemProps, {}> {
+  render(): JSX.Element {
+    const { name, href, badge } = this.props;
+    return (
+      <NavLink
+        activeClassName="active"
+        className="list-group-item list-group-item-action py-2 d-flex align-items-center border-0"
+        to={href}
+      >
+        <span className="ml-4">{name}</span>
         <Badge variant="secondary" className="ml-2" hidden={badge === null}>
           {badge}
         </Badge>
@@ -69,32 +125,64 @@ class Sidebar extends React.Component<Props, {}> {
           <Navbar.Brand href="#home">
             <img
               alt="brand"
-              src="logo128.png"
+              src="/logo128.png"
               width="32"
               height="32"
               className="mr-2"
             ></img>
           </Navbar.Brand>
         </Navbar>
-        <ListGroup variant="flush">
-          <ListItem name="Series" icon={faPlay} href="/series"></ListItem>
-          <ListItem name="Movie" icon={faFilm} href="/movie"></ListItem>
-          <ListItem
-            name="Wanted"
-            icon={faExclamationTriangle}
-            href="/wanted"
-            badge={totalWanted === 0 ? undefined : totalWanted.toString()}
-          ></ListItem>
-          <ListItem name="Settings" icon={faCogs} href="/settings"></ListItem>
-          <ListItem
-            name="System"
-            icon={faLaptop}
-            href="/system"
-            badge={
-              providers_badge === 0 ? undefined : providers_badge.toString()
-            }
-          ></ListItem>
-        </ListGroup>
+        <Accordion>
+          <ListGroup variant="flush">
+            <LinkListItem
+              name="Series"
+              icon={faPlay}
+              href="/series"
+            ></LinkListItem>
+            <LinkListItem
+              name="Movie"
+              icon={faFilm}
+              href="/movie"
+            ></LinkListItem>
+            <LinkListItem
+              name="Wanted"
+              icon={faExclamationTriangle}
+              href="/wanted"
+              badge={totalWanted === 0 ? undefined : totalWanted.toString()}
+            ></LinkListItem>
+            <ToggleListItem
+              name="Settings"
+              icon={faCogs}
+              eventKey="settings-toggle"
+            ></ToggleListItem>
+            <Accordion.Collapse eventKey="settings-toggle">
+            <ListCollapseItem
+                  name="Languages"
+                  href="/settings/languages"
+                ></ListCollapseItem>
+            </Accordion.Collapse>
+            <ToggleListItem
+              name="System"
+              icon={faLaptop}
+              eventKey="system-toggle"
+              badge={
+                providers_badge === 0 ? undefined : providers_badge.toString()
+              }
+            ></ToggleListItem>
+            <Accordion.Collapse eventKey="system-toggle">
+              <div>
+                <ListCollapseItem
+                  name="Tasks"
+                  href="/system/tasks"
+                ></ListCollapseItem>
+                <ListCollapseItem
+                  name="Status"
+                  href="/system/status"
+                ></ListCollapseItem>
+              </div>
+            </Accordion.Collapse>
+          </ListGroup>
+        </Accordion>
       </aside>
     );
   }

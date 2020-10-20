@@ -16,10 +16,10 @@ interface Props {
   series: Array<Series>;
 }
 
-function mapStateToProps({ common }: StoreState): Props {
-  const { series } = common;
+function mapStateToProps({ series }: StoreState): Props {
+  const { seriesList } = series;
   return {
-    series: series.items,
+    series: seriesList.items,
   };
 }
 

@@ -62,3 +62,14 @@ interface Series {
   tvdbId: number;
   year: string;
 }
+
+// System
+interface SystemStatusResult {
+  bazarr_config_directory: string
+  bazarr_directory: string
+  bazarr_version: string
+  operating_system: string
+  python_version: string
+  radarr_version: string
+  sonarr_version: string
+}

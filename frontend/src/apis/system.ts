@@ -25,4 +25,16 @@ export default class SystemApi {
         });
     });
   }
+
+  async status() {
+    return new Promise<SystemStatusResult>((resolve, reject) => {
+      this.get<DataWrapper<SystemStatusResult>>("systemstatus")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
 }
