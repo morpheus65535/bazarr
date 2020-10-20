@@ -57,7 +57,7 @@ function Table(props: Props) {
         },
       },
     ],
-    []
+    [exec]
   );
 
   return <BasicTable options={{ columns, data: props.tasks }}></BasicTable>;

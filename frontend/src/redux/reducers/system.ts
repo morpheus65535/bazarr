@@ -1,4 +1,4 @@
-import { AsyncAction, AsyncPayload } from "../types/actions";
+import { AsyncAction } from "../types/actions";
 import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
@@ -16,7 +16,9 @@ const reducer = handleActions<SystemState, any>(
         const payload = (action as AsyncAction<Array<Language>>).payload;
         let enabled = state.enabledLanguage;
         if (payload.loading === false) {
-          enabled = (payload.item as Language[]).filter((val) => val.enabled == true);
+          enabled = (payload.item as Language[]).filter(
+            (val) => Boolean(val.enabled) === true
+          );
         }
         return {
           ...state,
@@ -52,7 +54,7 @@ const reducer = handleActions<SystemState, any>(
         const { payload } = action as RAction<string>;
 
         let items = state.tasks.items.map((val) => {
-          if (val.job_id == payload) {
+          if (val.job_id === payload) {
             val.job_running = true;
           }
           return val;
