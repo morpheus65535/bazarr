@@ -15,7 +15,7 @@ interface Props {
 
 class Series extends React.Component<Props, {}> {
   componentDidMount() {
-    this.props.updateSeriesList()
+    this.props.updateSeriesList();
   }
   render(): JSX.Element {
     return (

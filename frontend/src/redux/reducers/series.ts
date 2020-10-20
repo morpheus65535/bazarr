@@ -1,7 +1,4 @@
-import { SeriesState } from "../types";
-import {
-  AsyncPayload
-} from "../types/actions";
+import { AsyncPayload } from "../types/actions";
 import { UPDATE_SERIES_LIST } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
@@ -13,9 +10,9 @@ const reducer = handleActions<SeriesState, AsyncPayload<Array<any>>>(
       next(state, action) {
         return {
           ...state,
-          seriesList: mapToAsyncState(action, state.seriesList.items)
-        }
-      }
+          seriesList: mapToAsyncState(action, state.seriesList.items),
+        };
+      },
     },
   },
   {

@@ -3,7 +3,7 @@ import { Table } from "react-bootstrap";
 import { TableOptions, useTable } from "react-table";
 
 export interface Props<T extends object = {}> {
-  options: TableOptions<T>
+  options: TableOptions<T>;
 }
 
 export default function BasicTable<T extends object = {}>(props: Props<T>) {

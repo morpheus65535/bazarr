@@ -1,6 +1,9 @@
-import { SystemState } from "../types";
 import { AsyncPayload } from "../types/actions";
-import { UPDATE_LANGUAGES_LIST, UPDATE_SYSTEM_STATUS } from "../constants";
+import {
+  UPDATE_LANGUAGES_LIST,
+  UPDATE_SYSTEM_STATUS,
+  UPDATE_SYSTEM_TASKS,
+} from "../constants";
 import { mapToAsyncState } from "./mapper";
 
 import { handleActions } from "redux-actions";
@@ -19,7 +22,21 @@ const reducer = handleActions<SystemState, AsyncPayload<any>>(
       next(state, action) {
         return {
           ...state,
-          status: mapToAsyncState<SystemStatusResult>(action, state.status.items),
+          status: mapToAsyncState<SystemStatusResult>(
+            action,
+            state.status.items
+          ),
+        };
+      },
+    },
+    [UPDATE_SYSTEM_TASKS]: {
+      next(state, action) {
+        return {
+          ...state,
+          tasks: mapToAsyncState<Array<SystemTaskResult>>(
+            action,
+            state.tasks.items
+          ),
         };
       },
     },
@@ -37,6 +54,10 @@ const reducer = handleActions<SystemState, AsyncPayload<any>>(
         radarr_version: "",
         sonarr_version: "",
       },
+    },
+    tasks: {
+      loading: false,
+      items: [],
     },
   }
 );

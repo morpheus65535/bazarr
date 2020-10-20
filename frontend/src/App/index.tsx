@@ -12,14 +12,14 @@ import {
   updateMovies,
   updateProviders,
 } from "../redux/actions/badges";
-import {updateLanguagesList} from "../redux/actions/system"
+import { updateLanguagesList } from "../redux/actions/system";
 import { connect } from "react-redux";
 
 interface Props {
   updateEpisodes: () => void;
   updateMovies: () => void;
   updateProviders: () => void;
-  updateLanguagesList: () => void
+  updateLanguagesList: () => void;
 }
 
 class App extends React.Component<Props, {}> {
@@ -47,6 +47,9 @@ class App extends React.Component<Props, {}> {
   }
 }
 
-export default connect(null, { updateEpisodes, updateMovies, updateProviders, updateLanguagesList })(
-  App
-);
+export default connect(null, {
+  updateEpisodes,
+  updateMovies,
+  updateProviders,
+  updateLanguagesList,
+})(App);

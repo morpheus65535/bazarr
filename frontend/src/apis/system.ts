@@ -6,6 +6,10 @@ export default class SystemApi {
     return apis.axios.get(`/${path}`, { params });
   }
 
+  post<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+    return apis.axios.post(`/${path}`, { params });
+  }
+
   async shutdown() {
     return this.get<never>("shutdown");
   }
@@ -31,6 +35,30 @@ export default class SystemApi {
       this.get<DataWrapper<SystemStatusResult>>("systemstatus")
         .then((result) => {
           resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async getTasks() {
+    return new Promise<SystemTaskResult>((resolve, reject) => {
+      this.get<DataWrapper<SystemTaskResult>>("systemtasks")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
+  async execTasks(id: string) {
+    return new Promise<never>((resolve, reject) => {
+      this.get<never>("systemtasks", { taskid: id })
+        .then(() => {
+          resolve();
         })
         .catch((reason) => {
           reject(reason);

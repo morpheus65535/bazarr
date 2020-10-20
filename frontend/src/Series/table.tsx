@@ -3,7 +3,6 @@ import { Column } from "react-table";
 import BasicTable from "../components/BasicTable";
 
 import { connect } from "react-redux";
-import { StoreState } from "../redux/types";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -79,15 +78,24 @@ function Table(props: Props) {
         Cell: (row) => {
           const { episodeFileCount, episodeMissingCount } = row.row.original;
           let progress = 0;
-          let label = '';
+          let label = "";
           if (episodeFileCount === 0) {
             progress = 0.0;
           } else {
             progress = 1.0 - episodeMissingCount / episodeFileCount;
-            label = `${episodeFileCount - episodeMissingCount}/${episodeFileCount}`;
+            label = `${
+              episodeFileCount - episodeMissingCount
+            }/${episodeFileCount}`;
           }
 
-          return <ProgressBar min={0} max={1} now={progress} label={label}></ProgressBar>;
+          return (
+            <ProgressBar
+              min={0}
+              max={1}
+              now={progress}
+              label={label}
+            ></ProgressBar>
+          );
         },
       },
     ],

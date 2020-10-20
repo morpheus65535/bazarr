@@ -11,7 +11,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
 
-import { StoreState } from "../redux/types";
 import { connect } from "react-redux";
 
 interface BaseItemProps {
@@ -156,10 +155,10 @@ class Sidebar extends React.Component<Props, {}> {
               eventKey="settings-toggle"
             ></ToggleListItem>
             <Accordion.Collapse eventKey="settings-toggle">
-            <ListCollapseItem
-                  name="Languages"
-                  href="/settings/languages"
-                ></ListCollapseItem>
+              <ListCollapseItem
+                name="Languages"
+                href="/settings/languages"
+              ></ListCollapseItem>
             </Accordion.Collapse>
             <ToggleListItem
               name="System"

@@ -2,12 +2,15 @@ import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../redux/actions/system";
-import { StoreState } from "../../redux/types";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
-import { faGithub, faWikipediaW, faDiscord } from "@fortawesome/free-brands-svg-icons";
+import {
+  faGithub,
+  faWikipediaW,
+  faDiscord,
+} from "@fortawesome/free-brands-svg-icons";
 
 interface Props {
   status: SystemStatusResult;
@@ -48,11 +51,9 @@ function IconLabel(props: IconProps): JSX.Element {
   return (
     <Row>
       <Col sm={1}>
-      <FontAwesomeIcon icon={icon} className="mr-2"></FontAwesomeIcon>
+        <FontAwesomeIcon icon={icon} className="mr-2"></FontAwesomeIcon>
       </Col>
-      <Col>
-      {children}
-      </Col>
+      <Col>{children}</Col>
     </Row>
   );
 }
@@ -129,11 +130,8 @@ class SystemStatus extends React.Component<Props, {}> {
           </IconLabel>
         </InfoRow>
         <InfoRow title="Discord">
-        <IconLabel icon={faDiscord}>
-            <a
-              href="https://discord.gg/MH2e2eb"
-              target="_blank"
-            >
+          <IconLabel icon={faDiscord}>
+            <a href="https://discord.gg/MH2e2eb" target="_blank">
               Bazarr on Discord
             </a>
           </IconLabel>
