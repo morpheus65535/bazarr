@@ -20,7 +20,7 @@ class Header extends React.Component {
           <Nav.Link>
             <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
           </Nav.Link>
-          <Dropdown drop="left" as={NavItem}>
+          <Dropdown alignRight as={NavItem}>
             <Dropdown.Toggle as={NavLink}>
               <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
             </Dropdown.Toggle>
