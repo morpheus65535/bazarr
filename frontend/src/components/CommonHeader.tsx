@@ -1,11 +1,14 @@
 import React from "react";
 import { Navbar, Nav, Button, ButtonProps } from "react-bootstrap";
-import { FontAwesomeIcon, FontAwesomeIconProps } from "@fortawesome/react-fontawesome";
+import {
+  FontAwesomeIcon,
+  FontAwesomeIconProps,
+} from "@fortawesome/react-fontawesome";
 
 interface BtnProps {
   text: string;
-  iconProps: FontAwesomeIconProps
-  btnProps?: ButtonProps
+  iconProps: FontAwesomeIconProps;
+  btnProps?: ButtonProps;
 }
 
 export function CommonHeaderBtn(props: BtnProps): JSX.Element {

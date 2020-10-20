@@ -1,7 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { Container } from "react-bootstrap";
-import {CommonHeader, CommonHeaderBtn} from "../components/CommonHeader"
+import { CommonHeader, CommonHeaderBtn } from "../components/CommonHeader";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
@@ -23,7 +23,7 @@ class Series extends React.Component<Props, {}> {
         <CommonHeader>
           <CommonHeaderBtn
             text="Mass Edit"
-            iconProps={{ icon: faList}}
+            iconProps={{ icon: faList }}
           ></CommonHeaderBtn>
         </CommonHeader>
         <div className="p-3">

@@ -7,10 +7,10 @@ export default class SystemApi {
   }
 
   postForm<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    let form = new FormData()
+    let form = new FormData();
 
-    for(const key in params) {
-      form.append(key, params[key])
+    for (const key in params) {
+      form.append(key, params[key]);
     }
 
     return apis.axios.post(`/${path}`, form);

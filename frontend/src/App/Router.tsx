@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 
 import Series from "../Series";
 import SystemRouter from "../System/Router";
-import SettingRouter from "../Settings/Router"
+import SettingRouter from "../Settings/Router";
 
 class Router extends React.Component {
   render(): JSX.Element {
