@@ -2,10 +2,12 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
+  EXEC_SYSTEM_TASK,
 } from "../constants";
 
 import apis from "../../apis";
 import { createAsyncAction } from "./creator";
+import { Action } from "redux-actions";
 
 export const updateLanguagesList = createAsyncAction(
   UPDATE_LANGUAGES_LIST,
@@ -19,3 +21,11 @@ export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>
 export const UpdateSystemTasks = createAsyncAction(UPDATE_SYSTEM_TASKS, () =>
   apis.system.getTasks()
 );
+
+export const ExecSystemTask = (id: string): Action<string> => {
+  apis.system.execTasks(id);
+  return {
+    type: EXEC_SYSTEM_TASK,
+    payload: id,
+  };
+};

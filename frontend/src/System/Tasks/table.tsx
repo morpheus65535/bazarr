@@ -1,14 +1,17 @@
 import React from "react";
 import { Column } from "react-table";
 import BasicTable from "../../components/BasicTable";
+import { ExecSystemTask } from "../../redux/actions/system";
 
 import { connect } from "react-redux";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "react-bootstrap";
 
 interface Props {
   tasks: Array<SystemTaskResult>;
+  exec: (id: string) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -19,6 +22,8 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 function Table(props: Props) {
+  const { exec } = props;
+
   const columns: Column<SystemTaskResult>[] = React.useMemo<
     Column<SystemTaskResult>[]
   >(
@@ -37,9 +42,18 @@ function Table(props: Props) {
       },
       {
         Header: "",
-        id: "tasks-action",
-        Cell: () => {
-          return <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>;
+        accessor: "job_running",
+        Cell: (row) => {
+          const { job_id } = row.row.original;
+          return (
+            <Button variant="light" size="sm" disabled={row.value}>
+              <FontAwesomeIcon
+                icon={faSync}
+                spin={row.value}
+                onClick={() => exec(job_id)}
+              ></FontAwesomeIcon>
+            </Button>
+          );
         },
       },
     ],
@@ -49,4 +63,6 @@ function Table(props: Props) {
   return <BasicTable options={{ columns, data: props.tasks }}></BasicTable>;
 }
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, {
+  exec: ExecSystemTask,
+})(Table);

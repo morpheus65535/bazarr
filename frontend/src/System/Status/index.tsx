@@ -107,14 +107,22 @@ class SystemStatus extends React.Component<Props, {}> {
         <hr></hr>
         <InfoRow title="Home Page">
           <IconLabel icon={faPaperPlane}>
-            <a href="https://www.bazarr.media/" target="_blank">
+            <a
+              href="https://www.bazarr.media/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Bazarr Website
             </a>
           </IconLabel>
         </InfoRow>
         <InfoRow title="Source">
           <IconLabel icon={faGithub}>
-            <a href="https://github.com/morpheus65535/bazarr" target="_blank">
+            <a
+              href="https://github.com/morpheus65535/bazarr"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Bazarr on Github
             </a>
           </IconLabel>
@@ -124,6 +132,7 @@ class SystemStatus extends React.Component<Props, {}> {
             <a
               href="https://github.com/morpheus65535/bazarr/wiki"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Bazarr Wiki
             </a>
@@ -131,7 +140,11 @@ class SystemStatus extends React.Component<Props, {}> {
         </InfoRow>
         <InfoRow title="Discord">
           <IconLabel icon={faDiscord}>
-            <a href="https://discord.gg/MH2e2eb" target="_blank">
+            <a
+              href="https://discord.gg/MH2e2eb"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Bazarr on Discord
             </a>
           </IconLabel>

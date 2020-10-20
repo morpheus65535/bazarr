@@ -6,8 +6,14 @@ export default class SystemApi {
     return apis.axios.get(`/${path}`, { params });
   }
 
-  post<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.post(`/${path}`, { params });
+  postForm<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+    let form = new FormData()
+
+    for(const key in params) {
+      form.append(key, params[key])
+    }
+
+    return apis.axios.post(`/${path}`, form);
   }
 
   async shutdown() {
@@ -56,7 +62,7 @@ export default class SystemApi {
 
   async execTasks(id: string) {
     return new Promise<never>((resolve, reject) => {
-      this.get<never>("systemtasks", { taskid: id })
+      this.postForm<never>("systemtasks", { taskid: id })
         .then(() => {
           resolve();
         })

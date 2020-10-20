@@ -3,18 +3,19 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
+  EXEC_SYSTEM_TASK,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
-import { handleActions } from "redux-actions";
+import { handleActions, Action as RAction } from "redux-actions";
 
-const reducer = handleActions<SystemState, AsyncPayload<any>>(
+const reducer = handleActions<SystemState, any>(
   {
     [UPDATE_LANGUAGES_LIST]: {
       next(state, action) {
         return {
           ...state,
-          languages: mapToAsyncState(action, []),
+          languages: mapToAsyncState<Array<Language>>(action, []),
         };
       },
     },
@@ -37,6 +38,25 @@ const reducer = handleActions<SystemState, AsyncPayload<any>>(
             action,
             state.tasks.items
           ),
+        };
+      },
+    },
+    [EXEC_SYSTEM_TASK]: {
+      next(state, action) {
+        const { payload } = action as RAction<string>;
+
+        let items = state.tasks.items.map((val) => {
+          if (val.job_id == payload) {
+            val.job_running = true;
+          }
+          return val;
+        });
+        return {
+          ...state,
+          tasks: {
+            ...state.tasks,
+            items,
+          },
         };
       },
     },

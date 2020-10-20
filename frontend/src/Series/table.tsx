@@ -33,7 +33,7 @@ function Table(props: Props) {
         Header: "Path Exist",
         accessor: "exist",
         Cell: (row) => {
-          const { exist } = row.row.original;
+          const exist = row.value;
           return (
             <FontAwesomeIcon
               icon={exist ? faCheck : faExclamationTriangle}
@@ -45,7 +45,7 @@ function Table(props: Props) {
         Header: "Audio",
         accessor: "audio_language",
         Cell: (row) => {
-          const { audio_language } = row.row.original;
+          const audio_language = row.value;
           return <span>{audio_language.name}</span>;
         },
       },
@@ -53,7 +53,7 @@ function Table(props: Props) {
         Header: "Subtitles Languages",
         accessor: "languages",
         Cell: (row) => {
-          const { languages } = row.row.original;
+          const languages = row.value;
           const items = languages.map(
             (val: SeriesLanguage, idx: number): JSX.Element => (
               <Badge className="mx-1" key={idx} variant="secondary">
