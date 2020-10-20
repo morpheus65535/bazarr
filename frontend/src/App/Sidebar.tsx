@@ -1,5 +1,5 @@
 import React from "react";
-import { Accordion, Badge, ListGroup, Navbar } from "react-bootstrap";
+import { Accordion, Badge, ListGroup, Navbar, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
@@ -43,15 +43,19 @@ class LinkListItem extends React.Component<LinkListItemProps, {}> {
         className="list-group-item list-group-item-action py-2 d-flex align-items-center"
         to={href}
       >
-        <FontAwesomeIcon
-          size="1x"
-          className="mr-3"
-          icon={icon}
-        ></FontAwesomeIcon>
-        <span>{name}</span>
-        <Badge variant="secondary" className="ml-2" hidden={badge === null}>
-          {badge}
-        </Badge>
+        <Col sm={1}>
+          <FontAwesomeIcon
+            size="1x"
+            className="mr-3"
+            icon={icon}
+          ></FontAwesomeIcon>
+        </Col>
+        <Col>
+          <span>{name}</span>
+          <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+            {badge}
+          </Badge>
+        </Col>
       </NavLink>
     );
   }
@@ -67,15 +71,19 @@ class ToggleListItem extends React.Component<ToggleItemProps, {}> {
         eventKey={eventKey}
         className="d-flex align-items-center py-2"
       >
-        <FontAwesomeIcon
-          size="1x"
-          className="mr-3"
-          icon={icon}
-        ></FontAwesomeIcon>
-        <span>{name}</span>
-        <Badge variant="secondary" className="ml-2" hidden={badge === null}>
-          {badge}
-        </Badge>
+        <Col sm={1}>
+          <FontAwesomeIcon
+            size="1x"
+            className="mr-3"
+            icon={icon}
+          ></FontAwesomeIcon>
+        </Col>
+        <Col>
+          <span>{name}</span>
+          <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+            {badge}
+          </Badge>
+        </Col>
       </Accordion.Toggle>
     );
   }
