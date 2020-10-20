@@ -4,6 +4,11 @@ import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../redux/actions/system";
 import { StoreState } from "../../redux/types";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faGithub, faWikipediaW, faDiscord } from "@fortawesome/free-brands-svg-icons";
+
 interface Props {
   status: SystemStatusResult;
   update: () => void;
@@ -33,6 +38,25 @@ function InfoRow(props: InfoProps): JSX.Element {
   );
 }
 
+interface IconProps {
+  icon: IconDefinition;
+  children: React.ReactNode;
+}
+
+function IconLabel(props: IconProps): JSX.Element {
+  const { icon, children } = props;
+  return (
+    <Row>
+      <Col sm={1}>
+      <FontAwesomeIcon icon={icon} className="mr-2"></FontAwesomeIcon>
+      </Col>
+      <Col>
+      {children}
+      </Col>
+    </Row>
+  );
+}
+
 class SystemStatus extends React.Component<Props, {}> {
   componentDidMount() {
     this.props.update();
@@ -48,8 +72,8 @@ class SystemStatus extends React.Component<Props, {}> {
       bazarr_directory,
     } = this.props.status;
 
-    return (
-      <Container fluid className="p-5">
+    const about: JSX.Element = (
+      <div>
         <h2>About</h2>
         <hr></hr>
         <InfoRow title="Bazarr Version">
@@ -73,6 +97,54 @@ class SystemStatus extends React.Component<Props, {}> {
         <InfoRow title="Bazarr Config Directory">
           <span>{bazarr_config_directory}</span>
         </InfoRow>
+      </div>
+    );
+
+    const more: JSX.Element = (
+      <div className="my-4">
+        <h2>More Info</h2>
+        <hr></hr>
+        <InfoRow title="Home Page">
+          <IconLabel icon={faPaperPlane}>
+            <a href="https://www.bazarr.media/" target="_blank">
+              Bazarr Website
+            </a>
+          </IconLabel>
+        </InfoRow>
+        <InfoRow title="Source">
+          <IconLabel icon={faGithub}>
+            <a href="https://github.com/morpheus65535/bazarr" target="_blank">
+              Bazarr on Github
+            </a>
+          </IconLabel>
+        </InfoRow>
+        <InfoRow title="Wiki">
+          <IconLabel icon={faWikipediaW}>
+            <a
+              href="https://github.com/morpheus65535/bazarr/wiki"
+              target="_blank"
+            >
+              Bazarr Wiki
+            </a>
+          </IconLabel>
+        </InfoRow>
+        <InfoRow title="Discord">
+        <IconLabel icon={faDiscord}>
+            <a
+              href="https://discord.gg/MH2e2eb"
+              target="_blank"
+            >
+              Bazarr on Discord
+            </a>
+          </IconLabel>
+        </InfoRow>
+      </div>
+    );
+
+    return (
+      <Container fluid className="p-5">
+        {about}
+        {more}
       </Container>
     );
   }
