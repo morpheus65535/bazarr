@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 
 import Series from "../Series";
 import SystemRouter from "../System/Router";
+import SettingRouter from "../Settings/Router"
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -17,7 +18,7 @@ class Router extends React.Component {
             <Series />
           </Route>
           <Route path="/settings">
-            <span>Settings</span>
+            <SettingRouter></SettingRouter>
           </Route>
           <Route path="/system">
             <SystemRouter></SystemRouter>

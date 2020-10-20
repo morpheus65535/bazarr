@@ -19,6 +19,7 @@ interface AsyncState<T> {
 
 interface SystemState {
   languages: AsyncState<Array<Language>>;
+  enabledLanguage: Array<Language>;
   status: AsyncState<SystemStatusResult>;
   tasks: AsyncState<Array<SystemTaskResult>>;
 }

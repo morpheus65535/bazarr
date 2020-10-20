@@ -1,9 +1,9 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button, Container, Nav, Navbar } from "react-bootstrap";
+import { Container } from "react-bootstrap";
+import {CommonHeader, CommonHeaderBtn} from "../components/CommonHeader"
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { updateSeriesList } from "../redux/actions/series";
 
@@ -20,20 +20,12 @@ class Series extends React.Component<Props, {}> {
   render(): JSX.Element {
     return (
       <Container fluid className="px-0">
-        <Navbar bg="dark">
-          <Nav>
-            <Button variant="dark" className="d-flex flex-column">
-              <FontAwesomeIcon
-                icon={faList}
-                size="lg"
-                className="mx-auto"
-              ></FontAwesomeIcon>
-              <span className="align-bottom text-themecolor small text-center">
-                Mass Edit
-              </span>
-            </Button>
-          </Nav>
-        </Navbar>
+        <CommonHeader>
+          <CommonHeaderBtn
+            text="Mass Edit"
+            iconProps={{ icon: faList}}
+          ></CommonHeaderBtn>
+        </CommonHeader>
         <div className="p-3">
           <Table></Table>
         </div>

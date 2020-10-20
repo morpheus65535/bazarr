@@ -1,9 +1,9 @@
 import React from "react";
-import { Container, Navbar, Nav, Button } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../redux/actions/system";
+import { CommonHeaderBtn, CommonHeader } from "../../components/CommonHeader";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 
 import Table from "./table";
@@ -26,29 +26,16 @@ class SystemStatus extends React.Component<Props, {}> {
   }
 
   render(): JSX.Element {
-    const { loading } = this.props;
+    const { loading, update } = this.props;
     return (
       <Container fluid className="p-0">
-        <Navbar bg="dark">
-          <Nav>
-            <Button
-              variant="dark"
-              className="d-flex flex-column"
-              disabled={loading}
-              onClick={this.props.update}
-            >
-              <FontAwesomeIcon
-                icon={faSync}
-                spin={loading}
-                size="lg"
-                className="mx-auto"
-              ></FontAwesomeIcon>
-              <span className="align-bottom text-themecolor small text-center">
-                Refresh
-              </span>
-            </Button>
-          </Nav>
-        </Navbar>
+        <CommonHeader>
+          <CommonHeaderBtn
+            text="Refresh"
+            iconProps={{ icon: faSync, spin: loading }}
+            btnProps={{ disabled: loading, onClick: update }}
+          ></CommonHeaderBtn>
+        </CommonHeader>
         <div className="p-3">
           <Table></Table>
         </div>
