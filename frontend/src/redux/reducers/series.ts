@@ -13,7 +13,7 @@ const reducer = handleActions<SeriesState, AsyncPayload<Array<any>>>(
       next(state, action) {
         return {
           ...state,
-          seriesList: mapToAsyncState(action, [])
+          seriesList: mapToAsyncState(action, state.seriesList.items)
         }
       }
     },

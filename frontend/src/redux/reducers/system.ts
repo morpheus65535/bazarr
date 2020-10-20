@@ -19,15 +19,7 @@ const reducer = handleActions<SystemState, AsyncPayload<any>>(
       next(state, action) {
         return {
           ...state,
-          status: mapToAsyncState<SystemStatusResult>(action, {
-            bazarr_config_directory: "",
-            bazarr_directory: "",
-            bazarr_version: "",
-            operating_system: "",
-            python_version: "",
-            radarr_version: "",
-            sonarr_version: "",
-          }),
+          status: mapToAsyncState<SystemStatusResult>(action, state.status.items),
         };
       },
     },
