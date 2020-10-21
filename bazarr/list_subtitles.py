@@ -207,7 +207,6 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + episodes_subtitles)
         return
 
-    missing_subtitles = []
     use_embedded_subs = settings.general.getboolean('use_embedded_subs')
 
     for episode_subtitles in episodes_subtitles:
@@ -292,7 +291,103 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             event_stream(type='badges_series')
 
 
-def list_missing_subtitles_movies(no=None, send_event=True):
+def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
+    if no is not None:
+        movies_subtitles_clause = " WHERE radarrId=" + str(no)
+    else:
+        movies_subtitles_clause = ""
+
+    movies_subtitles = database.execute("SELECT radarrId, subtitles, profileId FROM table_movies" +
+                                        movies_subtitles_clause)
+    if isinstance(movies_subtitles, str):
+        logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
+        return
+
+
+    use_embedded_subs = settings.general.getboolean('use_embedded_subs')
+
+    for movie_subtitles in movies_subtitles:
+        missing_subtitles_text = '[]'
+        if movie_subtitles['profileId']:
+            # get desired subtitles
+            desired_subtitles_temp = get_profiles_list(profile_id=movie_subtitles['profileId'])
+            desired_subtitles_list = []
+            if desired_subtitles_temp:
+                for language in ast.literal_eval(desired_subtitles_temp['items']):
+                    desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
+
+            # get existing subtitles
+            actual_subtitles_list = []
+            if movie_subtitles['subtitles'] is not None:
+                if use_embedded_subs:
+                    actual_subtitles_temp = ast.literal_eval(movie_subtitles['subtitles'])
+                else:
+                    actual_subtitles_temp = [x for x in ast.literal_eval(movie_subtitles['subtitles']) if x[1]]
+
+                for subtitles in actual_subtitles_temp:
+                    subtitles = subtitles[0].split(':')
+                    lang = subtitles[0]
+                    forced = False
+                    hi = False
+                    if len(subtitles) > 1:
+                        if subtitles[1] == 'forced':
+                            forced = True
+                            hi = False
+                        elif subtitles[1] == 'hi':
+                            forced = False
+                            hi = True
+                    actual_subtitles_list.append([lang, str(forced), str(hi)])
+
+            # check if cutoff is reached and skip any further check
+            cutoff_temp = get_profile_cutoff(profile_id=movie_subtitles['profileId'])
+            if cutoff_temp:
+                cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
+            else:
+                cutoff_language = None
+            if cutoff_language and cutoff_language in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                missing_subtitles_text = str([])
+            else:
+                # if cutoff isn't met or None, we continue
+
+                # get difference between desired and existing subtitles
+                missing_subtitles_list = []
+                for item in desired_subtitles_list:
+                    if item not in actual_subtitles_list:
+                        missing_subtitles_list.append(item)
+
+                # remove missing that have forced or hi subtitles for this language in existing
+                for item in actual_subtitles_list:
+                    if item[1] == 'True' or item[2] == 'True':
+                        try:
+                            missing_subtitles_list.remove([item[0], 'False', 'False'])
+                        except ValueError:
+                            pass
+
+                # make the missing languages list looks like expected
+                missing_subtitles_output_list = []
+                for item in missing_subtitles_list:
+                    lang = item[0]
+                    if item[1] == 'True':
+                        lang += ':forced'
+                    elif item[2] == 'True':
+                        lang += ':hi'
+                    missing_subtitles_output_list.append(lang)
+
+                missing_subtitles_text = str(missing_subtitles_output_list)
+
+        database.execute("UPDATE table_movies SET missing_subtitles=? WHERE radarrId=?",
+                         (missing_subtitles_text, movie_subtitles['radarrId']))
+
+        if send_event:
+            event_stream(type='movie', action='update', movie=movie_subtitles['radarrId'])
+            event_stream(type='badges_movies')
+
+
+def list_missing_subtitles_movies_old(no=None, send_event=True):
     if no is not None:
         movies_subtitles_clause = " WHERE radarrId=" + str(no)
     else:

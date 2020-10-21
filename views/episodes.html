@@ -663,7 +663,7 @@
                         			var advtag = '';
 								}
 
-                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + advtag + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-title="' + data.title + '" data-language="' + value.code3 + '" data-hi="' + seriesDetails.hearing_impaired + '" data-forced="' + value.forced + '" data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + advtag + ' <i class="fas fa-search"></i></a> ';
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + advtag + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-title="' + data.title + '" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '" data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + advtag + ' <i class="fas fa-search"></i></a> ';
                             }
                         }
                     },
@@ -671,7 +671,7 @@
                         data: null,
                         render: function (data) {
                             if (data.desired_languages !== '[]') {
-                                return '<a href="" class="manual_search badge badge-secondary" data-season=' + data.season + ' data-episode=' + data.episode + ' data-episode_title="' + data.title + '" data-episodePath="' + data.mapped_path + '" data-sceneName="' + data.scene_name + '" data-language="' + data.desired_languages + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '><i class="fas fa-user"></i></a>';
+                                return '<a href="" class="manual_search badge badge-secondary" data-season=' + data.season + ' data-episode=' + data.episode + ' data-episode_title="' + data.title + '" data-episodePath="' + data.mapped_path + '" data-sceneName="' + data.scene_name + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '><i class="fas fa-user"></i></a>';
                             } else {
                                 return ''
                             }
@@ -760,9 +760,7 @@
 
                 episodePath = $(this).attr("data-episodePath");
                 sceneName = $(this).attr("data-sceneName");
-                language = $(this).attr("data-language");
-                hi = seriesDetails['hearing_impaired'];
-                forced = seriesDetails['forced'];
+                profileId = seriesDetails['profileId'].id;
                 sonarrSeriesId = seriesDetails['sonarrSeriesId'];
                 sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
                 var languages = Array.from(seriesDetails['languages']);
@@ -772,9 +770,7 @@
                 const values = {
                     episodePath: episodePath,
                     sceneName: sceneName,
-                    language: language,
-                    hi: hi,
-                    forced: forced,
+                    profileId: profileId,
                     sonarrSeriesId: sonarrSeriesId,
                     sonarrEpisodeId: sonarrEpisodeId,
                     title: seriesDetails['title']
@@ -882,7 +878,7 @@
                             data: null,
                             searchable: false,
                             render: function (data) {
-                                return '<a href="" class="manual_download badge badge-secondary" data-episodePath="' + episodePath + '" data-sceneName="' + sceneName + '" data-sonarrEpisodeId=' + sonarrEpisodeId + ' data-subtitle="' + data.subtitle + '" data-provider="' + data.provider + '" data-language="' + data.language + '" data-forced="' + forced + '"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+                                return '<a href="" class="manual_download badge badge-secondary" data-episodePath="' + episodePath + '" data-sceneName="' + sceneName + '" data-sonarrEpisodeId=' + sonarrEpisodeId + ' data-subtitle="' + data.subtitle + '" data-provider="' + data.provider + '" data-language="' + data.language + '" data-forced="' + data.forced + '"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
                             }
                         }
                     ]

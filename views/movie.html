@@ -518,8 +518,8 @@
 				moviePath: movieDetails['mapped_path'],
 				sceneName: movieDetails['sceneName'],
 				language: $(this).attr("data-language"),
-				hi: movieDetails['hearing_impaired'],
-				forced:$(this).attr("data-forced"),
+				hi: $(this).attr("data-hi"),
+				forced: $(this).attr("data-forced"),
 				radarrId: movieDetails['radarrId'],
 				title: movieDetails['title']
 			};
@@ -543,9 +543,7 @@
 
 			moviePath = movieDetails['mapped_path'];
 			sceneName = movieDetails['sceneName'];
-			language = movieDetails['desired_languages'];
-			hi = movieDetails['hearing_impaired'];
-			forced = movieDetails['forced'];
+			profileId = movieDetails['profileId'].id;
 			radarrId = movieDetails['radarrId'];
 			var languages = Array.from(movieDetails['languages']);
 			var is_pb = languages.includes('pb');
@@ -554,9 +552,7 @@
 			const values = {
 				moviePath: moviePath,
 				sceneName: sceneName,
-				language: language,
-				hi: hi,
-				forced: forced,
+				profileId: profileId,
 				radarrId: radarrId,
 				title: movieDetails['title']
 			};
@@ -656,7 +652,7 @@
 					{ data: null,
 						searchable: false,
 						render: function ( data ) {
-							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+data.forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
 						}
 					}
 				]
@@ -1202,11 +1198,11 @@
 
 			function missingAppendFunc(value) {
 				if (value.forced) {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + ' Forced" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
 				} else if (value.hi) {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + ' HI" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
 				} else {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ' <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ' <i class="fas fa-search"></i></button> ';
 				}
 			}
 

@@ -29,7 +29,7 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
 from subsyncer import subsync
-from database import database, dict_mapper, get_exclusion_clause
+from database import database, dict_mapper, get_exclusion_clause, get_profiles_list
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -303,44 +303,48 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
     logging.debug('BAZARR Ended searching Subtitles for file: ' + path)
 
 
-def manual_search(path, language, hi, forced, providers, providers_auth, sceneName, title, media_type):
+def manual_search(path, profileId, providers, providers_auth, sceneName, title, media_type):
     logging.debug('BAZARR Manually searching subtitles for this file: ' + path)
 
     final_subtitles = []
 
-    initial_hi = True if hi == "True" else False
-    if hi == "True":
-        hi = "force HI"
-    else:
-        hi = "force non-HI"
+    initial_language_set = set()
     language_set = set()
 
-    if forced == "True":
-        providers_auth['podnapisi']['only_foreign'] = True
-        providers_auth['subscene']['only_foreign'] = True
-        providers_auth['opensubtitles']['only_foreign'] = True
-    else:
-        providers_auth['podnapisi']['only_foreign'] = False
-        providers_auth['subscene']['only_foreign'] = False
-        providers_auth['opensubtitles']['only_foreign'] = False
+    # where [3] is items list of dict(id, lang, forced, hi)
+    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
 
-    for lang in ast.literal_eval(language):
+    for language in language_items:
+        lang_id, lang, forced, hi = language.values()
+
         lang = alpha3_from_alpha2(lang)
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
         else:
             lang_obj = Language(lang)
-            if forced == "True":
-                lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        language_set.add(lang_obj)
+        if forced == "True":
+            lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        if forced != "True":
-            lang_obj_hi = Language.rebuild(lang_obj, hi=True)
-            language_set.add(lang_obj_hi)
+            providers_auth['podnapisi']['also_foreign'] = True
+            providers_auth['opensubtitles']['also_foreign'] = True
+
+        if hi == "True":
+            lang_obj = Language.rebuild(lang_obj, hi=True)
+
+        initial_language_set.add(lang_obj)
+
+    language_set = initial_language_set.copy()
+    for language in language_set.copy():
+        lang_obj_for_hi = language
+        if not language.forced and not language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=True)
+        elif not language.forced and language.hi:
+            lang_obj_hi = Language.rebuild(lang_obj_for_hi, hi=False)
+        else:
+            continue
+        language_set.add(lang_obj_hi)
 
     minimum_score = settings.general.minimum_score
     minimum_score_movie = settings.general.minimum_score_movie
@@ -364,6 +368,22 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                                                blacklist=get_blacklist(media_type=media_type),
                                                throttle_callback=provider_throttle,
                                                language_hook=None)  # fixme
+
+                if 'subscene' in providers:
+                    subscene_language_set = set()
+                    for language in language_set:
+                        if language.forced:
+                            subscene_language_set.add(language)
+                    if len(subscene_language_set):
+                        providers_auth['subscene']['only_foreign'] = True
+                        subtitles_subscene = list_all_subtitles([video], subscene_language_set,
+                                                                providers=['subscene'],
+                                                                provider_configs=providers_auth,
+                                                                blacklist=get_blacklist(media_type=media_type),
+                                                                throttle_callback=provider_throttle,
+                                                                language_hook=None)  # fixme
+                        providers_auth['subscene']['only_foreign'] = False
+                        subtitles[video] += subtitles_subscene[video]
             else:
                 subtitles = []
                 logging.info("BAZARR All providers are throttled")
@@ -389,7 +409,18 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
 
-                if s.hearing_impaired == initial_hi:
+                initial_hi_match = False
+                for language in initial_language_set:
+                    if s.language.basename == language.basename and \
+                            s.language.forced == language.forced and \
+                            s.language.hi == language.hi:
+                        initial_hi = language.hi
+                        initial_hi_match = True
+                        break
+                if not initial_hi_match:
+                    initial_hi = None
+
+                if initial_hi_match:
                     matches.add('hearing_impaired')
 
                 score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)

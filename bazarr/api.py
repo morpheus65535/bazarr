@@ -615,14 +615,12 @@ class EpisodesSubtitlesManualSearch(Resource):
         sceneName = request.form.get('sceneName')
         if sceneName == "null":
             sceneName = "None"
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
+        profileId = request.form.get('profileId')
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
                              'series')
         if not data:
             data = []
@@ -1096,14 +1094,12 @@ class MovieSubtitlesManualSearch(Resource):
         sceneName = request.form.get('sceneName')
         if sceneName == "null":
             sceneName = "None"
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
+        profileId = request.form.get('profileId')
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        data = manual_search(moviePath, profileId, providers_list, providers_auth, sceneName, title,
                              'movie')
         if not data:
             data = []
