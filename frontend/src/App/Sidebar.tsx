@@ -126,6 +126,27 @@ class Sidebar extends React.Component<Props, {}> {
     const { movies_badge, episodes_badge, providers_badge } = this.props;
     const totalWanted = movies_badge + episodes_badge;
 
+    const wanted: JSX.Element = (
+      <ToggleListItem
+        name="Wanted"
+        icon={faExclamationTriangle}
+        badge={totalWanted === 0 ? undefined : totalWanted.toString()}
+        eventKey="wanted-toggle"
+      ></ToggleListItem>
+    );
+
+    const wantedItems: JSX.Element = (
+      <Accordion.Collapse eventKey="wanted-toggle">
+        <div>
+          <ListCollapseItem
+            name="Series"
+            href="/wanted/series"
+            badge={episodes_badge === 0 ? undefined : episodes_badge.toString()}
+          ></ListCollapseItem>
+        </div>
+      </Accordion.Collapse>
+    );
+
     const settings: JSX.Element = (
       <ToggleListItem
         name="Settings"
@@ -198,12 +219,8 @@ class Sidebar extends React.Component<Props, {}> {
               icon={faFilm}
               href="/movie"
             ></LinkListItem>
-            <LinkListItem
-              name="Wanted"
-              icon={faExclamationTriangle}
-              href="/wanted"
-              badge={totalWanted === 0 ? undefined : totalWanted.toString()}
-            ></LinkListItem>
+            {wanted}
+            {wantedItems}
             {settings}
             {settingsItems}
             {system}

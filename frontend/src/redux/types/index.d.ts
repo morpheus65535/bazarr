@@ -26,4 +26,5 @@ interface SystemState {
 
 interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
+  wantedSeriesList: AsyncState<Array<WantedSeries>>;
 }

@@ -38,6 +38,11 @@ interface SeriesLanguage {
   name: string;
 }
 
+interface SubtitleInfo extends SeriesLanguage {
+  forced: boolean;
+  hi: boolean;
+}
+
 interface Series {
   DT_RowId: string;
   alternateTitles: [string];
@@ -61,6 +66,35 @@ interface Series {
   title: string;
   tvdbId: number;
   year: string;
+}
+
+interface WantedSeries {
+  episodeTitle: string;
+  episode_number: string;
+  exist: boolean;
+  failedAttempts?: any;
+  hearing_impaired: PythonBoolean;
+  mapped_path: string;
+  missing_subtitles: SubtitleInfo[];
+  monitored: PythonBoolean;
+  path: string;
+  scene_name?: any;
+  seriesTitle: string;
+  seriesType: SonarrSeriesType;
+  sonarrEpisodeId: number;
+  sonarrSeriesId: number;
+  tags: string[];
+}
+
+interface SeriesSubDownloadRequest {
+  episodePath: string;
+  sceneName?: string;
+  language: string;
+  hi: boolean;
+  forced: boolean;
+  sonarrSeriesId: number;
+  sonarrEpisodeId: number;
+  title: string;
 }
 
 // System

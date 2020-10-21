@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import Series from "../Series";
 import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
+import WantedRouter from "../Wanted/Router";
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -16,6 +17,9 @@ class Router extends React.Component {
           </Route>
           <Route exact path="/series">
             <Series />
+          </Route>
+          <Route path="/wanted">
+            <WantedRouter></WantedRouter>
           </Route>
           <Route path="/settings">
             <SettingRouter></SettingRouter>
