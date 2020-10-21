@@ -27,8 +27,8 @@ const reducer = handleActions<SeriesState, AsyncPayload<Array<any>>>(
     },
   },
   {
-    seriesList: { loading: false, items: [] },
-    wantedSeriesList: { loading: false, items: [] },
+    seriesList: { updating: false, items: [] },
+    wantedSeriesList: { updating: false, items: [] },
   }
 );
 

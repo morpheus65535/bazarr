@@ -12,7 +12,7 @@ interface BadgeState {
 }
 
 interface AsyncState<T> {
-  loading: boolean;
+  updating: boolean;
   lastResult?: string;
   items: T;
 }

@@ -70,10 +70,10 @@ const reducer = handleActions<SystemState, any>(
     },
   },
   {
-    languages: { loading: false, items: [] },
+    languages: { updating: false, items: [] },
     enabledLanguage: [],
     status: {
-      loading: false,
+      updating: false,
       items: {
         bazarr_config_directory: "",
         bazarr_directory: "",
@@ -85,7 +85,7 @@ const reducer = handleActions<SystemState, any>(
       },
     },
     tasks: {
-      loading: false,
+      updating: false,
       items: [],
     },
   }

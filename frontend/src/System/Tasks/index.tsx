@@ -16,7 +16,7 @@ interface Props {
 function mapStateToProps({ system }: StoreState) {
   const { tasks } = system;
   return {
-    loading: tasks.loading,
+    loading: tasks.updating,
   };
 }
 

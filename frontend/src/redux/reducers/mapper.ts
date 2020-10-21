@@ -6,19 +6,19 @@ export function mapToAsyncState<Payload>(
 ): AsyncState<Payload> {
   if (action.payload.loading) {
     return {
-      loading: true,
+      updating: true,
       lastResult: undefined,
       items: defVal,
     };
   } else if (action.error !== undefined) {
     return {
-      loading: false,
+      updating: false,
       lastResult: action.payload.item as string,
       items: defVal,
     };
   } else {
     return {
-      loading: false,
+      updating: false,
       lastResult: undefined,
       items: action.payload.item as Payload,
     };
