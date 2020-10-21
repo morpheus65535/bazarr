@@ -1,6 +1,8 @@
 import React from "react";
 import { Col, Form, Row } from "react-bootstrap";
 
+import "./CommonForm.css";
+
 interface FormProps {
   title: string;
 }
@@ -14,7 +16,13 @@ export function CommonFormGroup(
       <Col sm={3}>
         <b>{title}</b>
       </Col>
-      <Form.Group as={Col}>{children}</Form.Group>
+      <Form.Group
+        as={Col}
+        sm={7}
+        className="d-flex flex-column common-form-group"
+      >
+        {children}
+      </Form.Group>
     </Row>
   );
 }

@@ -126,6 +126,53 @@ class Sidebar extends React.Component<Props, {}> {
     const { movies_badge, episodes_badge, providers_badge } = this.props;
     const totalWanted = movies_badge + episodes_badge;
 
+    const settings: JSX.Element = (
+      <ToggleListItem
+        name="Settings"
+        icon={faCogs}
+        eventKey="settings-toggle"
+      ></ToggleListItem>
+    );
+
+    const settingsItems: JSX.Element = (
+      <Accordion.Collapse eventKey="settings-toggle">
+        <div>
+          <ListCollapseItem
+            name="General"
+            href="/settings/general"
+          ></ListCollapseItem>
+          <ListCollapseItem
+            name="Languages"
+            href="/settings/languages"
+          ></ListCollapseItem>
+        </div>
+      </Accordion.Collapse>
+    );
+
+    const system: JSX.Element = (
+      <ToggleListItem
+        name="System"
+        icon={faLaptop}
+        eventKey="system-toggle"
+        badge={providers_badge === 0 ? undefined : providers_badge.toString()}
+      ></ToggleListItem>
+    );
+
+    const systemItems: JSX.Element = (
+      <Accordion.Collapse eventKey="system-toggle">
+        <div>
+          <ListCollapseItem
+            name="Tasks"
+            href="/system/tasks"
+          ></ListCollapseItem>
+          <ListCollapseItem
+            name="Status"
+            href="/system/status"
+          ></ListCollapseItem>
+        </div>
+      </Accordion.Collapse>
+    );
+
     return (
       <aside id="sidebar-wrapper" className="px-0 col-md-3 col-xl-2">
         <Navbar bg="light" expand="lg" className="header">
@@ -157,37 +204,10 @@ class Sidebar extends React.Component<Props, {}> {
               href="/wanted"
               badge={totalWanted === 0 ? undefined : totalWanted.toString()}
             ></LinkListItem>
-            <ToggleListItem
-              name="Settings"
-              icon={faCogs}
-              eventKey="settings-toggle"
-            ></ToggleListItem>
-            <Accordion.Collapse eventKey="settings-toggle">
-              <ListCollapseItem
-                name="Languages"
-                href="/settings/languages"
-              ></ListCollapseItem>
-            </Accordion.Collapse>
-            <ToggleListItem
-              name="System"
-              icon={faLaptop}
-              eventKey="system-toggle"
-              badge={
-                providers_badge === 0 ? undefined : providers_badge.toString()
-              }
-            ></ToggleListItem>
-            <Accordion.Collapse eventKey="system-toggle">
-              <div>
-                <ListCollapseItem
-                  name="Tasks"
-                  href="/system/tasks"
-                ></ListCollapseItem>
-                <ListCollapseItem
-                  name="Status"
-                  href="/system/status"
-                ></ListCollapseItem>
-              </div>
-            </Accordion.Collapse>
+            {settings}
+            {settingsItems}
+            {system}
+            {systemItems}
           </ListGroup>
         </Accordion>
       </aside>

@@ -1,4 +1,3 @@
-.scrollable-dropdown-menu {
-  max-height: 144px;
-  overflow-y: scroll;
+.common-form-group > * {
+  margin: 6px 0;
 }
