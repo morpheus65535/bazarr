@@ -24,9 +24,19 @@ interface State {
 // }
 
 const SelectionDefault = "None";
+const AuthOptions = [
+  ["None", SelectionDefault],
+  ["Basic", "Basic"],
+  ["Form", "Form"],
+];
 
-const AuthOptions = [SelectionDefault, "Basic", "Form"];
-const ProxyOptions = [SelectionDefault, "HTTP(S)", "Socks4", "Socks5"];
+const ProxyOptions = [
+  ["None", SelectionDefault],
+  ["http", "HTTP(S)"],
+  ["socks4", "Socks4"],
+  ["socks5", "Socks5"],
+];
+
 const PageSizeOptions = ["Unlimited", 25, 50, 100, 250, 500, 1000];
 const PageSizeManualSearchOptions = [5, 10, 15, 20, 25];
 
@@ -94,7 +104,7 @@ class SettingsGeneral extends React.Component<Props, State> {
             }}
           >
             {AuthOptions.map((val) => (
-              <option>{val}</option>
+              <option value={val[0]}>{val[1]}</option>
             ))}
           </Form.Control>
           <Form.Label>
@@ -133,7 +143,7 @@ class SettingsGeneral extends React.Component<Props, State> {
             }}
           >
             {ProxyOptions.map((val) => (
-              <option>{val}</option>
+              <option value={val[0]}>{val[1]}</option>
             ))}
           </Form.Control>
         </CommonFormGroup>
