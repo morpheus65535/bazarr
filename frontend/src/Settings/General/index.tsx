@@ -25,6 +25,11 @@ interface State {
 
 const SelectionDefault = "None";
 
+const AuthOptions = [SelectionDefault, "Basic", "Form"];
+const ProxyOptions = [SelectionDefault, "HTTP(S)", "Socks4", "Socks5"];
+const PageSizeOptions = ["Unlimited", 25, 50, 100, 250, 500, 1000];
+const PageSizeManualSearchOptions = [5, 10, 15, 20, 25];
+
 class SettingsGeneral extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -88,9 +93,9 @@ class SettingsGeneral extends React.Component<Props, State> {
               this.onAuthChanged(event.target.value);
             }}
           >
-            <option>{SelectionDefault}</option>
-            <option>Basic</option>
-            <option>Form</option>
+            {AuthOptions.map((val) => (
+              <option>{val}</option>
+            ))}
           </Form.Control>
           <Form.Label>
             Require Username and Password to access Bazarr
@@ -127,10 +132,9 @@ class SettingsGeneral extends React.Component<Props, State> {
               this.onProxyChanged(event.target.value);
             }}
           >
-            <option>{SelectionDefault}</option>
-            <option>HTTP(S)</option>
-            <option>Socks4</option>
-            <option>Socks5</option>
+            {ProxyOptions.map((val) => (
+              <option>{val}</option>
+            ))}
           </Form.Control>
         </CommonFormGroup>
         <div hidden={proxySelection === SelectionDefault}>
@@ -161,22 +165,16 @@ class SettingsGeneral extends React.Component<Props, State> {
       <TitleBlock title="UI">
         <CommonFormGroup title="Page Size">
           <Form.Control as="select" className="w-50">
-            <option>Unlimited</option>
-            <option>25</option>
-            <option>50</option>
-            <option>100</option>
-            <option>250</option>
-            <option>500</option>
-            <option>1000</option>
+            {PageSizeOptions.map((val) => (
+              <option>{val}</option>
+            ))}
           </Form.Control>
         </CommonFormGroup>
         <CommonFormGroup title="Page Size Manual Search">
           <Form.Control as="select" className="w-50">
-            <option>5</option>
-            <option>10</option>
-            <option>15</option>
-            <option>20</option>
-            <option>25</option>
+            {PageSizeManualSearchOptions.map((val) => (
+              <option>{val}</option>
+            ))}
           </Form.Control>
         </CommonFormGroup>
       </TitleBlock>
