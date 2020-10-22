@@ -40,6 +40,8 @@ const ProxyOptions = [
 const PageSizeOptions = ["Unlimited", 25, 50, 100, 250, 500, 1000];
 const PageSizeManualSearchOptions = [5, 10, 15, 20, 25];
 
+const formControlClass = "w-50";
+
 class SettingsGeneral extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -69,7 +71,7 @@ class SettingsGeneral extends React.Component<Props, State> {
     const host: JSX.Element = (
       <TitleBlock title="Host">
         <CommonFormGroup title="Bind Address">
-          <Form.Control type="text" className="w-50"></Form.Control>
+          <Form.Control type="text" className={formControlClass}></Form.Control>
           <Form.Label>
             Valid IP4 address or '0.0.0.0' for all interfaces
           </Form.Label>
@@ -78,13 +80,13 @@ class SettingsGeneral extends React.Component<Props, State> {
           </Form.Label>
         </CommonFormGroup>
         <CommonFormGroup title="Port Number">
-          <Form.Control type="text" className="w-50"></Form.Control>
+          <Form.Control type="text" className={formControlClass}></Form.Control>
           <Form.Label className="text-warning">
             Requires restart to take effect
           </Form.Label>
         </CommonFormGroup>
         <CommonFormGroup title="URL Base">
-          <Form.Control type="text" className="w-50"></Form.Control>
+          <Form.Control type="text" className={formControlClass}></Form.Control>
           <Form.Label>For reverse proxy support, default is '/'</Form.Label>
           <Form.Label className="text-warning">
             Requires restart to take effect
@@ -98,7 +100,7 @@ class SettingsGeneral extends React.Component<Props, State> {
         <CommonFormGroup title="Authentication">
           <Form.Control
             as="select"
-            className="w-50"
+            className={formControlClass}
             onChange={(event) => {
               this.onAuthChanged(event.target.value);
             }}
@@ -113,14 +115,20 @@ class SettingsGeneral extends React.Component<Props, State> {
         </CommonFormGroup>
         <div hidden={authSelection === SelectionDefault}>
           <CommonFormGroup title="Username">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
           <CommonFormGroup title="Password">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
         </div>
         <CommonFormGroup title="API Key">
-          <InputGroup className="w-50">
+          <InputGroup className={formControlClass}>
             <Form.Control type="text" disabled></Form.Control>
             <InputGroup.Append>
               <Button variant="danger">
@@ -137,7 +145,7 @@ class SettingsGeneral extends React.Component<Props, State> {
         <CommonFormGroup title="Type">
           <Form.Control
             as="select"
-            className="w-50"
+            className={formControlClass}
             onChange={(event) => {
               this.onProxyChanged(event.target.value);
             }}
@@ -149,23 +157,38 @@ class SettingsGeneral extends React.Component<Props, State> {
         </CommonFormGroup>
         <div hidden={proxySelection === SelectionDefault}>
           <CommonFormGroup title="Hostname">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
           <CommonFormGroup title="Port">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
           <CommonFormGroup title="Username">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
           <CommonFormGroup title="Password">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
             <Form.Label>
               You only need to enter a username and password if one is required.
               Leave them blank otherwise.
             </Form.Label>
           </CommonFormGroup>
           <CommonFormGroup title="Ignored Addresses">
-            <Form.Control type="text" className="w-50"></Form.Control>
+            <Form.Control
+              type="text"
+              className={formControlClass}
+            ></Form.Control>
           </CommonFormGroup>
         </div>
       </TitleBlock>
@@ -174,14 +197,14 @@ class SettingsGeneral extends React.Component<Props, State> {
     const ui: JSX.Element = (
       <TitleBlock title="UI">
         <CommonFormGroup title="Page Size">
-          <Form.Control as="select" className="w-50">
+          <Form.Control as="select" className={formControlClass}>
             {PageSizeOptions.map((val) => (
               <option>{val}</option>
             ))}
           </Form.Control>
         </CommonFormGroup>
         <CommonFormGroup title="Page Size Manual Search">
-          <Form.Control as="select" className="w-50">
+          <Form.Control as="select" className={formControlClass}>
             {PageSizeManualSearchOptions.map((val) => (
               <option>{val}</option>
             ))}
