@@ -467,8 +467,12 @@ def guess_external_subtitles(dest_folder, subtitles):
                         except:
                             pass
 
+        # If language is still None (undetected), skip it
+        if not language:
+            pass
+
         # Skip HI detection if forced
-        if language.forced:
+        elif language.forced:
             pass
 
         # Detect hearing-impaired external subtitles not identified in filename
