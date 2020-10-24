@@ -86,10 +86,15 @@ def store_subtitles(original_path, reversed_path):
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
                 elif not language:
                     continue
-                elif str(language.basename) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
-                    actual_subtitles.append([str(language.basename + (':hi' if language.hi else '')),
-                                             path_mappings.path_replace_reverse(subtitle_path)])
+                elif str(language) != 'und':
+                    if language.forced:
+                        language_str = str(language)
+                    elif language.hi:
+                        language_str = str(language) + ':hi'
+                    else:
+                        language_str = str(language)
+                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -170,9 +175,14 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif not language:
                     continue
                 elif str(language.basename) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
-                    actual_subtitles.append([str(language) + (':hi' if language.hi else ''),
-                                             path_mappings.path_replace_reverse_movie(subtitle_path)])
+                    if language.forced:
+                        language_str = str(language)
+                    elif language.hi:
+                        language_str = str(language) + ':hi'
+                    else:
+                        language_str = str(language)
+                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -457,8 +467,12 @@ def guess_external_subtitles(dest_folder, subtitles):
                         except:
                             pass
 
+        # Skip HI detection if forced
+        if language.forced:
+            pass
+
         # Detect hearing-impaired external subtitles not identified in filename
-        if not subtitles[subtitle].hi:
+        elif not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
             # to improve performance, skip detection of files larger that 1M
