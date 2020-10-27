@@ -104,7 +104,7 @@ class Subtitle(Subtitle_):
 
     def make_picklable(self):
         """
-        some subtitle instances might have unpicklable objects stored; clean them up here 
+        some subtitle instances might have unpicklable objects stored; clean them up here
         :return: self
         """
         return self
@@ -377,7 +377,7 @@ class Subtitle(Subtitle_):
 
     def get_modified_content(self, format="srt", debug=False):
         """
-        :return: string 
+        :return: string
         """
         if not self.mods:
             return fix_text(self.content.decode(encoding=self.get_encoding()), **ftfy_defaults).encode(
@@ -404,7 +404,9 @@ class ModifiedSubtitle(Subtitle):
 MERGED_FORMATS = {
     "TV": ("HDTV", "SDTV", "AHDTV", "UHDTV"),
     "Air": ("SATRip", "DVB", "PPV"),
-    "Disk": ("DVD", "HD-DVD", "BluRay")
+    "Disk-HD": ("HD-DVD", "Blu-ray"),
+    "Disk-SD": ("DVD", "VHS"),
+    "Web": ("Web"),
 }
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
