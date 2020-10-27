@@ -212,7 +212,7 @@ class TitulkyProvider(Provider):
         subtitles = []
         if season and episode:
             search_link = self.server_url + text_type(self.search_url_series).format(params)
-        elif year:
+        else:
             search_link = self.server_url + text_type(self.search_url_movies).format(params)
         
         
