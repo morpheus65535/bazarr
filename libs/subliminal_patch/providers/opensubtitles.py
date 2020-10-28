@@ -4,6 +4,7 @@ import base64
 import logging
 import os
 import traceback
+import re
 import zlib
 import time
 import requests
@@ -43,6 +44,7 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
         self.release_info = movie_release_name
         self.wrong_fps = False
         self.skip_wrong_fps = skip_wrong_fps
+        self.movie_imdb_id = movie_imdb_id
 
     def get_fps(self):
         try:
@@ -89,6 +91,10 @@ class OpenSubtitlesSubtitle(_OpenSubtitlesSubtitle):
             logger.debug("Subtitle matched by tag, treating it as a hash-match. Tag: '%s'",
                          self.query_parameters.get("tag", None))
             matches.add("hash")
+
+        # imdb_id match so we'll consider year as matching
+        if self.movie_imdb_id and video.imdb_id and (self.movie_imdb_id == video.imdb_id):
+            matches.add("year")
 
         return matches
 
@@ -231,13 +237,13 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         else:
             query = [video.title] + video.alternative_titles
 
-        return self.query(languages, hash=video.hashes.get('opensubtitles'), size=video.size, imdb_id=video.imdb_id,
-                          query=query, season=season, episode=episode, tag=video.original_name,
+        return self.query(video, languages, hash=video.hashes.get('opensubtitles'), size=video.size,
+                          imdb_id=video.imdb_id, query=query, season=season, episode=episode, tag=video.original_name,
                           use_tag_search=self.use_tag_search, only_foreign=self.only_foreign,
                           also_foreign=self.also_foreign)
 
-    def query(self, languages, hash=None, size=None, imdb_id=None, query=None, season=None, episode=None, tag=None,
-              use_tag_search=False, only_foreign=False, also_foreign=False):
+    def query(self, video, languages, hash=None, size=None, imdb_id=None, query=None, season=None, episode=None,
+              tag=None, use_tag_search=False, only_foreign=False, also_foreign=False):
         # fill the search criteria
         criteria = []
         if hash and size:
@@ -294,7 +300,10 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
             movie_name = _subtitle_item['MovieName']
             movie_release_name = _subtitle_item['MovieReleaseName']
             movie_year = int(_subtitle_item['MovieYear']) if _subtitle_item['MovieYear'] else None
-            movie_imdb_id = 'tt' + _subtitle_item['IDMovieImdb']
+            if season or episode:
+                movie_imdb_id = 'tt' + _subtitle_item['SeriesIMDBParent']
+            else:
+                movie_imdb_id = 'tt' + _subtitle_item['IDMovieImdb']
             movie_fps = _subtitle_item.get('MovieFPS')
             series_season = int(_subtitle_item['SeriesSeason']) if _subtitle_item['SeriesSeason'] else None
             series_episode = int(_subtitle_item['SeriesEpisode']) if _subtitle_item['SeriesEpisode'] else None
@@ -319,6 +328,9 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                 language = Language.rebuild(language, hi=True)
 
             if language not in languages:
+                continue
+
+            if video.imdb_id and (movie_imdb_id != re.sub("(?<![^a-zA-Z])0+","", video.imdb_id)):
                 continue
 
             query_parameters = _subtitle_item.get("QueryParameters")

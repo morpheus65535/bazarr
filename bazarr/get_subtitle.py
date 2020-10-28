@@ -1123,7 +1123,8 @@ def refine_from_db(path, video):
             # Commented out because Radarr provided so much bad year
             # if data['year']:
             #     if int(data['year']) > 0: video.year = int(data['year'])
-            if data['imdbId']: video.imdb_id = data['imdbId']
+            if data['imdbId'] and not video.imdb_id:
+                video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
                 if data['format']: video.source = data['format']

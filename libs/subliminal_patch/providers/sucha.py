@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
+import io
 import logging
 import os
-import io
-import rarfile
 import zipfile
 
+import rarfile
 from requests import Session
-from subzero.language import Language
-
-from subliminal import Movie, Episode
-from subliminal_patch.exceptions import APIThrottled
+from subliminal import Episode, Movie
 from subliminal.exceptions import ServiceUnavailable
-from subliminal_patch.subtitle import Subtitle
-from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
+from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
+from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
+from subliminal_patch.subtitle import Subtitle
+from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +25,21 @@ class SuchaSubtitle(Subtitle):
     hash_verifiable = False
 
     def __init__(
-        self, language, page_link, filename, download_link, hearing_impaired, matches
+        self,
+        language,
+        page_link,
+        filename,
+        guessit_dict,
+        download_link,
+        hearing_impaired,
+        matches,
     ):
         super(SuchaSubtitle, self).__init__(
             language, hearing_impaired=hearing_impaired, page_link=page_url
         )
         self.download_link = download_link
         self.referer = page_link
+        self.guessit = guessit_dict
         self.language = language
         self.release_info = filename
         self.filename = filename
@@ -43,23 +50,33 @@ class SuchaSubtitle(Subtitle):
         return self.download_link
 
     def get_matches(self, video):
-        if video.resolution and video.resolution.lower() in self.release_info.lower():
-            self.found_matches.add("resolution")
+        if (
+            video.release_group
+            and str(video.release_group).lower() in self.filename.lower()
+        ):
+            self.found_matches.add("release_group")
 
-        if video.source and video.source.lower() in self.release_info.lower():
+        if video.source and video.source.lower() in self.guessit["source"].lower():
             self.found_matches.add("source")
 
-        if video.video_codec:
-            if video.video_codec == "H.264" and "x264" in self.release_info.lower():
-                self.found_matches.add("video_codec")
-            elif video.video_codec == "H.265" and "x265" in self.release_info.lower():
-                self.found_matches.add("video_codec")
-            elif video.video_codec.lower() in self.release_info.lower():
-                self.found_matches.add("video_codec")
+        if (
+            video.resolution
+            and video.resolution.lower() in self.guessit["resolution"].lower()
+        ):
+            self.found_matches.add("resolution")
 
-        if video.audio_codec:
-            if video.audio_codec.lower().replace(" ", ".") in self.release_info.lower():
-                self.found_matches.add("audio_codec")
+        if (
+            video.audio_codec
+            and video.audio_codec.lower() in self.guessit["audio_codec"].lower()
+        ):
+            self.found_matches.add("audio_codec")
+
+        if (
+            video.video_codec
+            and video.video_codec.lower() in self.guessit["video_codec"].lower()
+        ):
+            self.found_matches.add("video_codec")
+
         return self.found_matches
 
 
@@ -115,6 +132,7 @@ class SuchaProvider(Provider):
                     if q["query"].lower() in i["title"].lower():
                         matches.add("title")
                         matches.add("series")
+                        matches.add("imdb_id")
                         matches.add("season")
                         matches.add("episode")
                         matches.add("year")
@@ -122,11 +140,24 @@ class SuchaProvider(Provider):
                     matches.add("year")
                 if imdb_id:
                     matches.add("imdb_id")
+
+                # We'll add release group info (if found) to the pseudo filename 
+                # in order to show it in the manual search
+                filename = i["pseudo_file"]
+                if (
+                    video.release_group
+                    and str(video.release_group).lower() in i["original_description"]
+                ):
+                    filename = i["pseudo_file"].replace(
+                        ".es.srt", "-" + str(video.release_group) + ".es.srt"
+                    )
+
                 subtitles.append(
                     SuchaSubtitle(
                         language,
                         i["referer"],
-                        i["pseudo_file"],
+                        filename,
+                        i["guessit"],
                         i["download_url"],
                         i["hearing_impaired"],
                         matches,

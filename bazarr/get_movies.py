@@ -273,7 +273,10 @@ def update_movies():
                 for altered_movie in altered_movies:
                     data = database.execute("SELECT * FROM table_movies WHERE radarrId = ?" +
                                             get_exclusion_clause('movie'), (altered_movie[2],), only_one=True)
-                    movies_download_subtitles(data['radarrId'])
+                    if data:
+                        movies_download_subtitles(data['radarrId'])
+                    else:
+                        logging.debug("BAZARR skipping download for this movie as it is excluded.")
             else:
                 logging.debug("BAZARR More than 5 movies were added during this sync then we wont search for subtitles.")
 

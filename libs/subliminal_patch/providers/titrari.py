@@ -4,8 +4,8 @@ from __future__ import absolute_import
 import io
 import logging
 import re
-from subliminal import __short_version__
 import rarfile
+from random import randint
 
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
@@ -13,6 +13,7 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming as _fix_inconsistent_naming
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal.exceptions import ProviderError
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode, Movie
@@ -101,7 +102,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()

@@ -43,7 +43,7 @@ class AssrtSubtitle(Subtitle):
     provider_name = 'assrt'
     guessit_options = {
         'allowed_languages': [ l[0] for l in supported_languages ],
-        'allowed_countries': [ l[1] for l in supported_languages if len(l) > 1 ],
+        # 'allowed_countries': [ l[1] for l in supported_languages if len(l) > 1 ],
         'enforce_list': True
     }
 
@@ -53,6 +53,7 @@ class AssrtSubtitle(Subtitle):
         self.token = token
         self.subtitle_id = subtitle_id
         self.video_name = video_name
+        self.release_info = video_name
         self.url = None
         self._detail = None
 
@@ -126,13 +127,15 @@ class AssrtProvider(Provider):
         keywords = []
         if isinstance(video, Movie):
             if video.title:
-                title = "".join(e for e in video.title if e.isalnum())
+                # title = "".join(e for e in video.title if e.isalnum())
+                title = video.title
                 keywords.append(title)
             if video.year:
                 keywords.append(str(video.year))
         elif isinstance(video, Episode):
             if video.series:
-                series = "".join(e for e in video.series if e.isalnum())
+                # series = "".join(e for e in video.series if e.isalnum())
+                series = video.series
                 keywords.append(series)
             if video.season and video.episode:
                 keywords.append('S%02dE%02d' % (video.season, video.episode))
