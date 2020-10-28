@@ -146,13 +146,14 @@ def update_movies():
                                 videoCodec = None
                                 audioCodec = None
 
-                            audio_language = None
+                            audio_language = []
                             if radarr_version.startswith('0'):
                                 if 'mediaInfo' in movie['movieFile']:
                                     if 'audioLanguages' in movie['movieFile']['mediaInfo']:
-                                        audio_language_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
-                                        if len(audio_language_list):
-                                            audio_language = audio_language_list[0].strip()
+                                        audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
+                                        if len(audio_languages_list):
+                                            for audio_language_list in audio_languages_list:
+                                                audio_language.append(audio_language_list.strip())
                                 if not audio_language:
                                     audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
                             else:
@@ -160,8 +161,7 @@ def update_movies():
                                     for item in movie['movieFile']['languages']:
                                         if isinstance(item, dict):
                                             if 'name' in item:
-                                                audio_language = item['name']
-                                                break
+                                                audio_language.append(item['name'])
 
                             tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
 
@@ -175,7 +175,7 @@ def update_movies():
                                                          'tmdbId': str(movie["tmdbId"]),
                                                          'poster': poster,
                                                          'fanart': fanart,
-                                                         'audio_language': audio_language,
+                                                         'audio_language': str(audio_language),
                                                          'sceneName': sceneName,
                                                          'monitored': str(bool(movie['monitored'])),
                                                          'year': str(movie['year']),
@@ -200,7 +200,7 @@ def update_movies():
                                                       'overview': overview,
                                                       'poster': poster,
                                                       'fanart': fanart,
-                                                      'audio_language': audio_language,
+                                                      'audio_language': str(audio_language),
                                                       'sceneName': sceneName,
                                                       'monitored': str(bool(movie['monitored'])),
                                                       'sortTitle': movie['sortTitle'],
@@ -312,8 +312,10 @@ def get_profile_list():
 
 def profile_id_to_language(id, profiles):
     for profile in profiles:
+        profiles_to_return = []
         if id == profile[0]:
-            return profile[1]
+            profiles_to_return.append(profile[1])
+    return profiles_to_return
 
 
 def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):

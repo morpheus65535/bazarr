@@ -76,6 +76,7 @@ def update_series():
         if show['alternateTitles'] is not None:
             alternate_titles = str([item['title'] for item in show['alternateTitles']])
 
+        audio_language = []
         if sonarr_version.startswith('2'):
             audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
         else:
@@ -96,7 +97,7 @@ def update_series():
                                      'overview': overview,
                                      'poster': poster,
                                      'fanart': fanart,
-                                     'audio_language': audio_language,
+                                     'audio_language': str(audio_language),
                                      'sortTitle': show['sortTitle'],
                                      'year': str(show['year']),
                                      'alternateTitles': alternate_titles,
@@ -113,7 +114,7 @@ def update_series():
                                   'overview': overview,
                                   'poster': poster,
                                   'fanart': fanart,
-                                  'audio_language': audio_language,
+                                  'audio_language': str(audio_language),
                                   'sortTitle': show['sortTitle'],
                                   'year': str(show['year']),
                                   'alternateTitles': alternate_titles,
@@ -197,9 +198,11 @@ def get_profile_list():
 
 
 def profile_id_to_language(id_, profiles):
+    profiles_to_return = []
     for profile in profiles:
         if id_ == profile[0]:
-            return profile[1]
+            profiles_to_return.append(profile[1])
+    return profiles_to_return
 
 
 def get_tags():

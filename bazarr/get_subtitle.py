@@ -29,7 +29,7 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
 from subsyncer import subsync
-from database import database, dict_mapper, get_exclusion_clause, get_profiles_list
+from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -729,9 +729,15 @@ def series_download_subtitles(no):
         if providers_list:
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0].name
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               episode['audio_language'],
+                                               audio_language,
                                                series_details['hearing_impaired'],
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
@@ -781,9 +787,15 @@ def episode_download_subtitles(no):
         if providers_list:
             for language in ast.literal_eval(episode['missing_subtitles']):
                 if language is not None:
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0].name
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                str(alpha3_from_alpha2(language.split(':')[0])),
-                                               episode['audio_language'],
+                                               audio_language,
                                                episode['hearing_impaired'],
                                                "True" if language.endswith(':forced') else "False",
                                                providers_list,
@@ -835,9 +847,15 @@ def movies_download_subtitles(no):
     for i, language in enumerate(ast.literal_eval(movie['missing_subtitles']), 1):
         if providers_list:
             if language is not None:
+                audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                if len(audio_language_list) > 0:
+                    audio_language = audio_language_list[0].name
+                else:
+                    audio_language = 'None'
+
                 result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
                                            str(alpha3_from_alpha2(language.split(':')[0])),
-                                           movie['audio_language'],
+                                           audio_language,
                                            movie['hearing_impaired'],
                                            "True" if language.endswith(':forced') else "False",
                                            providers_list,
@@ -899,9 +917,15 @@ def wanted_download_subtitles(path, l, count_episodes):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]):
+                        audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                        if len(audio_language_list) > 0:
+                            audio_language = audio_language_list[0].name
+                        else:
+                            audio_language = 'None'
+
                         result = download_subtitle(path_mappings.path_replace(episode['path']),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   episode['audio_language'],
+                                                   audio_language,
                                                    episode['hearing_impaired'],
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
@@ -961,9 +985,15 @@ def wanted_download_subtitles_movie(path, l, count_movies):
             for i in range(len(attempt)):
                 if attempt[i][0] == language:
                     if search_active(attempt[i][1]) is True:
+                        audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                        if len(audio_language_list) > 0:
+                            audio_language = audio_language_list[0].name
+                        else:
+                            audio_language = 'None'
+
                         result = download_subtitle(path_mappings.path_replace_movie(movie['path']),
                                                    str(alpha3_from_alpha2(language.split(':')[0])),
-                                                   movie['audio_language'],
+                                                   audio_language,
                                                    movie['hearing_impaired'],
                                                    "True" if language.endswith(':forced') else "False",
                                                    providers_list,
@@ -1250,9 +1280,15 @@ def upgrade_subtitles():
                         language = episode['language']
                         is_forced = "False"
 
+                    audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0].name
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace(episode['video_path']),
                                                str(alpha3_from_alpha2(language)),
-                                               episode['audio_language'],
+                                               audio_language,
                                                episode['hearing_impaired'],
                                                is_forced,
                                                providers_list,
@@ -1306,9 +1342,15 @@ def upgrade_subtitles():
                         language = movie['language']
                         is_forced = "False"
 
+                    audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
+                    if len(audio_language_list) > 0:
+                        audio_language = audio_language_list[0].name
+                    else:
+                        audio_language = 'None'
+
                     result = download_subtitle(path_mappings.path_replace_movie(movie['video_path']),
                                                str(alpha3_from_alpha2(language)),
-                                               movie['audio_language'],
+                                               audio_language,
                                                movie['hearing_impaired'],
                                                is_forced,
                                                providers_list,

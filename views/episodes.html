@@ -87,7 +87,7 @@
                            title="None" data-html="true"></i>
                     </div>
                     <div class="row">
-                        <h5><span id="seriesAudioLanguage" class="badge badge-secondary"></span></h5>
+                        <h5><span id="seriesAudioLanguage"></span></h5>
                         <h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesType" class="badge badge-secondary"></span></h5>
@@ -613,7 +613,16 @@
                         }
                     },
                     {
-                        data: 'audio_language.name'
+                        data: 'audio_language',
+                        render: function (data) {
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
+
+                            function appendFunc(value) {
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
+                            }
+                        }
                     },
                     {
                         data: null,
@@ -1312,7 +1321,10 @@
             $('#edit_button').on('click', function (e) {
                 e.preventDefault();
                 $("#edit_series_title_span").html(seriesDetails['title']);
-                $("#edit_audio_language_span").text(seriesDetails['audio_language']['name']);
+                $("#edit_audio_language_span").html();
+                $.each(seriesDetails['audio_language'], function (i, item) {
+                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                })
                 $('#edit_sonarrSeriesId').val(seriesDetails['sonarrSeriesId']);
 
 
@@ -1789,7 +1801,10 @@
                     $('#seriesTags').hide();
                 }
 
-                $('#seriesAudioLanguage').text(seriesDetails['audio_language']['name']);
+                $("#seriesAudioLanguage").html();
+                $.each(seriesDetails['audio_language'], function (i, item) {
+                    $("#seriesAudioLanguage").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                })
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');

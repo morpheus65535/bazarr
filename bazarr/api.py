@@ -18,7 +18,8 @@ from config import settings, base_url, save_settings
 
 from init import *
 import logging
-from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name
+from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
+    get_audio_profile_languages
 from helper import path_mappings
 from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
     alpha3_from_language, alpha3_from_alpha2
@@ -296,9 +297,7 @@ class Series(Resource):
             item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
 
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
             # Parse desired languages
             item['languages'] = str(get_desired_languages(item['profileId']))
@@ -386,9 +385,7 @@ class SeriesEditor(Resource):
             item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
 
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
             # Parse desired languages
             item['languages'] = str(get_desired_languages(item['profileId']))
@@ -463,9 +460,7 @@ class Episodes(Resource):
             item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
 
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])})
 
             # Parse subtitles
             if item['subtitles']:
@@ -572,8 +567,12 @@ class EpisodesSubtitlesDownload(Resource):
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-                                          (sonarrEpisodeId,), only_one=True)['audio_language']
+
+        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0].name
+        else:
+            audio_language = 'None'
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -644,8 +643,12 @@ class EpisodesSubtitlesManualDownload(Resource):
         sonarrEpisodeId = request.form.get('sonarrEpisodeId')
         title = request.form.get('title')
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-                                          (sonarrEpisodeId,), only_one=True)['audio_language']
+
+        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0].name
+        else:
+            audio_language = 'None'
 
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
@@ -849,9 +852,7 @@ class Movies(Resource):
             item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
 
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
             # Parse desired languages
             item['languages'] = str(get_desired_languages(item['profileId']))
@@ -966,9 +967,7 @@ class MoviesEditor(Resource):
             item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
 
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
             # Parse desired languages
             item['languages'] = str(get_desired_languages(item['profileId']))
@@ -1051,8 +1050,12 @@ class MovieSubtitlesDownload(Resource):
         title = request.form.get('title')
         providers_list = get_providers()
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,),
-                                          only_one=True)['audio_language']
+
+        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0].name
+        else:
+            audio_language = 'None'
 
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
@@ -1122,8 +1125,12 @@ class MovieSubtitlesManualDownload(Resource):
         radarrId = request.form.get('radarrId')
         title = request.form.get('title')
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?", (radarrId,),
-                                          only_one=True)['audio_language']
+
+        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0].name
+        else:
+            audio_language = 'None'
 
         try:
             result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
