@@ -93,7 +93,18 @@
                             return '<a href="' + "{{ url_for( 'movie', no='tempvalue' ) }}".replace("tempvalue", data.radarrId) + '">' + data.title + '</a>'
                         }
                     },
-                    {data: "audio_language.name"},
+                    {
+                        data: 'audio_language',
+                        render: function (data) {
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
+
+                            function appendFunc(value) {
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
+                            }
+                        }
+                    },
                     {
                         data: "profileId.name",
                         className: "dt-center"

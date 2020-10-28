@@ -94,7 +94,7 @@
 					<i class="far fa-clone" id="moviealternativeTitles" data-toggle="tooltip" data-placement="right" title="None" data-html="true"></i>
 				</div>
 				<div class="row">
-					<h5><span id="movieAudioLanguage" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieAudioLanguage"></span></h5>
 					<h5><span id="movieMappedPath" data-toggle="tooltip" data-placement="right" title="None" class="badge badge-secondary"></span></h5>
 					<h5><span id="movieTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
 							  title="None" data-html="true">Tags</span></h5>
@@ -699,7 +699,7 @@
 			$('#upload_sceneName').val(movieDetails['sceneName']);
 			$('#upload_radarrId').val(movieDetails['radarrId']);
 			$('#upload_title').val(movieDetails['title']);
-			$('#upload_audioLanguage').val(movieDetails['audio_language']['name']);
+            $('#upload_audioLanguage').val((movieDetails['audio_language'].length) ? movieDetails['audio_language'][0].name : 'None');
 
 			$('#manual_language_select').empty();
 			$.each(enabledLanguages, function (i, item) {
@@ -763,8 +763,11 @@
 		$('#edit_button').on('click', function(e){
 			e.preventDefault();
 			$("#edit_movie_title_span").html(movieDetails['title']);
-			$("#edit_audio_language_span").text(movieDetails['audio_language']['name']);
-			$('#edit_radarrId').val(movieDetails['radarrId']);
+			$("#edit_audio_language_span").empty();
+                $.each(movieDetails['audio_language'], function (i, item) {
+                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                })
+            $('#edit_radarrId').val(movieDetails['radarrId']);
 
 
 			$('#edit_languages_select').empty();
@@ -1183,8 +1186,11 @@
 				$('#movieTags').hide();
 			}
 
-			$('#movieAudioLanguage').text(movieDetails['audio_language']['name']);
-			$('#movieMappedPath').text(movieDetails['mapped_path']);
+			$("#movieAudioLanguage").empty();
+                $.each(movieDetails['audio_language'], function (i, item) {
+                    $("#movieAudioLanguage").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                })
+            $('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
 			$('#movieSubtitlesLanguagesProfile').text(movieDetails['profileId'].name);

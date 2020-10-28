@@ -16,7 +16,7 @@
         <tr>
             <th></th>
             <th>Name</th>
-            <th>Audio Profile</th>
+            <th>Audio Profile Languages</th>
             <th>Languages Profile</th>
         </tr>
         </thead>
@@ -93,7 +93,18 @@
                             return '<a href="' + "{{ url_for( 'episodes', no='tempvalue' ) }}".replace("tempvalue", data.sonarrSeriesId) + '">' + data.title + '</a>'
                         }
                     },
-                    {data: "audio_language.name"},
+                    {
+                        data: 'audio_language',
+                        render: function (data) {
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
+
+                            function appendFunc(value) {
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
+                            }
+                        }
+                    },
                     {data: "profileId.name", className: "dt-center"}
                 ]
             });

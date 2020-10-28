@@ -22,7 +22,7 @@
         <tr>
             <th>Name</th>
             <th>Path Exist</th>
-            <th>Audio Profile</th>
+            <th>Audio Profile Languages</th>
             <th>Languages Profile</th>
             <th>Subtitles</th>
             <th></th>
@@ -44,12 +44,13 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Audio Profile
+                                    Audio Profile Languages
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
                                     <span id="edit_audio_language_span"></span>
                                 </div>
                             </div>
+                            <br>
                             <div class="row">
                                 <div class="col-sm-3 text-right">
                                     Languages Profile
@@ -149,7 +150,18 @@
                             }
                         }
                     },
-                    {data: "audio_language.name"},
+                    {
+                        data: 'audio_language',
+                        render: function (data) {
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
+
+                            function appendFunc(value) {
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
+                            }
+                        }
+                    },
                     {
                         data: "profileId.name",
                         className: "dt-center"
@@ -172,7 +184,7 @@
                     {
                         data: null,
                         render: function (data) {
-                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId=' + data.sonarrSeriesId + ' data-audiolanguage="' + data.audio_language.name + '" data-title="' + data.title + '" data-languages_profile=' + data.profileId.id + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
+                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId=' + data.sonarrSeriesId + ' data-audiolanguage=\'' + JSON.stringify(data.audio_language) + '\' data-title="' + data.title + '" data-languages_profile=' + data.profileId.id + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
                         }
                     }
                 ]
@@ -182,7 +194,10 @@
         $('#series').on('click', '.edit_button', function (e) {
             e.preventDefault();
             $("#edit_series_title_span").html($(this).data('title'));
-            $("#edit_audio_language_span").html($(this).data('audiolanguage'));
+            $("#edit_audio_language_span").empty();
+            $.each($(this).data('audiolanguage'), function (i, item) {
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+            })
             $('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
 
 
