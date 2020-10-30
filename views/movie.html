@@ -95,6 +95,8 @@
 				</div>
 				<div class="row">
 					<h5><span id="movieAudioLanguage"></span></h5>
+				</div>
+				<div class="row">
 					<h5><span id="movieMappedPath" data-toggle="tooltip" data-placement="right" title="None" class="badge badge-secondary"></span></h5>
 					<h5><span id="movieTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
 							  title="None" data-html="true">Tags</span></h5>
@@ -764,9 +766,9 @@
 			e.preventDefault();
 			$("#edit_movie_title_span").html(movieDetails['title']);
 			$("#edit_audio_language_span").empty();
-                $.each(movieDetails['audio_language'], function (i, item) {
-                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
-                })
+            $.each(movieDetails['audio_language'], function (i, item) {
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
+            })
             $('#edit_radarrId').val(movieDetails['radarrId']);
 
 
@@ -1188,7 +1190,7 @@
 
 			$("#movieAudioLanguage").empty();
                 $.each(movieDetails['audio_language'], function (i, item) {
-                    $("#movieAudioLanguage").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                    $("#movieAudioLanguage").append('<div class="badge badge-secondary"><i class="fa fa-music"></i> ' + item['name'] + '</div> ');
                 })
             $('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);

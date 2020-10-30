@@ -175,12 +175,12 @@ def db_upgrade():
             for i, language in enumerate(languages_list, 1):
                 if profile['forced'] == 'Both':
                     profile_items.append({'id': i, 'language': language, 'forced': 'True',
-                                          'hi': profile['hearing_impaired']})
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
                     profile_items.append({'id': i, 'language': language, 'forced': 'False',
-                                          'hi': profile['hearing_impaired']})
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
                 else:
                     profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
-                                          'hi': profile['hearing_impaired']})
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
             # Create profiles
             new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
@@ -198,6 +198,10 @@ def db_upgrade():
         # null languages, forced and hearing_impaired for all series and movies
         database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
         database.execute("UPDATE table_movies SET languages = null, forced = null, hearing_impaired = null")
+
+        # Force series, episodes and movies sync with Sonarr to get all the audio track from video files
+        # Set environment variable that is going to be use during the init process to run sync once Bazarr is ready.
+        os.environ['BAZARR_AUDIO_PROFILES_MIGRATION'] = '1'
 
 
 def get_exclusion_clause(type):

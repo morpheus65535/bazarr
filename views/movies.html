@@ -193,7 +193,7 @@
                     {
                         data: null,
                         render: function (data) {
-                            return '<a href="" class="edit_button badge badge-secondary" data-radarrId=' + data.radarrId + ' data-audiolanguage="' + data.audio_language.name + '" data-title="' + data.title + '" data-languages_profile=' + data.profileId.id + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
+                            return '<a href="" class="edit_button badge badge-secondary" data-radarrId=' + data.radarrId + ' data-audiolanguage=\'' + JSON.stringify(data.audio_language) + '\' data-title="' + data.title + '" data-languages_profile=' + data.profileId.id + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
                         }
                     }
                 ]
@@ -203,7 +203,10 @@
         $('#movies').on('click', '.edit_button', function (e) {
             e.preventDefault();
             $("#edit_movies_title_span").html($(this).data('title'));
-            $("#edit_audio_language_span").html($(this).data('audiolanguage'));
+            $("#edit_audio_language_span").empty();
+            $.each($(this).data('audiolanguage'), function (i, item) {
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
+            })
             $('#edit_radarrId').val($(this).data('radarrid'));
 
 

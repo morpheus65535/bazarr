@@ -196,7 +196,7 @@
             $("#edit_series_title_span").html($(this).data('title'));
             $("#edit_audio_language_span").empty();
             $.each($(this).data('audiolanguage'), function (i, item) {
-                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
             })
             $('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
 

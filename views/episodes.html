@@ -88,6 +88,8 @@
                     </div>
                     <div class="row">
                         <h5><span id="seriesAudioLanguage"></span></h5>
+                    </div>
+                    <div class="row">
                         <h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesType" class="badge badge-secondary"></span></h5>
@@ -1324,7 +1326,7 @@
                 $("#edit_series_title_span").html(seriesDetails['title']);
                 $("#edit_audio_language_span").empty();
                 $.each(seriesDetails['audio_language'], function (i, item) {
-                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
                 })
                 $('#edit_sonarrSeriesId').val(seriesDetails['sonarrSeriesId']);
 
@@ -1804,7 +1806,7 @@
 
                 $("#seriesAudioLanguage").empty();
                 $.each(seriesDetails['audio_language'], function (i, item) {
-                    $("#seriesAudioLanguage").append('<div class="badge badge-secondary">' + item['name'] + '</div>');
+                    $("#seriesAudioLanguage").append('<div class="badge badge-secondary"><i class="fa fa-music"></i> ' + item['name'] + '</div> ');
                 })
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);

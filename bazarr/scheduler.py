@@ -21,6 +21,7 @@ from calendar import day_name
 import pretty
 from random import randrange
 from event_handler import event_stream
+import os
 
 
 class Scheduler:
@@ -252,3 +253,12 @@ class Scheduler:
 
 
 scheduler = Scheduler()
+
+# Force the execution of the sync process with Sonarr and Radarr after migration to v0.9.1
+if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
+    if settings.general.getboolean('use_sonarr'):
+        scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
+        scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
+    if settings.general.getboolean('use_radarr'):
+        scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
+    del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']
