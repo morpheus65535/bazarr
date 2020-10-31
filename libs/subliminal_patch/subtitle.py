@@ -406,7 +406,6 @@ MERGED_FORMATS = {
     "Air": ("SATRip", "DVB", "PPV"),
     "Disk-HD": ("HD-DVD", "Blu-ray"),
     "Disk-SD": ("DVD", "VHS"),
-    "Web": ("Web"),
 }
 
 MERGED_FORMATS_REV = dict((v.lower(), k.lower()) for k in MERGED_FORMATS for v in MERGED_FORMATS[k])
