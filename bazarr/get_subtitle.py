@@ -29,7 +29,8 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
 from subsyncer import subsync
-from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages
+from database import database, dict_mapper, get_exclusion_clause, get_profiles_list, get_audio_profile_languages, \
+    get_desired_languages
 
 from analytics import track_event
 from locale import getpreferredencoding
@@ -315,7 +316,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
 
     for language in language_items:
-        lang_id, lang, forced, hi = language.values()
+        lang_id, lang, forced, hi, audio_exclude = language.values()
 
         lang = alpha3_from_alpha2(lang)
 
@@ -731,7 +732,7 @@ def series_download_subtitles(no):
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                     if len(audio_language_list) > 0:
-                        audio_language = audio_language_list[0].name
+                        audio_language = audio_language_list[0]['name']
                     else:
                         audio_language = 'None'
 
@@ -789,7 +790,7 @@ def episode_download_subtitles(no):
                 if language is not None:
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                     if len(audio_language_list) > 0:
-                        audio_language = audio_language_list[0].name
+                        audio_language = audio_language_list[0]['name']
                     else:
                         audio_language = 'None'
 
@@ -849,7 +850,7 @@ def movies_download_subtitles(no):
             if language is not None:
                 audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
                 if len(audio_language_list) > 0:
-                    audio_language = audio_language_list[0].name
+                    audio_language = audio_language_list[0]['name']
                 else:
                     audio_language = 'None'
 
@@ -919,7 +920,7 @@ def wanted_download_subtitles(path, l, count_episodes):
                     if search_active(attempt[i][1]):
                         audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                         if len(audio_language_list) > 0:
-                            audio_language = audio_language_list[0].name
+                            audio_language = audio_language_list[0]['name']
                         else:
                             audio_language = 'None'
 
@@ -987,7 +988,7 @@ def wanted_download_subtitles_movie(path, l, count_movies):
                     if search_active(attempt[i][1]) is True:
                         audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
                         if len(audio_language_list) > 0:
-                            audio_language = audio_language_list[0].name
+                            audio_language = audio_language_list[0]['name']
                         else:
                             audio_language = 'None'
 
@@ -1192,7 +1193,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
-                                               "table_history.score, table_shows.hearing_impaired, "
+                                               "table_history.score, table_shows.hearing_impaired, table_shows.profileId, "
                                                "table_episodes.audio_language, table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
@@ -1258,6 +1259,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         for i, episode in enumerate(episodes_to_upgrade, 1):
+            episode['languages'] = get_desired_languages(episode['profileId'])
             if episode['languages'] in [None, 'None', '[]']:
                 continue
             providers = get_providers()
@@ -1273,7 +1275,7 @@ def upgrade_subtitles():
                 else:
                     forced_languages = desired_languages
 
-                if episode['language'] in forced_languages:
+                if episode['language'] in forced_languages or episode['language'].split(':hi')[0] in forced_languages:
                     if episode['language'].endswith('forced'):
                         language = episode['language'].split(':')[0]
                         is_forced = "True"
@@ -1283,7 +1285,7 @@ def upgrade_subtitles():
 
                     audio_language_list = get_audio_profile_languages(episode_id=episode['sonarrEpisodeId'])
                     if len(audio_language_list) > 0:
-                        audio_language = audio_language_list[0].name
+                        audio_language = audio_language_list[0]['name']
                     else:
                         audio_language = 'None'
 
@@ -1345,7 +1347,7 @@ def upgrade_subtitles():
 
                     audio_language_list = get_audio_profile_languages(movie_id=movie['radarrId'])
                     if len(audio_language_list) > 0:
-                        audio_language = audio_language_list[0].name
+                        audio_language = audio_language_list[0]['name']
                     else:
                         audio_language = 'None'
 

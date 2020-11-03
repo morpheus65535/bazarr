@@ -570,7 +570,7 @@ class EpisodesSubtitlesDownload(Resource):
 
         audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0].name
+            audio_language = audio_language_list[0]['name']
         else:
             audio_language = 'None'
 
@@ -646,7 +646,7 @@ class EpisodesSubtitlesManualDownload(Resource):
 
         audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0].name
+            audio_language = audio_language_list[0]['name']
         else:
             audio_language = 'None'
 
@@ -1053,7 +1053,7 @@ class MovieSubtitlesDownload(Resource):
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0].name
+            audio_language = audio_language_list[0]['name']
         else:
             audio_language = 'None'
 
@@ -1128,7 +1128,7 @@ class MovieSubtitlesManualDownload(Resource):
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
         if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0].name
+            audio_language = audio_language_list[0]['name']
         else:
             audio_language = 'None'
 
@@ -1358,16 +1358,16 @@ class HistorySeries(Resource):
                                 "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
                                 "table_history.description, table_history.sonarrSeriesId, table_episodes.path, "
                                 "table_history.language, table_history.score, table_shows.tags, table_history.action, "
-                                "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider "
-                                "FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = "
-                                "table_history.sonarrSeriesId LEFT JOIN table_episodes on "
+                                "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider, "
+                                "table_shows.seriesType FROM table_history LEFT JOIN table_shows on "
+                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on "
                                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
                                 "table_episodes.title is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?",
                                 (length, start))
 
         for item in data:
             # Mark episode as upgradable or not
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_episodes_not_perfect:
+            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored']), "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
                 item.update({"upgradable": True})
             else:
                 item.update({"upgradable": False})
