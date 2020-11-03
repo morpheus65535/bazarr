@@ -96,7 +96,7 @@ class YifySubtitlesProvider(Provider):
 
     languages = {Language(l, c) for (_, l, c) in YifyLanguages}
     languages.update(set(Language.rebuild(l, hi=True) for l in languages))
-    server_urls = ['https://yifysubtitles.org', 'https://www.yifysubtitles.com']
+    server_urls = ['https://yifysubtitles.org']
     video_types = (Movie,)
 
     def initialize(self):
