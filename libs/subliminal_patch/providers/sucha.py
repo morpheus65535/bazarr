@@ -6,12 +6,13 @@ import zipfile
 
 import rarfile
 from requests import Session
+from guessit import guessit
 from subliminal import Episode, Movie
 from subliminal.exceptions import ServiceUnavailable
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
@@ -50,32 +51,14 @@ class SuchaSubtitle(Subtitle):
         return self.download_link
 
     def get_matches(self, video):
-        if (
-            video.release_group
-            and str(video.release_group).lower() in self.filename.lower()
-        ):
-            self.found_matches.add("release_group")
-
-        if video.source and video.source.lower() in self.guessit["source"].lower():
-            self.found_matches.add("source")
-
-        if (
-            video.resolution
-            and video.resolution.lower() in self.guessit["resolution"].lower()
-        ):
-            self.found_matches.add("resolution")
-
-        if (
-            video.audio_codec
-            and video.audio_codec.lower() in self.guessit["audio_codec"].lower()
-        ):
-            self.found_matches.add("audio_codec")
-
-        if (
-            video.video_codec
-            and video.video_codec.lower() in self.guessit["video_codec"].lower()
-        ):
-            self.found_matches.add("video_codec")
+        if isinstance(video, Episode):
+            self.found_matches |= guess_matches(
+                video, guessit(self.filename, {"type": "episode"})
+            )
+        else:
+            self.found_matches |= guess_matches(
+                video, guessit(self.filename, {"type": "movie"})
+            )
 
         return self.found_matches
 
@@ -141,7 +124,7 @@ class SuchaProvider(Provider):
                 if imdb_id:
                     matches.add("imdb_id")
 
-                # We'll add release group info (if found) to the pseudo filename 
+                # We'll add release group info (if found) to the pseudo filename
                 # in order to show it in the manual search
                 filename = i["pseudo_file"]
                 if (
