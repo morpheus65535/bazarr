@@ -1193,8 +1193,9 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_sonarr'):
         upgradable_episodes = database.execute("SELECT table_history.video_path, table_history.language, "
-                                               "table_history.score, table_shows.hearing_impaired, table_shows.profileId, "
-                                               "table_episodes.audio_language, table_episodes.scene_name, table_episodes.title,"
+                                               "table_history.score, table_shows.hearing_impaired, "
+                                               "table_shows.profileId, table_episodes.audio_language, "
+                                               "table_episodes.scene_name, table_episodes.title,"
                                                "table_episodes.sonarrSeriesId, table_episodes.sonarrEpisodeId,"
                                                "MAX(table_history.timestamp) as timestamp, table_episodes.monitored, "
                                                "table_shows.languages, table_shows.forced, table_shows.tags, "
@@ -1227,12 +1228,13 @@ def upgrade_subtitles():
     if settings.general.getboolean('use_radarr'):
         upgradable_movies = database.execute("SELECT table_history_movie.video_path, table_history_movie.language, "
                                              "table_history_movie.score, table_movies.hearing_impaired, "
-                                             "table_movies.audio_language, table_movies.sceneName, table_movies.title, "
-                                             "table_movies.radarrId, MAX(table_history_movie.timestamp) as timestamp, "
-                                             "table_movies.languages, table_movies.forced, table_movies.tags, "
-                                             "table_movies.monitored FROM table_history_movie INNER JOIN table_movies "
-                                             "on table_movies.radarrId = table_history_movie.radarrId WHERE action  IN "
-                                             "(" + ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
+                                             "table_movies.profileId, table_movies.audio_language, "
+                                             "table_movies.sceneName, table_movies.title, table_movies.radarrId, "
+                                             "MAX(table_history_movie.timestamp) as timestamp, table_movies.languages, "
+                                             "table_movies.forced, table_movies.tags, table_movies.monitored FROM "
+                                             "table_history_movie INNER JOIN table_movies on table_movies.radarrId = "
+                                             "table_history_movie.radarrId WHERE action  IN (" +
+                                             ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score "
                                              "is not null" + get_exclusion_clause('movie') + " GROUP BY "
                                              "table_history_movie.video_path, table_history_movie.language",
                                              (minimum_timestamp,))
@@ -1322,6 +1324,7 @@ def upgrade_subtitles():
 
     if settings.general.getboolean('use_radarr'):
         for i, movie in enumerate(movies_to_upgrade, 1):
+            movie['languages'] = get_desired_languages(movie['profileId'])
             if movie['languages'] in [None, 'None', '[]']:
                 continue
             providers = get_providers()
