@@ -147,7 +147,9 @@ class YifySubtitlesProvider(Provider):
             if response.status_code == 200:
                 break
 
-        response.raise_for_status()
+        # 404 is returned if the imdb_id was not found
+        if response.status_code != 404:
+            response.raise_for_status()
 
         if response.status_code != 200:
             logger.debug('No subtitles found')
