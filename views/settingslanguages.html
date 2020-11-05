@@ -31,7 +31,7 @@
 {% block body %}
     <div class="container-fluid" style="padding-top: 3em;">
         <form class="form" name="settings_form" id="settings_form">
-            <h4>Subtitles languages</h4>
+            <h4>Subtitles Languages</h4>
             <hr/>
             <div class="row">
                 <div class="col-sm-3 text-right">
@@ -49,10 +49,28 @@
             <br>
             <div class="row">
                 <div class="col-sm-3 text-right">
-                    <b>Enabled Languages</b>
+                    <b>Languages Filter</b>
                 </div>
                 <div class="form-group col-sm-8 pl-sm-0">
                     <select class="selectpicker" id="enabled_languages" name="enabled_languages" data-live-search="true" multiple></select>
+                </div>
+            </div>
+            <br>
+
+            <h4>Languages Profiles</h4>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-12">
+                    <table class="table table-striped" id="languages_profiles" style="width:100%;">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Cutoff</th>
+                            <th>Items</th>
+                        </tr>
+                        </thead>
+                    </table>
                 </div>
             </div>
             <br>
@@ -224,6 +242,61 @@
                 }
             });
 
+            var table = $('#languages_profiles').DataTable({
+                dom: 'Bfrtip',
+                select: {
+                    style: 'single'
+                },
+                language: {
+                    zeroRecords: 'No Languages Profiles'
+                },
+                searching: false,
+                ordering: false,
+                lengthChange: true,
+                responsive: true,
+                paging: false,
+                info: false,
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: "{{ url_for('api.languagesprofiles') }}",
+                    type: 'GET'
+                },
+                columns: [
+                    { data: 'profileId' },
+                    { data: 'name' },
+                    { data: 'cutoff' },
+                    { data: 'items',
+                        render: function(data) {
+                            var languages = '';
+                            $(data).each(function (index, value) {
+                                languages += value.language;
+                            });
+                            return languages;
+                        }
+                    }
+                ],
+                buttons: [{
+                    text: 'Add',
+                    action: function () {
+                        if (form_changed) {
+                            alert('You must save changes before adding a path mapping.')
+                        } else {
+                            $('#addModal').modal('show');
+                        }
+                    }
+                },
+                {
+                    extend: 'selected',
+                    text: 'Edit',
+                    action: function () {
+                        $('#edit_path_sonarr').val(table.row( { selected: true } ).data()[0]);
+                        $('#edit_path_bazarr').val(table.row( { selected: true } ).data()[1]);
+                        $('#editModal').modal('show');
+                    }
+                }]
+            });
+
             // Hide *_div on default-enabled change
             $('#settings-general-serie_default_enabled').on('change', function() {
                 if ($(this).prop('checked')) {
@@ -270,6 +343,7 @@
                     contentType: false,
                     type: 'POST',
                     complete: function () {
+                        getEnabledLanguages();
                         $('#save_button_checkmark').show();
                         form_changed = false;
                         $('#save_button').prop('disabled', true).css('cursor', 'not-allowed');
