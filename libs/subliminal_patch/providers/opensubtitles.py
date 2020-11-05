@@ -237,8 +237,13 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
         else:
             query = [video.title] + video.alternative_titles
 
+        if isinstance(video, Episode):
+            imdb_id = video.series_imdb_id
+        else:
+            imdb_id = video.imdb_id
+
         return self.query(video, languages, hash=video.hashes.get('opensubtitles'), size=video.size,
-                          imdb_id=video.imdb_id, query=query, season=season, episode=episode, tag=video.original_name,
+                          imdb_id=imdb_id, query=query, season=season, episode=episode, tag=video.original_name,
                           use_tag_search=self.use_tag_search, only_foreign=self.only_foreign,
                           also_foreign=self.also_foreign)
 
@@ -255,12 +260,13 @@ class OpenSubtitlesProvider(ProviderRetryMixin, _OpenSubtitlesProvider):
                 criteria.append({'imdbid': imdb_id[2:], 'season': season, 'episode': episode})
             else:
                 criteria.append({'imdbid': imdb_id[2:]})
-        if query and season and episode:
-            for q in query:
-                criteria.append({'query': q.replace('\'', ''), 'season': season, 'episode': episode})
-        elif query:
-            for q in query:
-                criteria.append({'query': q.replace('\'', '')})
+        # Commented out after the issue with episode released after October 17th 2020.
+        # if query and season and episode:
+        #     for q in query:
+        #         criteria.append({'query': q.replace('\'', ''), 'season': season, 'episode': episode})
+        # elif query:
+        #     for q in query:
+        #         criteria.append({'query': q.replace('\'', '')})
         if not criteria:
             raise ValueError('Not enough information')
 
