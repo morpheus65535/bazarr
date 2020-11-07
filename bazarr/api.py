@@ -559,12 +559,12 @@ class SubtitleNameInfo(Resource):
             result = guessit(name, options=opts)
 
             res = dict()
-            if result['episode'] is not None:
+            if 'episode' in result:
                 res['episode'] = result['episode']
             else:
                 res['episode'] = 0
 
-            if result['season'] is not None:
+            if 'season' in result:
                 res['season'] = result['season']
             else:
                 res['season'] = 0
