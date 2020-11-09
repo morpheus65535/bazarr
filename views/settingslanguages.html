@@ -60,14 +60,15 @@
             <h4>Languages Profiles</h4>
             <hr/>
             <div class="row">
-                <div class="col-sm-12">
+                <div class="col-sm-8">
                     <table class="table table-striped" id="languages_profiles" style="width:100%;">
                         <thead>
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Cutoff</th>
-                            <th>Items</th>
+                            <th>Languages</th>
+                            <th></th>
                         </tr>
                         </thead>
                     </table>
@@ -172,6 +173,88 @@
             </div>
         </form>
     </div>
+
+    <div id="addModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="add_form" id="add_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Sonarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="sonarr_browser"></div>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="" placeholder="Browse or type...">
+                                    <div class="filetree" id="bazarr_browser"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="add_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Path Mapping</h5><br>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form class="form" name="edit_form" id="edit_form">
+                    <div class="modal-body">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Sonarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_sonarr" name="edit_path_sonarr" value="">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Path for Bazarr
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_path_bazarr" name="edit_path_bazarr" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock body %}
 
 {% block tail %}
@@ -263,17 +346,31 @@
                     type: 'GET'
                 },
                 columns: [
-                    { data: 'profileId' },
+                    { data: 'profileId',
+                        visible: false
+                    },
                     { data: 'name' },
-                    { data: 'cutoff' },
-                    { data: 'items',
+                    { data: 'cutoff',
+                        visible: false
+                    },
+                    { data: null,
                         render: function(data) {
                             var languages = '';
-                            $(data).each(function (index, value) {
-                                languages += value.language;
+                            console.log(data);
+                            $(eval(data.items)).each(function (index, value) {
+                                if (value.forced == 'True') {
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + '<span>';
+                                } else if (value.hi == 'True') {
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + '<span>';
+                                } else {
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + '<span>';
+                                }
                             });
                             return languages;
                         }
+                    },
+                    { data: 'items',
+                        visible: false
                     }
                 ],
                 buttons: [{
@@ -354,6 +451,20 @@
                             }, 2000);
                     }
                 });
+            });
+
+            $('#add_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row.add([ $('#add_path_sonarr').val(), $('#add_path_bazarr').val()]).draw();
+                $('#addModal').modal('hide');
+                $('#settings_form').trigger('change');
+            });
+
+            $('#edit_save_button').on('click', function(e) {
+                e.preventDefault();
+                table.row( { selected: true } ).data([ $('#edit_path_sonarr').val(), $('#edit_path_bazarr').val()]);
+                $('#editModal').modal('hide');
+                $('#settings_form').trigger('change');
             });
 
             function getLanguages() {

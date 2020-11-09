@@ -178,7 +178,7 @@
                 url: "{{ url_for('api.languagesprofiles') }}",
                 success: function (data) {
                     $('#languages_select').append('<option value="None">None</option>');
-                    $.each(data, function (i, item) {
+                    $.each(data['data'], function (i, item) {
                         $('#languages_select').append('<option value="' + item.profileId + '">' + item.name + '</option>');
                     });
                     $("#languages_select").selectpicker("refresh");

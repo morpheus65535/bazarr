@@ -1298,7 +1298,7 @@
 		$.ajax({
 			url: "{{ url_for('api.languagesprofiles') }}",
 			success: function (data) {
-				languagesProfiles = data;
+				languagesProfiles = data['data'];
 			}
 		});
 	}

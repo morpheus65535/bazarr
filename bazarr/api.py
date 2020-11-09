@@ -132,10 +132,7 @@ class Languages(Resource):
 class LanguagesProfiles(Resource):
     @authenticate
     def get(self):
-        profiles_list = get_profiles_list()
-        for profile in profiles_list:
-            profile.update('items', ast.literal_eval(profile['items']))
-        return jsonify(data=profiles_list)
+        return jsonify(data=get_profiles_list())
 
 
 class Notifications(Resource):
