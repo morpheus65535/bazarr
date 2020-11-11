@@ -1,6 +1,6 @@
 # coding=utf-8
 
-bazarr_version = '0.9.0.6'
+bazarr_version = '0.9.0.7'
 
 import os
 
