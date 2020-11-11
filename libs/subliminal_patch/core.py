@@ -352,7 +352,7 @@ class SZProviderPool(ProviderPool):
 
         for s in subtitles:
             # get the matches
-            if s.language.basename not in languages:
+            if s.language not in languages:
                 logger.debug("%r: Skipping, language not searched for", s)
                 continue
 
@@ -381,12 +381,12 @@ class SZProviderPool(ProviderPool):
                 break
 
             # stop when all languages are downloaded
-            if set(s.language.basename for s in downloaded_subtitles) == languages:
+            if set(s.language for s in downloaded_subtitles) == languages:
                 logger.debug('All languages downloaded')
                 break
 
             # check downloaded languages
-            if subtitle.language in set(s.language.basename for s in downloaded_subtitles):
+            if subtitle.language in set(s.language for s in downloaded_subtitles):
                 logger.debug('%r: Skipping subtitle: already downloaded', subtitle.language)
                 continue
 
@@ -868,7 +868,7 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
             continue
 
         # check language
-        if subtitle.language in set(s.language.basename for s in saved_subtitles):
+        if subtitle.language in set(s.language for s in saved_subtitles):
             logger.debug('Skipping subtitle %r: language already saved', subtitle)
             continue
 
