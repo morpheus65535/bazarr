@@ -97,7 +97,7 @@ class GreekSubsProvider(Provider):
                                     language = Language.fromalpha2(subtitles_item.parent.find('img')['alt'])
                                     version = subtitles_item.contents[2].contents[4].text.strip()
                                     uploader = subtitles_item.contents[2].contents[5].contents[0].contents[1].text.strip()
-                                    referer = episode_page
+                                    referer = episode_page.encode('utf-8')
 
                                     r = self.session.get(page_link,
                                                          headers={'Referer': referer},
@@ -152,7 +152,7 @@ class GreekSubsProvider(Provider):
                             version = subtitles_item.contents[2].contents[4].text.strip()
                             uploader = subtitles_item.contents[2].contents[5].contents[0].contents[
                                 1].text.strip()
-                            referer = page_link
+                            referer = page_link.encode('utf-8')
 
                             r = self.session.get(page_link,
                                                  headers={'Referer': referer},

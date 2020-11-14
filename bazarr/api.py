@@ -521,9 +521,22 @@ class SubtitleNameInfo(Resource):
             opts = dict()
             opts['type'] = 'episode'
             result = guessit(name, options=opts)
+
+            res = dict()
+            if 'episode' in result:
+                res['episode'] = result['episode']
+            else:
+                res['episode'] = 0
+
+            if 'season' in result:
+                res['season'] = result['season']
+            else:
+                res['season'] = 0
+            
             if 'subtitle_language' in result:
-                result['subtitle_language'] = str(result['subtitle_language'])
-            return jsonify(data=result)
+                res['subtitle_language'] = str(result['subtitle_language'])
+            
+            return jsonify(data=res)
         else:
             return '', 400
 
