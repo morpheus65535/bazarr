@@ -178,7 +178,7 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Path Mapping</h5><br>
+                    <h5 class="modal-title">Add Languages Profile</h5><br>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -359,11 +359,11 @@
                             console.log(data);
                             $(eval(data.items)).each(function (index, value) {
                                 if (value.forced == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + '<span>';
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + '</span> ';
                                 } else if (value.hi == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + '<span>';
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + '</span> ';
                                 } else {
-                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + '<span>';
+                                    languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + '</span> ';
                                 }
                             });
                             return languages;
