@@ -13,7 +13,7 @@ export function CommonFormGroup(
   const { title, children } = props;
   return (
     <Row>
-      <Col sm={3}>
+      <Col sm={3} className="mb-3">
         <b>{title}</b>
       </Col>
       <Form.Group

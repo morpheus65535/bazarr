@@ -163,6 +163,10 @@ class Sidebar extends React.Component<Props, {}> {
             href="/settings/general"
           ></ListCollapseItem>
           <ListCollapseItem
+            name="Subtitles"
+            href="/settings/subtitles"
+          ></ListCollapseItem>
+          <ListCollapseItem
             name="Languages"
             href="/settings/languages"
           ></ListCollapseItem>

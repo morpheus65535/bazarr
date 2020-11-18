@@ -105,8 +105,8 @@ class SettingsGeneral extends React.Component<Props, State> {
               this.onAuthChanged(event.target.value);
             }}
           >
-            {AuthOptions.map((val) => (
-              <option value={val[0]}>{val[1]}</option>
+            {AuthOptions.map((val, idx) => (
+              <option key={idx} value={val[0]}>{val[1]}</option>
             ))}
           </Form.Control>
           <Form.Label>
@@ -150,8 +150,8 @@ class SettingsGeneral extends React.Component<Props, State> {
               this.onProxyChanged(event.target.value);
             }}
           >
-            {ProxyOptions.map((val) => (
-              <option value={val[0]}>{val[1]}</option>
+            {ProxyOptions.map((val, idx) => (
+              <option key={idx} value={val[0]}>{val[1]}</option>
             ))}
           </Form.Control>
         </CommonFormGroup>
@@ -198,15 +198,15 @@ class SettingsGeneral extends React.Component<Props, State> {
       <TitleBlock title="UI">
         <CommonFormGroup title="Page Size">
           <Form.Control as="select" className={formControlClass}>
-            {PageSizeOptions.map((val) => (
-              <option>{val}</option>
+            {PageSizeOptions.map((val, idx) => (
+              <option key={idx}>{val}</option>
             ))}
           </Form.Control>
         </CommonFormGroup>
         <CommonFormGroup title="Page Size Manual Search">
           <Form.Control as="select" className={formControlClass}>
-            {PageSizeManualSearchOptions.map((val) => (
-              <option>{val}</option>
+            {PageSizeManualSearchOptions.map((val, idx) => (
+              <option key={idx}>{val}</option>
             ))}
           </Form.Control>
         </CommonFormGroup>
