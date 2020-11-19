@@ -18,7 +18,7 @@ class LegendasTVSubtitle(_LegendasTVSubtitle):
     def __init__(self, language, type, title, year, imdb_id, season, archive, name):
         super(LegendasTVSubtitle, self).__init__(language, type, title, year, imdb_id, season, archive, name)
         self.archive.content = None
-        self.release_info = archive.name
+        self.release_info = name.rstrip('.srt').split('/')[-1]
         self.page_link = archive.link
 
     def make_picklable(self):
@@ -185,6 +185,17 @@ class LegendasTVProvider(_LegendasTVProvider):
         subtitles = []
         # iterate over titles
         for title_id, t in titles.items():
+            # Skip episodes or movies if it's not what was requested
+            if (season and t['type'] == 'movie') or (not season and t['type'] == 'episode'):
+                continue
+
+            # Skip if season isn't matching
+            if season and season != t.get('season'):
+                continue
+
+            # Skip if season wasn't provided (not an episode) but one is returned by provider (wrong type)
+            if not season and t.get('season'):
+                continue
 
             logger.info('Getting archives for title %d and language %d', title_id, language.legendastv)
             archives = self.get_archives(title_id, language.legendastv, t['type'], season, episode)
@@ -243,12 +254,14 @@ class LegendasTVProvider(_LegendasTVProvider):
             titles = [video.series] + video.alternative_series
             season = video.season
             episode = video.episode
+            imdb = video.series_imdb_id
         else:
             titles = [video.title] + video.alternative_titles
+            imdb = video.imdb_id
 
         for title in titles:
             subtitles = [s for l in languages for s in
-                         self.query(l, title, season=season, episode=episode, year=video.year, imdb_id=video.imdb_id)]
+                         self.query(l, title, season=season, episode=episode, year=video.year, imdb_id=imdb)]
             if subtitles:
                 return subtitles
 
