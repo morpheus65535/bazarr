@@ -54,6 +54,7 @@ function Table(props: Props) {
         accessor: "languages",
         Cell: (row) => {
           const languages = row.value;
+          if (languages instanceof Array) {
           const items = languages.map(
             (val: SeriesLanguage, idx: number): JSX.Element => (
               <Badge className="mx-1" key={idx} variant="secondary">
@@ -62,6 +63,9 @@ function Table(props: Props) {
             )
           );
           return items;
+          } else {
+            return <span />;
+          }
         },
       },
       {

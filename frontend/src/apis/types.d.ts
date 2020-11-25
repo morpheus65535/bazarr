@@ -54,7 +54,7 @@ interface Series {
   forced: PythonBoolean;
   hearing_impaired: PythonBoolean;
   imdbId: string;
-  languages: [SeriesLanguage];
+  languages: [SeriesLanguage] | string;
   mapped_path: string;
   overview: string;
   path: string;
