@@ -71,6 +71,7 @@ class SettingsSubtitles extends React.Component<Props, State> {
               className="m-0 p-0"
               href="http://getcaptchasolution.com/eixxo1rsnw"
               target="_blank"
+              rel="noopener noreferrer"
             >
               Anti-Captcha.com
             </a>
@@ -91,6 +92,7 @@ class SettingsSubtitles extends React.Component<Props, State> {
               className="m-0 p-0"
               href="https://www.deathbycaptcha.com/"
               target="_blank"
+              rel="noopener noreferrer"
             >
               DeathByCaptcha.com
             </a>
