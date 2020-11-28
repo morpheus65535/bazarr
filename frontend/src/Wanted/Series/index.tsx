@@ -14,7 +14,7 @@ interface Props {
   update: () => void;
 }
 
-class WantedSeriesPage extends React.Component<Props> {
+class WantedSeriesView extends React.Component<Props> {
   componentDidMount() {
     this.props.update();
   }
@@ -37,4 +37,4 @@ class WantedSeriesPage extends React.Component<Props> {
 
 export default connect(null, {
   update: updateWantedSeriesList,
-})(WantedSeriesPage);
+})(WantedSeriesView);

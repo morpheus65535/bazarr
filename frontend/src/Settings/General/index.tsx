@@ -42,7 +42,7 @@ const PageSizeManualSearchOptions = [5, 10, 15, 20, 25];
 
 const formControlClass = "w-50";
 
-class SettingsGeneral extends React.Component<Props, State> {
+class SettingsGeneralView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -265,4 +265,4 @@ class SettingsGeneral extends React.Component<Props, State> {
   }
 }
 
-export default connect()(SettingsGeneral);
+export default connect()(SettingsGeneralView);

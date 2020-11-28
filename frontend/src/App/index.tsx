@@ -22,7 +22,7 @@ interface Props {
   updateLanguagesList: () => void;
 }
 
-class App extends React.Component<Props, {}> {
+class App extends React.Component<Props> {
   componentDidMount() {
     this.props.updateEpisodes();
     this.props.updateMovies();

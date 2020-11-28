@@ -37,7 +37,7 @@ const AntiCaptchaOption = [
   ["deathbycaptcha", "Death by Captcha"],
 ];
 
-class SettingsSubtitles extends React.Component<Props, State> {
+class SettingsSubtitlesView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -235,4 +235,4 @@ class SettingsSubtitles extends React.Component<Props, State> {
   }
 }
 
-export default connect(null, {})(SettingsSubtitles);
+export default connect(null, {})(SettingsSubtitlesView);

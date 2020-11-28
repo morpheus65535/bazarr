@@ -2,7 +2,7 @@ import React from "react";
 import { Redirect, Route, Switch } from "react-router-dom";
 import { connect } from "react-redux";
 
-import Series from "../Series";
+import SeriesRouter from "../Series/Router";
 import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
@@ -16,7 +16,7 @@ class Router extends React.Component {
             <Redirect exact to="/series"></Redirect>
           </Route>
           <Route exact path="/series">
-            <Series />
+            <SeriesRouter></SeriesRouter>
           </Route>
           <Route path="/wanted">
             <WantedRouter></WantedRouter>

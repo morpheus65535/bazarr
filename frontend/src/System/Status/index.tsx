@@ -60,7 +60,7 @@ function IconLabel(props: IconProps): JSX.Element {
   );
 }
 
-class SystemStatus extends React.Component<Props, {}> {
+class SystemStatusView extends React.Component<Props, {}> {
   componentDidMount() {
     this.props.update();
   }
@@ -161,4 +161,4 @@ class SystemStatus extends React.Component<Props, {}> {
 
 export default connect(mapStateToProps, {
   update: UpdateSystemStatus,
-})(SystemStatus);
+})(SystemStatusView);

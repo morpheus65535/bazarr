@@ -22,7 +22,7 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-class SettingsLanguages extends React.Component<Props, {}> {
+class SettingsLanguagesView extends React.Component<Props, {}> {
   render(): JSX.Element {
     const { enabled, languages } = this.props;
 
@@ -84,4 +84,4 @@ class SettingsLanguages extends React.Component<Props, {}> {
   }
 }
 
-export default connect(mapStateToProps, {})(SettingsLanguages);
+export default connect(mapStateToProps, {})(SettingsLanguagesView);
