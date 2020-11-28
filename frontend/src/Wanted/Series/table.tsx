@@ -1,8 +1,9 @@
 import React from "react";
 import { Column } from "react-table";
-import BasicTable from "../../components/BasicTable";
-
 import { connect } from "react-redux";
+import { Link } from "react-router-dom";
+
+import BasicTable from "../../components/BasicTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -26,6 +27,14 @@ function Table(props: Props): JSX.Element {
       {
         Header: "Series",
         accessor: "seriesTitle",
+        Cell: (row) => {
+          const target = `/series/${row.row.original.sonarrSeriesId}`;
+          return (
+            <Link to={target}>
+              <span>{row.value}</span>
+            </Link>
+          );
+        },
       },
       {
         Header: "Episode",
