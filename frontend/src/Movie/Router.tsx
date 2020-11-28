@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import { updateMovieList } from "../redux/actions/movie";
 
 import Movie from ".";
+import MovieDetail from "./Detail"
 
 interface Props {
   updateMovieList: () => void;
@@ -19,6 +20,9 @@ class Router extends React.Component<Props> {
       <Switch>
         <Route exact path="/movie">
           <Movie></Movie>
+        </Route>
+        <Route path="/movie/:id">
+          <MovieDetail></MovieDetail>
         </Route>
       </Switch>
     );
