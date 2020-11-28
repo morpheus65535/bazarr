@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Form, Dropdown, Button } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,9 +6,9 @@ import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { throttle } from "lodash";
 
 interface DropdownProps {
-  title: string;
   className?: string;
   languages: Language[];
+  enabled: Language[];
   onChanged?: (lang: Language[]) => void;
 }
 
@@ -41,10 +41,7 @@ export default class LanguageSelector extends React.Component<
   onBtnSelect(event: React.MouseEvent, lang: Language) {
     event.preventDefault();
 
-    const { languages } = this.props;
-
-    // TODO: Opti with memo
-    const enabled = languages.filter((val) => Boolean(val.enabled) === true);
+    const { enabled } = this.props;
 
     if (this.props.onChanged) {
       this.props.onChanged(enabled.concat(lang));
@@ -52,10 +49,19 @@ export default class LanguageSelector extends React.Component<
   }
 
   itemList(): JSX.Element {
-    const { languages } = this.props;
+    const { languages, enabled } = this.props;
     const { filter } = this.state;
 
-    const items: JSX.Element[] = languages
+    const enabledSet = new Set(enabled.map((lang) => lang.name));
+
+    const enabledAllList = languages.map((lang) => {
+      return {
+        ...lang,
+        enabled: enabledSet.has(lang.name),
+      };
+    });
+
+    const items: JSX.Element[] = enabledAllList
       .filter((val) => val.name.includes(filter))
       .map((val) => (
         <Dropdown.Item
@@ -92,7 +98,12 @@ export default class LanguageSelector extends React.Component<
   }
 
   render() {
-    const { title, className } = this.props;
+    const { enabled, className } = this.props;
+
+    let title = enabled.map((lang) => lang.name).join(",");
+    if (title.length === 0) {
+      title = "Nothing Selected";
+    }
 
     return (
       <Dropdown className={className}>

@@ -1,33 +1,42 @@
-import React from "react";
+import React, { FunctionComponent, MouseEvent } from "react";
 import { Column } from "react-table";
 import BasicTable from "../components/BasicTable";
 
 import { connect } from "react-redux";
 
+import { openSeriesEditModal } from "../redux/actions/series";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
   faExclamationTriangle,
+  faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
   series: Array<Series>;
+  openSeriesEditModal: (series: Series) => void;
 }
 
-function mapStateToProps({ series }: StoreState): Props {
+function mapStateToProps({ series }: StoreState) {
   const { seriesList } = series;
   return {
     series: seriesList.items,
   };
 }
 
-function Table(props: Props) {
+const Table: FunctionComponent<Props> = (props) => {
+  const { series, openSeriesEditModal } = props;
+
   const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
     () => [
       {
         Header: "Name",
         accessor: "title",
+        Cell: (row) => {
+          return <span>{row.value}</span>;
+        },
       },
       {
         Header: "Path Exist",
@@ -55,14 +64,14 @@ function Table(props: Props) {
         Cell: (row) => {
           const languages = row.value;
           if (languages instanceof Array) {
-          const items = languages.map(
-            (val: SeriesLanguage, idx: number): JSX.Element => (
-              <Badge className="mx-1" key={idx} variant="secondary">
-                {val.code2}
-              </Badge>
-            )
-          );
-          return items;
+            const items = languages.map(
+              (val: SeriesLanguage, idx: number): JSX.Element => (
+                <Badge className="mx-1" key={idx} variant="secondary">
+                  {val.code2}
+                </Badge>
+              )
+            );
+            return items;
           } else {
             return <span />;
           }
@@ -94,6 +103,7 @@ function Table(props: Props) {
 
           return (
             <ProgressBar
+              className="my-a"
               min={0}
               max={1}
               now={progress}
@@ -102,11 +112,33 @@ function Table(props: Props) {
           );
         },
       },
+      {
+        Header: "",
+        accessor: "overview",
+        Cell: (row) => {
+          return (
+            <Badge
+              as="a"
+              href=""
+              className="mx-1"
+              variant="secondary"
+              onClick={(e: MouseEvent) => {
+                e.preventDefault();
+                openSeriesEditModal(row.row.original);
+              }}
+            >
+              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
+            </Badge>
+          );
+        },
+      },
     ],
     []
   );
 
-  return <BasicTable options={{ columns, data: props.series }}></BasicTable>;
-}
+  return <BasicTable options={{ columns, data: series }}></BasicTable>;
+};
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, {
+  openSeriesEditModal,
+})(Table);

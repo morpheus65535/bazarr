@@ -106,7 +106,9 @@ class SettingsGeneral extends React.Component<Props, State> {
             }}
           >
             {AuthOptions.map((val, idx) => (
-              <option key={idx} value={val[0]}>{val[1]}</option>
+              <option key={idx} value={val[0]}>
+                {val[1]}
+              </option>
             ))}
           </Form.Control>
           <Form.Label>
@@ -151,7 +153,9 @@ class SettingsGeneral extends React.Component<Props, State> {
             }}
           >
             {ProxyOptions.map((val, idx) => (
-              <option key={idx} value={val[0]}>{val[1]}</option>
+              <option key={idx} value={val[0]}>
+                {val[1]}
+              </option>
             ))}
           </Form.Control>
         </CommonFormGroup>

@@ -8,16 +8,32 @@ import { faList } from "@fortawesome/free-solid-svg-icons";
 import { updateSeriesList } from "../redux/actions/series";
 
 import Table from "./table";
+import SeriesEditModal from "../components/SeriesEditModal";
 
 interface Props {
   updateSeriesList: () => void;
+  modal?: Series;
 }
 
-class Series extends React.Component<Props, {}> {
+function mapStateToProps({ series }: StoreState) {
+  const { seriesModal } = series;
+  return {
+    modal: seriesModal,
+  };
+}
+
+class SeriesView extends React.Component<Props> {
+  constructor(props: Props) {
+    super(props);
+  }
   componentDidMount() {
     this.props.updateSeriesList();
   }
+
+  onSeriesEditClick(serie: Series) {}
+
   render(): JSX.Element {
+    const { modal } = this.props;
     return (
       <Container fluid className="px-0">
         <CommonHeader>
@@ -29,9 +45,10 @@ class Series extends React.Component<Props, {}> {
         <div className="p-3">
           <Table></Table>
         </div>
+        <SeriesEditModal></SeriesEditModal>
       </Container>
     );
   }
 }
 
-export default connect(null, { updateSeriesList })(Series);
+export default connect(mapStateToProps, { updateSeriesList })(SeriesView);

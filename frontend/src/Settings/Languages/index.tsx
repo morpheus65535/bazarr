@@ -24,7 +24,7 @@ function mapStateToProps({ system }: StoreState) {
 
 class SettingsLanguages extends React.Component<Props, {}> {
   render(): JSX.Element {
-    const selectorTitle = this.props.enabled.map((val) => val.name).join(", ");
+    const { enabled, languages } = this.props;
 
     const subtitles: JSX.Element = (
       <TitleBlock title="Subtitles Languages">
@@ -42,9 +42,9 @@ class SettingsLanguages extends React.Component<Props, {}> {
         </CommonFormGroup>
         <CommonFormGroup title="Enabled Languages">
           <LanguageSelector
-            title={selectorTitle}
             className="px-0"
-            languages={this.props.languages}
+            enabled={enabled}
+            languages={languages}
           ></LanguageSelector>
         </CommonFormGroup>
       </TitleBlock>
