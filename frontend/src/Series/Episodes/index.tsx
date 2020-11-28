@@ -2,7 +2,6 @@ import React from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 
 import { connect } from "react-redux";
-import { Container } from "react-bootstrap";
 
 import {
   faSync,

@@ -201,7 +201,7 @@ class Sidebar extends React.Component<Props, {}> {
     return (
       <aside id="sidebar-wrapper" className="px-0 col-md-3 col-xl-2">
         <Navbar bg="light" expand="lg" className="header">
-          <Navbar.Brand href="#home">
+          <Navbar.Brand href="/">
             <img
               alt="brand"
               src="/logo128.png"
