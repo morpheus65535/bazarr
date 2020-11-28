@@ -219,9 +219,9 @@ class Sidebar extends React.Component<Props, {}> {
               href="/series"
             ></LinkListItem>
             <LinkListItem
-              name="Movie"
+              name="Movies"
               icon={faFilm}
-              href="/movie"
+              href="/movies"
             ></LinkListItem>
             {wanted}
             {wantedItems}

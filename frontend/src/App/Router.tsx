@@ -19,7 +19,7 @@ class Router extends React.Component {
           <Route path="/series">
             <SeriesRouter></SeriesRouter>
           </Route>
-          <Route path="/movie">
+          <Route path="/movies">
             <MovieRouter></MovieRouter>
           </Route>
           <Route path="/wanted">

@@ -18,10 +18,10 @@ class Router extends React.Component<Props> {
   render(): JSX.Element {
     return (
       <Switch>
-        <Route exact path="/movie">
+        <Route exact path="/movies">
           <Movie></Movie>
         </Route>
-        <Route path="/movie/:id">
+        <Route path="/movies/:id">
           <MovieDetail></MovieDetail>
         </Route>
       </Switch>
