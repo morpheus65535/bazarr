@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { Navbar, Nav, Button, ButtonProps } from "react-bootstrap";
 import {
   FontAwesomeIcon,
@@ -6,13 +6,13 @@ import {
 } from "@fortawesome/react-fontawesome";
 
 interface BtnProps {
-  text: string;
   iconProps: FontAwesomeIconProps;
   btnProps?: ButtonProps;
 }
 
-export function CommonHeaderBtn(props: BtnProps): JSX.Element {
-  const { text, iconProps, btnProps } = props;
+export const CommonHeaderBtn: FunctionComponent<BtnProps> = (props) => {
+  const { children, iconProps, btnProps } = props;
+
   return (
     <Button variant="dark" className="d-flex flex-column" {...btnProps}>
       <FontAwesomeIcon
@@ -21,17 +21,29 @@ export function CommonHeaderBtn(props: BtnProps): JSX.Element {
         {...iconProps}
       ></FontAwesomeIcon>
       <span className="align-bottom text-themecolor small text-center">
-        {text}
+        {children}
       </span>
     </Button>
   );
+};
+
+type GroupDir = "start" | "end";
+interface GroupProps {
+  dir: GroupDir;
 }
 
-export function CommonHeader(props: React.PropsWithChildren<{}>): JSX.Element {
+export const CommonHeaderGroup: FunctionComponent<GroupProps> = (props) => {
+  const { children, dir } = props;
+
+  const className = `d-flex flex-grow-1 justify-content-${dir}`;
+  return <div className={className}>{children}</div>;
+};
+
+export const CommonHeader: FunctionComponent = (props) => {
   const { children } = props;
   return (
     <Navbar bg="dark">
-      <Nav>{children}</Nav>
+      <Nav className="flex-grow-1">{children}</Nav>
     </Navbar>
   );
-}
+};

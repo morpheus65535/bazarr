@@ -22,10 +22,9 @@ class WantedSeriesView extends React.Component<Props> {
     return (
       <Container fluid className="p-0">
         <CommonHeader>
-          <CommonHeaderBtn
-            text="Search All"
-            iconProps={{ icon: faSearch }}
-          ></CommonHeaderBtn>
+          <CommonHeaderBtn iconProps={{ icon: faSearch }}>
+            Search All
+          </CommonHeaderBtn>
         </CommonHeader>
         <div className="p-3">
           <Table></Table>

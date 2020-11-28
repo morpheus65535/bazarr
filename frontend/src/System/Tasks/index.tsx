@@ -31,10 +31,11 @@ class SystemTasksView extends React.Component<Props, {}> {
       <Container fluid className="p-0">
         <CommonHeader>
           <CommonHeaderBtn
-            text="Refresh"
             iconProps={{ icon: faSync, spin: loading }}
             btnProps={{ disabled: loading, onClick: update }}
-          ></CommonHeaderBtn>
+          >
+            Refresh
+          </CommonHeaderBtn>
         </CommonHeader>
         <div className="p-3">
           <Table></Table>

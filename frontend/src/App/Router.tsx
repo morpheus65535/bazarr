@@ -15,7 +15,7 @@ class Router extends React.Component {
           <Route exact path="/">
             <Redirect exact to="/series"></Redirect>
           </Route>
-          <Route exact path="/series">
+          <Route path="/series">
             <SeriesRouter></SeriesRouter>
           </Route>
           <Route path="/wanted">

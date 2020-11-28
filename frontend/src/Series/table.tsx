@@ -3,6 +3,7 @@ import { Column } from "react-table";
 import BasicTable from "../components/BasicTable";
 
 import { connect } from "react-redux";
+import { Link } from "react-router-dom";
 
 import { openSeriesEditModal } from "../redux/actions/series";
 
@@ -12,6 +13,7 @@ import {
   faExclamationTriangle,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
+
 import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
@@ -35,7 +37,12 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Name",
         accessor: "title",
         Cell: (row) => {
-          return <span>{row.value}</span>;
+          const target = `/series/${row.row.original.sonarrSeriesId}`;
+          return (
+            <Link to={target}>
+              <span>{row.value}</span>
+            </Link>
+          );
         },
       },
       {

@@ -1,9 +1,9 @@
 import React, { FunctionComponent } from "react";
 import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
 import { connect } from "react-redux";
-import { closeSeriesEditModal } from "../redux/actions/series";
+import { closeSeriesEditModal } from "../../redux/actions/series";
 
-import LanguageSelector from "./LanguageSelector";
+import LanguageSelector from "../../components/LanguageSelector";
 
 interface Props {
   series?: Series;

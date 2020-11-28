@@ -70,10 +70,7 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
     return (
       <Container fluid className="p-0">
         <CommonHeader>
-          <CommonHeaderBtn
-            iconProps={{ icon: faSave }}
-            text="Save"
-          ></CommonHeaderBtn>
+          <CommonHeaderBtn iconProps={{ icon: faSave }}>Save</CommonHeaderBtn>
         </CommonHeader>
         <Form className="p-4">
           {subtitles}

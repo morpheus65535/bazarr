@@ -5,13 +5,10 @@ import { CommonHeader, CommonHeaderBtn } from "../components/CommonHeader";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
-import { updateSeriesList } from "../redux/actions/series";
-
 import Table from "./table";
-import SeriesEditModal from "../components/SeriesEditModal";
+import SeriesEditModal from "./Components/SeriesEditModal";
 
 interface Props {
-  updateSeriesList: () => void;
   modal?: Series;
 }
 
@@ -26,9 +23,6 @@ class SeriesView extends React.Component<Props> {
   constructor(props: Props) {
     super(props);
   }
-  componentDidMount() {
-    this.props.updateSeriesList();
-  }
 
   onSeriesEditClick(serie: Series) {}
 
@@ -37,10 +31,9 @@ class SeriesView extends React.Component<Props> {
     return (
       <Container fluid className="px-0">
         <CommonHeader>
-          <CommonHeaderBtn
-            text="Mass Edit"
-            iconProps={{ icon: faList }}
-          ></CommonHeaderBtn>
+          <CommonHeaderBtn iconProps={{ icon: faList }}>
+            Mass Edit
+          </CommonHeaderBtn>
         </CommonHeader>
         <div className="p-3">
           <Table></Table>
@@ -51,4 +44,4 @@ class SeriesView extends React.Component<Props> {
   }
 }
 
-export default connect(mapStateToProps, { updateSeriesList })(SeriesView);
+export default connect(mapStateToProps)(SeriesView);
