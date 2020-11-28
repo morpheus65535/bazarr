@@ -104,6 +104,7 @@ interface SeriesSubDownloadRequest {
 // Movie
 interface Movie extends BasicUnit {
   audio_codec: string;
+  missing_subtitles: SubtitleInfo[];
   monitored: PythonBoolean;
   movie_file_id: number;
   radarrId: number;

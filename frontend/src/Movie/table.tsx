@@ -3,45 +3,49 @@ import { Column } from "react-table";
 import BasicTable from "../components/BasicTable";
 
 import { connect } from "react-redux";
-import { Link } from "react-router-dom";
+
+import { Badge } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCheck,
-  faExclamationTriangle,
   faWrench,
+  faCheck,
+  faBookmark,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { Badge, ProgressBar } from "react-bootstrap";
-
 interface Props {
-  series: Array<Series>;
-  openSeriesEditor?: (series: Series) => void;
+  movies: Array<Movie>;
 }
 
-function mapStateToProps({ series }: StoreState) {
-  const { seriesList } = series;
+function mapStateToProps({ movie }: StoreState) {
+  const { movieList } = movie;
   return {
-    series: seriesList.items,
+    movies: movieList.items,
   };
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series, openSeriesEditor } = props;
+  const { movies } = props;
 
-  const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
+  const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
     () => [
+      {
+        Header: "",
+        accessor: "monitored",
+        Cell: (row) => {
+          const monitored = row.value === "True";
+
+          if (monitored) {
+            return <FontAwesomeIcon icon={faBookmark}></FontAwesomeIcon>;
+          } else {
+            return <span></span>;
+          }
+        },
+      },
       {
         Header: "Name",
         accessor: "title",
-        Cell: (row) => {
-          const target = `/series/${row.row.original.sonarrSeriesId}`;
-          return (
-            <Link to={target}>
-              <span>{row.value}</span>
-            </Link>
-          );
-        },
       },
       {
         Header: "Path Exist",
@@ -70,8 +74,8 @@ const Table: FunctionComponent<Props> = (props) => {
           const languages = row.value;
           if (languages instanceof Array) {
             const items = languages.map(
-              (val: SeriesLanguage, idx: number): JSX.Element => (
-                <Badge className="mx-1" key={idx} variant="secondary">
+              (val: SeriesLanguage): JSX.Element => (
+                <Badge className="mx-1" key={val.name} variant="secondary">
                   {val.code2}
                 </Badge>
               )
@@ -91,35 +95,20 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "forced",
       },
       {
-        Header: "Subtitles",
-        accessor: "episodeFileCount",
+        Header: "Missing Subtitles",
+        accessor: "missing_subtitles",
         Cell: (row) => {
-          const { episodeFileCount, episodeMissingCount } = row.row.original;
-          let progress = 0;
-          let label = "";
-          if (episodeFileCount === 0) {
-            progress = 0.0;
-          } else {
-            progress = 1.0 - episodeMissingCount / episodeFileCount;
-            label = `${
-              episodeFileCount - episodeMissingCount
-            }/${episodeFileCount}`;
-          }
-
-          return (
-            <ProgressBar
-              className="my-a"
-              min={0}
-              max={1}
-              now={progress}
-              label={label}
-            ></ProgressBar>
-          );
+          const subtitles = row.value;
+          return subtitles.map((val) => (
+            <Badge className="mx-1" key={val.name} variant="secondary">
+              {val.code2}
+            </Badge>
+          ));
         },
       },
       {
         Header: "",
-        accessor: "sonarrSeriesId",
+        accessor: "radarrId",
         Cell: (row) => {
           return (
             <Badge
@@ -129,7 +118,6 @@ const Table: FunctionComponent<Props> = (props) => {
               variant="secondary"
               onClick={(e: MouseEvent) => {
                 e.preventDefault();
-                openSeriesEditor && openSeriesEditor(row.row.original);
               }}
             >
               <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
@@ -141,7 +129,7 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: series }}></BasicTable>;
+  return <BasicTable options={{ columns, data: movies }}></BasicTable>;
 };
 
 export default connect(mapStateToProps)(Table);
