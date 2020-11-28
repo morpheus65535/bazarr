@@ -1,7 +1,5 @@
 import { AsyncAction } from "../types/actions";
 import {
-  CLOSE_SERIES_EDIT_MODAL,
-  OPEN_SERIES_EDIT_MODAL,
   UPDATE_SERIES_LIST,
   UPDATE_SERIES_WANTED_LIST,
 } from "../constants";
@@ -27,22 +25,6 @@ const reducer = handleActions<SeriesState, any>(
             action,
             state.wantedSeriesList.items
           ),
-        };
-      },
-    },
-    [OPEN_SERIES_EDIT_MODAL]: {
-      next(state, action: Action<Series>) {
-        return {
-          ...state,
-          seriesModal: action.payload,
-        };
-      },
-    },
-    [CLOSE_SERIES_EDIT_MODAL]: {
-      next(state, action) {
-        return {
-          ...state,
-          seriesModal: undefined,
         };
       },
     },

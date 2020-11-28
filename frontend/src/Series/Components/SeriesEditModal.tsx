@@ -1,25 +1,23 @@
 import React, { FunctionComponent } from "react";
+import { connect } from "react-redux"
 import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
-import { connect } from "react-redux";
-import { closeSeriesEditModal } from "../../redux/actions/series";
 
 import LanguageSelector from "../../components/LanguageSelector";
 
 interface Props {
-  series?: Series;
   languages: Array<Language>;
-  closeSeriesEditModal: () => void;
+  series?: Series;
+  close?: () => void;
 }
 
 function mapStateToProps({ system, series }: StoreState) {
   return {
-    series: series.seriesModal,
     languages: system.enabledLanguage,
   };
 }
 
 const SeriesEditModal: FunctionComponent<Props> = (props) => {
-  const { series, languages, closeSeriesEditModal } = props;
+  const { series, languages, close } = props;
 
   const colTitleClass = "text-right my-a";
   const rowClass = "py-2";
@@ -38,7 +36,7 @@ const SeriesEditModal: FunctionComponent<Props> = (props) => {
   }
 
   return (
-    <Modal size="lg" show={series !== undefined} onHide={closeSeriesEditModal}>
+    <Modal size="lg" show={series !== undefined} onHide={close}>
       <Modal.Header closeButton>{series?.title}</Modal.Header>
       <Modal.Body>
         <Container fluid>
@@ -81,7 +79,7 @@ const SeriesEditModal: FunctionComponent<Props> = (props) => {
         </Container>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="outline-secondary" onClick={closeSeriesEditModal}>
+        <Button variant="outline-secondary" onClick={close}>
           Cancel
         </Button>
         <Button>Save</Button>
@@ -90,6 +88,4 @@ const SeriesEditModal: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, {
-  closeSeriesEditModal,
-})(SeriesEditModal);
+export default connect(mapStateToProps)(SeriesEditModal);

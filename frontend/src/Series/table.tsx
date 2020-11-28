@@ -5,8 +5,6 @@ import BasicTable from "../components/BasicTable";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { openSeriesEditModal } from "../redux/actions/series";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
@@ -18,7 +16,7 @@ import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
   series: Array<Series>;
-  openSeriesEditModal: (series: Series) => void;
+  openSeriesEditor?: (series: Series) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -29,7 +27,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series, openSeriesEditModal } = props;
+  const { series, openSeriesEditor } = props;
 
   const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
     () => [
@@ -131,7 +129,7 @@ const Table: FunctionComponent<Props> = (props) => {
               variant="secondary"
               onClick={(e: MouseEvent) => {
                 e.preventDefault();
-                openSeriesEditModal(row.row.original);
+                openSeriesEditor && openSeriesEditor(row.row.original);
               }}
             >
               <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
@@ -146,6 +144,4 @@ const Table: FunctionComponent<Props> = (props) => {
   return <BasicTable options={{ columns, data: series }}></BasicTable>;
 };
 
-export default connect(mapStateToProps, {
-  openSeriesEditModal,
-})(Table);
+export default connect(mapStateToProps)(Table);

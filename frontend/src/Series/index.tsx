@@ -8,26 +8,41 @@ import { faList } from "@fortawesome/free-solid-svg-icons";
 import Table from "./table";
 import SeriesEditModal from "./Components/SeriesEditModal";
 
-interface Props {
+interface Props {}
+
+interface State {
   modal?: Series;
 }
 
 function mapStateToProps({ series }: StoreState) {
-  const { seriesModal } = series;
-  return {
-    modal: seriesModal,
-  };
+  return {};
 }
 
-class SeriesView extends React.Component<Props> {
+class SeriesView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
+    this.state = {
+      modal: undefined,
+    };
   }
 
-  onSeriesEditClick(serie: Series) {}
+  onSeriesEditClick(series: Series) {
+    this.setState({
+      ...this.state,
+      modal: series,
+    });
+  }
+
+  onSeriesEditorClose() {
+    this.setState({
+      ...this.state,
+      modal: undefined,
+    });
+  }
 
   render(): JSX.Element {
-    const { modal } = this.props;
+    const { modal } = this.state;
+
     return (
       <Container fluid className="px-0">
         <CommonHeader>
@@ -36,9 +51,12 @@ class SeriesView extends React.Component<Props> {
           </CommonHeaderBtn>
         </CommonHeader>
         <div className="p-3">
-          <Table></Table>
+          <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </div>
-        <SeriesEditModal></SeriesEditModal>
+        <SeriesEditModal
+          series={modal}
+          close={this.onSeriesEditorClose.bind(this)}
+        ></SeriesEditModal>
       </Container>
     );
   }
