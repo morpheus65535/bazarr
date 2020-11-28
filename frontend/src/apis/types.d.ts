@@ -31,6 +31,26 @@ interface Language {
   name: string;
 }
 
+interface BasicUnit {
+  DT_RowId: string;
+  alternateTitles: [string];
+  audio_language: SeriesLanguage;
+  exist: true;
+  fanart: string;
+  forced: PythonBoolean;
+  hearing_impaired: PythonBoolean;
+  imdbId: string;
+  languages: [SeriesLanguage] | string;
+  mapped_path: string;
+  overview: string;
+  path: string;
+  poster: string;
+  sortTitle: string;
+  tags: [string];
+  title: string;
+  year: string;
+}
+
 // Series
 interface SeriesLanguage {
   code2: string;
@@ -43,29 +63,13 @@ interface SubtitleInfo extends SeriesLanguage {
   hi: boolean;
 }
 
-interface Series {
-  DT_RowId: string;
-  alternateTitles: [string];
-  audio_language: SeriesLanguage;
+interface Series extends BasicUnit {
   episodeFileCount: number;
   episodeMissingCount: number;
-  exist: true;
-  fanart: string;
-  forced: PythonBoolean;
-  hearing_impaired: PythonBoolean;
   imdbId: string;
-  languages: [SeriesLanguage] | string;
-  mapped_path: string;
-  overview: string;
-  path: string;
-  poster: string;
   seriesType: SonarrSeriesType;
   sonarrSeriesId: number;
-  sortTitle: string;
-  tags: [string];
-  title: string;
   tvdbId: number;
-  year: string;
 }
 
 interface WantedSeries {
@@ -95,6 +99,15 @@ interface SeriesSubDownloadRequest {
   sonarrSeriesId: number;
   sonarrEpisodeId: number;
   title: string;
+}
+
+// Movie
+interface Movie extends BasicUnit {
+  audio_codec: string;
+  monitored: PythonBoolean;
+  movie_file_id: number;
+  radarrId: number;
+  tmdbId: number;
 }
 
 // System

@@ -2,6 +2,7 @@ import Axios, { AxiosInstance, CancelTokenSource } from "axios";
 import BadgesApi from "./badges";
 import SystemApi from "./system";
 import SeriesApi from "./series";
+import MovieApi from "./movie";
 
 class Api {
   axios!: AxiosInstance;
@@ -10,6 +11,7 @@ class Api {
   system: SystemApi = new SystemApi();
   badges: BadgesApi = new BadgesApi();
   series: SeriesApi = new SeriesApi();
+  movie: MovieApi = new MovieApi();
 
   constructor() {
     if (process.env.NODE_ENV === "development") {

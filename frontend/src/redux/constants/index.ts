@@ -12,3 +12,6 @@ export const EXEC_SYSTEM_TASK = "EXEC_SYSTEM_TASK";
 // Series action
 export const UPDATE_SERIES_LIST = "UPDATE_SERIES_LIST";
 export const UPDATE_SERIES_WANTED_LIST = "UPDATE_SERIES_WANTED_LIST";
+
+// Movie action
+export const UPDATE_MOVIE_LIST = "UPDATE_MOVIE_LIST";

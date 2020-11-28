@@ -3,6 +3,7 @@ interface StoreState {
   badges: BadgeState;
   system: SystemState;
   series: SeriesState;
+  movie: MovieState;
 }
 
 interface BadgeState {
@@ -27,4 +28,8 @@ interface SystemState {
 interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
   wantedSeriesList: AsyncState<Array<WantedSeries>>;
+}
+
+interface MovieState {
+  movieList: AsyncState<Array<Movie>>;
 }
