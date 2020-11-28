@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent } from "react";
 import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { closeSeriesEditModal } from "../redux/actions/series";
