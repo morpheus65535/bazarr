@@ -1,6 +1,21 @@
 import React from "react";
-import { connect } from "react-redux"
+import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
+
+import {
+  faSync,
+  faHistory,
+  faToolbox,
+  faWrench,
+} from "@fortawesome/free-solid-svg-icons";
+
+import { Container } from "react-bootstrap";
+
+import {
+  CommonHeader,
+  CommonHeaderBtn,
+  CommonHeaderGroup,
+} from "../../components/CommonHeader";
 
 interface Params {
   id: string;
@@ -24,11 +39,32 @@ class MovieDetailView extends React.Component<Props> {
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
     if (item) {
-      return <div>{id}</div>;
+      return (
+        <Container fluid className="p-0">
+          <CommonHeader>
+            <CommonHeaderGroup dir="start">
+              <CommonHeaderBtn iconProps={{ icon: faSync }}>
+                Scan Disk
+              </CommonHeaderBtn>
+              <CommonHeaderBtn iconProps={{ icon: faHistory }}>
+                History
+              </CommonHeaderBtn>
+              <CommonHeaderBtn iconProps={{ icon: faToolbox }}>
+                Tools
+              </CommonHeaderBtn>
+            </CommonHeaderGroup>
+            <CommonHeaderGroup dir="end">
+              <CommonHeaderBtn iconProps={{ icon: faWrench }}>
+                Edit Movie
+              </CommonHeaderBtn>
+            </CommonHeaderGroup>
+          </CommonHeader>
+        </Container>
+      );
     } else {
       return <div></div>;
     }
   }
 }
 
-export default withRouter(connect(mapStateToProps)(MovieDetailView))
+export default withRouter(connect(mapStateToProps)(MovieDetailView));
