@@ -1,10 +1,10 @@
 import React, { FunctionComponent, MouseEvent } from "react";
 import { Column } from "react-table";
-import BasicTable from "../components/BasicTable";
-
 import { connect } from "react-redux";
-
+import { Link } from "react-router-dom";
 import { Badge } from "react-bootstrap";
+
+import BasicTable from "../components/BasicTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -46,6 +46,14 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Name",
         accessor: "title",
+        Cell: (row) => {
+          const target = `/movies/${row.row.original.radarrId}`;
+          return (
+            <Link to={target}>
+              <span>{row.value}</span>
+            </Link>
+          );
+        },
       },
       {
         Header: "Path Exist",
