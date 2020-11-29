@@ -17,6 +17,8 @@ import ContentHeader, {
 } from "../../components/ContentHeader";
 import ItemOverview from "../../components/ItemOverview";
 
+import Table from "./table";
+
 interface Params {
   id: string;
 }
@@ -38,7 +40,7 @@ class MovieDetailView extends React.Component<Props> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
-    const details = [item?.audio_language.name, item?.mapped_path, item?.tags]
+    const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
     if (item) {
       return (
@@ -62,6 +64,7 @@ class MovieDetailView extends React.Component<Props> {
             </ContentHeaderGroup>
           </ContentHeader>
           <ItemOverview item={item} details={details}></ItemOverview>
+          <Table movie={item}></Table>
         </Container>
       );
     } else {

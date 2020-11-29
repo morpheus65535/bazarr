@@ -61,6 +61,7 @@ interface SeriesLanguage {
 interface SubtitleInfo extends SeriesLanguage {
   forced: boolean;
   hi: boolean;
+  path: string | null;
 }
 
 interface Series extends BasicItem {
@@ -104,6 +105,7 @@ interface SeriesSubDownloadRequest {
 // Movie
 interface Movie extends BasicItem {
   audio_codec: string;
+  subtitles: SubtitleInfo[];
   missing_subtitles: SubtitleInfo[];
   monitored: PythonBoolean;
   movie_file_id: number;
