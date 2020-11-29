@@ -7,7 +7,7 @@ import ContentHeader, {
   ContentHeaderButton,
 } from "../components/ContentHeader";
 import Table from "./table";
-import SeriesEditModal from "./Components/SeriesEditModal";
+import ItemSimpleEditor from "../components/ItemSimpleEditor";
 
 interface Props {}
 
@@ -54,10 +54,10 @@ class SeriesView extends React.Component<Props, State> {
         <div className="p-3">
           <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </div>
-        <SeriesEditModal
-          series={modal}
+        <ItemSimpleEditor
+          item={modal}
           close={this.onSeriesEditorClose.bind(this)}
-        ></SeriesEditModal>
+        ></ItemSimpleEditor>
       </Container>
     );
   }

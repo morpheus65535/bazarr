@@ -7,10 +7,39 @@ import ContentHeader, {
   ContentHeaderButton,
 } from "../components/ContentHeader";
 import { Container } from "react-bootstrap";
+import ItemSimpleEditor from "../components/ItemSimpleEditor";
 
 import Table from "./table";
-class MovieView extends React.Component {
+
+interface Props {}
+interface State {
+  modal?: Movie;
+}
+class MovieView extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      modal: undefined,
+    };
+  }
+
+  onMovieEditClick(movie: Movie) {
+    this.setState({
+      ...this.state,
+      modal: movie,
+    });
+  }
+
+  onMovieEditClose() {
+    this.setState({
+      ...this.state,
+      modal: undefined,
+    });
+  }
   render() {
+    const { modal } = this.state;
+
     return (
       <Container fluid className="p-0">
         <ContentHeader>
@@ -19,8 +48,12 @@ class MovieView extends React.Component {
           </ContentHeaderButton>
         </ContentHeader>
         <div className="p-3">
-          <Table></Table>
+          <Table openMovieEditor={ this.onMovieEditClick.bind(this) }></Table>
         </div>
+        <ItemSimpleEditor
+          item={modal}
+          close={this.onMovieEditClose.bind(this)}
+        ></ItemSimpleEditor>
       </Container>
     );
   }

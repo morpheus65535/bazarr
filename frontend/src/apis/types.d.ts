@@ -31,7 +31,7 @@ interface Language {
   name: string;
 }
 
-interface BasicUnit {
+interface BasicItem {
   DT_RowId: string;
   alternateTitles: [string];
   audio_language: SeriesLanguage;
@@ -63,7 +63,7 @@ interface SubtitleInfo extends SeriesLanguage {
   hi: boolean;
 }
 
-interface Series extends BasicUnit {
+interface Series extends BasicItem {
   episodeFileCount: number;
   episodeMissingCount: number;
   imdbId: string;
@@ -102,7 +102,7 @@ interface SeriesSubDownloadRequest {
 }
 
 // Movie
-interface Movie extends BasicUnit {
+interface Movie extends BasicItem {
   audio_codec: string;
   missing_subtitles: SubtitleInfo[];
   monitored: PythonBoolean;

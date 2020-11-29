@@ -2,11 +2,11 @@ import React, { FunctionComponent } from "react";
 import { connect } from "react-redux"
 import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
 
-import LanguageSelector from "../../components/LanguageSelector";
+import LanguageSelector from "./LanguageSelector";
 
 interface Props {
   languages: Array<Language>;
-  series?: Series;
+  item?: BasicItem;
   close?: () => void;
 }
 
@@ -16,8 +16,8 @@ function mapStateToProps({ system, series }: StoreState) {
   };
 }
 
-const SeriesEditModal: FunctionComponent<Props> = (props) => {
-  const { series, languages, close } = props;
+const UnitSimpleEditor: FunctionComponent<Props> = (props) => {
+  const { item: series, languages, close } = props;
 
   const colTitleClass = "text-right my-a";
   const rowClass = "py-2";
@@ -88,4 +88,4 @@ const SeriesEditModal: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(SeriesEditModal);
+export default connect(mapStateToProps)(UnitSimpleEditor);

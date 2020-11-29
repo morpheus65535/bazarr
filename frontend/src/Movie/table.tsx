@@ -16,6 +16,7 @@ import {
 
 interface Props {
   movies: Array<Movie>;
+  openMovieEditor?: (movie: Movie) => void;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -26,7 +27,7 @@ function mapStateToProps({ movie }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movies } = props;
+  const { movies, openMovieEditor: onOpenMovieEditor } = props;
 
   const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
     () => [
@@ -126,6 +127,7 @@ const Table: FunctionComponent<Props> = (props) => {
               variant="secondary"
               onClick={(e: MouseEvent) => {
                 e.preventDefault();
+                onOpenMovieEditor && onOpenMovieEditor(row.row.original);
               }}
             >
               <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
