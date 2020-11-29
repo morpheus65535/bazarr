@@ -15,6 +15,7 @@ import ContentHeader, {
   ContentHeaderButton,
   ContentHeaderGroup,
 } from "../../components/ContentHeader";
+import ItemOverview from "../../components/ItemOverview";
 
 interface Params {
   id: string;
@@ -37,6 +38,8 @@ class MovieDetailView extends React.Component<Props> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
+    const details = [item?.audio_language.name, item?.mapped_path, item?.tags]
+
     if (item) {
       return (
         <Container fluid className="p-0">
@@ -58,6 +61,7 @@ class MovieDetailView extends React.Component<Props> {
               </ContentHeaderButton>
             </ContentHeaderGroup>
           </ContentHeader>
+          <ItemOverview item={item} details={details}></ItemOverview>
         </Container>
       );
     } else {

@@ -1,6 +1,5 @@
 import React from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-
 import { connect } from "react-redux";
 
 import {
@@ -14,7 +13,7 @@ import ContentHeader, {
   ContentHeaderButton,
   ContentHeaderGroup,
 } from "../../components/ContentHeader";
-import Detail from "./EpisodeDetail";
+import ItemOverview from "../../components/ItemOverview";
 
 interface Params {
   id: string;
@@ -37,6 +36,8 @@ class SeriesEpisodesView extends React.Component<Props> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
 
+    const details = [item?.audio_language.name, item?.mapped_path, `${item?.episodeFileCount} files`, item?.seriesType, item?.tags]
+
     if (item) {
       return (
         <div>
@@ -58,7 +59,8 @@ class SeriesEpisodesView extends React.Component<Props> {
               </ContentHeaderButton>
             </ContentHeaderGroup>
           </ContentHeader>
-          <Detail series={item}></Detail>
+          <ItemOverview item={item} details={details}>
+          </ItemOverview>
         </div>
       );
     } else {
