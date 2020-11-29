@@ -3,8 +3,10 @@ import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import {} from "../../redux/actions/system";
 
-import TitleBlock from "../../components/TitleBlock";
-import { CommonHeader, CommonHeaderBtn } from "../../components/CommonHeader";
+import SettingGroup from "../../components/SettingGroup";
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../../components/ContentHeader";
 import { CommonFormGroup } from "../../components/CommonForm";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
@@ -65,7 +67,7 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
 
     if (antiCaptchaSelection === "anticaptcha") {
       return (
-        <div>
+        <React.Fragment>
           <CommonFormGroup title="Provider Website">
             <a
               className="m-0 p-0"
@@ -82,11 +84,11 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
               className={formControlClass}
             ></Form.Control>
           </CommonFormGroup>
-        </div>
+        </React.Fragment>
       );
     } else if (antiCaptchaSelection === "deathbycaptcha") {
       return (
-        <div>
+        <React.Fragment>
           <CommonFormGroup title="Provider Website">
             <a
               className="m-0 p-0"
@@ -109,7 +111,7 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
               className={formControlClass}
             ></Form.Control>
           </CommonFormGroup>
-        </div>
+        </React.Fragment>
       );
     } else {
       return <div></div>;
@@ -119,7 +121,7 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
   render(): JSX.Element {
     const { upgradeEnabled } = this.state;
     const subtitles: JSX.Element = (
-      <TitleBlock title="Subtitles Options">
+      <SettingGroup name="Subtitles Options">
         <CommonFormGroup title="Subtitle Folder">
           <Form.Control as="select" className={formControlClass}>
             {SubtitleFolderOption.map((val, idx) => (
@@ -165,11 +167,11 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
             </Form.Label>
           </CommonFormGroup>
         </div>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const anti_captcha: JSX.Element = (
-      <TitleBlock title="Anti-Captcha Options">
+      <SettingGroup name="Anti-Captcha Options">
         <CommonFormGroup title="Provider">
           <Form.Control
             as="select"
@@ -189,11 +191,11 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
           </Form.Label>
         </CommonFormGroup>
         {this.renderAcProvider()}
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const performance: JSX.Element = (
-      <TitleBlock title="Performance / Optimization">
+      <SettingGroup name="Performance / Optimization">
         <CommonFormGroup title="Adaptive Searching">
           <Form.Check className={formControlClass} type="checkbox"></Form.Check>
           <Form.Label>
@@ -214,14 +216,16 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
             Use embedded subtitles in media files when determining missing ones.
           </Form.Label>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     return (
       <Container fluid className="p-0">
-        <CommonHeader>
-          <CommonHeaderBtn iconProps={{ icon: faSave }}>Save</CommonHeaderBtn>
-        </CommonHeader>
+        <ContentHeader>
+          <ContentHeaderButton iconProps={{ icon: faSave }}>
+            Save
+          </ContentHeaderButton>
+        </ContentHeader>
         <Form className="p-4">
           {subtitles}
           {anti_captcha}

@@ -11,11 +11,10 @@ import {
 
 import { Container } from "react-bootstrap";
 
-import {
-  CommonHeader,
-  CommonHeaderBtn,
-  CommonHeaderGroup,
-} from "../../components/CommonHeader";
+import ContentHeader, {
+  ContentHeaderButton,
+  ContentHeaderGroup,
+} from "../../components/ContentHeader";
 
 interface Params {
   id: string;
@@ -41,24 +40,24 @@ class MovieDetailView extends React.Component<Props> {
     if (item) {
       return (
         <Container fluid className="p-0">
-          <CommonHeader>
-            <CommonHeaderGroup dir="start">
-              <CommonHeaderBtn iconProps={{ icon: faSync }}>
+          <ContentHeader>
+            <ContentHeaderGroup pos="start">
+              <ContentHeaderButton iconProps={{ icon: faSync }}>
                 Scan Disk
-              </CommonHeaderBtn>
-              <CommonHeaderBtn iconProps={{ icon: faHistory }}>
+              </ContentHeaderButton>
+              <ContentHeaderButton iconProps={{ icon: faHistory }}>
                 History
-              </CommonHeaderBtn>
-              <CommonHeaderBtn iconProps={{ icon: faToolbox }}>
+              </ContentHeaderButton>
+              <ContentHeaderButton iconProps={{ icon: faToolbox }}>
                 Tools
-              </CommonHeaderBtn>
-            </CommonHeaderGroup>
-            <CommonHeaderGroup dir="end">
-              <CommonHeaderBtn iconProps={{ icon: faWrench }}>
+              </ContentHeaderButton>
+            </ContentHeaderGroup>
+            <ContentHeaderGroup pos="end">
+              <ContentHeaderButton iconProps={{ icon: faWrench }}>
                 Edit Movie
-              </CommonHeaderBtn>
-            </CommonHeaderGroup>
-          </CommonHeader>
+              </ContentHeaderButton>
+            </ContentHeaderGroup>
+          </ContentHeader>
         </Container>
       );
     } else {

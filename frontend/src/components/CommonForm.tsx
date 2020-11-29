@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { Col, Form, Row } from "react-bootstrap";
 
 import "./CommonForm.css";
@@ -7,9 +7,7 @@ interface FormProps {
   title: string;
 }
 
-export function CommonFormGroup(
-  props: React.PropsWithChildren<FormProps>
-): JSX.Element {
+export const CommonFormGroup: FunctionComponent<FormProps> = (props) => {
   const { title, children } = props;
   return (
     <Row>
@@ -25,4 +23,4 @@ export function CommonFormGroup(
       </Form.Group>
     </Row>
   );
-}
+};

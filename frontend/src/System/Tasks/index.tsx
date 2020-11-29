@@ -2,7 +2,9 @@ import React from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../redux/actions/system";
-import { CommonHeaderBtn, CommonHeader } from "../../components/CommonHeader";
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../../components/ContentHeader";
 
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 
@@ -29,14 +31,14 @@ class SystemTasksView extends React.Component<Props, {}> {
     const { loading, update } = this.props;
     return (
       <Container fluid className="p-0">
-        <CommonHeader>
-          <CommonHeaderBtn
+        <ContentHeader>
+          <ContentHeaderButton
             iconProps={{ icon: faSync, spin: loading }}
             btnProps={{ disabled: loading, onClick: update }}
           >
             Refresh
-          </CommonHeaderBtn>
-        </CommonHeader>
+          </ContentHeaderButton>
+        </ContentHeader>
         <div className="p-3">
           <Table></Table>
         </div>

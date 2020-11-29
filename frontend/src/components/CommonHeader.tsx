@@ -5,12 +5,17 @@ import {
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
 
-interface BtnProps {
+interface CHButtonProps {
   iconProps: FontAwesomeIconProps;
   btnProps?: ButtonProps;
 }
 
-export const CommonHeaderBtn: FunctionComponent<BtnProps> = (props) => {
+type GroupPosition = "start" | "end";
+interface GroupProps {
+  pos: GroupPosition;
+}
+
+const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   const { children, iconProps, btnProps } = props;
 
   return (
@@ -27,19 +32,14 @@ export const CommonHeaderBtn: FunctionComponent<BtnProps> = (props) => {
   );
 };
 
-type GroupDir = "start" | "end";
-interface GroupProps {
-  dir: GroupDir;
-}
-
-export const CommonHeaderGroup: FunctionComponent<GroupProps> = (props) => {
-  const { children, dir } = props;
+const ContentHeaderGroup: FunctionComponent<GroupProps> = (props) => {
+  const { children, pos: dir } = props;
 
   const className = `d-flex flex-grow-1 justify-content-${dir}`;
   return <div className={className}>{children}</div>;
 };
 
-export const CommonHeader: FunctionComponent = (props) => {
+const ContentHeader: FunctionComponent = (props) => {
   const { children } = props;
   return (
     <Navbar bg="dark">
@@ -47,3 +47,10 @@ export const CommonHeader: FunctionComponent = (props) => {
     </Navbar>
   );
 };
+
+declare type Header = typeof ContentHeader & {
+  Button: typeof ContentHeaderButton;
+  Group: typeof ContentHeaderGroup;
+};
+declare const Header: Header;
+export default Header;

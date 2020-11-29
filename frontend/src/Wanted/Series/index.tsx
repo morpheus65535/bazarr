@@ -6,7 +6,9 @@ import { updateWantedSeriesList } from "../../redux/actions/series";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
-import { CommonHeaderBtn, CommonHeader } from "../../components/CommonHeader";
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../../components/ContentHeader";
 
 import Table from "./table";
 
@@ -21,11 +23,11 @@ class WantedSeriesView extends React.Component<Props> {
   render(): JSX.Element {
     return (
       <Container fluid className="p-0">
-        <CommonHeader>
-          <CommonHeaderBtn iconProps={{ icon: faSearch }}>
+        <ContentHeader>
+          <ContentHeaderButton iconProps={{ icon: faSearch }}>
             Search All
-          </CommonHeaderBtn>
-        </CommonHeader>
+          </ContentHeaderButton>
+        </ContentHeader>
         <div className="p-3">
           <Table></Table>
         </div>

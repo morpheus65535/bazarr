@@ -1,10 +1,11 @@
 import React from "react";
 import { connect } from "react-redux";
 import { Container } from "react-bootstrap";
-import { CommonHeader, CommonHeaderBtn } from "../components/CommonHeader";
-
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../components/ContentHeader";
 import Table from "./table";
 import SeriesEditModal from "./Components/SeriesEditModal";
 
@@ -45,11 +46,11 @@ class SeriesView extends React.Component<Props, State> {
 
     return (
       <Container fluid className="px-0">
-        <CommonHeader>
-          <CommonHeaderBtn iconProps={{ icon: faList }}>
+        <ContentHeader>
+          <ContentHeaderButton iconProps={{ icon: faList }}>
             Mass Edit
-          </CommonHeaderBtn>
-        </CommonHeader>
+          </ContentHeaderButton>
+        </ContentHeader>
         <div className="p-3">
           <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </div>

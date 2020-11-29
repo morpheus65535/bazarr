@@ -2,8 +2,10 @@ import React from "react";
 import { Container, Form, InputGroup, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 
-import TitleBlock from "../../components/TitleBlock";
-import { CommonHeader, CommonHeaderBtn } from "../../components/CommonHeader";
+import SettingGroup from "../../components/SettingGroup";
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../../components/ContentHeader";
 import { CommonFormGroup } from "../../components/CommonForm";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -69,7 +71,7 @@ class SettingsGeneralView extends React.Component<Props, State> {
     const { proxySelection, authSelection } = this.state;
 
     const host: JSX.Element = (
-      <TitleBlock title="Host">
+      <SettingGroup name="Host">
         <CommonFormGroup title="Bind Address">
           <Form.Control type="text" className={formControlClass}></Form.Control>
           <Form.Label>
@@ -92,11 +94,11 @@ class SettingsGeneralView extends React.Component<Props, State> {
             Requires restart to take effect
           </Form.Label>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const security: JSX.Element = (
-      <TitleBlock title="Security">
+      <SettingGroup name="Security">
         <CommonFormGroup title="Authentication">
           <Form.Control
             as="select"
@@ -139,11 +141,11 @@ class SettingsGeneralView extends React.Component<Props, State> {
             </InputGroup.Append>
           </InputGroup>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const proxy: JSX.Element = (
-      <TitleBlock title="Proxy">
+      <SettingGroup name="Proxy">
         <CommonFormGroup title="Type">
           <Form.Control
             as="select"
@@ -195,11 +197,11 @@ class SettingsGeneralView extends React.Component<Props, State> {
             ></Form.Control>
           </CommonFormGroup>
         </div>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const ui: JSX.Element = (
-      <TitleBlock title="UI">
+      <SettingGroup name="UI">
         <CommonFormGroup title="Page Size">
           <Form.Control as="select" className={formControlClass}>
             {PageSizeOptions.map((val, idx) => (
@@ -214,22 +216,22 @@ class SettingsGeneralView extends React.Component<Props, State> {
             ))}
           </Form.Control>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const logging: JSX.Element = (
-      <TitleBlock title="Logging">
+      <SettingGroup name="Logging">
         <CommonFormGroup title="Debug">
           <Form.Check type="checkbox"></Form.Check>
           <Form.Label>
             Debug logging should only be enabled temporarily
           </Form.Label>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const analytics: JSX.Element = (
-      <TitleBlock title="Analytics">
+      <SettingGroup name="Analytics">
         <CommonFormGroup title="Enabled">
           <Form.Check type="checkbox"></Form.Check>
           <Form.Label>
@@ -241,14 +243,16 @@ class SettingsGeneralView extends React.Component<Props, State> {
             have to better understand how you use Bazarr.
           </Form.Label>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     return (
       <Container fluid className="p-0">
-        <CommonHeader>
-          <CommonHeaderBtn iconProps={{ icon: faSave }}>Save</CommonHeaderBtn>
-        </CommonHeader>
+        <ContentHeader>
+          <ContentHeaderButton iconProps={{ icon: faSave }}>
+            Save
+          </ContentHeaderButton>
+        </ContentHeader>
         <Form className="p-4">
           {host}
           {security}

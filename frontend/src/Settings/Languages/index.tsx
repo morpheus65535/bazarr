@@ -3,8 +3,10 @@ import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import {} from "../../redux/actions/system";
 
-import TitleBlock from "../../components/TitleBlock";
-import { CommonHeader, CommonHeaderBtn } from "../../components/CommonHeader";
+import SettingGroup from "../../components/SettingGroup";
+import ContentHeader, {
+  ContentHeaderButton,
+} from "../../components/ContentHeader";
 import { CommonFormGroup } from "../../components/CommonForm";
 import LanguageSelector from "../../components/LanguageSelector";
 
@@ -27,7 +29,7 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
     const { enabled, languages } = this.props;
 
     const subtitles: JSX.Element = (
-      <TitleBlock title="Subtitles Languages">
+      <SettingGroup name="Subtitles Languages">
         <CommonFormGroup title="Single Language">
           <Form.Check type="checkbox"></Form.Check>
           <Form.Label>
@@ -47,11 +49,11 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
             languages={languages}
           ></LanguageSelector>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const defaultSetting: JSX.Element = (
-      <TitleBlock title="Default Settings">
+      <SettingGroup name="Default Settings">
         <CommonFormGroup title="Series Default Settings">
           <Form.Check type="checkbox"></Form.Check>
           <Form.Label>
@@ -64,14 +66,16 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
             Apply only to Movies added to Bazarr after enabling this option.
           </Form.Label>
         </CommonFormGroup>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     return (
       <Container fluid className="p-0">
-        <CommonHeader>
-          <CommonHeaderBtn iconProps={{ icon: faSave }}>Save</CommonHeaderBtn>
-        </CommonHeader>
+        <ContentHeader>
+          <ContentHeaderButton iconProps={{ icon: faSave }}>
+            Save
+          </ContentHeaderButton>
+        </ContentHeader>
         <Form className="p-4">
           {subtitles}
           {defaultSetting}

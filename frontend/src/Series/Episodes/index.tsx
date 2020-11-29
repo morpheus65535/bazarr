@@ -10,11 +10,10 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
-import {
-  CommonHeader,
-  CommonHeaderBtn,
-  CommonHeaderGroup,
-} from "../../components/CommonHeader";
+import ContentHeader, {
+  ContentHeaderButton,
+  ContentHeaderGroup,
+} from "../../components/ContentHeader";
 import Detail from "./EpisodeDetail";
 
 interface Params {
@@ -41,24 +40,24 @@ class SeriesEpisodesView extends React.Component<Props> {
     if (item) {
       return (
         <div>
-          <CommonHeader>
-            <CommonHeaderGroup dir="start">
-              <CommonHeaderBtn iconProps={{ icon: faSync }}>
+          <ContentHeader>
+            <ContentHeaderGroup pos="start">
+              <ContentHeaderButton iconProps={{ icon: faSync }}>
                 Scan Disk
-              </CommonHeaderBtn>
-              <CommonHeaderBtn iconProps={{ icon: faSearch }}>
+              </ContentHeaderButton>
+              <ContentHeaderButton iconProps={{ icon: faSearch }}>
                 Search
-              </CommonHeaderBtn>
-            </CommonHeaderGroup>
-            <CommonHeaderGroup dir="end">
-              <CommonHeaderBtn iconProps={{ icon: faCloudUploadAlt }}>
+              </ContentHeaderButton>
+            </ContentHeaderGroup>
+            <ContentHeaderGroup pos="end">
+              <ContentHeaderButton iconProps={{ icon: faCloudUploadAlt }}>
                 Upload
-              </CommonHeaderBtn>
-              <CommonHeaderBtn iconProps={{ icon: faWrench }}>
+              </ContentHeaderButton>
+              <ContentHeaderButton iconProps={{ icon: faWrench }}>
                 Edit Series
-              </CommonHeaderBtn>
-            </CommonHeaderGroup>
-          </CommonHeader>
+              </ContentHeaderButton>
+            </ContentHeaderGroup>
+          </ContentHeader>
           <Detail series={item}></Detail>
         </div>
       );

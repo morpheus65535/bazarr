@@ -3,7 +3,7 @@ import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../redux/actions/system";
 
-import TitleBlock from "../../components/TitleBlock";
+import SettingGroup from "../../components/SettingGroup";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
@@ -76,7 +76,7 @@ class SystemStatusView extends React.Component<Props, {}> {
     } = this.props.status;
 
     const about: JSX.Element = (
-      <TitleBlock title="About">
+      <SettingGroup name="About">
         <InfoRow title="Bazarr Version">
           <span>{bazarr_version}</span>
         </InfoRow>
@@ -98,11 +98,11 @@ class SystemStatusView extends React.Component<Props, {}> {
         <InfoRow title="Bazarr Config Directory">
           <span>{bazarr_config_directory}</span>
         </InfoRow>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     const more: JSX.Element = (
-      <TitleBlock title="More Info">
+      <SettingGroup name="More Info">
         <InfoRow title="Home Page">
           <IconLabel icon={faPaperPlane}>
             <a
@@ -147,7 +147,7 @@ class SystemStatusView extends React.Component<Props, {}> {
             </a>
           </IconLabel>
         </InfoRow>
-      </TitleBlock>
+      </SettingGroup>
     );
 
     return (
