@@ -7,7 +7,7 @@ import ContentHeader, {
   ContentHeaderButton,
 } from "../components/ContentHeader";
 import Table from "./table";
-import ItemSimpleEditor from "../components/ItemSimpleEditor";
+import ItemSimpleEditor from "../components/EditItemModal";
 
 interface Props {}
 

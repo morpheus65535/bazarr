@@ -7,7 +7,7 @@ import ContentHeader, {
   ContentHeaderButton,
 } from "../components/ContentHeader";
 import { Container } from "react-bootstrap";
-import ItemSimpleEditor from "../components/ItemSimpleEditor";
+import ItemSimpleEditor from "../components/EditItemModal";
 
 import Table from "./table";
 

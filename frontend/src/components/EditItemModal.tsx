@@ -16,7 +16,7 @@ function mapStateToProps({ system, series }: StoreState) {
   };
 }
 
-const UnitSimpleEditor: FunctionComponent<Props> = (props) => {
+const EditItemModal: FunctionComponent<Props> = (props) => {
   const { item: series, languages, close } = props;
 
   const colTitleClass = "text-right my-a";
@@ -88,4 +88,4 @@ const UnitSimpleEditor: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(UnitSimpleEditor);
+export default connect(mapStateToProps)(EditItemModal);
