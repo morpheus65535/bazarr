@@ -1,7 +1,4 @@
-import {
-  UPDATE_SERIES_LIST,
-  UPDATE_SERIES_WANTED_LIST,
-} from "../constants";
+import { UPDATE_SERIES_LIST, UPDATE_SERIES_WANTED_LIST } from "../constants";
 
 import apis from "../../apis";
 import { createAsyncAction } from "./creator";

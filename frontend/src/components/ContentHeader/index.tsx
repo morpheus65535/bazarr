@@ -14,7 +14,7 @@ export const ContentHeader: FunctionComponent = (props) => {
 };
 
 export default ContentHeader;
-export { ContentHeaderButton, ContentHeaderGroup }
+export { ContentHeaderButton, ContentHeaderGroup };
 
 // declare type Header = typeof ContentHeader & {
 //   Button: typeof ContentHeaderButton;

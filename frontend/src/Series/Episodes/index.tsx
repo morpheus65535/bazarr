@@ -36,7 +36,13 @@ class SeriesEpisodesView extends React.Component<Props> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
 
-    const details = [item?.audio_language.name, item?.mapped_path, `${item?.episodeFileCount} files`, item?.seriesType, item?.tags]
+    const details = [
+      item?.audio_language.name,
+      item?.mapped_path,
+      `${item?.episodeFileCount} files`,
+      item?.seriesType,
+      item?.tags,
+    ];
 
     if (item) {
       return (
@@ -59,8 +65,7 @@ class SeriesEpisodesView extends React.Component<Props> {
               </ContentHeaderButton>
             </ContentHeaderGroup>
           </ContentHeader>
-          <ItemOverview item={item} details={details}>
-          </ItemOverview>
+          <ItemOverview item={item} details={details}></ItemOverview>
         </div>
       );
     } else {

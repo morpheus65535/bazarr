@@ -1,8 +1,5 @@
 import { AsyncAction } from "../types/actions";
-import {
-  UPDATE_SERIES_LIST,
-  UPDATE_SERIES_WANTED_LIST,
-} from "../constants";
+import { UPDATE_SERIES_LIST, UPDATE_SERIES_WANTED_LIST } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
 import { handleActions, Action } from "redux-actions";

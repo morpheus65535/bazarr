@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { connect } from "react-redux"
+import { connect } from "react-redux";
 import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
 
 import LanguageSelector from "./LanguageSelector";

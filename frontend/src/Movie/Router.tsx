@@ -5,7 +5,7 @@ import { connect } from "react-redux";
 import { updateMovieList } from "../redux/actions/movie";
 
 import Movie from ".";
-import MovieDetail from "./Detail"
+import MovieDetail from "./Detail";
 
 interface Props {
   updateMovieList: () => void;

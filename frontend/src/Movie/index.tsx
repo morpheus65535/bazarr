@@ -48,7 +48,7 @@ class MovieView extends React.Component<Props, State> {
           </ContentHeaderButton>
         </ContentHeader>
         <div className="p-3">
-          <Table openMovieEditor={ this.onMovieEditClick.bind(this) }></Table>
+          <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
         </div>
         <ItemSimpleEditor
           item={modal}

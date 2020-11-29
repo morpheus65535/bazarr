@@ -8,5 +8,5 @@ export default combineReducers({
   badges,
   system,
   series,
-  movie
+  movie,
 });

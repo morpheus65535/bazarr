@@ -14,6 +14,6 @@ const SettingGroup: FunctionComponent<Props> = (props) => {
       {children}
     </div>
   );
-}
+};
 
 export default SettingGroup;
