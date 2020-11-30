@@ -15,7 +15,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-  movies: Array<Movie>;
+  movies: Movie[];
   openMovieEditor?: (movie: Movie) => void;
 }
 
@@ -83,7 +83,7 @@ const Table: FunctionComponent<Props> = (props) => {
           const languages = row.value;
           if (languages instanceof Array) {
             const items = languages.map(
-              (val: SeriesLanguage): JSX.Element => (
+              (val: Language): JSX.Element => (
                 <Badge className="mx-1" key={val.name} variant="secondary">
                   {val.code2}
                 </Badge>

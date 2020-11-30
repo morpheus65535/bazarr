@@ -32,9 +32,9 @@ export default class SeriesApi {
     draw: number,
     start: number,
     length: number
-  ): Promise<Array<WantedSeries>> {
-    return new Promise<Array<WantedSeries>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedSeries>>>("wanted_series", {
+  ): Promise<Array<WantedEpisode>> {
+    return new Promise<Array<WantedEpisode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<WantedEpisode>>>("wanted_series", {
         draw,
         start,
         length,

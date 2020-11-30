@@ -5,8 +5,8 @@ import { Button, Container, Modal, Row, Col, Form } from "react-bootstrap";
 import LanguageSelector from "./LanguageSelector";
 
 interface Props {
-  languages: Array<Language>;
-  item?: BasicItem;
+  languages: ExtendLanguage[];
+  item?: ExtendItem;
   close?: () => void;
 }
 
@@ -23,7 +23,7 @@ const EditItemModal: FunctionComponent<Props> = (props) => {
   const rowClass = "py-2";
   const colSize = 3;
 
-  let enabled: Language[] = [];
+  let enabled: ExtendLanguage[] = [];
   if (series?.languages instanceof Array) {
     enabled = series?.languages.map((lang) => {
       return {

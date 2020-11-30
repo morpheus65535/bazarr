@@ -1,4 +1,4 @@
-import { AsyncAction } from "../types/actions";
+import { AsyncAction } from "../types";
 
 export function mapToAsyncState<Payload>(
   action: AsyncAction<Payload>,

@@ -10,7 +10,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button } from "react-bootstrap";
 
 interface Props {
-  wanted: Array<WantedSeries>;
+  wanted: Array<WantedEpisode>;
   //   search: (id: string) => void;
 }
 
@@ -22,7 +22,7 @@ function mapStateToProps({ series }: StoreState): Props {
 }
 
 function Table(props: Props): JSX.Element {
-  const columns: Column<WantedSeries>[] = React.useMemo<Column<WantedSeries>[]>(
+  const columns: Column<WantedEpisode>[] = React.useMemo<Column<WantedEpisode>[]>(
     () => [
       {
         Header: "Series",

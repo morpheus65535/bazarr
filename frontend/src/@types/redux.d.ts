@@ -1,4 +1,9 @@
-// State
+interface AsyncState<T> {
+  updating: boolean;
+  lastResult?: string;
+  items: T;
+}
+
 interface StoreState {
   badges: BadgeState;
   system: SystemState;
@@ -12,22 +17,16 @@ interface BadgeState {
   providers: number;
 }
 
-interface AsyncState<T> {
-  updating: boolean;
-  lastResult?: string;
-  items: T;
-}
-
 interface SystemState {
-  languages: AsyncState<Array<Language>>;
-  enabledLanguage: Array<Language>;
+  languages: AsyncState<Array<ExtendLanguage>>;
+  enabledLanguage: Array<ExtendLanguage>;
   status: AsyncState<SystemStatusResult>;
   tasks: AsyncState<Array<SystemTaskResult>>;
 }
 
 interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
-  wantedSeriesList: AsyncState<Array<WantedSeries>>;
+  wantedSeriesList: AsyncState<Array<WantedEpisode>>;
 }
 
 interface MovieState {

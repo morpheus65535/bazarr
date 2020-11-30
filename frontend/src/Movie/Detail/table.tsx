@@ -14,7 +14,7 @@ interface Props {
 const Table: FunctionComponent<Props> = (props) => {
   const { movie } = props;
 
-  const columns: Column<SubtitleInfo>[] = React.useMemo<Column<SubtitleInfo>[]>(
+  const columns: Column<Subtitle>[] = React.useMemo<Column<Subtitle>[]>(
     () => [
       {
         Header: "Subtitle Path",

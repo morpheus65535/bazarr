@@ -1,3 +1,0 @@
-interface Nameable {
-  name: string;
-}

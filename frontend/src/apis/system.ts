@@ -25,8 +25,8 @@ export default class SystemApi {
   }
 
   async languages(enabled: boolean = false) {
-    return new Promise<Array<Language>>((resolve, reject) => {
-      this.get<Array<Language>>("languages", { enabled })
+    return new Promise<Array<ExtendLanguage>>((resolve, reject) => {
+      this.get<Array<ExtendLanguage>>("languages", { enabled })
         .then((result) => {
           resolve(result.data);
         })

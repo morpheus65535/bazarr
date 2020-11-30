@@ -1,4 +1,4 @@
-import { AsyncAction } from "../types/actions";
+import { AsyncAction } from "../types";
 import { UPDATE_MOVIE_LIST } from "../constants";
 
 import { mapToAsyncState } from "./mapper";

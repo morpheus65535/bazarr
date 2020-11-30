@@ -1,4 +1,4 @@
-import { AsyncAction } from "../types/actions";
+import { AsyncAction } from "../types";
 import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
@@ -13,16 +13,16 @@ const reducer = handleActions<SystemState, any>(
   {
     [UPDATE_LANGUAGES_LIST]: {
       next(state, action) {
-        const payload = (action as AsyncAction<Array<Language>>).payload;
+        const payload = (action as AsyncAction<Array<ExtendLanguage>>).payload;
         let enabled = state.enabledLanguage;
         if (payload.loading === false) {
-          enabled = (payload.item as Language[]).filter(
+          enabled = (payload.item as ExtendLanguage[]).filter(
             (val) => Boolean(val.enabled) === true
           );
         }
         return {
           ...state,
-          languages: mapToAsyncState<Array<Language>>(action, []),
+          languages: mapToAsyncState<Array<ExtendLanguage>>(action, []),
           enabledLanguage: enabled,
         };
       },

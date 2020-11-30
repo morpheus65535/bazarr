@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { Image, Container, Row, Col, Badge } from "react-bootstrap";
 
 interface Props {
-  item: BasicItem;
+  item: ExtendItem;
   details?: any[];
 }
 

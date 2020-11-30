@@ -15,7 +15,7 @@ import {
 import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
-  series: Array<Series>;
+  series: Series[];
   openSeriesEditor?: (series: Series) => void;
 }
 
@@ -70,7 +70,7 @@ const Table: FunctionComponent<Props> = (props) => {
           const languages = row.value;
           if (languages instanceof Array) {
             const items = languages.map(
-              (val: SeriesLanguage, idx: number): JSX.Element => (
+              (val: Language, idx: number): JSX.Element => (
                 <Badge className="mx-1" key={idx} variant="secondary">
                   {val.code2}
                 </Badge>

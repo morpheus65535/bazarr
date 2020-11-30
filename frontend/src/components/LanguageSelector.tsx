@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { } from "react";
 import { Form, Dropdown, Button } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -7,9 +7,9 @@ import { throttle } from "lodash";
 
 interface DropdownProps {
   className?: string;
-  languages: Language[];
-  enabled: Language[];
-  onChanged?: (lang: Language[]) => void;
+  languages: ExtendLanguage[];
+  enabled: ExtendLanguage[];
+  onChanged?: (lang: ExtendLanguage[]) => void;
 }
 
 interface DropdownState {
@@ -38,7 +38,7 @@ export default class LanguageSelector extends React.Component<
     this.updateFilter(value);
   }
 
-  onBtnSelect(event: React.MouseEvent, lang: Language) {
+  onBtnSelect(event: React.MouseEvent, lang: ExtendLanguage) {
     event.preventDefault();
 
     const { enabled } = this.props;

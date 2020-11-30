@@ -1,6 +1,6 @@
 import {} from "redux-thunk";
 import { Dispatch } from "redux";
-import { AsyncAction } from "../types/actions";
+import { AsyncAction } from "../types";
 
 function asyncTrunkCreator<P, R>(
   type: string,

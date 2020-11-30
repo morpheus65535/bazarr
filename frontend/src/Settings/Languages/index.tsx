@@ -13,8 +13,8 @@ import LanguageSelector from "../../components/LanguageSelector";
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-  languages: Array<Language>;
-  enabled: Array<Language>;
+  languages: ExtendLanguage[];
+  enabled: Array<ExtendLanguage>;
 }
 
 function mapStateToProps({ system }: StoreState) {
