@@ -27,6 +27,7 @@ interface SystemState {
 interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
   wantedSeriesList: AsyncState<Array<WantedEpisode>>;
+  episodeList: AsyncState<Map<number, Array<Episode>>>;
 }
 
 interface MovieState {

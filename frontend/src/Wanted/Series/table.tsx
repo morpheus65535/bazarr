@@ -22,7 +22,9 @@ function mapStateToProps({ series }: StoreState): Props {
 }
 
 function Table(props: Props): JSX.Element {
-  const columns: Column<WantedEpisode>[] = React.useMemo<Column<WantedEpisode>[]>(
+  const columns: Column<WantedEpisode>[] = React.useMemo<
+    Column<WantedEpisode>[]
+  >(
     () => [
       {
         Header: "Series",

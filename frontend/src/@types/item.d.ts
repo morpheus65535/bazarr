@@ -106,4 +106,3 @@ interface SeriesSubDownloadRequest {
   sonarrEpisodeId: number;
   title: string;
 }
-

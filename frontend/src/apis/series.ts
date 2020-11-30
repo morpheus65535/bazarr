@@ -28,6 +28,18 @@ export default class SeriesApi {
     });
   }
 
+  async episodes(id: number): Promise<Array<Episode>> {
+    return new Promise<Array<Episode>>((resolve, reject) => {
+      this.get<DataWrapper<Array<Episode>>>("episodes", { seriesid: id })
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async wanted(
     draw: number,
     start: number,

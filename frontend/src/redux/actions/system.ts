@@ -11,7 +11,7 @@ import { Action } from "redux-actions";
 
 export const updateLanguagesList = createAsyncAction(
   UPDATE_LANGUAGES_LIST,
-  () => apis.system.languages()
+  (enabled: boolean = false) => apis.system.languages(enabled)
 );
 
 export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>

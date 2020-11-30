@@ -1,4 +1,4 @@
-import React, { } from "react";
+import React from "react";
 import { Form, Dropdown, Button } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

@@ -19,7 +19,7 @@ interface Props {
   updateEpisodes: () => void;
   updateMovies: () => void;
   updateProviders: () => void;
-  updateLanguagesList: () => void;
+  updateLanguagesList: (enabled: boolean) => void;
 }
 
 class App extends React.Component<Props> {
@@ -27,7 +27,7 @@ class App extends React.Component<Props> {
     this.props.updateEpisodes();
     this.props.updateMovies();
     this.props.updateProviders();
-    this.props.updateLanguagesList();
+    this.props.updateLanguagesList(false);
   }
 
   render() {

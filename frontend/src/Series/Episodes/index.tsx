@@ -9,11 +9,14 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
+import { updateEpisodeList } from "../../redux/actions/series";
+
 import ContentHeader, {
   ContentHeaderButton,
   ContentHeaderGroup,
 } from "../../components/ContentHeader";
 import ItemOverview from "../../components/ItemOverview";
+import Table from "./table";
 
 interface Params {
   id: string;
@@ -21,6 +24,7 @@ interface Params {
 
 interface Props extends RouteComponentProps<Params> {
   seriesList: AsyncState<Series[]>;
+  updateEpisodeList: (id: number) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -31,6 +35,10 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 class SeriesEpisodesView extends React.Component<Props> {
+  componentDidMount() {
+    const { id } = this.props.match.params;
+    this.props.updateEpisodeList(Number.parseInt(id));
+  }
   render() {
     const list = this.props.seriesList.items;
     const { id } = this.props.match.params;
@@ -66,6 +74,7 @@ class SeriesEpisodesView extends React.Component<Props> {
             </ContentHeaderGroup>
           </ContentHeader>
           <ItemOverview item={item} details={details}></ItemOverview>
+          <Table></Table>
         </div>
       );
     } else {
@@ -74,4 +83,6 @@ class SeriesEpisodesView extends React.Component<Props> {
   }
 }
 
-export default withRouter(connect(mapStateToProps)(SeriesEpisodesView));
+export default withRouter(
+  connect(mapStateToProps, { updateEpisodeList })(SeriesEpisodesView)
+);
