@@ -63,7 +63,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     </tbody>
   );
 
-  const start = pageSize * pageIndex;
+  const start = pageSize * pageIndex + 1;
   const end = Math.min(pageSize * (pageIndex + 1), rows.length);
 
   const buttonClass = "";
