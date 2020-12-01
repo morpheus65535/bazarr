@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Badge } from "react-bootstrap";
 
-import BasicTable from "../components/BasicTable";
+import BasicTable from "../components/tables/BasicTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -32,7 +32,6 @@ const Table: FunctionComponent<Props> = (props) => {
   const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
     () => [
       {
-        Header: "",
         accessor: "monitored",
         Cell: (row) => {
           const monitored = row.value === "True";
@@ -116,7 +115,6 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "",
         accessor: "radarrId",
         Cell: (row) => {
           return (
@@ -136,7 +134,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    []
+    [onOpenMovieEditor]
   );
 
   return <BasicTable options={{ columns, data: movies }}></BasicTable>;

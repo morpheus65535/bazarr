@@ -1,6 +1,6 @@
 import React from "react";
 import { Column } from "react-table";
-import BasicTable from "../../components/BasicTable";
+import BasicTable from "../../components/tables/BasicTable";
 import { ExecSystemTask } from "../../redux/actions/system";
 
 import { connect } from "react-redux";
@@ -41,7 +41,6 @@ function Table(props: Props) {
         accessor: "next_run_in",
       },
       {
-        Header: "",
         accessor: "job_running",
         Cell: (row) => {
           const { job_id } = row.row.original;

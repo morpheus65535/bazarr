@@ -74,6 +74,7 @@ interface Episode extends BasicItem {
   resolution: string;
   monitored: PythonBoolean;
   missing_subtitles: Subtitle[];
+  subtitles: Subtitle[]; // FIX: Backend format
   format: string;
   episode_file_id: number;
 }

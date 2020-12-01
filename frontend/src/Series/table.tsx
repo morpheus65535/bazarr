@@ -1,6 +1,6 @@
 import React, { FunctionComponent, MouseEvent } from "react";
 import { Column } from "react-table";
-import BasicTable from "../components/BasicTable";
+import BasicTable from "../components/tables/BasicTable";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -118,7 +118,6 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "",
         accessor: "sonarrSeriesId",
         Cell: (row) => {
           return (

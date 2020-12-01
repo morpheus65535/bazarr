@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
 
-import BasicTable from "../../components/BasicTable";
+import BasicTable from "../../components/tables/BasicTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
@@ -35,7 +35,6 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "",
         accessor: "code2",
         Cell: (row) => {
           return (
