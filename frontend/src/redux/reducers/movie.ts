@@ -1,5 +1,5 @@
 import { AsyncAction } from "../types";
-import { UPDATE_MOVIE_LIST } from "../constants";
+import { UPDATE_MOVIE_LIST, UPDATE_MOVIE_WANTED_LIST } from "../constants";
 
 import { mapToAsyncState } from "./mapper";
 
@@ -15,9 +15,18 @@ const reducer = handleActions<MovieState, any>(
         };
       },
     },
+    [UPDATE_MOVIE_WANTED_LIST]: {
+      next(state, action: AsyncAction<WantedMovie[]>) {
+        return {
+          ...state,
+          wantedMovieList: mapToAsyncState(action, state.movieList.items),
+        }
+      }
+    }
   },
   {
     movieList: { updating: false, items: [] },
+    wantedMovieList: { updating: false, items: [] },
   }
 );
 

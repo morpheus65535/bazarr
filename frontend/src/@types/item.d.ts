@@ -79,9 +79,7 @@ interface Episode extends BasicItem {
   episode_file_id: number;
 }
 
-interface WantedEpisode {
-  episodeTitle: string;
-  episode_number: string;
+interface WantedItem {
   exist: boolean;
   failedAttempts?: any;
   hearing_impaired: PythonBoolean;
@@ -89,12 +87,23 @@ interface WantedEpisode {
   missing_subtitles: Subtitle[];
   monitored: PythonBoolean;
   path: string;
-  scene_name?: any;
+  tags: string[];
+}
+
+interface WantedEpisode extends WantedItem {
+  episodeTitle: string;
+  episode_number: string;
+  // scene_name?: any;
   seriesTitle: string;
   seriesType: SonarrSeriesType;
   sonarrEpisodeId: number;
   sonarrSeriesId: number;
-  tags: string[];
+}
+
+interface WantedMovie extends WantedItem {
+  radarrId: number;
+  // sceneName?: any;
+  title: string;
 }
 
 interface SeriesSubDownloadRequest {

@@ -17,4 +17,24 @@ export default class MovieApi {
         });
     });
   }
+
+  async wanted(
+    draw: number,
+    start: number,
+    length: number
+  ): Promise<Array<WantedMovie>> {
+    return new Promise<Array<WantedMovie>>((resolve, reject) => {
+      this.get<DataWrapper<Array<WantedMovie>>>("wanted_movies", {
+        draw,
+        start,
+        length,
+      })
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
 }

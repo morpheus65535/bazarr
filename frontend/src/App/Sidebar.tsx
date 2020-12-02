@@ -143,6 +143,11 @@ class Sidebar extends React.Component<Props, {}> {
             href="/wanted/series"
             badge={episodes_badge === 0 ? undefined : episodes_badge.toString()}
           ></ListCollapseItem>
+          <ListCollapseItem
+            name="Movies"
+            href="/wanted/movies"
+            badge={movies_badge === 0 ? undefined : movies_badge.toString()}
+          ></ListCollapseItem>
         </div>
       </Accordion.Collapse>
     );

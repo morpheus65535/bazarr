@@ -32,4 +32,5 @@ interface SeriesState {
 
 interface MovieState {
   movieList: AsyncState<Array<Movie>>;
+  wantedMovieList: AsyncState<Array<WantedMovie>>;
 }
