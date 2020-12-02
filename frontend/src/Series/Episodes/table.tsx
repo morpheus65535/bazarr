@@ -28,10 +28,11 @@ function mapStateToProps({ series }: StoreState) {
 
 const Table: FunctionComponent<Props> = (props) => {
   const { id } = props;
-  const { items } = props.episodeList;
+  const { items, updating } = props.episodeList;
   const episodes = useMemo(() => items.get(Number.parseInt(id)) ?? [], [
     id,
     items,
+    updating
   ]);
 
   const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
