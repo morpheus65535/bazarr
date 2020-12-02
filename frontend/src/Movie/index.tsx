@@ -52,7 +52,7 @@ class MovieView extends React.Component<Props, State> {
         </div>
         <ItemSimpleEditor
           item={modal}
-          close={this.onMovieEditClose.bind(this)}
+          onClose={this.onMovieEditClose.bind(this)}
         ></ItemSimpleEditor>
       </Container>
     );

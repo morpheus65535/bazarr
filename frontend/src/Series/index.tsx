@@ -56,7 +56,7 @@ class SeriesView extends React.Component<Props, State> {
         </div>
         <ItemSimpleEditor
           item={modal}
-          close={this.onSeriesEditorClose.bind(this)}
+          onClose={this.onSeriesEditorClose.bind(this)}
         ></ItemSimpleEditor>
       </Container>
     );

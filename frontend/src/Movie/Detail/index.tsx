@@ -16,6 +16,7 @@ import ContentHeader, {
   ContentHeaderGroup,
 } from "../../components/ContentHeader";
 import ItemOverview from "../../components/ItemOverview";
+import EditItemModal from "../../components/EditItemModal";
 
 import Table from "./table";
 
@@ -27,6 +28,10 @@ interface Props extends RouteComponentProps<Params> {
   movieList: AsyncState<Movie[]>;
 }
 
+interface State {
+  editMovie: boolean;
+}
+
 function mapStateToProps({ movie }: StoreState) {
   const { movieList } = movie;
   return {
@@ -34,37 +39,68 @@ function mapStateToProps({ movie }: StoreState) {
   };
 }
 
-class MovieDetailView extends React.Component<Props> {
+class MovieDetailView extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      editMovie: false,
+    };
+  }
+  onEditMovieClick() {
+    this.setState({
+      ...this.state,
+      editMovie: true,
+    });
+  }
+  onEditMovieClose() {
+    this.setState({
+      ...this.state,
+      editMovie: false,
+    });
+  }
   render() {
     const list = this.props.movieList.items;
     const { id } = this.props.match.params;
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
+    const { editMovie } = this.state;
+
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
     if (item) {
+      const header = (
+        <ContentHeader>
+          <ContentHeaderGroup pos="start">
+            <ContentHeaderButton iconProps={{ icon: faSync }}>
+              Scan Disk
+            </ContentHeaderButton>
+            <ContentHeaderButton iconProps={{ icon: faHistory }}>
+              History
+            </ContentHeaderButton>
+            <ContentHeaderButton iconProps={{ icon: faToolbox }}>
+              Tools
+            </ContentHeaderButton>
+          </ContentHeaderGroup>
+          <ContentHeaderGroup pos="end">
+            <ContentHeaderButton
+              iconProps={{ icon: faWrench }}
+              onClick={this.onEditMovieClick.bind(this)}
+            >
+              Edit Movie
+            </ContentHeaderButton>
+          </ContentHeaderGroup>
+        </ContentHeader>
+      );
       return (
         <Container fluid className="p-0">
-          <ContentHeader>
-            <ContentHeaderGroup pos="start">
-              <ContentHeaderButton iconProps={{ icon: faSync }}>
-                Scan Disk
-              </ContentHeaderButton>
-              <ContentHeaderButton iconProps={{ icon: faHistory }}>
-                History
-              </ContentHeaderButton>
-              <ContentHeaderButton iconProps={{ icon: faToolbox }}>
-                Tools
-              </ContentHeaderButton>
-            </ContentHeaderGroup>
-            <ContentHeaderGroup pos="end">
-              <ContentHeaderButton iconProps={{ icon: faWrench }}>
-                Edit Movie
-              </ContentHeaderButton>
-            </ContentHeaderGroup>
-          </ContentHeader>
+          {header}
           <ItemOverview item={item} details={details}></ItemOverview>
           <Table movie={item}></Table>
+          <EditItemModal
+            item={editMovie ? item : undefined}
+            onClose={this.onEditMovieClose.bind(this)}
+          ></EditItemModal>
         </Container>
       );
     } else {

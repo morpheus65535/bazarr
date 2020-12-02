@@ -7,7 +7,7 @@ import LanguageSelector from "./LanguageSelector";
 interface Props {
   languages: ExtendLanguage[];
   item?: ExtendItem;
-  close?: () => void;
+  onClose: () => void;
 }
 
 function mapStateToProps({ system, series }: StoreState) {
@@ -17,7 +17,7 @@ function mapStateToProps({ system, series }: StoreState) {
 }
 
 const EditItemModal: FunctionComponent<Props> = (props) => {
-  const { item: series, languages, close } = props;
+  const { item: series, languages, onClose } = props;
 
   const colTitleClass = "text-right my-a";
   const rowClass = "py-2";
@@ -36,7 +36,7 @@ const EditItemModal: FunctionComponent<Props> = (props) => {
   }
 
   return (
-    <Modal size="lg" show={series !== undefined} onHide={close}>
+    <Modal size="lg" show={series !== undefined} onHide={onClose}>
       <Modal.Header closeButton>{series?.title}</Modal.Header>
       <Modal.Body>
         <Container fluid>
@@ -79,7 +79,7 @@ const EditItemModal: FunctionComponent<Props> = (props) => {
         </Container>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="outline-secondary" onClick={close}>
+        <Button variant="outline-secondary" onClick={onClose}>
           Cancel
         </Button>
         <Button>Save</Button>

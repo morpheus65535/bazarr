@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, MouseEvent } from "react";
 import { Button, ButtonProps } from "react-bootstrap";
 import {
   FontAwesomeIcon,
@@ -8,13 +8,19 @@ import {
 interface CHButtonProps {
   iconProps: FontAwesomeIconProps;
   btnProps?: ButtonProps;
+  onClick?: (e: MouseEvent) => void;
 }
 
 const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
-  const { children, iconProps, btnProps } = props;
+  const { children, iconProps, btnProps, onClick } = props;
 
   return (
-    <Button variant="dark" className="d-flex flex-column" {...btnProps}>
+    <Button
+      variant="dark"
+      className="d-flex flex-column"
+      {...btnProps}
+      onClick={onClick}
+    >
       <FontAwesomeIcon
         size="lg"
         className="mx-auto"
