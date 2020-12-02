@@ -188,27 +188,44 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Path for Sonarr
+                                    Profile name
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_sonarr" name="add_path_sonarr" value="" placeholder="Browse or type...">
-                                    <div class="filetree" id="sonarr_browser"></div>
+                                    <input type="text" class="form-control" id="add_profile_name" name="add_profile_name" value="">
                                 </div>
                             </div>
                             <br>
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Path for Bazarr
+                                    Languages
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="" placeholder="Browse or type...">
-                                    <div class="filetree" id="bazarr_browser"></div>
+                                    <table class="table table-striped" id="languages_profiles" style="width:100%;">
+                                        <thead>
+                                        <tr>
+                                            <th>Language</th>
+                                            <th>Forced</th>
+                                            <th>Hearing-Impaired</th>
+                                            <th>Audio Exclude</th>
+                                        </tr>
+                                        </thead>
+                                    </table>
                                 </div>
                             </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language cutoff
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                </div>
+                            </div>
+                            <input type="hidden" id="add_profile_id" value="" />
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="add_save_button" class="btn btn-info">Save</button>
+                        <button type="submit" id="add_save_button" class="btn btn-info">Add</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </form>
@@ -248,7 +265,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" id="edit_save_button" class="btn btn-info">Save</button>
+                        <button type="submit" id="edit_save_button" class="btn btn-info">Edit</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </form>
@@ -377,7 +394,7 @@
                     text: 'Add',
                     action: function () {
                         if (form_changed) {
-                            alert('You must save changes before adding a path mapping.')
+                            alert('You must save changes before adding a languages profile.')
                         } else {
                             $('#addModal').modal('show');
                         }
