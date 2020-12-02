@@ -1,11 +1,9 @@
 import React from "react";
 import {
-  Button,
-  Container,
+  Pagination,
   Row,
   Col,
   Table,
-  ButtonGroup,
 } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
@@ -67,23 +65,21 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const end = Math.min(pageSize * (pageIndex + 1), rows.length);
 
   const buttonClass = "";
-  const buttonVariant = "light";
   const pageButtons = React.useMemo(() => {
     return [...Array(pageCount).keys()].map((idx) => (
-      <Button
-        variant={buttonVariant}
+      <Pagination.Item
         key={idx}
         className={buttonClass}
         active={pageIndex === idx}
         onClick={() => gotoPage(idx)}
       >
         {idx + 1}
-      </Button>
+      </Pagination.Item>
     ));
   }, [pageCount, pageIndex, gotoPage]);
 
   const pageControl = (
-    <Container fluid>
+    <div>
       <Row>
         <Col className="d-flex align-items-center justify-content-start">
           <span>
@@ -91,33 +87,29 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           </span>
         </Col>
         <Col className="d-flex justify-content-end">
-          <ButtonGroup>
-            <Button
-              variant={buttonVariant}
+          <Pagination>
+            <Pagination.Prev
               className={buttonClass}
               onClick={previousPage}
               disabled={!canPreviousPage}
             >
-              Previous
-            </Button>
+            </Pagination.Prev>
             {pageButtons}
-            <Button
-              variant={buttonVariant}
+            <Pagination.Next
               className={buttonClass}
               onClick={nextPage}
               disabled={!canNextPage}
             >
-              Next
-            </Button>
-          </ButtonGroup>
+            </Pagination.Next>
+          </Pagination>
         </Col>
       </Row>
-    </Container>
+    </div>
   );
 
   return (
     <React.Fragment>
-      <Table {...getTableProps()}>
+      <Table striped borderless {...getTableProps()}>
         {header}
         {body}
       </Table>

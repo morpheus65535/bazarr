@@ -137,7 +137,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    []
+    [openSeriesEditor]
   );
 
   return <BasicTable options={{ columns, data: series }}></BasicTable>;
