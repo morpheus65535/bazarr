@@ -74,7 +74,7 @@ class SeriesEpisodesView extends React.Component<Props> {
             </ContentHeaderGroup>
           </ContentHeader>
           <ItemOverview item={item} details={details}></ItemOverview>
-          <Table></Table>
+          <Table id={id}></Table>
         </div>
       );
     } else {
