@@ -25,3 +25,18 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
     </Badge>
   );
 };
+
+interface SettingGroupProps {
+  name: string;
+}
+
+export const SettingGroup: FunctionComponent<SettingGroupProps> = (props) => {
+  const { name, children } = props;
+  return (
+    <div className="my-4">
+      <h4>{name}</h4>
+      <hr></hr>
+      {children}
+    </div>
+  );
+};

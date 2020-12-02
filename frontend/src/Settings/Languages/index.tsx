@@ -3,7 +3,7 @@ import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import {} from "../../redux/actions/system";
 
-import SettingGroup from "../../components/SettingGroup";
+import { SettingGroup } from "../../components";
 import ContentHeader, {
   ContentHeaderButton,
 } from "../../components/ContentHeader";

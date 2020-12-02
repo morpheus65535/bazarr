@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Form, InputGroup, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 
-import SettingGroup from "../../components/SettingGroup";
+import { SettingGroup } from "../../components";
 import ContentHeader, {
   ContentHeaderButton,
 } from "../../components/ContentHeader";

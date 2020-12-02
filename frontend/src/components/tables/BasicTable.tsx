@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Pagination,
-  Row,
-  Col,
-  Table,
-} from "react-bootstrap";
+import { Pagination, Row, Col, Table } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
 interface Props<T extends object = {}> {
@@ -87,20 +82,18 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           </span>
         </Col>
         <Col className="d-flex justify-content-end">
-          <Pagination>
+          <Pagination className="m-0">
             <Pagination.Prev
               className={buttonClass}
               onClick={previousPage}
               disabled={!canPreviousPage}
-            >
-            </Pagination.Prev>
+            ></Pagination.Prev>
             {pageButtons}
             <Pagination.Next
               className={buttonClass}
               onClick={nextPage}
               disabled={!canNextPage}
-            >
-            </Pagination.Next>
+            ></Pagination.Next>
           </Pagination>
         </Col>
       </Row>
