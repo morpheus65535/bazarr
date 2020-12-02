@@ -1,4 +1,4 @@
-import React, { FunctionComponent, MouseEvent } from "react";
+import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -13,6 +13,8 @@ import {
   faBookmark,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
+
+import { ActionIcon } from "../components";
 
 interface Props {
   movies: Movie[];
@@ -116,22 +118,14 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "radarrId",
-        Cell: (row) => {
-          return (
-            <Badge
-              as="a"
-              href=""
-              className="mx-1"
-              variant="secondary"
-              onClick={(e: MouseEvent) => {
-                e.preventDefault();
-                onOpenMovieEditor && onOpenMovieEditor(row.row.original);
-              }}
-            >
-              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
-            </Badge>
-          );
-        },
+        Cell: (row) => (
+          <ActionIcon
+            icon={faWrench}
+            onClick={(e) =>
+              onOpenMovieEditor && onOpenMovieEditor(row.row.original)
+            }
+          ></ActionIcon>
+        ),
       },
     ],
     [onOpenMovieEditor]

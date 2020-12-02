@@ -1,4 +1,4 @@
-import React, { FunctionComponent, MouseEvent } from "react";
+import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
 import BasicTable from "../components/tables/BasicTable";
 
@@ -13,6 +13,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import { Badge, ProgressBar } from "react-bootstrap";
+
+import { ActionIcon } from "../components";
 
 interface Props {
   series: Series[];
@@ -119,22 +121,14 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "sonarrSeriesId",
-        Cell: (row) => {
-          return (
-            <Badge
-              as="a"
-              href=""
-              className="mx-1"
-              variant="secondary"
-              onClick={(e: MouseEvent) => {
-                e.preventDefault();
-                openSeriesEditor && openSeriesEditor(row.row.original);
-              }}
-            >
-              <FontAwesomeIcon icon={faWrench}></FontAwesomeIcon>
-            </Badge>
-          );
-        },
+        Cell: (row) => (
+          <ActionIcon
+            icon={faWrench}
+            onClick={(e) => {
+              openSeriesEditor && openSeriesEditor(row.row.original);
+            }}
+          ></ActionIcon>
+        ),
       },
     ],
     [openSeriesEditor]
