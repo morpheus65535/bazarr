@@ -19,7 +19,7 @@ const reducer = handleActions<MovieState, any>(
       next(state, action: AsyncAction<WantedMovie[]>) {
         return {
           ...state,
-          wantedMovieList: mapToAsyncState(action, state.movieList.items),
+          wantedMovieList: mapToAsyncState(action, state.wantedMovieList.items),
         }
       }
     }

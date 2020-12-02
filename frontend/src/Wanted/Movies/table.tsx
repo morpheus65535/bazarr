@@ -27,6 +27,14 @@ function Table(props: Props): JSX.Element {
       {
         Header: "Movie",
         accessor: "title",
+        Cell: (row) => {
+          const target = `/movies/${row.row.original.radarrId}`;
+          return (
+            <Link to={target}>
+              <span>{row.value}</span>
+            </Link>
+          );
+        },
       },
       {
         Header: "Missing Subtitle(s)",
