@@ -1,5 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
@@ -42,6 +43,9 @@ class MovieView extends React.Component<Props, State> {
 
     return (
       <Container fluid className="p-0">
+        <Helmet>
+          <title>Movies - Bazarr</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton iconProps={{ icon: faList }}>
             Mass Edit

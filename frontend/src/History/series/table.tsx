@@ -6,7 +6,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
 import { ActionIcon } from "../../components";
-import { HistoryActionIcon } from "../components"
+import { HistoryActionIcon } from "../components";
 
 interface Props {
   seriesHistory: SeriesHistory[];

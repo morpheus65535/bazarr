@@ -1,6 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 import {
   faSync,
@@ -94,6 +95,9 @@ class MovieDetailView extends React.Component<Props, State> {
       );
       return (
         <Container fluid className="p-0">
+          <Helmet>
+            <title>{item.title} - Bazarr (Movies)</title>
+          </Helmet>
           {header}
           <ItemOverview item={item} details={details}></ItemOverview>
           <Table movie={item}></Table>

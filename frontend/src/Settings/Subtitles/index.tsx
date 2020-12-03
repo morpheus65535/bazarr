@@ -2,6 +2,7 @@ import React from "react";
 import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import {} from "../../@redux/actions/system";
+import { Helmet } from "react-helmet";
 
 import { SettingGroup } from "../../components";
 import ContentHeader, {
@@ -221,6 +222,9 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
 
     return (
       <Container fluid className="p-0">
+        <Helmet>
+          <title>Subtitles - Bazarr (Settings)</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton iconProps={{ icon: faSave }}>
             Save

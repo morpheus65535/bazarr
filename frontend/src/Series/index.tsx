@@ -2,6 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import { Container } from "react-bootstrap";
 import { faList } from "@fortawesome/free-solid-svg-icons";
+import { Helmet } from "react-helmet";
 
 import ContentHeader, {
   ContentHeaderButton,
@@ -46,6 +47,9 @@ class SeriesView extends React.Component<Props, State> {
 
     return (
       <Container fluid className="px-0">
+        <Helmet>
+          <title>Series - Bazarr</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton iconProps={{ icon: faList }}>
             Mass Edit

@@ -1,6 +1,7 @@
 import React from "react";
 import { Container, Form, InputGroup, Button } from "react-bootstrap";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 
 import { SettingGroup } from "../../components";
 import ContentHeader, {
@@ -248,6 +249,9 @@ class SettingsGeneralView extends React.Component<Props, State> {
 
     return (
       <Container fluid className="p-0">
+        <Helmet>
+          <title>General - Bazarr (Settings)</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton iconProps={{ icon: faSave }}>
             Save

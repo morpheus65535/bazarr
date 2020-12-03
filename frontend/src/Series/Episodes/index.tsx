@@ -1,8 +1,9 @@
 import React from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 
-import { Container } from "react-bootstrap"
+import { Container } from "react-bootstrap";
 
 import {
   faSync,
@@ -109,6 +110,9 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     if (item) {
       return (
         <Container fluid className="p-0">
+          <Helmet>
+            <title>{item.title} - Bazarr (Series)</title>
+          </Helmet>
           {header}
           <ItemOverview item={item} details={details}></ItemOverview>
           <Table id={id}></Table>

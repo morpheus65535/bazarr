@@ -28,8 +28,8 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "action",
         Cell: (row) => (
-          <HistoryActionIcon action={ row.value }></HistoryActionIcon>
-        )
+          <HistoryActionIcon action={row.value}></HistoryActionIcon>
+        ),
       },
       {
         Header: "Title",

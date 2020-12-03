@@ -2,6 +2,7 @@ import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../@redux/actions/system";
+import { Helmet } from "react-helmet";
 
 import { SettingGroup } from "../../components";
 
@@ -152,6 +153,9 @@ class SystemStatusView extends React.Component<Props, {}> {
 
     return (
       <Container fluid className="p-5">
+        <Helmet>
+          <title>Status - Bazarr (System)</title>
+        </Helmet>
         {about}
         {more}
       </Container>

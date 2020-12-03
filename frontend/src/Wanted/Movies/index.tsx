@@ -1,5 +1,6 @@
 import React from "react";
 import { Container } from "react-bootstrap";
+import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
 import { updateWantedMovieList } from "../../@redux/actions/movie";
@@ -23,6 +24,9 @@ class WantedMoviesView extends React.Component<Props> {
   render() {
     return (
       <Container fluid className="p-0">
+        <Helmet>
+          <title>Wanted Movies - Bazarr</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton iconProps={{ icon: faSearch }}>
             Search All

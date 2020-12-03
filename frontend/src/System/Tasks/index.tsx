@@ -2,6 +2,8 @@ import React from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../@redux/actions/system";
+import { Helmet } from "react-helmet";
+
 import ContentHeader, {
   ContentHeaderButton,
 } from "../../components/ContentHeader";
@@ -31,6 +33,9 @@ class SystemTasksView extends React.Component<Props, {}> {
     const { loading, update } = this.props;
     return (
       <Container fluid className="p-0">
+        <Helmet>
+          <title>Tasks - Bazarr (System)</title>
+        </Helmet>
         <ContentHeader>
           <ContentHeaderButton
             iconProps={{ icon: faSync, spin: loading }}
