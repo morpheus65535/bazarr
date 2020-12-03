@@ -18,6 +18,18 @@ export default class MovieApi {
     });
   }
 
+  async history(): Promise<Array<MovieHistory>> {
+    return new Promise<Array<MovieHistory>>((resolve, reject) => {
+      this.get<DataWrapper<Array<MovieHistory>>>("history_movies")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async wanted(
     draw: number,
     start: number,

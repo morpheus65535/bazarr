@@ -3,6 +3,7 @@ import {
   UPDATE_SERIES_EPISODE_LIST,
   UPDATE_SERIES_LIST,
   UPDATE_SERIES_WANTED_LIST,
+  UPDATE_SERIES_HISTORY_LIST,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
@@ -57,11 +58,20 @@ const reducer = handleActions<SeriesState, any>(
         }
       },
     },
+    [UPDATE_SERIES_HISTORY_LIST]: {
+      next(state, action: AsyncAction<SeriesHistory[]>) {
+        return {
+          ...state,
+          historyList: mapToAsyncState(action, state.historyList.items),
+        };
+      },
+    },
   },
   {
     seriesList: { updating: false, items: [] },
     wantedSeriesList: { updating: false, items: [] },
     episodeList: { updating: false, items: new Map() },
+    historyList: { updating: false, items: [] },
   }
 );
 

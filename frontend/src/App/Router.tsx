@@ -7,6 +7,7 @@ import MovieRouter from "../Movie/Router";
 import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
+import HistoryRouter from "../History/Router"
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -24,6 +25,9 @@ class Router extends React.Component {
           </Route>
           <Route path="/wanted">
             <WantedRouter></WantedRouter>
+          </Route>
+          <Route path="/history">
+            <HistoryRouter></HistoryRouter>
           </Route>
           <Route path="/settings">
             <SettingRouter></SettingRouter>

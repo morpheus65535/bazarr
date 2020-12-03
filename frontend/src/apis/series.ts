@@ -60,6 +60,18 @@ export default class SeriesApi {
     });
   }
 
+  async history(): Promise<Array<SeriesHistory>> {
+    return new Promise<Array<SeriesHistory>>((resolve, reject) => {
+      this.get<DataWrapper<Array<SeriesHistory>>>("history_series")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async search(): Promise<never> {
     return new Promise<never>((resolve, reject) => {
       this.get<never>("search_wanted_series")

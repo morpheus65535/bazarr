@@ -5,7 +5,7 @@ import { Column } from "react-table";
 import BasicTable from "../../components/tables/BasicTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
   movie: Movie;
@@ -37,11 +37,16 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "code2",
         Cell: (row) => {
-          return (
-            <Button variant="light" size="sm">
-              <FontAwesomeIcon icon={faTimes}></FontAwesomeIcon>
-            </Button>
-          );
+          const { original } = row.row;
+          if (original.path === null || original.path.length === 0) {
+            return null;
+          } else {
+            return (
+              <Button variant="light" size="sm">
+                <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
+              </Button>
+            );
+          }
         },
       },
     ],

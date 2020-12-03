@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { Accordion, Badge, ListGroup, Navbar, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
@@ -8,6 +8,7 @@ import {
   faExclamationTriangle,
   faCogs,
   faLaptop,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
 
@@ -34,78 +35,72 @@ interface CollapseItemProps extends BaseItemProps {
   href: string;
 }
 
-class LinkListItem extends React.Component<LinkListItemProps, {}> {
-  render(): JSX.Element {
-    const { name, icon, href, badge } = this.props;
-    return (
-      <NavLink
-        activeClassName="active"
-        className="list-group-item list-group-item-action py-2 d-flex align-items-center"
-        to={href}
-      >
-        <Col sm={1}>
-          <FontAwesomeIcon
-            size="1x"
-            className="mr-3"
-            icon={icon}
-          ></FontAwesomeIcon>
-        </Col>
-        <Col>
-          <span>{name}</span>
-          <Badge variant="secondary" className="ml-2" hidden={badge === null}>
-            {badge}
-          </Badge>
-        </Col>
-      </NavLink>
-    );
-  }
-}
-
-class ToggleListItem extends React.Component<ToggleItemProps, {}> {
-  render(): JSX.Element {
-    const { name, icon, badge, eventKey } = this.props;
-    return (
-      <Accordion.Toggle
-        as={ListGroup.Item}
-        action
-        eventKey={eventKey}
-        className="d-flex align-items-center py-2"
-      >
-        <Col sm={1}>
-          <FontAwesomeIcon
-            size="1x"
-            className="mr-3"
-            icon={icon}
-          ></FontAwesomeIcon>
-        </Col>
-        <Col>
-          <span>{name}</span>
-          <Badge variant="secondary" className="ml-2" hidden={badge === null}>
-            {badge}
-          </Badge>
-        </Col>
-      </Accordion.Toggle>
-    );
-  }
-}
-
-class ListCollapseItem extends React.Component<CollapseItemProps, {}> {
-  render(): JSX.Element {
-    const { name, href, badge } = this.props;
-    return (
-      <NavLink
-        activeClassName="active"
-        className="list-group-item list-group-item-action py-2 d-flex align-items-center border-0"
-        to={href}
-      >
-        <span className="ml-4">{name}</span>
+const LinkListItem: FunctionComponent<LinkListItemProps> = (props) => {
+  const { name, icon, href, badge } = props;
+  return (
+    <NavLink
+      activeClassName="active"
+      className="list-group-item list-group-item-action py-2 d-flex align-items-center"
+      to={href}
+    >
+      <Col sm={1}>
+        <FontAwesomeIcon
+          size="1x"
+          className="mr-3"
+          icon={icon}
+        ></FontAwesomeIcon>
+      </Col>
+      <Col>
+        <span>{name}</span>
         <Badge variant="secondary" className="ml-2" hidden={badge === null}>
           {badge}
         </Badge>
-      </NavLink>
-    );
-  }
-}
+      </Col>
+    </NavLink>
+  );
+};
+
+const ToggleListItem: FunctionComponent<ToggleItemProps> = (props) => {
+  const { name, icon, badge, eventKey } = props;
+  return (
+    <Accordion.Toggle
+      as={ListGroup.Item}
+      action
+      eventKey={eventKey}
+      className="d-flex align-items-center py-2"
+    >
+      <Col sm={1}>
+        <FontAwesomeIcon
+          size="1x"
+          className="mr-3"
+          icon={icon}
+        ></FontAwesomeIcon>
+      </Col>
+      <Col>
+        <span>{name}</span>
+        <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+          {badge}
+        </Badge>
+      </Col>
+    </Accordion.Toggle>
+  );
+};
+
+const ListCollapseItem: FunctionComponent<CollapseItemProps> = (props) => {
+  const { name, href, badge } = props;
+  return (
+    <NavLink
+      activeClassName="active"
+      className="list-group-item list-group-item-action py-2 d-flex align-items-center border-0"
+      to={href}
+    >
+      <span className="ml-4">{name}</span>
+      <Badge variant="secondary" className="ml-2" hidden={badge === null}>
+        {badge}
+      </Badge>
+    </NavLink>
+  );
+};
 
 interface Props {
   movies_badge: number;
@@ -125,6 +120,29 @@ class Sidebar extends React.Component<Props, {}> {
   render() {
     const { movies_badge, episodes_badge, providers_badge } = this.props;
     const totalWanted = movies_badge + episodes_badge;
+
+    const history = (
+      <ToggleListItem
+        name="History"
+        icon={faClock}
+        eventKey="history-toggle"
+      ></ToggleListItem>
+    );
+
+    const historyItems: JSX.Element = (
+      <Accordion.Collapse eventKey="history-toggle">
+        <div>
+          <ListCollapseItem
+            name="Series"
+            href="/history/series"
+          ></ListCollapseItem>
+          <ListCollapseItem
+            name="Movies"
+            href="/history/movies"
+          ></ListCollapseItem>
+        </div>
+      </Accordion.Collapse>
+    );
 
     const wanted: JSX.Element = (
       <ToggleListItem
@@ -228,6 +246,8 @@ class Sidebar extends React.Component<Props, {}> {
               icon={faFilm}
               href="/movies"
             ></LinkListItem>
+            {history}
+            {historyItems}
             {wanted}
             {wantedItems}
             {settings}
