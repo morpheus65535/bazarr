@@ -6,6 +6,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
 import { ActionIcon } from "../../components";
+import { HistoryActionIcon } from "../components"
 
 interface Props {
   seriesHistory: SeriesHistory[];
@@ -27,6 +28,9 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "action",
+        Cell: (row) => (
+          <HistoryActionIcon action={row.value}></HistoryActionIcon>
+        ),
       },
       {
         Header: "Name",

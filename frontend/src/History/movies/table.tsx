@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 
 import { ActionIcon } from "../../components";
 
+import { HistoryActionIcon } from "../components";
+
 interface Props {
   movieHistory: MovieHistory[];
 }
@@ -25,6 +27,9 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "action",
+        Cell: (row) => (
+          <HistoryActionIcon action={ row.value }></HistoryActionIcon>
+        )
       },
       {
         Header: "Title",

@@ -1,11 +1,15 @@
-enum HistoryAction {
-  Download = 1,
-  Upload = 4,
-  Sync = 5,
-}
+
+// enum HistoryAction {
+//   Delete = 0,
+//   Download,
+//   Manual,
+//   Upgrade,
+//   Upload,
+//   Sync,
+// }
 
 interface BasicHistory {
-  action: HistoryAction;
+  action: number;
   blacklisted: boolean;
   description: string;
   exist: boolean;
