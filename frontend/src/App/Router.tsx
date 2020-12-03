@@ -7,7 +7,7 @@ import MovieRouter from "../Movie/Router";
 import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
-import HistoryRouter from "../History/Router"
+import HistoryRouter from "../History/Router";
 
 class Router extends React.Component {
   render(): JSX.Element {

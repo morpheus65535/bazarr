@@ -32,7 +32,7 @@ const Table: FunctionComponent<Props> = (props) => {
   const episodes = useMemo(() => items.get(Number.parseInt(id)) ?? [], [
     id,
     items,
-    updating
+    updating,
   ]);
 
   const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
