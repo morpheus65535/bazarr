@@ -2,7 +2,7 @@ import React from "react";
 import { Container } from "react-bootstrap";
 
 import { connect } from "react-redux";
-import { updateWantedSeriesList } from "../../redux/actions/series";
+import { updateWantedSeriesList } from "../../@redux/actions/series";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 

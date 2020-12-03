@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
-import { UpdateSystemStatus } from "../../redux/actions/system";
+import { UpdateSystemStatus } from "../../@redux/actions/system";
 
 import { SettingGroup } from "../../components";
 

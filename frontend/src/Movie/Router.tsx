@@ -2,7 +2,7 @@ import React from "react";
 import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
-import { updateMovieList } from "../redux/actions/movie";
+import { updateMovieList } from "../@redux/actions/movie";
 
 import Movie from ".";
 import MovieDetail from "./Detail";

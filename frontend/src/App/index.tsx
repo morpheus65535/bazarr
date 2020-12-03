@@ -11,8 +11,8 @@ import {
   updateEpisodes,
   updateMovies,
   updateProviders,
-} from "../redux/actions/badges";
-import { updateLanguagesList } from "../redux/actions/system";
+} from "../@redux/actions/badges";
+import { updateLanguagesList } from "../@redux/actions/system";
 import { connect } from "react-redux";
 
 interface Props {

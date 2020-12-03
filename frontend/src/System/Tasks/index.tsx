@@ -1,7 +1,7 @@
 import React from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
-import { UpdateSystemTasks } from "../../redux/actions/system";
+import { UpdateSystemTasks } from "../../@redux/actions/system";
 import ContentHeader, {
   ContentHeaderButton,
 } from "../../components/ContentHeader";

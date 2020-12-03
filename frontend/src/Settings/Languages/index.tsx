@@ -1,7 +1,7 @@
 import React from "react";
 import { Container, Form } from "react-bootstrap";
 import { connect } from "react-redux";
-import {} from "../../redux/actions/system";
+import {} from "../../@redux/actions/system";
 
 import { SettingGroup } from "../../components";
 import ContentHeader, {

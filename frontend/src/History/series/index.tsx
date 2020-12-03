@@ -2,7 +2,7 @@ import React from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 
-import { updateHistorySeriesList } from "../../redux/actions/series";
+import { updateHistorySeriesList } from "../../@redux/actions/series";
 
 import Table from "./table";
 
