@@ -103,42 +103,41 @@ class SuchaProvider(Provider):
         )
         res.raise_for_status()
         result = res.json()
-
-        try:
-            subtitles = []
-            for i in result:
-                matches = set()
+        subtitles = []
+        for i in result:
+            matches = set()
+            try:
                 if (
                     video.title.lower() in i["title"].lower()
                     or video.title.lower() in i["alt_title"].lower()
                 ):
                     matches.add("title")
-                if is_episode:
-                    if (
-                        q["query"].lower() in i["title"].lower()
-                        or q["query"].lower() in i["alt_title"].lower()
-                    ):
-                        matches.add("title")
-                        matches.add("series")
-                        matches.add("season")
-                        matches.add("episode")
-                        matches.add("year")
-                if str(i["year"]) == video.year:
+            except TypeError:
+                logger.debug("No subtitles found")
+                return []
+            if is_episode:
+                if (
+                    q["query"].lower() in i["title"].lower()
+                    or q["query"].lower() in i["alt_title"].lower()
+                ):
+                    matches.add("title")
+                    matches.add("series")
+                    matches.add("season")
+                    matches.add("episode")
                     matches.add("year")
-                subtitles.append(
-                    SuchaSubtitle(
-                        language,
-                        i["release"],
-                        i["filename"],
-                        str(i["id"]),
-                        "episode" if is_episode else "movie",
-                        matches,
-                    )
+            if str(i["year"]) == video.year:
+                matches.add("year")
+            subtitles.append(
+                SuchaSubtitle(
+                    language,
+                    i["release"],
+                    i["filename"],
+                    str(i["id"]),
+                    "episode" if is_episode else "movie",
+                    matches,
                 )
-            return subtitles
-        except KeyError:
-            logger.debug("No subtitles found")
-            return []
+            )
+        return subtitles
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
