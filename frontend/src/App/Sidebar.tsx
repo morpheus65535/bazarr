@@ -15,7 +15,6 @@ import { NavLink } from "react-router-dom";
 import { connect } from "react-redux";
 
 interface BaseItemProps {
-  name: string;
   badge?: string;
 }
 
@@ -36,7 +35,7 @@ interface CollapseItemProps extends BaseItemProps {
 }
 
 const LinkListItem: FunctionComponent<LinkListItemProps> = (props) => {
-  const { name, icon, href, badge } = props;
+  const { children, icon, href, badge } = props;
   return (
     <NavLink
       activeClassName="active"
@@ -51,7 +50,7 @@ const LinkListItem: FunctionComponent<LinkListItemProps> = (props) => {
         ></FontAwesomeIcon>
       </Col>
       <Col>
-        <span>{name}</span>
+        <span>{children}</span>
         <Badge variant="secondary" className="ml-2" hidden={badge === null}>
           {badge}
         </Badge>
@@ -61,7 +60,7 @@ const LinkListItem: FunctionComponent<LinkListItemProps> = (props) => {
 };
 
 const ToggleListItem: FunctionComponent<ToggleItemProps> = (props) => {
-  const { name, icon, badge, eventKey } = props;
+  const { children, icon, badge, eventKey } = props;
   return (
     <Accordion.Toggle
       as={ListGroup.Item}
@@ -77,7 +76,7 @@ const ToggleListItem: FunctionComponent<ToggleItemProps> = (props) => {
         ></FontAwesomeIcon>
       </Col>
       <Col>
-        <span>{name}</span>
+        <span>{children}</span>
         <Badge variant="secondary" className="ml-2" hidden={badge === null}>
           {badge}
         </Badge>
@@ -87,14 +86,14 @@ const ToggleListItem: FunctionComponent<ToggleItemProps> = (props) => {
 };
 
 const ListCollapseItem: FunctionComponent<CollapseItemProps> = (props) => {
-  const { name, href, badge } = props;
+  const { children, href, badge } = props;
   return (
     <NavLink
       activeClassName="active"
       className="list-group-item list-group-item-action py-2 d-flex align-items-center border-0"
       to={href}
     >
-      <span className="ml-4">{name}</span>
+      <span className="ml-4">{children}</span>
       <Badge variant="secondary" className="ml-2" hidden={badge === null}>
         {badge}
       </Badge>
@@ -122,101 +121,84 @@ class Sidebar extends React.Component<Props, {}> {
     const totalWanted = movies_badge + episodes_badge;
 
     const history = (
-      <ToggleListItem
-        name="History"
-        icon={faClock}
-        eventKey="history-toggle"
-      ></ToggleListItem>
+      <ToggleListItem icon={faClock} eventKey="history-toggle">
+        History
+      </ToggleListItem>
     );
 
     const historyItems: JSX.Element = (
       <Accordion.Collapse eventKey="history-toggle">
         <div>
-          <ListCollapseItem
-            name="Series"
-            href="/history/series"
-          ></ListCollapseItem>
-          <ListCollapseItem
-            name="Movies"
-            href="/history/movies"
-          ></ListCollapseItem>
+          <ListCollapseItem href="/history/series">Series</ListCollapseItem>
+          <ListCollapseItem href="/history/movies">Movies</ListCollapseItem>
         </div>
       </Accordion.Collapse>
     );
 
     const wanted: JSX.Element = (
       <ToggleListItem
-        name="Wanted"
         icon={faExclamationTriangle}
         badge={totalWanted === 0 ? undefined : totalWanted.toString()}
         eventKey="wanted-toggle"
-      ></ToggleListItem>
+      >
+        Wanted
+      </ToggleListItem>
     );
 
     const wantedItems: JSX.Element = (
       <Accordion.Collapse eventKey="wanted-toggle">
         <div>
           <ListCollapseItem
-            name="Series"
             href="/wanted/series"
             badge={episodes_badge === 0 ? undefined : episodes_badge.toString()}
-          ></ListCollapseItem>
+          >
+            Series
+          </ListCollapseItem>
           <ListCollapseItem
-            name="Movies"
             href="/wanted/movies"
             badge={movies_badge === 0 ? undefined : movies_badge.toString()}
-          ></ListCollapseItem>
+          >
+            Movies
+          </ListCollapseItem>
         </div>
       </Accordion.Collapse>
     );
 
     const settings: JSX.Element = (
-      <ToggleListItem
-        name="Settings"
-        icon={faCogs}
-        eventKey="settings-toggle"
-      ></ToggleListItem>
+      <ToggleListItem icon={faCogs} eventKey="settings-toggle">
+        Settings
+      </ToggleListItem>
     );
 
     const settingsItems: JSX.Element = (
       <Accordion.Collapse eventKey="settings-toggle">
         <div>
-          <ListCollapseItem
-            name="General"
-            href="/settings/general"
-          ></ListCollapseItem>
-          <ListCollapseItem
-            name="Subtitles"
-            href="/settings/subtitles"
-          ></ListCollapseItem>
-          <ListCollapseItem
-            name="Languages"
-            href="/settings/languages"
-          ></ListCollapseItem>
+          <ListCollapseItem href="/settings/general">General</ListCollapseItem>
+          <ListCollapseItem href="/settings/subtitles">
+            Subtitles
+          </ListCollapseItem>
+          <ListCollapseItem href="/settings/languages">
+            Languages
+          </ListCollapseItem>
         </div>
       </Accordion.Collapse>
     );
 
     const system: JSX.Element = (
       <ToggleListItem
-        name="System"
         icon={faLaptop}
         eventKey="system-toggle"
         badge={providers_badge === 0 ? undefined : providers_badge.toString()}
-      ></ToggleListItem>
+      >
+        System
+      </ToggleListItem>
     );
 
     const systemItems: JSX.Element = (
       <Accordion.Collapse eventKey="system-toggle">
         <div>
-          <ListCollapseItem
-            name="Tasks"
-            href="/system/tasks"
-          ></ListCollapseItem>
-          <ListCollapseItem
-            name="Status"
-            href="/system/status"
-          ></ListCollapseItem>
+          <ListCollapseItem href="/system/tasks">Tasks</ListCollapseItem>
+          <ListCollapseItem href="/system/status">Status</ListCollapseItem>
         </div>
       </Accordion.Collapse>
     );
@@ -236,16 +218,12 @@ class Sidebar extends React.Component<Props, {}> {
         </Navbar>
         <Accordion>
           <ListGroup variant="flush">
-            <LinkListItem
-              name="Series"
-              icon={faPlay}
-              href="/series"
-            ></LinkListItem>
-            <LinkListItem
-              name="Movies"
-              icon={faFilm}
-              href="/movies"
-            ></LinkListItem>
+            <LinkListItem icon={faPlay} href="/series">
+              Series
+            </LinkListItem>
+            <LinkListItem icon={faFilm} href="/movies">
+              Movies
+            </LinkListItem>
             {history}
             {historyItems}
             {wanted}
