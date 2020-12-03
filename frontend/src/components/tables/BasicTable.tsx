@@ -60,17 +60,46 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const end = Math.min(pageSize * (pageIndex + 1), rows.length);
 
   const buttonClass = "";
+
   const pageButtons = React.useMemo(() => {
-    return [...Array(pageCount).keys()].map((idx) => (
-      <Pagination.Item
-        key={idx}
-        className={buttonClass}
-        active={pageIndex === idx}
-        onClick={() => gotoPage(idx)}
-      >
-        {idx + 1}
-      </Pagination.Item>
-    ));
+    return [...Array(pageCount).keys()]
+      .map((idx) => {
+        if (
+          Math.abs(idx - pageIndex) >= 4 &&
+          idx !== 0 &&
+          idx !== pageCount - 1
+        ) {
+          return null;
+        } else {
+          return (
+            <Pagination.Item
+              key={idx}
+              className={buttonClass}
+              active={pageIndex === idx}
+              onClick={() => gotoPage(idx)}
+            >
+              {idx + 1}
+            </Pagination.Item>
+          );
+        }
+      })
+      .flatMap((item, idx, arr) => {
+        if (item === null) {
+          if (arr[idx + 1] === null) {
+            return [];
+          } else {
+            return (
+              <Pagination.Ellipsis
+                key={idx}
+                className={buttonClass}
+                disabled
+              ></Pagination.Ellipsis>
+            );
+          }
+        } else {
+          return [item];
+        }
+      });
   }, [pageCount, pageIndex, gotoPage]);
 
   const pageControl = (
