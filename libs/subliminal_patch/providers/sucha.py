@@ -88,7 +88,6 @@ class SuchaProvider(Provider):
     def query(self, languages, video):
         movie_year = video.year if video.year else "0"
         is_episode = isinstance(video, Episode)
-        logger.debug("Is episode {}".format(is_episode))
         language = self.language_list[0]
         if is_episode:
             q = {
@@ -108,8 +107,6 @@ class SuchaProvider(Provider):
         try:
             subtitles = []
             for i in result:
-                logger.debug("year from sucha {}".format(i["year"]))
-                logger.debug("year from video {}".format(video.year))
                 matches = set()
                 if (
                     video.title.lower() in i["title"].lower()
