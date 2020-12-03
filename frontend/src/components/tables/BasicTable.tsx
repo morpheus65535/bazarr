@@ -1,5 +1,5 @@
 import React from "react";
-import { Pagination, Row, Col, Table } from "react-bootstrap";
+import { Pagination, Row, Col, Container, Table } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
 interface Props<T extends object = {}> {
@@ -103,7 +103,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   }, [pageCount, pageIndex, gotoPage]);
 
   const pageControl = (
-    <div>
+    <Container fluid>
       <Row>
         <Col className="d-flex align-items-center justify-content-start">
           <span>
@@ -126,7 +126,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           </Pagination>
         </Col>
       </Row>
-    </div>
+    </Container>
   );
 
   return (

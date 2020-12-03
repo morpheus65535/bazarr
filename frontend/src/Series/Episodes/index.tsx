@@ -2,6 +2,8 @@ import React from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 
+import { Container } from "react-bootstrap"
+
 import {
   faSync,
   faSearch,
@@ -106,7 +108,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
 
     if (item) {
       return (
-        <div>
+        <Container fluid className="p-0">
           {header}
           <ItemOverview item={item} details={details}></ItemOverview>
           <Table id={id}></Table>
@@ -114,7 +116,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
             item={editSeries ? item : undefined}
             onClose={this.onEditSeriesClose.bind(this)}
           ></EditItemModal>
-        </div>
+        </Container>
       );
     } else {
       return <div></div>;
