@@ -1,7 +1,7 @@
 import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { Badge } from "react-bootstrap";
+import { Badge, Spinner } from "react-bootstrap";
 
 interface ActionIconProps {
   icon: IconProp;
@@ -37,6 +37,14 @@ export const SettingGroup: FunctionComponent<SettingGroupProps> = (props) => {
       <h4>{name}</h4>
       <hr></hr>
       {children}
+    </div>
+  );
+};
+
+export const LoadingOverlay: FunctionComponent = (props) => {
+  return (
+    <div className="d-flex flex-grow-1 justify-content-center my-5">
+      <Spinner animation="border"></Spinner>
     </div>
   );
 };

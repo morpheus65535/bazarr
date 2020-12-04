@@ -21,6 +21,7 @@ import {
   ContentHeaderGroup,
   EditItemModal,
   ItemOverview,
+  LoadingOverlay
 } from "../../components";
 
 import Table from "./table";
@@ -129,7 +130,7 @@ class MovieDetailView extends React.Component<Props, State> {
         </Container>
       );
     } else {
-      return <div></div>;
+      return <LoadingOverlay></LoadingOverlay>;
     }
   }
 }

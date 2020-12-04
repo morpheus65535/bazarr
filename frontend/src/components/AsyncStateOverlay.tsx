@@ -1,5 +1,5 @@
-import React, { FunctionComponent, PropsWithChildren } from "react";
-import { Spinner } from "react-bootstrap";
+import React, { PropsWithChildren } from "react";
+import { LoadingOverlay } from ".";
 
 interface Params<T> {
   state: AsyncState<T>;
@@ -23,11 +23,7 @@ class AsyncStateOverlay<T> extends React.Component<
     const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
     if (state.updating && missing) {
-      return (
-        <div className="d-flex justify-content-center my-5">
-          <Spinner animation="border"></Spinner>
-        </div>
-      );
+      return <LoadingOverlay></LoadingOverlay>;
     } else {
       return <React.Fragment>{children}</React.Fragment>;
     }
