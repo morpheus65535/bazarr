@@ -1,5 +1,4 @@
 import React, { FunctionComponent } from "react";
-import {} from "react-bootstrap";
 
 type GroupPosition = "start" | "end";
 interface GroupProps {
