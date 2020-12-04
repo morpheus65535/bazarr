@@ -4,17 +4,17 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { ActionIcon, BasicTable } from "../../components";
+import { ActionIcon, BasicTable, AsyncStateOverlay } from "../../components";
 import { HistoryActionIcon } from "../components";
 
 interface Props {
-  seriesHistory: SeriesHistory[];
+  seriesHistory: AsyncState<SeriesHistory[]>;
 }
 
 function mapStateToProps({ series }: StoreState) {
   const { historyList } = series;
   return {
-    seriesHistory: historyList.items,
+    seriesHistory: historyList,
   };
 }
 
@@ -70,7 +70,11 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: seriesHistory }}></BasicTable>;
+  return (
+    <AsyncStateOverlay state={seriesHistory}>
+      <BasicTable options={{ columns, data: seriesHistory.items }}></BasicTable>
+    </AsyncStateOverlay>
+  );
 };
 
 export default connect(mapStateToProps)(Table);

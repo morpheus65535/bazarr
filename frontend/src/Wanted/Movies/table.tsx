@@ -3,21 +3,21 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { BasicTable } from "../../components";
+import { BasicTable, AsyncStateOverlay } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Badge, Button } from "react-bootstrap";
 
 interface Props {
-  wanted: Array<WantedMovie>;
+  wanted: AsyncState<WantedMovie[]>;
   //   search: (id: string) => void;
 }
 
 function mapStateToProps({ movie }: StoreState): Props {
   const { wantedMovieList } = movie;
   return {
-    wanted: wantedMovieList.items,
+    wanted: wantedMovieList,
   };
 }
 
@@ -60,7 +60,11 @@ function Table(props: Props): JSX.Element {
     []
   );
 
-  return <BasicTable options={{ columns, data: props.wanted }}></BasicTable>;
+  return (
+    <AsyncStateOverlay state={props.wanted}>
+      <BasicTable options={{ columns, data: props.wanted.items }}></BasicTable>
+    </AsyncStateOverlay>
+  );
 }
 
 export default connect(mapStateToProps, {})(Table);

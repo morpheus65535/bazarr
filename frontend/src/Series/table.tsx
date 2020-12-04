@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
-import { BasicTable, ActionIcon } from "../components";
+import { BasicTable, ActionIcon, AsyncStateOverlay } from "../components";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -15,14 +15,14 @@ import {
 import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
-  series: Series[];
+  series: AsyncState<Series[]>;
   openSeriesEditor?: (series: Series) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
   const { seriesList } = series;
   return {
-    series: seriesList.items,
+    series: seriesList,
   };
 }
 
@@ -132,7 +132,11 @@ const Table: FunctionComponent<Props> = (props) => {
     [openSeriesEditor]
   );
 
-  return <BasicTable options={{ columns, data: series }}></BasicTable>;
+  return (
+    <AsyncStateOverlay state={series}>
+      <BasicTable options={{ columns, data: series.items }}></BasicTable>
+    </AsyncStateOverlay>
+  );
 };
 
 export default connect(mapStateToProps)(Table);

@@ -12,7 +12,7 @@ import {
   faBriefcase,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { GroupTable, ActionIcon } from "../../components";
+import { GroupTable, ActionIcon, AsyncStateOverlay } from "../../components";
 
 interface Props {
   id: string;
@@ -26,13 +26,9 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { id } = props;
+  const id = Number.parseInt(props.id);
   const { items, updating } = props.episodeList;
-  const episodes = useMemo(() => items.get(Number.parseInt(id)) ?? [], [
-    id,
-    items,
-    updating,
-  ]);
+  const episodes = useMemo(() => items.get(id) ?? [], [id, items, updating]);
 
   const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
     () => [
@@ -99,7 +95,11 @@ const Table: FunctionComponent<Props> = (props) => {
     },
   };
 
-  return <GroupTable options={options}></GroupTable>;
+  return (
+    <AsyncStateOverlay state={props.episodeList} exist={(item) => item.has(id)}>
+      <GroupTable options={options}></GroupTable>
+    </AsyncStateOverlay>
+  );
 };
 
 export default connect(mapStateToProps)(Table);

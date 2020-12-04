@@ -4,18 +4,18 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { ActionIcon, BasicTable } from "../../components";
+import { ActionIcon, BasicTable, AsyncStateOverlay } from "../../components";
 
 import { HistoryActionIcon } from "../components";
 
 interface Props {
-  movieHistory: MovieHistory[];
+  movieHistory: AsyncState<MovieHistory[]>;
 }
 
 function mapStateToProps({ movie }: StoreState) {
   const { historyList } = movie;
   return {
-    movieHistory: historyList.items,
+    movieHistory: historyList,
   };
 }
 
@@ -62,7 +62,11 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: movieHistory }}></BasicTable>;
+  return (
+    <AsyncStateOverlay state={movieHistory}>
+      <BasicTable options={{ columns, data: movieHistory.items }}></BasicTable>
+    </AsyncStateOverlay>
+  );
 };
 
 export default connect(mapStateToProps)(Table);

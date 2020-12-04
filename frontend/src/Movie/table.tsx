@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Badge } from "react-bootstrap";
 
-import { BasicTable, ActionIcon } from "../components";
+import { BasicTable, ActionIcon, AsyncStateOverlay } from "../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,14 +15,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-  movies: Movie[];
+  movies: AsyncState<Movie[]>;
   openMovieEditor?: (movie: Movie) => void;
 }
 
 function mapStateToProps({ movie }: StoreState) {
   const { movieList } = movie;
   return {
-    movies: movieList.items,
+    movies: movieList,
   };
 }
 
@@ -129,7 +129,11 @@ const Table: FunctionComponent<Props> = (props) => {
     [onOpenMovieEditor]
   );
 
-  return <BasicTable options={{ columns, data: movies }}></BasicTable>;
+  return (
+    <AsyncStateOverlay state={movies}>
+      <BasicTable options={{ columns, data: movies.items }}></BasicTable>
+    </AsyncStateOverlay>
+  );
 };
 
 export default connect(mapStateToProps)(Table);
