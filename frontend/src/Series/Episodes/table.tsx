@@ -3,7 +3,6 @@ import { Badge } from "react-bootstrap";
 import { Column, TableOptions } from "react-table";
 
 import { connect } from "react-redux";
-import GroupTable from "../../components/tables/GroupTable";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,7 +12,7 @@ import {
   faBriefcase,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { ActionIcon } from "../../components";
+import { GroupTable, ActionIcon } from "../../components";
 
 interface Props {
   id: string;

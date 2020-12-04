@@ -1,11 +1,10 @@
 import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
-import BasicTable from "../../components/tables/BasicTable";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { ActionIcon } from "../../components";
+import { ActionIcon, BasicTable } from "../../components";
 import { HistoryActionIcon } from "../components";
 
 interface Props {

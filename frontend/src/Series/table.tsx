@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
-import BasicTable from "../components/tables/BasicTable";
+import { BasicTable, ActionIcon } from "../components";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -13,8 +13,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import { Badge, ProgressBar } from "react-bootstrap";
-
-import { ActionIcon } from "../components";
 
 interface Props {
   series: Series[];

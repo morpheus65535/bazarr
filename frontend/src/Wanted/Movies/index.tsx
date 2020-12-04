@@ -9,9 +9,7 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
 import Table from "./table";
 
-import ContentHeader, {
-  ContentHeaderButton,
-} from "../../components/ContentHeader";
+import { ContentHeader, ContentHeaderButton } from "../../components";
 
 interface Props {
   update: () => void;

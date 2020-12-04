@@ -15,12 +15,13 @@ import {
 
 import { Container } from "react-bootstrap";
 
-import ContentHeader, {
+import {
+  ContentHeader,
   ContentHeaderButton,
   ContentHeaderGroup,
-} from "../../components/ContentHeader";
-import ItemOverview from "../../components/ItemOverview";
-import EditItemModal from "../../components/EditItemModal";
+  EditItemModal,
+  ItemOverview,
+} from "../../components";
 
 import Table from "./table";
 
@@ -73,7 +74,7 @@ class MovieDetailView extends React.Component<Props, State> {
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
     if (item) {
-      const allowEdit = (item.languages instanceof Array)
+      const allowEdit = item.languages instanceof Array;
 
       const editButton = (
         <React.Fragment>
@@ -95,7 +96,7 @@ class MovieDetailView extends React.Component<Props, State> {
             <ContentHeaderButton iconProps={{ icon: faSync }}>
               Scan Disk
             </ContentHeaderButton>
-            { allowEdit && editButton }
+            {allowEdit && editButton}
             <ContentHeaderButton iconProps={{ icon: faHistory }}>
               History
             </ContentHeaderButton>

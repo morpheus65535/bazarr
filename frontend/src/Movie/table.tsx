@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Badge } from "react-bootstrap";
 
-import BasicTable from "../components/tables/BasicTable";
+import { BasicTable, ActionIcon } from "../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,8 +13,6 @@ import {
   faBookmark,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
-
-import { ActionIcon } from "../components";
 
 interface Props {
   movies: Movie[];

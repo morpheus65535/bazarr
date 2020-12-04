@@ -4,11 +4,12 @@ import { Helmet } from "react-helmet";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
-import ContentHeader, {
+import {
+  ContentHeader,
   ContentHeaderButton,
-} from "../components/ContentHeader";
+  EditItemModal,
+} from "../components";
 import { Container } from "react-bootstrap";
-import ItemSimpleEditor from "../components/EditItemModal";
 
 import Table from "./table";
 
@@ -54,10 +55,10 @@ class MovieView extends React.Component<Props, State> {
         <div className="p-3">
           <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
         </div>
-        <ItemSimpleEditor
+        <EditItemModal
           item={modal}
           onClose={this.onMovieEditClose.bind(this)}
-        ></ItemSimpleEditor>
+        ></EditItemModal>
       </Container>
     );
   }

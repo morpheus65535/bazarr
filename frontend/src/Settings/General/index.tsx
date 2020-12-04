@@ -3,11 +3,12 @@ import { Container, Form, InputGroup, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { SettingGroup } from "../../components";
-import ContentHeader, {
+import {
+  SettingGroup,
+  ContentHeader,
   ContentHeaderButton,
-} from "../../components/ContentHeader";
-import { CommonFormGroup } from "../../components/CommonForm";
+  CommonFormGroup,
+} from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSave, faSync } from "@fortawesome/free-solid-svg-icons";

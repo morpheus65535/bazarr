@@ -4,12 +4,13 @@ import { connect } from "react-redux";
 import {} from "../../@redux/actions/system";
 import { Helmet } from "react-helmet";
 
-import { SettingGroup } from "../../components";
-import ContentHeader, {
+import {
+  SettingGroup,
+  ContentHeader,
   ContentHeaderButton,
-} from "../../components/ContentHeader";
-import { CommonFormGroup } from "../../components/CommonForm";
-import LanguageSelector from "../../components/LanguageSelector";
+  CommonFormGroup,
+  LanguageSelector,
+} from "../../components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 

@@ -14,13 +14,15 @@ import {
 
 import { updateEpisodeList } from "../../@redux/actions/series";
 
-import ContentHeader, {
+import {
+  ContentHeader,
   ContentHeaderButton,
   ContentHeaderGroup,
-} from "../../components/ContentHeader";
-import ItemOverview from "../../components/ItemOverview";
+  ItemOverview,
+  EditItemModal,
+} from "../../components";
+
 import Table from "./table";
-import EditItemModal from "../../components/EditItemModal";
 
 interface Params {
   id: string;

@@ -5,10 +5,11 @@ import {} from "../../@redux/actions/system";
 import { Helmet } from "react-helmet";
 
 import { SettingGroup } from "../../components";
-import ContentHeader, {
+import {
+  ContentHeader,
   ContentHeaderButton,
-} from "../../components/ContentHeader";
-import { CommonFormGroup } from "../../components/CommonForm";
+  CommonFormGroup,
+} from "../../components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 

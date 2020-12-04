@@ -4,11 +4,12 @@ import { Container } from "react-bootstrap";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { Helmet } from "react-helmet";
 
-import ContentHeader, {
+import {
+  ContentHeader,
   ContentHeaderButton,
-} from "../components/ContentHeader";
+  EditItemModal,
+} from "../components";
 import Table from "./table";
-import ItemSimpleEditor from "../components/EditItemModal";
 
 interface Props {}
 
@@ -58,10 +59,10 @@ class SeriesView extends React.Component<Props, State> {
         <div className="p-3">
           <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </div>
-        <ItemSimpleEditor
+        <EditItemModal
           item={modal}
           onClose={this.onSeriesEditorClose.bind(this)}
-        ></ItemSimpleEditor>
+        ></EditItemModal>
       </Container>
     );
   }
