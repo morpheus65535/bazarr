@@ -8,6 +8,9 @@ import {
   faHistory,
   faToolbox,
   faWrench,
+  faUser,
+  faSearch,
+  faCloudUploadAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { Container } from "react-bootstrap";
@@ -70,12 +73,29 @@ class MovieDetailView extends React.Component<Props, State> {
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
     if (item) {
+      const allowEdit = (item.languages instanceof Array)
+
+      const editButton = (
+        <React.Fragment>
+          <ContentHeaderButton iconProps={{ icon: faSearch }}>
+            Search
+          </ContentHeaderButton>
+          <ContentHeaderButton iconProps={{ icon: faUser }}>
+            Manual
+          </ContentHeaderButton>
+          <ContentHeaderButton iconProps={{ icon: faCloudUploadAlt }}>
+            Upload
+          </ContentHeaderButton>
+        </React.Fragment>
+      );
+
       const header = (
         <ContentHeader>
           <ContentHeaderGroup pos="start">
             <ContentHeaderButton iconProps={{ icon: faSync }}>
               Scan Disk
             </ContentHeaderButton>
+            { allowEdit && editButton }
             <ContentHeaderButton iconProps={{ icon: faHistory }}>
               History
             </ContentHeaderButton>
