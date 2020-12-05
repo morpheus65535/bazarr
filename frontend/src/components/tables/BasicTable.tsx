@@ -4,6 +4,7 @@ import { TableOptions, usePagination, useTable } from "react-table";
 
 interface Props<T extends object = {}> {
   options: TableOptions<T>;
+  emptyText?: string;
 }
 
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
@@ -39,24 +40,41 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     </thead>
   );
 
+  const colCount = React.useMemo<number>(() => {
+    return headerGroups.reduce(
+      (prev, curr) => (curr.headers.length > prev ? curr.headers.length : prev),
+      0
+    );
+  }, [headerGroups]);
+
+  const empty = rows.length === 0;
+
   const body = (
     <tbody {...getTableBodyProps()}>
-      {page.map(
-        (row): JSX.Element => {
-          prepareRow(row);
-          return (
-            <tr {...row.getRowProps()}>
-              {row.cells.map((cell) => (
-                <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
-              ))}
-            </tr>
-          );
-        }
+      {props.emptyText && empty ? (
+        <tr>
+          <td colSpan={colCount} className="text-center">
+            {props.emptyText}
+          </td>
+        </tr>
+      ) : (
+        page.map(
+          (row): JSX.Element => {
+            prepareRow(row);
+            return (
+              <tr {...row.getRowProps()}>
+                {row.cells.map((cell) => (
+                  <td {...cell.getCellProps()}>{cell.render("Cell")}</td>
+                ))}
+              </tr>
+            );
+          }
+        )
       )}
     </tbody>
   );
 
-  const start = pageSize * pageIndex + 1;
+  const start = empty ? 0 : pageSize * pageIndex + 1;
   const end = Math.min(pageSize * (pageIndex + 1), rows.length);
 
   const buttonClass = "";
