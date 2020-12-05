@@ -92,6 +92,9 @@ const Table: FunctionComponent<Props> = (props) => {
     data: episodes,
     initialState: {
       groupBy: ["season"],
+      expanded: {
+        "season:1": true
+      }
     },
   };
 
