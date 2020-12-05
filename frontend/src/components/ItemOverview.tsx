@@ -8,7 +8,7 @@ interface Props {
 
 const ItemOverview: FunctionComponent<Props> = (props) => {
   const badgeClass = "mr-2";
-  const infoRowClass = "mb-2";
+  const infoRowClass = "mb-2 text-white";
 
   const { item, details } = props;
 
@@ -31,8 +31,13 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   ));
 
   return (
-    <Container fluid className="p-4">
-      <Row>
+    <Container fluid>
+      <Row
+        className="p-4"
+        style={{
+          backgroundColor: "rgba(0,0,0,0.7)",
+        }}
+      >
         <Col sm="auto">
           <Image src={item.poster}></Image>
         </Col>

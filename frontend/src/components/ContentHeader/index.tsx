@@ -7,7 +7,7 @@ import ContentHeaderGroup from "./Group";
 export const ContentHeader: FunctionComponent = (props) => {
   const { children } = props;
   return (
-    <Navbar bg="dark">
+    <Navbar bg="dark" className="flex-grow-1">
       <Nav className="flex-grow-1">{children}</Nav>
     </Navbar>
   );

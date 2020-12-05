@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Form } from "react-bootstrap";
+import { Container, Row, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
@@ -221,20 +221,22 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
     );
 
     return (
-      <Container fluid className="p-0">
+      <Container fluid>
         <Helmet>
           <title>Subtitles - Bazarr (Settings)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton iconProps={{ icon: faSave }}>
-            Save
-          </ContentHeaderButton>
-        </ContentHeader>
-        <Form className="p-4">
-          {subtitles}
-          {anti_captcha}
-          {performance}
-        </Form>
+        <Row className="flex-column">
+          <ContentHeader>
+            <ContentHeaderButton iconProps={{ icon: faSave }}>
+              Save
+            </ContentHeaderButton>
+          </ContentHeader>
+          <Form className="p-4">
+            {subtitles}
+            {anti_captcha}
+            {performance}
+          </Form>
+        </Row>
       </Container>
     );
   }

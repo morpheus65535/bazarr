@@ -1,5 +1,5 @@
 import React from "react";
-import { Container } from "react-bootstrap";
+import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
@@ -17,11 +17,13 @@ class SeriesHistoryView extends React.Component<Props> {
   }
   render() {
     return (
-      <Container fluid className="m-1">
+      <Container fluid>
         <Helmet>
           <title>Series History - Bazarr</title>
         </Helmet>
-        <Table></Table>
+        <Row className="flex-column">
+          <Table></Table>
+        </Row>
       </Container>
     );
   }

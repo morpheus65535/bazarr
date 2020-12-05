@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Form } from "react-bootstrap";
+import { Container, Row, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
@@ -71,19 +71,21 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
     );
 
     return (
-      <Container fluid className="p-0">
+      <Container fluid>
         <Helmet>
           <title>Languages - Bazarr (Settings)</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton iconProps={{ icon: faSave }}>
-            Save
-          </ContentHeaderButton>
-        </ContentHeader>
-        <Form className="p-4">
-          {subtitles}
-          {defaultSetting}
-        </Form>
+        <Row className="flex-column">
+          <ContentHeader>
+            <ContentHeaderButton iconProps={{ icon: faSave }}>
+              Save
+            </ContentHeaderButton>
+          </ContentHeader>
+          <Form className="p-4">
+            {subtitles}
+            {defaultSetting}
+          </Form>
+        </Row>
       </Container>
     );
   }

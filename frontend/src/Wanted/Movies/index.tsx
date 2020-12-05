@@ -1,5 +1,5 @@
 import React from "react";
-import { Container } from "react-bootstrap";
+import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
@@ -21,18 +21,20 @@ class WantedMoviesView extends React.Component<Props> {
   }
   render() {
     return (
-      <Container fluid className="p-0">
+      <Container fluid>
         <Helmet>
           <title>Wanted Movies - Bazarr</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton iconProps={{ icon: faSearch }}>
-            Search All
-          </ContentHeaderButton>
-        </ContentHeader>
-        <div className="p-3">
-          <Table></Table>
-        </div>
+        <Row className="flex-column">
+          <ContentHeader>
+            <ContentHeaderButton iconProps={{ icon: faSearch }}>
+              Search All
+            </ContentHeaderButton>
+          </ContentHeader>
+          <div className="p-3">
+            <Table></Table>
+          </div>
+        </Row>
       </Container>
     );
   }

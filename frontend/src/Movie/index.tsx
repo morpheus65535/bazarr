@@ -1,4 +1,5 @@
 import React from "react";
+import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
@@ -9,7 +10,6 @@ import {
   ContentHeaderButton,
   EditItemModal,
 } from "../components";
-import { Container } from "react-bootstrap";
 
 import Table from "./table";
 
@@ -43,22 +43,24 @@ class MovieView extends React.Component<Props, State> {
     const { modal } = this.state;
 
     return (
-      <Container fluid className="p-0">
+      <Container fluid>
         <Helmet>
           <title>Movies - Bazarr</title>
         </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton iconProps={{ icon: faList }}>
-            Mass Edit
-          </ContentHeaderButton>
-        </ContentHeader>
-        <div className="p-3">
-          <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
-        </div>
-        <EditItemModal
-          item={modal}
-          onClose={this.onMovieEditClose.bind(this)}
-        ></EditItemModal>
+        <Row className="flex-column">
+          <ContentHeader>
+            <ContentHeaderButton iconProps={{ icon: faList }}>
+              Mass Edit
+            </ContentHeaderButton>
+          </ContentHeader>
+          <Row className="p-3">
+            <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
+          </Row>
+          <EditItemModal
+            item={modal}
+            onClose={this.onMovieEditClose.bind(this)}
+          ></EditItemModal>
+        </Row>
       </Container>
     );
   }

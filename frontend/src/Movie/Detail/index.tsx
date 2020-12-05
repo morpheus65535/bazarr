@@ -152,28 +152,26 @@ class MovieDetailView extends React.Component<Props, State> {
       ];
 
       return (
-        <Container fluid className="p-0">
+        <Container fluid>
           <Helmet>
             <title>{item.title} - Bazarr (Movies)</title>
           </Helmet>
-          {header}
-          <Row>
+          <Row className="flex-column">
+            {header}
             <ItemOverview item={item} details={details}></ItemOverview>
-          </Row>
-          <Row className="mx-3">
             <Table movie={item}></Table>
+            <EditItemModal
+              item={editMovie ? item : undefined}
+              onClose={this.onEditMovieClose.bind(this)}
+            ></EditItemModal>
+            <ActionModal
+              title={item.title}
+              show={actionModalShow}
+              active={actionModalKey}
+              close={this.onActionModalClose.bind(this)}
+              tabs={actionTabs}
+            ></ActionModal>
           </Row>
-          <EditItemModal
-            item={editMovie ? item : undefined}
-            onClose={this.onEditMovieClose.bind(this)}
-          ></EditItemModal>
-          <ActionModal
-            title={item.title}
-            show={actionModalShow}
-            active={actionModalKey}
-            close={this.onActionModalClose.bind(this)}
-            tabs={actionTabs}
-          ></ActionModal>
         </Container>
       );
     } else {
