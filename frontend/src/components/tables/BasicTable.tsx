@@ -111,7 +111,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
           </span>
         </Col>
         <Col className="d-flex justify-content-end">
-          <Pagination className="m-0">
+          <Pagination className="m-0" hidden={pageCount <= 1}>
             <Pagination.Prev
               className={buttonClass}
               onClick={previousPage}

@@ -22,7 +22,7 @@ enum HistoryAction {
   Sync,
 }
 
-export const HistoryActionIcon: FunctionComponent<HistoryActionIconProps> = (
+const HistoryActionIcon: FunctionComponent<HistoryActionIconProps> = (
   props
 ) => {
   const { action } = props;
@@ -53,3 +53,5 @@ export const HistoryActionIcon: FunctionComponent<HistoryActionIconProps> = (
     return null;
   }
 };
+
+export default HistoryActionIcon;

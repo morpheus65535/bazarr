@@ -4,8 +4,12 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { ActionIcon, BasicTable, AsyncStateOverlay } from "../../components";
-import { HistoryActionIcon } from "../components";
+import {
+  ActionIcon,
+  BasicTable,
+  AsyncStateOverlay,
+  HistoryActionIcon,
+} from "../../components";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;

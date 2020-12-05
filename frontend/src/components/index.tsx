@@ -54,5 +54,7 @@ export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
 export { default as EditItemModal } from "./EditItemModal";
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
+export { default as HistoryActionIcon } from "./HistoryActionIcon";
+export * from "./ActionModal";
 export * from "./ContentHeader";
 export * from "./tables";

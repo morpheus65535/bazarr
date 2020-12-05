@@ -21,10 +21,13 @@ import {
   ContentHeaderGroup,
   EditItemModal,
   ItemOverview,
-  LoadingOverlay
+  LoadingOverlay,
+  ActionModal,
+  TabElement,
 } from "../../components";
 
 import Table from "./table";
+import ToolTable from "./ToolTable";
 
 interface Params {
   id: string;
@@ -36,6 +39,8 @@ interface Props extends RouteComponentProps<Params> {
 
 interface State {
   editMovie: boolean;
+  actionModalShow: boolean;
+  actionModalKey?: string;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -51,6 +56,8 @@ class MovieDetailView extends React.Component<Props, State> {
 
     this.state = {
       editMovie: false,
+      actionModalShow: false,
+      actionModalKey: undefined,
     };
   }
   onEditMovieClick() {
@@ -65,12 +72,26 @@ class MovieDetailView extends React.Component<Props, State> {
       editMovie: false,
     });
   }
+  onActionModalClick(key?: string) {
+    this.setState({
+      ...this.state,
+      actionModalShow: true,
+      actionModalKey: key,
+    });
+  }
+  onActionModalClose() {
+    this.setState({
+      ...this.state,
+      actionModalShow: false,
+      actionModalKey: undefined,
+    });
+  }
   render() {
     const list = this.props.movieList.items;
     const { id } = this.props.match.params;
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
-    const { editMovie } = this.state;
+    const { editMovie, actionModalShow, actionModalKey } = this.state;
 
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
@@ -98,10 +119,16 @@ class MovieDetailView extends React.Component<Props, State> {
               Scan Disk
             </ContentHeaderButton>
             {allowEdit && editButton}
-            <ContentHeaderButton iconProps={{ icon: faHistory }}>
+            <ContentHeaderButton
+              iconProps={{ icon: faHistory }}
+              // onClick={() => this.onActionModalClick("history")}
+            >
               History
             </ContentHeaderButton>
-            <ContentHeaderButton iconProps={{ icon: faToolbox }}>
+            <ContentHeaderButton
+              iconProps={{ icon: faToolbox }}
+              onClick={() => this.onActionModalClick("tools")}
+            >
               Tools
             </ContentHeaderButton>
           </ContentHeaderGroup>
@@ -115,6 +142,15 @@ class MovieDetailView extends React.Component<Props, State> {
           </ContentHeaderGroup>
         </ContentHeader>
       );
+
+      const actionTabs: TabElement[] = [
+        {
+          event: "tools",
+          title: "Tools",
+          element: <ToolTable subtitles={item.subtitles}></ToolTable>,
+        },
+      ];
+
       return (
         <Container fluid className="p-0">
           <Helmet>
@@ -127,6 +163,13 @@ class MovieDetailView extends React.Component<Props, State> {
             item={editMovie ? item : undefined}
             onClose={this.onEditMovieClose.bind(this)}
           ></EditItemModal>
+          <ActionModal
+            title={item.title}
+            show={actionModalShow}
+            active={actionModalKey}
+            close={this.onActionModalClose.bind(this)}
+            tabs={actionTabs}
+          ></ActionModal>
         </Container>
       );
     } else {
