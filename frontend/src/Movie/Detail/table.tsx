@@ -5,7 +5,9 @@ import { Column } from "react-table";
 import { BasicTable } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
+
+const missingText = "Missing";
 
 interface Props {
   movie: Movie;
@@ -22,6 +24,8 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           if (row.value === null || row.value.length === 0) {
             return "Video File Subtitle Track";
+          } else if (row.value === missingText) {
+            return <span className="text-muted">{row.value}</span>;
           } else {
             return row.value;
           }
@@ -40,6 +44,12 @@ const Table: FunctionComponent<Props> = (props) => {
           const { original } = row.row;
           if (original.path === null || original.path.length === 0) {
             return null;
+          } else if (original.path === missingText) {
+            return (
+              <Button variant="light" size="sm">
+                <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
+              </Button>
+            );
           } else {
             return (
               <Button variant="light" size="sm">
@@ -53,7 +63,16 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: movie.subtitles }}></BasicTable>;
+  const data: Subtitle[] = React.useMemo(() => {
+    const missing = movie.missing_subtitles.map((item) => {
+      item.path = missingText;
+      return item;
+    });
+
+    return movie.subtitles.concat(missing);
+  }, [movie.missing_subtitles, movie.subtitles]);
+
+  return <BasicTable options={{ columns, data }}></BasicTable>;
 };
 
 export default Table;

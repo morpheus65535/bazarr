@@ -13,7 +13,7 @@ import {
   faCloudUploadAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { Container } from "react-bootstrap";
+import { Container, Row } from "react-bootstrap";
 
 import {
   ContentHeader,
@@ -157,8 +157,12 @@ class MovieDetailView extends React.Component<Props, State> {
             <title>{item.title} - Bazarr (Movies)</title>
           </Helmet>
           {header}
-          <ItemOverview item={item} details={details}></ItemOverview>
-          <Table movie={item}></Table>
+          <Row>
+            <ItemOverview item={item} details={details}></ItemOverview>
+          </Row>
+          <Row className="mx-3">
+            <Table movie={item}></Table>
+          </Row>
           <EditItemModal
             item={editMovie ? item : undefined}
             onClose={this.onEditMovieClose.bind(this)}
