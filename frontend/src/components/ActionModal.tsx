@@ -22,11 +22,10 @@ export const ActionModal: FunctionComponent<ModalProps> = ({
   close,
   tabs,
 }) => {
-
   const tabElements = React.useMemo(
     () =>
       tabs.map((val) => (
-        <Tab eventKey={val.event} title={val.title}>
+        <Tab eventKey={val.event} key={val.event} title={val.title}>
           <Container fluid className="p-2">
             {val.element}
           </Container>
@@ -38,9 +37,7 @@ export const ActionModal: FunctionComponent<ModalProps> = ({
     <Modal size="lg" show={show} onHide={close}>
       <Modal.Header closeButton>{title}</Modal.Header>
       <Modal.Body>
-        <Tabs defaultActiveKey={active}>
-          {tabElements}
-        </Tabs>
+        <Tabs defaultActiveKey={active}>{tabElements}</Tabs>
       </Modal.Body>
     </Modal>
   );
