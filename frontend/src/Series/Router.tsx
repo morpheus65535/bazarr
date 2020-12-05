@@ -2,7 +2,7 @@ import React from "react";
 import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
-import { updateSeriesList } from "../@redux/actions/series";
+import { updateSeriesList } from "../@redux/actions";
 
 import Series from ".";
 import Episodes from "./Episodes";

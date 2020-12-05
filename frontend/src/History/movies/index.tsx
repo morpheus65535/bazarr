@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { updateHistoryMovieList } from "../../@redux/actions/movie";
+import { updateHistoryMovieList } from "../../@redux/actions";
 
 import Table from "./table";
 

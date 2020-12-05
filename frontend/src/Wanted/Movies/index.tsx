@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
 import { connect } from "react-redux";
-import { updateWantedMovieList } from "../../@redux/actions/movie";
+import { updateWantedMovieList } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 

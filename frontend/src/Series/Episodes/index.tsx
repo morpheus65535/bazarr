@@ -12,7 +12,7 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { updateEpisodeList } from "../../@redux/actions/series";
+import { updateEpisodeList } from "../../@redux/actions";
 
 import {
   ContentHeader,
