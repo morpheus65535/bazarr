@@ -7,7 +7,7 @@ import { BasicTable } from "../../components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 
-const missingText = "Missing";
+const missingText = "Subtitle Missing";
 
 interface Props {
   movie: Movie;

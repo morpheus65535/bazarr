@@ -1,5 +1,5 @@
 import React from "react";
-import { Container } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import { BrowserRouter } from "react-router-dom";
 import Router from "./Router";
 import Sidebar from "./Sidebar";
@@ -33,13 +33,18 @@ class App extends React.Component<Props> {
   render() {
     return (
       <div id="app">
+        {/* TODO: Setting basename for router */}
         <BrowserRouter>
-          <Container fluid className="p-0 d-flex">
-            <Sidebar></Sidebar>
-            <div id="content-wrapper">
-              <Header></Header>
-              <Router></Router>
-            </div>
+          <Container fluid className="p-0">
+            <Row noGutters>
+              <Col sm={12} md={3} lg={2}>
+                <Sidebar></Sidebar>
+              </Col>
+              <Col>
+                <Header></Header>
+                <Router></Router>
+              </Col>
+            </Row>
           </Container>
         </BrowserRouter>
       </div>

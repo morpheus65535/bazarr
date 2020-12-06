@@ -27,7 +27,7 @@ function Table(props: Props): JSX.Element {
   >(
     () => [
       {
-        Header: "Series",
+        Header: "Name",
         accessor: "seriesTitle",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
@@ -43,7 +43,6 @@ function Table(props: Props): JSX.Element {
         accessor: "episode_number",
       },
       {
-        Header: "Episode Title",
         accessor: "episodeTitle",
       },
       {

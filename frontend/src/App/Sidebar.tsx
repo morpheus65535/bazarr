@@ -68,7 +68,7 @@ const ToggleListItem: FunctionComponent<ToggleItemProps> = (props) => {
       eventKey={eventKey}
       className="d-flex align-items-center py-2"
     >
-      <Col sm={1}>
+      <Col sm={1} className="justify-content-center">
         <FontAwesomeIcon
           size="1x"
           className="mr-3"
@@ -107,6 +107,10 @@ interface Props {
   providers_badge: number;
 }
 
+interface State {
+  active: string;
+}
+
 function mapStateToProps({ badges }: StoreState): Props {
   return {
     movies_badge: badges.movies,
@@ -115,10 +119,20 @@ function mapStateToProps({ badges }: StoreState): Props {
   };
 }
 
-class Sidebar extends React.Component<Props, {}> {
+class Sidebar extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      active: "",
+    };
+  }
+
   render() {
     const { movies_badge, episodes_badge, providers_badge } = this.props;
     const totalWanted = movies_badge + episodes_badge;
+
+    const { active } = this.state;
 
     const history = (
       <ToggleListItem icon={faClock} eventKey="history-toggle">
@@ -204,7 +218,7 @@ class Sidebar extends React.Component<Props, {}> {
     );
 
     return (
-      <aside id="sidebar-wrapper" className="px-0 col-md-3 col-xl-2">
+      <aside>
         <Navbar bg="light" expand="lg" className="header">
           <Navbar.Brand href="/">
             <img
@@ -216,7 +230,7 @@ class Sidebar extends React.Component<Props, {}> {
             ></img>
           </Navbar.Brand>
         </Navbar>
-        <Accordion>
+        <Accordion defaultActiveKey={active}>
           <ListGroup variant="flush">
             <LinkListItem icon={faPlay} href="/series">
               Series

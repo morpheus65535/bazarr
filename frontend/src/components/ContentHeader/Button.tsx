@@ -23,7 +23,7 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
     >
       <FontAwesomeIcon
         size="lg"
-        className="mx-auto"
+        className="mx-auto my-1"
         {...iconProps}
       ></FontAwesomeIcon>
       <span className="align-bottom text-themecolor small text-center">

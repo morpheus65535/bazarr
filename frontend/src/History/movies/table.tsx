@@ -34,7 +34,7 @@ const Table: FunctionComponent<Props> = (props) => {
         ),
       },
       {
-        Header: "Title",
+        Header: "Name",
         accessor: "title",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;

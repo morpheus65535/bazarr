@@ -25,7 +25,7 @@ function Table(props: Props): JSX.Element {
   const columns: Column<WantedMovie>[] = React.useMemo<Column<WantedMovie>[]>(
     () => [
       {
-        Header: "Movie",
+        Header: "Name",
         accessor: "title",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
