@@ -15,6 +15,7 @@ At the request of some, here is a way to demonstrate your appreciation for the e
 [![Docker Pulls](https://img.shields.io/docker/pulls/linuxserver/bazarr.svg?style=flat-square)](https://hub.docker.com/r/linuxserver/bazarr/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/hotio/bazarr.svg?style=flat-square)](https://hub.docker.com/r/hotio/bazarr/)
 [![Discord](https://img.shields.io/badge/discord-chat-MH2e2eb.svg?style=flat-square)](https://discord.gg/MH2e2eb)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmorpheus65535%2Fbazarr.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmorpheus65535%2Fbazarr?ref=badge_shield)
 
 # Support
 For installation and configuration instructions, see [wiki](https://github.com/morpheus65535/bazarr/wiki).
@@ -86,3 +87,6 @@ If you need something that is not already part of Bazarr, feel free to create a 
 
 * [GNU GPL v3](http://www.gnu.org/licenses/gpl.html)
 * Copyright 2010-2019
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmorpheus65535%2Fbazarr.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmorpheus65535%2Fbazarr?ref=badge_large)
