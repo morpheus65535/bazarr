@@ -131,7 +131,10 @@ const Table: FunctionComponent<Props> = (props) => {
 
   return (
     <AsyncStateOverlay state={movies}>
-      <BasicTable options={{ columns, data: movies.items }}></BasicTable>
+      <BasicTable
+        emptyText="No Movies Found"
+        options={{ columns, data: movies.items }}
+      ></BasicTable>
     </AsyncStateOverlay>
   );
 };

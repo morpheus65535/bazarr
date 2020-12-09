@@ -67,7 +67,10 @@ const Table: FunctionComponent<Props> = (props) => {
 
   return (
     <AsyncStateOverlay state={movieHistory}>
-      <BasicTable options={{ columns, data: movieHistory.items }}></BasicTable>
+      <BasicTable
+        emptyText="Nothing Found in Movies History"
+        options={{ columns, data: movieHistory.items }}
+      ></BasicTable>
     </AsyncStateOverlay>
   );
 };
