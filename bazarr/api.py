@@ -500,23 +500,29 @@ class Episodes(Resource):
 
             # Parse subtitles
             if item['subtitles']:
-                item.update({"subtitles": ast.literal_eval(item['subtitles'])})
-                for subs in item['subtitles']:
+                raw_subtitles = ast.literal_eval(item['subtitles'])
+                subtitles = []
+
+                for subs in raw_subtitles:
                     subtitle = subs[0].split(':')
-                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
+                    sub = {"name": language_from_alpha2(subtitle[0]),
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
+                               "path": subs[1],
                                "forced": False,
                                "hi": False}
                     if len(subtitle) > 1:
-                        subs[0].update({
-                            "forced": True if subtitle[1] == 'forced' else False,
-                            "hi": True if subtitle[1] == 'hi' else False
-                        })
+                        sub["forced"] = True if subtitle[1] == 'forced' else False
+                        sub["hi"] = True if subtitle[1] == 'hi' else False
+
+                    subtitles.append(sub)
+
+                item.update({"subtitles": subtitles})
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
+                    desired = ast.literal_eval(desired_languages)
                     item['subtitles'] = [x for x in item['subtitles'] if
-                                         x[0]['code2'] in ast.literal_eval(desired_languages) or x[1]]
+                                         x['code2'] in desired or x['path']]
             else:
                 item.update({"subtitles": []})
 
