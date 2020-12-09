@@ -56,20 +56,34 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Audio Language",
         accessor: (d) => d.audio_language.name,
       },
-      // {
-      //   Header: "Subtitles",
-      //   accessor: "subtitles",
-      //   Cell: (row) => {
-      //     const items = row.value.map(
-      //       (val: Subtitle, idx: number): JSX.Element => (
-      //         <Badge className="mx-1" key={idx} variant="secondary">
-      //           {val.code2}
-      //         </Badge>
-      //       )
-      //     );
-      //     return items;
-      //   },
-      // },
+      {
+        Header: "Subtitles",
+        accessor: "subtitles",
+        Cell: (row) => {
+          const items = row.value.map(
+            (val: Subtitle, idx: number): JSX.Element => (
+              <Badge className="mx-1" key={idx} variant="success">
+                {val.code2}
+              </Badge>
+            )
+          );
+          return items;
+        },
+      },
+      {
+        Header: "Missing",
+        accessor: "missing_subtitles",
+        Cell: (row) => {
+          const items = row.value.map(
+            (val: Subtitle, idx: number): JSX.Element => (
+              <Badge className="mx-1" key={idx} variant="secondary">
+                {val.code2}
+              </Badge>
+            )
+          );
+          return items;
+        },
+      },
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
