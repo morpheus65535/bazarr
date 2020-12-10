@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/morpheus65535/bazarr/issues"
   },
-  "homepage": "https://bazarr.media",
+  "homepage": "./",
   "proxy": "http://localhost:6767",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.32",

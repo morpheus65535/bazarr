@@ -31,10 +31,10 @@ class App extends React.Component<Props> {
   }
 
   render() {
+    const baseUrl = window.Bazarr.baseUrl
     return (
       <div id="app">
-        {/* TODO: Setting basename for router */}
-        <BrowserRouter>
+        <BrowserRouter basename={baseUrl}>
           <Container fluid className="p-0">
             <Row noGutters>
               <Col sm={12} md={3} lg={2}>

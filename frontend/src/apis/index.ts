@@ -17,7 +17,11 @@ class Api {
     if (process.env.NODE_ENV === "development") {
       this.recreateAxios("/api/", process.env.REACT_APP_APIKEY!);
     } else {
-      this.recreateAxios("/api/", window.Bazarr.apiKey);
+      const baseUrl =
+        window.Bazarr.baseUrl === "/"
+          ? "/api/"
+          : `${window.Bazarr.baseUrl}/api/`;
+      this.recreateAxios(baseUrl, window.Bazarr.apiKey);
     }
   }
 
