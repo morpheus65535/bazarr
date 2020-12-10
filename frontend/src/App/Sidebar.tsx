@@ -14,6 +14,8 @@ import { NavLink } from "react-router-dom";
 
 import { connect } from "react-redux";
 
+import logo from "../@static/logo128.png";
+
 interface BaseItemProps {
   badge?: string;
 }
@@ -223,7 +225,7 @@ class Sidebar extends React.Component<Props, State> {
           <Navbar.Brand href="/">
             <img
               alt="brand"
-              src="/logo128.png"
+              src={ logo }
               width="32"
               height="32"
               className="mr-2"
