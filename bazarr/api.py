@@ -1312,10 +1312,7 @@ class MovieHistory(Resource):
                                          "BY timestamp DESC", (radarrid,))
         for item in movie_history:
             item['raw_timestamp'] = item['timestamp']
-            item['timestamp'] = "<div title='" + \
-                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
-                                "' data-toggle='tooltip' data-placement='left'>" + \
-                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            item['timestamp'] = pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))
             if item['language']:
                 language = item['language'].split(':')
                 item['language'] = {"name": language_from_alpha2(language[0]),
