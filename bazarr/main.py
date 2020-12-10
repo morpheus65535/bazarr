@@ -86,6 +86,14 @@ def login_required(f):
     return wrap
 
 
+@app.errorhandler(404)
+@login_required
+def page_not_found(e):
+    if request.path == '/':
+        return redirect(url_for('series'), code=302)
+    return render_template('404.html'), 404
+
+
 @app.route('/login/', methods=["GET", "POST"])
 def login_page():
     error = ''
@@ -269,9 +277,9 @@ def historystats():
     data_languages_list = []
     for item in data_languages:
         splitted_lang = item['language'].split(':')
-        item = {"name": language_from_alpha2(splitted_lang[0]),
-                "code2": splitted_lang[0],
-                "code3": alpha3_from_alpha2(splitted_lang[0]),
+        item = {"name"  : language_from_alpha2(splitted_lang[0]),
+                "code2" : splitted_lang[0],
+                "code3" : alpha3_from_alpha2(splitted_lang[0]),
                 "forced": True if len(splitted_lang) > 1 else False}
         data_languages_list.append(item)
 
@@ -490,8 +498,8 @@ def test_notification(protocol, provider):
     apobj.add(protocol + "://" + provider)
 
     apobj.notify(
-        title='Bazarr test notification',
-        body='Test notification'
+            title='Bazarr test notification',
+            body='Test notification'
     )
 
     return '', 200
