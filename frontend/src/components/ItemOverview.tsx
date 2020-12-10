@@ -31,15 +31,25 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   ));
 
   return (
-    <Container fluid>
+    <Container
+      fluid
+      style={{
+        backgroundImage: `url('${item.fanart}')`,
+      }}
+    >
       <Row
-        className="p-4"
+        className="p-4 pb-5"
         style={{
           backgroundColor: "rgba(0,0,0,0.7)",
         }}
       >
         <Col sm="auto">
-          <Image src={item.poster}></Image>
+          <Image
+            style={{
+              maxHeight: 250,
+            }}
+            src={item.poster}
+          ></Image>
         </Col>
         <Col>
           <Container fluid>
