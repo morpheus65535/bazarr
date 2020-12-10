@@ -257,12 +257,15 @@ class SystemReleases(Resource):
         releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
-                releases = ast.literal_eval(f.read())
-            for release in releases:
-                release[1] = release[1].replace('- ', '')
-                release[1] = release[1].split('\r\n')
-                release[1].pop(0)
-                release.append(True if release[0].lstrip('v') == os.environ["BAZARR_VERSION"] else False)
+                raw_releases = ast.literal_eval(f.read())
+            for release in raw_releases:
+                rel = dict()
+                rel["version"] = release[0]
+
+                changesets = release[1].replace('- ', '').split('\r\n')
+                changesets.pop(0)
+                rel["changesets"] = changesets
+                releases.append(rel)
 
         except Exception as e:
             logging.exception(
