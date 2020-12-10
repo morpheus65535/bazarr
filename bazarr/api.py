@@ -90,7 +90,7 @@ class BadgesSeries(Resource):
         missing_episodes = len(missing_episodes)
 
         result = {
-            "missing_episodes": missing_episodes
+            "value": missing_episodes
         }
         return jsonify(result)
 
@@ -103,7 +103,7 @@ class BadgesMovies(Resource):
         missing_movies = len(missing_movies)
 
         result = {
-            "missing_movies": missing_movies
+            "value": missing_movies
         }
         return jsonify(result)
 
@@ -112,7 +112,7 @@ class BadgesProviders(Resource):
     @authenticate
     def get(self):
         result = {
-            "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
+            "value": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
 

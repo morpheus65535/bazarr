@@ -8,9 +8,9 @@ export default class BadgesApi {
 
   async series(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<SeriesBadge>("series")
+      this.get<Badge>("series")
         .then((result) => {
-          resolve(result.data.missing_episodes);
+          resolve(result.data.value);
         })
         .catch((reason) => {
           reject(reason);
@@ -20,9 +20,9 @@ export default class BadgesApi {
 
   async movies(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<MoviesBadge>("movies")
+      this.get<Badge>("movies")
         .then((result) => {
-          resolve(result.data.missing_movies);
+          resolve(result.data.value);
         })
         .catch((reason) => {
           reject(reason);
@@ -32,9 +32,9 @@ export default class BadgesApi {
 
   async providers(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<ProvidersBadge>("providers")
+      this.get<Badge>("providers")
         .then((result) => {
-          resolve(result.data.throttled_providers);
+          resolve(result.data.value);
         })
         .catch((reason) => {
           reject(reason);
