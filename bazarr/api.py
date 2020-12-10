@@ -396,12 +396,8 @@ class Series(Resource):
 class SeriesEditor(Resource):
     @authenticate
     def get(self, **kwargs):
-        draw = request.args.get('draw')
-
         result = database.execute("SELECT sonarrSeriesId, title, languages, hearing_impaired, forced, audio_language "
                                   "FROM table_shows ORDER BY sortTitle")
-
-        row_count = len(result)
 
         for item in result:
             # Add Datatables rowId
@@ -420,7 +416,7 @@ class SeriesEditor(Resource):
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
 
 class SeriesEditSave(Resource):
@@ -474,12 +470,9 @@ class Episodes(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         seriesId = request.args.get('seriesid')
         episodeId = request.args.get('episodeid')
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE sonarrSeriesId=?",
-                                     (seriesId,), only_one=True)['count']
         if episodeId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
             desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
@@ -559,7 +552,7 @@ class Episodes(Resource):
 
             # Add the series desired subtitles language code2
             item.update({"desired_languages": desired_languages})
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
 class SubtitleNameInfo(Resource):
     @authenticate
@@ -652,7 +645,6 @@ class EpisodesSubtitlesManualSearch(Resource):
     def post(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         episodePath = request.form.get('episodePath')
         sceneName = request.form.get('sceneName')
@@ -669,8 +661,7 @@ class EpisodesSubtitlesManualSearch(Resource):
                              'series')
         if not data:
             data = []
-        row_count = len(data)
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class EpisodesSubtitlesManualDownload(Resource):
@@ -879,10 +870,8 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         moviesId = request.args.get('radarrid')
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         if moviesId:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (moviesId, length, start))
@@ -978,7 +967,7 @@ class Movies(Resource):
                 item.update({"desired_languages": desired_languages})
             except NameError:
                 pass
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
     @authenticate
     def post(self):
@@ -1021,12 +1010,8 @@ class Movies(Resource):
 class MoviesEditor(Resource):
     @authenticate
     def get(self):
-        draw = request.args.get('draw')
-
         result = database.execute("SELECT radarrId, title, languages, hearing_impaired, forced, audio_language "
                                   "FROM table_movies ORDER BY sortTitle")
-
-        row_count = len(result)
 
         for item in result:
             # Add Datatables rowId
@@ -1045,7 +1030,7 @@ class MoviesEditor(Resource):
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
 
 class MoviesEditSave(Resource):
@@ -1167,7 +1152,6 @@ class MovieSubtitlesManualSearch(Resource):
     def post(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         moviePath = request.form.get('moviePath')
         sceneName = request.form.get('sceneName')
@@ -1184,8 +1168,7 @@ class MovieSubtitlesManualSearch(Resource):
                              'movie')
         if not data:
             data = []
-        row_count = len(data)
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class MovieSubtitlesManualDownload(Resource):
@@ -1389,7 +1372,6 @@ class HistorySeries(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
@@ -1421,9 +1403,6 @@ class HistorySeries(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
-                                     "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                     "table_episodes.title is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
@@ -1487,7 +1466,7 @@ class HistorySeries(Resource):
             else:
                 item.update({"blacklisted": False})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class HistoryMovies(Resource):
@@ -1495,7 +1474,6 @@ class HistoryMovies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         upgradable_movies = []
         upgradable_movies_not_perfect = []
@@ -1525,9 +1503,6 @@ class HistoryMovies(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies on "
-                                     "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
-                                     "is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
                                 "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored,"
                                 " table_history_movie.video_path, table_history_movie.language, table_movies.tags, "
@@ -1587,7 +1562,7 @@ class HistoryMovies(Resource):
             else:
                 item.update({"blacklisted": False})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class HistoryStats(Resource):
@@ -1647,13 +1622,7 @@ class WantedSeries(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        data_count = database.execute("SELECT table_episodes.monitored, table_shows.tags, table_shows.seriesType FROM "
-                                      "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                      "table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" +
-                                      get_exclusion_clause('series'))
-        row_count = len(data_count)
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -1690,7 +1659,7 @@ class WantedSeries(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class WantedMovies(Resource):
@@ -1698,11 +1667,7 @@ class WantedMovies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                      get_exclusion_clause('movie'))
-        row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
                                 get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
@@ -1734,7 +1699,7 @@ class WantedMovies(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class SearchWantedSeries(Resource):
@@ -1756,9 +1721,7 @@ class BlacklistSeries(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist", only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
                                 "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
                                 "table_episodes.sonarrSeriesId, table_blacklist.provider, table_blacklist.subs_id, "
@@ -1782,7 +1745,7 @@ class BlacklistSeries(Resource):
                                     "forced": True if item['language'].endswith(':forced') else False,
                                     "hi": True if item['language'].endswith(':hi') else False}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class BlacklistEpisodeSubtitlesAdd(Resource):
@@ -1844,9 +1807,7 @@ class BlacklistMovies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist_movie", only_one=True)['count']
         data = database.execute("SELECT table_movies.title, table_movies.radarrId, table_blacklist_movie.provider, "
                                 "table_blacklist_movie.subs_id, table_blacklist_movie.language, "
                                 "table_blacklist_movie.timestamp FROM table_blacklist_movie INNER JOIN "
@@ -1868,7 +1829,7 @@ class BlacklistMovies(Resource):
                                     "forced": True if item['language'].endswith(':forced') else False,
                                     "hi": True if item['language'].endswith(':hi') else False}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class BlacklistMovieSubtitlesAdd(Resource):
