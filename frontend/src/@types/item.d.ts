@@ -19,7 +19,6 @@ interface Subtitle extends Language {
 }
 
 interface BasicItem {
-  // DT_RowId: string;
   audio_language: Language;
   exist: boolean;
   mapped_path: string;

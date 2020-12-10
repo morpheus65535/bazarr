@@ -193,10 +193,6 @@ class SystemTasks(Resource):
 
         task_list = scheduler.get_task_list()
 
-        for item in task_list:
-            # Add Datatables rowId
-            item.update({"DT_RowId": item['job_id']})
-
         if taskid:
             for item in task_list:
                 if item['job_id'] == taskid:
@@ -291,9 +287,6 @@ class Series(Resource):
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
-
             # Parse audio language
             item.update({"audio_language": {"name": item['audio_language'],
                                             "code2": alpha2_from_language(item['audio_language']) or None,
@@ -400,9 +393,6 @@ class SeriesEditor(Resource):
                                   "FROM table_shows ORDER BY sortTitle")
 
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
-
             # Parse audio language
             item.update({"audio_language": {"name": item['audio_language'],
                                             "code2": alpha2_from_language(item['audio_language']) or None,
@@ -489,9 +479,6 @@ class Episodes(Resource):
         else:
             return "Series ID not provided", 400
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
-
             # Parse audio language
             item.update({"audio_language": {"name": item['audio_language'],
                                             "code2": alpha2_from_language(item['audio_language']) or None,
@@ -883,9 +870,6 @@ class Movies(Resource):
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
-
             # Parse audio language
             item.update({"audio_language": {"name": item['audio_language'],
                                             "code2": alpha2_from_language(item['audio_language']) or None,
@@ -1014,9 +998,6 @@ class MoviesEditor(Resource):
                                   "FROM table_movies ORDER BY sortTitle")
 
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
-
             # Parse audio language
             item.update({"audio_language": {"name": item['audio_language'],
                                             "code2": alpha2_from_language(item['audio_language']) or None,
