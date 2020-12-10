@@ -5,5 +5,5 @@ declare global {
 }
 
 export interface BazarrServer {
-  apikey: string;
+  apiKey: string;
 }

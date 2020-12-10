@@ -17,7 +17,7 @@ class Api {
     if (process.env.NODE_ENV === "development") {
       this.recreateAxios("/api/", process.env.REACT_APP_APIKEY!);
     } else {
-      this.recreateAxios("/api/", window.Bazarr.apikey);
+      this.recreateAxios("/api/", window.Bazarr.apiKey);
     }
   }
 

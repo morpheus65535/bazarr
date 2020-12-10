@@ -13,8 +13,8 @@ socketio = SocketIO()
 def create_app():
     # Flask Setup
     app = Flask(__name__,
-                template_folder=os.path.join(os.path.dirname(__file__), '..', 'views'),
-                static_folder=os.path.join(os.path.dirname(__file__), '..', 'static'),
+                template_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build'),
+                static_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend', 'build', 'static'),
                 static_url_path=base_url.rstrip('/') + '/static')
     app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.route = prefix_route(app.route, base_url.rstrip('/'))
@@ -36,13 +36,6 @@ def create_app():
         app.config["DEBUG_TB_ENABLED"] = False
 
     toolbar = DebugToolbarExtension(app)
-
-
-    @app.errorhandler(404)
-    def page_not_found(e):
-        if request.path == '/':
-            return redirect(url_for('series'), code=302)
-        return render_template('404.html'), 404
 
     socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*', async_mode='threading')
     return app

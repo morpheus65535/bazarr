@@ -16,7 +16,7 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script>
-      window.Bazarr = "__BAZARR_SERVER_INJECT__";
+      window.Bazarr = {{BAZARR_SERVER_INJECT | tojson | safe}};
     </script>
   </body>
 </html>

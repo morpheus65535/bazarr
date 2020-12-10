@@ -85,6 +85,14 @@ def login_required(f):
     return wrap
 
 
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    apikey = settings.auth.apikey
+    inject = dict()
+    inject["apiKey"] = apikey
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject)
+
 @app.route('/login/', methods=["GET", "POST"])
 def login_page():
     error = ''
@@ -103,12 +111,14 @@ def login_page():
                 error = "Invalid credentials, try again."
         gc.collect()
 
-        return render_template("login.html", error=error, password_reset=password_reset)
+        # return render_template("login.html", error=error, password_reset=password_reset)
+        return ""
 
     except Exception as e:
         # flash(e)
         error = "Invalid credentials, try again."
-        return render_template("login.html", error=error)
+        # return "render_template("login.html", error=error)"
+        return ""
 
 
 @app.context_processor
@@ -189,164 +199,6 @@ def image_proxy_movies(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
-@app.route("/")
-@login_required
-def redirect_root():
-    if settings.general.getboolean('use_sonarr'):
-        return redirect(url_for('series'))
-    elif settings.general.getboolean('use_radarr'):
-        return redirect(url_for('movies'))
-    else:
-        return redirect(url_for('settingsgeneral'))
-
-
-@app.route('/series/')
-@login_required
-def series():
-    return render_template('series.html')
-
-
-@app.route('/serieseditor/')
-@login_required
-def serieseditor():
-    return render_template('serieseditor.html')
-
-
-@app.route('/episodes/<no>')
-@login_required
-def episodes(no):
-    return render_template('episodes.html', id=str(no))
-
-
-@app.route('/movies')
-@login_required
-def movies():
-    return render_template('movies.html')
-
-
-@app.route('/movieseditor')
-@login_required
-def movieseditor():
-    return render_template('movieseditor.html')
-
-
-@app.route('/movie/<no>')
-@login_required
-def movie(no):
-    return render_template('movie.html', id=str(no))
-
-
-@app.route('/history/series/')
-@login_required
-def historyseries():
-    return render_template('historyseries.html')
-
-
-@app.route('/history/movies/')
-@login_required
-def historymovies():
-    return render_template('historymovies.html')
-
-
-@app.route('/history/stats/')
-@login_required
-def historystats():
-    data_providers = database.execute("SELECT DISTINCT provider FROM table_history WHERE provider IS NOT null "
-                                      "UNION SELECT DISTINCT provider FROM table_history_movie WHERE provider "
-                                      "IS NOT null")
-    data_providers_list = []
-    for item in data_providers:
-        data_providers_list.append(item['provider'])
-
-    data_languages = database.execute("SELECT DISTINCT language FROM table_history WHERE language IS NOT null "
-                                      "AND language != '' UNION SELECT DISTINCT language FROM table_history_movie "
-                                      "WHERE language IS NOT null AND language != ''")
-    data_languages_list = []
-    for item in data_languages:
-        splitted_lang = item['language'].split(':')
-        item = {"name": language_from_alpha2(splitted_lang[0]),
-                "code2": splitted_lang[0],
-                "code3": alpha3_from_alpha2(splitted_lang[0]),
-                "forced": True if len(splitted_lang) > 1 else False}
-        data_languages_list.append(item)
-
-    return render_template('historystats.html', data_providers=data_providers_list,
-                           data_languages=sorted(data_languages_list, key=lambda i: i['name']))
-
-
-@app.route('/blacklist/series/')
-@login_required
-def blacklistseries():
-    return render_template('blacklistseries.html')
-
-
-@app.route('/blacklist/movies/')
-@login_required
-def blacklistmovies():
-    return render_template('blacklistmovies.html')
-
-
-@app.route('/wanted/series/')
-@login_required
-def wantedseries():
-    return render_template('wantedseries.html')
-
-
-@app.route('/wanted/movies/')
-@login_required
-def wantedmovies():
-    return render_template('wantedmovies.html')
-
-
-@app.route('/settings/general/')
-@login_required
-def settingsgeneral():
-    return render_template('settingsgeneral.html')
-
-
-@app.route('/settings/sonarr/')
-@login_required
-def settingssonarr():
-    return render_template('settingssonarr.html')
-
-
-@app.route('/settings/radarr/')
-@login_required
-def settingsradarr():
-    return render_template('settingsradarr.html')
-
-
-@app.route('/settings/subtitles/')
-@login_required
-def settingssubtitles():
-    return render_template('settingssubtitles.html', os=sys.platform)
-
-
-@app.route('/settings/languages/')
-@login_required
-def settingslanguages():
-    return render_template('settingslanguages.html')
-
-
-@app.route('/settings/providers/')
-@login_required
-def settingsproviders():
-    return render_template('settingsproviders.html')
-
-
-@app.route('/settings/notifications/')
-@login_required
-def settingsnotifications():
-    return render_template('settingsnotifications.html')
-
-
-@app.route('/settings/scheduler/')
-@login_required
-def settingsscheduler():
-    days_of_the_week = list(enumerate(calendar.day_name))
-    return render_template('settingsscheduler.html', days=days_of_the_week)
-
-
 @app.route('/check_update')
 @login_required
 def check_update():
@@ -354,36 +206,6 @@ def check_update():
         check_and_apply_update()
 
     return '', 200
-
-
-@app.route('/system/tasks')
-@login_required
-def systemtasks():
-    return render_template('systemtasks.html')
-
-
-@app.route('/system/logs')
-@login_required
-def systemlogs():
-    return render_template('systemlogs.html')
-
-
-@app.route('/system/providers')
-@login_required
-def systemproviders():
-    return render_template('systemproviders.html')
-
-
-@app.route('/system/status')
-@login_required
-def systemstatus():
-    return render_template('systemstatus.html')
-
-
-@app.route('/system/releases')
-@login_required
-def systemreleases():
-    return render_template('systemreleases.html')
 
 
 def configured():
