@@ -3,7 +3,7 @@ import apis from ".";
 
 export default class SystemApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/${path}`, { params });
+    return apis.axios.get(`/system/${path}`, { params });
   }
 
   postForm<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
@@ -13,7 +13,7 @@ export default class SystemApi {
       form.append(key, params[key]);
     }
 
-    return apis.axios.post(`/${path}`, form);
+    return apis.axios.post(`/system/${path}`, form);
   }
 
   async shutdown() {
@@ -38,7 +38,7 @@ export default class SystemApi {
 
   async status() {
     return new Promise<SystemStatusResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemStatusResult>>("systemstatus")
+      this.get<DataWrapper<SystemStatusResult>>("status")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -50,7 +50,7 @@ export default class SystemApi {
 
   async getTasks() {
     return new Promise<SystemTaskResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemTaskResult>>("systemtasks")
+      this.get<DataWrapper<SystemTaskResult>>("tasks")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -62,7 +62,7 @@ export default class SystemApi {
 
   async execTasks(id: string) {
     return new Promise<never>((resolve, reject) => {
-      this.postForm<never>("systemtasks", { taskid: id })
+      this.postForm<never>("tasks", { taskid: id })
         .then(() => {
           resolve();
         })

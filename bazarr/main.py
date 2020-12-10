@@ -213,68 +213,6 @@ def configured():
     database.execute("UPDATE system SET configured = 1")
 
 
-@app.route('/api/series/wanted')
-def api_wanted():
-    data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
-                            "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
-                            "table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on "
-                            "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                            "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10")
-
-    wanted_subs = []
-    for item in data:
-        wanted_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'],
-                            item['missing_subtitles']])
-
-    return dict(subtitles=wanted_subs)
-
-
-@app.route('/api/series/history')
-def api_history():
-    data = database.execute("SELECT table_shows.title as seriesTitle, "
-                            "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                            "table_episodes.title as episodeTitle, "
-                            "strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')) as date, "
-                            "table_history.description FROM table_history "
-                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
-                            "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                            "table_history.sonarrEpisodeId WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
-
-    history_subs = []
-    for item in data:
-        history_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['date'],
-                             item['description']])
-
-    return dict(subtitles=history_subs)
-
-
-@app.route('/api/movies/wanted/')
-def api_movies_wanted():
-    data = database.execute("SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies "
-                            "WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC LIMIT 10")
-
-    wanted_subs = []
-    for item in data:
-        wanted_subs.append([item['title'], item['missing_subtitles']])
-
-    return dict(subtitles=wanted_subs)
-
-
-@app.route('/api/movies/history/')
-def api_movies_history():
-    data = database.execute("SELECT table_movies.title, strftime('%Y-%m-%d', "
-                            "datetime(table_history_movie.timestamp, 'unixepoch')) as date, "
-                            "table_history_movie.description FROM table_history_movie "
-                            "INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
-                            "WHERE table_history_movie.action != '0' ORDER BY id DESC LIMIT 10")
-
-    history_subs = []
-    for item in data:
-        history_subs.append([item['title'], item['date'], item['description']])
-
-    return dict(subtitles=history_subs)
-
-
 @app.route('/test_url', methods=['GET'])
 @app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
 @login_required

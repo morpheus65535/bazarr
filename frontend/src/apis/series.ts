@@ -3,7 +3,7 @@ import apis from ".";
 
 export default class SeriesApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/${path}`, { params });
+    return apis.axios.get(`/series${path}`, { params });
   }
 
   postForm<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
@@ -13,12 +13,12 @@ export default class SeriesApi {
       form.append(key, params[key]);
     }
 
-    return apis.axios.post(`/${path}`, form);
+    return apis.axios.post(`/series${path}`, form);
   }
 
   async series(): Promise<Array<Series>> {
     return new Promise<Array<Series>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Series>>>("series")
+      this.get<DataWrapper<Array<Series>>>("")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -30,7 +30,7 @@ export default class SeriesApi {
 
   async episodes(id: number): Promise<Array<Episode>> {
     return new Promise<Array<Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Episode>>>("episodes", { seriesid: id })
+      this.get<DataWrapper<Array<Episode>>>("/episodes", { seriesid: id })
         .then((result) => {
           resolve(result.data.data);
         })
@@ -46,7 +46,7 @@ export default class SeriesApi {
     length: number
   ): Promise<Array<WantedEpisode>> {
     return new Promise<Array<WantedEpisode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedEpisode>>>("wanted_series", {
+      this.get<DataWrapper<Array<WantedEpisode>>>("/wanted", {
         draw,
         start,
         length,
@@ -62,7 +62,7 @@ export default class SeriesApi {
 
   async history(): Promise<Array<SeriesHistory>> {
     return new Promise<Array<SeriesHistory>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SeriesHistory>>>("history_series")
+      this.get<DataWrapper<Array<SeriesHistory>>>("/history")
         .then((result) => {
           resolve(result.data.data);
         })

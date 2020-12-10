@@ -3,12 +3,12 @@ import apis from ".";
 
 export default class MovieApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/${path}`, { params });
+    return apis.axios.get(`/movies${path}`, { params });
   }
 
   async movies(): Promise<Array<Movie>> {
     return new Promise<Array<Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Movie>>>("movies")
+      this.get<DataWrapper<Array<Movie>>>("")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -20,7 +20,7 @@ export default class MovieApi {
 
   async history(): Promise<Array<MovieHistory>> {
     return new Promise<Array<MovieHistory>>((resolve, reject) => {
-      this.get<DataWrapper<Array<MovieHistory>>>("history_movies")
+      this.get<DataWrapper<Array<MovieHistory>>>("/history")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -36,7 +36,7 @@ export default class MovieApi {
     length: number
   ): Promise<Array<WantedMovie>> {
     return new Promise<Array<WantedMovie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedMovie>>>("wanted_movies", {
+      this.get<DataWrapper<Array<WantedMovie>>>("/wanted", {
         draw,
         start,
         length,

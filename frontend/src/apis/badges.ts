@@ -3,12 +3,12 @@ import apis from ".";
 
 export default class BadgesApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.get(`/${path}`, { params });
+    return apis.axios.get(`/badges/${path}`, { params });
   }
 
   async series(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<SeriesBadge>("badges_series")
+      this.get<SeriesBadge>("series")
         .then((result) => {
           resolve(result.data.missing_episodes);
         })
@@ -20,7 +20,7 @@ export default class BadgesApi {
 
   async movies(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<MoviesBadge>("badges_movies")
+      this.get<MoviesBadge>("movies")
         .then((result) => {
           resolve(result.data.missing_movies);
         })
@@ -32,7 +32,7 @@ export default class BadgesApi {
 
   async providers(): Promise<number> {
     return new Promise<number>((resolve, reject) => {
-      this.get<ProvidersBadge>("badges_providers")
+      this.get<ProvidersBadge>("providers")
         .then((result) => {
           resolve(result.data.throttled_providers);
         })
