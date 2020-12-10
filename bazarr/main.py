@@ -91,6 +91,7 @@ def catch_all(path):
     apikey = settings.auth.apikey
     inject = dict()
     inject["apiKey"] = apikey
+    inject["baseUrl"] = base_url
     return render_template("index.html", BAZARR_SERVER_INJECT=inject)
 
 @app.route('/login/', methods=["GET", "POST"])
@@ -173,9 +174,9 @@ def download_log():
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0)
 
 
-@app.route('/image_proxy/<path:url>', methods=['GET'])
+@app.route('/images/series/<path:url>', methods=['GET'])
 @login_required
-def image_proxy(url):
+def series_images(url):
     apikey = settings.sonarr.apikey
     url_image = (url_sonarr() + '/api/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
@@ -186,9 +187,9 @@ def image_proxy(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
-@app.route('/image_proxy_movies/<path:url>', methods=['GET'])
+@app.route('/images/movies/<path:url>', methods=['GET'])
 @login_required
-def image_proxy_movies(url):
+def movies_images(url):
     apikey = settings.radarr.apikey
     url_image = url_radarr() + '/api/' + url + '?apikey=' + apikey
     try:
