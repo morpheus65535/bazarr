@@ -31,7 +31,8 @@ class App extends React.Component<Props> {
   }
 
   render() {
-    const baseUrl = window.Bazarr.baseUrl
+    let baseUrl =
+      process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
     return (
       <div id="app">
         <BrowserRouter basename={baseUrl}>

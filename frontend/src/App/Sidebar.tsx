@@ -219,7 +219,8 @@ class Sidebar extends React.Component<Props, State> {
       </Accordion.Collapse>
     );
 
-    const baseUrl = window.Bazarr.baseUrl ?? "/"
+    const baseUrl =
+      process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
 
     return (
       <aside>

@@ -92,7 +92,12 @@ def catch_all(path):
     inject = dict()
     inject["apiKey"] = apikey
     inject["baseUrl"] = base_url
-    return render_template("index.html", BAZARR_SERVER_INJECT=inject)
+
+    template_url = base_url
+    if not template_url.endswith("/"):
+        template_url += "/"
+
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login_page():
