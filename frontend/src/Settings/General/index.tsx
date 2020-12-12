@@ -8,7 +8,7 @@ import {
   ContentHeader,
   ContentHeaderButton,
   CommonFormGroup,
-} from "../../components";
+} from "../../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSave, faSync } from "@fortawesome/free-solid-svg-icons";

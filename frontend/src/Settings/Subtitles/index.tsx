@@ -3,12 +3,12 @@ import { Container, Row, Form } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { SettingGroup } from "../../components";
+import { SettingGroup } from "../../Components";
 import {
   ContentHeader,
   ContentHeaderButton,
   CommonFormGroup,
-} from "../../components";
+} from "../../Components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 

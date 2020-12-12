@@ -3,8 +3,8 @@ import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
 
-import SeriesHistory from "./series";
-import MoviesHistory from "./movies";
+import SeriesHistory from "./Series";
+import MoviesHistory from "./Movies";
 
 class Router extends React.Component {
   render(): JSX.Element {

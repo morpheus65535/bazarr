@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
 
-import { BasicTable } from "../../components";
+import { BasicTable } from "../../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";

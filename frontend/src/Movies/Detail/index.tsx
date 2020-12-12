@@ -23,7 +23,7 @@ import {
   ItemOverview,
   LoadingIndicator,
   SubtitleToolModal,
-} from "../../components";
+} from "../../Components";
 
 import Table from "./table";
 

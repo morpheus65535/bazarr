@@ -9,7 +9,7 @@ import {
   ActionIcon,
   AsyncStateOverlay,
   BooleanIndicator,
-} from "../components";
+} from "../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

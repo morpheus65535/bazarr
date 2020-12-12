@@ -1,6 +1,6 @@
 import React from "react";
 import { Column } from "react-table";
-import { BasicTable } from "../../components";
+import { BasicTable } from "../../Components";
 import { ExecSystemTask } from "../../@redux/actions";
 
 import { connect } from "react-redux";

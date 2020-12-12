@@ -5,7 +5,7 @@ import {
   ActionIcon,
   AsyncStateOverlay,
   BooleanIndicator,
-} from "../components";
+} from "../Components";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";

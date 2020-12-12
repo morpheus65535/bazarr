@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import BasicModal, { ModalProps } from "./BasicModal";
 
 import { Column } from "react-table";
-import { BasicTable } from "../../components";
+import { BasicTable } from "..";
 
 interface Props {
   subtitles: Subtitle[];

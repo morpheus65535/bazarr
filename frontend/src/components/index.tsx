@@ -139,6 +139,6 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
-export * from "./modals";
+export * from "./Modals";
 export * from "./ContentHeader";
-export * from "./tables";
+export * from "./Tables";

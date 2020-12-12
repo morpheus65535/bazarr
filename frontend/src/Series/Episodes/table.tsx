@@ -17,7 +17,7 @@ import {
   ActionIcon,
   AsyncStateOverlay,
   SubtitleToolModal,
-} from "../../components";
+} from "../../Components";
 
 interface Props {
   id: string;

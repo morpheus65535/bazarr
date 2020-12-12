@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
-import { SettingGroup } from "../../components";
+import { SettingGroup } from "../../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";

@@ -21,7 +21,7 @@ import {
   ItemOverview,
   ItemEditorModal,
   LoadingIndicator,
-} from "../../components";
+} from "../../Components";
 
 import Table from "./table";
 

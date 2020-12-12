@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 import { Column } from "react-table";
 
-import { BasicTable } from "../../components";
+import { BasicTable } from "../../Components";
 
 interface Props {
   providers: SystemProviders[];

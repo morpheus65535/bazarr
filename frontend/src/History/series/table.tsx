@@ -9,7 +9,7 @@ import {
   BasicTable,
   AsyncStateOverlay,
   HistoryIcon,
-} from "../../components";
+} from "../../Components";
 
 interface Props {
   seriesHistory: AsyncState<SeriesHistory[]>;

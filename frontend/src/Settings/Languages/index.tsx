@@ -9,7 +9,7 @@ import {
   ContentHeaderButton,
   CommonFormGroup,
   LanguageSelector,
-} from "../../components";
+} from "../../Components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 

@@ -8,7 +8,7 @@ import {
   ContentHeader,
   ContentHeaderButton,
   ItemEditorModal,
-} from "../components";
+} from "../Components";
 import Table from "./table";
 
 interface Props {}

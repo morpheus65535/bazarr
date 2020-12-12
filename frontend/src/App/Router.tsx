@@ -3,7 +3,7 @@ import { Redirect, Route, Switch } from "react-router-dom";
 import { connect } from "react-redux";
 
 import SeriesRouter from "../Series/Router";
-import MovieRouter from "../Movie/Router";
+import MovieRouter from "../Movies/Router";
 import SystemRouter from "../System/Router";
 import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
