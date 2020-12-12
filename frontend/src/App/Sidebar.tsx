@@ -14,8 +14,6 @@ import { NavLink } from "react-router-dom";
 
 import { connect } from "react-redux";
 
-import logo from "../@static/logo128.png";
-
 interface BaseItemProps {
   badge?: string;
 }
@@ -225,22 +223,8 @@ class Sidebar extends React.Component<Props, State> {
       </Accordion.Collapse>
     );
 
-    const baseUrl =
-      process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
-
     return (
       <aside>
-        <Navbar bg="light" expand="lg" className="header">
-          <Navbar.Brand href={baseUrl}>
-            <img
-              alt="brand"
-              src={logo}
-              width="32"
-              height="32"
-              className="mr-2"
-            ></img>
-          </Navbar.Brand>
-        </Navbar>
         <Accordion defaultActiveKey={active}>
           <ListGroup variant="flush">
             <LinkListItem icon={faPlay} href="/series">

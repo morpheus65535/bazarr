@@ -1,11 +1,25 @@
 import React, { FunctionComponent, ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faHeart } from "@fortawesome/free-solid-svg-icons";
-import { Dropdown, Form, Nav, Navbar, NavLink, NavItem } from "react-bootstrap";
+import {
+  Image,
+  Dropdown,
+  Form,
+  Nav,
+  Navbar,
+  NavLink,
+  NavItem,
+  Container,
+  Row,
+  Col,
+  Button,
+} from "react-bootstrap";
 import { throttle } from "lodash";
 
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
+
+import logo from "../@static/logo128.png";
 
 interface Props {
   movies: Movie[];
@@ -112,35 +126,53 @@ class Header extends React.Component<Props, State> {
       items.push(<Dropdown.Header key="notify">No Found</Dropdown.Header>);
     }
 
+    const baseUrl =
+      process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
+
     return (
-      <Navbar bg="light" className="header">
-        <Nav className="mr-auto">
-          <Dropdown show={searchText.length !== 0}>
-            <Form.Control
-              type="text"
-              size="sm"
-              placeholder="Search..."
-              onChange={this.onSearch.bind(this)}
-            ></Form.Control>
-            <Dropdown.Menu style={{ maxHeight: 256, overflowY: "scroll" }}>
-              {items}
-            </Dropdown.Menu>
-          </Dropdown>
-        </Nav>
-        <Nav>
-          <Nav.Link>
-            <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
-          </Nav.Link>
-          <Dropdown alignRight as={NavItem}>
-            <Dropdown.Toggle as={NavLink}>
-              <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
-            </Dropdown.Toggle>
-            <Dropdown.Menu>
-              <Dropdown.Item>Restart</Dropdown.Item>
-              <Dropdown.Item>Shutdown</Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
-        </Nav>
+      <Navbar bg="light" className="flex-grow-1">
+        <Container fluid>
+          <Row noGutters className="flex-grow-1">
+            <Col sm={1} md={3} lg={2} className="d-flex align-items-center">
+              <Navbar.Brand href={baseUrl} className="px-3">
+                <Image
+                  alt="brand"
+                  src={logo}
+                  width="32"
+                  height="32"
+                  className="mr-2"
+                ></Image>
+              </Navbar.Brand>
+            </Col>
+            <Col xs={2} className="d-flex align-items-center">
+              <Dropdown show={searchText.length !== 0}>
+                <Form.Control
+                  type="text"
+                  size="sm"
+                  placeholder="Search..."
+                  onChange={this.onSearch.bind(this)}
+                ></Form.Control>
+                <Dropdown.Menu style={{ maxHeight: 256, overflowY: "scroll" }}>
+                  {items}
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+            <Col className="d-flex flex-row align-items-center justify-content-end">
+              <Button variant="light">
+                <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
+              </Button>
+              <Dropdown alignRight>
+                <Dropdown.Toggle as={Button} variant="light">
+                  <FontAwesomeIcon icon={faUser}></FontAwesomeIcon>
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item>Restart</Dropdown.Item>
+                  <Dropdown.Item>Shutdown</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </Col>
+          </Row>
+        </Container>
       </Navbar>
     );
   }

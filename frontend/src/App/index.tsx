@@ -37,12 +37,14 @@ class App extends React.Component<Props> {
       <div id="app">
         <BrowserRouter basename={baseUrl}>
           <Container fluid className="p-0">
+            <Row>
+              <Header></Header>
+            </Row>
             <Row noGutters>
               <Col sm={12} md={3} lg={2}>
                 <Sidebar></Sidebar>
               </Col>
               <Col>
-                <Header></Header>
                 <Router></Router>
               </Col>
             </Row>
