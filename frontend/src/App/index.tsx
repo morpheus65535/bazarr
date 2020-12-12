@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { BrowserRouter } from "react-router-dom";
 import Router from "./Router";
-import Sidebar from "./Sidebar";
+import Sidebar from "../Sidebar";
 import Header from "./Header";
 
 import "./App.css";
