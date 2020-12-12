@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
@@ -38,7 +38,7 @@ class SystemProvidersView extends React.Component<Props> {
             <ContentHeaderButton
               iconProps={{ icon: faSync, spin: loading }}
               disabled={loading}
-              onClick={this.props.update}
+              onClick={update}
             >
               Refresh
             </ContentHeaderButton>

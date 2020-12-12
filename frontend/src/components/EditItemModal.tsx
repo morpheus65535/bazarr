@@ -65,7 +65,7 @@ const EditItemModal: FunctionComponent<Props> = (props) => {
             <Col>
               <Form.Check
                 type="checkbox"
-                defaultChecked={series?.hearing_impaired === "True"}
+                defaultChecked={series?.hearing_impaired}
               ></Form.Check>
             </Col>
           </Row>

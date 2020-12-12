@@ -29,11 +29,11 @@ interface BasicItem {
 // Temp Name
 interface ExtendItem extends BasicItem {
   fanart: string;
-  forced: PythonBoolean;
+  forced: boolean;
   overview: string;
-  hearing_impaired: PythonBoolean;
+  hearing_impaired: boolean;
   imdbId: string;
-  languages: Language[] | string;
+  languages: Language[];
   alternateTitles: string[];
   poster: string;
   sortTitle: string;
@@ -54,7 +54,7 @@ interface Movie extends ExtendItem {
   audio_codec: string;
   subtitles: Subtitle[];
   missing_subtitles: Subtitle[];
-  monitored: PythonBoolean;
+  monitored: boolean;
   movie_file_id: number;
   radarrId: number;
   tmdbId: number;
@@ -71,7 +71,7 @@ interface Episode extends BasicItem {
   episode: number;
   scene_name: string;
   resolution: string;
-  monitored: PythonBoolean;
+  monitored: boolean;
   missing_subtitles: Subtitle[];
   subtitles: Subtitle[]; // FIX: Backend format
   format: string;
@@ -81,10 +81,10 @@ interface Episode extends BasicItem {
 interface WantedItem {
   exist: boolean;
   failedAttempts?: any;
-  hearing_impaired: PythonBoolean;
+  hearing_impaired: boolean;
   mapped_path: string;
   missing_subtitles: Subtitle[];
-  monitored: PythonBoolean;
+  monitored: boolean;
   path: string;
   tags: string[];
 }

@@ -308,6 +308,8 @@ class Series(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
             # Parse alternate titles
             if item['alternateTitles']:
@@ -355,6 +357,9 @@ class Series(Resource):
                 item.update({"desired_languages": desired_languages})
             except NameError:
                 pass
+
+            item.update({"forced": item["forced"] is "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
         return jsonify(data=result)
 
     @authenticate
@@ -414,6 +419,8 @@ class SeriesEditor(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
         return jsonify(data=result)
 
@@ -548,6 +555,7 @@ class Episodes(Resource):
 
             # Add the series desired subtitles language code2
             item.update({"desired_languages": desired_languages})
+            item.update({"monitored": item["monitored"] is "True"})
         return jsonify(data=result)
 
 class SubtitleNameInfo(Resource):
@@ -891,6 +899,8 @@ class Movies(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
             # Parse alternate titles
             if item['alternativeTitles']:
@@ -960,6 +970,10 @@ class Movies(Resource):
                 item.update({"desired_languages": desired_languages})
             except NameError:
                 pass
+
+            item.update({"monitored": item["monitored"] is "True"})
+            item.update({"forced": item["forced"] is "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
         return jsonify(data=result)
 
     @authenticate
@@ -1019,6 +1033,8 @@ class MoviesEditor(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
         return jsonify(data=result)
 
@@ -1648,6 +1664,8 @@ class WantedSeries(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"monitored": item["monitored"] is "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
 
         return jsonify(data=data)
 
@@ -1688,6 +1706,8 @@ class WantedMovies(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"monitored": item["monitored"] is "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
 
         return jsonify(data=data)
 

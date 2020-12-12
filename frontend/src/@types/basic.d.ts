@@ -1,5 +1,3 @@
-type PythonBoolean = "True" | "False";
-
 // Sonarr
 type SonarrSeriesType = "Standard" | "Daily" | "Anime";
 

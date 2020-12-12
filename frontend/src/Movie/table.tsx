@@ -34,7 +34,7 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "monitored",
         Cell: (row) => {
-          const monitored = row.value === "True";
+          const monitored = row.value;
 
           if (monitored) {
             return <FontAwesomeIcon icon={faBookmark}></FontAwesomeIcon>;
