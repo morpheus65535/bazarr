@@ -3,6 +3,7 @@ import BadgesApi from "./badges";
 import SystemApi from "./system";
 import SeriesApi from "./series";
 import MovieApi from "./movie";
+import HistoryApi from "./history";
 
 class Api {
   axios!: AxiosInstance;
@@ -12,6 +13,7 @@ class Api {
   badges: BadgesApi = new BadgesApi();
   series: SeriesApi = new SeriesApi();
   movie: MovieApi = new MovieApi();
+  history: HistoryApi = new HistoryApi();
 
   constructor() {
     if (process.env.NODE_ENV === "development") {

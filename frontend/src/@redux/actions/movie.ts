@@ -17,5 +17,5 @@ export const updateWantedMovieList = createAsyncAction(
 
 export const updateHistoryMovieList = createAsyncAction(
   UPDATE_MOVIE_HISTORY_LIST,
-  () => apis.movie.history()
+  () => apis.history.movies()
 );

@@ -25,5 +25,5 @@ export const updateEpisodeList = createAsyncAction1(
 
 export const updateHistorySeriesList = createAsyncAction(
   UPDATE_SERIES_HISTORY_LIST,
-  () => apis.series.history()
+  () => apis.history.series()
 );
