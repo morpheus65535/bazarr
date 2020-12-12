@@ -8,7 +8,7 @@ import {
   ActionIcon,
   BasicTable,
   AsyncStateOverlay,
-  HistoryActionIcon,
+  HistoryIcon,
 } from "../../components";
 
 interface Props {
@@ -29,9 +29,7 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "action",
-        Cell: (row) => (
-          <HistoryActionIcon action={row.value}></HistoryActionIcon>
-        ),
+        Cell: (row) => <HistoryIcon action={row.value}></HistoryIcon>,
       },
       {
         Header: "Name",

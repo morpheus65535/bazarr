@@ -3,7 +3,7 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { BasicTable, AsyncStateOverlay } from "../../components";
+import { BasicTable, AsyncStateOverlay, ActionBadge } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -50,18 +50,10 @@ function Table(props: Props): JSX.Element {
         accessor: "missing_subtitles",
         Cell: (row) => {
           return row.value.map((item, idx) => (
-            <Button
-              as={Badge}
-              className="mx-1 p-1"
-              key={idx}
-              variant="secondary"
-              onClick={(event) => {
-                event.preventDefault();
-              }}
-            >
+            <ActionBadge key={idx} onClick={() => {}}>
               <span className="mr-1">{item.code2}</span>
               <FontAwesomeIcon size="sm" icon={faSearch}></FontAwesomeIcon>
-            </Button>
+            </ActionBadge>
           ));
         },
       },

@@ -1,11 +1,38 @@
 import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { Badge, Spinner } from "react-bootstrap";
+import { Badge, Spinner, Button, Row, Col, Form } from "react-bootstrap";
 import {
   faCheckCircle,
   faTimesCircle,
+  faTrash,
+  faDownload,
+  faUser,
+  faRecycle,
+  faCloudUploadAlt,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
+
+import "./style.css";
+
+export const ActionBadge: FunctionComponent<{
+  onClick?: (e: MouseEvent) => void;
+}> = (props) => {
+  const { children, onClick } = props;
+  return (
+    <Button
+      as={Badge}
+      className="mx-1 p-1"
+      variant="secondary"
+      onClick={(event) => {
+        event.preventDefault();
+        onClick && onClick(event);
+      }}
+    >
+      {children}
+    </Button>
+  );
+};
 
 interface ActionIconProps {
   icon: IconProp;
@@ -15,18 +42,68 @@ interface ActionIconProps {
 export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
   const { icon, onClick } = props;
   return (
-    <Badge
-      as="a"
-      href=""
-      variant="secondary"
-      className="mx-1"
-      onClick={(event: MouseEvent) => {
-        event.preventDefault();
-        onClick && onClick(event);
-      }}
-    >
+    <ActionBadge onClick={onClick}>
       <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-    </Badge>
+    </ActionBadge>
+  );
+};
+
+enum HistoryAction {
+  Delete = 0,
+  Download,
+  Manual,
+  Upgrade,
+  Upload,
+  Sync,
+}
+
+export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
+  const { action } = props;
+  let icon = null;
+  switch (action) {
+    case HistoryAction.Delete:
+      icon = faTrash;
+      break;
+    case HistoryAction.Download:
+      icon = faDownload;
+      break;
+    case HistoryAction.Manual:
+      icon = faUser;
+      break;
+    case HistoryAction.Sync:
+      icon = faClock;
+      break;
+    case HistoryAction.Upgrade:
+      icon = faRecycle;
+      break;
+    case HistoryAction.Upload:
+      icon = faCloudUploadAlt;
+      break;
+  }
+  if (icon) {
+    return <FontAwesomeIcon icon={icon}></FontAwesomeIcon>;
+  } else {
+    return null;
+  }
+};
+
+export const CommonFormGroup: FunctionComponent<{ title: string }> = (
+  props
+) => {
+  const { title, children } = props;
+  return (
+    <Row>
+      <Col sm={3} className="mb-3">
+        <b>{title}</b>
+      </Col>
+      <Form.Group
+        as={Col}
+        sm={7}
+        className="d-flex flex-column common-form-group"
+      >
+        {children}
+      </Form.Group>
+    </Row>
   );
 };
 
@@ -62,8 +139,6 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
-export { default as HistoryActionIcon } from "./HistoryActionIcon";
-export * from "./CommonForm";
 export * from "./modals";
 export * from "./ContentHeader";
 export * from "./tables";
