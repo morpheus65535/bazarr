@@ -38,8 +38,8 @@ class SystemTasksView extends React.Component<Props, {}> {
           <ContentHeader>
             <ContentHeaderButton
               iconProps={{ icon: faSync, spin: loading }}
-              btnProps={{ disabled: loading}}
-              onClick={ update }
+              btnProps={{ disabled: loading }}
+              onClick={update}
             >
               Refresh
             </ContentHeaderButton>

@@ -19,7 +19,7 @@ import {
   ContentHeaderButton,
   ContentHeaderGroup,
   ItemOverview,
-  EditItemModal,
+  ItemEditorModal,
   LoadingIndicator,
 } from "../../components";
 
@@ -35,7 +35,7 @@ interface Props extends RouteComponentProps<Params> {
 }
 
 interface State {
-  editSeries: boolean;
+  liveModal: string;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -50,7 +50,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      editSeries: false,
+      liveModal: "",
     };
   }
   componentDidMount() {
@@ -58,25 +58,26 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     this.props.updateEpisodeList(Number.parseInt(id));
   }
 
-  onEditSeriesClick() {
+  showModal(key: string) {
     this.setState({
       ...this.state,
-      editSeries: true,
+      liveModal: key,
     });
   }
 
-  onEditSeriesClose() {
+  closeModal() {
     this.setState({
       ...this.state,
-      editSeries: false,
+      liveModal: "",
     });
   }
+
   render() {
     const list = this.props.seriesList.items;
     const { id } = this.props.match.params;
     const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
 
-    const { editSeries } = this.state;
+    const { liveModal } = this.state;
 
     const details = [
       item?.audio_language.name,
@@ -102,7 +103,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
           </ContentHeaderButton>
           <ContentHeaderButton
             iconProps={{ icon: faWrench }}
-            onClick={this.onEditSeriesClick.bind(this)}
+            onClick={() => this.showModal("edit")}
           >
             Edit Series
           </ContentHeaderButton>
@@ -123,10 +124,10 @@ class SeriesEpisodesView extends React.Component<Props, State> {
           <Row>
             <Table id={id}></Table>
           </Row>
-          <EditItemModal
-            item={editSeries ? item : undefined}
-            onClose={this.onEditSeriesClose.bind(this)}
-          ></EditItemModal>
+          <ItemEditorModal
+            item={liveModal === "edit" ? item : undefined}
+            onClose={this.closeModal.bind(this)}
+          ></ItemEditorModal>
         </Container>
       );
     } else {

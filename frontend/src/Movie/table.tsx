@@ -4,7 +4,12 @@ import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 import { Badge } from "react-bootstrap";
 
-import { BasicTable, ActionIcon, AsyncStateOverlay, BooleanIndicator } from "../components";
+import {
+  BasicTable,
+  ActionIcon,
+  AsyncStateOverlay,
+  BooleanIndicator,
+} from "../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

@@ -19,15 +19,13 @@ import {
   ContentHeader,
   ContentHeaderButton,
   ContentHeaderGroup,
-  EditItemModal,
+  ItemEditorModal,
   ItemOverview,
   LoadingIndicator,
-  ActionModal,
-  TabElement,
+  SubtitleToolModal,
 } from "../../components";
 
 import Table from "./table";
-import ToolTable from "./ToolTable";
 
 interface Params {
   id: string;
@@ -38,9 +36,7 @@ interface Props extends RouteComponentProps<Params> {
 }
 
 interface State {
-  editMovie: boolean;
-  actionModalShow: boolean;
-  actionModalKey?: string;
+  liveModal: string;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -55,43 +51,30 @@ class MovieDetailView extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      editMovie: false,
-      actionModalShow: false,
-      actionModalKey: undefined,
+      liveModal: "",
     };
   }
-  onEditMovieClick() {
+
+  showModal(key: string) {
     this.setState({
       ...this.state,
-      editMovie: true,
+      liveModal: key,
     });
   }
-  onEditMovieClose() {
+
+  closeModal() {
     this.setState({
       ...this.state,
-      editMovie: false,
+      liveModal: "",
     });
   }
-  onActionModalClick(key?: string) {
-    this.setState({
-      ...this.state,
-      actionModalShow: true,
-      actionModalKey: key,
-    });
-  }
-  onActionModalClose() {
-    this.setState({
-      ...this.state,
-      actionModalShow: false,
-      actionModalKey: undefined,
-    });
-  }
+
   render() {
     const list = this.props.movieList.items;
     const { id } = this.props.match.params;
     const item = list.find((val) => val.radarrId === Number.parseInt(id));
 
-    const { editMovie, actionModalShow, actionModalKey } = this.state;
+    const { liveModal } = this.state;
 
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
@@ -127,7 +110,7 @@ class MovieDetailView extends React.Component<Props, State> {
             </ContentHeaderButton>
             <ContentHeaderButton
               iconProps={{ icon: faToolbox }}
-              onClick={() => this.onActionModalClick("tools")}
+              onClick={() => this.showModal("tools")}
             >
               Tools
             </ContentHeaderButton>
@@ -135,21 +118,13 @@ class MovieDetailView extends React.Component<Props, State> {
           <ContentHeaderGroup pos="end">
             <ContentHeaderButton
               iconProps={{ icon: faWrench }}
-              onClick={this.onEditMovieClick.bind(this)}
+              onClick={() => this.showModal("edit")}
             >
               Edit Movie
             </ContentHeaderButton>
           </ContentHeaderGroup>
         </ContentHeader>
       );
-
-      const actionTabs: TabElement[] = [
-        {
-          event: "tools",
-          title: "Tools",
-          element: <ToolTable subtitles={item.subtitles}></ToolTable>,
-        },
-      ];
 
       return (
         <Container fluid>
@@ -163,17 +138,15 @@ class MovieDetailView extends React.Component<Props, State> {
           <Row>
             <Table movie={item}></Table>
           </Row>
-          <EditItemModal
-            item={editMovie ? item : undefined}
-            onClose={this.onEditMovieClose.bind(this)}
-          ></EditItemModal>
-          <ActionModal
-            title={item.title}
-            show={actionModalShow}
-            active={actionModalKey}
-            close={this.onActionModalClose.bind(this)}
-            tabs={actionTabs}
-          ></ActionModal>
+          <ItemEditorModal
+            item={liveModal === "edit" ? item : undefined}
+            onClose={this.closeModal.bind(this)}
+          ></ItemEditorModal>
+          <SubtitleToolModal
+            item={liveModal === "tools" ? item : undefined}
+            subtitles={item.subtitles}
+            onClose={this.closeModal.bind(this)}
+          ></SubtitleToolModal>
         </Container>
       );
     } else {

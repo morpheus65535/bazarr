@@ -7,7 +7,7 @@ import { Helmet } from "react-helmet";
 import {
   ContentHeader,
   ContentHeaderButton,
-  EditItemModal,
+  ItemEditorModal,
 } from "../components";
 import Table from "./table";
 
@@ -61,10 +61,10 @@ class SeriesView extends React.Component<Props, State> {
         <Row>
           <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </Row>
-        <EditItemModal
+        <ItemEditorModal
           item={modal}
           onClose={this.onSeriesEditorClose.bind(this)}
-        ></EditItemModal>
+        ></ItemEditorModal>
       </Container>
     );
   }

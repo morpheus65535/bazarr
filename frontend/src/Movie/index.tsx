@@ -8,7 +8,7 @@ import { faList } from "@fortawesome/free-solid-svg-icons";
 import {
   ContentHeader,
   ContentHeaderButton,
-  EditItemModal,
+  ItemEditorModal,
 } from "../components";
 
 import Table from "./table";
@@ -57,10 +57,10 @@ class MovieView extends React.Component<Props, State> {
         <Row>
           <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
         </Row>
-        <EditItemModal
+        <ItemEditorModal
           item={modal}
           onClose={this.onMovieEditClose.bind(this)}
-        ></EditItemModal>
+        ></ItemEditorModal>
       </Container>
     );
   }

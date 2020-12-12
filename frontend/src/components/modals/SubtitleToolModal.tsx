@@ -1,4 +1,6 @@
 import React, { FunctionComponent } from "react";
+import BasicModal, { ModalProps } from "./BasicModal";
+
 import { Column } from "react-table";
 import { BasicTable } from "../../components";
 
@@ -37,4 +39,12 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
   return <BasicTable options={{ columns, data }}></BasicTable>;
 };
 
-export default Table;
+const Tools: FunctionComponent<Props & ModalProps> = (props) => {
+  return (
+    <BasicModal {...props}>
+      <Table {...props}></Table>
+    </BasicModal>
+  );
+};
+
+export default Tools;

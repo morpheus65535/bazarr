@@ -2,7 +2,10 @@ import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { Badge, Spinner } from "react-bootstrap";
-import { faCheckCircle, faTimesCircle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheckCircle,
+  faTimesCircle,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface ActionIconProps {
   icon: IconProp;
@@ -27,7 +30,7 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
   );
 };
 
-export const SettingGroup: FunctionComponent<{name: string}> = (props) => {
+export const SettingGroup: FunctionComponent<{ name: string }> = (props) => {
   const { name, children } = props;
   return (
     <div className="my-4 flex-grow-1">
@@ -50,16 +53,17 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
   props
 ) => {
   return (
-    <FontAwesomeIcon icon={props.value ? faCheckCircle : faTimesCircle}></FontAwesomeIcon>
+    <FontAwesomeIcon
+      icon={props.value ? faCheckCircle : faTimesCircle}
+    ></FontAwesomeIcon>
   );
 };
 
-export * from "./CommonForm";
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
-export { default as EditItemModal } from "./EditItemModal";
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
 export { default as HistoryActionIcon } from "./HistoryActionIcon";
-export * from "./ActionModal";
+export * from "./CommonForm";
+export * from "./modals";
 export * from "./ContentHeader";
 export * from "./tables";
