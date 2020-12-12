@@ -1,6 +1,6 @@
 import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { Badge, Spinner, Button, Row, Col, Form } from "react-bootstrap";
 import {
   faCheckCircle,
@@ -34,12 +34,12 @@ export const ActionBadge: FunctionComponent<{
   );
 };
 
-interface ActionIconProps {
-  icon: IconProp;
+interface ActionIconDefinitions {
+  icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
 }
 
-export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
+export const ActionIcon: FunctionComponent<ActionIconDefinitions> = (props) => {
   const { icon, onClick } = props;
   return (
     <ActionBadge onClick={onClick}>

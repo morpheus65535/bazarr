@@ -35,7 +35,11 @@ function renderRow<T extends object>(row: Row<T>) {
       const rotation = row.isExpanded ? 90 : undefined;
       return (
         <tr {...row.getRowProps()}>
-          <td {...cell.getCellProps()} colSpan={row.cells.length}>
+          <td
+            style={{ verticalAlign: "middle" }}
+            {...cell.getCellProps()}
+            colSpan={row.cells.length}
+          >
             <span
               {...row.getToggleRowExpandedProps()}
               className="d-flex align-items-center"
@@ -59,7 +63,9 @@ function renderRow<T extends object>(row: Row<T>) {
         {row.cells
           .filter((cell) => !cell.isPlaceholder)
           .map((cell) => (
-            <td {...cell.getCellProps()}>{renderCell(cell, row)}</td>
+            <td style={{ verticalAlign: "middle" }} {...cell.getCellProps()}>
+              {renderCell(cell, row)}
+            </td>
           ))}
       </tr>
     );
