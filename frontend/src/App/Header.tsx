@@ -77,7 +77,6 @@ class Header extends React.Component<Props, State> {
   }
 
   updateSearchText = throttle((text: string) => {
-    // TODO: UpdateSearchResult
     this.setState({
       ...this.state,
       searchText: text,

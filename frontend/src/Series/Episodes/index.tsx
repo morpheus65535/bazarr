@@ -122,7 +122,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
             <ItemOverview item={item} details={details}></ItemOverview>
           </Row>
           <Row>
-            <Table id={id}></Table>
+            <Table series={item} id={id}></Table>
           </Row>
           <ItemEditorModal
             item={liveModal === "edit" ? item : undefined}

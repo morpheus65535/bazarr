@@ -16,9 +16,23 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
         accessor: "name",
       },
       {
-        // TODO: (Backend) Change to Filename
         Header: "File Name",
         accessor: "path",
+        Cell: (row) => {
+          if (row.value !== null) {
+            let idx = row.value.lastIndexOf("/") ?? -1;
+
+            if (idx === -1) {
+              idx = row.value.lastIndexOf("\\") ?? -1;
+            }
+
+            if (idx !== -1) {
+              return row.value.slice(idx + 1);
+            }
+          }
+
+          return row.value;
+        },
       },
       {
         Header: "Tools",
@@ -36,7 +50,12 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
     [subtitles]
   );
 
-  return <BasicTable options={{ columns, data }}></BasicTable>;
+  return (
+    <BasicTable
+      emptyText="No External Subtitles Found"
+      options={{ columns, data }}
+    ></BasicTable>
+  );
 };
 
 const Tools: FunctionComponent<Props & ModalProps> = (props) => {

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useState, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { Column, TableOptions } from "react-table";
 
@@ -12,10 +12,16 @@ import {
   faBriefcase,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { GroupTable, ActionIcon, AsyncStateOverlay } from "../../components";
+import {
+  GroupTable,
+  ActionIcon,
+  AsyncStateOverlay,
+  SubtitleToolModal,
+} from "../../components";
 
 interface Props {
   id: string;
+  series: Series;
   episodeList: AsyncState<Map<number, Episode[]>>;
 }
 
@@ -29,6 +35,19 @@ const Table: FunctionComponent<Props> = (props) => {
   const id = Number.parseInt(props.id);
   const list = props.episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
+
+  const [modal, setModal] = useState<string>("");
+  const [modalItem, setModalItem] = useState<Episode | undefined>(undefined);
+
+  const closeModal = () => {
+    setModal("");
+    setModalItem(undefined);
+  };
+
+  const showModal = (key: string, item: Episode) => {
+    setModal(key);
+    setModalItem(item);
+  };
 
   const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
     () => [
@@ -92,7 +111,12 @@ const Table: FunctionComponent<Props> = (props) => {
             <React.Fragment>
               <ActionIcon icon={faUser}></ActionIcon>
               <ActionIcon icon={faCloudUploadAlt}></ActionIcon>
-              <ActionIcon icon={faBriefcase}></ActionIcon>
+              <ActionIcon
+                icon={faBriefcase}
+                onClick={() => {
+                  showModal("tools", row.row.original);
+                }}
+              ></ActionIcon>
             </React.Fragment>
           );
         },
@@ -115,6 +139,11 @@ const Table: FunctionComponent<Props> = (props) => {
   return (
     <AsyncStateOverlay state={props.episodeList} exist={(item) => item.has(id)}>
       <GroupTable options={options}></GroupTable>
+      <SubtitleToolModal
+        item={modal === "tools" ? props.series : undefined}
+        subtitles={modalItem?.subtitles ?? []}
+        onClose={closeModal}
+      ></SubtitleToolModal>
     </AsyncStateOverlay>
   );
 };
