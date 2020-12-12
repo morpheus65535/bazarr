@@ -354,7 +354,7 @@ class Series(Resource):
 
             # Add the series desired subtitles language code2
             try:
-                item.update({"desired_languages": desired_languages})
+                item.update({"desired_languages": ast.literal_eval(desired_languages)})
             except NameError:
                 pass
 
@@ -554,7 +554,7 @@ class Episodes(Resource):
             item.update({"exist": os.path.isfile(mapped_path)})
 
             # Add the series desired subtitles language code2
-            item.update({"desired_languages": desired_languages})
+            item.update({"desired_languages": ast.literal_eval(desired_languages)})
             item.update({"monitored": item["monitored"] is "True"})
         return jsonify(data=result)
 
@@ -967,7 +967,7 @@ class Movies(Resource):
 
             # Add the movie desired subtitles language code2
             try:
-                item.update({"desired_languages": desired_languages})
+                item.update({"desired_languages": ast.literal_eval(desired_languages)})
             except NameError:
                 pass
 
