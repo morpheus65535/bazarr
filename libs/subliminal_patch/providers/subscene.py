@@ -12,8 +12,14 @@ import requests
 import inflect
 import re
 import json
-import six.moves.html_parser
 import six.moves.urllib.parse
+
+import sys
+if sys.version_info[0] >= 3:
+    import html
+else:
+    from six.moves import html_parser    
+    html = html_parser.HTMLParser()
 
 from zipfile import ZipFile
 from babelfish import language_converters
@@ -160,7 +166,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.text)
 
         if match:
-            h = six.moves.html_parser.HTMLParser()
+            h = html
             data = json.loads(h.unescape(match.group(1)))
             login_url = six.moves.urllib.parse.urljoin(data["siteUrl"], data["loginUrl"])
             time.sleep(1.0)
