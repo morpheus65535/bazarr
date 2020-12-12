@@ -2,6 +2,7 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
+  UPDATE_SYSTEM_PROVIDERS,
   EXEC_SYSTEM_TASK,
 } from "../constants";
 
@@ -20,6 +21,11 @@ export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>
 
 export const UpdateSystemTasks = createAsyncAction(UPDATE_SYSTEM_TASKS, () =>
   apis.system.getTasks()
+);
+
+export const UpdateSystemProviders = createAsyncAction(
+  UPDATE_SYSTEM_PROVIDERS,
+  () => apis.system.providers()
 );
 
 export const ExecSystemTask = (id: string): Action<string> => {

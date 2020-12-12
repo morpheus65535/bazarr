@@ -48,6 +48,18 @@ export default class SystemApi {
     });
   }
 
+  async providers() {
+    return new Promise<SystemProviders>((resolve, reject) => {
+      this.get<DataWrapper<SystemProviders>>("providers")
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
+
   async getTasks() {
     return new Promise<SystemTaskResult>((resolve, reject) => {
       this.get<DataWrapper<SystemTaskResult>>("tasks")

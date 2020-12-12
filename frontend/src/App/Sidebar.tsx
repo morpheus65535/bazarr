@@ -200,11 +200,14 @@ class Sidebar extends React.Component<Props, State> {
       </Accordion.Collapse>
     );
 
+    const providers =
+      providers_badge === 0 ? undefined : providers_badge.toString();
+
     const system: JSX.Element = (
       <ToggleListItem
         icon={faLaptop}
         eventKey="system-toggle"
-        badge={providers_badge === 0 ? undefined : providers_badge.toString()}
+        badge={providers}
       >
         System
       </ToggleListItem>
@@ -214,6 +217,9 @@ class Sidebar extends React.Component<Props, State> {
       <Accordion.Collapse eventKey="system-toggle">
         <div>
           <ListCollapseItem href="/system/tasks">Tasks</ListCollapseItem>
+          <ListCollapseItem href="/system/providers" badge={providers}>
+            Providers
+          </ListCollapseItem>
           <ListCollapseItem href="/system/status">Status</ListCollapseItem>
         </div>
       </Accordion.Collapse>

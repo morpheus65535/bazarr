@@ -8,17 +8,19 @@ import {
 interface CHButtonProps {
   iconProps: FontAwesomeIconProps;
   btnProps?: ButtonProps;
+  disabled?: boolean;
   onClick?: (e: MouseEvent) => void;
 }
 
 const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
-  const { children, iconProps, btnProps, onClick } = props;
+  const { children, iconProps, btnProps, disabled, onClick } = props;
 
   return (
     <Button
       variant="dark"
       className="d-flex flex-column"
       {...btnProps}
+      disabled={disabled}
       onClick={onClick}
     >
       <FontAwesomeIcon

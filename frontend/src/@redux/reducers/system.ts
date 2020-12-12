@@ -3,11 +3,13 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
+  UPDATE_SYSTEM_PROVIDERS,
   EXEC_SYSTEM_TASK,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
 import { handleActions, Action as RAction } from "redux-actions";
+import Providers from "../../System/Providers";
 
 const reducer = handleActions<SystemState, any>(
   {
@@ -49,6 +51,17 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
+    [UPDATE_SYSTEM_PROVIDERS]: {
+      next(state, action) {
+        return {
+          ...state,
+          providers: mapToAsyncState<Array<SystemProviders>>(
+            action,
+            state.providers.items
+          ),
+        };
+      },
+    },
     [EXEC_SYSTEM_TASK]: {
       next(state, action) {
         const { payload } = action as RAction<string>;
@@ -85,6 +98,10 @@ const reducer = handleActions<SystemState, any>(
       },
     },
     tasks: {
+      updating: false,
+      items: [],
+    },
+    providers: {
       updating: false,
       items: [],
     },

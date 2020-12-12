@@ -17,3 +17,9 @@ interface SystemTaskResult {
   next_run_in: string;
   next_run_time: string;
 }
+
+interface SystemProviders {
+  name: string;
+  status: string;
+  retry: string;
+}
