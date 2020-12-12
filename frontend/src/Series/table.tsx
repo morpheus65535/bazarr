@@ -1,6 +1,11 @@
 import React, { FunctionComponent } from "react";
 import { Column } from "react-table";
-import { BasicTable, ActionIcon, AsyncStateOverlay } from "../components";
+import {
+  BasicTable,
+  ActionIcon,
+  AsyncStateOverlay,
+  BooleanIndicator,
+} from "../components";
 
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -85,10 +90,16 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Hearing-Impaired",
         accessor: "hearing_impaired",
+        Cell: (row) => {
+          return <BooleanIndicator value={row.value}></BooleanIndicator>;
+        },
       },
       {
         Header: "Forced",
         accessor: "forced",
+        Cell: (row) => {
+          return <BooleanIndicator value={row.value}></BooleanIndicator>;
+        },
       },
       {
         Header: "Subtitles",

@@ -20,7 +20,7 @@ import {
   ContentHeaderGroup,
   ItemOverview,
   EditItemModal,
-  LoadingOverlay,
+  LoadingIndicator,
 } from "../../components";
 
 import Table from "./table";
@@ -128,7 +128,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
         </Container>
       );
     } else {
-      return <LoadingOverlay></LoadingOverlay>;
+      return <LoadingIndicator></LoadingIndicator>;
     }
   }
 }

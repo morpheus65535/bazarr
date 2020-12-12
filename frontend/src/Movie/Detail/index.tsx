@@ -21,7 +21,7 @@ import {
   ContentHeaderGroup,
   EditItemModal,
   ItemOverview,
-  LoadingOverlay,
+  LoadingIndicator,
   ActionModal,
   TabElement,
 } from "../../components";
@@ -175,7 +175,7 @@ class MovieDetailView extends React.Component<Props, State> {
         </Container>
       );
     } else {
-      return <LoadingOverlay></LoadingOverlay>;
+      return <LoadingIndicator></LoadingIndicator>;
     }
   }
 }

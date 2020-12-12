@@ -2,6 +2,7 @@ import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { Badge, Spinner } from "react-bootstrap";
+import { faCheckCircle, faTimesCircle } from "@fortawesome/free-solid-svg-icons";
 
 interface ActionIconProps {
   icon: IconProp;
@@ -26,11 +27,7 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
   );
 };
 
-interface SettingGroupProps {
-  name: string;
-}
-
-export const SettingGroup: FunctionComponent<SettingGroupProps> = (props) => {
+export const SettingGroup: FunctionComponent<{name: string}> = (props) => {
   const { name, children } = props;
   return (
     <div className="my-4">
@@ -41,11 +38,19 @@ export const SettingGroup: FunctionComponent<SettingGroupProps> = (props) => {
   );
 };
 
-export const LoadingOverlay: FunctionComponent = (props) => {
+export const LoadingIndicator: FunctionComponent = (props) => {
   return (
     <div className="d-flex flex-grow-1 justify-content-center my-5">
       <Spinner animation="border"></Spinner>
     </div>
+  );
+};
+
+export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
+  props
+) => {
+  return (
+    <FontAwesomeIcon icon={props.value ? faCheckCircle : faTimesCircle}></FontAwesomeIcon>
   );
 };
 

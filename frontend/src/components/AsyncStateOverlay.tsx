@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { LoadingOverlay } from ".";
+import { LoadingIndicator } from ".";
 
 interface Params<T> {
   state: AsyncState<T>;
@@ -23,7 +23,7 @@ class AsyncStateOverlay<T> extends React.Component<
     const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
     if (state.updating && missing) {
-      return <LoadingOverlay></LoadingOverlay>;
+      return <LoadingIndicator></LoadingIndicator>;
     } else {
       return <React.Fragment>{children}</React.Fragment>;
     }

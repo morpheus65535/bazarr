@@ -60,11 +60,19 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Row className={infoRowClass}>{detailBadges}</Row>
             <Row className={infoRowClass}>{subtitleLanguages}</Row>
             <Row className={infoRowClass}>
-              <Badge variant="secondary" className={badgeClass}>
-                Hearing-Impaired: {item.hearing_impaired}
+              <Badge
+                variant="secondary"
+                className={badgeClass}
+                hidden={!item.hearing_impaired}
+              >
+                Hearing-Impaired
               </Badge>
-              <Badge variant="secondary" className={badgeClass}>
-                Forced: {item.forced}
+              <Badge
+                variant="secondary"
+                className={badgeClass}
+                hidden={!item.forced}
+              >
+                Forced
               </Badge>
             </Row>
             <Row className={infoRowClass}>
