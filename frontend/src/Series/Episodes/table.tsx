@@ -72,7 +72,7 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "title",
       },
       {
-        Header: "Audio Language",
+        Header: "Audio",
         accessor: (d) => d.audio_language.name,
       },
       {

@@ -33,7 +33,7 @@ function Table(props: Props) {
         accessor: "name",
       },
       {
-        Header: "Execution Frequency",
+        Header: "Interval",
         accessor: "interval",
       },
       {

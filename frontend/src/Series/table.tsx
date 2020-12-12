@@ -49,7 +49,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Path Exist",
+        Header: "Exist",
         accessor: "exist",
         Cell: (row) => {
           const exist = row.value;
@@ -69,7 +69,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Subtitles Languages",
+        Header: "Subtitles",
         accessor: "languages",
         Cell: (row) => {
           const languages = row.value;
@@ -88,7 +88,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Hearing-Impaired",
+        Header: "HI",
         accessor: "hearing_impaired",
         Cell: (row) => {
           return <BooleanIndicator value={row.value}></BooleanIndicator>;
@@ -102,7 +102,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Subtitles",
+        Header: "Episodes",
         accessor: "episodeFileCount",
         Cell: (row) => {
           const { episodeFileCount, episodeMissingCount } = row.row.original;

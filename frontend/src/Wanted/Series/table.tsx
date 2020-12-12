@@ -46,7 +46,7 @@ function Table(props: Props): JSX.Element {
         accessor: "episodeTitle",
       },
       {
-        Header: "Missing Subtitle(s)",
+        Header: "Missing",
         accessor: "missing_subtitles",
         Cell: (row) => {
           return row.value.map((item, idx) => (
@@ -64,7 +64,7 @@ function Table(props: Props): JSX.Element {
   return (
     <AsyncStateOverlay state={props.wanted}>
       <BasicTable
-        emptyText="No Missing Series Subtitles"
+        emptyText="No Missing Episodes Subtitles"
         options={{ columns, data: props.wanted.items }}
       ></BasicTable>
     </AsyncStateOverlay>

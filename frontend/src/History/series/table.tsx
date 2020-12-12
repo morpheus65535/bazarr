@@ -62,7 +62,6 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "description",
       },
       {
-        Header: "Actions",
         accessor: "sonarrEpisodeId",
         Cell: (row) => {
           return null;

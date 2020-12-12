@@ -37,7 +37,7 @@ function Table(props: Props): JSX.Element {
         },
       },
       {
-        Header: "Missing Subtitle(s)",
+        Header: "Missing",
         accessor: "missing_subtitles",
         Cell: (row) => {
           return row.value.map((item, idx) => (

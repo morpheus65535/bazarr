@@ -61,7 +61,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Path Exist",
+        Header: "Exist",
         accessor: "exist",
         Cell: (row) => {
           const exist = row.value;
@@ -81,7 +81,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Subtitles Languages",
+        Header: "Subtitles",
         accessor: "languages",
         Cell: (row) => {
           const languages = row.value;
@@ -100,7 +100,19 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Hearing-Impaired",
+        Header: "Missing",
+        accessor: "missing_subtitles",
+        Cell: (row) => {
+          const subtitles = row.value;
+          return subtitles.map((val) => (
+            <Badge className="mx-1" key={val.name} variant="secondary">
+              {val.code2}
+            </Badge>
+          ));
+        },
+      },
+      {
+        Header: "HI",
         accessor: "hearing_impaired",
         Cell: (row) => {
           return <BooleanIndicator value={row.value}></BooleanIndicator>;
@@ -111,18 +123,6 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "forced",
         Cell: (row) => {
           return <BooleanIndicator value={row.value}></BooleanIndicator>;
-        },
-      },
-      {
-        Header: "Missing Subtitles",
-        accessor: "missing_subtitles",
-        Cell: (row) => {
-          const subtitles = row.value;
-          return subtitles.map((val) => (
-            <Badge className="mx-1" key={val.name} variant="secondary">
-              {val.code2}
-            </Badge>
-          ));
         },
       },
       {
