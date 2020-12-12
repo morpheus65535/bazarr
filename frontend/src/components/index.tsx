@@ -30,7 +30,7 @@ export const ActionIcon: FunctionComponent<ActionIconProps> = (props) => {
 export const SettingGroup: FunctionComponent<{name: string}> = (props) => {
   const { name, children } = props;
   return (
-    <div className="my-4">
+    <div className="my-4 flex-grow-1">
       <h4>{name}</h4>
       <hr></hr>
       {children}

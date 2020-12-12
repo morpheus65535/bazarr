@@ -25,15 +25,15 @@ class WantedSeriesView extends React.Component<Props> {
         <Helmet>
           <title>Wanted Series - Bazarr</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton iconProps={{ icon: faSearch }}>
               Search All
             </ContentHeaderButton>
           </ContentHeader>
-          <div className="p-3">
-            <Table></Table>
-          </div>
+        </Row>
+        <Row>
+          <Table></Table>
         </Row>
       </Container>
     );

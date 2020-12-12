@@ -21,7 +21,7 @@ class MoviesHistoryView extends React.Component<Props> {
         <Helmet>
           <title>Movies History - Bazarr</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <Table></Table>
         </Row>
       </Container>

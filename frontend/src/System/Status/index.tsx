@@ -156,8 +156,8 @@ class SystemStatusView extends React.Component<Props, {}> {
         <Helmet>
           <title>Status - Bazarr (System)</title>
         </Helmet>
-        {about}
-        {more}
+        <Row>{about}</Row>
+        <Row>{more}</Row>
       </Container>
     );
   }

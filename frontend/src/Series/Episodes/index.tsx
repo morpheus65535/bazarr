@@ -116,15 +116,17 @@ class SeriesEpisodesView extends React.Component<Props, State> {
           <Helmet>
             <title>{item.title} - Bazarr (Series)</title>
           </Helmet>
-          <Row className="flex-column">
-            {header}
+          <Row>{header}</Row>
+          <Row>
             <ItemOverview item={item} details={details}></ItemOverview>
-            <Table id={id}></Table>
-            <EditItemModal
-              item={editSeries ? item : undefined}
-              onClose={this.onEditSeriesClose.bind(this)}
-            ></EditItemModal>
           </Row>
+          <Row>
+            <Table id={id}></Table>
+          </Row>
+          <EditItemModal
+            item={editSeries ? item : undefined}
+            onClose={this.onEditSeriesClose.bind(this)}
+          ></EditItemModal>
         </Container>
       );
     } else {

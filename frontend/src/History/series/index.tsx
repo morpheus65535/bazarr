@@ -21,7 +21,7 @@ class SeriesHistoryView extends React.Component<Props> {
         <Helmet>
           <title>Series History - Bazarr</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <Table></Table>
         </Row>
       </Container>

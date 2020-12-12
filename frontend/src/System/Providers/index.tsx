@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { UpdateSystemProviders } from "../../@redux/actions/system";
+import { UpdateSystemProviders } from "../../@redux/actions";
 
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader, ContentHeaderButton } from "../../components";
@@ -47,7 +47,7 @@ class SystemProvidersView extends React.Component<Props> {
             </ContentHeaderButton>
           </ContentHeader>
         </Row>
-        <Row className="p-3">
+        <Row>
           <Table></Table>
         </Row>
       </Container>

@@ -75,12 +75,14 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
         <Helmet>
           <title>Languages - Bazarr (Settings)</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton iconProps={{ icon: faSave }}>
               Save
             </ContentHeaderButton>
           </ContentHeader>
+        </Row>
+        <Row>
           <Form className="p-4">
             {subtitles}
             {defaultSetting}

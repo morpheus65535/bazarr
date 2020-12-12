@@ -225,12 +225,14 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
         <Helmet>
           <title>Subtitles - Bazarr (Settings)</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton iconProps={{ icon: faSave }}>
               Save
             </ContentHeaderButton>
           </ContentHeader>
+        </Row>
+        <Row>
           <Form className="p-4">
             {subtitles}
             {anti_captcha}

@@ -253,12 +253,14 @@ class SettingsGeneralView extends React.Component<Props, State> {
         <Helmet>
           <title>General - Bazarr (Settings)</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton iconProps={{ icon: faSave }}>
               Save
             </ContentHeaderButton>
           </ContentHeader>
+        </Row>
+        <Row>
           <Form className="p-4">
             {host}
             {security}

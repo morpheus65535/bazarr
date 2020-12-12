@@ -47,20 +47,20 @@ class MovieView extends React.Component<Props, State> {
         <Helmet>
           <title>Movies - Bazarr</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton iconProps={{ icon: faList }}>
               Mass Edit
             </ContentHeaderButton>
           </ContentHeader>
-          <Row className="p-3">
-            <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
-          </Row>
-          <EditItemModal
-            item={modal}
-            onClose={this.onMovieEditClose.bind(this)}
-          ></EditItemModal>
         </Row>
+        <Row>
+          <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
+        </Row>
+        <EditItemModal
+          item={modal}
+          onClose={this.onMovieEditClose.bind(this)}
+        ></EditItemModal>
       </Container>
     );
   }
