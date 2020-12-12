@@ -47,7 +47,7 @@ class SystemProvidersView extends React.Component<Props> {
             </ContentHeaderButton>
           </ContentHeader>
         </Row>
-        <Row className="p-2">
+        <Row className="p-3">
           <Table></Table>
         </Row>
       </Container>

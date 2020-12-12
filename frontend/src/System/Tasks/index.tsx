@@ -34,7 +34,7 @@ class SystemTasksView extends React.Component<Props, {}> {
         <Helmet>
           <title>Tasks - Bazarr (System)</title>
         </Helmet>
-        <Row className="flex-column">
+        <Row>
           <ContentHeader>
             <ContentHeaderButton
               iconProps={{ icon: faSync, spin: loading }}
@@ -43,9 +43,9 @@ class SystemTasksView extends React.Component<Props, {}> {
               Refresh
             </ContentHeaderButton>
           </ContentHeader>
-          <div className="p-3">
-            <Table></Table>
-          </div>
+        </Row>
+        <Row className="p-3">
+          <Table></Table>
         </Row>
       </Container>
     );
