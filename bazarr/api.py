@@ -231,10 +231,16 @@ class SystemProviders(Resource):
     @authenticate
     def get(self):
         throttled_providers = list_throttled_providers()
+
+        providers = list()
         for i in range(len(throttled_providers)):
-            throttled_providers[i][1] = throttled_providers[i][1] if throttled_providers[i][1] is not None else "Good"
-            throttled_providers[i][2] = throttled_providers[i][2] if throttled_providers[i][2] != "now" else "-"
-        return jsonify(data=throttled_providers)
+            provider = {
+                "name": throttled_providers[i][0],
+                "status": throttled_providers[i][1] if throttled_providers[i][1] is not None else "Good",
+                "retry": throttled_providers[i][2] if throttled_providers[i][2] != "now" else "-"
+            }
+            providers.append(provider)
+        return jsonify(data=providers)
 
 
 class SystemStatus(Resource):
