@@ -23,9 +23,11 @@ import {
   ItemOverview,
   LoadingIndicator,
   SubtitleToolModal,
+  MovieHistoryModal,
 } from "../../Components";
 
 import Table from "./table";
+import apis from "../../apis";
 
 interface Params {
   id: string;
@@ -36,7 +38,8 @@ interface Props extends RouteComponentProps<Params> {
 }
 
 interface State {
-  liveModal: string;
+  modal: string;
+  history: AsyncState<MovieHistory[]>;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -51,30 +54,34 @@ class MovieDetailView extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      liveModal: "",
+      modal: "",
+      history: {
+        updating: true,
+        items: [],
+      },
     };
   }
 
   showModal(key: string) {
     this.setState({
       ...this.state,
-      liveModal: key,
+      modal: key,
     });
   }
 
   closeModal() {
     this.setState({
       ...this.state,
-      liveModal: "",
+      modal: "",
     });
   }
 
   render() {
     const list = this.props.movieList.items;
-    const { id } = this.props.match.params;
-    const item = list.find((val) => val.radarrId === Number.parseInt(id));
+    const id = Number.parseInt(this.props.match.params.id);
+    const item = list.find((val) => val.radarrId === id);
 
-    const { liveModal } = this.state;
+    const { modal, history } = this.state;
 
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
@@ -104,7 +111,18 @@ class MovieDetailView extends React.Component<Props, State> {
             {allowEdit && editButton}
             <ContentHeaderButton
               iconProps={{ icon: faHistory }}
-              // onClick={() => this.onActionModalClick("history")}
+              onClick={() => {
+                apis.movie.history(id).then((items) => {
+                  this.setState({
+                    ...this.state,
+                    history: {
+                      updating: false,
+                      items,
+                    },
+                  });
+                });
+                this.showModal("history");
+              }}
             >
               History
             </ContentHeaderButton>
@@ -139,14 +157,23 @@ class MovieDetailView extends React.Component<Props, State> {
             <Table movie={item}></Table>
           </Row>
           <ItemEditorModal
-            item={liveModal === "edit" ? item : undefined}
+            show={modal === "edit"}
+            item={item}
+            title={item.title}
             onClose={this.closeModal.bind(this)}
           ></ItemEditorModal>
           <SubtitleToolModal
-            item={liveModal === "tools" ? item : undefined}
+            show={modal === "tools"}
+            title={item.title}
             subtitles={item.subtitles}
             onClose={this.closeModal.bind(this)}
           ></SubtitleToolModal>
+          <MovieHistoryModal
+            show={modal === "history"}
+            title={item.title}
+            history={history}
+            onClose={this.closeModal.bind(this)}
+          ></MovieHistoryModal>
         </Container>
       );
     } else {

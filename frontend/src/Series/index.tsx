@@ -62,7 +62,8 @@ class SeriesView extends React.Component<Props, State> {
           <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
         </Row>
         <ItemEditorModal
-          item={modal}
+          show={modal !== undefined}
+          title={modal?.title}
           onClose={this.onSeriesEditorClose.bind(this)}
         ></ItemEditorModal>
       </Container>

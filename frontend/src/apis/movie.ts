@@ -37,4 +37,18 @@ export default class MovieApi {
         });
     });
   }
+
+  async history(id: number): Promise<Array<MovieHistory>> {
+    return new Promise<Array<MovieHistory>>((resolve, reject) => {
+      this.get<DataWrapper<Array<MovieHistory>>>("/history", {
+        radarrid: id,
+      })
+        .then((result) => {
+          resolve(result.data.data);
+        })
+        .catch((reason) => {
+          reject(reason);
+        });
+    });
+  }
 }

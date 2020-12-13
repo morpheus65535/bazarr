@@ -58,7 +58,8 @@ class MovieView extends React.Component<Props, State> {
           <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
         </Row>
         <ItemEditorModal
-          item={modal}
+          show={modal !== undefined}
+          title={modal?.title}
           onClose={this.onMovieEditClose.bind(this)}
         ></ItemEditorModal>
       </Container>

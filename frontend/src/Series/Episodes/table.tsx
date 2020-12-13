@@ -10,6 +10,7 @@ import {
   faUser,
   faCloudUploadAlt,
   faBriefcase,
+  faHistory,
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -21,7 +22,6 @@ import {
 
 interface Props {
   id: string;
-  series: Series;
   episodeList: AsyncState<Map<number, Episode[]>>;
 }
 
@@ -110,6 +110,7 @@ const Table: FunctionComponent<Props> = (props) => {
           return (
             <React.Fragment>
               <ActionIcon icon={faUser}></ActionIcon>
+              <ActionIcon icon={faHistory}></ActionIcon>
               <ActionIcon icon={faCloudUploadAlt}></ActionIcon>
               <ActionIcon
                 icon={faBriefcase}
@@ -140,7 +141,8 @@ const Table: FunctionComponent<Props> = (props) => {
     <AsyncStateOverlay state={props.episodeList} exist={(item) => item.has(id)}>
       <GroupTable options={options}></GroupTable>
       <SubtitleToolModal
-        item={modal === "tools" ? props.series : undefined}
+        show={modal === "tools"}
+        title={`${modalItem?.title}`}
         subtitles={modalItem?.subtitles ?? []}
         onClose={closeModal}
       ></SubtitleToolModal>

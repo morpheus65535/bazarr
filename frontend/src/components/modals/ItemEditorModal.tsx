@@ -6,8 +6,9 @@ import BasicModal, { ModalProps } from "./BasicModal";
 
 import LanguageSelector from "../LanguageSelector";
 
-interface EditorProps extends ModalProps {
+interface EditorProps {
   languages: ExtendLanguage[];
+  item?: ExtendItem;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -16,7 +17,7 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-const Editor: FunctionComponent<EditorProps> = (props) => {
+const Editor: FunctionComponent<EditorProps & ModalProps> = (props) => {
   const { item, languages } = props;
 
   const colTitleClass = "text-right my-a";

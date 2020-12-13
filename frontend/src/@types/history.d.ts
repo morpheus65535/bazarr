@@ -16,7 +16,6 @@ interface BasicHistory {
   mapped_path: string;
   mapped_subtitles_path: string;
   monitored: boolean;
-  path: string;
   provider?: string;
   raw_timestamp: number;
   score?: string; // TODO: Fix
@@ -29,6 +28,7 @@ interface BasicHistory {
 
 interface SeriesHistory extends BasicHistory {
   episodeTitle: string;
+  path: string;
   episode_number: string;
   seriesTitle: string;
   sonarrEpisodeId: number;

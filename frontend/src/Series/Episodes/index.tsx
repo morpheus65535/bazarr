@@ -35,7 +35,7 @@ interface Props extends RouteComponentProps<Params> {
 }
 
 interface State {
-  liveModal: string;
+  modal: string;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -50,7 +50,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      liveModal: "",
+      modal: "",
     };
   }
   componentDidMount() {
@@ -61,14 +61,14 @@ class SeriesEpisodesView extends React.Component<Props, State> {
   showModal(key: string) {
     this.setState({
       ...this.state,
-      liveModal: key,
+      modal: key,
     });
   }
 
   closeModal() {
     this.setState({
       ...this.state,
-      liveModal: "",
+      modal: "",
     });
   }
 
@@ -77,7 +77,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
 
-    const { liveModal } = this.state;
+    const { modal } = this.state;
 
     const details = [
       item?.audio_language.name,
@@ -122,10 +122,12 @@ class SeriesEpisodesView extends React.Component<Props, State> {
             <ItemOverview item={item} details={details}></ItemOverview>
           </Row>
           <Row>
-            <Table series={item} id={id}></Table>
+            <Table id={id}></Table>
           </Row>
           <ItemEditorModal
-            item={liveModal === "edit" ? item : undefined}
+            show={modal === "edit"}
+            title={item.title}
+            item={item}
             onClose={this.closeModal.bind(this)}
           ></ItemEditorModal>
         </Container>
