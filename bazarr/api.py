@@ -358,8 +358,8 @@ class Series(Resource):
             except NameError:
                 pass
 
-            item.update({"forced": item["forced"] is "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
+            item.update({"forced": item["forced"] == "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
     @authenticate
@@ -555,7 +555,7 @@ class Episodes(Resource):
 
             # Add the series desired subtitles language code2
             item.update({"desired_languages": ast.literal_eval(desired_languages)})
-            item.update({"monitored": item["monitored"] is "True"})
+            item.update({"monitored": item["monitored"] == "True"})
         return jsonify(data=result)
 
 class SubtitleNameInfo(Resource):
@@ -971,9 +971,9 @@ class Movies(Resource):
             except NameError:
                 pass
 
-            item.update({"monitored": item["monitored"] is "True"})
-            item.update({"forced": item["forced"] is "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
+            item.update({"monitored": item["monitored"] == "True"})
+            item.update({"forced": item["forced"] == "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
     @authenticate
@@ -1664,8 +1664,8 @@ class WantedSeries(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
-            item.update({"monitored": item["monitored"] is "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
+            item.update({"monitored": item["monitored"] == "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
 
         return jsonify(data=data)
 
@@ -1706,8 +1706,8 @@ class WantedMovies(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
-            item.update({"monitored": item["monitored"] is "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] is "True"})
+            item.update({"monitored": item["monitored"] == "True"})
+            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
 
         return jsonify(data=data)
 
