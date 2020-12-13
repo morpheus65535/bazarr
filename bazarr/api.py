@@ -1472,6 +1472,8 @@ class HistorySeries(Resource):
             else:
                 item.update({"blacklisted": False})
 
+            item.update({"monitored": item["monitored"] == "True"})
+
         return jsonify(data=data)
 
 
@@ -1567,6 +1569,8 @@ class HistoryMovies(Resource):
                 item.update({"blacklisted": True})
             else:
                 item.update({"blacklisted": False})
+
+            item.update({"monitored": item["monitored"] == "True"})
 
         return jsonify(data=data)
 

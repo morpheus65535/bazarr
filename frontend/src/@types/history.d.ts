@@ -15,7 +15,7 @@ interface BasicHistory {
   language: ExtendLanguage;
   mapped_path: string;
   mapped_subtitles_path: string;
-  monitored: PythonBoolean;
+  monitored: boolean;
   path: string;
   provider?: string;
   raw_timestamp: number;
