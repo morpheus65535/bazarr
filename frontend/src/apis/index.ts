@@ -4,6 +4,7 @@ import SystemApi from "./system";
 import SeriesApi from "./series";
 import MovieApi from "./movie";
 import HistoryApi from "./history";
+import EpisodeApi from "./episodes";
 
 class Api {
   axios!: AxiosInstance;
@@ -12,6 +13,7 @@ class Api {
   system: SystemApi = new SystemApi();
   badges: BadgesApi = new BadgesApi();
   series: SeriesApi = new SeriesApi();
+  episodes: EpisodeApi = new EpisodeApi();
   movie: MovieApi = new MovieApi();
   history: HistoryApi = new HistoryApi();
 

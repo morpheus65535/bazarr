@@ -28,29 +28,9 @@ export default class SeriesApi {
     });
   }
 
-  async episodes(id: number): Promise<Array<Episode>> {
-    return new Promise<Array<Episode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Episode>>>("/episodes", { seriesid: id })
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
-  async wanted(
-    draw: number,
-    start: number,
-    length: number
-  ): Promise<Array<WantedEpisode>> {
+  async wanted(): Promise<Array<WantedEpisode>> {
     return new Promise<Array<WantedEpisode>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedEpisode>>>("/wanted", {
-        draw,
-        start,
-        length,
-      })
+      this.get<DataWrapper<Array<WantedEpisode>>>("/wanted")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -60,9 +40,9 @@ export default class SeriesApi {
     });
   }
 
-  async search(): Promise<never> {
-    return new Promise<never>((resolve, reject) => {
-      this.get<never>("search_wanted_series")
+  async search(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.get<void>("search_wanted_series")
         .then((result) => {
           resolve();
         })
@@ -72,9 +52,9 @@ export default class SeriesApi {
     });
   }
 
-  async download(request: SeriesSubDownloadRequest): Promise<never> {
-    return new Promise<never>((resolve, reject) => {
-      this.postForm<never>("episodes_subtitles_download", request)
+  async download(request: SeriesSubDownloadRequest): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm<void>("episodes_subtitles_download", request)
         .then((result) => {
           resolve();
         })

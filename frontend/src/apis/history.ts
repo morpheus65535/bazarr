@@ -18,9 +18,9 @@ export default class HistoryApi {
     });
   }
 
-  async series(): Promise<Array<SeriesHistory>> {
-    return new Promise<Array<SeriesHistory>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SeriesHistory>>>("/series")
+  async series(): Promise<Array<EpisodeHistory>> {
+    return new Promise<Array<EpisodeHistory>>((resolve, reject) => {
+      this.get<DataWrapper<Array<EpisodeHistory>>>("/series")
         .then((result) => {
           resolve(result.data.data);
         })

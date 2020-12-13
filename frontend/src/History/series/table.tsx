@@ -12,7 +12,7 @@ import {
 } from "../../Components";
 
 interface Props {
-  seriesHistory: AsyncState<SeriesHistory[]>;
+  seriesHistory: AsyncState<EpisodeHistory[]>;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -25,8 +25,8 @@ function mapStateToProps({ series }: StoreState) {
 const Table: FunctionComponent<Props> = (props) => {
   const { seriesHistory } = props;
 
-  const columns: Column<SeriesHistory>[] = React.useMemo<
-    Column<SeriesHistory>[]
+  const columns: Column<EpisodeHistory>[] = React.useMemo<
+    Column<EpisodeHistory>[]
   >(
     () => [
       {

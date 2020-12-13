@@ -793,10 +793,8 @@ class EpisodesHistory(Resource):
                                            "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
         for item in episode_history:
             item['raw_timestamp'] = item['timestamp']
-            item['timestamp'] = "<div title='" + \
-                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
-                                "' data-toggle='tooltip' data-placement='left'>" + \
-                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            item['timestamp'] = pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))
+
             if item['language']:
                 language = item['language'].split(':')
                 item['language'] = {"name": language_from_alpha2(language[0]),
@@ -1630,8 +1628,6 @@ class HistoryStats(Resource):
 class WantedSeries(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
 
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
@@ -1641,7 +1637,7 @@ class WantedSeries(Resource):
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT " + length + " OFFSET " + start)
+                                " ORDER BY table_episodes._rowid_ ")
 
         for item in data:
             # Parse missing subtitles
@@ -1677,13 +1673,9 @@ class WantedSeries(Resource):
 class WantedMovies(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
-                                start)
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
 
         for item in data:
             # Parse missing subtitles
@@ -1994,7 +1986,7 @@ api.add_resource(SubMods, '/subtitles/mods')
 api.add_resource(Series, '/series')
 # api.add_resource(SeriesEditor, '/series_editor')
 # api.add_resource(SeriesEditSave, '/series_edit_save')
-api.add_resource(Episodes, '/series/episodes')
+api.add_resource(Episodes, '/episodes')
 
 # api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
 # api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
@@ -2003,7 +1995,7 @@ api.add_resource(Episodes, '/series/episodes')
 # api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 # api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
 # api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
-# api.add_resource(EpisodesHistory, '/episodes_history')
+api.add_resource(EpisodesHistory, '/episodes/history')
 # api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')

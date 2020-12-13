@@ -15,12 +15,12 @@ export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
 export const updateWantedSeriesList = createAsyncAction(
   UPDATE_SERIES_WANTED_LIST,
   // TODO: Hardcode to 0 - 25
-  () => apis.series.wanted(0, 0, 25)
+  () => apis.series.wanted()
 );
 
 export const updateEpisodeList = createAsyncAction1(
   UPDATE_SERIES_EPISODE_LIST,
-  (id: number) => apis.series.episodes(id)
+  (id: number) => apis.episodes.all(id)
 );
 
 export const updateHistorySeriesList = createAsyncAction(

@@ -26,7 +26,7 @@ interface BasicHistory {
   upgradable: boolean;
 }
 
-interface SeriesHistory extends BasicHistory {
+interface EpisodeHistory extends BasicHistory {
   episodeTitle: string;
   path: string;
   episode_number: string;

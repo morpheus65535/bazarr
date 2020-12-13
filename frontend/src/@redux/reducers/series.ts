@@ -59,7 +59,7 @@ const reducer = handleActions<SeriesState, any>(
       },
     },
     [UPDATE_SERIES_HISTORY_LIST]: {
-      next(state, action: AsyncAction<SeriesHistory[]>) {
+      next(state, action: AsyncAction<EpisodeHistory[]>) {
         return {
           ...state,
           historyList: mapToAsyncState(action, state.historyList.items),

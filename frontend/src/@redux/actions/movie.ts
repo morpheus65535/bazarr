@@ -12,7 +12,7 @@ export const updateMovieList = createAsyncAction(UPDATE_MOVIE_LIST, () =>
 
 export const updateWantedMovieList = createAsyncAction(
   UPDATE_MOVIE_WANTED_LIST,
-  () => apis.movie.wanted(0, 0, 50)
+  () => apis.movie.wanted()
 );
 
 export const updateHistoryMovieList = createAsyncAction(

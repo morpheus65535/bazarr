@@ -18,17 +18,9 @@ export default class MovieApi {
     });
   }
 
-  async wanted(
-    draw: number,
-    start: number,
-    length: number
-  ): Promise<Array<WantedMovie>> {
+  async wanted(): Promise<Array<WantedMovie>> {
     return new Promise<Array<WantedMovie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<WantedMovie>>>("/wanted", {
-        draw,
-        start,
-        length,
-      })
+      this.get<DataWrapper<Array<WantedMovie>>>("/wanted")
         .then((result) => {
           resolve(result.data.data);
         })
