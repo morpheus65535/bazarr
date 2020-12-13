@@ -29,7 +29,7 @@ interface SeriesState {
   seriesList: AsyncState<Array<Series>>;
   wantedSeriesList: AsyncState<Array<WantedEpisode>>;
   episodeList: AsyncState<Map<number, Array<Episode>>>;
-  historyList: AsyncState<Array<EpisodeHistory>>;
+  historyList: AsyncState<Array<SeriesHistory>>;
 }
 
 interface MovieState {

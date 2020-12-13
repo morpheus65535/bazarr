@@ -18,7 +18,10 @@ import {
   ActionIcon,
   AsyncStateOverlay,
   SubtitleToolModal,
+  EpisodeHistoryModal,
 } from "../../Components";
+
+import apis from "../../apis";
 
 interface Props {
   id: string;
@@ -35,6 +38,11 @@ const Table: FunctionComponent<Props> = (props) => {
   const id = Number.parseInt(props.id);
   const list = props.episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
+
+  const [history, setHistory] = useState<AsyncState<Array<EpisodeHistory>>>({
+    updating: true,
+    items: [],
+  });
 
   const [modal, setModal] = useState<string>("");
   const [modalItem, setModalItem] = useState<Episode | undefined>(undefined);
@@ -110,7 +118,24 @@ const Table: FunctionComponent<Props> = (props) => {
           return (
             <React.Fragment>
               <ActionIcon icon={faUser}></ActionIcon>
-              <ActionIcon icon={faHistory}></ActionIcon>
+              <ActionIcon
+                icon={faHistory}
+                onClick={() => {
+                  const id = row.value;
+                  showModal("history", row.row.original);
+
+                  setHistory({
+                    updating: true,
+                    items: [],
+                  });
+                  apis.episodes.history(id).then((data) => {
+                    setHistory({
+                      updating: false,
+                      items: data,
+                    });
+                  });
+                }}
+              ></ActionIcon>
               <ActionIcon icon={faCloudUploadAlt}></ActionIcon>
               <ActionIcon
                 icon={faBriefcase}
@@ -142,10 +167,16 @@ const Table: FunctionComponent<Props> = (props) => {
       <GroupTable options={options}></GroupTable>
       <SubtitleToolModal
         show={modal === "tools"}
-        title={`${modalItem?.title}`}
+        title={`Tools - ${modalItem?.title}`}
         subtitles={modalItem?.subtitles ?? []}
         onClose={closeModal}
       ></SubtitleToolModal>
+      <EpisodeHistoryModal
+        show={modal === "history"}
+        title={`History - ${modalItem?.title}`}
+        history={history}
+        onClose={closeModal}
+      ></EpisodeHistoryModal>
     </AsyncStateOverlay>
   );
 };

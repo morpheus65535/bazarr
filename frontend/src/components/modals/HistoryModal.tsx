@@ -58,3 +58,56 @@ export const MovieHistoryModal: FunctionComponent<
     </BasicModal>
   );
 };
+
+interface EpisodeHistoryProps {
+  history: AsyncState<EpisodeHistory[]>;
+}
+
+export const EpisodeHistoryModal: FunctionComponent<
+  ModalProps & EpisodeHistoryProps
+> = (props) => {
+  const { history } = props;
+
+  const columns = useMemo<Column<EpisodeHistory>[]>(
+    () => [
+      {
+        accessor: "action",
+        Cell: (row) => {
+          return <HistoryIcon action={row.value}></HistoryIcon>;
+        },
+      },
+      {
+        Header: "Language",
+        accessor: (d) => d.language.name,
+      },
+      {
+        Header: "Provider",
+        accessor: "provider",
+      },
+      {
+        Header: "Score",
+        accessor: "score",
+      },
+      {
+        Header: "Date",
+        accessor: "timestamp",
+      },
+      {
+        // Actions
+        accessor: "sonarrEpisodeId",
+        Cell: (row) => {
+          return null;
+        },
+      },
+    ],
+    []
+  );
+
+  return (
+    <BasicModal {...props}>
+      <AsyncStateOverlay state={history}>
+        <BasicTable options={{ columns, data: history.items }}></BasicTable>
+      </AsyncStateOverlay>
+    </BasicModal>
+  );
+};

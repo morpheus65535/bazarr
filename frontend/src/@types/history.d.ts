@@ -10,23 +10,31 @@
 interface BasicHistory {
   action: number;
   blacklisted: boolean;
-  description: string;
   exist: boolean;
   language: ExtendLanguage;
   mapped_path: string;
   mapped_subtitles_path: string;
-  monitored: boolean;
   provider?: string;
-  raw_timestamp: number;
+  // raw_timestamp: number;
   score?: string; // TODO: Fix
   subs_id?: string;
   subtitles_path: string;
   tags: string[];
   timestamp: string;
-  upgradable: boolean;
 }
 
 interface EpisodeHistory extends BasicHistory {
+  sonarrEpisodeId: number;
+  sonarrSeriesId: number;
+}
+
+interface ExtendHistory extends BasicHistory {
+  description: string;
+  monitored: boolean;
+  upgradable: boolean;
+}
+
+interface SeriesHistory extends ExtendHistory {
   episodeTitle: string;
   path: string;
   episode_number: string;
@@ -35,7 +43,7 @@ interface EpisodeHistory extends BasicHistory {
   sonarrSeriesId: number;
 }
 
-interface MovieHistory extends BasicHistory {
+interface MovieHistory extends ExtendHistory {
   title: string;
   radarrId: number;
   video_path: string;
