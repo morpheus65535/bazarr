@@ -390,12 +390,17 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
 
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
+                if 'hash' not in matches:
+                    not_matched = scores - matches
+                else:
+                    not_matched = set()
+                s.score = score
+
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')
-
-                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
-                not_matched = scores - matches
-                s.score = score
+                else:
+                    not_matched.add('hearing_impaired')
 
                 releases = []
                 if hasattr(s, 'release_info'):
