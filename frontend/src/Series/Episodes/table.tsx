@@ -23,6 +23,8 @@ import {
 
 import apis from "../../apis";
 
+import { updateAsyncState } from "../../utilites";
+
 interface Props {
   id: string;
   episodeList: AsyncState<Map<number, Episode[]>>;
@@ -124,16 +126,7 @@ const Table: FunctionComponent<Props> = (props) => {
                   const id = row.value;
                   showModal("history", row.row.original);
 
-                  setHistory({
-                    updating: true,
-                    items: [],
-                  });
-                  apis.episodes.history(id).then((data) => {
-                    setHistory({
-                      updating: false,
-                      items: data,
-                    });
-                  });
+                  updateAsyncState(apis.episodes.history(id), setHistory, []);
                 }}
               ></ActionIcon>
               <ActionIcon icon={faCloudUploadAlt}></ActionIcon>

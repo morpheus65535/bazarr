@@ -29,6 +29,8 @@ import {
 import Table from "./table";
 import apis from "../../apis";
 
+import { updateAsyncState } from "../../utilites";
+
 interface Params {
   id: string;
 }
@@ -60,6 +62,13 @@ class MovieDetailView extends React.Component<Props, State> {
         items: [],
       },
     };
+  }
+
+  setHistory(history: AsyncState<MovieHistory[]>) {
+    this.setState({
+      ...this.state,
+      history,
+    });
   }
 
   showModal(key: string) {
@@ -112,15 +121,11 @@ class MovieDetailView extends React.Component<Props, State> {
             <ContentHeaderButton
               iconProps={{ icon: faHistory }}
               onClick={() => {
-                apis.movie.history(id).then((items) => {
-                  this.setState({
-                    ...this.state,
-                    history: {
-                      updating: false,
-                      items,
-                    },
-                  });
-                });
+                updateAsyncState(
+                  apis.movie.history(id),
+                  this.setHistory.bind(this),
+                  []
+                );
                 this.showModal("history");
               }}
             >
