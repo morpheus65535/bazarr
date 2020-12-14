@@ -572,30 +572,6 @@ class SubtitleNameInfo(Resource):
         else:
             return '', 400
 
-class EpisodesSubtitlesDelete(Resource):
-    @authenticate
-    def delete(self):
-        episodePath = request.form.get('episodePath')
-        language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        subtitlesPath = request.form.get('subtitlesPath')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-
-        result = delete_subtitles(media_type='series',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=episodePath,
-                                  subtitles_path=subtitlesPath,
-                                  sonarr_series_id=sonarrSeriesId,
-                                  sonarr_episode_id=sonarrEpisodeId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
-
 
 class EpisodesSubtitlesDownload(Resource):
     @authenticate
@@ -715,7 +691,9 @@ class EpisodesSubtitlesManualDownload(Resource):
         return '', 204
 
 
-class EpisodesSubtitlesUpload(Resource):
+# POST: Upload Subtitles
+# DELETE: Delete Subtitles
+class EpisodesSubtitles(Resource):
     @authenticate
     def post(self):
         episodePath = request.form.get('episodePath')
@@ -725,8 +703,8 @@ class EpisodesSubtitlesUpload(Resource):
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'on' else False
         upload = request.files.get('upload')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+        sonarrSeriesId = request.form.get('seriesId')
+        sonarrEpisodeId = request.form.get('episodeId')
         title = request.form.get('title')
         audioLanguage = request.form.get('audioLanguage')
 
@@ -765,6 +743,30 @@ class EpisodesSubtitlesUpload(Resource):
             pass
 
         return '', 204
+
+    @authenticate
+    def delete(self):
+        episodePath = request.form.get('episodePath')
+        language = request.form.get('language')
+        forced = request.form.get('forced')
+        hi = request.form.get('hi')
+        subtitlesPath = request.form.get('subtitlesPath')
+        sonarrSeriesId = request.form.get('sonarrSeriesId')
+        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+
+        result = delete_subtitles(media_type='series',
+                                  language=language,
+                                  forced=forced,
+                                  hi=hi,
+                                  media_path=episodePath,
+                                  subtitles_path=subtitlesPath,
+                                  sonarr_series_id=sonarrSeriesId,
+                                  sonarr_episode_id=sonarrEpisodeId)
+        if result:
+            return '', 202
+        else:
+            return '', 204
+
 
 
 class EpisodesScanDisk(Resource):
@@ -996,6 +998,11 @@ class Movies(Resource):
 
         hi = request.form.get('hi')
         forced = request.form.get('forced')
+
+        if forced == "on":
+            forced = "True"
+        else:
+            forced = "False"
 
         if hi == "on":
             hi = "True"
@@ -1987,12 +1994,11 @@ api.add_resource(Series, '/series')
 # api.add_resource(SeriesEditor, '/series_editor')
 # api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
+api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
 
-# api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
 # api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
 # api.add_resource(EpisodesSubtitlesManualSearch, '/episodes_subtitles_manual_search')
 # api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_download')
-# api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
 # api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
 # api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(EpisodesHistory, '/episodes/history')

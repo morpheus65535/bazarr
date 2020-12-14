@@ -74,8 +74,12 @@ const Editor: FunctionComponent<EditorProps & ModalProps> = (props) => {
           <Col sm={colSize} className={colTitleClass}>
             Forced
           </Col>
-          {/* TODO: Make it useable */}
-          <Col>{item?.forced}</Col>
+          <Col>
+            <Form.Check
+              type="checkbox"
+              defaultChecked={item?.forced}
+            ></Form.Check>
+          </Col>
         </Row>
       </Container>
     </BasicModal>

@@ -14,34 +14,9 @@ import {
 import Table from "./table";
 
 interface Props {}
-interface State {
-  modal?: Movie;
-}
-class MovieView extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
+class MovieView extends React.Component<Props> {
 
-    this.state = {
-      modal: undefined,
-    };
-  }
-
-  onMovieEditClick(movie: Movie) {
-    this.setState({
-      ...this.state,
-      modal: movie,
-    });
-  }
-
-  onMovieEditClose() {
-    this.setState({
-      ...this.state,
-      modal: undefined,
-    });
-  }
   render() {
-    const { modal } = this.state;
-
     return (
       <Container fluid>
         <Helmet>
@@ -55,13 +30,8 @@ class MovieView extends React.Component<Props, State> {
           </ContentHeader>
         </Row>
         <Row>
-          <Table openMovieEditor={this.onMovieEditClick.bind(this)}></Table>
+          <Table></Table>
         </Row>
-        <ItemEditorModal
-          show={modal !== undefined}
-          title={modal?.title}
-          onClose={this.onMovieEditClose.bind(this)}
-        ></ItemEditorModal>
       </Container>
     );
   }

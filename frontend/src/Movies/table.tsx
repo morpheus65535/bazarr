@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -9,6 +9,7 @@ import {
   ActionIcon,
   AsyncStateOverlay,
   BooleanIndicator,
+  ItemEditorModal,
 } from "../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,7 +24,6 @@ import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 interface Props {
   movies: AsyncState<Movie[]>;
-  openMovieEditor?: (movie: Movie) => void;
 }
 
 function mapStateToProps({ movie }: StoreState) {
@@ -34,7 +34,19 @@ function mapStateToProps({ movie }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movies, openMovieEditor: onOpenMovieEditor } = props;
+  const { movies } = props;
+
+  const [modal, setModal] = useState<string>("");
+  const [item, setItem] = useState<Movie | undefined>(undefined);
+
+  const showModal = (key: string, item: Movie) => {
+    setItem(item);
+    setModal(key);
+  };
+
+  const hideModal = () => {
+    setModal("");
+  };
 
   const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
     () => [
@@ -128,14 +140,12 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => (
           <ActionIcon
             icon={faWrench}
-            onClick={(e) =>
-              onOpenMovieEditor && onOpenMovieEditor(row.row.original)
-            }
+            onClick={(e) => showModal("edit", row.row.original)}
           ></ActionIcon>
         ),
       },
     ],
-    [onOpenMovieEditor]
+    []
   );
 
   return (
@@ -144,6 +154,12 @@ const Table: FunctionComponent<Props> = (props) => {
         emptyText="No Movies Found"
         options={{ columns, data: movies.items }}
       ></BasicTable>
+      <ItemEditorModal
+        show={modal === "edit"}
+        title={item?.title}
+        item={item}
+        onClose={hideModal}
+      ></ItemEditorModal>
     </AsyncStateOverlay>
   );
 };

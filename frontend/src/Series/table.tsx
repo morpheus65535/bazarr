@@ -1,10 +1,11 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Column } from "react-table";
 import {
   BasicTable,
   ActionIcon,
   AsyncStateOverlay,
   BooleanIndicator,
+  ItemEditorModal,
 } from "../Components";
 
 import { connect } from "react-redux";
@@ -21,7 +22,6 @@ import { Badge, ProgressBar } from "react-bootstrap";
 
 interface Props {
   series: AsyncState<Series[]>;
-  openSeriesEditor?: (series: Series) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -32,7 +32,19 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series, openSeriesEditor } = props;
+  const { series } = props;
+
+  const [modal, setModal] = useState<string>("");
+  const [item, setItem] = useState<Series | undefined>(undefined);
+
+  const showModal = (key: string, item: Series) => {
+    setItem(item);
+    setModal(key);
+  };
+
+  const hideModal = () => {
+    setModal("");
+  };
 
   const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
     () => [
@@ -117,9 +129,12 @@ const Table: FunctionComponent<Props> = (props) => {
             }/${episodeFileCount}`;
           }
 
+          const color = progress === 1.0 ? "info" : "warning"
+
           return (
             <ProgressBar
               className="my-a"
+              variant={color}
               min={0}
               max={1}
               now={progress}
@@ -134,13 +149,13 @@ const Table: FunctionComponent<Props> = (props) => {
           <ActionIcon
             icon={faWrench}
             onClick={(e) => {
-              openSeriesEditor && openSeriesEditor(row.row.original);
+              showModal("edit", row.row.original);
             }}
           ></ActionIcon>
         ),
       },
     ],
-    [openSeriesEditor]
+    []
   );
 
   return (
@@ -149,6 +164,12 @@ const Table: FunctionComponent<Props> = (props) => {
         emptyText="No Series Found"
         options={{ columns, data: series.items }}
       ></BasicTable>
+      <ItemEditorModal
+        show={modal === "edit"}
+        title={item?.title}
+        item={item}
+        onClose={hideModal}
+      ></ItemEditorModal>
     </AsyncStateOverlay>
   );
 };

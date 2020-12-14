@@ -13,39 +13,13 @@ import Table from "./table";
 
 interface Props {}
 
-interface State {
-  modal?: Series;
-}
-
 function mapStateToProps({ series }: StoreState) {
   return {};
 }
 
-class SeriesView extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      modal: undefined,
-    };
-  }
-
-  onSeriesEditClick(series: Series) {
-    this.setState({
-      ...this.state,
-      modal: series,
-    });
-  }
-
-  onSeriesEditorClose() {
-    this.setState({
-      ...this.state,
-      modal: undefined,
-    });
-  }
+class SeriesView extends React.Component<Props> {
 
   render(): JSX.Element {
-    const { modal } = this.state;
-
     return (
       <Container fluid>
         <Helmet>
@@ -59,13 +33,8 @@ class SeriesView extends React.Component<Props, State> {
           </ContentHeader>
         </Row>
         <Row>
-          <Table openSeriesEditor={this.onSeriesEditClick.bind(this)}></Table>
+          <Table></Table>
         </Row>
-        <ItemEditorModal
-          show={modal !== undefined}
-          title={modal?.title}
-          onClose={this.onSeriesEditorClose.bind(this)}
-        ></ItemEditorModal>
       </Container>
     );
   }
