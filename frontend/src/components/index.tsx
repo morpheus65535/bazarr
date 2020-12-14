@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { Badge, Spinner, Button, Row, Col, Form } from "react-bootstrap";
 import {
-  faCheckCircle,
-  faTimesCircle,
+  faCheck,
+  faTimes,
   faTrash,
   faDownload,
   faUser,
@@ -34,12 +34,10 @@ export const ActionBadge: FunctionComponent<{
   );
 };
 
-interface ActionIconDefinitions {
+export const ActionIcon: FunctionComponent<{
   icon: IconDefinition;
   onClick?: (e: MouseEvent) => void;
-}
-
-export const ActionIcon: FunctionComponent<ActionIconDefinitions> = (props) => {
+}> = (props) => {
   const { icon, onClick } = props;
   return (
     <ActionBadge onClick={onClick}>
@@ -118,7 +116,7 @@ export const SettingGroup: FunctionComponent<{ name: string }> = (props) => {
   );
 };
 
-export const LoadingIndicator: FunctionComponent = (props) => {
+export const LoadingIndicator: FunctionComponent = () => {
   return (
     <div className="d-flex flex-grow-1 justify-content-center my-5">
       <Spinner animation="border"></Spinner>
@@ -130,9 +128,7 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
   props
 ) => {
   return (
-    <FontAwesomeIcon
-      icon={props.value ? faCheckCircle : faTimesCircle}
-    ></FontAwesomeIcon>
+    <FontAwesomeIcon icon={props.value ? faCheck : faTimes}></FontAwesomeIcon>
   );
 };
 

@@ -19,6 +19,8 @@ import {
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
+
 interface Props {
   movies: AsyncState<Movie[]>;
   openMovieEditor?: (movie: Movie) => void;
@@ -41,11 +43,11 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           const monitored = row.value;
 
-          if (monitored) {
-            return <FontAwesomeIcon icon={faBookmark}></FontAwesomeIcon>;
-          } else {
-            return <span></span>;
-          }
+          return (
+            <FontAwesomeIcon
+              icon={monitored ? faBookmark : farBookmark}
+            ></FontAwesomeIcon>
+          );
         },
       },
       {
@@ -81,34 +83,30 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Subtitles",
+        Header: "Languages",
         accessor: "languages",
         Cell: (row) => {
-          const languages = row.value;
-          if (languages instanceof Array) {
-            const items = languages.map(
-              (val: Language): JSX.Element => (
-                <Badge className="mx-1" key={val.name} variant="secondary">
+          const { missing_subtitles } = row.row.original;
+
+          // Subtitles
+          const languages = row.row.original.languages.map(
+            (val: Language, idx: number): JSX.Element => {
+              const missing = missing_subtitles.find(
+                (item) => item.code2 === val.code2
+              );
+              return (
+                <Badge
+                  className="mx-1"
+                  key={`${idx}-sub`}
+                  variant={missing ? "warning" : "secondary"}
+                >
                   {val.code2}
                 </Badge>
-              )
-            );
-            return items;
-          } else {
-            return <span />;
-          }
-        },
-      },
-      {
-        Header: "Missing",
-        accessor: "missing_subtitles",
-        Cell: (row) => {
-          const subtitles = row.value;
-          return subtitles.map((val) => (
-            <Badge className="mx-1" key={val.name} variant="secondary">
-              {val.code2}
-            </Badge>
-          ));
+              );
+            }
+          );
+
+          return languages;
         },
       },
       {

@@ -69,7 +69,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
       {
-        Header: "Subtitles",
+        Header: "Languages",
         accessor: "languages",
         Cell: (row) => {
           const languages = row.value;

@@ -8,10 +8,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBookmark,
   faUser,
-  faCloudUploadAlt,
   faBriefcase,
   faHistory,
 } from "@fortawesome/free-solid-svg-icons";
+
+import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 import {
   GroupTable,
@@ -51,7 +52,6 @@ const Table: FunctionComponent<Props> = (props) => {
 
   const closeModal = () => {
     setModal("");
-    setModalItem(undefined);
   };
 
   const showModal = (key: string, item: Episode) => {
@@ -64,7 +64,11 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "monitored",
         Cell: (row) => {
-          return <FontAwesomeIcon icon={faBookmark}></FontAwesomeIcon>;
+          return (
+            <FontAwesomeIcon
+              icon={row.value ? faBookmark : farBookmark}
+            ></FontAwesomeIcon>
+          );
         },
       },
       {
@@ -87,30 +91,30 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         Header: "Subtitles",
-        accessor: "subtitles",
-        Cell: (row) => {
-          const items = row.value.map(
-            (val: Subtitle, idx: number): JSX.Element => (
-              <Badge className="mx-1" key={idx} variant="success">
-                {val.code2}
-              </Badge>
-            )
-          );
-          return items;
-        },
-      },
-      {
-        Header: "Missing",
         accessor: "missing_subtitles",
         Cell: (row) => {
-          const items = row.value.map(
+          const missing = row.value.map(
             (val: Subtitle, idx: number): JSX.Element => (
-              <Badge className="mx-1" key={idx} variant="secondary">
+              <Badge className="mx-1" key={`${idx}-missing`} variant="warning">
                 {val.code2}
               </Badge>
             )
           );
-          return items;
+
+          // Subtitles
+          const subtitles = row.row.original.subtitles.map(
+            (val: Subtitle, idx: number): JSX.Element => (
+              <Badge
+                className="mx-1"
+                key={`${idx}-sub`}
+                variant="secondary"
+              >
+                {val.code2}
+              </Badge>
+            )
+          );
+
+          return [...missing, ...subtitles];
         },
       },
       {
@@ -129,7 +133,6 @@ const Table: FunctionComponent<Props> = (props) => {
                   updateAsyncState(apis.episodes.history(id), setHistory, []);
                 }}
               ></ActionIcon>
-              <ActionIcon icon={faCloudUploadAlt}></ActionIcon>
               <ActionIcon
                 icon={faBriefcase}
                 onClick={() => {
