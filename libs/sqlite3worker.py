@@ -120,7 +120,7 @@ class Sqlite3Worker(threading.Thread):
             query: A sql query with ? placeholders for values.
             values: A tuple of values to replace "?" in query.
         """
-        if query.lower().strip().startswith("select"):
+        if query.lower().strip().startswith(("select", "pragma")):
             try:
                 self.sqlite3_cursor.execute(query, values)
                 if only_one:
@@ -205,7 +205,7 @@ class Sqlite3Worker(threading.Thread):
         token = str(uuid.uuid4())
         # If it's a select we queue it up with a token to mark the results
         # into the output queue so we know what results are ours.
-        if query.lower().strip().startswith(("select", "insert", "update", "delete")):
+        if query.lower().strip().startswith(("select", "insert", "update", "delete", "pragma")):
             self.sql_queue.put((token, query, values, only_one, execute_many), timeout=5)
             return self.query_results(token)
         else:

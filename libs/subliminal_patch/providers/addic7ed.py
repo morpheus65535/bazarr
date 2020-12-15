@@ -90,7 +90,7 @@ class Addic7edProvider(_Addic7edProvider):
         # login
         if self.username and self.password:
             def check_verification(cache_region):
-                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=10,
+                rr = self.session.get(self.server_url + 'panel.php', allow_redirects=False, timeout=60,
                                       headers={"Referer": self.server_url})
                 if rr.status_code == 302:
                     logger.info('Addic7ed: Login expired')
@@ -110,7 +110,7 @@ class Addic7edProvider(_Addic7edProvider):
             tries = 0
             while tries <= 3:
                 tries += 1
-                r = self.session.get(self.server_url + 'login.php', timeout=10, headers={"Referer": self.server_url})
+                r = self.session.get(self.server_url + 'login.php', timeout=60, headers={"Referer": self.server_url})
                 if "g-recaptcha" in r.text or "grecaptcha" in r.text:
                     logger.info('Addic7ed: Solving captcha. This might take a couple of minutes, but should only '
                                 'happen once every so often')
@@ -138,7 +138,7 @@ class Addic7edProvider(_Addic7edProvider):
 
                     data[g] = result
 
-                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=10,
+                r = self.session.post(self.server_url + 'dologin.php', data, allow_redirects=False, timeout=60,
                                       headers={"Referer": self.server_url + "login.php"})
 
                 if "relax, slow down" in r.text:
@@ -230,7 +230,7 @@ class Addic7edProvider(_Addic7edProvider):
         logger.info('Getting show ids')
         region.set(self.last_show_ids_fetch_key, datetime.datetime.now())
 
-        r = self.session.get(self.server_url, timeout=10)
+        r = self.session.get(self.server_url, timeout=60)
         r.raise_for_status()
 
         soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['lxml', 'html.parser'])
@@ -293,7 +293,7 @@ class Addic7edProvider(_Addic7edProvider):
                 headers = {
                     "referer": self.server_url + "srch.php"
                 }
-            r = self.session.get(self.server_url + endpoint, params=params, timeout=10, headers=headers)
+            r = self.session.get(self.server_url + endpoint, params=params, timeout=60, headers=headers)
             r.raise_for_status()
 
             if r.text and "Sorry, your search" not in r.text:
@@ -334,7 +334,7 @@ class Addic7edProvider(_Addic7edProvider):
         logger.info('Getting the page of show id %d, season %d', show_id, season)
         r = self.session.get(self.server_url + 'ajax_loadShow.php',
                              params={'show': show_id, 'season': season},
-                             timeout=10,
+                             timeout=60,
                              headers={
                                  "referer": "%sshow/%s" % (self.server_url, show_id),
                                  "X-Requested-With": "XMLHttpRequest"
@@ -393,7 +393,7 @@ class Addic7edProvider(_Addic7edProvider):
     def download_subtitle(self, subtitle):
         # download the subtitle
         r = self.session.get(self.server_url + subtitle.download_link, headers={'Referer': subtitle.page_link},
-                             timeout=10)
+                             timeout=60)
         r.raise_for_status()
 
         if r.status_code == 304:
