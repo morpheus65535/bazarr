@@ -15,11 +15,7 @@ import json
 import six.moves.urllib.parse
 
 import sys
-if sys.version_info[0] >= 3:
-    import html
-else:
-    from six.moves import html_parser    
-    html = html_parser.HTMLParser()
+import html
 
 from zipfile import ZipFile
 from babelfish import language_converters
