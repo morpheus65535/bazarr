@@ -102,13 +102,19 @@ const Table: FunctionComponent<Props> = (props) => {
           );
 
           // Subtitles
-          const subtitles = row.row.original.subtitles.map(
-            (val: Subtitle, idx: number): JSX.Element => (
-              <Badge className="mx-1" key={`${idx}-sub`} variant="secondary">
-                {val.code2}
-              </Badge>
+          const subtitles = row.row.original.subtitles
+            // TODO: Performance
+            .filter(
+              (val) =>
+                row.value.findIndex((item) => item.code2 === val.code2) === -1
             )
-          );
+            .map(
+              (val: Subtitle, idx: number): JSX.Element => (
+                <Badge className="mx-1" key={`${idx}-sub`} variant="secondary">
+                  {val.code2}
+                </Badge>
+              )
+            );
 
           return [...missing, ...subtitles];
         },
