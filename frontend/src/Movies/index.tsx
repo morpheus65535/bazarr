@@ -15,7 +15,6 @@ import Table from "./table";
 
 interface Props {}
 class MovieView extends React.Component<Props> {
-
   render() {
     return (
       <Container fluid>

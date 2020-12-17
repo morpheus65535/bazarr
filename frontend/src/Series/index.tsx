@@ -18,7 +18,6 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 class SeriesView extends React.Component<Props> {
-
   render(): JSX.Element {
     return (
       <Container fluid>

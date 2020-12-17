@@ -3,7 +3,7 @@ import {
   UPDATE_SERIES_WANTED_LIST,
   UPDATE_SERIES_EPISODE_LIST,
   UPDATE_SERIES_HISTORY_LIST,
-  UPDATE_SERIES_INFO
+  UPDATE_SERIES_INFO,
 } from "../constants";
 
 import apis from "../../apis";

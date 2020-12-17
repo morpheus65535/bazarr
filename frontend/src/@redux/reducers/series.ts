@@ -71,10 +71,14 @@ const reducer = handleActions<SeriesState, any>(
       next(state, action: AsyncAction<Series[]>) {
         return {
           ...state,
-          seriesList: updateAsyncList(action, state.seriesList, "sonarrSeriesId")
+          seriesList: updateAsyncList(
+            action,
+            state.seriesList,
+            "sonarrSeriesId"
+          ),
         };
-      }
-    }
+      },
+    },
   },
   {
     seriesList: { updating: false, items: [] },

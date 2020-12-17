@@ -1,5 +1,4 @@
 import { AsyncAction } from "../types";
-import { clone } from "lodash"
 
 export function mapToAsyncState<Payload>(
   action: AsyncAction<Payload>,
@@ -48,17 +47,17 @@ export function updateAsyncList<T, ID extends keyof T>(
     // TODO: Opti Performance
     const payload = action.payload.item as Array<T>;
     const items = state.items.map((val) => {
-      const idx = payload.findIndex((old) => old[match] === val[match])
+      const idx = payload.findIndex((old) => old[match] === val[match]);
       if (idx !== -1) {
-        return payload[idx]
+        return payload[idx];
       } else {
-        return val
+        return val;
       }
-    })
+    });
     return {
       updating: false,
       lastResult: undefined,
-      items
+      items,
     };
   }
 }

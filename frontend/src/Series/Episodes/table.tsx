@@ -104,11 +104,7 @@ const Table: FunctionComponent<Props> = (props) => {
           // Subtitles
           const subtitles = row.row.original.subtitles.map(
             (val: Subtitle, idx: number): JSX.Element => (
-              <Badge
-                className="mx-1"
-                key={`${idx}-sub`}
-                variant="secondary"
-              >
+              <Badge className="mx-1" key={`${idx}-sub`} variant="secondary">
                 {val.code2}
               </Badge>
             )
