@@ -385,7 +385,12 @@ class Series(Resource):
         hi = request.form.get('hi')
         forced = request.form.get('forced')
 
-        if hi == "on":
+        if forced == "true":
+            forced = "True"
+        else:
+            forced = "False"
+
+        if hi == "true":
             hi = "True"
         else:
             hi = "False"
@@ -474,9 +479,6 @@ class SeriesEditSave(Resource):
 class Episodes(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-
         seriesId = request.args.get('seriesid')
         episodeId = request.args.get('episodeid')
         if episodeId:
@@ -623,9 +625,6 @@ class EpisodesSubtitlesDownload(Resource):
 class EpisodesSubtitlesManualSearch(Resource):
     @authenticate
     def post(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-
         episodePath = request.form.get('episodePath')
         sceneName = request.form.get('sceneName')
         if sceneName == "null":
