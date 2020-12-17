@@ -157,6 +157,7 @@ const Table: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         show={modal === "edit"}
         title={item?.title}
+        key={item?.title}
         item={item}
         onClose={hideModal}
       ></ItemEditorModal>

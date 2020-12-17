@@ -3,6 +3,7 @@ import {
   UPDATE_SERIES_WANTED_LIST,
   UPDATE_SERIES_EPISODE_LIST,
   UPDATE_SERIES_HISTORY_LIST,
+  UPDATE_SERIES_INFO
 } from "../constants";
 
 import apis from "../../apis";
@@ -26,4 +27,9 @@ export const updateEpisodeList = createAsyncAction1(
 export const updateHistorySeriesList = createAsyncAction(
   UPDATE_SERIES_HISTORY_LIST,
   () => apis.history.series()
+);
+
+export const updateSeriesInfo = createAsyncAction1(
+  UPDATE_SERIES_INFO,
+  (id: number) => apis.series.series(id)
 );

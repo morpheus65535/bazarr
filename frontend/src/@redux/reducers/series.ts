@@ -4,8 +4,9 @@ import {
   UPDATE_SERIES_LIST,
   UPDATE_SERIES_WANTED_LIST,
   UPDATE_SERIES_HISTORY_LIST,
+  UPDATE_SERIES_INFO,
 } from "../constants";
-import { mapToAsyncState } from "./mapper";
+import { mapToAsyncState, updateAsyncList } from "./mapper";
 
 import { handleActions } from "redux-actions";
 
@@ -66,6 +67,14 @@ const reducer = handleActions<SeriesState, any>(
         };
       },
     },
+    [UPDATE_SERIES_INFO]: {
+      next(state, action: AsyncAction<Series[]>) {
+        return {
+          ...state,
+          seriesList: updateAsyncList(action, state.seriesList, "sonarrSeriesId")
+        };
+      }
+    }
   },
   {
     seriesList: { updating: false, items: [] },

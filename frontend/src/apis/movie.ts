@@ -6,15 +6,35 @@ export default class MovieApi {
     return apis.axios.get(`/movies${path}`, { params });
   }
 
-  async movies(): Promise<Array<Movie>> {
+  postForm<T>(
+    path: string,
+    formdata?: any,
+    params?: any
+  ): Promise<AxiosResponse<T>> {
+    let form = new FormData();
+
+    for (const key in formdata) {
+      form.append(key, formdata[key]);
+    }
+
+    return apis.axios.post(`/movies${path}`, form, { params });
+  }
+
+  async movies(id?: number): Promise<Array<Movie>> {
     return new Promise<Array<Movie>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Movie>>>("")
+      this.get<DataWrapper<Array<Movie>>>("", { radarrid: id })
         .then((result) => {
           resolve(result.data.data);
         })
         .catch((reason) => {
           reject(reason);
         });
+    });
+  }
+
+  async modify(id: number, form: ItemModifyForm) {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm<void>("", {...form}, { radarrid: id });
     });
   }
 

@@ -6,24 +6,40 @@ export default class SeriesApi {
     return apis.axios.get(`/series${path}`, { params });
   }
 
-  postForm<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+  postForm<T>(
+    path: string,
+    formdata?: any,
+    params?: any
+  ): Promise<AxiosResponse<T>> {
     let form = new FormData();
 
-    for (const key in params) {
-      form.append(key, params[key]);
+    for (const key in formdata) {
+      form.append(key, formdata[key]);
     }
 
-    return apis.axios.post(`/series${path}`, form);
+    return apis.axios.post(`/series${path}`, form, { params });
   }
 
-  async series(): Promise<Array<Series>> {
+  async series(id?: number): Promise<Array<Series>> {
     return new Promise<Array<Series>>((resolve, reject) => {
-      this.get<DataWrapper<Array<Series>>>("")
+      this.get<DataWrapper<Array<Series>>>("", { seriesid: id })
         .then((result) => {
           resolve(result.data.data);
         })
         .catch((reason) => {
           reject(reason);
+        });
+    });
+  }
+
+  async modify(id: number, form: ItemModifyForm) {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm<void>("", { ...form }, { seriesid: id })
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
         });
     });
   }

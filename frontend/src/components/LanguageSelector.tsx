@@ -1,117 +1,102 @@
-import React from "react";
-import { Form, Dropdown, Button } from "react-bootstrap";
+import React, {
+  ChangeEvent,
+  MouseEvent,
+  FunctionComponent,
+  useState,
+  useMemo,
+} from "react";
+import { Form, Dropdown, Button, DropdownProps } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
-import { throttle } from "lodash";
 
-interface DropdownProps {
+interface Props {
   className?: string;
-  languages: ExtendLanguage[];
-  enabled: ExtendLanguage[];
-  onChanged?: (lang: ExtendLanguage[]) => void;
+  avaliable: ExtendLanguage[];
+  defaultSelect: ExtendLanguage[];
+  onChange?: (lang: ExtendLanguage[]) => void;
 }
 
-interface DropdownState {
-  filter: string;
-}
+const LanguageSelector: FunctionComponent<Props> = (props) => {
+  const { className, avaliable, defaultSelect, onChange } = props;
+  const [filter, setFilter] = useState<string>("");
+  const [enabled, setEnabled] = useState<ExtendLanguage[]>(defaultSelect);
 
-export default class LanguageSelector extends React.Component<
-  DropdownProps,
-  DropdownState
-> {
-  constructor(props: DropdownProps) {
-    super(props);
-    this.state = {
-      filter: "",
-    };
-  }
+  const items = useMemo(
+    () =>
+      avaliable
+        .map((lang) => {
+          return {
+            ...lang,
+            enabled: enabled.some((val) => val.name === lang.name),
+          };
+        })
+        .filter((val) => val.name.includes(filter))
+        .map((lang) => (
+          <Dropdown.Item
+            as="button"
+            value={lang.code2}
+            key={lang.name}
+            className="py-2 d-flex justify-content-between align-items-center"
+            onClick={(e: MouseEvent<any>) => {
+              e.preventDefault();
+              if (lang.enabled) {
+                const result = enabled.filter((val) => val.name !== lang.name);
+                setEnabled(result);
+                onChange && onChange(result);
+              } else {
+                const result = enabled.concat(lang);
+                setEnabled(result);
+                onChange && onChange(result);
+              }
+            }}
+          >
+            <span>{lang.name}</span>
+            {lang.enabled && <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>}
+          </Dropdown.Item>
+        )),
+    [avaliable, enabled, filter, onChange]
+  );
 
-  updateFilter = throttle((val: string) => {
-    this.setState({
-      filter: val,
-    });
-  }, 100);
-
-  onFilterChanged(event: React.ChangeEvent<HTMLTextAreaElement>) {
-    const value = event.target.value;
-    this.updateFilter(value);
-  }
-
-  onBtnSelect(event: React.MouseEvent, lang: ExtendLanguage) {
-    event.preventDefault();
-
-    const { enabled } = this.props;
-
-    if (this.props.onChanged) {
-      this.props.onChanged(enabled.concat(lang));
+  const title = useMemo(() => {
+    let name = enabled.map((lang) => lang.name).join(", ");
+    if (name.length === 0) {
+      name = "Nothing Selected";
     }
-  }
+    return name;
+  }, [enabled]);
 
-  itemList(): JSX.Element {
-    const { languages, enabled } = this.props;
-    const { filter } = this.state;
-
-    const enabledSet = new Set(enabled.map((lang) => lang.name));
-
-    const enabledAllList = languages.map((lang) => {
-      return {
-        ...lang,
-        enabled: enabledSet.has(lang.name),
-      };
-    });
-
-    const items: JSX.Element[] = enabledAllList
-      .filter((val) => val.name.includes(filter))
-      .map((val) => (
-        <Dropdown.Item
-          as="button"
-          value={val.code2}
-          key={val.name}
-          className="py-2 d-flex justify-content-between"
-          onClick={(e: any) => this.onBtnSelect(e, val)}
-        >
-          <span>{val.name}</span>
-          {Boolean(val.enabled) === true && (
-            <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
-          )}
-        </Dropdown.Item>
-      ));
-
-    const itemHolderStyle: React.CSSProperties = {
-      maxHeight: 256,
-      overflowY: "scroll",
-    };
-
-    return (
+  return (
+    <Dropdown className={className}>
+      <Dropdown.Toggle as={Button} variant="outline-secondary">
+        <span className="mx-1">{title}</span>
+      </Dropdown.Toggle>
       <Dropdown.Menu>
         <Dropdown.Header>
-          <Form.Control
-            type="text"
-            placeholder="Filter"
-            onChange={this.onFilterChanged.bind(this)}
-          ></Form.Control>
+          {items.length === 0 ? (
+            "No Selectable Items"
+          ) : (
+            <Form.Control
+              type="text"
+              placeholder="Filter"
+              onChange={(e: ChangeEvent<any>) => {
+                setFilter(e.target.value);
+              }}
+            ></Form.Control>
+          )}
         </Dropdown.Header>
-        <div style={itemHolderStyle}>{items}</div>
+        <div
+          style={{
+            maxHeight: 256,
+            maxWidth: 320,
+            overflowY: "scroll",
+          }}
+        >
+          {items}
+        </div>
       </Dropdown.Menu>
-    );
-  }
+    </Dropdown>
+  );
+};
 
-  render() {
-    const { enabled, className } = this.props;
-
-    let title = enabled.map((lang) => lang.name).join(",");
-    if (title.length === 0) {
-      title = "Nothing Selected";
-    }
-
-    return (
-      <Dropdown className={className}>
-        <Dropdown.Toggle as={Button} variant="outline-secondary">
-          <span className="mx-1">{title}</span>
-        </Dropdown.Toggle>
-        {this.itemList()}
-      </Dropdown>
-    );
-  }
-}
+export default LanguageSelector;

@@ -20,8 +20,12 @@ import {
 
 import { Badge, ProgressBar } from "react-bootstrap";
 
+import { updateSeriesInfo } from "../@redux/actions";
+import apis from "../apis";
+
 interface Props {
   series: AsyncState<Series[]>;
+  update: (id: number) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -32,7 +36,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series } = props;
+  const { series, update } = props;
 
   const [modal, setModal] = useState<string>("");
   const [item, setItem] = useState<Series | undefined>(undefined);
@@ -129,7 +133,7 @@ const Table: FunctionComponent<Props> = (props) => {
             }/${episodeFileCount}`;
           }
 
-          const color = progress === 1.0 ? "info" : "warning"
+          const color = progress === 1.0 ? "info" : "warning";
 
           return (
             <ProgressBar
@@ -167,11 +171,18 @@ const Table: FunctionComponent<Props> = (props) => {
       <ItemEditorModal
         show={modal === "edit"}
         title={item?.title}
-        item={item}
         onClose={hideModal}
+        key={item?.title}
+        item={item}
+        onSubmit={(form) => {
+          apis.series.modify(item!.sonarrSeriesId, form).then(() => {
+            update(item!.sonarrSeriesId);
+            hideModal();
+          });
+        }}
       ></ItemEditorModal>
     </AsyncStateOverlay>
   );
 };
 
-export default connect(mapStateToProps)(Table);
+export default connect(mapStateToProps, { update: updateSeriesInfo })(Table);

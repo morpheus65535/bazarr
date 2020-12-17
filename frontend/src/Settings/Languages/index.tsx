@@ -46,8 +46,8 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
         <CommonFormGroup title="Enabled Languages">
           <LanguageSelector
             className="px-0"
-            enabled={enabled}
-            languages={languages}
+            defaultSelect={enabled}
+            avaliable={languages}
           ></LanguageSelector>
         </CommonFormGroup>
       </SettingGroup>
