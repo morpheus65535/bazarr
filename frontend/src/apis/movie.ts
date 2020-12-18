@@ -34,7 +34,9 @@ export default class MovieApi {
 
   async modify(id: number, form: ItemModifyForm) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("", { ...form }, { radarrid: id });
+      this.postForm<void>("", { ...form }, { radarrid: id })
+        .then(() => resolve())
+        .catch((err) => reject(err));
     });
   }
 

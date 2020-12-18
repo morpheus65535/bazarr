@@ -35,12 +35,8 @@ export default class SeriesApi {
   async modify(id: number, form: ItemModifyForm) {
     return new Promise<void>((resolve, reject) => {
       this.postForm<void>("", { ...form }, { seriesid: id })
-        .then(() => {
-          resolve();
-        })
-        .catch((err) => {
-          reject(err);
-        });
+        .then(() => resolve())
+        .catch((err) => reject(err));
     });
   }
 
@@ -59,23 +55,23 @@ export default class SeriesApi {
   async search(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.get<void>("search_wanted_series")
-        .then((result) => {
+        .then(() => {
           resolve();
         })
-        .catch((reason) => {
-          reject(reason);
+        .catch((err) => {
+          reject(err);
         });
     });
   }
 
-  async download(request: SeriesSubDownloadRequest): Promise<void> {
+  async download(form: SeriesDownloadForm): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("episodes_subtitles_download", request)
-        .then((result) => {
+      this.postForm<void>("episodes_subtitles_download", form)
+        .then(() => {
           resolve();
         })
-        .catch((reason) => {
-          reject(reason);
+        .catch((err) => {
+          reject(err);
         });
     });
   }

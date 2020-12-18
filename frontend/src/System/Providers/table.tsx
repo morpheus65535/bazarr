@@ -5,7 +5,7 @@ import { Column } from "react-table";
 import { BasicTable } from "../../Components";
 
 interface Props {
-  providers: SystemProviders[];
+  providers: SystemProvider[];
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -16,8 +16,8 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const columns: Column<SystemProviders>[] = React.useMemo<
-    Column<SystemProviders>[]
+  const columns: Column<SystemProvider>[] = React.useMemo<
+    Column<SystemProvider>[]
   >(
     () => [
       {

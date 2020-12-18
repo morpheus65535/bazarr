@@ -55,7 +55,7 @@ const reducer = handleActions<SystemState, any>(
       next(state, action) {
         return {
           ...state,
-          providers: mapToAsyncState<Array<SystemProviders>>(
+          providers: mapToAsyncState<Array<SystemProvider>>(
             action,
             state.providers.items
           ),

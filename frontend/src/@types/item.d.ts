@@ -104,14 +104,3 @@ interface WantedMovie extends WantedItem {
   // sceneName?: any;
   title: string;
 }
-
-interface SeriesSubDownloadRequest {
-  episodePath: string;
-  sceneName?: string;
-  language: string;
-  hi: boolean;
-  forced: boolean;
-  sonarrSeriesId: number;
-  sonarrEpisodeId: number;
-  title: string;
-}

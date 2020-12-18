@@ -22,7 +22,7 @@ interface SystemState {
   enabledLanguage: Array<ExtendLanguage>;
   status: AsyncState<SystemStatusResult>;
   tasks: AsyncState<Array<SystemTaskResult>>;
-  providers: AsyncState<Array<SystemProviders>>;
+  providers: AsyncState<Array<SystemProvider>>;
 }
 
 interface SeriesState {

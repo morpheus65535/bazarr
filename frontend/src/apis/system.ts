@@ -21,11 +21,11 @@ export default class SystemApi {
   }
 
   async shutdown() {
-    return this.get<never>("shutdown");
+    return this.get<void>("shutdown");
   }
 
   async restart() {
-    return this.get<never>("restart");
+    return this.get<void>("restart");
   }
 
   async languages(enabled: boolean = false) {
@@ -53,8 +53,8 @@ export default class SystemApi {
   }
 
   async providers() {
-    return new Promise<SystemProviders>((resolve, reject) => {
-      this.get<DataWrapper<SystemProviders>>("providers")
+    return new Promise<SystemProvider>((resolve, reject) => {
+      this.get<DataWrapper<SystemProvider>>("providers")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -77,8 +77,8 @@ export default class SystemApi {
   }
 
   async execTasks(id: string) {
-    return new Promise<never>((resolve, reject) => {
-      this.postForm<never>("tasks", { taskid: id })
+    return new Promise<void>((resolve, reject) => {
+      this.postForm<void>("tasks", { taskid: id })
         .then(() => {
           resolve();
         })

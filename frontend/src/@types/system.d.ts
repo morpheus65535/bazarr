@@ -18,8 +18,12 @@ interface SystemTaskResult {
   next_run_time: string;
 }
 
-interface SystemProviders {
+interface SystemProvider {
   name: string;
   status: string;
   retry: string;
+}
+
+interface SystemLog {
+
 }
