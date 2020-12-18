@@ -1,15 +1,16 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button, Container, Row, Col, Form } from "react-bootstrap";
+import { Button, Container, Form } from "react-bootstrap";
 
 import BasicModal, { ModalProps } from "./BasicModal";
 
 import LanguageSelector from "../LanguageSelector";
 
-interface EditorProps {
+interface Props {
   languages: ExtendLanguage[];
   item?: ExtendItem;
-  onSubmit?: (form: ItemModifyForm) => void;
+  submit?: (form: ItemModifyForm) => Promise<void>;
+  onSuccess?: () => void;
 }
 
 interface State {
@@ -25,12 +26,8 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-const colTitleClass = "text-right my-a";
-const rowClass = "py-2";
-const colSize = 3;
-
-class Editor extends React.Component<EditorProps & ModalProps, State> {
-  constructor(props: EditorProps & ModalProps) {
+class Editor extends React.Component<Props & ModalProps, State> {
+  constructor(props: Props & ModalProps) {
     super(props);
 
     this.state = {
@@ -56,8 +53,23 @@ class Editor extends React.Component<EditorProps & ModalProps, State> {
     this.setState(state);
   }
 
+  submitForm() {
+    const { submit, onSuccess } = this.props;
+    if (submit === undefined) return;
+
+    const { enabled, hi, forced } = this.state;
+
+    submit({
+      languages: enabled.map((val) => val.code2 ?? ""),
+      hi,
+      forced,
+    })
+      .then(() => { onSuccess && onSuccess()})
+      .catch((err) => {});
+  }
+
   render() {
-    const { item, languages, onSubmit } = this.props;
+    const { item, languages } = this.props;
 
     const { changed, enabled, hi, forced } = this.state;
 
@@ -66,12 +78,7 @@ class Editor extends React.Component<EditorProps & ModalProps, State> {
         disabled={!changed}
         onClick={(e) => {
           e.preventDefault();
-          onSubmit &&
-            onSubmit({
-              languages: enabled.map((val) => val.code2 ?? ""),
-              hi,
-              forced,
-            });
+          this.submitForm();
         }}
       >
         Save
@@ -81,52 +88,42 @@ class Editor extends React.Component<EditorProps & ModalProps, State> {
     return (
       <BasicModal {...this.props} footer={footer}>
         <Container fluid>
-          <Row className={rowClass}>
-            <Col sm={colSize} className={colTitleClass}>
-              Audio
-            </Col>
-            <Col>{item?.audio_language.name}</Col>
-          </Row>
-          <Row className={rowClass}>
-            <Col sm={colSize} className={colTitleClass}>
-              Languages
-            </Col>
-            <Col>
+          <Form>
+            <Form.Group>
+              <Form.Label>Audio</Form.Label>
+              <Form.Control
+                type="text"
+                disabled
+                defaultValue={item?.audio_language.name}
+              ></Form.Control>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Languages</Form.Label>
               <LanguageSelector
                 avaliable={languages}
                 defaultSelect={enabled}
                 onChange={(val) => this.updateState("enabled", val)}
               ></LanguageSelector>
-            </Col>
-          </Row>
-          <Row className={rowClass}>
-            <Col sm={colSize} className={colTitleClass}>
-              HI
-            </Col>
-            <Col>
+            </Form.Group>
+            <Form.Group>
               <Form.Check
-                type="checkbox"
+                inline
+                label="Hearing Impaired"
                 defaultChecked={hi}
                 onChange={(e) => {
                   this.updateState("hi", e.currentTarget.checked);
                 }}
               ></Form.Check>
-            </Col>
-          </Row>
-          <Row className={rowClass}>
-            <Col sm={colSize} className={colTitleClass}>
-              Forced
-            </Col>
-            <Col>
               <Form.Check
-                type="checkbox"
+                inline
+                label="Forced"
                 defaultChecked={forced}
                 onChange={(e) => {
                   this.updateState("forced", e.currentTarget.checked);
                 }}
               ></Form.Check>
-            </Col>
-          </Row>
+            </Form.Group>
+          </Form>
         </Container>
       </BasicModal>
     );

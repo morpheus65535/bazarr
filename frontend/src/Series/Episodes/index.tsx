@@ -23,6 +23,8 @@ import {
   LoadingIndicator,
 } from "../../Components";
 
+import apis from "../../apis";
+
 import Table from "./table";
 
 interface Params {
@@ -77,6 +79,8 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     const { id } = this.props.match.params;
     const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
 
+    const { updateEpisodeList } = this.props;
+
     const { modal } = this.state;
 
     const details = [
@@ -129,6 +133,12 @@ class SeriesEpisodesView extends React.Component<Props, State> {
             title={item.title}
             item={item}
             onClose={this.closeModal.bind(this)}
+            submit={(form) => apis.series.modify(item.sonarrSeriesId, form)}
+            onSuccess={() => {
+              this.closeModal();
+              // TODO: Websocket
+              updateEpisodeList(item.sonarrSeriesId);
+            }}
           ></ItemEditorModal>
         </Container>
       );

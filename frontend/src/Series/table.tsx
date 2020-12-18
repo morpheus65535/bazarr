@@ -174,11 +174,11 @@ const Table: FunctionComponent<Props> = (props) => {
         onClose={hideModal}
         key={item?.title}
         item={item}
-        onSubmit={(form) => {
-          apis.series.modify(item!.sonarrSeriesId, form).then(() => {
-            update(item!.sonarrSeriesId);
-            hideModal();
-          });
+        submit={(form) => apis.series.modify(item!.sonarrSeriesId, form)}
+        onSuccess={() => {
+          hideModal();
+          // TODO: Websocket
+          update(item!.sonarrSeriesId);
         }}
       ></ItemEditorModal>
     </AsyncStateOverlay>
