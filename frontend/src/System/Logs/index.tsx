@@ -6,10 +6,9 @@ import { Helmet } from "react-helmet";
 import { UpdateSystemLogs } from "../../@redux/actions";
 
 import {
-  faSync,
   faTrash,
   faDownload,
-  faSpinner,
+  faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader, ContentHeaderButton } from "../../Components";
 
@@ -55,21 +54,19 @@ class SystemLogsView extends React.Component<Props, State> {
         <Row>
           <ContentHeader>
             <ContentHeaderButton
-              iconProps={{ icon: faSync, spin: loading }}
+              updating={loading}
+              icon={faSync}
               disabled={loading}
               onClick={update}
             >
               Refresh
             </ContentHeaderButton>
-            <ContentHeaderButton iconProps={{ icon: faDownload }}>
+            <ContentHeaderButton icon={faDownload}>
               Download
             </ContentHeaderButton>
             <ContentHeaderButton
-              disabled={resetting}
-              iconProps={{
-                icon: resetting ? faSpinner : faTrash,
-                spin: resetting,
-              }}
+              updating={resetting}
+              icon={faTrash}
               onClick={() => {
                 this.setState({ ...this.state, resetting: true });
                 SystemApi.deleteLogs().finally(() => {

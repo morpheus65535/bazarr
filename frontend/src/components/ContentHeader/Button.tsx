@@ -4,29 +4,44 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 interface CHButtonProps {
-  iconProps: FontAwesomeIconProps;
-  btnProps?: ButtonProps;
   disabled?: boolean;
+  icon: IconDefinition;
+  updating?: boolean;
+  updatingIcon?: IconDefinition;
   onClick?: (e: MouseEvent) => void;
 }
 
 const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
-  const { children, iconProps, btnProps, disabled, onClick } = props;
+  const {
+    children,
+    icon,
+    disabled,
+    updating,
+    updatingIcon,
+    onClick,
+  } = props;
+
+  let displayIcon = icon;
+  if (updating) {
+    displayIcon = updatingIcon ? updatingIcon : faSpinner;
+  }
 
   return (
     <Button
       variant="dark"
       className="d-flex flex-column"
-      {...btnProps}
-      disabled={disabled}
+      disabled={disabled || updating}
       onClick={onClick}
     >
       <FontAwesomeIcon
         size="lg"
         className="mx-auto my-1"
-        {...iconProps}
+        icon={displayIcon}
+        spin={updating}
       ></FontAwesomeIcon>
       <span className="align-bottom text-themecolor small text-center">
         {children}

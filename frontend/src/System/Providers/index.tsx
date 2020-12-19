@@ -36,13 +36,14 @@ class SystemProvidersView extends React.Component<Props> {
         <Row>
           <ContentHeader>
             <ContentHeaderButton
-              iconProps={{ icon: faSync, spin: loading }}
+              updating={loading}
+              icon={faSync}
               disabled={loading}
               onClick={update}
             >
               Refresh
             </ContentHeaderButton>
-            <ContentHeaderButton iconProps={{ icon: faTrash }}>
+            <ContentHeaderButton icon={faTrash}>
               Reset
             </ContentHeaderButton>
           </ContentHeader>

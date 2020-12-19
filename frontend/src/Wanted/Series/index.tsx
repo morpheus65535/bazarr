@@ -27,7 +27,7 @@ class WantedSeriesView extends React.Component<Props> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton iconProps={{ icon: faSearch }}>
+            <ContentHeaderButton icon={faSearch}>
               Search All
             </ContentHeaderButton>
           </ContentHeader>

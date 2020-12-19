@@ -102,13 +102,13 @@ class MovieDetailView extends React.Component<Props, State> {
 
       const editButton = (
         <React.Fragment>
-          <ContentHeaderButton iconProps={{ icon: faSearch }}>
+          <ContentHeaderButton icon={faSearch}>
             Search
           </ContentHeaderButton>
-          <ContentHeaderButton iconProps={{ icon: faUser }}>
+          <ContentHeaderButton icon={faUser}>
             Manual
           </ContentHeaderButton>
-          <ContentHeaderButton iconProps={{ icon: faCloudUploadAlt }}>
+          <ContentHeaderButton icon={faCloudUploadAlt}>
             Upload
           </ContentHeaderButton>
         </React.Fragment>
@@ -117,12 +117,10 @@ class MovieDetailView extends React.Component<Props, State> {
       const header = (
         <ContentHeader>
           <ContentHeaderGroup pos="start">
-            <ContentHeaderButton iconProps={{ icon: faSync }}>
-              Scan Disk
-            </ContentHeaderButton>
+            <ContentHeaderButton icon={faSync}>Scan Disk</ContentHeaderButton>
             {allowEdit && editButton}
             <ContentHeaderButton
-              iconProps={{ icon: faHistory }}
+              icon={faHistory}
               onClick={() => {
                 updateAsyncState(
                   MoviesApi.history(id),
@@ -135,7 +133,7 @@ class MovieDetailView extends React.Component<Props, State> {
               History
             </ContentHeaderButton>
             <ContentHeaderButton
-              iconProps={{ icon: faToolbox }}
+              icon={faToolbox}
               onClick={() => this.showModal("tools")}
             >
               Tools
@@ -143,7 +141,7 @@ class MovieDetailView extends React.Component<Props, State> {
           </ContentHeaderGroup>
           <ContentHeaderGroup pos="end">
             <ContentHeaderButton
-              iconProps={{ icon: faWrench }}
+              icon={faWrench}
               onClick={() => this.showModal("edit")}
             >
               Edit Movie

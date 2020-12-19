@@ -23,7 +23,7 @@ class MovieView extends React.Component<Props> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton iconProps={{ icon: faList }}>
+            <ContentHeaderButton icon={faList}>
               Mass Edit
             </ContentHeaderButton>
           </ContentHeader>

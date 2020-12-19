@@ -227,7 +227,7 @@ class SettingsSubtitlesView extends React.Component<Props, State> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton iconProps={{ icon: faSave }}>
+            <ContentHeaderButton icon={faSave}>
               Save
             </ContentHeaderButton>
           </ContentHeader>

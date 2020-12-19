@@ -94,19 +94,19 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     const header = (
       <ContentHeader>
         <ContentHeaderGroup pos="start">
-          <ContentHeaderButton iconProps={{ icon: faSync }}>
+          <ContentHeaderButton icon={faSync}>
             Scan Disk
           </ContentHeaderButton>
-          <ContentHeaderButton iconProps={{ icon: faSearch }}>
+          <ContentHeaderButton icon={faSearch}>
             Search
           </ContentHeaderButton>
         </ContentHeaderGroup>
         <ContentHeaderGroup pos="end">
-          <ContentHeaderButton iconProps={{ icon: faCloudUploadAlt }}>
+          <ContentHeaderButton icon={faCloudUploadAlt}>
             Upload
           </ContentHeaderButton>
           <ContentHeaderButton
-            iconProps={{ icon: faWrench }}
+            icon={faWrench}
             onClick={() => this.showModal("edit")}
           >
             Edit Series
