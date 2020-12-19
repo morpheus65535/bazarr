@@ -23,6 +23,7 @@ interface SystemState {
   status: AsyncState<SystemStatusResult>;
   tasks: AsyncState<Array<SystemTaskResult>>;
   providers: AsyncState<Array<SystemProvider>>;
+  logs: AsyncState<Array<SystemLog>>;
 }
 
 interface SeriesState {

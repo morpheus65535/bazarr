@@ -4,6 +4,7 @@ import {
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
   UPDATE_SYSTEM_PROVIDERS,
+  UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
@@ -55,10 +56,15 @@ const reducer = handleActions<SystemState, any>(
       next(state, action) {
         return {
           ...state,
-          providers: mapToAsyncState<Array<SystemProvider>>(
-            action,
-            state.providers.items
-          ),
+          providers: mapToAsyncState(action, state.providers.items),
+        };
+      },
+    },
+    [UPDATE_SYSTEM_LOGS]: {
+      next(state, action) {
+        return {
+          ...state,
+          logs: mapToAsyncState(action, state.logs.items),
         };
       },
     },
@@ -102,6 +108,10 @@ const reducer = handleActions<SystemState, any>(
       items: [],
     },
     providers: {
+      updating: false,
+      items: [],
+    },
+    logs: {
       updating: false,
       items: [],
     },

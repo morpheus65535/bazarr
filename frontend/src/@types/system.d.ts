@@ -24,6 +24,10 @@ interface SystemProvider {
   retry: string;
 }
 
-interface SystemLog {
+type SystemLogType = "INFO" | "WARNING" | "ERROR" | "DEBUG";
 
+interface SystemLog {
+  type: SystemLogType;
+  timestamp: string;
+  message: string;
 }

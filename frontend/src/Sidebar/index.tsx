@@ -107,6 +107,10 @@ const Sidebar: FunctionComponent<Props> = ({
             to: "/system/tasks",
           },
           {
+            name: "Logs",
+            to: "/system/logs",
+          },
+          {
             name: "Providers",
             to: "/system/providers",
             badge:

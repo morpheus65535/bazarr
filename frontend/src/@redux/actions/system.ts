@@ -3,6 +3,7 @@ import {
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
   UPDATE_SYSTEM_PROVIDERS,
+  UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
 } from "../constants";
 
@@ -27,6 +28,11 @@ export const UpdateSystemProviders = createAsyncAction(
   UPDATE_SYSTEM_PROVIDERS,
   () => apis.system.providers()
 );
+
+export const UpdateSystemLogs = createAsyncAction(
+  UPDATE_SYSTEM_LOGS,
+  () => apis.system.logs()
+)
 
 export const ExecSystemTask = (id: string): Action<string> => {
   apis.system.execTasks(id);

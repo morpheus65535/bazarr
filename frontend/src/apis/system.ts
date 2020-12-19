@@ -1,4 +1,5 @@
 import { AxiosResponse } from "axios";
+import { ThemeConsumer } from "react-bootstrap/esm/ThemeProvider";
 import apis from ".";
 
 export default class SystemApi {
@@ -53,14 +54,22 @@ export default class SystemApi {
   }
 
   async providers() {
-    return new Promise<SystemProvider>((resolve, reject) => {
-      this.get<DataWrapper<SystemProvider>>("providers")
+    return new Promise<Array<SystemProvider>>((resolve, reject) => {
+      this.get<DataWrapper<Array<SystemProvider>>>("providers")
         .then((result) => {
           resolve(result.data.data);
         })
         .catch((reason) => {
           reject(reason);
         });
+    });
+  }
+
+  async logs() {
+    return new Promise<Array<SystemLog>>((resolve, reject) => {
+      this.get<DataWrapper<Array<SystemLog>>>("logs")
+        .then((result) => resolve(result.data.data))
+        .catch((err) => reject(err));
     });
   }
 

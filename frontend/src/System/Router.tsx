@@ -4,6 +4,7 @@ import { Route, Switch } from "react-router-dom";
 import Status from "./Status";
 import Tasks from "./Tasks";
 import Providers from "./Providers";
+import Logs from "./Logs"
 
 class Router extends React.Component {
   render(): JSX.Element {
@@ -17,6 +18,9 @@ class Router extends React.Component {
         </Route>
         <Route exact path="/system/providers">
           <Providers></Providers>
+        </Route>
+        <Route exact path="/system/logs">
+          <Logs></Logs>
         </Route>
       </Switch>
     );
