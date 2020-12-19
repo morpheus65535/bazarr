@@ -998,12 +998,12 @@ class Movies(Resource):
         hi = request.form.get('hi')
         forced = request.form.get('forced')
 
-        if forced == "on":
+        if forced == "true":
             forced = "True"
         else:
             forced = "False"
 
-        if hi == "on":
+        if hi == "true":
             hi = "True"
         else:
             hi = "False"
