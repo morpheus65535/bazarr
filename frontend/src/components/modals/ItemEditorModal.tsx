@@ -1,6 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button, Container, Form } from "react-bootstrap";
+import { Button, Container, Form, Spinner } from "react-bootstrap";
 
 import BasicModal, { ModalProps } from "./BasicModal";
 
@@ -14,6 +14,7 @@ interface Props {
 }
 
 interface State {
+  updating: boolean;
   changed: boolean;
   enabled: ExtendLanguage[];
   hi: boolean;
@@ -41,6 +42,7 @@ class Editor extends React.Component<Props & ModalProps, State> {
       hi: props.item?.hearing_impaired ?? false,
       forced: props.item?.forced ?? false,
       changed: false,
+      updating: false,
     };
   }
 
@@ -59,34 +61,48 @@ class Editor extends React.Component<Props & ModalProps, State> {
 
     const { enabled, hi, forced } = this.state;
 
+    this.updateState("updating", true);
+
     submit({
       languages: enabled.map((val) => val.code2 ?? ""),
       hi,
       forced,
     })
-      .then(() => { onSuccess && onSuccess()})
-      .catch((err) => {});
+      .then(() => {
+        onSuccess && onSuccess();
+      })
+      .catch((err) => {})
+      .finally(() => this.updateState("updating", false));
   }
 
   render() {
     const { item, languages } = this.props;
 
-    const { changed, enabled, hi, forced } = this.state;
+    const { changed, enabled, hi, forced, updating } = this.state;
 
     const footer = (
       <Button
-        disabled={!changed}
+        disabled={!changed || updating}
         onClick={(e) => {
           e.preventDefault();
           this.submitForm();
         }}
       >
-        Save
+        {updating ? (
+          <Spinner
+            as="span"
+            role="status"
+            size="sm"
+            animation="border"
+          ></Spinner>
+        ) : (
+          <span>Save</span>
+        )}
       </Button>
     );
 
     return (
-      <BasicModal {...this.props} footer={footer}>
+      <BasicModal closeable={!updating} {...this.props} footer={footer}>
         <Container fluid>
           <Form>
             <Form.Group>
