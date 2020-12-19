@@ -218,9 +218,9 @@ class SystemLogs(Resource):
             for line in file.readlines():
                 lin = []
                 lin = line.split('|')
-                log = dict()
+                log = dict() 
                 log["timestamp"] = lin[0]
-                log["type"] = lin[1]
+                log["type"] = lin[1].rstrip()
                 log["message"] = lin[3]
                 logs.append(log)
             logs.reverse()
