@@ -12,13 +12,7 @@ export default class SystemApi {
     formdata?: any,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    let form = new FormData();
-
-    for (const key in formdata) {
-      form.append(key, formdata[key]);
-    }
-
-    return apis.axios.post(`/system/${path}`, form, { params });
+    return apis.post(`/system/${path}`, formdata, params);
   }
 
   async shutdown() {

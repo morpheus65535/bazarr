@@ -11,13 +11,7 @@ export default class MovieApi {
     formdata?: any,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    let form = new FormData();
-
-    for (const key in formdata) {
-      form.append(key, formdata[key]);
-    }
-
-    return apis.axios.post(`/movies${path}`, form, { params });
+    return apis.post(`/movies${path}`, formdata, params);
   }
 
   async movies(id?: number): Promise<Array<Movie>> {

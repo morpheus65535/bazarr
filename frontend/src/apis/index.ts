@@ -29,6 +29,21 @@ class Api {
     }
   }
 
+  post(path: string, formdata?: any, params?: any) {
+    let form = new FormData();
+
+    for (const key in formdata) {
+      const data = formdata[key];
+      if (data instanceof Array) {
+        data.forEach((val) => form.append(key, val));
+      } else {
+        form.append(key, formdata[key]);
+      }
+    }
+
+    return this.axios.post(path, form, { params });
+  }
+
   recreateAxios(url: string, apikey: string) {
     this.axios = Axios.create({
       baseURL: url,

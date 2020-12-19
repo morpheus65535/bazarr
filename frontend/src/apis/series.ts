@@ -11,13 +11,7 @@ export default class SeriesApi {
     formdata?: any,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    let form = new FormData();
-
-    for (const key in formdata) {
-      form.append(key, formdata[key]);
-    }
-
-    return apis.axios.post(`/series${path}`, form, { params });
+    return apis.post(`/series${path}`, formdata, params);
   }
 
   async series(id?: number): Promise<Array<Series>> {
