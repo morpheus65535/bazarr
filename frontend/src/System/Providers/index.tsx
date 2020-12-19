@@ -43,9 +43,7 @@ class SystemProvidersView extends React.Component<Props> {
             >
               Refresh
             </ContentHeaderButton>
-            <ContentHeaderButton icon={faTrash}>
-              Reset
-            </ContentHeaderButton>
+            <ContentHeaderButton icon={faTrash}>Reset</ContentHeaderButton>
           </ContentHeader>
         </Row>
         <Row>

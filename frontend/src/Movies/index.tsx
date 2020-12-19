@@ -8,7 +8,6 @@ import { faList } from "@fortawesome/free-solid-svg-icons";
 import {
   ContentHeader,
   ContentHeaderButton,
-  ItemEditorModal,
 } from "../Components";
 
 import Table from "./table";
@@ -23,9 +22,7 @@ class MovieView extends React.Component<Props> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton icon={faList}>
-              Mass Edit
-            </ContentHeaderButton>
+            <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
           </ContentHeader>
         </Row>
         <Row>

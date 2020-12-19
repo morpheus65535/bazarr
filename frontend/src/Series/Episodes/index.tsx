@@ -94,12 +94,8 @@ class SeriesEpisodesView extends React.Component<Props, State> {
     const header = (
       <ContentHeader>
         <ContentHeaderGroup pos="start">
-          <ContentHeaderButton icon={faSync}>
-            Scan Disk
-          </ContentHeaderButton>
-          <ContentHeaderButton icon={faSearch}>
-            Search
-          </ContentHeaderButton>
+          <ContentHeaderButton icon={faSync}>Scan Disk</ContentHeaderButton>
+          <ContentHeaderButton icon={faSearch}>Search</ContentHeaderButton>
         </ContentHeaderGroup>
         <ContentHeaderGroup pos="end">
           <ContentHeaderButton icon={faCloudUploadAlt}>

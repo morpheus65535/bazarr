@@ -29,10 +29,9 @@ export const UpdateSystemProviders = createAsyncAction(
   () => SystemApi.providers()
 );
 
-export const UpdateSystemLogs = createAsyncAction(
-  UPDATE_SYSTEM_LOGS,
-  () => SystemApi.logs()
-)
+export const UpdateSystemLogs = createAsyncAction(UPDATE_SYSTEM_LOGS, () =>
+  SystemApi.logs()
+);
 
 export const ExecSystemTask = (id: string): Action<string> => {
   SystemApi.execTasks(id);

@@ -31,4 +31,4 @@ class EpisodeApi {
   }
 }
 
-export default new EpisodeApi()
+export default new EpisodeApi();

@@ -255,9 +255,7 @@ class SettingsGeneralView extends React.Component<Props, State> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton icon={faSave}>
-              Save
-            </ContentHeaderButton>
+            <ContentHeaderButton icon={faSave}>Save</ContentHeaderButton>
           </ContentHeader>
         </Row>
         <Row>

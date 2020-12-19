@@ -167,7 +167,7 @@ const Table: FunctionComponent<Props> = (props) => {
         submit={(form) => MoviesApi.modify(item!.radarrId, form)}
         onSuccess={() => {
           hideModal();
-          update(item!.radarrId)
+          update(item!.radarrId);
         }}
       ></ItemEditorModal>
     </AsyncStateOverlay>

@@ -61,4 +61,4 @@ class MovieApi {
   }
 }
 
-export default new MovieApi()
+export default new MovieApi();

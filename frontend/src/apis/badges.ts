@@ -43,4 +43,4 @@ class BadgesApi {
   }
 }
 
-export default new BadgesApi()
+export default new BadgesApi();

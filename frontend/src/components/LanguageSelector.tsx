@@ -68,7 +68,12 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
 
   return (
     <Dropdown className={className}>
-      <Dropdown.Toggle as={Button} variant="outline-secondary" block className="text-left">
+      <Dropdown.Toggle
+        as={Button}
+        variant="outline-secondary"
+        block
+        className="text-left"
+      >
         <span>{title}</span>
       </Dropdown.Toggle>
       <Dropdown.Menu>

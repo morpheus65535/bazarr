@@ -1,5 +1,4 @@
 import { AxiosResponse } from "axios";
-import { ThemeConsumer } from "react-bootstrap/esm/ThemeProvider";
 import apis from ".";
 
 class SystemApi {

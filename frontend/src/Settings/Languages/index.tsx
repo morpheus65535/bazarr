@@ -77,9 +77,7 @@ class SettingsLanguagesView extends React.Component<Props, {}> {
         </Helmet>
         <Row>
           <ContentHeader>
-            <ContentHeaderButton icon={faSave}>
-              Save
-            </ContentHeaderButton>
+            <ContentHeaderButton icon={faSave}>Save</ContentHeaderButton>
           </ContentHeader>
         </Row>
         <Row>

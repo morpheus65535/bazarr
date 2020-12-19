@@ -71,4 +71,4 @@ class SeriesApi {
   }
 }
 
-export default new SeriesApi()
+export default new SeriesApi();

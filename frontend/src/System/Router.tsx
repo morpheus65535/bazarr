@@ -4,7 +4,7 @@ import { Route, Switch } from "react-router-dom";
 import Status from "./Status";
 import Tasks from "./Tasks";
 import Providers from "./Providers";
-import Logs from "./Logs"
+import Logs from "./Logs";
 
 class Router extends React.Component {
   render(): JSX.Element {

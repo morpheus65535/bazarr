@@ -5,11 +5,7 @@ import { Helmet } from "react-helmet";
 
 import { UpdateSystemLogs } from "../../@redux/actions";
 
-import {
-  faTrash,
-  faDownload,
-  faSync,
-} from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faDownload, faSync } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader, ContentHeaderButton } from "../../Components";
 
 import Table from "./table";

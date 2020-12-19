@@ -31,4 +31,4 @@ class HistoryApi {
   }
 }
 
-export default new HistoryApi()
+export default new HistoryApi();

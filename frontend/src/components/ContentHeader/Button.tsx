@@ -16,14 +16,7 @@ interface CHButtonProps {
 }
 
 const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
-  const {
-    children,
-    icon,
-    disabled,
-    updating,
-    updatingIcon,
-    onClick,
-  } = props;
+  const { children, icon, disabled, updating, updatingIcon, onClick } = props;
 
   let displayIcon = icon;
   if (updating) {

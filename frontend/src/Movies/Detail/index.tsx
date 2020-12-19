@@ -92,7 +92,7 @@ class MovieDetailView extends React.Component<Props, State> {
     const id = Number.parseInt(this.props.match.params.id);
     const item = list.find((val) => val.radarrId === id);
 
-    const { update } = this.props
+    const { update } = this.props;
     const { modal, history } = this.state;
 
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
@@ -102,12 +102,8 @@ class MovieDetailView extends React.Component<Props, State> {
 
       const editButton = (
         <React.Fragment>
-          <ContentHeaderButton icon={faSearch}>
-            Search
-          </ContentHeaderButton>
-          <ContentHeaderButton icon={faUser}>
-            Manual
-          </ContentHeaderButton>
+          <ContentHeaderButton icon={faSearch}>Search</ContentHeaderButton>
+          <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
           <ContentHeaderButton icon={faCloudUploadAlt}>
             Upload
           </ContentHeaderButton>
