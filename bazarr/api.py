@@ -15,6 +15,7 @@ import json
 
 from get_args import args
 from config import settings, base_url, save_settings
+from logger import empty_log
 
 from init import *
 import logging
@@ -225,6 +226,11 @@ class SystemLogs(Resource):
                 logs.append(log)
             logs.reverse()
         return jsonify(data=logs)
+
+    @authenticate
+    def delete(self):
+        empty_log()
+        return '', 204
 
 
 class SystemProviders(Resource):

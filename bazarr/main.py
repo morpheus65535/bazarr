@@ -16,7 +16,6 @@ import calendar
 
 
 from get_args import args
-from logger import empty_log
 from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url, configure_proxy_func
 
 from init import *
@@ -159,13 +158,6 @@ def logout():
         flash("You have been logged out!")
         gc.collect()
         return redirect(url_for('redirect_root'))
-
-
-@app.route('/emptylog')
-@login_required
-def emptylog():
-    empty_log()
-    return '', 200
 
 
 @app.route('/bazarr.log')
