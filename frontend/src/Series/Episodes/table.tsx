@@ -22,7 +22,7 @@ import {
   EpisodeHistoryModal,
 } from "../../Components";
 
-import apis from "../../apis";
+import { EpisodesApi } from "../../apis";
 
 import { updateAsyncState } from "../../utilites";
 
@@ -132,7 +132,7 @@ const Table: FunctionComponent<Props> = (props) => {
                   const id = row.value;
                   showModal("history", row.row.original);
 
-                  updateAsyncState(apis.episodes.history(id), setHistory, []);
+                  updateAsyncState(EpisodesApi.history(id), setHistory, []);
                 }}
               ></ActionIcon>
               <ActionIcon

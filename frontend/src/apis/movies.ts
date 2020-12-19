@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import apis from ".";
 
-export default class MovieApi {
+class MovieApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/movies${path}`, { params });
   }
@@ -60,3 +60,5 @@ export default class MovieApi {
     });
   }
 }
+
+export default new MovieApi()

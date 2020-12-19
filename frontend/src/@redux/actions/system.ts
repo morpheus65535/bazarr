@@ -7,35 +7,35 @@ import {
   EXEC_SYSTEM_TASK,
 } from "../constants";
 
-import apis from "../../apis";
+import { SystemApi } from "../../apis";
 import { createAsyncAction } from "./creator";
 import { Action } from "redux-actions";
 
 export const updateLanguagesList = createAsyncAction(
   UPDATE_LANGUAGES_LIST,
-  (enabled: boolean = false) => apis.system.languages(enabled)
+  (enabled: boolean = false) => SystemApi.languages(enabled)
 );
 
 export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>
-  apis.system.status()
+  SystemApi.status()
 );
 
 export const UpdateSystemTasks = createAsyncAction(UPDATE_SYSTEM_TASKS, () =>
-  apis.system.getTasks()
+  SystemApi.getTasks()
 );
 
 export const UpdateSystemProviders = createAsyncAction(
   UPDATE_SYSTEM_PROVIDERS,
-  () => apis.system.providers()
+  () => SystemApi.providers()
 );
 
 export const UpdateSystemLogs = createAsyncAction(
   UPDATE_SYSTEM_LOGS,
-  () => apis.system.logs()
+  () => SystemApi.logs()
 )
 
 export const ExecSystemTask = (id: string): Action<string> => {
-  apis.system.execTasks(id);
+  SystemApi.execTasks(id);
   return {
     type: EXEC_SYSTEM_TASK,
     payload: id,

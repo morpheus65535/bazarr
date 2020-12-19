@@ -23,7 +23,7 @@ import {
   LoadingIndicator,
 } from "../../Components";
 
-import apis from "../../apis";
+import { SeriesApi } from "../../apis";
 
 import Table from "./table";
 
@@ -133,7 +133,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
             title={item.title}
             item={item}
             onClose={this.closeModal.bind(this)}
-            submit={(form) => apis.series.modify(item.sonarrSeriesId, form)}
+            submit={(form) => SeriesApi.modify(item.sonarrSeriesId, form)}
             onSuccess={() => {
               this.closeModal();
               // TODO: Websocket

@@ -27,7 +27,7 @@ import {
 } from "../../Components";
 
 import Table from "./table";
-import apis from "../../apis";
+import { MoviesApi } from "../../apis";
 
 import { updateAsyncState } from "../../utilites";
 
@@ -122,7 +122,7 @@ class MovieDetailView extends React.Component<Props, State> {
               iconProps={{ icon: faHistory }}
               onClick={() => {
                 updateAsyncState(
-                  apis.movie.history(id),
+                  MoviesApi.history(id),
                   this.setHistory.bind(this),
                   []
                 );

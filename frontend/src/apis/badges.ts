@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import apis from ".";
 
-export default class BadgesApi {
+class BadgesApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/badges/${path}`, { params });
   }
@@ -42,3 +42,5 @@ export default class BadgesApi {
     });
   }
 }
+
+export default new BadgesApi()

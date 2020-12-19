@@ -6,30 +6,30 @@ import {
   UPDATE_SERIES_INFO,
 } from "../constants";
 
-import apis from "../../apis";
+import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
 import { createAsyncAction, createAsyncAction1 } from "./creator";
 
 export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
-  apis.series.series()
+  SeriesApi.series()
 );
 
 export const updateWantedSeriesList = createAsyncAction(
   UPDATE_SERIES_WANTED_LIST,
   // TODO: Hardcode to 0 - 25
-  () => apis.series.wanted()
+  () => SeriesApi.wanted()
 );
 
 export const updateEpisodeList = createAsyncAction1(
   UPDATE_SERIES_EPISODE_LIST,
-  (id: number) => apis.episodes.all(id)
+  (id: number) => EpisodesApi.all(id)
 );
 
 export const updateHistorySeriesList = createAsyncAction(
   UPDATE_SERIES_HISTORY_LIST,
-  () => apis.history.series()
+  () => HistoryApi.series()
 );
 
 export const updateSeriesInfo = createAsyncAction1(
   UPDATE_SERIES_INFO,
-  (id: number) => apis.series.series(id)
+  (id: number) => SeriesApi.series(id)
 );

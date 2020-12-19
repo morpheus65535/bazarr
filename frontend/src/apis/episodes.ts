@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import apis from ".";
 
-export default class EpisodeApi {
+class EpisodeApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/episodes${path}`, { params });
   }
@@ -30,3 +30,5 @@ export default class EpisodeApi {
     });
   }
 }
+
+export default new EpisodeApi()

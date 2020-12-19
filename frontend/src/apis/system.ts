@@ -2,7 +2,7 @@ import { AxiosResponse } from "axios";
 import { ThemeConsumer } from "react-bootstrap/esm/ThemeProvider";
 import apis from ".";
 
-export default class SystemApi {
+class SystemApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/system/${path}`, { params });
   }
@@ -91,3 +91,5 @@ export default class SystemApi {
     });
   }
 }
+
+export default new SystemApi()

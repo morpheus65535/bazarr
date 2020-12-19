@@ -21,7 +21,7 @@ import {
 import { Badge, ProgressBar } from "react-bootstrap";
 
 import { updateSeriesInfo } from "../@redux/actions";
-import apis from "../apis";
+import { SeriesApi } from "../apis";
 
 interface Props {
   series: AsyncState<Series[]>;
@@ -174,7 +174,7 @@ const Table: FunctionComponent<Props> = (props) => {
         onClose={hideModal}
         key={item?.title}
         item={item}
-        submit={(form) => apis.series.modify(item!.sonarrSeriesId, form)}
+        submit={(form) => SeriesApi.modify(item!.sonarrSeriesId, form)}
         onSuccess={() => {
           hideModal();
           // TODO: Websocket

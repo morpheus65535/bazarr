@@ -1,7 +1,7 @@
 import { AxiosResponse } from "axios";
 import apis from ".";
 
-export default class HistoryApi {
+class HistoryApi {
   get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/history${path}`, { params });
   }
@@ -30,3 +30,5 @@ export default class HistoryApi {
     });
   }
 }
+
+export default new HistoryApi()

@@ -5,16 +5,16 @@ import {
 } from "../constants";
 
 import { createAction } from "redux-actions";
-import apis from "../../apis";
+import { BadgesApi } from "../../apis";
 
 export const updateEpisodes = createAction(UPDATE_BADGE_EPISODES, () =>
-  apis.badges.series()
+  BadgesApi.series()
 );
 
 export const updateMovies = createAction(UPDATE_BADGE_MOVIES, () =>
-  apis.badges.movies()
+  BadgesApi.movies()
 );
 
 export const updateProviders = createAction(UPDATE_BADGE_PROVIDERS, () =>
-  apis.badges.providers()
+  BadgesApi.providers()
 );

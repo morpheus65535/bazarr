@@ -1,21 +1,7 @@
 import Axios, { AxiosInstance, CancelTokenSource } from "axios";
-import BadgesApi from "./badges";
-import SystemApi from "./system";
-import SeriesApi from "./series";
-import MovieApi from "./movie";
-import HistoryApi from "./history";
-import EpisodeApi from "./episodes";
-
 class Api {
   axios!: AxiosInstance;
   source!: CancelTokenSource;
-
-  system: SystemApi = new SystemApi();
-  badges: BadgesApi = new BadgesApi();
-  series: SeriesApi = new SeriesApi();
-  episodes: EpisodeApi = new EpisodeApi();
-  movie: MovieApi = new MovieApi();
-  history: HistoryApi = new HistoryApi();
 
   constructor() {
     if (process.env.NODE_ENV === "development") {
@@ -68,3 +54,9 @@ class Api {
 }
 
 export default new Api();
+export { default as BadgesApi } from "./badges";
+export { default as SystemApi } from "./system";
+export { default as SeriesApi } from "./series";
+export { default as MoviesApi } from "./movies";
+export { default as HistoryApi } from "./history";
+export { default as EpisodesApi } from "./episodes";

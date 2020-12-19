@@ -1,4 +1,4 @@
-import apis from "../../apis";
+import { MoviesApi, HistoryApi } from "../../apis";
 import {
   UPDATE_MOVIE_HISTORY_LIST,
   UPDATE_MOVIE_LIST,
@@ -7,15 +7,15 @@ import {
 import { createAsyncAction } from "./creator";
 
 export const updateMovieList = createAsyncAction(UPDATE_MOVIE_LIST, () =>
-  apis.movie.movies()
+  MoviesApi.movies()
 );
 
 export const updateWantedMovieList = createAsyncAction(
   UPDATE_MOVIE_WANTED_LIST,
-  () => apis.movie.wanted()
+  () => MoviesApi.wanted()
 );
 
 export const updateHistoryMovieList = createAsyncAction(
   UPDATE_MOVIE_HISTORY_LIST,
-  () => apis.history.movies()
+  () => HistoryApi.movies()
 );
