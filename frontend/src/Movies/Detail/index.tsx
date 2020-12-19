@@ -28,6 +28,7 @@ import {
 
 import Table from "./table";
 import { MoviesApi } from "../../apis";
+import { updateMovieInfo } from "../../@redux/actions";
 
 import { updateAsyncState } from "../../utilites";
 
@@ -37,6 +38,7 @@ interface Params {
 
 interface Props extends RouteComponentProps<Params> {
   movieList: AsyncState<Movie[]>;
+  update: (id: number) => void;
 }
 
 interface State {
@@ -90,6 +92,7 @@ class MovieDetailView extends React.Component<Props, State> {
     const id = Number.parseInt(this.props.match.params.id);
     const item = list.find((val) => val.radarrId === id);
 
+    const { update } = this.props
     const { modal, history } = this.state;
 
     const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
@@ -166,6 +169,11 @@ class MovieDetailView extends React.Component<Props, State> {
             item={item}
             title={item.title}
             onClose={this.closeModal.bind(this)}
+            submit={(form) => MoviesApi.modify(item!.radarrId, form)}
+            onSuccess={() => {
+              this.closeModal();
+              update(id);
+            }}
           ></ItemEditorModal>
           <SubtitleToolModal
             show={modal === "tools"}
@@ -187,4 +195,6 @@ class MovieDetailView extends React.Component<Props, State> {
   }
 }
 
-export default withRouter(connect(mapStateToProps)(MovieDetailView));
+export default withRouter(
+  connect(mapStateToProps, { update: updateMovieInfo })(MovieDetailView)
+);
