@@ -15,6 +15,10 @@ class SystemApi {
     return apis.post(`/system/${path}`, formdata, params);
   }
 
+  delete<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+    return apis.axios.delete(`/system/${path}`, { params });
+  }
+
   async shutdown() {
     return this.get<void>("shutdown");
   }
@@ -67,6 +71,14 @@ class SystemApi {
     });
   }
 
+  async deleteLogs() {
+    return new Promise<void>((resolve, reject) => {
+      this.delete<void>("logs")
+        .then(() => resolve())
+        .catch((err) => reject(err));
+    });
+  }
+
   async getTasks() {
     return new Promise<SystemTaskResult>((resolve, reject) => {
       this.get<DataWrapper<SystemTaskResult>>("tasks")
@@ -92,4 +104,4 @@ class SystemApi {
   }
 }
 
-export default new SystemApi()
+export default new SystemApi();
