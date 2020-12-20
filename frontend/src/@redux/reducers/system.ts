@@ -6,11 +6,11 @@ import {
   UPDATE_SYSTEM_PROVIDERS,
   UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
+  UPDATE_SYSTEM_SETTINGS,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
 import { handleActions, Action as RAction } from "redux-actions";
-import Providers from "../../System/Providers";
 
 const reducer = handleActions<SystemState, any>(
   {
@@ -34,7 +34,7 @@ const reducer = handleActions<SystemState, any>(
       next(state, action) {
         return {
           ...state,
-          status: mapToAsyncState<SystemStatusResult>(
+          status: mapToAsyncState<SystemStatusResult | null>(
             action,
             state.status.items
           ),
@@ -68,6 +68,14 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
+    [UPDATE_SYSTEM_SETTINGS]: {
+      next(state, action) {
+        return {
+          ...state,
+          settings: mapToAsyncState(action, state.settings.items),
+        };
+      },
+    },
     [EXEC_SYSTEM_TASK]: {
       next(state, action) {
         const { payload } = action as RAction<string>;
@@ -93,15 +101,7 @@ const reducer = handleActions<SystemState, any>(
     enabledLanguage: [],
     status: {
       updating: false,
-      items: {
-        bazarr_config_directory: "",
-        bazarr_directory: "",
-        bazarr_version: "",
-        operating_system: "",
-        python_version: "",
-        radarr_version: "",
-        sonarr_version: "",
-      },
+      items: null,
     },
     tasks: {
       updating: false,
@@ -114,6 +114,10 @@ const reducer = handleActions<SystemState, any>(
     logs: {
       updating: false,
       items: [],
+    },
+    settings: {
+      updating: false,
+      items: null,
     },
   }
 );

@@ -16,7 +16,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 
 interface Props {
-  status: SystemStatusResult;
+  status: SystemStatusResult | null;
   update: () => void;
 }
 
@@ -66,38 +66,30 @@ class SystemStatusView extends React.Component<Props, {}> {
     this.props.update();
   }
   render(): JSX.Element {
-    const {
-      bazarr_version,
-      sonarr_version,
-      radarr_version,
-      operating_system,
-      python_version,
-      bazarr_config_directory,
-      bazarr_directory,
-    } = this.props.status;
+    const status = this.props.status;
 
     const about: JSX.Element = (
       <SettingGroup name="About">
         <InfoRow title="Bazarr Version">
-          <span>{bazarr_version}</span>
+          <span>{status?.bazarr_version}</span>
         </InfoRow>
         <InfoRow title="Sonarr Version">
-          <span>{sonarr_version}</span>
+          <span>{status?.sonarr_version}</span>
         </InfoRow>
         <InfoRow title="Radarr Version">
-          <span>{radarr_version}</span>
+          <span>{status?.radarr_version}</span>
         </InfoRow>
         <InfoRow title="Operating System">
-          <span>{operating_system}</span>
+          <span>{status?.operating_system}</span>
         </InfoRow>
         <InfoRow title="Python Version">
-          <span>{python_version}</span>
+          <span>{status?.python_version}</span>
         </InfoRow>
         <InfoRow title="Bazarr Directory">
-          <span>{bazarr_directory}</span>
+          <span>{status?.bazarr_directory}</span>
         </InfoRow>
         <InfoRow title="Bazarr Config Directory">
-          <span>{bazarr_config_directory}</span>
+          <span>{status?.bazarr_config_directory}</span>
         </InfoRow>
       </SettingGroup>
     );

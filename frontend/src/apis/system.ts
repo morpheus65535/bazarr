@@ -26,6 +26,16 @@ class SystemApi {
     return this.get<void>("restart");
   }
 
+  async settings() {
+    return new Promise<SystemSettings>((resolve, reject) => {
+      this.get<SystemSettings>("settings")
+        .then((result) => {
+          resolve(result.data);
+        })
+        .catch(reject);
+    });
+  }
+
   async languages(enabled: boolean = false) {
     return new Promise<Array<ExtendLanguage>>((resolve, reject) => {
       this.get<Array<ExtendLanguage>>("languages", { enabled })

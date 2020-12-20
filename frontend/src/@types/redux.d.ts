@@ -20,10 +20,11 @@ interface BadgeState {
 interface SystemState {
   languages: AsyncState<Array<ExtendLanguage>>;
   enabledLanguage: Array<ExtendLanguage>;
-  status: AsyncState<SystemStatusResult>;
+  status: AsyncState<SystemStatusResult | null>;
   tasks: AsyncState<Array<SystemTaskResult>>;
   providers: AsyncState<Array<SystemProvider>>;
   logs: AsyncState<Array<SystemLog>>;
+  settings: AsyncState<SystemSettings | null>;
 }
 
 interface SeriesState {

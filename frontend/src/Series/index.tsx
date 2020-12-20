@@ -4,10 +4,7 @@ import { Container, Row } from "react-bootstrap";
 import { faList } from "@fortawesome/free-solid-svg-icons";
 import { Helmet } from "react-helmet";
 
-import {
-  ContentHeader,
-  ContentHeaderButton,
-} from "../Components";
+import { ContentHeader, ContentHeaderButton } from "../Components";
 import Table from "./table";
 
 interface Props {}

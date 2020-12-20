@@ -1,11 +1,21 @@
 import React from "react";
 import { Route, Switch } from "react-router-dom";
 
+import { connect } from "react-redux";
+import { UpdateSystemSettings } from "../@redux/actions";
+
 import General from "./General";
 import Languages from "./Languages";
 import Subtitles from "./Subtitles";
 
-class Router extends React.Component {
+interface Props {
+  update: () => void;
+}
+
+class Router extends React.Component<Props> {
+  componentDidMount() {
+    this.props.update();
+  }
   render(): JSX.Element {
     return (
       <Switch>
@@ -23,4 +33,4 @@ class Router extends React.Component {
   }
 }
 
-export default Router;
+export default connect(null, { update: UpdateSystemSettings })(Router);

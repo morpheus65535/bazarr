@@ -5,10 +5,7 @@ import { Helmet } from "react-helmet";
 
 import { faList } from "@fortawesome/free-solid-svg-icons";
 
-import {
-  ContentHeader,
-  ContentHeaderButton,
-} from "../Components";
+import { ContentHeader, ContentHeaderButton } from "../Components";
 
 import Table from "./table";
 
