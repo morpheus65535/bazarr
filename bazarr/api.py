@@ -14,7 +14,7 @@ import re
 import json
 
 from get_args import args
-from config import settings, base_url, save_settings
+from config import settings, base_url, save_settings, get_settings
 from logger import empty_log
 
 from init import *
@@ -177,13 +177,15 @@ class ResetProviders(Resource):
     def post(self):
         reset_throttled_providers()
         return '', 200
+class Settings(Resource):
+    @authenticate
+    def get(self):
+        data=get_settings()
+        return jsonify(data)
 
-
-class SaveSettings(Resource):
     @authenticate
     def post(self):
         save_settings(zip(request.form.keys(), request.form.listvalues()))
-
         return '', 200
 
 
@@ -1983,7 +1985,7 @@ api.add_resource(Search, '/search')
 
 api.add_resource(ResetProviders, '/providers/reset')
 
-api.add_resource(SaveSettings, '/settings')
+api.add_resource(Settings, '/settings')
 
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')

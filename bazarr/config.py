@@ -176,6 +176,31 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url
 
 
+def get_settings():
+    result = dict()
+    sections = settings.sections()
+
+    for sec in sections:
+        sec_values = settings.items(sec, False)
+        values_dict = dict()
+
+        for sec_val in sec_values:
+            key = sec_val[0]
+            value = sec_val[1]
+            # Do some postprocessings
+            if value == '':
+                value = None
+            elif value == 'True':
+                value = True
+            elif value == 'False':
+                value = False
+            
+            values_dict[key] = value
+        
+        result[sec] = values_dict
+
+    return result
+
 def save_settings(settings_items):
     from database import database
 
