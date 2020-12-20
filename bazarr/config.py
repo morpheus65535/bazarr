@@ -1,6 +1,7 @@
 # coding=utf-8
 import hashlib
 import os
+import ast
 
 from subliminal.cache import region
 
@@ -175,6 +176,13 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url
 
+jump_keys = ['flask_secret_key',
+                'multithreading',
+                'page_size',
+                'page_size_manual_search',
+                'throtteled_providers',
+                'apikey',
+                'password']
 
 def get_settings():
     result = dict()
@@ -187,13 +195,27 @@ def get_settings():
         for sec_val in sec_values:
             key = sec_val[0]
             value = sec_val[1]
+
+            if key in jump_keys:
+                continue
+
             # Do some postprocessings
-            if value == '':
-                value = None
+            if value == '' or value == 'None':
+                continue
             elif value == 'True':
                 value = True
             elif value == 'False':
                 value = False
+            elif (value[0] == '[' and value[-1] == ']'):
+                value = ast.literal_eval(value)
+            elif value.find(',') != -1:
+                value = value.split(',')
+                pass
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    pass
             
             values_dict[key] = value
         
