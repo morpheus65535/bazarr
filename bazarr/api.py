@@ -177,7 +177,7 @@ class ResetProviders(Resource):
     def post(self):
         reset_throttled_providers()
         return '', 200
-class Settings(Resource):
+class SystemSettings(Resource):
     @authenticate
     def get(self):
         data=get_settings()
@@ -1985,7 +1985,7 @@ api.add_resource(Search, '/search')
 
 api.add_resource(ResetProviders, '/providers/reset')
 
-api.add_resource(Settings, '/settings')
+api.add_resource(SystemSettings, '/system/settings')
 
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
