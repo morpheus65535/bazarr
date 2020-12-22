@@ -104,7 +104,7 @@
             events.on('event', function (event) {
                 var event_json = JSON.parse(event);
                 if (event_json.type === 'movieBlacklist') {
-                    $('#blacklist_movies').DataTable().ajax.reload(resetPaging = false);
+                    $('#blacklist_movies').DataTable().ajax.reload(null, false);
                     $('[data-toggle="tooltip"]').tooltip({html: true});
                 }
             });
