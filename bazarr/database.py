@@ -2,6 +2,7 @@ import os
 import ast
 import sqlite3
 import logging
+import json
 
 from sqlite3worker import Sqlite3Worker
 
@@ -192,7 +193,7 @@ def db_upgrade():
             # Create profiles
             new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
             database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
-                             "?,null,?)", (new_profile_name, str(profile_items),))
+                             "?,null,?)", (new_profile_name, json.dumps(profile_items),))
             created_profile_id = database.execute("SELECT profileId FROM table_languages_profiles WHERE name = ?",
                                                   (new_profile_name,), only_one=True)['profileId']
             # Assign profiles to series and movies

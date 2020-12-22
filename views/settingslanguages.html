@@ -200,7 +200,7 @@
                                     Languages
                                 </div>
                                 <div class="col-sm-8">
-                                    <table class="table table-striped" id="languages_profiles" style="width:100%;">
+                                    <table class="table table-striped" id="add_languages_profiles" style="width:100%;">
                                         <thead>
                                         <tr>
                                             <th>Language</th>
@@ -218,7 +218,7 @@
                                     Language cutoff
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_path_bazarr" name="add_path_bazarr" value="">
+                                    <input type="text" class="form-control" id="add_language_cutoff" name="add_language_cutoff" value="">
                                 </div>
                             </div>
                             <input type="hidden" id="add_profile_id" value="" />
@@ -237,7 +237,7 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Path Mapping</h5><br>
+                    <h5 class="modal-title">Edit Languages Profile</h5><br>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -247,21 +247,41 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Path for Sonarr
+                                    Profile name
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="edit_path_sonarr" name="edit_path_sonarr" value="">
+                                    <input type="text" class="form-control" id="edit_profile_name" name="edit_profile_name" value="">
                                 </div>
                             </div>
                             <br>
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Path for Bazarr
+                                    Languages
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="edit_path_bazarr" name="edit_path_bazarr" value="">
+                                    <table class="table table-striped" id="edit_languages_profiles" style="width:100%;">
+                                        <thead>
+                                        <tr>
+                                            <th>Id</th>
+                                            <th>Language</th>
+                                            <th>Forced</th>
+                                            <th>Hearing-Impaired</th>
+                                            <th>Audio Exclude</th>
+                                        </tr>
+                                        </thead>
+                                    </table>
                                 </div>
                             </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-3 text-right">
+                                    Language cutoff
+                                </div>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control" id="edit_language_cutoff" name="edit_language_cutoff" value="">
+                                </div>
+                            </div>
+                            <input type="hidden" id="edit_profile_id" value="" />
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -373,7 +393,6 @@
                     { data: null,
                         render: function(data) {
                             var languages = '';
-                            console.log(data);
                             $(eval(data.items)).each(function (index, value) {
                                 if (value.forced == 'True') {
                                     languages += '<span class="badge badge-secondary"' + ((data.cutoff && value.id === data.cutoff) ? ' style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + '</span> ';
@@ -404,8 +423,27 @@
                     extend: 'selected',
                     text: 'Edit',
                     action: function () {
-                        $('#edit_path_sonarr').val(table.row( { selected: true } ).data()[0]);
-                        $('#edit_path_bazarr').val(table.row( { selected: true } ).data()[1]);
+                        $('#edit_profile_name').val(table.row( { selected: true } ).data()['name']);
+                        var items = $.parseJSON(table.row( { selected: true } ).data()['items']);
+                        $('#edit_languages_profiles').DataTable().destroy();
+                        var table_edit = $('#edit_languages_profiles').DataTable({
+                            searching: false,
+                            ordering: false,
+                            lengthChange: false,
+                            responsive: true,
+                            paging: false,
+                            info: false,
+                            data: items,
+                            columns: [
+                                { data: 'id' },
+                                { data: 'language' },
+                                { data: 'forced' },
+                                { data: 'hi' },
+                                { data: 'audio_exclude' }
+                                ]
+                        });
+                        $('#edit_language_cutoff').val(table.row( { selected: true } ).data()['cutoff']);
+                        $('#edit_profile_id').val(table.row( { selected: true } ).data()['profileId']);
                         $('#editModal').modal('show');
                     }
                 }]
