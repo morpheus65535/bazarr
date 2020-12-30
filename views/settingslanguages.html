@@ -263,6 +263,7 @@
                                         <thead>
                                         <tr>
                                             <th>Id</th>
+                                            <th>Id</th>
                                             <th>Language</th>
                                             <th>Forced</th>
                                             <th>Hearing-Impaired</th>
@@ -278,7 +279,9 @@
                                     Language cutoff
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="edit_language_cutoff" name="edit_language_cutoff" value="">
+                                    <select class="selectpicker show-tick" id="edit_language_cutoff" name="edit_language_cutoff">
+
+                                    </select>
                                 </div>
                             </div>
                             <input type="hidden" id="edit_profile_id" value="" />
@@ -435,19 +438,61 @@
                             info: false,
                             data: items,
                             columns: [
+                                { data: 'id',
+                                    visible: false
+                                },
                                 { data: 'id' },
-                                { data: 'language' },
-                                { data: 'forced' },
-                                { data: 'hi' },
-                                { data: 'audio_exclude' }
+                                { data: 'language',
+                                    render: function (data) {
+                                        var enabled_languages = Array();
+                                        $('#enabled_languages option:selected').each(function(){
+                                            enabled_languages.push([$(this).val(), $(this).text()]);
+                                        });
+
+                                        var html_dropdown = '<select class="selectpicker show-tick" data-width="fit">';
+                                        for (i = 0; i < enabled_languages.length; i++) {
+                                            html_dropdown += '<option value="' + enabled_languages[i][0] + '"' + ((data == enabled_languages[i][0]) ? ' selected="selected"' : '') + '>' + enabled_languages[i][1] + '</option>';
+                                        }
+                                        html_dropdown += '</select>'
+
+                                        return html_dropdown;
+                                    }
+                                },
+                                { data: 'forced',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                },
+                                { data: 'hi',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                },
+                                { data: 'audio_exclude',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                }
                                 ]
                         });
                         $('#edit_language_cutoff').val(table.row( { selected: true } ).data()['cutoff']);
                         $('#edit_profile_id').val(table.row( { selected: true } ).data()['profileId']);
+                        $('.selectpicker').selectpicker('refresh')
                         $('#editModal').modal('show');
                     }
                 }]
             });
+
+            $('#edit_languages_profiles').DataTable().on( 'draw', function () {
+                $("#edit_language_cutoff").empty();
+                $('#edit_language_cutoff').append('<option value="">Nothing selected</option>');
+
+                var ids = $('#edit_languages_profiles').DataTable().rows().data().pluck( 'id' ).toArray();
+                $(ids).each( function(i, item) {
+                    $('#edit_language_cutoff').append('<option value="' + item + '">' + item + '</option>');
+                });
+                $("#edit_language_cutoff").selectpicker("refresh");
+            } );
 
             // Hide *_div on default-enabled change
             $('#settings-general-serie_default_enabled').on('change', function() {
