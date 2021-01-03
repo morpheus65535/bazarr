@@ -40,6 +40,8 @@ def fix_tv_naming(title):
                                            "Marvel's Jessica Jones": "Jessica Jones",
                                            "DC's Legends of Tomorrow": "Legends of Tomorrow",
                                            "Doctor Who (2005)": "Doctor Who",
+                                           "Star Trek: Deep Space Nine": "Star Trek DS9",
+                                           "Star Trek: The Next Generation": "Star Trek TNG",
                                            }, True)
 
 
