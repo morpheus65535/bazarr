@@ -68,7 +68,6 @@
                             <th>Name</th>
                             <th>Cutoff</th>
                             <th>Languages</th>
-                            <th>Items</th>
                         </tr>
                         </thead>
                     </table>
@@ -203,6 +202,8 @@
                                     <table class="table table-striped" id="add_languages_profiles" style="width:100%;">
                                         <thead>
                                         <tr>
+                                            <th>Id</th>
+                                            <th>Id</th>
                                             <th>Language</th>
                                             <th>Forced</th>
                                             <th>Hearing-Impaired</th>
@@ -218,10 +219,11 @@
                                     Language cutoff
                                 </div>
                                 <div class="col-sm-8">
-                                    <input type="text" class="form-control" id="add_language_cutoff" name="add_language_cutoff" value="">
+                                    <select class="selectpicker show-tick" id="add_language_cutoff" name="add_language_cutoff">
+
+                                    </select>
                                 </div>
                             </div>
-                            <input type="hidden" id="add_profile_id" value="" />
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -279,7 +281,7 @@
                                     Language cutoff
                                 </div>
                                 <div class="col-sm-8">
-                                    <select class="selectpicker show-tick" id="edit_language_cutoff" name="edit_language_cutoff">
+                                    <select class="selectpicker show-tick inline_select_edit" id="edit_language_cutoff" name="edit_language_cutoff">
 
                                     </select>
                                 </div>
@@ -387,7 +389,7 @@
                 },
                 columns: [
                     { data: 'profileId',
-                        visible: false
+                        visible: true
                     },
                     { data: 'name' },
                     { data: 'cutoff',
@@ -407,9 +409,6 @@
                             });
                             return languages;
                         }
-                    },
-                    { data: 'items',
-                        visible: false
                     }
                 ],
                 buttons: [{
@@ -418,6 +417,91 @@
                         if (form_changed) {
                             alert('You must save changes before adding a languages profile.')
                         } else {
+                            $('#add_languages_profiles').DataTable().destroy();
+                            var table_add = $('#add_languages_profiles').DataTable({
+                                dom: 'Bfrtip',
+                                select: {
+                                    style: 'single'
+                                },
+                                language: {
+                                    zeroRecords: 'No Languages In This Profile'
+                                },
+                                searching: false,
+                                ordering: false,
+                                lengthChange: false,
+                                responsive: true,
+                                paging: false,
+                                info: false,
+                                data: null,
+                                columns: [
+                                    { data: 'id',
+                                        visible: false
+                                    },
+                                    { data: 'id' },
+                                    { data: 'language',
+                                        render: function (data) {
+                                            var enabled_languages = Array();
+                                            $('#enabled_languages option:selected').each(function(){
+                                                enabled_languages.push([$(this).val(), $(this).text()]);
+                                            });
+
+                                            var html_dropdown = '<select class="selectpicker show-tick inline_select_add" data-width="fit">';
+                                            for (i = 0; i < enabled_languages.length; i++) {
+                                                html_dropdown += '<option value="' + enabled_languages[i][0] + '"' + ((data == enabled_languages[i][0]) ? ' selected="selected"' : '') + '>' + enabled_languages[i][1] + '</option>';
+                                            }
+                                            html_dropdown += '</select>';
+
+                                            return html_dropdown;
+                                        }
+                                    },
+                                    { data: 'forced',
+                                        render: function(data) {
+                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        }
+                                    },
+                                    { data: 'hi',
+                                        render: function(data) {
+                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        }
+                                    },
+                                    { data: 'audio_exclude',
+                                        render: function(data) {
+                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        }
+                                    }
+                                ],
+                                buttons: [{
+                                    text: 'Add',
+                                    action: function () {
+                                        var language_id = 0;
+                                        if (table_add.rows().data().toArray().length) {
+                                            language_id = Math.max(...table_add.column(0).data().toArray());
+                                        }
+                                        language_id++;
+                                        table_add.row.add({
+                                            id: language_id,
+                                            language: '',
+                                            forced: 'False',
+                                            hi: 'False',
+                                            audio_exclude: 'False'
+                                        }).draw();
+                                        $('.inline_select_add').selectpicker('refresh');
+
+                                        $('.inline_select_add.selectpicker').on('changed.bs.select', function () {
+                                            table_add.row( $(this).closest('tr') ).cell( $(this).closest('td') ).data($(this).val());
+                                            $('.inline_select_add').selectpicker('refresh');
+                                            table_add.draw();
+                                        });
+                                    }
+                                },
+                                {
+                                    extend: 'selected',
+                                    text: 'Delete',
+                                    action: function () {
+                                        table_add.row( { selected: true } ).remove().draw();
+                                    }
+                                }]
+                            });
                             $('#addModal').modal('show');
                         }
                     }
@@ -456,7 +540,7 @@
                                             enabled_languages.push([$(this).val(), $(this).text()]);
                                         });
 
-                                        var html_dropdown = '<select class="selectpicker show-tick inline_select" data-width="fit">';
+                                        var html_dropdown = '<select class="selectpicker show-tick inline_select_edit" data-width="fit">';
                                         for (i = 0; i < enabled_languages.length; i++) {
                                             html_dropdown += '<option value="' + enabled_languages[i][0] + '"' + ((data == enabled_languages[i][0]) ? ' selected="selected"' : '') + '>' + enabled_languages[i][1] + '</option>';
                                         }
@@ -467,24 +551,27 @@
                                 },
                                 { data: 'forced',
                                     render: function(data) {
-                                        return '<select class="selectpicker show-tick inline_select" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        return '<select class="selectpicker show-tick inline_select_edit" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
                                     }
                                 },
                                 { data: 'hi',
                                     render: function(data) {
-                                        return '<select class="selectpicker show-tick inline_select" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        return '<select class="selectpicker show-tick inline_select_edit" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
                                     }
                                 },
                                 { data: 'audio_exclude',
                                     render: function(data) {
-                                        return '<select class="selectpicker show-tick inline_select" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                        return '<select class="selectpicker show-tick inline_select_edit" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
                                     }
                                 }
                             ],
                             buttons: [{
                                 text: 'Add',
                                 action: function () {
-                                    var language_id = Math.max(...table_edit.column(0).data().toArray());
+                                    var language_id = 0;
+                                    if (table_edit.rows().data().toArray().length) {
+                                        language_id = Math.max(...table_edit.column(0).data().toArray());
+                                    }
                                     language_id++;
                                     table_edit.row.add({
                                         id: language_id,
@@ -493,11 +580,11 @@
                                         hi: 'False',
                                         audio_exclude: 'False'
                                     }).draw();
-                                    $('.inline_select').selectpicker('refresh');
+                                    $('.inline_select_edit').selectpicker('refresh');
 
-                                    $('.inline_select.selectpicker').on('changed.bs.select', function () {
+                                    $('.inline_select_edit.selectpicker').on('changed.bs.select', function () {
                                         table_edit.row( $(this).closest('tr') ).cell( $(this).closest('td') ).data($(this).val());
-                                        $('.inline_select').selectpicker('refresh');
+                                        $('.inline_select_edit').selectpicker('refresh');
                                         table_edit.draw();
                                     });
                                 }
@@ -512,12 +599,12 @@
                         });
                         $('#edit_language_cutoff').val(table.row( { selected: true } ).data()['cutoff']);
                         $('#edit_profile_id').val(table.row( { selected: true } ).data()['profileId']);
-                        $('.inline_select').selectpicker('refresh');
+                        $('.inline_select_edit').selectpicker('refresh');
                         $('#editModal').modal('show');
 
-                        $('.inline_select.selectpicker').on('changed.bs.select', function () {
+                        $('.inline_select_edit.selectpicker').on('changed.bs.select', function () {
                             table_edit.row( $(this).closest('tr') ).cell( $(this).closest('td') ).data($(this).val());
-                            $('.inline_select').selectpicker('refresh');
+                            $('.inline_select_edit').selectpicker('refresh');
                             table_edit.draw();
                         });
                     }
@@ -531,6 +618,19 @@
                     }
                 }]
             });
+
+            $('#add_languages_profiles').DataTable().on( 'draw', function () {
+                var previousValue = $("#add_language_cutoff").val();
+                $("#add_language_cutoff").empty();
+                $('#add_language_cutoff').append('<option value="">None</option>');
+
+                var ids = $('#add_languages_profiles').DataTable().rows().data().pluck( 'id' ).toArray();
+                $(ids).each( function(i, item) {
+                    $('#add_language_cutoff').append('<option value="' + item + '">' + item + '</option>');
+                });
+                $("#add_language_cutoff").val(previousValue);
+                $("#add_language_cutoff").selectpicker("refresh");
+            } );
 
             $('#edit_languages_profiles').DataTable().on( 'draw', function () {
                 var previousValue = $("#edit_language_cutoff").val();
@@ -606,7 +706,35 @@
 
             $('#add_save_button').on('click', function(e) {
                 e.preventDefault();
-                table.row.add([ $('#add_path_sonarr').val(), $('#add_path_bazarr').val()]).draw();
+                var table_add = $('#add_languages_profiles').DataTable();
+                var items = [];
+                table_add.rows().every( function (row) {
+                    var row_item = table_add.cells( row, '' ).render( 'display' );
+                    var language = $(row_item[2]).filter('select').selectpicker().val();
+                    var forced = $(row_item[3]).filter('select').val();
+                    var hi = $(row_item[4]).filter('select').val();
+                    var audio_exclude = $(row_item[5]).filter('select').val();
+                    items.push({
+                        id: row_item[1],
+                        language: language,
+                        forced: forced,
+                        hi: hi,
+                        audio_exclude: audio_exclude
+                    });
+                })
+
+                if (table.rows().data().toArray().length === 0) {
+                    var languages_profile_id = 0;
+                } else {
+                    var languages_profile_id = Math.max(...table.column(0).data().toArray());
+                }
+                languages_profile_id++
+                table.row.add({
+                    profileId: languages_profile_id,
+                    name: $('#add_profile_name').val(),
+                    cutoff: $('#add_language_cutoff').val(),
+                    items: JSON.stringify(items)
+                }).draw();
                 $('#addModal').modal('hide');
                 $('#settings_form').trigger('change');
             });
