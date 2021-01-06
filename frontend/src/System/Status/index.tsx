@@ -16,7 +16,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 
 interface Props {
-  status: SystemStatusResult | null;
+  status?: SystemStatusResult;
   update: () => void;
 }
 

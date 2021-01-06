@@ -3,6 +3,9 @@ interface SystemSettings {
   proxy: ProxySettings;
   auth: AuthSettings;
   subsync: SubsyncSettings;
+  analytics: {
+    enabled: boolean;
+  }
 }
 
 // Basic
@@ -64,6 +67,7 @@ interface ProxySettings {
   url: string;
   port: number;
   username?: string;
+  password?: string;
 }
 
 interface AuthSettings {

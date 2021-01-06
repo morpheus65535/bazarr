@@ -34,7 +34,7 @@ const reducer = handleActions<SystemState, any>(
       next(state, action) {
         return {
           ...state,
-          status: mapToAsyncState<SystemStatusResult | null>(
+          status: mapToAsyncState<SystemStatusResult | undefined>(
             action,
             state.status.items
           ),
@@ -101,7 +101,7 @@ const reducer = handleActions<SystemState, any>(
     enabledLanguage: [],
     status: {
       updating: false,
-      items: null,
+      items: undefined,
     },
     tasks: {
       updating: false,
@@ -117,7 +117,7 @@ const reducer = handleActions<SystemState, any>(
     },
     settings: {
       updating: false,
-      items: null,
+      items: undefined,
     },
   }
 );
