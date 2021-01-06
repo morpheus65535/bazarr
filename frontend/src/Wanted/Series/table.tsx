@@ -7,7 +7,6 @@ import { BasicTable, AsyncStateOverlay, ActionBadge } from "../../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { Badge, Button } from "react-bootstrap";
 
 interface Props {
   wanted: AsyncState<WantedEpisode[]>;

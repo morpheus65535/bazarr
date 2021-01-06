@@ -1,7 +1,12 @@
-import React, { FunctionComponent, MouseEvent } from "react";
+import React, { FunctionComponent, MouseEvent, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { Badge, Spinner, Button, Row, Col, Form } from "react-bootstrap";
+import {
+  Badge,
+  Spinner,
+  Button,
+  Dropdown,
+} from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -85,34 +90,67 @@ export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
   }
 };
 
-export const CommonFormGroup: FunctionComponent<{ title: string }> = (
-  props
-) => {
-  const { title, children } = props;
-  return (
-    <Row>
-      <Col sm={3} className="mb-3">
-        <b>{title}</b>
-      </Col>
-      <Form.Group
-        as={Col}
-        sm={7}
-        className="d-flex flex-column common-form-group"
-      >
-        {children}
-      </Form.Group>
-    </Row>
-  );
+type SelectorOptions = {
+  [key: string]: string;
 };
 
-export const SettingGroup: FunctionComponent<{ name: string }> = (props) => {
-  const { name, children } = props;
+export interface SelectorProps {
+  options: SelectorOptions;
+  noneKey?: string;
+  defaultKey?: string;
+  multiply?: boolean;
+  disabled?: boolean;
+  onChanged?: (key: string) => void;
+}
+
+export const Selector: FunctionComponent<SelectorProps> = ({
+  options,
+  noneKey,
+  defaultKey,
+  multiply,
+  disabled,
+  onChanged,
+}) => {
+  const [selectKey, setSelect] = useState(defaultKey ? defaultKey : noneKey);
+  const items = useMemo(() => {
+    const its: JSX.Element[] = [];
+    for (const key in options) {
+      const value = options[key];
+      its.push(
+        <Dropdown.Item
+          key={key}
+          onClick={() => {
+            setSelect(key);
+            onChanged && onChanged(key);
+          }}
+        >
+          {value}
+        </Dropdown.Item>
+      );
+    }
+    return its;
+  }, [options, onChanged]);
+
+  let text: string;
+
+  if (selectKey) {
+    text = options[selectKey];
+  } else {
+    text = "Select...";
+  }
+
   return (
-    <div className="my-4 flex-grow-1">
-      <h4>{name}</h4>
-      <hr></hr>
-      {children}
-    </div>
+    <Dropdown defaultValue={selectKey}>
+      <Dropdown.Toggle
+        disabled={disabled}
+        block
+        className="text-left"
+        variant="outline-secondary"
+      >
+        {text}
+      </Dropdown.Toggle>
+      <Dropdown.Menu>{items}</Dropdown.Menu>
+    </Dropdown>
   );
 };
 

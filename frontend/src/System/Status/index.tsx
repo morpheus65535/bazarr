@@ -4,8 +4,6 @@ import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
-import { SettingGroup } from "../../Components";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
@@ -69,7 +67,7 @@ class SystemStatusView extends React.Component<Props, {}> {
     const status = this.props.status;
 
     const about: JSX.Element = (
-      <SettingGroup name="About">
+      <React.Fragment>
         <InfoRow title="Bazarr Version">
           <span>{status?.bazarr_version}</span>
         </InfoRow>
@@ -89,13 +87,13 @@ class SystemStatusView extends React.Component<Props, {}> {
           <span>{status?.bazarr_directory}</span>
         </InfoRow>
         <InfoRow title="Bazarr Config Directory">
-          <span>{status?.bazarr_config_directory}</span>
+          <span>{status?.bazarr_config_directory}</span>``
         </InfoRow>
-      </SettingGroup>
+      </React.Fragment>
     );
 
     const more: JSX.Element = (
-      <SettingGroup name="More Info">
+      <React.Fragment>
         <InfoRow title="Home Page">
           <IconLabel icon={faPaperPlane}>
             <a
@@ -140,7 +138,7 @@ class SystemStatusView extends React.Component<Props, {}> {
             </a>
           </IconLabel>
         </InfoRow>
-      </SettingGroup>
+      </React.Fragment>
     );
 
     return (
