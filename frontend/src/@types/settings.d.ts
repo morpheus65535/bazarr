@@ -5,7 +5,7 @@ interface SystemSettings {
   subsync: SubsyncSettings;
   analytics: {
     enabled: boolean;
-  }
+  };
 }
 
 // Basic

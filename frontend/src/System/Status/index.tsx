@@ -59,15 +59,18 @@ function IconLabel(props: IconProps): JSX.Element {
   );
 }
 
-const InfoContainer: FunctionComponent<{ title: string }> = ({ title, children }) => {
+const InfoContainer: FunctionComponent<{ title: string }> = ({
+  title,
+  children,
+}) => {
   return (
     <Container className="py-3">
       <h4>{title}</h4>
       <hr></hr>
       {children}
     </Container>
-  )
-}
+  );
+};
 
 class SystemStatusView extends React.Component<Props, {}> {
   componentDidMount() {

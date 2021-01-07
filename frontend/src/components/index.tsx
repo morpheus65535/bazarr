@@ -1,12 +1,7 @@
 import React, { FunctionComponent, MouseEvent, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import {
-  Badge,
-  Spinner,
-  Button,
-  Dropdown,
-} from "react-bootstrap";
+import { Badge, Spinner, Button, Dropdown } from "react-bootstrap";
 import {
   faCheck,
   faTimes,
