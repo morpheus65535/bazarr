@@ -7,12 +7,8 @@ interface Params<T> {
   children?: (item: NonNullable<T>) => JSX.Element;
 }
 
-function defaultExist<T>(item: T) {
-  if (item instanceof Array) {
-    return item.length !== 0;
-  } else {
-    return item !== null && item !== undefined;
-  }
+function defaultExist(item: any) {
+  return item !== null && item !== undefined;
 }
 
 class AsyncStateOverlay<T> extends React.Component<Params<T>> {

@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { Form, Dropdown, Button, DropdownProps } from "react-bootstrap";
+import { Form, Dropdown, Button } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
