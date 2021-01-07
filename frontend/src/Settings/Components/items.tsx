@@ -69,9 +69,6 @@ export const Check: FunctionComponent<CheckProps> = ({
 
 type SelectProps = SelectorProps & BasicInput<string>;
 
-export const Select: FunctionComponent<SelectProps> = ({
-  options,
-  defaultKey,
-}) => {
-  return <Selector options={options} defaultKey={defaultKey}></Selector>;
+export const Select: FunctionComponent<SelectProps> = (props) => {
+  return <Selector {...props}></Selector>;
 };

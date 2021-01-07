@@ -90,7 +90,7 @@ class SettingsSubtitlesView extends React.Component<Props> {
             </Group>
             <Group header="Anti-Captcha Options">
               <Input>
-                <Select options={antiCaptchaOption} noneKey="none"></Select>
+                <Select options={antiCaptchaOption} nullKey="none"></Select>
               </Input>
             </Group>
             <Group header="Performance / Optimization">

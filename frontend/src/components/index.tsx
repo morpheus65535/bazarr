@@ -96,7 +96,7 @@ type SelectorOptions = {
 
 export interface SelectorProps {
   options: SelectorOptions;
-  noneKey?: string;
+  nullKey?: string;
   defaultKey?: string;
   multiply?: boolean;
   disabled?: boolean;
@@ -105,13 +105,13 @@ export interface SelectorProps {
 
 export const Selector: FunctionComponent<SelectorProps> = ({
   options,
-  noneKey,
+  nullKey,
   defaultKey,
   multiply,
   disabled,
   onChanged,
 }) => {
-  const [selectKey, setSelect] = useState(defaultKey ? defaultKey : noneKey);
+  const [selectKey, setSelect] = useState(defaultKey ? defaultKey : nullKey);
   const items = useMemo(() => {
     const its: JSX.Element[] = [];
     for (const key in options) {

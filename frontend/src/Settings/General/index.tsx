@@ -78,7 +78,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           </Group>
           <Group header="Security">
             <Input name="Authentication">
-              <Select options={securityOptions}></Select>
+              <Select options={securityOptions} nullKey="none"></Select>
             </Input>
             <Input name="API Key">
               <Text disabled></Text>
@@ -86,7 +86,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           </Group>
           <Group header="Proxy">
             <Input>
-              <Select options={proxyOptions}></Select>
+              <Select options={proxyOptions} nullKey="none"></Select>
             </Input>
           </Group>
           <Group header="Logging">
