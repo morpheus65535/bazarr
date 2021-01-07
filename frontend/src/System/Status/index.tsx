@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../@redux/actions";
@@ -59,6 +59,16 @@ function IconLabel(props: IconProps): JSX.Element {
   );
 }
 
+const InfoContainer: FunctionComponent<{ title: string }> = ({ title, children }) => {
+  return (
+    <Container className="py-3">
+      <h4>{title}</h4>
+      <hr></hr>
+      {children}
+    </Container>
+  )
+}
+
 class SystemStatusView extends React.Component<Props, {}> {
   componentDidMount() {
     this.props.update();
@@ -67,7 +77,7 @@ class SystemStatusView extends React.Component<Props, {}> {
     const status = this.props.status;
 
     const about: JSX.Element = (
-      <React.Fragment>
+      <InfoContainer title="About">
         <InfoRow title="Bazarr Version">
           <span>{status?.bazarr_version}</span>
         </InfoRow>
@@ -89,11 +99,11 @@ class SystemStatusView extends React.Component<Props, {}> {
         <InfoRow title="Bazarr Config Directory">
           <span>{status?.bazarr_config_directory}</span>``
         </InfoRow>
-      </React.Fragment>
+      </InfoContainer>
     );
 
     const more: JSX.Element = (
-      <React.Fragment>
+      <InfoContainer title="More Info">
         <InfoRow title="Home Page">
           <IconLabel icon={faPaperPlane}>
             <a
@@ -138,7 +148,7 @@ class SystemStatusView extends React.Component<Props, {}> {
             </a>
           </IconLabel>
         </InfoRow>
-      </React.Fragment>
+      </InfoContainer>
     );
 
     return (
