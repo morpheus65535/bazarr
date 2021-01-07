@@ -153,11 +153,15 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 
   return (
-    <AsyncStateOverlay state={movies}>
-      <BasicTable
-        emptyText="No Movies Found"
-        options={{ columns, data: movies.items }}
-      ></BasicTable>
+    <React.Fragment>
+      <AsyncStateOverlay state={movies}>
+        {(data) => (
+          <BasicTable
+            emptyText="No Movies Found"
+            options={{ columns, data }}
+          ></BasicTable>
+        )}
+      </AsyncStateOverlay>
       <ItemEditorModal
         show={modal === "edit"}
         title={item?.title}
@@ -170,7 +174,7 @@ const Table: FunctionComponent<Props> = (props) => {
           update(item!.radarrId);
         }}
       ></ItemEditorModal>
-    </AsyncStateOverlay>
+    </React.Fragment>
   );
 };
 

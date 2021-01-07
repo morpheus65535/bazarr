@@ -163,11 +163,15 @@ const Table: FunctionComponent<Props> = (props) => {
   );
 
   return (
-    <AsyncStateOverlay state={series}>
-      <BasicTable
-        emptyText="No Series Found"
-        options={{ columns, data: series.items }}
-      ></BasicTable>
+    <React.Fragment>
+      <AsyncStateOverlay state={series}>
+        {(data) => (
+          <BasicTable
+            emptyText="No Series Found"
+            options={{ columns, data }}
+          ></BasicTable>
+        )}
+      </AsyncStateOverlay>
       <ItemEditorModal
         show={modal === "edit"}
         title={item?.title}
@@ -181,7 +185,7 @@ const Table: FunctionComponent<Props> = (props) => {
           update(item!.sonarrSeriesId);
         }}
       ></ItemEditorModal>
-    </AsyncStateOverlay>
+    </React.Fragment>
   );
 };
 

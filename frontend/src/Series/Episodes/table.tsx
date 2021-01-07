@@ -161,8 +161,13 @@ const Table: FunctionComponent<Props> = (props) => {
   };
 
   return (
-    <AsyncStateOverlay state={props.episodeList} exist={(item) => item.has(id)}>
-      <GroupTable options={options}></GroupTable>
+    <React.Fragment>
+      <AsyncStateOverlay
+        state={props.episodeList}
+        exist={(item) => item.has(id)}
+      >
+        {(data) => <GroupTable options={options}></GroupTable>}
+      </AsyncStateOverlay>
       <SubtitleToolModal
         show={modal === "tools"}
         title={`Tools - ${modalItem?.title}`}
@@ -175,7 +180,7 @@ const Table: FunctionComponent<Props> = (props) => {
         history={history}
         onClose={closeModal}
       ></EpisodeHistoryModal>
-    </AsyncStateOverlay>
+    </React.Fragment>
   );
 };
 

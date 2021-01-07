@@ -50,10 +50,12 @@ export const MovieHistoryModal: FunctionComponent<
   return (
     <BasicModal {...props}>
       <AsyncStateOverlay state={history}>
-        <BasicTable
-          emptyText="No History Found"
-          options={{ columns, data: history.items }}
-        ></BasicTable>
+        {(data) => (
+          <BasicTable
+            emptyText="No History Found"
+            options={{ columns, data }}
+          ></BasicTable>
+        )}
       </AsyncStateOverlay>
     </BasicModal>
   );
@@ -106,7 +108,7 @@ export const EpisodeHistoryModal: FunctionComponent<
   return (
     <BasicModal {...props}>
       <AsyncStateOverlay state={history}>
-        <BasicTable options={{ columns, data: history.items }}></BasicTable>
+        {(data) => <BasicTable options={{ columns, data }}></BasicTable>}
       </AsyncStateOverlay>
     </BasicModal>
   );

@@ -20,7 +20,7 @@ import {
   ContentHeaderGroup,
   ItemOverview,
   ItemEditorModal,
-  LoadingIndicator,
+  LoadingOverlay,
 } from "../../Components";
 
 import { SeriesApi } from "../../apis";
@@ -139,7 +139,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
         </Container>
       );
     } else {
-      return <LoadingIndicator></LoadingIndicator>;
+      return <LoadingOverlay></LoadingOverlay>;
     }
   }
 }

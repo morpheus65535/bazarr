@@ -1,31 +1,33 @@
-import React, { PropsWithChildren } from "react";
-import { LoadingIndicator } from ".";
+import React from "react";
+import { LoadingOverlay } from ".";
 
 interface Params<T> {
   state: AsyncState<T>;
   exist?: (item: T) => boolean;
+  children?: (item: NonNullable<T>) => JSX.Element;
 }
 
 function defaultExist<T>(item: T) {
   if (item instanceof Array) {
     return item.length !== 0;
   } else {
-    return item !== null || item !== undefined;
+    return item !== null && item !== undefined;
   }
 }
 
-class AsyncStateOverlay<T> extends React.Component<
-  PropsWithChildren<Params<T>>
-> {
+class AsyncStateOverlay<T> extends React.Component<Params<T>> {
   render() {
-    const { state, children, exist } = this.props;
-
+    const { exist, state, children } = this.props;
     const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
-    if (state.updating && missing) {
-      return <LoadingIndicator></LoadingIndicator>;
+    if (state.updating) {
+      return <LoadingOverlay></LoadingOverlay>;
+    } else if (missing) {
+      return null;
     } else {
-      return <React.Fragment>{children}</React.Fragment>;
+      return (
+        <React.Fragment>{children && children(state.items!)}</React.Fragment>
+      );
     }
   }
 }

@@ -53,10 +53,12 @@ function Table(props: Props): JSX.Element {
 
   return (
     <AsyncStateOverlay state={props.wanted}>
-      <BasicTable
-        emptyText="No Missing Movies Subtitles"
-        options={{ columns, data: props.wanted.items }}
-      ></BasicTable>
+      {(data) => (
+        <BasicTable
+          emptyText="No Missing Movies Subtitles"
+          options={{ columns, data }}
+        ></BasicTable>
+      )}
     </AsyncStateOverlay>
   );
 }

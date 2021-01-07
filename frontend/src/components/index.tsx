@@ -154,7 +154,7 @@ export const Selector: FunctionComponent<SelectorProps> = ({
   );
 };
 
-export const LoadingIndicator: FunctionComponent = () => {
+export const LoadingOverlay: FunctionComponent = () => {
   return (
     <div className="d-flex flex-grow-1 justify-content-center my-5">
       <Spinner animation="border"></Spinner>
