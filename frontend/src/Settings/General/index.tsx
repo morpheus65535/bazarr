@@ -42,9 +42,6 @@ const proxyOptions = {
 const SettingsGeneralView: FunctionComponent<Props> = (props) => {
   const { settings } = props;
 
-  const general = settings.items?.general;
-  const analytics = settings.items?.analytics;
-
   return (
     <AsyncStateOverlay state={settings}>
       {(item) => (
@@ -66,12 +63,12 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                     defaultValue={item.general.ip}
                   ></Text>
                   <Message type="info">
-                    Valid IP4 address or '0.0.0.0' for all interfaces
+                    Valid IPv4 address or '0.0.0.0' for all interfaces
                   </Message>
                 </Input>
                 <Input name="Port">
                   <Text
-                    placeholder="6767"
+                    placeholder={6767}
                     defaultValue={item.general.port}
                   ></Text>
                 </Input>

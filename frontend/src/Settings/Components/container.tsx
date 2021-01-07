@@ -36,9 +36,8 @@ export const Input: FunctionComponent<ContainerProps> = ({
 export const Message: FunctionComponent<{
   type: "warning" | "info";
 }> = ({ type, children }) => {
-  return (
-    <Form.Text className={type === "warning" ? "text-warning" : "text-muted"}>
-      {children}
-    </Form.Text>
-  );
+  const cls = ["pr-4"];
+  cls.push(type === "warning" ? "text-warning" : "text-muted");
+
+  return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
 };

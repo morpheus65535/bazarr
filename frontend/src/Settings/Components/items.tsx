@@ -1,9 +1,7 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent } from "react";
 import { Form, InputGroup } from "react-bootstrap";
 
 import { Selector, SelectorProps } from "../../Components";
-
-import { Input, ContainerProps } from "./container";
 
 interface BasicInput<T> {
   disabled?: boolean;
@@ -12,7 +10,7 @@ interface BasicInput<T> {
 }
 
 interface TextProps extends BasicInput<string | number> {
-  placeholder?: string;
+  placeholder?: string | number;
   prefix?: string;
   postfix?: string;
 }
@@ -24,6 +22,9 @@ export const Text: FunctionComponent<TextProps> = ({
   disabled,
   defaultValue,
 }) => {
+  if (defaultValue === placeholder) {
+    defaultValue = undefined;
+  }
   return (
     <InputGroup>
       {prefix && (
@@ -33,7 +34,7 @@ export const Text: FunctionComponent<TextProps> = ({
       )}
       <Form.Control
         type="text"
-        placeholder={placeholder}
+        placeholder={placeholder?.toString()}
         disabled={disabled}
         defaultValue={defaultValue}
         onChange={() => {}}
