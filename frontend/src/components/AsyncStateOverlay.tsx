@@ -8,7 +8,11 @@ interface Params<T> {
 }
 
 function defaultExist(item: any) {
-  return item !== null && item !== undefined;
+  if (item instanceof Array) {
+    return item.length !== 0;
+  } else {
+    return item !== null && item !== undefined;
+  }
 }
 
 class AsyncStateOverlay<T> extends React.Component<Params<T>> {
@@ -16,9 +20,9 @@ class AsyncStateOverlay<T> extends React.Component<Params<T>> {
     const { exist, state, children } = this.props;
     const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
-    if (state.updating) {
+    if (state.updating && missing) {
       return <LoadingOverlay></LoadingOverlay>;
-    } else if (missing) {
+    } else if (state.items === null || state.items === undefined) {
       return null;
     } else {
       return (
