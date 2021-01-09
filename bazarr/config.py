@@ -177,12 +177,9 @@ settings.general.base_url = settings.general.base_url if settings.general.base_u
 base_url = settings.general.base_url
 
 jump_keys = ['flask_secret_key',
-                'multithreading',
                 'page_size',
                 'page_size_manual_search',
-                'throtteled_providers',
-                'apikey',
-                'password']
+                'throtteled_providers']
 
 def get_settings():
     result = dict()
