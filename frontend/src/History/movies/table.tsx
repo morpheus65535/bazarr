@@ -4,11 +4,7 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import {
-  BasicTable,
-  AsyncStateOverlay,
-  HistoryIcon,
-} from "../../Components";
+import { BasicTable, AsyncStateOverlay, HistoryIcon } from "../../Components";
 
 interface Props {
   movieHistory: AsyncState<MovieHistory[]>;

@@ -95,7 +95,7 @@ export interface SelectorProps {
   defaultKey?: string;
   multiply?: boolean;
   disabled?: boolean;
-  onChanged?: (key: string) => void;
+  onChange?: (key: string) => void;
 }
 
 export const Selector: FunctionComponent<SelectorProps> = ({
@@ -104,7 +104,7 @@ export const Selector: FunctionComponent<SelectorProps> = ({
   defaultKey,
   multiply,
   disabled,
-  onChanged,
+  onChange,
 }) => {
   const [selectKey, setSelect] = useState(defaultKey ? defaultKey : nullKey);
   const items = useMemo(() => {
@@ -116,7 +116,7 @@ export const Selector: FunctionComponent<SelectorProps> = ({
           key={key}
           onClick={() => {
             setSelect(key);
-            onChanged && onChanged(key);
+            onChange && onChange(key);
           }}
         >
           {value}
@@ -124,7 +124,7 @@ export const Selector: FunctionComponent<SelectorProps> = ({
       );
     }
     return its;
-  }, [options, onChanged]);
+  }, [options, onChange]);
 
   let text: string;
 

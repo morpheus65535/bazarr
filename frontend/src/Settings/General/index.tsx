@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -9,7 +9,15 @@ import {
   AsyncStateOverlay,
 } from "../../Components";
 
-import { Check, Group, Input, Message, Select, Text } from "../Components";
+import {
+  Check,
+  Group,
+  Input,
+  Message,
+  Select,
+  Text,
+  CollapseBox,
+} from "../Components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 
@@ -73,22 +81,75 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                   ></Text>
                 </Input>
                 <Input name="Base URL">
-                  <Text prefix="/"></Text>
+                  <Text prefix="/" defaultValue={item.general.base_url}></Text>
                   <Message type="info">Reverse proxy support</Message>
                 </Input>
               </Group>
               <Group header="Security">
-                <Input name="Authentication">
-                  <Select options={securityOptions} nullKey="none"></Select>
-                </Input>
+                <CollapseBox
+                  indent
+                  control={(change) => (
+                    <Input name="Authentication">
+                      <Select
+                        options={securityOptions}
+                        onChange={(val) => {
+                          change(val !== "none");
+                        }}
+                        nullKey="none"
+                      ></Select>
+                    </Input>
+                  )}
+                >
+                  <Input name="Username">
+                    <Text></Text>
+                  </Input>
+                  <Input name="Password">
+                    <Text></Text>
+                  </Input>
+                </CollapseBox>
                 <Input name="API Key">
                   <Text disabled></Text>
                 </Input>
               </Group>
               <Group header="Proxy">
-                <Input>
-                  <Select options={proxyOptions} nullKey="none"></Select>
-                </Input>
+                <CollapseBox
+                  indent
+                  control={(change) => (
+                    <Input>
+                      <Select
+                        options={proxyOptions}
+                        nullKey="none"
+                        onChange={(val) => {
+                          change(val !== "none");
+                        }}
+                      ></Select>
+                    </Input>
+                  )}
+                >
+                  <Input name="Host">
+                    <Text></Text>
+                  </Input>
+                  <Input name="Port">
+                    <Text></Text>
+                  </Input>
+                  <Input name="Username">
+                    <Text></Text>
+                  </Input>
+                  <Input name="Password">
+                    <Text></Text>
+                    <Message type="info">
+                      You only need to enter a username and password if one is
+                      required. Leave them blank otherwise
+                    </Message>
+                  </Input>
+                  <Input name="Ignored Addresses">
+                    <Text defaultValue={item.proxy.exclude.join(",")}></Text>
+                    <Message type="info">
+                      Use ',' as a separator, and '*.' as a wildcard for
+                      subdomains
+                    </Message>
+                  </Input>
+                </CollapseBox>
               </Group>
               <Group header="Logging">
                 <Input>

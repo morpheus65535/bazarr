@@ -1,5 +1,6 @@
-import React, { FunctionComponent } from "react";
-import { Col, Form, Row } from "react-bootstrap";
+import React, { FunctionComponent, useState } from "react";
+import { Col, Form, Row, Collapse } from "react-bootstrap";
+import { Check, CheckProps } from "./items";
 
 interface GroupProps {
   header: string;
@@ -7,7 +8,7 @@ interface GroupProps {
 
 export const Group: FunctionComponent<GroupProps> = ({ header, children }) => {
   return (
-    <Row className="flex-column">
+    <Row className="flex-column mt-3">
       <Col>
         <h4>{header}</h4>
         <hr></hr>
@@ -17,14 +18,11 @@ export const Group: FunctionComponent<GroupProps> = ({ header, children }) => {
   );
 };
 
-export interface ContainerProps {
+export interface InputProps {
   name?: string;
 }
 
-export const Input: FunctionComponent<ContainerProps> = ({
-  children,
-  name,
-}) => {
+export const Input: FunctionComponent<InputProps> = ({ children, name }) => {
   return (
     <Form.Group>
       {name && <Form.Label>{name}</Form.Label>}
@@ -33,11 +31,32 @@ export const Input: FunctionComponent<ContainerProps> = ({
   );
 };
 
-export const Message: FunctionComponent<{
-  type: "warning" | "info";
-}> = ({ type, children }) => {
-  const cls = ["pr-4"];
-  cls.push(type === "warning" ? "text-warning" : "text-muted");
+interface CollapseBoxProps {
+  control: (change: React.Dispatch<boolean>) => JSX.Element;
+  defaultOpen?: boolean;
+  indent?: boolean;
+}
 
-  return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
+export const CollapseBox: FunctionComponent<CollapseBoxProps> = ({
+  control,
+  children,
+  indent,
+  defaultOpen,
+}) => {
+  const cls: string[] = [];
+
+  const [open, setOpen] = useState(defaultOpen ?? false);
+
+  if (indent) {
+    cls.push("pl-4");
+  }
+
+  return (
+    <React.Fragment>
+      {control(setOpen)}
+      <Collapse in={open}>
+        <div className={cls.join(" ")}>{children}</div>
+      </Collapse>
+    </React.Fragment>
+  );
 };

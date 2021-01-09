@@ -100,7 +100,7 @@ class SystemStatusView extends React.Component<Props, {}> {
           <span>{status?.bazarr_directory}</span>
         </InfoRow>
         <InfoRow title="Bazarr Config Directory">
-          <span>{status?.bazarr_config_directory}</span>``
+          <span>{status?.bazarr_config_directory}</span>
         </InfoRow>
       </InfoContainer>
     );

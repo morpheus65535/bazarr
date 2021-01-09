@@ -3,13 +3,22 @@ import { Form, InputGroup } from "react-bootstrap";
 
 import { Selector, SelectorProps } from "../../Components";
 
-interface BasicInput<T> {
+export const Message: FunctionComponent<{
+  type: "warning" | "info";
+}> = ({ type, children }) => {
+  const cls = ["pr-4"];
+  cls.push(type === "warning" ? "text-warning" : "text-muted");
+
+  return <Form.Text className={cls.join(" ")}>{children}</Form.Text>;
+};
+
+export interface BasicInput<T> {
   disabled?: boolean;
   defaultValue?: T;
   onChange?: (val: T) => void;
 }
 
-interface TextProps extends BasicInput<string | number> {
+export interface TextProps extends BasicInput<string | number> {
   placeholder?: string | number;
   prefix?: string;
   postfix?: string;
@@ -48,7 +57,7 @@ export const Text: FunctionComponent<TextProps> = ({
   );
 };
 
-interface CheckProps extends BasicInput<boolean> {
+export interface CheckProps extends BasicInput<boolean> {
   label?: string;
 }
 
@@ -56,12 +65,15 @@ export const Check: FunctionComponent<CheckProps> = ({
   label,
   disabled,
   defaultValue,
+  onChange,
 }) => {
   return (
     <Form.Check
       type="checkbox"
       label={label}
-      onChange={() => {}}
+      onChange={(e) => {
+        onChange && onChange(e.currentTarget.checked);
+      }}
       disabled={disabled}
       defaultChecked={defaultValue}
     ></Form.Check>
@@ -73,3 +85,11 @@ type SelectProps = SelectorProps & BasicInput<string>;
 export const Select: FunctionComponent<SelectProps> = (props) => {
   return <Selector {...props}></Selector>;
 };
+
+interface SliderProps {
+
+}
+
+export const Slider: FunctionComponent<SliderProps> = ({ }) => {
+  return <Form.Control type="range" className="py-1"></Form.Control>
+}
