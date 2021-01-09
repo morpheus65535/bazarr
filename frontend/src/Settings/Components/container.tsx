@@ -1,6 +1,5 @@
 import React, { FunctionComponent, useState } from "react";
 import { Col, Form, Row, Collapse } from "react-bootstrap";
-import { Check, CheckProps } from "./items";
 
 interface GroupProps {
   header: string;

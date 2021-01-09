@@ -78,7 +78,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
       </Dropdown.Toggle>
       <Dropdown.Menu>
         <Dropdown.Header>
-          {items.length === 0 ? (
+          {avaliable.length === 0 ? (
             "No Selectable Items"
           ) : (
             <Form.Control

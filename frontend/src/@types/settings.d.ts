@@ -25,6 +25,7 @@ interface GeneralSettings {
   ignore_pgs_subs: boolean;
   ignore_vobsub_subs: boolean;
   ip: string;
+  multithreading: boolean;
   minimum_score: number;
   minimum_score_movie: number;
   movie_default_enabled: boolean;
@@ -73,6 +74,8 @@ interface ProxySettings {
 interface AuthSettings {
   type?: string;
   username?: string;
+  password?: string;
+  apikey: string;
 }
 
 interface SubsyncSettings {

@@ -6,6 +6,7 @@ import {
   UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
   UPDATE_SYSTEM_SETTINGS,
+  SET_SYSTEM_SETTINGS,
 } from "../constants";
 
 import { SystemApi } from "../../apis";
@@ -38,6 +39,13 @@ export const UpdateSystemSettings = createAsyncAction(
   UPDATE_SYSTEM_SETTINGS,
   () => SystemApi.settings()
 );
+
+export const SetSystemSettings = (data: object) => {
+  SystemApi.setSettings(data);
+  return {
+    type: SET_SYSTEM_SETTINGS,
+  };
+};
 
 export const ExecSystemTask = (id: string): Action<string> => {
   SystemApi.execTasks(id);

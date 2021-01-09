@@ -21,7 +21,11 @@ class Api {
     for (const key in formdata) {
       const data = formdata[key];
       if (data instanceof Array) {
-        data.forEach((val) => form.append(key, val));
+        if (data.length > 0) {
+          data.forEach((val) => form.append(key, val));
+        } else {
+          form.append(key, "");
+        }
       } else {
         form.append(key, formdata[key]);
       }

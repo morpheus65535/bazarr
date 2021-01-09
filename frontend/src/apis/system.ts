@@ -36,6 +36,16 @@ class SystemApi {
     });
   }
 
+  async setSettings(data: object) {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm<void>("settings", data)
+        .then((res) => {
+          resolve();
+        })
+        .catch(reject);
+    });
+  }
+
   async languages(enabled: boolean = false) {
     return new Promise<Array<ExtendLanguage>>((resolve, reject) => {
       this.get<Array<ExtendLanguage>>("languages", { enabled })
