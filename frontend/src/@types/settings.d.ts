@@ -29,11 +29,11 @@ interface GeneralSettings {
   minimum_score: number;
   minimum_score_movie: number;
   movie_default_enabled: boolean;
-  movie_default_forced: boolean;
+  movie_default_forced: boolean | string;
   movie_default_hi: boolean;
   movie_default_language: string[];
   serie_default_enabled: boolean;
-  serie_default_forced: boolean;
+  serie_default_forced: boolean | string;
   serie_default_hi: boolean;
   serie_default_language: string[];
   path_mappings: string[];

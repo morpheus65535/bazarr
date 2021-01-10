@@ -29,7 +29,7 @@ interface BasicItem {
 // Temp Name
 interface ExtendItem extends BasicItem {
   fanart: string;
-  forced: boolean;
+  forced: boolean | string;
   overview: string;
   hearing_impaired: boolean;
   imdbId: string;

@@ -136,7 +136,13 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Forced",
         accessor: "forced",
         Cell: (row) => {
-          return <BooleanIndicator value={row.value}></BooleanIndicator>;
+          let result = false;
+          if (typeof row.value === "string") {
+            result = true;
+          } else {
+            result = row.value
+          }
+          return <BooleanIndicator value={result}></BooleanIndicator>;
         },
       },
       {

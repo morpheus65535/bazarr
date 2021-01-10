@@ -4,7 +4,13 @@ import { Button, Container, Form, Spinner } from "react-bootstrap";
 
 import BasicModal, { ModalProps } from "./BasicModal";
 
-import LanguageSelector from "../LanguageSelector";
+import { LanguageSelector, Selector } from "../";
+
+const forcedOptions = {
+  false: "False",
+  true: "True",
+  Both: "Both",
+};
 
 interface Props {
   languages: ExtendLanguage[];
@@ -18,7 +24,7 @@ interface State {
   changed: boolean;
   enabled: ExtendLanguage[];
   hi: boolean;
-  forced: boolean;
+  forced: boolean | string;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -101,6 +107,13 @@ class Editor extends React.Component<Props & ModalProps, State> {
       </Button>
     );
 
+    let forcedKey = "false";
+    if (typeof forced === "string") {
+      forcedKey = forced;
+    } else {
+      forcedKey = forced ? "true" : "false";
+    }
+
     return (
       <BasicModal closeable={!updating} {...this.props} footer={footer}>
         <Container fluid>
@@ -122,6 +135,15 @@ class Editor extends React.Component<Props & ModalProps, State> {
               ></LanguageSelector>
             </Form.Group>
             <Form.Group>
+              <Form.Label>Forced</Form.Label>
+              <Selector
+                options={forcedOptions}
+                defaultKey={forcedKey}
+                multiply={false}
+                onSelect={(val) => this.updateState("forced", val)}
+              ></Selector>
+            </Form.Group>
+            <Form.Group>
               <Form.Check
                 inline
                 label="Hearing Impaired"
@@ -130,14 +152,14 @@ class Editor extends React.Component<Props & ModalProps, State> {
                   this.updateState("hi", e.currentTarget.checked);
                 }}
               ></Form.Check>
-              <Form.Check
+              {/* <Form.Check
                 inline
                 label="Forced"
                 defaultChecked={forced}
                 onChange={(e) => {
                   this.updateState("forced", e.currentTarget.checked);
                 }}
-              ></Form.Check>
+              ></Form.Check> */}
             </Form.Group>
           </Form>
         </Container>

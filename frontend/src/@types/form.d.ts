@@ -1,7 +1,7 @@
 interface ItemModifyForm {
   languages: string[];
   hi: boolean;
-  forced: boolean;
+  forced: boolean | string;
 }
 
 interface SeriesDownloadForm {
