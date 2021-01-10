@@ -5,27 +5,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
-type SelectorOptions = {
-  [key: string]: string;
-};
-
-type SelectorBasic = {
+type SelectorBasic<T extends string | string[]> = {
   className?: string;
-  options: SelectorOptions | Pair[];
+  options: LooseObject | Pair[];
   disabled?: boolean;
   nullKey?: string;
+  defaultKey?: T;
+  onSelect?: (key: T) => void;
 };
 
-export type SingleSelectorProps = SelectorBasic & {
-  defaultKey?: string;
+export type SingleSelectorProps = SelectorBasic<string> & {
   multiply?: false;
-  onSelect?: (key: string) => void;
 };
 
-export type MultiSelectorProps = SelectorBasic & {
-  defaultKey?: string[];
+export type MultiSelectorProps = SelectorBasic<string[]> & {
   multiply: true;
-  onSelect?: (key: string[]) => void;
 };
 
 export type SelectorProps = MultiSelectorProps | SingleSelectorProps;
@@ -74,7 +68,7 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
       return pairs;
     } else {
       return pairs.filter((p) =>
-        p.value.toLowerCase().includes(filter.toLocaleLowerCase())
+        p.value.toLowerCase().includes(filter.toLowerCase())
       );
     }
   }, [pairs, filter]);

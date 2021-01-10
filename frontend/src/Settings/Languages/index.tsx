@@ -4,6 +4,8 @@ import { connect } from "react-redux";
 
 import { LanguageSelector } from "../../Components";
 
+import { ComputeForcedKey } from "../../utilites";
+
 import {
   Group,
   Message,
@@ -30,7 +32,7 @@ function mapStateToProps({ system }: StoreState) {
 const forcedOptions = {
   false: "False",
   true: "True",
-  both: "Both",
+  Both: "Both",
 };
 
 const SettingsLanguagesView: FunctionComponent<Props> = ({
@@ -121,7 +123,11 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
               <Input name="Forced">
                 <Select
                   remoteKey="settings-general-serie_default_forced"
+                  defaultKey={ComputeForcedKey(
+                    settings.general.serie_default_forced
+                  )}
                   options={forcedOptions}
+                  onChange={update}
                 ></Select>
               </Input>
               <Input>
@@ -170,6 +176,10 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Select
                   options={forcedOptions}
                   remoteKey="settings-general-movie_default_forced"
+                  defaultKey={ComputeForcedKey(
+                    settings.general.movie_default_forced
+                  )}
+                  onChange={update}
                 ></Select>
               </Input>
               <Input>

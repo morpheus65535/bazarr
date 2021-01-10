@@ -3,7 +3,6 @@ import {
 } from "../constants";
 
 import { handleActions } from "redux-actions";
-import { act } from "react-dom/test-utils";
 
 const reducer = handleActions<BadgeState, number[]>(
   {

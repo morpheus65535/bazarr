@@ -6,6 +6,8 @@ import BasicModal, { ModalProps } from "./BasicModal";
 
 import { LanguageSelector, Selector } from "../";
 
+import { ComputeForcedKey } from "../../utilites";
+
 const forcedOptions = {
   false: "False",
   true: "True",
@@ -107,12 +109,7 @@ class Editor extends React.Component<Props & ModalProps, State> {
       </Button>
     );
 
-    let forcedKey = "false";
-    if (typeof forced === "string") {
-      forcedKey = forced;
-    } else {
-      forcedKey = forced ? "true" : "false";
-    }
+    let forcedKey = ComputeForcedKey(forced);
 
     return (
       <BasicModal closeable={!updating} {...this.props} footer={footer}>
