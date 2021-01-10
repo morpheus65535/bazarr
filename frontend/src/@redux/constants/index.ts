@@ -1,7 +1,8 @@
+// Web action
+export const INIT_WEB_APP = "INIT_WEB_APP";
+
 // Badge action
-export const UPDATE_BADGE_MOVIES = "UPDATE_BADGE_MOVIES";
-export const UPDATE_BADGE_EPISODES = "UPDATE_BADGE_EPISODES";
-export const UPDATE_BADGE_PROVIDERS = "UPDATE_BADGE_PROVIDERS";
+export const UPDATE_BADGE_ALL = "UPDATE_BADGE_ALL";
 
 // System action
 export const UPDATE_LANGUAGES_LIST = "UPDATE_LANGUAGES_LIST";

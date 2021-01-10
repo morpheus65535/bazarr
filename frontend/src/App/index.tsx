@@ -7,26 +7,24 @@ import Header from "./Header";
 
 import "./App.css";
 
-import {
-  updateEpisodes,
-  updateMovies,
-  updateProviders,
-  updateLanguagesList,
-} from "../@redux/actions";
+import { updateBadges, updateLanguagesList } from "../@redux/actions";
 import { connect } from "react-redux";
 
 interface Props {
-  updateEpisodes: () => void;
-  updateMovies: () => void;
-  updateProviders: () => void;
+  updateBadges: () => void;
   updateLanguagesList: (enabled: boolean) => void;
 }
 
+// function mapStateToProps({ series, movie, system }: StoreState) {
+//   return {
+//     init: series.seriesList.
+//   };
+// }
+
 class App extends React.Component<Props> {
   componentDidMount() {
-    this.props.updateEpisodes();
-    this.props.updateMovies();
-    this.props.updateProviders();
+    // Initialize Here
+    this.props.updateBadges();
     this.props.updateLanguagesList(false);
   }
 
@@ -56,8 +54,6 @@ class App extends React.Component<Props> {
 }
 
 export default connect(null, {
-  updateEpisodes,
-  updateMovies,
-  updateProviders,
+  updateBadges,
   updateLanguagesList,
 })(App);

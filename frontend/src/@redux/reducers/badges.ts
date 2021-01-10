@@ -1,34 +1,19 @@
 import {
-  UPDATE_BADGE_EPISODES,
-  UPDATE_BADGE_MOVIES,
-  UPDATE_BADGE_PROVIDERS,
+  UPDATE_BADGE_ALL
 } from "../constants";
 
 import { handleActions } from "redux-actions";
+import { act } from "react-dom/test-utils";
 
-const reducer = handleActions<BadgeState, number>(
+const reducer = handleActions<BadgeState, number[]>(
   {
-    [UPDATE_BADGE_EPISODES]: {
+    [UPDATE_BADGE_ALL]: {
       next(state, action) {
         return {
           ...state,
-          episodes: action.payload,
-        };
-      },
-    },
-    [UPDATE_BADGE_MOVIES]: {
-      next(state, action) {
-        return {
-          ...state,
-          movies: action.payload,
-        };
-      },
-    },
-    [UPDATE_BADGE_PROVIDERS]: {
-      next(state, action) {
-        return {
-          ...state,
-          providers: action.payload,
+          episodes: action.payload[0],
+          movies: action.payload[1],
+          providers: action.payload[2]
         };
       },
     },
