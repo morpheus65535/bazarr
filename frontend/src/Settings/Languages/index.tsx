@@ -74,9 +74,8 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             </Input>
             <Input name="Enabled Languages">
               <LanguageSelector
-                className="px-0"
                 defaultSelect={enabled}
-                avaliable={languages}
+                options={languages}
                 onChange={(val) => {
                   setAvaliable(val);
                   const langs = val.map((v) => v.code2);
@@ -109,7 +108,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
-                  avaliable={avaliable}
+                  options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.serie_default_language
                   )}
@@ -157,7 +156,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
-                  avaliable={avaliable}
+                  options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.movie_default_language
                   )}

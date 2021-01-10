@@ -116,7 +116,7 @@ class Editor extends React.Component<Props & ModalProps, State> {
             <Form.Group>
               <Form.Label>Languages</Form.Label>
               <LanguageSelector
-                avaliable={languages}
+                options={languages}
                 defaultSelect={enabled}
                 onChange={(val) => this.updateState("enabled", val)}
               ></LanguageSelector>

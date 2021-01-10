@@ -1,7 +1,7 @@
-import React, { FunctionComponent, MouseEvent, useMemo, useState } from "react";
+import React, { FunctionComponent, MouseEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { Badge, Spinner, Button, Dropdown } from "react-bootstrap";
+import { Badge, Spinner, Button } from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -85,70 +85,6 @@ export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
   }
 };
 
-type SelectorOptions = {
-  [key: string]: string;
-};
-
-export interface SelectorProps {
-  options: SelectorOptions;
-  nullKey?: string;
-  defaultKey?: string;
-  multiply?: boolean;
-  disabled?: boolean;
-  onSelect?: (key: string) => void;
-}
-
-export const Selector: FunctionComponent<SelectorProps> = ({
-  options,
-  nullKey,
-  defaultKey,
-  multiply,
-  disabled,
-  onSelect,
-}) => {
-  const [selectKey, setSelect] = useState(defaultKey ? defaultKey : nullKey);
-  const items = useMemo(() => {
-    const its: JSX.Element[] = [];
-    for (const key in options) {
-      const value = options[key];
-      its.push(
-        <Dropdown.Item
-          key={key}
-          onClick={() => {
-            setSelect(key);
-            onSelect && onSelect(key);
-          }}
-        >
-          {value}
-        </Dropdown.Item>
-      );
-    }
-    return its;
-  }, [options, onSelect]);
-
-  let text: string;
-
-  if (selectKey) {
-    text = options[selectKey];
-  } else {
-    text = "Select...";
-  }
-
-  return (
-    <Dropdown defaultValue={selectKey}>
-      <Dropdown.Toggle
-        disabled={disabled}
-        block
-        className="text-left"
-        variant="outline-secondary"
-      >
-        {text}
-      </Dropdown.Toggle>
-      <Dropdown.Menu>{items}</Dropdown.Menu>
-    </Dropdown>
-  );
-};
-
 export const LoadingOverlay: FunctionComponent = () => {
   return (
     <div className="d-flex flex-grow-1 justify-content-center my-5">
@@ -171,3 +107,4 @@ export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
 export * from "./Modals";
 export * from "./ContentHeader";
 export * from "./Tables";
+export * from "./Selector";

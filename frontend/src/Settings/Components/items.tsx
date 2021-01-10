@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Form, InputGroup } from "react-bootstrap";
 
-import { Selector, SelectorProps } from "../../Components";
+import { Selector, SingleSelectorProps } from "../../Components";
 
 export const Message: FunctionComponent<{
   type: "warning" | "info";
@@ -89,14 +89,15 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-type SelectProps = SelectorProps & BasicInput<string>;
+type SelectProps = SingleSelectorProps & BasicInput<string>;
 
 export const Select: FunctionComponent<SelectProps> = (props) => {
   const { onChange, remoteKey, ...other } = props;
+
   return (
     <Selector
+      multiply={false}
       onSelect={(v) => {
-        // TODO: Multiply Selection
         onChange && onChange(v, remoteKey);
       }}
       {...other}
@@ -106,6 +107,6 @@ export const Select: FunctionComponent<SelectProps> = (props) => {
 
 interface SliderProps {}
 
-export const Slider: FunctionComponent<SliderProps> = ({}) => {
+export const Slider: FunctionComponent<SliderProps> = (props) => {
   return <Form.Control type="range" className="py-1"></Form.Control>;
 };
