@@ -303,7 +303,7 @@
                 },
                 columns: [
                     { data: 'profileId',
-                        visible: true
+                        visible: false
                     },
                     { data: 'name' },
                     { data: 'cutoff',
@@ -328,99 +328,96 @@
                 buttons: [{
                     text: 'Add',
                     action: function () {
-                        if (form_changed) {
-                            alert('You must save changes before adding a languages profile.')
-                        } else {
-                            if ($('#add_languages_profiles').DataTable().rows().length) {
-                                $('#add_languages_profiles').DataTable().clear();
-                            }
-                            $('#add_languages_profiles').DataTable().destroy();
-                            var table_add = $('#add_languages_profiles').DataTable({
-                                dom: 'Bfrtip',
-                                select: {
-                                    style: 'single'
-                                },
-                                language: {
-                                    zeroRecords: 'No Languages In This Profile'
-                                },
-                                searching: false,
-                                ordering: false,
-                                lengthChange: false,
-                                responsive: false,
-                                paging: false,
-                                info: false,
-                                data: null,
-                                columns: [
-                                    { data: 'id',
-                                        visible: false
-                                    },
-                                    { data: 'id' },
-                                    { data: 'language',
-                                        render: function (data) {
-                                            var enabled_languages = Array();
-                                            $('#enabled_languages option:selected').each(function(){
-                                                enabled_languages.push([$(this).val(), $(this).text()]);
-                                            });
-
-                                            var html_dropdown = '<select class="selectpicker show-tick inline_select_add" data-width="fit">';
-                                            for (i = 0; i < enabled_languages.length; i++) {
-                                                html_dropdown += '<option value="' + enabled_languages[i][0] + '"' + ((data == enabled_languages[i][0]) ? ' selected="selected"' : '') + '>' + enabled_languages[i][1] + '</option>';
-                                            }
-                                            html_dropdown += '</select>';
-
-                                            return html_dropdown;
-                                        }
-                                    },
-                                    { data: 'forced',
-                                        render: function(data) {
-                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
-                                        }
-                                    },
-                                    { data: 'hi',
-                                        render: function(data) {
-                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
-                                        }
-                                    },
-                                    { data: 'audio_exclude',
-                                        render: function(data) {
-                                            return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
-                                        }
-                                    }
-                                ],
-                                buttons: [{
-                                    text: 'Add',
-                                    action: function () {
-                                        var language_id = 0;
-                                        if (table_add.rows().data().toArray().length) {
-                                            language_id = Math.max(...table_add.column(0).data().toArray());
-                                        }
-                                        language_id++;
-                                        table_add.row.add({
-                                            id: language_id,
-                                            language: '',
-                                            forced: 'False',
-                                            hi: 'False',
-                                            audio_exclude: 'False'
-                                        }).draw();
-                                        $('.inline_select_add').selectpicker('refresh');
-
-                                        $('.inline_select_add.selectpicker').on('changed.bs.select', function () {
-                                            table_add.row( $(this).closest('tr') ).cell( $(this).closest('td') ).data($(this).val());
-                                            $('.inline_select_add').selectpicker('refresh');
-                                            table_add.draw();
-                                        });
-                                    }
-                                },
-                                {
-                                    extend: 'selected',
-                                    text: 'Delete',
-                                    action: function () {
-                                        table_add.row( { selected: true } ).remove().draw();
-                                    }
-                                }]
-                            });
-                            $('#addModal').modal('show');
+                        if ($('#add_languages_profiles').DataTable().rows().length) {
+                            $('#add_languages_profiles').DataTable().clear();
                         }
+                        $('#add_profile_name').val('');
+                        $('#add_languages_profiles').DataTable().destroy();
+                        var table_add = $('#add_languages_profiles').DataTable({
+                            dom: 'Bfrtip',
+                            select: {
+                                style: 'single'
+                            },
+                            language: {
+                                zeroRecords: 'No Languages In This Profile'
+                            },
+                            searching: false,
+                            ordering: false,
+                            lengthChange: false,
+                            responsive: false,
+                            paging: false,
+                            info: false,
+                            data: null,
+                            columns: [
+                                { data: 'id',
+                                    visible: false
+                                },
+                                { data: 'id' },
+                                { data: 'language',
+                                    render: function (data) {
+                                        var enabled_languages = Array();
+                                        $('#enabled_languages option:selected').each(function(){
+                                            enabled_languages.push([$(this).val(), $(this).text()]);
+                                        });
+
+                                        var html_dropdown = '<select class="selectpicker show-tick inline_select_add" data-width="fit">';
+                                        for (i = 0; i < enabled_languages.length; i++) {
+                                            html_dropdown += '<option value="' + enabled_languages[i][0] + '"' + ((data == enabled_languages[i][0]) ? ' selected="selected"' : '') + '>' + enabled_languages[i][1] + '</option>';
+                                        }
+                                        html_dropdown += '</select>';
+
+                                        return html_dropdown;
+                                    }
+                                },
+                                { data: 'forced',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                },
+                                { data: 'hi',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                },
+                                { data: 'audio_exclude',
+                                    render: function(data) {
+                                        return '<select class="selectpicker show-tick inline_select_add" data-width="fit"><option value="True"' + ((data === 'True') ? ' selected="selected"' : '') + '>True</option><option value="False"' + ((data === 'False') ? ' selected="selected"' : '') + '>False</option></select>';
+                                    }
+                                }
+                            ],
+                            buttons: [{
+                                text: 'Add',
+                                action: function () {
+                                    var language_id = 0;
+                                    if (table_add.rows().data().toArray().length) {
+                                        language_id = Math.max(...table_add.column(0).data().toArray());
+                                    }
+                                    language_id++;
+                                    table_add.row.add({
+                                        id: language_id,
+                                        language: '',
+                                        forced: 'False',
+                                        hi: 'False',
+                                        audio_exclude: 'False'
+                                    }).draw();
+                                    $('.inline_select_add').selectpicker('refresh');
+
+                                    $('.inline_select_add.selectpicker').on('changed.bs.select', function () {
+                                        table_add.row( $(this).closest('tr') ).cell( $(this).closest('td') ).data($(this).val());
+                                        $('.inline_select_add').selectpicker('refresh');
+                                        table_add.draw();
+                                    });
+                                }
+                            },
+                            {
+                                extend: 'selected',
+                                text: 'Delete',
+                                action: function () {
+                                    table_add.row( { selected: true } ).remove().draw();
+                                }
+                            }]
+                        });
+                        $('#addModal').modal('show');
                     }
                 },
                 {
@@ -536,8 +533,16 @@
                 }]
             });
 
+             $('#add_profile_name').on('input', function() {
+                 if ($('#add_languages_profiles').DataTable().rows().count() && $('#add_profile_name').val()) {
+                    $('#add_save_button').prop('disabled', false).css('cursor', 'auto');
+                } else {
+                    $('#add_save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                }
+             })
+
             $('#add_languages_profiles').DataTable().on( 'draw', function () {
-                if ($('#add_languages_profiles').DataTable().rows().count()) {
+                if ($('#add_languages_profiles').DataTable().rows().count() && $('#add_profile_name').val()) {
                     $('#add_save_button').prop('disabled', false).css('cursor', 'auto');
                 } else {
                     $('#add_save_button').prop('disabled', true).css('cursor', 'not-allowed');
@@ -555,8 +560,16 @@
                 $("#add_language_cutoff").selectpicker("refresh");
             } );
 
+            $('#edit_profile_name').on('input', function() {
+                 if ($('#edit_languages_profiles').DataTable().rows().count() && $('#edit_profile_name').val()) {
+                    $('#edit_save_button').prop('disabled', false).css('cursor', 'auto');
+                } else {
+                    $('#edit_save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                }
+             })
+
             $('#edit_languages_profiles').DataTable().on( 'draw', function () {
-                if ($('#edit_languages_profiles').DataTable().rows().count()) {
+                if ($('#edit_languages_profiles').DataTable().rows().count() && $('#edit_profile_name').val()) {
                     $('#edit_save_button').prop('disabled', false).css('cursor', 'auto');
                 } else {
                     $('#edit_save_button').prop('disabled', true).css('cursor', 'not-allowed');
