@@ -292,7 +292,7 @@
                 searching: false,
                 ordering: false,
                 lengthChange: true,
-                responsive: true,
+                responsive: false,
                 paging: false,
                 info: false,
                 processing: true,
@@ -346,7 +346,7 @@
                                 searching: false,
                                 ordering: false,
                                 lengthChange: false,
-                                responsive: true,
+                                responsive: false,
                                 paging: false,
                                 info: false,
                                 data: null,
@@ -441,7 +441,7 @@
                             searching: false,
                             ordering: false,
                             lengthChange: false,
-                            responsive: true,
+                            responsive: false,
                             paging: false,
                             info: false,
                             data: items,
@@ -609,10 +609,10 @@
                 $('#settings-general-serie_default_profile').append('<option value="">None</option>');
                 $('#settings-general-movie_default_profile').append('<option value="">None</option>');
 
-                var ids = $('#languages_profiles').DataTable().rows().data().pluck( 'profileId' ).toArray();
+                var ids = $('#languages_profiles').DataTable().rows().data().toArray();
                 $(ids).each( function(i, item) {
-                    $('#settings-general-serie_default_profile').append('<option value="' + item + '">' + item + '</option>');
-                    $('#settings-general-movie_default_profile').append('<option value="' + item + '">' + item + '</option>');
+                    $('#settings-general-serie_default_profile').append('<option value="' + item.profileId + '">' + item.name + '</option>');
+                    $('#settings-general-movie_default_profile').append('<option value="' + item.profileId + '">' + item.name + '</option>');
                 });
                 $("#settings-general-serie_default_profile").val(previousValueSerie);
                 $("#settings-general-movie_default_profile").val(previousValueMovie);
