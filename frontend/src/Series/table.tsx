@@ -114,13 +114,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Forced",
         accessor: "forced",
         Cell: (row) => {
-          let result = false;
-          if (typeof row.value === "string") {
-            result = true;
-          } else {
-            result = row.value;
-          }
-          return <BooleanIndicator value={result}></BooleanIndicator>;
+          return <BooleanIndicator value={row.value !== "False"}></BooleanIndicator>;
         },
       },
       {

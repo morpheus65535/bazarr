@@ -1,6 +1,4 @@
-import {
-  UPDATE_BADGE_ALL
-} from "../constants";
+import { UPDATE_BADGE_ALL } from "../constants";
 
 import { handleActions } from "redux-actions";
 
@@ -12,7 +10,7 @@ const reducer = handleActions<BadgeState, number[]>(
           ...state,
           episodes: action.payload[0],
           movies: action.payload[1],
-          providers: action.payload[2]
+          providers: action.payload[2],
         };
       },
     },

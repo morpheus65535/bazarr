@@ -1,6 +1,4 @@
-import {
-  UPDATE_BADGE_ALL,
-} from "../constants";
+import { UPDATE_BADGE_ALL } from "../constants";
 
 import { createAction } from "redux-actions";
 import { BadgesApi } from "../../apis";

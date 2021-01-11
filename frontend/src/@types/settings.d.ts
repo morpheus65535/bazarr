@@ -3,12 +3,15 @@ interface SystemSettings {
   proxy: ProxySettings;
   auth: AuthSettings;
   subsync: SubsyncSettings;
-  analytics: {
-    enabled: boolean;
-  };
+  analytics: AnalyticSettings;
+  sonarr: SonarrSettings;
+  radarr: RadarrSettings;
 }
 
 // Basic
+
+type ForcedOptions = "True" | "False" | "Both";
+
 interface GeneralSettings {
   adaptive_searching: boolean;
   anti_captcha_provider?: string;
@@ -29,11 +32,11 @@ interface GeneralSettings {
   minimum_score: number;
   minimum_score_movie: number;
   movie_default_enabled: boolean;
-  movie_default_forced: boolean | string;
+  movie_default_forced: ForcedOptions;
   movie_default_hi: boolean;
   movie_default_language: string[];
   serie_default_enabled: boolean;
-  serie_default_forced: boolean | string;
+  serie_default_forced: ForcedOptions;
   serie_default_hi: boolean;
   serie_default_language: string[];
   path_mappings: string[];
@@ -87,4 +90,7 @@ interface SubsyncSettings {
   debug: boolean;
 }
 
+interface AnalyticSettings {
+  enabled: boolean;
+}
 // Providers

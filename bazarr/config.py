@@ -176,10 +176,12 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url
 
-jump_keys = ['flask_secret_key',
+ignore_keys = ['flask_secret_key',
                 'page_size',
                 'page_size_manual_search',
                 'throtteled_providers']
+
+raw_keys = ['movie_default_forced', 'serie_default_forced']
 
 def get_settings():
     result = dict()
@@ -193,26 +195,27 @@ def get_settings():
             key = sec_val[0]
             value = sec_val[1]
 
-            if key in jump_keys:
+            if key in ignore_keys:
                 continue
 
-            # Do some postprocessings
-            if value == '' or value == 'None':
-                continue
-            elif value == 'True':
-                value = True
-            elif value == 'False':
-                value = False
-            elif (value[0] == '[' and value[-1] == ']'):
-                value = ast.literal_eval(value)
-            elif value.find(',') != -1:
-                value = value.split(',')
-                pass
-            else:
-                try:
-                    value = int(value)
-                except ValueError:
+            if key not in raw_keys:
+                # Do some postprocessings
+                if value == '' or value == 'None':
+                    continue
+                elif value == 'True':
+                    value = True
+                elif value == 'False':
+                    value = False
+                elif (value[0] == '[' and value[-1] == ']'):
+                    value = ast.literal_eval(value)
+                elif value.find(',') != -1:
+                    value = value.split(',')
                     pass
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        pass
             
             values_dict[key] = value
         

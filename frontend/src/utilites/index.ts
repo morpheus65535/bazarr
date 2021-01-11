@@ -22,13 +22,3 @@ export function updateAsyncState<T>(
       });
     });
 }
-
-export function ComputeForcedKey(val: boolean | string) {
-  let forcedKey = "false";
-  if (typeof val === "string") {
-    forcedKey = val;
-  } else {
-    forcedKey = val ? "true" : "false";
-  }
-  return forcedKey;
-}

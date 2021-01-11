@@ -365,14 +365,8 @@ class Series(Resource):
                 item.update({"desired_languages": ast.literal_eval(desired_languages)})
             except NameError:
                 pass
-            
-            forced = item["forced"]
-            if forced == "True":
-                forced = True
-            elif forced == "False":
-                forced = False
 
-            item.update({"forced": forced})
+            item.update({"forced": item["forced"]})
             item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
@@ -398,11 +392,6 @@ class Series(Resource):
 
         hi = request.form.get('hi')
         forced = request.form.get('forced')
-
-        if forced == "true":
-            forced = "True"
-        elif forced == "false":
-            forced = "False"
 
         if hi == "true":
             hi = "True"
@@ -984,14 +973,8 @@ class Movies(Resource):
             except NameError:
                 pass
 
-            forced = item["forced"]
-            if forced == "True":
-                forced = True
-            elif forced == "False":
-                forced = False
-
             item.update({"monitored": item["monitored"] == "True"})
-            item.update({"forced": forced})
+            item.update({"forced": item["forced"]})
             item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
@@ -1017,11 +1000,6 @@ class Movies(Resource):
 
         hi = request.form.get('hi')
         forced = request.form.get('forced')
-
-        if forced == "true":
-            forced = "True"
-        elif forced == "false":
-            forced = "False"
 
         if hi == "true":
             hi = "True"

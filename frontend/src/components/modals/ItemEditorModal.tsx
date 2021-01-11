@@ -6,13 +6,7 @@ import BasicModal, { ModalProps } from "./BasicModal";
 
 import { LanguageSelector, Selector } from "../";
 
-import { ComputeForcedKey } from "../../utilites";
-
-const forcedOptions = {
-  false: "False",
-  true: "True",
-  Both: "Both",
-};
+import { forcedOptions } from "../../utilites/global";
 
 interface Props {
   languages: ExtendLanguage[];
@@ -26,7 +20,7 @@ interface State {
   changed: boolean;
   enabled: ExtendLanguage[];
   hi: boolean;
-  forced: boolean | string;
+  forced: ForcedOptions;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -48,7 +42,7 @@ class Editor extends React.Component<Props & ModalProps, State> {
           };
         }) ?? [],
       hi: props.item?.hearing_impaired ?? false,
-      forced: props.item?.forced ?? false,
+      forced: props.item?.forced ?? "False",
       changed: false,
       updating: false,
     };
@@ -109,8 +103,6 @@ class Editor extends React.Component<Props & ModalProps, State> {
       </Button>
     );
 
-    let forcedKey = ComputeForcedKey(forced);
-
     return (
       <BasicModal closeable={!updating} {...this.props} footer={footer}>
         <Container fluid>
@@ -135,9 +127,11 @@ class Editor extends React.Component<Props & ModalProps, State> {
               <Form.Label>Forced</Form.Label>
               <Selector
                 options={forcedOptions}
-                defaultKey={forcedKey}
+                defaultKey={forced}
                 multiply={false}
-                onSelect={(val) => this.updateState("forced", val)}
+                onSelect={(val) =>
+                  this.updateState("forced", val as ForcedOptions)
+                }
               ></Selector>
             </Form.Group>
             <Form.Group>

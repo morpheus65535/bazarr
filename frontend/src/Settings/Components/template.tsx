@@ -55,7 +55,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 disabled={Object.keys(willChange).length === 0}
                 onClick={() => {
                   update(willChange);
-                  setWillChange({})
+                  setWillChange({});
                 }}
               >
                 Save
