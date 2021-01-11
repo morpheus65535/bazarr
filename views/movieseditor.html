@@ -49,7 +49,7 @@
                         url: "{{ url_for('api.movieseditor') }}",
                         success: function (data) {
                             if (data.data.length) {
-                                $('#movies').DataTable().ajax.reload(resetPaging = false);
+                                $('#movies').DataTable().ajax.reload(null, false);
                                 $('[data-toggle="tooltip"]').tooltip({html: true});
                             }
                         }

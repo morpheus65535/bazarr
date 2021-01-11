@@ -1415,7 +1415,7 @@
 
                 if (event_json.type === 'episodeBlacklist' || event_json.type === 'episodeHistory') {
                     if ($('#episode_history_result').DataTable().ajax.json()) {
-                        $('#episode_history_result').DataTable().ajax.reload(resetPaging = false);
+                        $('#episode_history_result').DataTable().ajax.reload(null, false);
                         $('[data-toggle="tooltip"]').tooltip({html: true});
                     }
                 }
