@@ -3,8 +3,6 @@
 import os
 import io
 import rarfile
-import json
-import hashlib
 import sys
 import subprocess
 

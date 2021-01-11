@@ -1,11 +1,12 @@
 # coding=utf-8
+
 import requests
 import logging
 from database import database, dict_converter, get_exclusion_clause
 
 from config import settings, url_sonarr
 from helper import path_mappings
-from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles
+from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream
 

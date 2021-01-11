@@ -1,4 +1,5 @@
 # coding=utf-8
+
 import hashlib
 import os
 
@@ -30,13 +31,9 @@ defaults = {
         'use_radarr': 'False',
         'path_mappings_movie': '[]',
         'serie_default_enabled': 'False',
-        'serie_default_language': '[]',
-        'serie_default_hi': 'False',
-        'serie_default_forced': 'False',
+        'serie_default_profile': '',
         'movie_default_enabled': 'False',
-        'movie_default_language': '[]',
-        'movie_default_hi': 'False',
-        'movie_default_forced': 'False',
+        'movie_default_profile': '',
         'page_size': '25',
         'page_size_manual_search': '10',
         'minimum_score_movie': '70',

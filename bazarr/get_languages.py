@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import pycountry
-import ast
 
 from subzero.language import Language
 from database import database

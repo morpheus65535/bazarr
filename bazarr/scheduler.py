@@ -4,7 +4,8 @@ from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
-from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, upgrade_subtitles
+from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    upgrade_subtitles
 from utils import cache_maintenance
 from get_args import args
 if not args.no_update:
@@ -63,10 +64,10 @@ class Scheduler:
         if args.no_tasks:
             self.__no_task()
 
-    def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None):
+    def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None, kwargs=None):
         self.aps_scheduler.add_job(
             job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
-            coalesce=coalesce, args=args)
+            coalesce=coalesce, args=args, kwargs=kwargs)
 
     def execute_job_now(self, taskid):
         self.aps_scheduler.modify_job(taskid, next_run_time=datetime.now())

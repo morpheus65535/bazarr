@@ -1,17 +1,13 @@
 # coding=utf-8
 
-import os
 import ast
 from datetime import timedelta
-import datetime
 from dateutil import rrule
 import pretty
 import time
 from operator import itemgetter
 import platform
-import io
 import re
-import json
 
 from get_args import args
 from config import settings, base_url, save_settings
@@ -19,13 +15,12 @@ from config import settings, base_url, save_settings
 from init import *
 import logging
 from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
-    get_audio_profile_languages
+    get_audio_profile_languages, update_profile_id_list
 from helper import path_mappings
-from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
-    alpha3_from_language, alpha3_from_alpha2
-from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles_series, \
-    wanted_search_missing_subtitles_movies, episode_download_subtitles, movies_download_subtitles
+from get_languages import language_from_alpha2, alpha3_from_alpha2
+from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
+    manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    episode_download_subtitles, movies_download_subtitles
 from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
@@ -189,6 +184,40 @@ class ResetProviders(Resource):
 class SaveSettings(Resource):
     @authenticate
     def post(self):
+        languages_profiles = request.form.get('languages_profiles')
+        if languages_profiles:
+            existing_ids = database.execute('SELECT profileId FROM table_languages_profiles')
+            existing = [x['profileId'] for x in existing_ids]
+            for item in json.loads(languages_profiles):
+                if item['profileId'] in existing:
+                    # Update existing profiles
+                    database.execute('UPDATE table_languages_profiles SET name = ?, cutoff = ?, items = ? '
+                                     'WHERE profileId = ?', (item['name'],
+                                                             item['cutoff'] if item['cutoff'] != '' else None,
+                                                             item['items'],
+                                                             item['profileId']))
+                    existing.remove(item['profileId'])
+                else:
+                    # Add new profiles
+                    database.execute('INSERT INTO table_languages_profiles (profileId, name, cutoff, items) '
+                                     'VALUES (?, ?, ?, ?)', (item['profileId'],
+                                                             item['name'],
+                                                             item['cutoff'] if item['cutoff'] != '' else None,
+                                                             item['items']))
+            for profileId in existing:
+                # Unassign this profileId from series and movies
+                database.execute('UPDATE table_shows SET profileId = null WHERE profileId = ?', (profileId,))
+                database.execute('UPDATE table_movies SET profileId = null WHERE profileId = ?', (profileId,))
+                # Remove deleted profiles
+                database.execute('DELETE FROM table_languages_profiles WHERE profileId = ?', (profileId,))
+
+            update_profile_id_list()
+
+            if settings.general.getboolean('use_sonarr'):
+                scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
+            if settings.general.getboolean('use_radarr'):
+                scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': False})
+
         save_settings(zip(request.form.keys(), request.form.listvalues()))
 
         return '', 200
@@ -1350,8 +1379,7 @@ class HistorySeries(Resource):
                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
                 ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" + 
-                get_exclusion_clause('series') + " GROUP BY table_history.video_path, table_history.language", 
-                (minimum_timestamp,))
+                get_exclusion_clause('series') + " GROUP BY table_history.video_path", (minimum_timestamp,))
 
             for upgradable_episode in upgradable_episodes:
                 if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1454,8 +1482,8 @@ class HistoryMovies(Resource):
             upgradable_movies = database.execute(
                 "SELECT video_path, MAX(timestamp) as timestamp, score, tags, monitored FROM table_history_movie "
                 "INNER JOIN table_movies on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" + 
-                get_exclusion_clause('movie') + " GROUP BY video_path, language", (minimum_timestamp,))
+                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" +
+                get_exclusion_clause('movie') + " GROUP BY video_path", (minimum_timestamp,))
 
             for upgradable_movie in upgradable_movies:
                 if upgradable_movie['timestamp'] > minimum_timestamp:
@@ -1599,7 +1627,7 @@ class WantedSeries(Resource):
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
-                                "table_episodes.sonarrSeriesId, table_episodes.path, table_shows.hearing_impaired, "
+                                "table_episodes.sonarrSeriesId, table_episodes.path, "
                                 "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
@@ -1645,7 +1673,7 @@ class WantedMovies(Resource):
         data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
                                       get_exclusion_clause('movie'))
         row_count = len(data_count)
-        data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
+        data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
                                 get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
                                 start)

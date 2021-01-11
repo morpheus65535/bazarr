@@ -10,7 +10,7 @@ from subliminal_patch import core, search_external_subtitles
 from subzero.language import Language
 
 from database import database, get_profiles_list, get_profile_cutoff
-from get_languages import alpha2_from_alpha3, get_language_set
+from get_languages import alpha2_from_alpha3, language_from_alpha2, get_language_set
 from config import settings
 from helper import path_mappings, get_subtitle_destination_folder
 
@@ -210,7 +210,8 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
     else:
         episodes_subtitles_clause = ""
     episodes_subtitles = database.execute("SELECT table_shows.sonarrSeriesId, table_episodes.sonarrEpisodeId, "
-                                          "table_episodes.subtitles, table_shows.profileId FROM table_episodes "
+                                          "table_episodes.subtitles, table_shows.profileId, "
+                                          "table_episodes.audio_language FROM table_episodes "
                                           "LEFT JOIN table_shows on table_episodes.sonarrSeriesId = "
                                           "table_shows.sonarrSeriesId" + episodes_subtitles_clause)
     if isinstance(episodes_subtitles, str):
@@ -227,6 +228,9 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
             desired_subtitles_list = []
             if desired_subtitles_temp:
                 for language in ast.literal_eval(desired_subtitles_temp['items']):
+                    if language['audio_exclude'] == "True":
+                        if language_from_alpha2(language['language']) in ast.literal_eval(episode_subtitles['audio_language']):
+                            continue
                     desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
 
             # get existing subtitles
@@ -307,7 +311,7 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
     else:
         movies_subtitles_clause = ""
 
-    movies_subtitles = database.execute("SELECT radarrId, subtitles, profileId FROM table_movies" +
+    movies_subtitles = database.execute("SELECT radarrId, subtitles, profileId, audio_language FROM table_movies" +
                                         movies_subtitles_clause)
     if isinstance(movies_subtitles, str):
         logging.error("BAZARR list missing subtitles query to DB returned this instead of rows: " + movies_subtitles)
@@ -324,6 +328,9 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
             desired_subtitles_list = []
             if desired_subtitles_temp:
                 for language in ast.literal_eval(desired_subtitles_temp['items']):
+                    if language['audio_exclude'] == "True":
+                        if language_from_alpha2(language['language']) in ast.literal_eval(movie_subtitles['audio_language']):
+                            continue
                     desired_subtitles_list.append([language['language'], language['forced'], language['hi']])
 
             # get existing subtitles

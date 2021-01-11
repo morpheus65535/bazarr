@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import os
 import ast
 import sqlite3
@@ -149,14 +151,6 @@ def db_upgrade():
         except:
             pass
 
-    # Fix null languages, hearing-impaired and forced for series and movies.
-    database.execute("UPDATE table_shows SET languages = '[]' WHERE languages is null")
-    database.execute("UPDATE table_shows SET hearing_impaired = 'False' WHERE hearing_impaired is null")
-    database.execute("UPDATE table_shows SET forced = 'False' WHERE forced is null")
-    database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
-    database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
-    database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")
-
     # Create blacklist tables
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist (sonarr_series_id integer, sonarr_episode_id integer, "
                      "timestamp integer, provider text, subs_id text, language text)")
@@ -170,7 +164,7 @@ def db_upgrade():
     else:
         lang_table_exist = False
         database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
-                         "profileId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, "
+                         "profileId INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, "
                          "cutoff INTEGER, items TEXT NOT NULL)")
 
     if not lang_table_exist:
