@@ -26,7 +26,7 @@ def update_movies():
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
 
     if movie_default_enabled is True:
-        movie_default_profile = settings.general.movie_default_language
+        movie_default_profile = settings.general.movie_default_profile
         if movie_default_profile == '':
             movie_default_profile = None
     else:
