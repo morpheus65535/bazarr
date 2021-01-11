@@ -314,11 +314,11 @@
                             var languages = '';
                             $(eval(data)).each(function (index, value) {
                                 if (value.forced == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Cutoff" style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 } else if (value.hi == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Cutoff" style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 } else {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Cutoff" style="background-color:#911f93;"' : '') + '>' + value.language + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 }
                             });
                             return languages;
@@ -537,6 +537,12 @@
             });
 
             $('#add_languages_profiles').DataTable().on( 'draw', function () {
+                if ($('#add_languages_profiles').DataTable().rows().count()) {
+                    $('#add_save_button').prop('disabled', false).css('cursor', 'auto');
+                } else {
+                    $('#add_save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                }
+
                 var previousValue = $("#add_language_cutoff").val();
                 $("#add_language_cutoff").empty();
                 $('#add_language_cutoff').append('<option value="">None</option>');
@@ -550,6 +556,12 @@
             } );
 
             $('#edit_languages_profiles').DataTable().on( 'draw', function () {
+                if ($('#edit_languages_profiles').DataTable().rows().count()) {
+                    $('#edit_save_button').prop('disabled', false).css('cursor', 'auto');
+                } else {
+                    $('#edit_save_button').prop('disabled', true).css('cursor', 'not-allowed');
+                }
+
                 var previousValue = $("#edit_language_cutoff").val();
                 $("#edit_language_cutoff").empty();
                 $('#edit_language_cutoff').append('<option value="">None</option>');
