@@ -25,17 +25,18 @@ class BSPlayerSubtitle(Subtitle):
     provider_name = 'bsplayer'
     hash_verifiable = True
 
-    def __init__(self, language, filename, subtype, video, link):
+    def __init__(self, language, filename, subtype, video, link, subid):
         super(BSPlayerSubtitle, self).__init__(language)
         self.language = language
         self.filename = filename
         self.page_link = link
         self.subtype = subtype
         self.video = video
+        self.subid = subid
 
     @property
     def id(self):
-        return self.page_link
+        return self.subid
 
     @property
     def release_info(self):
@@ -225,7 +226,7 @@ class BSPlayerProvider(Provider):
                 subName = item.find('subName').text
                 subFormat = item.find('subFormat').text
                 subtitles.append(
-                    BSPlayerSubtitle(subLang, subName, subFormat, video, subDownloadLink)
+                    BSPlayerSubtitle(subLang, subName, subFormat, video, subDownloadLink, subID)
                 )
         return subtitles
 

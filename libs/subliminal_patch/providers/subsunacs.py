@@ -40,12 +40,15 @@ def fix_tv_naming(title):
                                            "Marvel's Iron Fist": "Iron Fist",
                                            "DC's Legends of Tomorrow": "Legends of Tomorrow",
                                            "Doctor Who (2005)": "Doctor Who",
+                                           "Star Trek: Deep Space Nine": "Star Trek DS9",
+                                           "Star Trek: The Next Generation": "Star Trek TNG",
                                            }, True)
 
 
 def fix_movie_naming(title):
     return fix_inconsistent_naming(title, {"Back to the Future Part III": "Back to the Future 3",
                                            "Back to the Future Part II": "Back to the Future 2",
+                                           'Bill & Ted Face the Music': 'Bill Ted Face the Music',
                                            }, True)
 
 

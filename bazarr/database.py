@@ -94,6 +94,7 @@ def db_upgrade():
         ['table_shows', 'forced', 'text', 'False'],
         ['table_shows', 'tags', 'text', '[]'],
         ['table_shows', 'seriesType', 'text', ''],
+        ['table_shows', 'imdbId', 'text', ''],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
@@ -127,10 +128,18 @@ def db_upgrade():
 
     for column in columnToAdd:
         try:
+            # Check if column already exist in table
+            columns_dict = database.execute('''PRAGMA table_info('{0}')'''.format(column[0]))
+            columns_names_list = [x['name'] for x in columns_dict]
+            if column[1] in columns_names_list:
+                continue
+
+            # Creating the missing column
             if len(column) == 3:
                 database.execute('''ALTER TABLE {0} ADD COLUMN "{1}" "{2}"'''.format(column[0], column[1], column[2]))
             else:
                 database.execute('''ALTER TABLE {0} ADD COLUMN "{1}" "{2}" DEFAULT "{3}"'''.format(column[0], column[1], column[2], column[3]))
+            logging.debug('BAZARR Database upgrade process added column {0} to table {1}.'.format(column[1], column[0]))
         except:
             pass
 

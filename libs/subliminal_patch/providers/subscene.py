@@ -1,19 +1,19 @@
 # coding=utf-8
 
-from __future__ import absolute_import
 import io
 import logging
 import os
 import time
 import traceback
+from urllib import parse
 
 import requests
 
 import inflect
 import re
 import json
-import six.moves.html_parser
-import six.moves.urllib.parse
+
+import html
 
 from zipfile import ZipFile
 from babelfish import language_converters
@@ -30,7 +30,6 @@ from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.converters.subscene import language_ids, supported_languages
 from subscene_api.subscene import search, Subtitle as APISubtitle, SITE_DOMAIN
 from subzero.language import Language
-import six
 
 p = inflect.engine()
 
@@ -160,9 +159,9 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
         match = re.search(r"<script id='modelJson' type='application/json'>\s*(.+)\s*</script>", r.text)
 
         if match:
-            h = six.moves.html_parser.HTMLParser()
+            h = html
             data = json.loads(h.unescape(match.group(1)))
-            login_url = six.moves.urllib.parse.urljoin(data["siteUrl"], data["loginUrl"])
+            login_url = parse.urljoin(data["siteUrl"], data["loginUrl"])
             time.sleep(1.0)
 
             r = self.session.post(login_url,
@@ -190,7 +189,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                 else:
                     cj = self.session.cookies.copy()
                     store_cks = ("scene", "idsrv", "idsrv.xsrf", "idsvr.clients", "idsvr.session", "idsvr.username")
-                    for cn in six.iterkeys(self.session.cookies):
+                    for cn in self.session.cookies.keys():
                         if cn not in store_cks:
                             del cj[cn]
 
@@ -310,7 +309,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
 
         # re-search for episodes without explicit release name
         if isinstance(video, Episode):
-            titles = list(set([video.series] + video.alternative_series))[:2]
+            titles = list(set([video.series] + video.alternative_series[:1]))
             # term = u"%s S%02iE%02i" % (video.series, video.season, video.episode)
             more_than_one = len(titles) > 1
             for series in titles:
@@ -339,7 +338,7 @@ class SubsceneProvider(Provider, ProviderSubtitleArchiveMixin):
                 if more_than_one:
                     time.sleep(self.search_throttle)
         else:
-            titles = list(set([video.title] + video.alternative_titles))[:2]
+            titles = list(set([video.title] + video.alternative_titles[:1]))
             more_than_one = len(titles) > 1
             for title in titles:
                 logger.debug('Searching for movie results: %r', title)

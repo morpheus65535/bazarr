@@ -1,75 +1,69 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 import os
-import re
-import io
 
-from babelfish import language_converters
-from guessit import guessit
 from requests import Session
 from subzero.language import Language
 
 from subliminal import Movie, Episode, ProviderError, __short_version__
-from subliminal.exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded, ProviderError
 from subliminal_patch.subtitle import Subtitle, guess_matches
+from subliminal.providers import ParserBeautifulSoup
 from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
 from subliminal_patch.providers import Provider
 
 logger = logging.getLogger(__name__)
-
-server_url = 'https://subtitulamos.tv/'
 
 
 class SubtitulamosTVSubtitle(Subtitle):
     provider_name = 'subtitulamostv'
     hash_verifiable = False
 
-    def __init__(self, language, page_link, download_link, description, title, matches, release_info):
-        super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False,
-                                              page_link=page_link)
+    def __init__(self, language, page_link, download_link, title, release_info):
+        super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False, page_link=page_link)
         self.download_link = download_link
-        self.description = description.lower()
         self.title = title
         self.release_info = release_info
-        self.found_matches = matches
 
     @property
     def id(self):
         return self.download_link
 
     def get_matches(self, video):
-        matches = self.found_matches
+        matches = {'series', 'season', 'episode', 'year'}
 
-        # release_group
-        if video.release_group and video.release_group.lower() in self.description:
+        title_lower = self.title.lower()
+        release_info_lower = self.release_info.lower()
+
+        if video.title and video.title.lower() in title_lower:
+            matches.add('title')
+
+        if video.release_group and video.release_group.lower() in release_info_lower:
             matches.add('release_group')
 
-        # resolution
-        if video.resolution and video.resolution.lower() in self.description:
+        if video.resolution and video.resolution.lower() in release_info_lower:
             matches.add('resolution')
 
-        # source
         if video.source:
             formats = [video.source.lower()]
             if formats[0] == "web":
                 formats.append("webdl")
+                formats.append("web-dl")
                 formats.append("webrip")
-                formats.append("web ")
             for frmt in formats:
-                if frmt.lower() in self.description:
+                if frmt in release_info_lower:
                     matches.add('source')
                     break
 
-        # video_codec
         if video.video_codec:
             video_codecs = [video.video_codec.lower()]
-            if video_codecs[0] == "H.264":
-                formats.append("x264")
-            elif video_codecs[0] == "H.265":
-                formats.append("x265")
-            for vc in formats:
-                if vc.lower() in self.description:
+            if video_codecs[0] == "h.264":
+                video_codecs.append("h264")
+                video_codecs.append("x264")
+            elif video_codecs[0] == "h.265":
+                video_codecs.append("h265")
+                video_codecs.append("x265")
+            for vc in video_codecs:
+                if vc in release_info_lower:
                     matches.add('video_codec')
                     break
 
@@ -78,8 +72,13 @@ class SubtitulamosTVSubtitle(Subtitle):
 
 class SubtitulamosTVProvider(Provider):
     """Subtitulamostv Provider"""
-    languages = {Language.fromietf(l) for l in ['en','es']}
+    languages = {Language.fromietf(lang) for lang in ['en', 'es']}
     video_types = (Episode,)
+
+    server_url = 'https://subtitulamos.tv'
+
+    def __init__(self):
+        self.session = None
 
     def initialize(self):
         self.session = Session()
@@ -90,58 +89,56 @@ class SubtitulamosTVProvider(Provider):
         self.session.close()
 
     def query(self, languages, video):
-        # query the server
-        result = None
-        year = (" (%d)" % video.year) if video.year else ""
-        q = "%s%s %dx%02d" % (video.series, year, video.season, video.episode)
-        logger.debug('Searching subtitles "%s"', q)
+        subtitle_name = "%s %dx%02d" % (video.series, video.season, video.episode)
+        logger.debug('Searching subtitles "%s"' % subtitle_name)
 
-        res = self.session.get(
-            server_url + 'search/query', params={'q':q}, timeout=10)
-        res.raise_for_status()
-        result = res.json()
+        response = self.session.get(self.server_url + '/search/query', params={'q': video.series}, timeout=10)
+        response.raise_for_status()
+        result = response.json()
 
         subtitles = []
-        for s in [s for s in result if len(s['episodes'])]:
-            for e in s['episodes']:
-                res = self.session.get(
-                    server_url + 'episodes/%d' % e['id'], timeout=10)
-                res.raise_for_status()
-                html = res.text
-                for lang_m in re.finditer(r"<div class=\"subtitle_language\">(.*?)<\/div>.*?(?=<div class=\"subtitle_language\">|<div id=\"subtitle-actions\">)", html, re.S):
-                    lang = lang_m.group(1)
-                    language = "es"
-                    if "English" in lang:
+        for serie in result:
+            # skip non-matching series
+            if video.series.lower() != serie['name'].lower():
+                continue
+
+            response = self.session.get(self.server_url + "/shows/%d/season/%d" % (serie['id'], video.season),
+                                        timeout=10)
+            response.raise_for_status()
+            soup = ParserBeautifulSoup(response.text, ['lxml', 'html.parser'])
+
+            for episode in soup.select('div.episode'):
+                episode_soup = episode.find('a')
+                episode_name = episode_soup.text
+                episode_url = episode_soup['href']
+
+                # skip non-matching episodes
+                if subtitle_name.lower() not in episode_name.lower():
+                    continue
+
+                for lang in episode.select("div.subtitle-language"):
+                    if "English" in lang.text:
                         language = "en"
+                    elif "Español" in lang.text:
+                        language = "es"
+                    else:
+                        continue  # not supported yet
                     logger.debug('Found subtitles in "%s" language.', language)
 
-                    for subt_m in re.finditer(r"<div class=\"version_name\">(.*?)</div>.*?<a href=\"/(subtitles/\d+/download)\" rel=\"nofollow\">(?:.*?<div class=\"version_comments ?\">.*?</i>(.*?)</p>)?", lang_m.group(0), re.S):
-                        matches = set()
-                        if video.alternative_series is None:
-                            if video.series.lower() == s['name'].lower():
-                                matches.add('series')
-                        elif s['name'].lower() in [video.series.lower()]+list(map(lambda name: name.lower(), video.alternative_series)):
-                            matches.add('series')
-                        if video.season == e['season']:
-                            matches.add('season')
-                        if video.episode == e['number']:
-                            matches.add('episode')
-                        if video.title == e['name']:
-                            matches.add('title')
-                        #if video.year is None or ("(%d)" % video.year) in s['name']:
-                        matches.add('year')
+                    for release in lang.find_next_sibling("div").select("div.sub"):
+                        release_name = release.select('div.version-name')[0].text
+                        release_url = release.select('a[href*="/download"]')[0]['href']
+
                         subtitles.append(
                             SubtitulamosTVSubtitle(
-                                Language.fromietf(language), 
-                                server_url + 'episodes/%d' % e['id'], 
-                                server_url + subt_m.group(2),
-                                subt_m.group(1)+(subt_m.group(3) if not subt_m.group(3) is None else ""), 
-                                e['name'], 
-                                matches,
-                                '%s %dx%d,%s,%s' % (s['name'], e['season'], e['number'], subt_m.group(1), lang_m.group(1)), 
+                                Language.fromietf(language),
+                                self.server_url + episode_url,
+                                self.server_url + release_url,
+                                episode_name,
+                                release_name
                             )
                         )
-                        
+
         return subtitles
 
     def list_subtitles(self, video, languages):

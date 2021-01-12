@@ -857,7 +857,7 @@
 
 			if (event_json.type === 'movieBlacklist' || event_json.type === 'movieHistory') {
 				if ($('#movie_history_result').DataTable().ajax.json()) {
-					$('#movie_history_result').DataTable().ajax.reload(resetPaging = false);
+					$('#movie_history_result').DataTable().ajax.reload(null, false);
 					$('[data-toggle="tooltip"]').tooltip({html: true});
 				}
 			}

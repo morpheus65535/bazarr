@@ -1,8 +1,9 @@
 # coding=utf-8
 
-bazarr_version = '0.9.0.5'
+bazarr_version = '0.9.0.8'
 
 import os
+
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 import gc
@@ -13,7 +14,6 @@ import hashlib
 import apprise
 import requests
 import calendar
-
 
 from get_args import args
 from logger import empty_log
@@ -82,7 +82,16 @@ def login_required(f):
                 return redirect(url_for('login_page'))
         else:
             return f(*args, **kwargs)
+
     return wrap
+
+
+@app.errorhandler(404)
+@login_required
+def page_not_found(e):
+    if request.path == '/':
+        return redirect(url_for('series'), code=302)
+    return render_template('404.html'), 404
 
 
 @app.route('/login/', methods=["GET", "POST"])
@@ -103,7 +112,11 @@ def login_page():
                 error = "Invalid credentials, try again."
         gc.collect()
 
-        return render_template("login.html", error=error, password_reset=password_reset)
+        if settings.auth.type == 'form' and not 'logged_in' in session:
+            return render_template("login.html", error=error, password_reset=password_reset)
+        else:
+            return redirect(url_for("redirect_root"))
+
 
     except Exception as e:
         # flash(e)
@@ -264,9 +277,9 @@ def historystats():
     data_languages_list = []
     for item in data_languages:
         splitted_lang = item['language'].split(':')
-        item = {"name": language_from_alpha2(splitted_lang[0]),
-                "code2": splitted_lang[0],
-                "code3": alpha3_from_alpha2(splitted_lang[0]),
+        item = {"name"  : language_from_alpha2(splitted_lang[0]),
+                "code2" : splitted_lang[0],
+                "code3" : alpha3_from_alpha2(splitted_lang[0]),
                 "forced": True if len(splitted_lang) > 1 else False}
         data_languages_list.append(item)
 
@@ -476,14 +489,17 @@ def test_url(protocol, url):
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
 @login_required
 def test_notification(protocol, provider):
-
     provider = unquote(provider)
-    apobj = apprise.Apprise()
+
+    asset = apprise.AppriseAsset(async_mode=False)
+
+    apobj = apprise.Apprise(asset=asset)
+
     apobj.add(protocol + "://" + provider)
 
     apobj.notify(
-        title='Bazarr test notification',
-        body='Test notification'
+            title='Bazarr test notification',
+            body='Test notification'
     )
 
     return '', 200

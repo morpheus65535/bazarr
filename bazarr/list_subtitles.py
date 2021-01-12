@@ -21,7 +21,7 @@ from charamel import Detector
 gc.enable()
 
 global hi_regex
-hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}]')
+hi_regex = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
 
 def store_subtitles(original_path, reversed_path):
@@ -63,7 +63,13 @@ def store_subtitles(original_path, reversed_path):
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set(),
                                                   only_one=settings.general.getboolean('single_language'))
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -80,10 +86,15 @@ def store_subtitles(original_path, reversed_path):
                         [str("pb:forced"), path_mappings.path_replace_reverse(subtitle_path)])
                 elif not language:
                     continue
-                elif str(language.basename) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
-                    actual_subtitles.append([str(language.basename + (':hi' if language.hi else '')),
-                                             path_mappings.path_replace_reverse(subtitle_path)])
+                elif str(language) != 'und':
+                    if language.forced:
+                        language_str = str(language)
+                    elif language.hi:
+                        language_str = str(language) + ':hi'
+                    else:
+                        language_str = str(language)
+                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path)])
 
         database.execute("UPDATE table_episodes SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -142,7 +153,13 @@ def store_subtitles_movie(original_path, reversed_path):
             dest_folder = get_subtitle_destination_folder() or ''
             core.CUSTOM_PATHS = [dest_folder] if dest_folder else []
             subtitles = search_external_subtitles(reversed_path, languages=get_language_set())
-            subtitles = guess_external_subtitles(get_subtitle_destination_folder() or os.path.dirname(reversed_path), subtitles)
+            full_dest_folder_path = os.path.dirname(reversed_path)
+            if dest_folder:
+                if settings.general.subfolder == "absolute":
+                    full_dest_folder_path = dest_folder
+                elif settings.general.subfolder == "relative":
+                    full_dest_folder_path = os.path.join(os.path.dirname(reversed_path), dest_folder)
+            subtitles = guess_external_subtitles(full_dest_folder_path, subtitles)
         except Exception as e:
             logging.exception("BAZARR unable to index external subtitles.")
             pass
@@ -158,9 +175,14 @@ def store_subtitles_movie(original_path, reversed_path):
                 elif not language:
                     continue
                 elif str(language.basename) != 'und':
-                    logging.debug("BAZARR external subtitles detected: " + str(language.basename))
-                    actual_subtitles.append([str(language) + (':hi' if language.hi else ''),
-                                             path_mappings.path_replace_reverse_movie(subtitle_path)])
+                    if language.forced:
+                        language_str = str(language)
+                    elif language.hi:
+                        language_str = str(language) + ':hi'
+                    else:
+                        language_str = str(language)
+                    logging.debug("BAZARR external subtitles detected: " + language_str)
+                    actual_subtitles.append([language_str, path_mappings.path_replace_reverse_movie(subtitle_path)])
         
         database.execute("UPDATE table_movies SET subtitles=? WHERE path=?",
                          (str(actual_subtitles), original_path))
@@ -417,9 +439,21 @@ def guess_external_subtitles(dest_folder, subtitles):
                     detected_language = guess_language(text)
                 except UnicodeDecodeError:
                     detector = Detector()
-                    guess = detector.detect(text)
-                    logging.debug('BAZARR detected encoding %r', guess)
-                    text = text.decode(guess)
+                    try:
+                        guess = detector.detect(text)
+                    except:
+                        logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                      "It's probably a binary file: " + subtitle_path)
+                        continue
+                    else:
+                        logging.debug('BAZARR detected encoding %r', guess)
+                        try:
+                            text = text.decode(guess)
+                        except:
+                            logging.debug(
+                                "BAZARR skipping this subtitles because we can't decode the file using the "
+                                "guessed encoding. It's probably a binary file: " + subtitle_path)
+                            continue
                     detected_language = guess_language(text)
                 except:
                     logging.debug('BAZARR was unable to detect encoding for this subtitles file: %r', subtitle_path)
@@ -433,31 +467,48 @@ def guess_external_subtitles(dest_folder, subtitles):
                         except:
                             pass
 
+        # If language is still None (undetected), skip it
+        if not language:
+            pass
+
+        # Skip HI detection if forced
+        elif language.forced:
+            pass
+
         # Detect hearing-impaired external subtitles not identified in filename
-        if not subtitles[subtitle].hi:
+        elif not subtitles[subtitle].hi:
             subtitle_path = os.path.join(dest_folder, subtitle)
 
-            # to improve performance, skip detection of files larger that 1M
-            #if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
-            #    logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
-            #                  subtitle_path)
-            #    continue
-
-            with open(subtitle_path, 'rb') as f:
-                text = f.read()
-
-            try:
-                text = text.decode('utf-8')
-            except UnicodeDecodeError:
-                detector = Detector()
-                guess = detector.detect(text)
-                logging.debug('BAZARR detected encoding %r', guess)
-                try:
-                    text = text.decode(guess)
-                except:
-                    # text could not be decoded with guessed encoding, we wont try to detect HI fo rthis one
+            # check if file exist:
+            if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
+                # to improve performance, skip detection of files larger that 1M
+                if os.path.getsize(subtitle_path) > 1 * 1024 * 1024:
+                    logging.debug("BAZARR subtitles file is too large to be text based. Skipping this file: " +
+                                  subtitle_path)
                     continue
 
-            if bool(re.search(hi_regex, text)):
-                subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
+                with open(subtitle_path, 'rb') as f:
+                    text = f.read()
+
+                try:
+                    text = text.decode('utf-8')
+                except UnicodeDecodeError:
+                    detector = Detector()
+                    try:
+                        guess = detector.detect(text)
+                    except:
+                        logging.debug("BAZARR skipping this subtitles because we can't guess the encoding. "
+                                      "It's probably a binary file: " + subtitle_path)
+                        continue
+                    else:
+                        logging.debug('BAZARR detected encoding %r', guess)
+                        try:
+                            text = text.decode(guess)
+                        except:
+                            logging.debug("BAZARR skipping this subtitles because we can't decode the file using the "
+                                          "guessed encoding. It's probably a binary file: " + subtitle_path)
+                            continue
+
+                if bool(re.search(hi_regex, text)):
+                    subtitles[subtitle] = Language.rebuild(subtitles[subtitle], forced=False, hi=True)
     return subtitles

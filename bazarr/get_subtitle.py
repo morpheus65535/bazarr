@@ -29,6 +29,7 @@ from notifier import send_notifications, send_notifications_movie
 from get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool
 from knowit import api
 from subsyncer import subsync
+from guessit import guessit
 from database import database, dict_mapper, get_exclusion_clause
 
 from analytics import track_event
@@ -241,7 +242,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                                 (path_mappings.path_replace_reverse(path),),
                                                                 only_one=True)
                             series_id = episode_metadata['sonarrSeriesId']
-                            episode_id = episode_metadata['sonarrEpisodeId']                                                                
+                            episode_id = episode_metadata['sonarrEpisodeId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=percent_score,
@@ -252,7 +253,7 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                                                               (path_mappings.path_replace_reverse_movie(path),),
                                                               only_one=True)
                             series_id = ""
-                            episode_id = movie_metadata['radarrId']                                  
+                            episode_id = movie_metadata['radarrId']
                             sync_subtitles(video_path=path, srt_path=downloaded_path,
                                            srt_lang=downloaded_language_code3, media_type=media_type,
                                            percent_score=percent_score,
@@ -389,12 +390,17 @@ def manual_search(path, language, hi, forced, providers, providers_auth, sceneNa
                         logging.debug(u"BAZARR Skipping %s, because it doesn't match our series/episode", s)
                         continue
 
+                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
+                if 'hash' not in matches:
+                    not_matched = scores - matches
+                else:
+                    not_matched = set()
+                s.score = score
+
                 if s.hearing_impaired == initial_hi:
                     matches.add('hearing_impaired')
-
-                score, score_without_hash = compute_score(matches, s, video, hearing_impaired=initial_hi)
-                not_matched = scores - matches
-                s.score = score
+                else:
+                    not_matched.add('hearing_impaired')
 
                 releases = []
                 if hasattr(s, 'release_info'):
@@ -640,7 +646,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                             (path_mappings.path_replace_reverse(path),),
                                             only_one=True)
         series_id = episode_metadata['sonarrSeriesId']
-        episode_id = episode_metadata['sonarrEpisodeId']   
+        episode_id = episode_metadata['sonarrEpisodeId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
                        percent_score=100, sonarr_series_id=episode_metadata['sonarrSeriesId'],
                        sonarr_episode_id=episode_metadata['sonarrEpisodeId'])
@@ -649,7 +655,7 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
                                           (path_mappings.path_replace_reverse_movie(path),),
                                           only_one=True)
         series_id = ""
-        episode_id = movie_metadata['radarrId']   
+        episode_id = movie_metadata['radarrId']
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code3, media_type=media_type,
                        percent_score=100, radarr_id=movie_metadata['radarrId'])
 
@@ -1021,19 +1027,26 @@ def search_active(timestamp):
         return True
 
 
+def convert_to_guessit(guessit_key, attr_from_db):
+    try:
+        return guessit(attr_from_db)[guessit_key]
+    except KeyError:
+        return attr_from_db
+
+
 def refine_from_db(path, video):
     if isinstance(video, Episode):
         data = database.execute(
             "SELECT table_shows.title as seriesTitle, table_episodes.season, table_episodes.episode, "
             "table_episodes.title as episodeTitle, table_shows.year, table_shows.tvdbId, "
             "table_shows.alternateTitles, table_episodes.format, table_episodes.resolution, "
-            "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path "
+            "table_episodes.video_codec, table_episodes.audio_codec, table_episodes.path, table_shows.imdbId "
             "FROM table_episodes INNER JOIN table_shows on "
             "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId "
             "WHERE table_episodes.path = ?", (path_mappings.path_replace_reverse(path),), only_one=True)
 
         if data:
-            video.series = re.sub(r'(\(\d\d\d\d\))', '', data['seriesTitle'])
+            video.series = re.sub(r'\s(\(\d\d\d\d\))', '', data['seriesTitle'])
             video.season = int(data['season'])
             video.episode = int(data['episode'])
             video.title = data['episodeTitle']
@@ -1042,34 +1055,37 @@ def refine_from_db(path, video):
             #     if int(data['year']) > 0: video.year = int(data['year'])
             video.series_tvdb_id = int(data['tvdbId'])
             video.alternative_series = ast.literal_eval(data['alternateTitles'])
+            if data['imdbId'] and not video.series_imdb_id:
+                video.series_imdb_id = data['imdbId']
             if not video.source:
-                video.source = str(data['format'])
+                video.source = convert_to_guessit('source', str(data['format']))
             if not video.resolution:
                 video.resolution = str(data['resolution'])
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = data['video_codec']
+                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = data['audio_codec']
+                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
     elif isinstance(video, Movie):
         data = database.execute("SELECT title, year, alternativeTitles, format, resolution, video_codec, audio_codec, "
                                 "imdbId FROM table_movies WHERE path = ?",
                                 (path_mappings.path_replace_reverse_movie(path),), only_one=True)
 
         if data:
-            video.title = re.sub(r'(\(\d\d\d\d\))', '', data['title'])
+            video.title = re.sub(r'\s(\(\d\d\d\d\))', '', data['title'])
             # Commented out because Radarr provided so much bad year
             # if data['year']:
             #     if int(data['year']) > 0: video.year = int(data['year'])
-            if data['imdbId']: video.imdb_id = data['imdbId']
+            if data['imdbId'] and not video.imdb_id:
+                video.imdb_id = data['imdbId']
             video.alternative_titles = ast.literal_eval(data['alternativeTitles'])
             if not video.source:
-                if data['format']: video.source = data['format']
+                if data['format']: video.source = convert_to_guessit('source', data['format'])
             if not video.resolution:
                 if data['resolution']: video.resolution = data['resolution']
             if not video.video_codec:
-                if data['video_codec']: video.video_codec = data['video_codec']
+                if data['video_codec']: video.video_codec = convert_to_guessit('video_codec', data['video_codec'])
             if not video.audio_codec:
-                if data['audio_codec']: video.audio_codec = data['audio_codec']
+                if data['audio_codec']: video.audio_codec = convert_to_guessit('audio_codec', data['audio_codec'])
 
     return video
 

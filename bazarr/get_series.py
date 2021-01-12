@@ -83,6 +83,8 @@ def update_series():
 
         tags = [d['label'] for d in tagsDict if d['id'] in show['tags']]
 
+        imdbId = show['imdbId'] if 'imdbId' in show else None
+
         # Add shows in Sonarr to current shows list
         current_shows_sonarr.append(show['id'])
 
@@ -99,7 +101,8 @@ def update_series():
                                      'year': str(show['year']),
                                      'alternateTitles': alternate_titles,
                                      'tags': str(tags),
-                                     'seriesType': show['seriesType']})
+                                     'seriesType': show['seriesType'],
+                                     'imdbId': imdbId})
         else:
             series_to_add.append({'title': show["title"],
                                   'path': show["path"],
@@ -116,7 +119,8 @@ def update_series():
                                   'alternateTitles': alternate_titles,
                                   'forced': serie_default_forced,
                                   'tags': str(tags),
-                                  'seriesType': show['seriesType']})
+                                  'seriesType': show['seriesType'],
+                                  'imdbId': imdbId})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
@@ -128,7 +132,7 @@ def update_series():
     # Update existing series in DB
     series_in_db_list = []
     series_in_db = database.execute("SELECT title, path, tvdbId, sonarrSeriesId, overview, poster, fanart, "
-                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType FROM table_shows")
+                                    "audio_language, sortTitle, year, alternateTitles, tags, seriesType, imdbId FROM table_shows")
 
     for item in series_in_db:
         series_in_db_list.append(item)

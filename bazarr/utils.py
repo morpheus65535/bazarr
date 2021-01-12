@@ -92,7 +92,7 @@ def get_binary(name):
         if platform.system() == "Windows":  # Windows
             exe = os.path.abspath(os.path.join(binaries_dir, "Windows", "i386", dir_name, "%s.exe" % name))
         elif platform.system() == "Darwin":  # MacOSX
-            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", "i386", dir_name, name))
+            exe = os.path.abspath(os.path.join(binaries_dir, "MacOSX", platform.machine(), dir_name, name))
         elif platform.system() == "Linux":  # Linux
             exe = os.path.abspath(os.path.join(binaries_dir, "Linux", platform.machine(), dir_name, name))
 

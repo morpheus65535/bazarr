@@ -67,7 +67,9 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     series = get_series_name(sonarr_series_id)
     episode = get_episode_name(sonarr_episode_id)
 
-    apobj = apprise.Apprise()
+    asset = apprise.AppriseAsset(async_mode=False)
+
+    apobj = apprise.Apprise(asset=asset)
 
     for provider in providers:
         if provider['url'] is not None:
@@ -83,7 +85,9 @@ def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
     movie = get_movies_name(radarr_id)
 
-    apobj = apprise.Apprise()
+    asset = apprise.AppriseAsset(async_mode=False)
+
+    apobj = apprise.Apprise(asset=asset)
 
     for provider in providers:
         if provider['url'] is not None:

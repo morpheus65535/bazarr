@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
 import logging
 import io
 import os
@@ -189,6 +188,8 @@ class LegendasdivxProvider(Provider):
     def login(self):
         logger.debug('Legendasdivx.pt :: Logging in')
         try:
+            # sleep for a 1 second before another request
+            sleep(1)
             res = self.session.get(self.loginpage)
             res.raise_for_status()
             bsoup = ParserBeautifulSoup(res.content, ['lxml'])
@@ -199,9 +200,10 @@ class LegendasdivxProvider(Provider):
             for field in _allinputs:
                 data[field.get('name')] = field.get('value')
 
+            # sleep for a 1 second before another request
+            sleep(1)
             data['username'] = self.username
             data['password'] = self.password
-
             res = self.session.post(self.loginpage, data)
             res.raise_for_status()
             # make sure we're logged in
@@ -290,6 +292,8 @@ class LegendasdivxProvider(Provider):
 
         _searchurl = self.searchurl
 
+        subtitles = []
+
         if isinstance(video, Movie):
             querytext = video.imdb_id if video.imdb_id else video.title
 
@@ -298,79 +302,89 @@ class LegendasdivxProvider(Provider):
             querytext = quote(quote(querytext))
 
         # language query filter
-        if isinstance(languages, (tuple, list, set)):
-            language_ids = ','.join(sorted(l.opensubtitles for l in languages))
-            if 'por' in language_ids: # prioritize portuguese subtitles
+        if not isinstance(languages, (tuple, list, set)):
+            languages = [languages]
+
+        for language in languages:
+            logger.debug("Legendasdivx.pt :: searching for %s subtitles.", language)
+            language_id = language.opensubtitles
+            if 'por' in language_id:
                 lang_filter = '&form_cat=28'
-            elif 'pob' in language_ids:
+            elif 'pob' in language_id:
                 lang_filter = '&form_cat=29'
             else:
                 lang_filter = ''
 
-        querytext = querytext + lang_filter if lang_filter else querytext
+            querytext = querytext + lang_filter if lang_filter else querytext
 
-        try:
-            # sleep for a 1 second before another request
-            sleep(1)
-            self.headers['Referer'] = self.site + '/index.php'
-            self.session.headers.update(self.headers)
-            res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
-            res.raise_for_status()
-            if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
-                logger.warning('Legendasdivx.pt :: query %s return no results!', querytext)
-                # for series, if no results found, try again just with series and season (subtitle packs)
-                if isinstance(video, Episode):
-                    logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
-                    querytext = re.sub("(e|E)(\d{2})", "", querytext)
-                    res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
-                    res.raise_for_status()
-                    if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
-                        logger.warning('Legendasdivx.pt :: query %s return no results (for series and season only).', querytext)
-                        return []
-            if res.status_code == 302: # got redirected to login page.
-                # seems that our session cookies are no longer valid... clean them from cache
-                region.delete("legendasdivx_cookies2")
-                logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
-                # login and try again
-                self.login()
-                res = self.session.get(_searchurl.format(query=querytext))
+            try:
+                # sleep for a 1 second before another request
+                sleep(1)
+                self.headers['Referer'] = self.site + '/index.php'
+                self.session.headers.update(self.headers)
+                res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
                 res.raise_for_status()
-        except HTTPError as e:
-            if "bloqueado" in res.text.lower():
-                logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
-                raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
-            logger.error("Legendasdivx.pt :: HTTP Error %s", e)
-            raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
-        except Exception as e:
-            logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
-            raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
+                if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
+                    logger.warning('Legendasdivx.pt :: query %s return no results!', querytext)
+                    # for series, if no results found, try again just with series and season (subtitle packs)
+                    if isinstance(video, Episode):
+                        logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
+                        querytext = re.sub("(e|E)(\d{2})", "", querytext)
+                        # sleep for a 1 second before another request
+                        sleep(1)
+                        res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
+                        res.raise_for_status()
+                        if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
+                            logger.warning('Legendasdivx.pt :: query %s return no results (for series and season only).', querytext)
+                            return []
+                if res.status_code == 302: # got redirected to login page.
+                    # seems that our session cookies are no longer valid... clean them from cache
+                    region.delete("legendasdivx_cookies2")
+                    logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
+                    # login and try again
+                    self.login()
+                    # sleep for a 1 second before another request
+                    sleep(1)
+                    res = self.session.get(_searchurl.format(query=querytext))
+                    res.raise_for_status()
+            except HTTPError as e:
+                if "bloqueado" in res.text.lower():
+                    logger.error("LegendasDivx.pt :: Your IP is blocked on this server.")
+                    raise IPAddressBlocked("LegendasDivx.pt :: Your IP is blocked on this server.")
+                logger.error("Legendasdivx.pt :: HTTP Error %s", e)
+                raise TooManyRequests("Legendasdivx.pt :: HTTP Error %s", e)
+            except Exception as e:
+                logger.error("LegendasDivx.pt :: Uncaught error: %r", e)
+                raise ServiceUnavailable("LegendasDivx.pt :: Uncaught error: %r", e)
 
-        bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
+            bsoup = ParserBeautifulSoup(res.content, ['html.parser'])
 
-        # search for more than 10 results (legendasdivx uses pagination)
-        # don't throttle - maximum results = 6 * 10
-        MAX_PAGES = 6
+            # search for more than 10 results (legendasdivx uses pagination)
+            # don't throttle - maximum results = 6 * 10
+            MAX_PAGES = 6
 
-        # get number of pages bases on results found
-        page_header = bsoup.find("div", {"class": "pager_bar"})
-        results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1) if page_header else 0
-        logger.debug("Legendasdivx.pt :: Found %s subtitles", str(results_found))
-        num_pages = (int(results_found) // 10) + 1
-        num_pages = min(MAX_PAGES, num_pages)
+            # get number of pages bases on results found
+            page_header = bsoup.find("div", {"class": "pager_bar"})
+            results_found = re.search(r'\((.*?) encontradas\)', page_header.text).group(1) if page_header else 0
+            logger.debug("Legendasdivx.pt :: Found %s subtitles", str(results_found))
+            num_pages = (int(results_found) // 10) + 1
+            num_pages = min(MAX_PAGES, num_pages)
 
-        # process first page
-        subtitles = self._process_page(video, bsoup)
+            # process first page
+            subtitles += self._process_page(video, bsoup)
 
-        # more pages?
-        if num_pages > 1:
-            for num_page in range(2, num_pages+1):
-                sleep(1) # another 1 sec before requesting...
-                _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
-                logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
-                res = self.session.get(_search_next)
-                next_page = ParserBeautifulSoup(res.content, ['html.parser'])
-                subs = self._process_page(video, next_page)
-                subtitles.extend(subs)
+            # more pages?
+            if num_pages > 1:
+                for num_page in range(2, num_pages+1):
+                    sleep(1) # another 1 sec before requesting...
+                    _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
+                    logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
+                    # sleep for a 1 second before another request
+                    sleep(1)
+                    res = self.session.get(_search_next)
+                    next_page = ParserBeautifulSoup(res.content, ['html.parser'])
+                    subs = self._process_page(video, next_page)
+                    subtitles.extend(subs)
 
         return subtitles
 
@@ -380,6 +394,8 @@ class LegendasdivxProvider(Provider):
     def download_subtitle(self, subtitle):
 
         try:
+            # sleep for a 1 second before another request
+            sleep(1)
             res = self.session.get(subtitle.page_link)
             res.raise_for_status()
         except HTTPError as e:

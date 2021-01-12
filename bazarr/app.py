@@ -37,13 +37,6 @@ def create_app():
 
     toolbar = DebugToolbarExtension(app)
 
-
-    @app.errorhandler(404)
-    def page_not_found(e):
-        if request.path == '/':
-            return redirect(url_for('series'), code=302)
-        return render_template('404.html'), 404
-
     socketio.init_app(app, path=base_url.rstrip('/')+'/socket.io', cors_allowed_origins='*', async_mode='threading')
     return app
 

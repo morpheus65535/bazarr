@@ -70,7 +70,7 @@
                         url: "{{ url_for('api.serieseditor') }}",
                         success: function (data) {
                             if (data.data.length) {
-                                $('#series').DataTable().ajax.reload(resetPaging = false);
+                                $('#series').DataTable().ajax.reload(null, false);
                                 $('[data-toggle="tooltip"]').tooltip({html: true});
                             }
                         }
