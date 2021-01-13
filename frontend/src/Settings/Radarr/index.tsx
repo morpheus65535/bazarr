@@ -20,7 +20,7 @@ interface Props {}
 const SettingsRadarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Radarr - Bazarr (Settings)">
     {(settings, update) => (
-      <Container className="p-4">
+      <Container>
         <CollapseBox
           defaultOpen={settings.general.use_radarr}
           control={(change) => (
@@ -84,8 +84,8 @@ const SettingsRadarrView: FunctionComponent<Props> = () => (
                 defaultValue={settings.radarr.excluded_tags.join(",")}
               ></Text>
               <Message type="info">
-                Movies with those tags (case sensitive) in Radarr
-                will be excluded from automatic download of subtitles.
+                Movies with those tags (case sensitive) in Radarr will be
+                excluded from automatic download of subtitles.
               </Message>
             </Input>
             <Input>

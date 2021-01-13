@@ -26,7 +26,7 @@ const seriesTypeOptions = {
 const SettingsSonarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Sonarr - Bazarr (Settings)">
     {(settings, update) => (
-      <Container className="p-4">
+      <Container>
         <CollapseBox
           defaultOpen={settings.general.use_sonarr}
           control={(change) => (

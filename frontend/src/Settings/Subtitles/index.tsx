@@ -42,7 +42,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
   return (
     <SettingTemplate title="Subtitles - Bazarr (Settings)">
       {(settings, update) => (
-        <Container className="p-4">
+        <Container>
           <Group header="Subtitles Options">
             <CollapseBox
               indent

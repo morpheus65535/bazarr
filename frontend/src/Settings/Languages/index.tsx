@@ -49,7 +49,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
   return (
     <SettingTemplate title="Languages - Bazarr (Settings)">
       {(settings, update) => (
-        <Container className="p-4">
+        <Container>
           <Group header="Subtitles Language">
             <Input>
               <Check
@@ -125,7 +125,9 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Check
                   label="Hearing-Impaired"
                   defaultValue={settings.general.serie_default_hi}
-                  onChange={(v) => update(v, "settings-general-serie_default_hi")}
+                  onChange={(v) =>
+                    update(v, "settings-general-serie_default_hi")
+                  }
                 ></Check>
               </Input>
             </CollapseBox>
@@ -174,7 +176,9 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Check
                   label="Hearing-Impaired"
                   defaultValue={settings.general.movie_default_hi}
-                  onChange={(v) => update(v, "settings-general-movie_default_hi")}
+                  onChange={(v) =>
+                    update(v, "settings-general-movie_default_hi")
+                  }
                 ></Check>
               </Input>
             </CollapseBox>

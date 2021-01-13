@@ -45,7 +45,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
   return (
     <SettingTemplate title="General - Bazarr (Settings)">
       {(settings, update) => (
-        <Container className="p-4">
+        <Container>
           <Group header="Host">
             <Input name="Address">
               <Text

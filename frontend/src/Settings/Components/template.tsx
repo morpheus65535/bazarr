@@ -62,7 +62,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               </ContentHeaderButton>
             </ContentHeader>
           </Row>
-          <Row>{children(item, updateChange)}</Row>
+          <Row className="p-4">{children(item, updateChange)}</Row>
         </Container>
       )}
     </AsyncStateOverlay>
