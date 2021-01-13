@@ -104,12 +104,14 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     languages = {Language.fromopensubtitles(l) for l in language_converters['szopensubtitles'].codes}
     languages.update(set(Language.rebuild(l, forced=True) for l in languages))
 
-    def __init__(self, username=None, password=None, use_hash=True):
+    def __init__(self, username=None, password=None, use_hash=True, api_key=None):
         if not all((username, password)):
             raise ConfigurationError('Username and password must be specified')
 
         self.session = Session()
-        self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
+        self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
+                                'Api-Key': api_key,
+                                'Content-Type': 'application/json'}
         self.token = None
         self.username = username
         self.password = password
@@ -118,7 +120,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def initialize(self):
         self.token = region.get("oscom_token")
         if self.token:
-            self.session.headers.update({'Authorization': self.token})
+            self.session.headers.update({'Authorization': 'Beaker ' + self.token})
             return True
         else:
             self.login()
@@ -141,7 +143,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 except ValueError:
                     raise ProviderError('Invalid JSON returned by provider')
                 else:
-                    self.session.headers.update({'Authorization': self.token})
+                    self.session.headers.update({'Authorization': 'Beaker ' + self.token})
                     region.set("oscom_token", self.token)
                     return True
             elif r.status_code == 401:
@@ -207,16 +209,21 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         # query the server
         result = None
         if isinstance(video, Episode):
-            res = self.session.get(self.server_url + 'find',
-                                   params={'parent_id': title_id,
+            res = self.session.get(self.server_url + 'subtitles',
+                                   params={'query': os.path.basename(video.name),
+                                           'parent_feature_id': title_id,
                                            'languages': langs,
                                            'episode_number': video.episode,
                                            'season_number': video.season,
-                                           'moviehash': hash}, timeout=10)
+                                           'moviehash': hash},
+                                   timeout=10)
         else:
-            res = self.session.get(self.server_url + 'find',
-                                   params={'id': title_id, 'languages': langs,
-                                           'moviehash': hash}, timeout=10)
+            res = self.session.get(self.server_url + 'subtitles',
+                                   params={'query': os.path.basename(video.name),
+                                           'id': title_id,
+                                           'languages': langs,
+                                           'moviehash': hash},
+                                   timeout=10)
         res.raise_for_status()
         result = res.json()
 
@@ -224,21 +231,45 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         if len(result['data']):
             for item in result['data']:
                 if item['type'] == 'subtitle':
-                    subtitle = OpenSubtitlesComSubtitle(
-                            language=Language.fromietf(item['attributes']['language']),
-                            hearing_impaired=item['attributes']['hearing_impaired'],
-                            page_link=item['attributes']['url'],
-                            file_id=item['attributes']['files'][0]['id'],
-                            releases=item['attributes']['release'],
-                            uploader=item['attributes']['uploader']['name'],
-                            title=item['attributes']['feature_details']['movie_name'],
-                            year=video.year,
-                            season=item['attributes']['feature_details']['season_number'] if isinstance(video, Episode) else None,
-                            episode=item['attributes']['feature_details']['episode_number'] if isinstance(video, Episode) else None,
-                            hash_matched=item['attributes']['moviehash_match'] if 'moviehash_match' in item['attributes'] else False
-                        )
-                    subtitle.get_matches(video)
-                    subtitles.append(subtitle)
+                    title_id_match = False
+                    if isinstance(video, Episode):
+                        if item['attributes']['feature_details']['parent_feature_id'] == int(title_id):
+                            title_id_match = True
+                    else:
+                        if item['attributes']['feature_details']['feature_id'] == int(title_id):
+                            title_id_match = True
+
+                    if title_id_match:
+                        if 'season_number' in item['attributes']['feature_details']:
+                            season_number = item['attributes']['feature_details']['season_number']
+                        else:
+                            season_number = None
+
+                        if 'episode_number' in item['attributes']['feature_details']:
+                            episode_number = item['attributes']['feature_details']['episode_number']
+                        else:
+                            episode_number = None
+
+                        if 'moviehash_match' in item['attributes']:
+                            moviehash_match = item['attributes']['moviehash_match']
+                        else:
+                            moviehash_match = False
+
+                        subtitle = OpenSubtitlesComSubtitle(
+                                language=Language.fromietf(item['attributes']['language']),
+                                hearing_impaired=item['attributes']['hearing_impaired'],
+                                page_link=item['attributes']['url'],
+                                file_id=item['attributes']['files'][0]['file_id'],
+                                releases=item['attributes']['release'],
+                                uploader=item['attributes']['uploader']['name'],
+                                title=item['attributes']['feature_details']['movie_name'],
+                                year=item['attributes']['feature_details']['year'],
+                                season=season_number,
+                                episode=episode_number,
+                                hash_matched=moviehash_match
+                            )
+                        subtitle.get_matches(video)
+                        subtitles.append(subtitle)
 
         return subtitles
 

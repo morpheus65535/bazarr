@@ -135,7 +135,8 @@ def get_providers_auth():
                           },
         'opensubtitlescom': {'username': settings.opensubtitlescom.username,
                              'password': settings.opensubtitlescom.password,
-                             'use_hash': settings.opensubtitlescom.getboolean('use_hash')
+                             'use_hash': settings.opensubtitlescom.getboolean('use_hash'),
+                             'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
         'podnapisi': {
             'only_foreign': False,  # fixme
