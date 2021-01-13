@@ -9,7 +9,7 @@ import {
   Input,
   Message,
   Text,
-  Select,
+  Selector,
   Slider,
 } from "../Components";
 
@@ -49,15 +49,14 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               defaultOpen={settings.general.subfolder !== "current"}
               control={(change) => (
                 <Input name="Subtitle Folder">
-                  <Select
+                  <Selector
                     options={folderOptions}
-                    remoteKey="settings-general-subfolder"
                     defaultKey={settings.general.subfolder}
-                    onChange={(v, k) => {
+                    onSelect={(v: string) => {
                       change(v !== "current");
-                      update(v, k);
+                      update(v, "settings-general-subfolder");
                     }}
-                  ></Select>
+                  ></Selector>
                   <Message type="info">
                     Choose the folder you wish to store/read the subtitles
                   </Message>
@@ -114,15 +113,15 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               indent
               control={(change) => (
                 <Input>
-                  <Select
+                  <Selector
+                    disabled
                     options={antiCaptchaOption}
                     nullKey="none"
-                    remoteKey="settings-general-anti_captcha_provider"
-                    onChange={(v, k) => {
+                    onSelect={(v: string) => {
                       change(v !== "none");
-                      update(v, k);
+                      update(v, "settings-general-anti_captcha_provider");
                     }}
-                  ></Select>
+                  ></Selector>
                 </Input>
               )}
             >
@@ -312,12 +311,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               )}
             >
               <Input>
-                <Select
+                <Selector
                   options={colorOptions}
-                  remoteKey="subzero_color"
-                  onChange={update}
+                  onSelect={(v: string) => update(v, "subzero_color")}
                   defaultKey="white"
-                ></Select>
+                ></Selector>
               </Input>
             </CollapseBox>
             <Input>

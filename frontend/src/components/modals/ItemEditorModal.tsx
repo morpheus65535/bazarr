@@ -128,8 +128,7 @@ class Editor extends React.Component<Props & ModalProps, State> {
               <Selector
                 options={forcedOptions}
                 defaultKey={forced}
-                multiply={false}
-                onSelect={(val) =>
+                onSelect={(val: string) =>
                   this.updateState("forced", val as ForcedOptions)
                 }
               ></Selector>

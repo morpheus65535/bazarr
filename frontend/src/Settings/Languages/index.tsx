@@ -11,7 +11,7 @@ import {
   Message,
   Input,
   Check,
-  Select,
+  Selector,
   CollapseBox,
 } from "../Components";
 
@@ -115,12 +115,13 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 ></LanguageSelector>
               </Input>
               <Input name="Forced">
-                <Select
-                  remoteKey="settings-general-serie_default_forced"
+                <Selector
                   defaultKey={settings.general.serie_default_forced}
                   options={forcedOptions}
-                  onChange={update}
-                ></Select>
+                  onSelect={(v: string) =>
+                    update(v, "settings-general-serie_default_forced")
+                  }
+                ></Selector>
               </Input>
               <Input>
                 <Check
@@ -165,12 +166,13 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 ></LanguageSelector>
               </Input>
               <Input name="Forced">
-                <Select
+                <Selector
                   options={forcedOptions}
-                  remoteKey="settings-general-movie_default_forced"
                   defaultKey={settings.general.movie_default_forced}
-                  onChange={update}
-                ></Select>
+                  onSelect={(v: string) =>
+                    update(v, "settings-general-movie_default_forced")
+                  }
+                ></Selector>
               </Input>
               <Input>
                 <Check

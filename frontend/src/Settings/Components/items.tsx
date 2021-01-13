@@ -1,8 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Form, InputGroup } from "react-bootstrap";
 
-import { Selector, SingleSelectorProps } from "../../Components";
-
 export const Message: FunctionComponent<{
   type: "warning" | "info";
 }> = ({ type, children }) => {
@@ -23,6 +21,7 @@ type FixElement = string | (() => JSX.Element);
 
 export interface TextProps extends BasicInput<string | number> {
   placeholder?: string | number;
+  password?: boolean;
   prefix?: FixElement;
   postfix?: FixElement;
 }
@@ -34,6 +33,7 @@ export const Text: FunctionComponent<TextProps> = ({
   disabled,
   remoteKey,
   defaultValue,
+  password,
   onChange,
 }) => {
   if (defaultValue === placeholder) {
@@ -52,7 +52,7 @@ export const Text: FunctionComponent<TextProps> = ({
     <InputGroup>
       {prefix && <InputGroup.Prepend>{create(prefix)}</InputGroup.Prepend>}
       <Form.Control
-        type="text"
+        type={password ? "password" : "text"}
         placeholder={placeholder?.toString()}
         disabled={disabled}
         defaultValue={defaultValue}
@@ -89,21 +89,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-type SelectProps = SingleSelectorProps & BasicInput<string>;
-
-export const Select: FunctionComponent<SelectProps> = (props) => {
-  const { onChange, remoteKey, ...other } = props;
-
-  return (
-    <Selector
-      multiply={false}
-      onSelect={(v) => {
-        onChange && onChange(v, remoteKey);
-      }}
-      {...other}
-    ></Selector>
-  );
-};
+export { Selector } from "../../Components";
 
 interface SliderProps {}
 

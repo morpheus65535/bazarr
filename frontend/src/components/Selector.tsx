@@ -14,15 +14,15 @@ type SelectorBasic<T extends string | string[]> = {
   onSelect?: (key: T) => void;
 };
 
-export type SingleSelectorProps = SelectorBasic<string> & {
+export type SingleSelectorProps = {
   multiply?: false;
-};
+} & SelectorBasic<string>;
 
-export type MultiSelectorProps = SelectorBasic<string[]> & {
+export type MultiSelectorProps = {
   multiply: true;
-};
+} & SelectorBasic<string[]>;
 
-export type SelectorProps = MultiSelectorProps | SingleSelectorProps;
+export type SelectorProps = SingleSelectorProps | MultiSelectorProps;
 
 export const Selector: FunctionComponent<SelectorProps> = (props) => {
   const { className, disabled, options, nullKey, ...other } = props;

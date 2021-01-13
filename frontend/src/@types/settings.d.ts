@@ -93,4 +93,40 @@ interface SubsyncSettings {
 interface AnalyticSettings {
   enabled: boolean;
 }
+
+// Sonarr / Radarr
+type FullUpdateOptions = "Manually" | "Daily" | "Weekly";
+
+type SeriesType = "Standard" | "Anime" | "Daily";
+
+interface SonarrSettings {
+  ip: string;
+  port: number;
+  base_url?: string;
+  ssl: boolean;
+  apikey: string;
+  full_update: FullUpdateOptions;
+  full_update_day: number;
+  full_update_hour: number;
+  only_monitored: boolean;
+  series_sync: number;
+  episodes_sync: number;
+  excluded_tags: string[];
+  excluded_series_types: SeriesType[];
+}
+
+interface RadarrSettings {
+  ip: string;
+  port: number;
+  base_url?: string;
+  ssl: boolean;
+  apikey: string;
+  full_update: FullUpdateOptions;
+  full_update_day: number;
+  full_update_hour: number;
+  only_monitored: boolean;
+  movies_sync: number;
+  excluded_tags: string[];
+}
+
 // Providers

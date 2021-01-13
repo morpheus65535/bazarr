@@ -6,8 +6,8 @@ import {
   Check,
   Group,
   Input,
+  Selector,
   Message,
-  Select,
   Text,
   CollapseBox,
 } from "../Components";
@@ -81,15 +81,14 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
               indent
               control={(change) => (
                 <Input name="Authentication">
-                  <Select
+                  <Selector
                     options={securityOptions}
-                    remoteKey="settings-auth-type"
-                    onChange={(v, k) => {
+                    onSelect={(v: string) => {
                       change(v !== "none");
-                      update(v, k);
+                      update(v, "settings-auth-type");
                     }}
                     nullKey="none"
-                  ></Select>
+                  ></Selector>
                 </Input>
               )}
             >
@@ -102,6 +101,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
               </Input>
               <Input name="Password">
                 <Text
+                  password
                   remoteKey="settings-auth-password"
                   defaultValue={settings.auth.password}
                   onChange={update}
@@ -114,10 +114,10 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                 disabled
                 postfix={() => (
                   <React.Fragment>
-                    <Button variant="light">
+                    <Button disabled variant="light">
                       <FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>
                     </Button>
-                    <Button variant="danger">
+                    <Button disabled variant="danger">
                       <FontAwesomeIcon icon={faSync}></FontAwesomeIcon>
                     </Button>
                   </React.Fragment>
@@ -133,16 +133,15 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
               defaultOpen={settings.proxy.type !== "none"}
               control={(change) => (
                 <Input>
-                  <Select
-                    remoteKey="settings-proxy-type"
+                  <Selector
                     defaultKey={settings.proxy.type}
                     options={proxyOptions}
                     nullKey="none"
-                    onChange={(v, k) => {
+                    onSelect={(v: string) => {
                       change(v !== "none");
-                      update(v, k);
+                      update(v, "settings-proxy-type");
                     }}
-                  ></Select>
+                  ></Selector>
                 </Input>
               )}
             >
@@ -169,6 +168,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
               </Input>
               <Input name="Password">
                 <Text
+                  password
                   remoteKey="settings-proxy-password"
                   defaultValue={settings.proxy.password}
                   onChange={update}

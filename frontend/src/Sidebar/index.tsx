@@ -88,6 +88,10 @@ const Sidebar: FunctionComponent<Props> = ({
             to: "/settings/general",
           },
           {
+            name: "Sonarr",
+            to: "/settings/sonarr",
+          },
+          {
             name: "Subtitles",
             to: "/settings/subtitles",
           },

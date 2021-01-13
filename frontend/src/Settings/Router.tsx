@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import { UpdateSystemSettings } from "../@redux/actions";
 
 import General from "./General";
+import Sonarr from "./Sonarr";
 import Languages from "./Languages";
 import Subtitles from "./Subtitles";
 
@@ -21,6 +22,9 @@ class Router extends React.Component<Props> {
       <Switch>
         <Route exact path="/settings/general">
           <General></General>
+        </Route>
+        <Route exact path="/settings/sonarr">
+          <Sonarr></Sonarr>
         </Route>
         <Route exact path="/settings/languages">
           <Languages></Languages>
