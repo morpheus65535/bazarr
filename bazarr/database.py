@@ -292,14 +292,19 @@ def get_profile_cutoff(profile_id):
         update_profile_id_list()
 
     if profile_id:
+        cutoff_language = []
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in ast.literal_eval(items):
                         if item['id'] == cutoff:
-                            cutoff_language = item
-                            break
+                            return [item]
+                        elif cutoff == 65535:
+                            cutoff_language.append(item)
+
+        if not len(cutoff_language):
+            cutoff_language = None
 
     return cutoff_language
 

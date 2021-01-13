@@ -314,11 +314,11 @@
                             var languages = '';
                             $(eval(data)).each(function (index, value) {
                                 if (value.forced == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff == '65535' || value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':forced' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 } else if (value.hi == 'True') {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff == '65535' || value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ':hi' + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 } else {
-                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff && value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
+                                    languages += '<span class="badge badge-secondary"' + ((row.cutoff == '65535' || value.id == row.cutoff) ? ' data-toggle="tooltip" title="Ignore others if this one is available" style="background-color:#911f93;"' : '') + '>' + value.language + ((value.audio_exclude === "True") ? ' <i class="fa fa-ban" data-toggle="tooltip" title="Ignore if matching audio track available"></i>' : '') + '</span> ';
                                 }
                             });
                             return languages;
@@ -550,7 +550,8 @@
 
                 var previousValue = $("#add_language_cutoff").val();
                 $("#add_language_cutoff").empty();
-                $('#add_language_cutoff').append('<option value="">None</option>');
+                $('#add_language_cutoff').append('<option value="">Disabled</option>');
+                $('#add_language_cutoff').append('<option value="65535">Any of them</option>');
 
                 var ids = $('#add_languages_profiles').DataTable().rows().data().pluck( 'id' ).toArray();
                 $(ids).each( function(i, item) {
@@ -577,7 +578,8 @@
 
                 var previousValue = $("#edit_language_cutoff").val();
                 $("#edit_language_cutoff").empty();
-                $('#edit_language_cutoff').append('<option value="">None</option>');
+                $('#edit_language_cutoff').append('<option value="">Disabled</option>');
+                $('#edit_language_cutoff').append('<option value="65535">Any of them</option>');
 
                 var ids = $('#edit_languages_profiles').DataTable().rows().data().pluck( 'id' ).toArray();
                 $(ids).each( function(i, item) {

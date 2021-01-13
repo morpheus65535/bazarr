@@ -256,18 +256,23 @@ def list_missing_subtitles(no=None, epno=None, send_event=True):
                     actual_subtitles_list.append([lang, str(forced), str(hi)])
 
             # check if cutoff is reached and skip any further check
-            cutoff_temp = get_profile_cutoff(profile_id=episode_subtitles['profileId'])
-            if cutoff_temp:
-                cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-            else:
-                cutoff_language = None
-            if cutoff_language and cutoff_language in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            else:
+            cutoff_met = False
+            cutoff_temp_list = get_profile_cutoff(profile_id=episode_subtitles['profileId'])
+
+            if cutoff_temp_list:
+                for cutoff_temp in cutoff_temp_list:
+                    cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
+                    if cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+                    elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+                    elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+
+            if not cutoff_met:
                 # if cutoff isn't met or None, we continue
 
                 # get difference between desired and existing subtitles
@@ -356,20 +361,23 @@ def list_missing_subtitles_movies(no=None, epno=None, send_event=True):
                     actual_subtitles_list.append([lang, str(forced), str(hi)])
 
             # check if cutoff is reached and skip any further check
-            cutoff_temp = get_profile_cutoff(profile_id=movie_subtitles['profileId'])
-            if cutoff_temp:
-                cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
-            else:
-                cutoff_language = None
-            if cutoff_language and cutoff_language in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
-                missing_subtitles_text = str([])
-            else:
-                # if cutoff isn't met or None, we continue
+            cutoff_met = False
+            cutoff_temp_list = get_profile_cutoff(profile_id=movie_subtitles['profileId'])
 
+            if cutoff_temp_list:
+                for cutoff_temp in cutoff_temp_list:
+                    cutoff_language = [cutoff_temp['language'], cutoff_temp['forced'], cutoff_temp['hi']]
+                    if cutoff_language in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+                    elif cutoff_language and [cutoff_language[0], 'True', 'False'] in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+                    elif cutoff_language and [cutoff_language[0], 'False', 'True'] in actual_subtitles_list:
+                        cutoff_met = True
+                        missing_subtitles_text = str([])
+
+            if not cutoff_met:
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
