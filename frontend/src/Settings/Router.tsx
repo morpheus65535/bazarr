@@ -6,6 +6,7 @@ import { UpdateSystemSettings } from "../@redux/actions";
 
 import General from "./General";
 import Sonarr from "./Sonarr";
+import Radarr from "./Radarr";
 import Languages from "./Languages";
 import Subtitles from "./Subtitles";
 
@@ -25,6 +26,9 @@ class Router extends React.Component<Props> {
         </Route>
         <Route exact path="/settings/sonarr">
           <Sonarr></Sonarr>
+        </Route>
+        <Route exact path="/settings/radarr">
+          <Radarr></Radarr>
         </Route>
         <Route exact path="/settings/languages">
           <Languages></Languages>

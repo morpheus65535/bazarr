@@ -92,6 +92,10 @@ const Sidebar: FunctionComponent<Props> = ({
             to: "/settings/sonarr",
           },
           {
+            name: "Radarr",
+            to: "/settings/radarr",
+          },
+          {
             name: "Subtitles",
             to: "/settings/subtitles",
           },
