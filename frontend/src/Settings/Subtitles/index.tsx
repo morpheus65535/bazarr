@@ -64,7 +64,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               )}
             >
               <Input name="Custom Subtitles Folder">
-                <Text remoteKey="settings-general-subfolder_custom"></Text>
+                <Text
+                  onChange={(v) =>
+                    update(v, "settings-general-subfolder_custom")
+                  }
+                ></Text>
               </Input>
             </CollapseBox>
             <CollapseBox
@@ -74,11 +78,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 <Input>
                   <Check
                     label="Upgrade Previously Downloaded subtitles"
-                    remoteKey="settings-general-upgrade_subs"
                     defaultValue={settings.general.upgrade_subs}
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "settings-general-upgrade_subs");
                     }}
                   ></Check>
                   <Message type="info">
@@ -97,9 +100,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               <Input>
                 <Check
                   label="Upgrade Manually Downloaded subtitles"
-                  remoteKey="settings-general-upgrade_manual"
                   defaultValue={settings.general.upgrade_manual}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-general-upgrade_manual")}
                 ></Check>
                 <Message type="info">
                   Enable or disable upgrade of manually searched and downloaded
@@ -132,9 +134,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Adaptive Searching"
-                remoteKey="settings-general-adaptive_searching"
                 defaultValue={settings.general.adaptive_searching}
-                onChange={update}
+                onChange={(v) =>
+                  update(v, "settings-general-adaptive_searching")
+                }
               ></Check>
               <Message type="info">
                 When searching for subtitles, Bazarr will search less frequently
@@ -144,9 +147,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Search Enabled Providers Simultaneously"
-                remoteKey="settings-general-multithreading"
                 defaultValue={settings.general.multithreading}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-multithreading")}
               ></Check>
               <Message type="info">
                 Search multiple providers at once (Don't choose this on low
@@ -160,11 +162,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 <Input>
                   <Check
                     label="Use Embedded Subtitles"
-                    remoteKey="settings-general-use_embedded_subs"
                     defaultValue={settings.general.use_embedded_subs}
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "settings-general-use_embedded_subs");
                     }}
                   ></Check>
                   <Message type="info">
@@ -177,9 +178,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               <Input>
                 <Check
                   label="Ignore Embedded PGS Subtitles"
-                  remoteKey="settings-general-ignore_pgs_subs"
                   defaultValue={settings.general.ignore_pgs_subs}
-                  onChange={update}
+                  onChange={(v) =>
+                    update(v, "settings-general-ignore_pgs_subs")
+                  }
                 ></Check>
                 <Message type="info">
                   Ignores PGS Subtitles in Embedded Subtitles detection.
@@ -188,9 +190,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               <Input>
                 <Check
                   label="Ignore Embedded VobSub Subtitles"
-                  remoteKey="settings-general-ignore_vobsub_subs"
                   defaultValue={settings.general.ignore_vobsub_subs}
-                  onChange={update}
+                  onChange={(v) =>
+                    update(v, "settings-general-ignore_vobsub_subs")
+                  }
                 ></Check>
                 <Message type="info">
                   Ignores VobSub Subtitles in Embedded Subtitles detection.
@@ -199,11 +202,15 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               <Input>
                 <Check
                   label="Show Only Desired Languages"
-                  remoteKey="settings-general-embeddeenabled_providersd_subs_show_desired"
                   defaultValue={
                     settings.general.embeddeenabled_providersd_subs_show_desired
                   }
-                  onChange={update}
+                  onChange={(v) =>
+                    update(
+                      v,
+                      "settings-general-embeddeenabled_providersd_subs_show_desired"
+                    )
+                  }
                 ></Check>
                 <Message type="info">
                   Hide embedded subtitles for languages that are not currently
@@ -216,9 +223,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Encode Subtitles To UTF8"
-                remoteKey="settings-general-utf8_encode"
                 defaultValue={settings.general.utf8_encode}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-utf8_encode")}
               ></Check>
               <Message type="info">
                 Re-encode downloaded Subtitles to UTF8. Should be left enabled
@@ -227,12 +233,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </Input>
             <Input>
               <Check
-                remoteKey="remove_HI"
                 label="Hearing Impaired"
                 defaultValue={settings.general.subzero_mods.includes(
                   "remove_HI"
                 )}
-                onChange={update}
+                onChange={(v) => update(v, "remove_HI")}
               ></Check>
               <Message type="info">
                 Removes tags, text and characters from subtitles that are meant
@@ -241,12 +246,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </Input>
             <Input>
               <Check
-                remoteKey="remove_tags"
                 label="Remove Tags"
                 defaultValue={settings.general.subzero_mods.includes(
                   "remove_tags"
                 )}
-                onChange={update}
+                onChange={(v) => update(v, "remove_tags")}
               ></Check>
               <Message type="info">
                 Removes all possible style tags from the subtitle, such as font,
@@ -255,12 +259,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </Input>
             <Input>
               <Check
-                remoteKey="OCR_fixed"
                 label="OCR Fixes"
                 defaultValue={settings.general.subzero_mods.includes(
                   "ocr_fixed"
                 )}
-                onChange={update}
+                onChange={(v) => update(v, "OCR_fixed")}
               ></Check>
               <Message type="info">
                 Fix issues that happen when a subtitle gets converted from
@@ -269,10 +272,9 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </Input>
             <Input>
               <Check
-                remoteKey="common"
                 label="Common Fixes"
                 defaultValue={settings.general.subzero_mods.includes("common")}
-                onChange={update}
+                onChange={(v) => update(v, "common")}
               ></Check>
               <Message type="info">
                 Fix common and whitespace/punctuation issues in subtitles.
@@ -280,11 +282,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </Input>
             <Input>
               <Check
-                remoteKey="fix_uppercase"
                 label="Fix Uppercase"
                 defaultValue={settings.general.subzero_mods.includes(
                   "fix_uppercase"
                 )}
+                onChange={(v) => update(v, "fix_uppercase")}
               ></Check>
               <Message type="info">
                 Tries to make subtitles that are completely uppercase readable.
@@ -296,10 +298,9 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 <Input>
                   <Check
                     label="Color"
-                    remoteKey="subzero_color_enabled"
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "subzero_color_enabled");
                     }}
                   ></Check>
                   <Message type="info">
@@ -320,11 +321,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             </CollapseBox>
             <Input>
               <Check
-                remoteKey="reverse_rtl"
                 label="Reverse RTL"
                 defaultValue={settings.general.subzero_mods.includes(
                   "reverse_rtl"
                 )}
+                onChange={(v) => update(v, "reverse_rtl")}
               ></Check>
               <Message type="info">
                 Reverses the punctuation in right-to-left subtitles for
@@ -337,12 +338,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               control={(change) => (
                 <Input>
                   <Check
-                    remoteKey="settings-general-chmod_enabled"
                     defaultValue={settings.general.chmod_enabled}
                     label="Permission (chmod)"
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "settings-general-chmod_enabled");
                     }}
                   ></Check>
                 </Input>
@@ -351,9 +351,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               <Input>
                 <Text
                   placeholder="0777"
-                  remoteKey="settings-general-chmod"
                   defaultValue={settings.general.chmod}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-general-chmod")}
                 ></Text>
                 <Message type="info">Must be 4 digit octal</Message>
               </Input>
@@ -361,9 +360,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Automatic Subtitles Synchronization"
-                remoteKey="settings-subsync-use_subsync"
                 defaultValue={settings.subsync.use_subsync}
-                onChange={update}
+                onChange={(v) => update(v, "settings-subsync-use_subsync")}
               ></Check>
               <Message type="info">
                 Enable the automatic subtitles synchronization after downloading

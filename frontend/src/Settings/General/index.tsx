@@ -50,9 +50,8 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
             <Input name="Address">
               <Text
                 placeholder="0.0.0.0"
-                remoteKey="settings-general-ip"
                 defaultValue={settings.general.ip}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-ip")}
               ></Text>
               <Message type="info">
                 Valid IPv4 address or '0.0.0.0' for all interfaces
@@ -61,17 +60,15 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
             <Input name="Port">
               <Text
                 placeholder={6767}
-                remoteKey="settings-general-port"
                 defaultValue={settings.general.port}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-port")}
               ></Text>
             </Input>
             <Input name="Base URL">
               <Text
                 prefix="/"
-                remoteKey="settings-general-base_url"
                 defaultValue={settings.general.base_url}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-base_url")}
               ></Text>
               <Message type="info">Reverse proxy support</Message>
             </Input>
@@ -94,23 +91,20 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
             >
               <Input name="Username">
                 <Text
-                  remoteKey="settings-auth-username"
                   defaultValue={settings.auth.username}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-auth-username")}
                 ></Text>
               </Input>
               <Input name="Password">
                 <Text
                   password
-                  remoteKey="settings-auth-password"
                   defaultValue={settings.auth.password}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-auth-password")}
                 ></Text>
               </Input>
             </CollapseBox>
             <Input name="API Key">
               <Text
-                remoteKey="settings-auth-apikey"
                 disabled
                 postfix={() => (
                   <React.Fragment>
@@ -123,7 +117,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                   </React.Fragment>
                 )}
                 defaultValue={settings.auth.apikey}
-                onChange={update}
+                onChange={(v) => update(v, "settings-auth-apikey")}
               ></Text>
             </Input>
           </Group>
@@ -147,31 +141,27 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
             >
               <Input name="Host">
                 <Text
-                  remoteKey="settings-proxy-url"
                   defaultValue={settings.proxy.url}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-proxy-url")}
                 ></Text>
               </Input>
               <Input name="Port">
                 <Text
-                  remoteKey="settings-proxy-port"
                   defaultValue={settings.proxy.port}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-proxy-port")}
                 ></Text>
               </Input>
               <Input name="Username">
                 <Text
-                  remoteKey="settings-proxy-username"
                   defaultValue={settings.proxy.username}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-proxy-username")}
                 ></Text>
               </Input>
               <Input name="Password">
                 <Text
                   password
-                  remoteKey="settings-proxy-password"
                   defaultValue={settings.proxy.password}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-proxy-password")}
                 ></Text>
                 <Message type="info">
                   You only need to enter a username and password if one is
@@ -180,9 +170,8 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
               </Input>
               <Input name="Ignored Addresses">
                 <Text
-                  remoteKey="settings-proxy-exclude"
                   defaultValue={settings.proxy.exclude.join(",")}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-proxy-exclude")}
                 ></Text>
                 <Message type="info">
                   Use ',' as a separator, and '*.' as a wildcard for subdomains
@@ -193,10 +182,9 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           <Group header="Logging">
             <Input>
               <Check
-                remoteKey="settings-general-debug"
                 label="Debug"
                 defaultValue={settings.general.debug}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-debug")}
               ></Check>
               <Message type="info">
                 Debug logging should only be enabled temporarily
@@ -206,10 +194,9 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           <Group header="Analytics">
             <Input>
               <Check
-                remoteKey="settings-analytics-enabled"
                 label="Enable"
                 defaultValue={settings.analytics.enabled}
-                onChange={update}
+                onChange={(v) => update(v, "settings-analytics-enabled")}
               ></Check>
               <Message type="info">
                 Send anonymous usage information, nothing that can identify you.

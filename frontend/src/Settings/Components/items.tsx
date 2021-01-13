@@ -13,8 +13,7 @@ export const Message: FunctionComponent<{
 export interface BasicInput<T> {
   disabled?: boolean;
   defaultValue?: T;
-  remoteKey?: string;
-  onChange?: (val: T, key?: string) => void;
+  onChange?: (val: T) => void;
 }
 
 type FixElement = string | (() => JSX.Element);
@@ -31,7 +30,6 @@ export const Text: FunctionComponent<TextProps> = ({
   prefix,
   postfix,
   disabled,
-  remoteKey,
   defaultValue,
   password,
   onChange,
@@ -57,7 +55,7 @@ export const Text: FunctionComponent<TextProps> = ({
         disabled={disabled}
         defaultValue={defaultValue}
         onChange={(e) => {
-          onChange && onChange(e.currentTarget.value, remoteKey);
+          onChange && onChange(e.currentTarget.value);
         }}
       ></Form.Control>
       {postfix && <InputGroup.Append>{create(postfix)}</InputGroup.Append>}
@@ -72,7 +70,6 @@ export interface CheckProps extends BasicInput<boolean> {
 export const Check: FunctionComponent<CheckProps> = ({
   label,
   disabled,
-  remoteKey,
   defaultValue,
   onChange,
 }) => {
@@ -81,7 +78,7 @@ export const Check: FunctionComponent<CheckProps> = ({
       type="checkbox"
       label={label}
       onChange={(e) => {
-        onChange && onChange(e.currentTarget.checked, remoteKey);
+        onChange && onChange(e.currentTarget.checked);
       }}
       disabled={disabled}
       defaultChecked={defaultValue}

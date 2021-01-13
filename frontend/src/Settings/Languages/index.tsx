@@ -53,10 +53,9 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
           <Group header="Subtitles Language">
             <Input>
               <Check
-                remoteKey="settings-general-single_language"
                 label="Single Language"
                 defaultValue={settings.general.single_language}
-                onChange={update}
+                onChange={(v) => update(v, "settings-general-single_language")}
               ></Check>
               <Message type="info">
                 Download a single Subtitles file without adding the language
@@ -88,11 +87,10 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Input>
                   <Check
                     label="Series"
-                    remoteKey="settings-general-serie_default_enabled"
                     defaultValue={settings.general.serie_default_enabled}
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "settings-general-serie_default_enabled");
                     }}
                   ></Check>
                   <Message type="info">
@@ -127,8 +125,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Check
                   label="Hearing-Impaired"
                   defaultValue={settings.general.serie_default_hi}
-                  remoteKey="settings-general-serie_default_hi"
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-general-serie_default_hi")}
                 ></Check>
               </Input>
             </CollapseBox>
@@ -139,11 +136,10 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Input>
                   <Check
                     label="Movies"
-                    remoteKey="settings-general-movie_default_enabled"
                     defaultValue={settings.general.movie_default_enabled}
-                    onChange={(v, k) => {
+                    onChange={(v) => {
                       change(v);
-                      update(v, k);
+                      update(v, "settings-general-movie_default_enabled");
                     }}
                   ></Check>
                   <Message type="info">
@@ -177,9 +173,8 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
               <Input>
                 <Check
                   label="Hearing-Impaired"
-                  remoteKey="settings-general-movie_default_hi"
                   defaultValue={settings.general.movie_default_hi}
-                  onChange={update}
+                  onChange={(v) => update(v, "settings-general-movie_default_hi")}
                 ></Check>
               </Input>
             </CollapseBox>
