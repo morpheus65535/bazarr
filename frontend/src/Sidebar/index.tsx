@@ -103,6 +103,10 @@ const Sidebar: FunctionComponent<Props> = ({
             name: "Languages",
             to: "/settings/languages",
           },
+          {
+            name: "Schedular",
+            to: "/settings/schedular",
+          },
         ],
       },
       {

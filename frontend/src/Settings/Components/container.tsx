@@ -19,11 +19,12 @@ export const Group: FunctionComponent<GroupProps> = ({ header, children }) => {
 
 export interface InputProps {
   name?: string;
+  hidden?: boolean
 }
 
-export const Input: FunctionComponent<InputProps> = ({ children, name }) => {
+export const Input: FunctionComponent<InputProps> = ({ children, name, hidden }) => {
   return (
-    <Form.Group>
+    <Form.Group hidden={hidden}>
       {name && <Form.Label>{name}</Form.Label>}
       {children}
     </Form.Group>
@@ -56,6 +57,35 @@ export const CollapseBox: FunctionComponent<CollapseBoxProps> = ({
       <Collapse in={open}>
         <div className={cls.join(" ")}>{children}</div>
       </Collapse>
+    </React.Fragment>
+  );
+};
+
+interface SelectionBoxProps {
+  control: (change: React.Dispatch<string | undefined>) => JSX.Element;
+  defaultKey?: string;
+  indent?: boolean;
+  children: (key: string | undefined) => JSX.Element
+}
+
+export const SelectionBox: FunctionComponent<SelectionBoxProps> = ({
+  control,
+  children,
+  indent,
+  defaultKey,
+}) => {
+  const cls: string[] = [];
+
+  const [open, setOpen] = useState(defaultKey);
+
+  if (indent) {
+    cls.push("pl-4");
+  }
+
+  return (
+    <React.Fragment>
+      {control(setOpen)}
+      <div className={cls.join(" ")}>{children(open)}</div>
     </React.Fragment>
   );
 };

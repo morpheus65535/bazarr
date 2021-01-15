@@ -76,10 +76,12 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           <Group header="Security">
             <CollapseBox
               indent
+              defaultOpen={settings.auth.type !== "none"}
               control={(change) => (
                 <Input name="Authentication">
                   <Selector
                     options={securityOptions}
+                    defaultKey={settings.auth.type}
                     onSelect={(v: string) => {
                       change(v !== "none");
                       update(v, "settings-auth-type");

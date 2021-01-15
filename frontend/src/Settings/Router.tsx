@@ -9,6 +9,7 @@ import Sonarr from "./Sonarr";
 import Radarr from "./Radarr";
 import Languages from "./Languages";
 import Subtitles from "./Subtitles";
+import Schedular from "./Schedular";
 
 interface Props {
   update: () => void;
@@ -35,6 +36,9 @@ class Router extends React.Component<Props> {
         </Route>
         <Route exact path="/settings/subtitles">
           <Subtitles></Subtitles>
+        </Route>
+        <Route exact path="/settings/schedular">
+          <Schedular></Schedular>
         </Route>
       </Switch>
     );
