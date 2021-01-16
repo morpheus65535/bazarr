@@ -183,6 +183,14 @@ ignore_keys = ['flask_secret_key',
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
+array_keys = ['settings-sonarr-excluded_tags',
+                'settings-sonarr-excluded_series_types',
+                'settings-radarr-excluded_tags',
+                'settings-general-serie_default_language',
+                'settings-general-movie_default_language',
+                'settings-general-path_mappings',
+                'settings-general-path_mappings_movie']
+
 def get_settings():
     result = dict()
     sections = settings.sections()
@@ -242,12 +250,11 @@ def save_settings(settings_items):
             continue
 
         # Make sure that text based form values aren't pass as list unless they are language list
-        if isinstance(value, list) and len(value) == 1 and key not in ['settings-general-serie_default_language',
-                                                                       'settings-general-movie_default_language']:
+        if isinstance(value, list) and len(value) == 1 and key not in array_keys:
             value = value[0]
 
-        # Make sure empty language list are stored correctly due to bug in bootstrap-select
-        if key in ['settings-general-serie_default_language', 'settings-general-movie_default_language'] and value == ['null']:
+        # Make sure empty language list are stored correctly
+        if key in array_keys and value == [''] or value == ['null']:
             value = []
 
         settings_keys = key.split('-')
