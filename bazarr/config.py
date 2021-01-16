@@ -241,6 +241,13 @@ def save_settings(settings_items):
     configure_proxy = False
     exclusion_updated = False
 
+    # Subzero Mods
+    update_subzero = False
+    subzero_mods = settings.general.subzero_mods.strip().split(',')
+
+    if len(subzero_mods) == 1 and subzero_mods[0] == '':
+        subzero_mods = []
+
     for key, value in settings_items:
         # Intercept database stored settings
         if key == 'enabled_languages':
@@ -312,6 +319,20 @@ def save_settings(settings_items):
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
+
+        if settings_keys[0] == 'subzero':
+            mod = settings_keys[1]
+            enabled = value == 'True'
+            if mod in subzero_mods:
+                if not enabled:
+                    subzero_mods.remove(mod)
+            else:
+                if enabled:
+                    subzero_mods.append(mod)
+            update_subzero = True
+
+    if update_subzero:
+        settings.set('general', 'subzero_mods', ','.join(subzero_mods))
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)
