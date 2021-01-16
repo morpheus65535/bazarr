@@ -359,17 +359,82 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 <Message type="info">Must be 4 digit octal</Message>
               </Input>
             </CollapseBox>
-            <Input>
-              <Check
-                label="Automatic Subtitles Synchronization"
-                defaultValue={settings.subsync.use_subsync}
-                onChange={(v) => update(v, "settings-subsync-use_subsync")}
-              ></Check>
-              <Message type="info">
-                Enable the automatic subtitles synchronization after downloading
-                a subtitles.
-              </Message>
-            </Input>
+            <CollapseBox
+              indent
+              defaultOpen={settings.subsync.use_subsync}
+              control={(change) => (
+                <Input>
+                  <Check
+                    label="Automatic Subtitles Synchronization"
+                    defaultValue={settings.subsync.use_subsync}
+                    onChange={(v) => {
+                      change(v);
+                      update(v, "settings-subsync-use_subsync");
+                    }}
+                  ></Check>
+                  <Message type="info">
+                    Enable the automatic subtitles synchronization after
+                    downloading a subtitles.
+                  </Message>
+                </Input>
+              )}
+            >
+              <Input>
+                <Check
+                  label="Debug"
+                  defaultValue={settings.subsync.debug}
+                  onChange={(v) => update(v, "settings-subsync-debug")}
+                ></Check>
+                <Message type="info">
+                  Do not actually sync the subtitles but generate a .tar.gz file
+                  to be able to open an issue for ffsubsync. This file will
+                  reside alongside the media file.
+                </Message>
+              </Input>
+              <CollapseBox
+                defaultOpen={settings.subsync.use_subsync_threshold}
+                control={(change) => (
+                  <Input>
+                    <Check
+                      label="Series Score Threshold"
+                      defaultValue={settings.subsync.use_subsync_threshold}
+                      onChange={(v) => {
+                        change(v);
+                        update(v, "settings-subsync-use_subsync_threshold");
+                      }}
+                    ></Check>
+                  </Input>
+                )}
+              >
+                <Input>
+                  <Slider></Slider>
+                </Input>
+              </CollapseBox>
+              <CollapseBox
+                defaultOpen={settings.subsync.use_subsync_movie_threshold}
+                control={(change) => (
+                  <Input>
+                    <Check
+                      label="Movies Score Threshold"
+                      defaultValue={
+                        settings.subsync.use_subsync_movie_threshold
+                      }
+                      onChange={(v) => {
+                        change(v);
+                        update(
+                          v,
+                          "settings-subsync-use_subsync_movie_threshold"
+                        );
+                      }}
+                    ></Check>
+                  </Input>
+                )}
+              >
+                <Input>
+                  <Slider></Slider>
+                </Input>
+              </CollapseBox>
+            </CollapseBox>
             <Input>
               <Check label="Use Custom Post-Processing"></Check>
               <Message type="info">
