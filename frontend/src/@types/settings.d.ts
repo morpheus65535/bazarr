@@ -49,7 +49,7 @@ interface GeneralSettings {
   single_language: boolean;
   subfolder: string;
   subfolder_custom?: string;
-  subzero_mods: string[];
+  subzero_mods?: string[];
   update_restart: boolean;
   upgrade_frequency: number;
   upgrade_manual: boolean;

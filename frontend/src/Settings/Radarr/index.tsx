@@ -7,7 +7,6 @@ import {
   Group,
   Input,
   Message,
-  Selector,
   Slider,
   Text,
   CollapseBox,

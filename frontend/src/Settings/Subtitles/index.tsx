@@ -234,10 +234,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Hearing Impaired"
-                defaultValue={settings.general.subzero_mods.includes(
+                defaultValue={settings.general.subzero_mods?.includes(
                   "remove_HI"
                 )}
-                onChange={(v) => update(v, "remove_HI")}
+                onChange={(v) => update(v, "subzero-remove_HI")}
               ></Check>
               <Message type="info">
                 Removes tags, text and characters from subtitles that are meant
@@ -247,10 +247,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Remove Tags"
-                defaultValue={settings.general.subzero_mods.includes(
+                defaultValue={settings.general.subzero_mods?.includes(
                   "remove_tags"
                 )}
-                onChange={(v) => update(v, "remove_tags")}
+                onChange={(v) => update(v, "subzero-remove_tags")}
               ></Check>
               <Message type="info">
                 Removes all possible style tags from the subtitle, such as font,
@@ -260,10 +260,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="OCR Fixes"
-                defaultValue={settings.general.subzero_mods.includes(
-                  "ocr_fixed"
+                defaultValue={settings.general.subzero_mods?.includes(
+                  "OCR_fixed"
                 )}
-                onChange={(v) => update(v, "OCR_fixed")}
+                onChange={(v) => update(v, "subzero-OCR_fixed")}
               ></Check>
               <Message type="info">
                 Fix issues that happen when a subtitle gets converted from
@@ -273,8 +273,8 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Common Fixes"
-                defaultValue={settings.general.subzero_mods.includes("common")}
-                onChange={(v) => update(v, "common")}
+                defaultValue={settings.general.subzero_mods?.includes("common")}
+                onChange={(v) => update(v, "subzero-common")}
               ></Check>
               <Message type="info">
                 Fix common and whitespace/punctuation issues in subtitles.
@@ -283,24 +283,26 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Fix Uppercase"
-                defaultValue={settings.general.subzero_mods.includes(
+                defaultValue={settings.general.subzero_mods?.includes(
                   "fix_uppercase"
                 )}
-                onChange={(v) => update(v, "fix_uppercase")}
+                onChange={(v) => update(v, "subzero-fix_uppercase")}
               ></Check>
               <Message type="info">
                 Tries to make subtitles that are completely uppercase readable.
               </Message>
             </Input>
+            {/* TODO: Support Color Modification */}
             <CollapseBox
               indent
               control={(change) => (
                 <Input>
                   <Check
+                    disabled
                     label="Color"
                     onChange={(v) => {
                       change(v);
-                      update(v, "subzero_color_enabled");
+                      update(v, "subzero-color");
                     }}
                   ></Check>
                   <Message type="info">
@@ -322,10 +324,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
             <Input>
               <Check
                 label="Reverse RTL"
-                defaultValue={settings.general.subzero_mods.includes(
+                defaultValue={settings.general.subzero_mods?.includes(
                   "reverse_rtl"
                 )}
-                onChange={(v) => update(v, "reverse_rtl")}
+                onChange={(v) => update(v, "subzero-reverse_rtl")}
               ></Check>
               <Message type="info">
                 Reverses the punctuation in right-to-left subtitles for

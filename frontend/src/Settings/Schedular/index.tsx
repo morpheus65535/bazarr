@@ -2,12 +2,7 @@ import React, { FunctionComponent, useMemo } from "react";
 
 import SettingsTemplate from "../Components/template";
 
-import {
-  Group,
-  Selector,
-  Input,
-  SelectionBox,
-} from "../Components";
+import { Group, Selector, Input, SelectionBox } from "../Components";
 import { Container } from "react-bootstrap";
 
 const seriesSyncOptions = {
@@ -58,11 +53,9 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
     let object: LooseObject = {};
     Array(24)
       .fill(undefined)
-      .map((_, idx) => {
-        object[idx.toString()] = `${idx}:00`;
-      });
+      .map((_, idx) => (object[idx.toString()] = `${idx}:00`));
     return object;
-  }, undefined);
+  }, []);
 
   return (
     <SettingsTemplate title="Schedular - Bazarr (Settings)">
