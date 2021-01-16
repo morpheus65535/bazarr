@@ -17,11 +17,9 @@ class MovieView extends React.Component<Props> {
         <Helmet>
           <title>Movies - Bazarr</title>
         </Helmet>
-        <Row>
-          <ContentHeader>
-            <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
-          </ContentHeader>
-        </Row>
+        <ContentHeader>
+          <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
+        </ContentHeader>
         <Row>
           <Table></Table>
         </Row>

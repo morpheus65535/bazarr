@@ -20,11 +20,9 @@ class SeriesView extends React.Component<Props> {
         <Helmet>
           <title>Series - Bazarr</title>
         </Helmet>
-        <Row>
-          <ContentHeader>
-            <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
-          </ContentHeader>
-        </Row>
+        <ContentHeader>
+          <ContentHeaderButton icon={faList}>Mass Edit</ContentHeaderButton>
+        </ContentHeader>
         <Row>
           <Table></Table>
         </Row>

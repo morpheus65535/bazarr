@@ -117,7 +117,7 @@ class SeriesEpisodesView extends React.Component<Props, State> {
           <Helmet>
             <title>{item.title} - Bazarr (Series)</title>
           </Helmet>
-          <Row>{header}</Row>
+          {header}
           <Row>
             <ItemOverview item={item} details={details}></ItemOverview>
           </Row>

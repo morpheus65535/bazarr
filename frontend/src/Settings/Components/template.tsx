@@ -48,20 +48,18 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
           <Helmet>
             <title>{title}</title>
           </Helmet>
-          <Row>
-            <ContentHeader>
-              <ContentHeaderButton
-                icon={faSave}
-                disabled={Object.keys(willChange).length === 0}
-                onClick={() => {
-                  update(willChange);
-                  setWillChange({});
-                }}
-              >
-                Save
-              </ContentHeaderButton>
-            </ContentHeader>
-          </Row>
+          <ContentHeader>
+            <ContentHeaderButton
+              icon={faSave}
+              disabled={Object.keys(willChange).length === 0}
+              onClick={() => {
+                update(willChange);
+                setWillChange({});
+              }}
+            >
+              Save
+            </ContentHeaderButton>
+          </ContentHeader>
           <Row className="p-4">{children(item, updateChange)}</Row>
         </Container>
       )}

@@ -1,0 +1,23 @@
+* {
+  box-sizing: border-box;
+}
+
+.sidebar-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: scroll;
+  background-color: rgb(58, 63, 81);
+}
+
+.sidebar-button {
+  color: white;
+  background-color: rgb(58, 63, 81);
+}
+
+.sidebar-button-active {
+  background-color: #252833;
+  border-left-color: var(--primary);
+  border-left-style: solid;
+  border-left-width: 3px !important;
+}

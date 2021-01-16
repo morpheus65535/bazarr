@@ -34,17 +34,15 @@ class SystemTasksView extends React.Component<Props, {}> {
         <Helmet>
           <title>Tasks - Bazarr (System)</title>
         </Helmet>
-        <Row>
-          <ContentHeader>
-            <ContentHeaderButton
-              updating={loading}
-              icon={faSync}
-              onClick={update}
-            >
-              Refresh
-            </ContentHeaderButton>
-          </ContentHeader>
-        </Row>
+        <ContentHeader>
+          <ContentHeaderButton
+            updating={loading}
+            icon={faSync}
+            onClick={update}
+          >
+            Refresh
+          </ContentHeaderButton>
+        </ContentHeader>
         <Row>
           <Table></Table>
         </Row>

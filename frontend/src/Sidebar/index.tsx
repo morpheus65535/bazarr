@@ -144,7 +144,7 @@ const Sidebar: FunctionComponent<Props> = ({
   const active = path.length >= 2 ? path[1] : "";
 
   return (
-    <aside>
+    <aside className="sidebar-container">
       <Accordion defaultActiveKey={active}>
         <ListGroup variant="flush">
           {sidebar.map((def) => (

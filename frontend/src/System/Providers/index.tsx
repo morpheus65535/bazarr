@@ -33,19 +33,17 @@ class SystemProvidersView extends React.Component<Props> {
         <Helmet>
           <title>Providers - Bazarr (System)</title>
         </Helmet>
-        <Row>
-          <ContentHeader>
-            <ContentHeaderButton
-              updating={loading}
-              icon={faSync}
-              disabled={loading}
-              onClick={update}
-            >
-              Refresh
-            </ContentHeaderButton>
-            <ContentHeaderButton icon={faTrash}>Reset</ContentHeaderButton>
-          </ContentHeader>
-        </Row>
+        <ContentHeader>
+          <ContentHeaderButton
+            updating={loading}
+            icon={faSync}
+            disabled={loading}
+            onClick={update}
+          >
+            Refresh
+          </ContentHeaderButton>
+          <ContentHeaderButton icon={faTrash}>Reset</ContentHeaderButton>
+        </ContentHeader>
         <Row>
           <Table></Table>
         </Row>

@@ -47,34 +47,30 @@ class SystemLogsView extends React.Component<Props, State> {
         <Helmet>
           <title>Providers - Bazarr (System)</title>
         </Helmet>
-        <Row>
-          <ContentHeader>
-            <ContentHeaderButton
-              updating={loading}
-              icon={faSync}
-              disabled={loading}
-              onClick={update}
-            >
-              Refresh
-            </ContentHeaderButton>
-            <ContentHeaderButton icon={faDownload}>
-              Download
-            </ContentHeaderButton>
-            <ContentHeaderButton
-              updating={resetting}
-              icon={faTrash}
-              onClick={() => {
-                this.setState({ ...this.state, resetting: true });
-                SystemApi.deleteLogs().finally(() => {
-                  this.setState({ ...this.state, resetting: false });
-                  update();
-                });
-              }}
-            >
-              Empty
-            </ContentHeaderButton>
-          </ContentHeader>
-        </Row>
+        <ContentHeader>
+          <ContentHeaderButton
+            updating={loading}
+            icon={faSync}
+            disabled={loading}
+            onClick={update}
+          >
+            Refresh
+          </ContentHeaderButton>
+          <ContentHeaderButton icon={faDownload}>Download</ContentHeaderButton>
+          <ContentHeaderButton
+            updating={resetting}
+            icon={faTrash}
+            onClick={() => {
+              this.setState({ ...this.state, resetting: true });
+              SystemApi.deleteLogs().finally(() => {
+                this.setState({ ...this.state, resetting: false });
+                update();
+              });
+            }}
+          >
+            Empty
+          </ContentHeaderButton>
+        </ContentHeader>
         <Row>
           <Table></Table>
         </Row>

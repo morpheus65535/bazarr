@@ -15,7 +15,7 @@ const Content: FunctionComponent<{
     <React.Fragment>
       <FontAwesomeIcon
         size="1x"
-        className="mr-2"
+        className="mr-3"
         icon={props.icon}
       ></FontAwesomeIcon>
       <span>
@@ -30,8 +30,8 @@ const Item: FunctionComponent<{ def: SidebarDef }> = (props) => {
   if (to) {
     return (
       <NavLink
-        activeClassName="active"
-        className="list-group-item list-group-item-action py-2"
+        activeClassName="sidebar-button-active"
+        className="list-group-item list-group-item-action py-2 sidebar-button"
         to={to}
       >
         <Content {...props.def}></Content>
@@ -44,7 +44,7 @@ const Item: FunctionComponent<{ def: SidebarDef }> = (props) => {
           as={ListGroup.Item}
           action
           eventKey={name.toLowerCase()}
-          className="py-2"
+          className="py-2 sidebar-button"
         >
           <Content {...props.def}></Content>
         </Accordion.Toggle>
@@ -56,8 +56,8 @@ const Item: FunctionComponent<{ def: SidebarDef }> = (props) => {
             {children.map((ch) => (
               <NavLink
                 key={ch.name}
-                activeClassName="active"
-                className="list-group-item list-group-item-action py-2"
+                activeClassName="sidebar-button-active"
+                className="list-group-item list-group-item-action py-2 sidebar-button"
                 to={ch.to}
               >
                 <span className="ml-4">
