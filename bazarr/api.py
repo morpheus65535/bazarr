@@ -973,6 +973,11 @@ class Movies(Resource):
             except NameError:
                 pass
 
+            # map poster and fanart to server proxy
+            poster = item["poster"]
+            fanart = item["fanart"]
+            item.update({"poster": f"{base_url}images/movies{poster}","fanart": f"{base_url}images/movies{fanart}"})
+
             item.update({"monitored": item["monitored"] == "True"})
             item.update({"forced": item["forced"]})
             item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
