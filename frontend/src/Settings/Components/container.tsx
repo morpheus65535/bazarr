@@ -19,10 +19,14 @@ export const Group: FunctionComponent<GroupProps> = ({ header, children }) => {
 
 export interface InputProps {
   name?: string;
-  hidden?: boolean
+  hidden?: boolean;
 }
 
-export const Input: FunctionComponent<InputProps> = ({ children, name, hidden }) => {
+export const Input: FunctionComponent<InputProps> = ({
+  children,
+  name,
+  hidden,
+}) => {
   return (
     <Form.Group hidden={hidden}>
       {name && <Form.Label>{name}</Form.Label>}
@@ -65,7 +69,7 @@ interface SelectionBoxProps {
   control: (change: React.Dispatch<string | undefined>) => JSX.Element;
   defaultKey?: string;
   indent?: boolean;
-  children: (key: string | undefined) => JSX.Element
+  children: (key: string | undefined) => JSX.Element;
 }
 
 export const SelectionBox: FunctionComponent<SelectionBoxProps> = ({

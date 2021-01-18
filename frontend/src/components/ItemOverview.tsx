@@ -7,8 +7,8 @@ interface Props {
 }
 
 const ItemOverview: FunctionComponent<Props> = (props) => {
-  const badgeClass = "mr-2";
-  const infoRowClass = "mb-2 text-white";
+  const badgeClass = "mr-2 my-1 text-overflow-ellipsis";
+  const infoRowClass = "text-white";
 
   const { item, details } = props;
 
@@ -17,7 +17,12 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   if (item.languages instanceof Array) {
     subtitleLanguages = item.languages.map((val) => {
       return (
-        <Badge variant="secondary" className={badgeClass} key={val.name}>
+        <Badge
+          title={val.name}
+          variant="secondary"
+          className={badgeClass}
+          key={val.name}
+        >
           {val.name}
         </Badge>
       );

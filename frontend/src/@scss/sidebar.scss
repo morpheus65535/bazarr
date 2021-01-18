@@ -1,0 +1,118 @@
+@import "./variable.scss";
+
+@mixin anim {
+  transition: {
+    duration: 0.2s;
+    timing-function: ease-in-out;
+  }
+}
+
+@media (min-width: $sm) {
+  .sidebar-container {
+    position: sticky;
+  }
+
+  .header-icon {
+    min-width: $sidebar-width;
+  }
+}
+
+@media (max-width: $md) {
+  .sidebar-container {
+    position: fixed !important;
+    transform: translateX(-100%);
+
+    @include anim();
+
+    &.open {
+      transform: translateX(0) !important;
+    }
+  }
+
+  .sidebar-overlay {
+    @include anim();
+    &.open {
+      display: block !important;
+      opacity: 0.6;
+    }
+  }
+
+  .header-icon {
+    min-width: 0;
+  }
+}
+
+$sidebar-bg-color: #3a3f51;
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: black;
+  opacity: 0;
+  z-index: 99;
+}
+
+.sidebar-container {
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: $sidebar-bg-color;
+
+  z-index: 100;
+
+  min-width: $sidebar-width;
+  max-width: $sidebar-width;
+
+  flex-grow: 2;
+
+  span {
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  .sidebar-button {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+
+    color: white;
+    background-color: $sidebar-bg-color;
+
+    &:hover {
+      background-color: #252833;
+    }
+
+    &:active,
+    &:focus {
+      color: white;
+      background-color: $sidebar-bg-color;
+      outline: none;
+    }
+
+    .icon {
+      margin-right: 1rem;
+      width: 1.5rem;
+    }
+
+    @mixin child {
+      border-left-style: solid;
+      border-left-width: 3px !important;
+      border-bottom: none;
+    }
+
+    &.sb-active {
+      background-color: #252833;
+      border-left-color: var(--primary) !important;
+      @include child();
+    }
+
+    &.sb-collapse {
+      border-left-color: var(--secondary);
+      @include child();
+    }
+  }
+}

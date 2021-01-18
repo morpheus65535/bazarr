@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo } from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { connect } from "react-redux";
 import { SidebarDef } from "./types";
 import {
@@ -18,9 +18,11 @@ interface Props {
   movies_badge: number;
   episodes_badge: number;
   providers_badge: number;
+  open?: boolean;
+  onToggle?: () => void;
 }
 
-function mapStateToProps({ badges }: StoreState): Props {
+function mapStateToProps({ badges }: StoreState) {
   return {
     movies_badge: badges.movies,
     episodes_badge: badges.episodes,
@@ -32,6 +34,8 @@ const Sidebar: FunctionComponent<Props> = ({
   movies_badge,
   episodes_badge,
   providers_badge,
+  open,
+  onToggle,
 }) => {
   const sidebar = useMemo<SidebarDef[]>(
     () => [
@@ -143,16 +147,31 @@ const Sidebar: FunctionComponent<Props> = ({
   const path = history.location.pathname.split("/");
   const active = path.length >= 2 ? path[1] : "";
 
+  const cls = ["sidebar-container"];
+  const overlay = ["sidebar-overlay"];
+
+  if (open && open === true) {
+    cls.push("open");
+    overlay.push("open");
+  }
+
   return (
-    <aside className="sidebar-container">
-      <Accordion defaultActiveKey={active}>
-        <ListGroup variant="flush">
-          {sidebar.map((def) => (
-            <SidebarItem key={def.name} def={def}></SidebarItem>
-          ))}
-        </ListGroup>
-      </Accordion>
-    </aside>
+    <React.Fragment>
+      <aside className={cls.join(" ")}>
+        <Accordion defaultActiveKey={active}>
+          <ListGroup variant="flush">
+            {sidebar.map((def) => (
+              <SidebarItem
+                key={def.name}
+                def={def}
+                onClick={onToggle}
+              ></SidebarItem>
+            ))}
+          </ListGroup>
+        </Accordion>
+      </aside>
+      <div className={overlay.join(" ")} onClick={onToggle}></div>
+    </React.Fragment>
   );
 };
 

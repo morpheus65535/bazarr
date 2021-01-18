@@ -9,10 +9,10 @@ import SettingRouter from "../Settings/Router";
 import WantedRouter from "../Wanted/Router";
 import HistoryRouter from "../History/Router";
 
-class Router extends React.Component {
+class Router extends React.Component<{ className?: string }> {
   render(): JSX.Element {
     return (
-      <div className="d-flex flex-row">
+      <div className={this.props.className}>
         <Switch>
           <Route exact path="/">
             <Redirect exact to="/series"></Redirect>

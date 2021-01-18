@@ -72,7 +72,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
           return (
-            <Link to={target}>
+            <Link to={target} className="text-nowrap">
               <span>{row.value}</span>
             </Link>
           );

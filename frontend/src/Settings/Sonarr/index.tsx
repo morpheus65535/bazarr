@@ -83,7 +83,9 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
             <Input name="Minimum Score">
               <Slider
                 defaultValue={settings.general.minimum_score}
-                onAfterChange={(v) => update(v, "settings-general-minimum_score")}
+                onAfterChange={(v) =>
+                  update(v, "settings-general-minimum_score")
+                }
               ></Slider>
             </Input>
             <Input name="Excluded Tags">

@@ -1,6 +1,6 @@
 import React, { FunctionComponent, ChangeEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faHeart, faBars } from "@fortawesome/free-solid-svg-icons";
 import {
   Image,
   Dropdown,
@@ -21,6 +21,7 @@ import logo from "../@static/logo128.png";
 interface Props {
   movies: Movie[];
   series: Series[];
+  onToggle?: () => void;
 }
 
 function mapStateToProps({ series, movie }: StoreState) {
@@ -110,6 +111,7 @@ class Header extends React.Component<Props, State> {
 
   render() {
     const { searchText, results } = this.state;
+    const { onToggle } = this.props;
 
     const items = results.map((val) => (
       <ResultItem
@@ -127,21 +129,23 @@ class Header extends React.Component<Props, State> {
       process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
 
     return (
-      <Navbar bg="light" className="flex-grow-1">
+      <Navbar bg="light" className="flex-grow-1 px-0">
+        <Navbar.Brand
+          href={baseUrl}
+          className="header-icon px-3 m-0 d-none d-md-block"
+        >
+          <Image alt="brand" src={logo} width="32" height="32"></Image>
+        </Navbar.Brand>
+        <Button
+          variant="light"
+          className="mx-2 m-0 d-md-none"
+          onClick={onToggle}
+        >
+          <FontAwesomeIcon icon={faBars}></FontAwesomeIcon>
+        </Button>
         <Container fluid>
           <Row noGutters className="flex-grow-1">
-            <Col sm={1} md={3} lg={2} className="d-flex align-items-center">
-              <Navbar.Brand href={baseUrl} className="px-3">
-                <Image
-                  alt="brand"
-                  src={logo}
-                  width="32"
-                  height="32"
-                  className="mr-2"
-                ></Image>
-              </Navbar.Brand>
-            </Col>
-            <Col xs={2} className="d-flex align-items-center">
+            <Col xs={6} sm={4} className="d-flex align-items-center">
               <Dropdown show={searchText.length !== 0}>
                 <Form.Control
                   type="text"
@@ -154,7 +158,7 @@ class Header extends React.Component<Props, State> {
                 </Dropdown.Menu>
               </Dropdown>
             </Col>
-            <Col className="d-flex flex-row align-items-center justify-content-end">
+            <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
               <Button variant="light">
                 <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
               </Button>

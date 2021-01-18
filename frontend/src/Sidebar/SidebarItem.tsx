@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { Accordion, Badge, ListGroup } from "react-bootstrap";
+import { Accordion, Badge } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { NavLink } from "react-router-dom";
 
@@ -10,29 +10,39 @@ const Content: FunctionComponent<{
   name: string;
   icon: IconDefinition;
   badge?: string;
-}> = (props) => {
-  return (
-    <React.Fragment>
-      <FontAwesomeIcon
-        size="1x"
-        className="mr-3"
-        icon={props.icon}
-      ></FontAwesomeIcon>
-      <span>
-        {props.name} <Badge variant="secondary">{props.badge}</Badge>
-      </span>
-    </React.Fragment>
-  );
-};
+}> = (props) => (
+  <React.Fragment>
+    <FontAwesomeIcon
+      size="1x"
+      className="icon"
+      icon={props.icon}
+    ></FontAwesomeIcon>
+    <span>
+      {props.name} <Badge variant="secondary">{props.badge}</Badge>
+    </span>
+  </React.Fragment>
+);
 
-const Item: FunctionComponent<{ def: SidebarDef }> = (props) => {
+const ChildContent: FunctionComponent<{ name: string; badge?: string }> = (
+  props
+) => (
+  <span className="ml-4">
+    {props.name} <Badge variant="secondary">{props.badge}</Badge>
+  </span>
+);
+
+const Item: FunctionComponent<{ def: SidebarDef; onClick?: () => void }> = (
+  props
+) => {
   const { to, name, children } = props.def;
+  const { onClick } = props;
   if (to) {
     return (
       <NavLink
-        activeClassName="sidebar-button-active"
-        className="list-group-item list-group-item-action py-2 sidebar-button"
+        activeClassName="sb-active"
+        className="list-group-item list-group-item-action sidebar-button"
         to={to}
+        onClick={onClick}
       >
         <Content {...props.def}></Content>
       </NavLink>
@@ -41,28 +51,22 @@ const Item: FunctionComponent<{ def: SidebarDef }> = (props) => {
     return (
       <React.Fragment>
         <Accordion.Toggle
-          as={ListGroup.Item}
-          action
           eventKey={name.toLowerCase()}
-          className="py-2 sidebar-button"
+          className="list-group-item list-group-item-action sidebar-button"
         >
           <Content {...props.def}></Content>
         </Accordion.Toggle>
-        <Accordion.Collapse
-          eventKey={name.toLowerCase()}
-          className="list-group-flush"
-        >
+        <Accordion.Collapse eventKey={name.toLowerCase()}>
           <React.Fragment>
             {children.map((ch) => (
               <NavLink
                 key={ch.name}
-                activeClassName="sidebar-button-active"
-                className="list-group-item list-group-item-action py-2 sidebar-button"
+                activeClassName="sb-active"
+                className="list-group-item list-group-item-action sidebar-button sb-collapse"
                 to={ch.to}
+                onClick={onClick}
               >
-                <span className="ml-4">
-                  {ch.name} <Badge variant="secondary">{ch.badge}</Badge>
-                </span>
+                <ChildContent name={ch.name} badge={ch.badge}></ChildContent>
               </NavLink>
             ))}
           </React.Fragment>

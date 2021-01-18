@@ -58,7 +58,7 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Link to={target}>
+            <Link to={target} className="text-nowrap">
               <span>{row.value}</span>
             </Link>
           );

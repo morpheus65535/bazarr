@@ -1,7 +1,14 @@
-.content-header-sticky {
+.content-header {
   position: sticky;
   top: 0;
   z-index: 99;
+  overflow-x: auto;
+}
+
+.text-overflow-ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 480px;
 }
 
 .custom-rc-slider {

@@ -154,7 +154,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
 
   return (
     <React.Fragment>
-      <Table striped borderless {...getTableProps()}>
+      <Table striped borderless responsive {...getTableProps()}>
         {header}
         {body}
       </Table>

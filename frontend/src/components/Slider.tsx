@@ -1,5 +1,4 @@
 import React, { FunctionComponent, useMemo } from "react";
-import { Tooltip } from "react-bootstrap";
 import RcSlider from "rc-slider";
 import "rc-slider/assets/index.css";
 
@@ -52,7 +51,6 @@ export const Slider: FunctionComponent<SliderProps> = ({
     </div>
   );
 };
-
 
 const SliderTooltips: FunctionComponent<{
   tooltips?: TooltipsOptions;
