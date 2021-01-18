@@ -1,12 +1,18 @@
 * {
-  box-sizing: border-box;
+  scrollbar-width: none;
 }
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
 
 .sidebar-container {
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: scroll;
+  overflow-y: auto;
   background-color: rgb(58, 63, 81);
 }
 

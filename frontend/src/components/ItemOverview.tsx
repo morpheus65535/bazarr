@@ -70,7 +70,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
               <Badge
                 variant="secondary"
                 className={badgeClass}
-                hidden={!item.forced}
+                hidden={item.forced === "False"}
               >
                 Forced
               </Badge>
