@@ -30,9 +30,9 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const securityOptions = {
-  none: "None",
-  basic: "Basic",
-  form: "Form",
+  None: "None",
+  Basic: "Basic",
+  Form: "Form",
 };
 
 const proxyOptions = {
@@ -76,17 +76,17 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           <Group header="Security">
             <CollapseBox
               indent
-              defaultOpen={settings.auth.type !== "none"}
+              defaultOpen={settings.auth.type !== undefined && settings.auth.type !== "None"}
               control={(change) => (
                 <Input name="Authentication">
                   <Selector
                     options={securityOptions}
                     defaultKey={settings.auth.type}
                     onSelect={(v: string) => {
-                      change(v !== "none");
+                      change(v !== "None");
                       update(v, "settings-auth-type");
                     }}
-                    nullKey="none"
+                    nullKey="None"
                   ></Selector>
                 </Input>
               )}

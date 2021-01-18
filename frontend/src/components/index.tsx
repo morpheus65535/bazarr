@@ -13,7 +13,7 @@ import {
   faClock,
 } from "@fortawesome/free-solid-svg-icons";
 
-import "./style.css";
+import "./style.scss";
 
 export const ActionBadge: FunctionComponent<{
   onClick?: (e: MouseEvent) => void;
@@ -108,3 +108,4 @@ export * from "./Modals";
 export * from "./ContentHeader";
 export * from "./Tables";
 export * from "./Selector";
+export * from "./Slider";

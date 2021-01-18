@@ -92,7 +92,13 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               )}
             >
               <Input>
-                <Slider></Slider>
+                <Slider
+                  max={30}
+                  defaultValue={settings.general.days_to_upgrade_subs}
+                  onAfterChange={(v) =>
+                    update(v, "settings-general-days_to_upgrade_subs")
+                  }
+                ></Slider>
                 <Message type="info">
                   Number of days to go back in history to upgrade subtitles
                 </Message>
@@ -407,7 +413,12 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 )}
               >
                 <Input>
-                  <Slider></Slider>
+                  <Slider
+                    defaultValue={settings.subsync.subsync_threshold}
+                    onAfterChange={(v) =>
+                      update(v, "settings-subsync-subsync_threshold")
+                    }
+                  ></Slider>
                 </Input>
               </CollapseBox>
               <CollapseBox
@@ -431,7 +442,12 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
                 )}
               >
                 <Input>
-                  <Slider></Slider>
+                  <Slider
+                    defaultValue={settings.subsync.subsync_movie_threshold}
+                    onAfterChange={(v) =>
+                      update(v, "settings-subsync-subsync_movie_threshold")
+                    }
+                  ></Slider>
                 </Input>
               </CollapseBox>
             </CollapseBox>

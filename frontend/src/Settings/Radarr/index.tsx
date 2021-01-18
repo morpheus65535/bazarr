@@ -74,7 +74,12 @@ const SettingsRadarrView: FunctionComponent<Props> = () => (
           </Group>
           <Group header="Options">
             <Input name="Minimum Score">
-              <Slider></Slider>
+              <Slider
+                defaultValue={settings.general.minimum_score_movie}
+                onAfterChange={(v) =>
+                  update(v, "settings-general-minimum_score_movie")
+                }
+              ></Slider>
             </Input>
             <Input name="Excluded Tags">
               <Text

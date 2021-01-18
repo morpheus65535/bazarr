@@ -35,7 +35,7 @@ class App extends React.Component<Props> {
       <div id="app">
         <BrowserRouter basename={baseUrl}>
           <Container fluid className="p-0">
-            <Row>
+            <Row className="header-container">
               <Header></Header>
             </Row>
             <Row noGutters>

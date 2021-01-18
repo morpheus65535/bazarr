@@ -86,10 +86,4 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-export { Selector } from "../../Components";
-
-interface SliderProps {}
-
-export const Slider: FunctionComponent<SliderProps> = (props) => {
-  return <Form.Control type="range" className="py-1"></Form.Control>;
-};
+export { Selector, Slider } from "../../Components";
