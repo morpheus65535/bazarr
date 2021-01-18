@@ -115,7 +115,16 @@ def append_arguments(code_obj, new_locals):
                 code_obj.co_freevars, code_obj.co_cellvars)
 
     # Done modifying codestring - make the code object
-    return types.CodeType(*args)
+    if hasattr(code_obj, "replace"):
+        # Python 3.8+
+        return code_obj.replace(
+            co_argcount=co_argcount + new_locals_len,
+            co_nlocals=code_obj.co_nlocals + new_locals_len,
+            co_code=code,
+            co_names=names,
+            co_varnames=varnames)
+    else:
+        return types.CodeType(*args)
 
 
 def instructions(code_obj):
