@@ -210,13 +210,14 @@ def configured():
     database.execute("UPDATE system SET configured = 1")
 
 
-@app.route('/test_url', methods=['GET'])
-@app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
+@app.route('/test', methods=['GET'])
+@app.route('/test/<protocol>/<path:url>', methods=['GET'])
 @login_required
-def test_url(protocol, url):
+def proxy(protocol, url):
     url = protocol + '://' + unquote(url)
+    params = request.args
     try:
-        result = requests.get(url, allow_redirects=False, verify=False, timeout=5)
+        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5)
     except Exception as e:
         return dict(status=False, error=repr(e))
     else:
