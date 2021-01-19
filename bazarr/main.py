@@ -1,32 +1,29 @@
 # coding=utf-8
 
-bazarr_version = '0.9.0.8'
+bazarr_version = '0.9.1'
 
 import os
 
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 import gc
-import sys
 import libs
 
 import hashlib
 import apprise
-import requests
 import calendar
 
 from get_args import args
 from logger import empty_log
-from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url, configure_proxy_func
+from config import settings, url_sonarr, url_radarr, configure_proxy_func
 
 from init import *
-from database import database, dict_mapper
+from database import database
 
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, \
-    alpha3_from_alpha2
+from get_languages import load_language_in_db, language_from_alpha2, alpha3_from_alpha2
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 

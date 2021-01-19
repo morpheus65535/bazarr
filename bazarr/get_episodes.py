@@ -1,11 +1,12 @@
 # coding=utf-8
+
 import requests
 import logging
 from database import database, dict_converter, get_exclusion_clause
 
 from config import settings, url_sonarr
 from helper import path_mappings
-from list_subtitles import list_missing_subtitles, store_subtitles, series_full_scan_subtitles
+from list_subtitles import store_subtitles, series_full_scan_subtitles
 from get_subtitle import episode_download_subtitles
 from event_handler import event_stream
 
@@ -85,12 +86,12 @@ def sync_episodes():
                                     videoCodec = None
                                     audioCodec = None
 
-                                audio_language = None
+                                audio_language = []
                                 if 'language' in episode['episodeFile'] and len(episode['episodeFile']['language']):
                                     item = episode['episodeFile']['language']
                                     if isinstance(item, dict):
                                         if 'name' in item:
-                                            audio_language = item['name']
+                                            audio_language.append(item['name'])
                                 else:
                                     audio_language = database.execute("SELECT audio_language FROM table_shows WHERE "
                                                                       "sonarrSeriesId=?", (episode['seriesId'],),
@@ -113,7 +114,7 @@ def sync_episodes():
                                                                'video_codec': videoCodec,
                                                                'audio_codec': audioCodec,
                                                                'episode_file_id': episode['episodeFile']['id'],
-                                                               'audio_language': audio_language})
+                                                               'audio_language': str(audio_language)})
                                 else:
                                     episodes_to_add.append({'sonarrSeriesId': episode['seriesId'],
                                                             'sonarrEpisodeId': episode['id'],
@@ -128,7 +129,7 @@ def sync_episodes():
                                                             'video_codec': videoCodec,
                                                             'audio_codec': audioCodec,
                                                             'episode_file_id': episode['episodeFile']['id'],
-                                                            'audio_language': audio_language})
+                                                            'audio_language': str(audio_language)})
 
     # Remove old episodes from DB
     removed_episodes = list(set(current_episodes_db_list) - set(current_episodes_sonarr))

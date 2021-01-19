@@ -94,17 +94,15 @@
 					<i class="far fa-clone" id="moviealternativeTitles" data-toggle="tooltip" data-placement="right" title="None" data-html="true"></i>
 				</div>
 				<div class="row">
-					<h5><span id="movieAudioLanguage" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieAudioLanguage"></span></h5>
+				</div>
+				<div class="row">
 					<h5><span id="movieMappedPath" data-toggle="tooltip" data-placement="right" title="None" class="badge badge-secondary"></span></h5>
 					<h5><span id="movieTags" class="badge badge-secondary" data-toggle="tooltip" data-placement="right"
 							  title="None" data-html="true">Tags</span></h5>
 				</div>
 				<div class="row">
-					<h5><span id="movieSubtitlesLanguages"></span></h5>
-				</div>
-				<div class="row">
-					<h5><span id="movieHearingImpaired" class="badge badge-secondary"></span></h5>
-					<h5><span id="movieForced" class="badge badge-secondary"></span></h5>
+					<h5><span id="movieSubtitlesLanguagesProfile" class="badge badge-secondary"></span></h5>
 				</div>
 				<div class="row">
 					<span id="movieDescription"></span>
@@ -244,33 +242,10 @@
 						</div>
 						<div class="row">
 							<div class="col-sm-3 text-right">
-								Subtitles Language(s)
+								Languages Profile
 							</div>
 							<div class="form-group col-sm-8 pl-sm-0">
-								<select class="selectpicker" id="edit_languages_select" name="languages" multiple data-live-search="true"></select>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-sm-3 text-right">
-								Hearing-Impaired
-							</div>
-							<div class="form-group col-sm-1 pl-sm-0">
-								<label class="custom-control custom-checkbox">
-									<input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
-									<span class="custom-control-label" for="hi_checkbox"></span>
-								</label>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col-sm-3 text-right">
-								Forced
-							</div>
-							<div class="form-group col-sm-8 pl-sm-0">
-								<select class="selectpicker" id="edit_forced_select" name="forced">
-									<option value="False">False</option>
-									<option value="True">True</option>
-									<option value="Both">Both</option>
-								</select>
+								<select class="selectpicker" id="edit_languages_select" name="languages"></select>
 							</div>
 						</div>
 					</div>
@@ -511,6 +486,7 @@
 		movieDetailsRefresh();
 		getLanguages();
 		getEnabledLanguages();
+		getLanguagesProfiles();
 
 		//test
 		$('#movieSubtitles').on('click', '.remove_subtitles', function(e){
@@ -544,8 +520,8 @@
 				moviePath: movieDetails['mapped_path'],
 				sceneName: movieDetails['sceneName'],
 				language: $(this).attr("data-language"),
-				hi: movieDetails['hearing_impaired'],
-				forced:$(this).attr("data-forced"),
+				hi: $(this).attr("data-hi"),
+				forced: $(this).attr("data-forced"),
 				radarrId: movieDetails['radarrId'],
 				title: movieDetails['title']
 			};
@@ -569,9 +545,7 @@
 
 			moviePath = movieDetails['mapped_path'];
 			sceneName = movieDetails['sceneName'];
-			language = movieDetails['desired_languages'];
-			hi = movieDetails['hearing_impaired'];
-			forced = movieDetails['forced'];
+			profileId = movieDetails['profileId'].id;
 			radarrId = movieDetails['radarrId'];
 			var languages = Array.from(movieDetails['languages']);
 			var is_pb = languages.includes('pb');
@@ -580,9 +554,7 @@
 			const values = {
 				moviePath: moviePath,
 				sceneName: sceneName,
-				language: language,
-				hi: hi,
-				forced: forced,
+				profileId: profileId,
 				radarrId: radarrId,
 				title: movieDetails['title']
 			};
@@ -683,7 +655,7 @@
 					{ data: null,
 						searchable: false,
 						render: function ( data ) {
-							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+							return '<a href="" class="manual_download badge badge-secondary" data-moviePath="'+moviePath+'" data-sceneName="'+sceneName+'" data-subtitle="'+data.subtitle+'" data-provider="'+data.provider+'" data-language="'+data.language+'" data-forced="'+data.forced+'"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
 						}
 					}
 				]
@@ -730,7 +702,7 @@
 			$('#upload_sceneName').val(movieDetails['sceneName']);
 			$('#upload_radarrId').val(movieDetails['radarrId']);
 			$('#upload_title').val(movieDetails['title']);
-			$('#upload_audioLanguage').val(movieDetails['audio_language']['name']);
+            $('#upload_audioLanguage').val((movieDetails['audio_language'].length) ? movieDetails['audio_language'][0].name : 'None');
 
 			$('#manual_language_select').empty();
 			$.each(enabledLanguages, function (i, item) {
@@ -794,26 +766,20 @@
 		$('#edit_button').on('click', function(e){
 			e.preventDefault();
 			$("#edit_movie_title_span").html(movieDetails['title']);
-			$("#edit_audio_language_span").text(movieDetails['audio_language']['name']);
-			$('#edit_radarrId').val(movieDetails['radarrId']);
+			$("#edit_audio_language_span").empty();
+            $.each(movieDetails['audio_language'], function (i, item) {
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
+            })
+            $('#edit_radarrId').val(movieDetails['radarrId']);
 
 
 			$('#edit_languages_select').empty();
-			if ('{{settings.general.single_language}}' === 'True') {
-				$('#edit_languages_select').selectpicker({maxOptions: 1});
-				$('#edit_languages_select').append('<option value="None">None</option>');
-			}
-			$.each(enabledLanguages, function (i, item) {
-				$('#edit_languages_select').append('<option value="'+item.code2+'">'+item.name+'</option>');
+			$('#edit_languages_select').append('<option value="None">None</option>');
+			$.each(languagesProfiles, function (i, item) {
+				$('#edit_languages_select').append('<option value="'+item.profileId+'">'+item.name+'</option>');
 			});
 			$("#edit_languages_select").selectpicker("refresh");
-			var selected_languages = Array();
-			$.each(Array.from(movieDetails['languages']), function (i, item) {
-				selected_languages.push(item.code2);
-			});
-			$('#edit_languages_select').selectpicker('val', selected_languages);
-			$('#hi_checkbox').prop('checked', (movieDetails['hearing_impaired'] === 'True'));
-			$('#edit_forced_select').val(movieDetails['forced']).change();
+			$('#edit_languages_select').selectpicker('val', ((movieDetails['profileId'].id) ? movieDetails['profileId'].id : 'None'));
 
 			$('#editModal')
 					.modal({
@@ -1223,22 +1189,15 @@
 				$('#movieTags').hide();
 			}
 
-			$('#movieAudioLanguage').text(movieDetails['audio_language']['name']);
-			$('#movieMappedPath').text(movieDetails['mapped_path']);
+			$("#movieAudioLanguage").empty();
+                $.each(movieDetails['audio_language'], function (i, item) {
+                    $("#movieAudioLanguage").append('<div class="badge badge-secondary"><i class="fa fa-music"></i> ' + item['name'] + '</div> ');
+                })
+            $('#movieMappedPath').text(movieDetails['mapped_path']);
 			$('#movieMappedPath').attr("data-original-title", movieDetails['mapped_path']);
 
-			var languages = '';
-			if (movieDetails['languages'] && movieDetails['languages'] !== 'None') {
-				movieDetails['languages'].forEach(appendFunc);
-			}
+			$('#movieSubtitlesLanguagesProfile').text(movieDetails['profileId'].name);
 
-			function appendFunc(value) {
-				languages += '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-			}
-
-			$('#movieSubtitlesLanguages').html(languages);
-			$('#movieHearingImpaired').text('Hearing-Impaired: ' + movieDetails['hearing_impaired']);
-			$('#movieForced').text('Forced: ' + movieDetails['forced']);
 			$('#movieDescription').text(movieDetails['overview']);
 
 			var missing_languages = '';
@@ -1248,11 +1207,11 @@
 
 			function missingAppendFunc(value) {
 				if (value.forced) {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + ' Forced" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ':forced <i class="fas fa-search"></i></button> ';
 				} else if (value.hi) {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + ' HI" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ':HI <i class="fas fa-search"></i></button> ';
 				} else {
-					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-forced=' + value.forced + '>' + value.code2 + ' <i class="fas fa-search"></i></button> ';
+					missing_languages += '<button class="get_subtitle btn btn-secondary btn-sm" type="button" data-toggle="tooltip" data-placement="right" data-original-title="' + value.name + '" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '">' + value.code2 + ' <i class="fas fa-search"></i></button> ';
 				}
 			}
 
@@ -1260,14 +1219,14 @@
 
 			$('[data-toggle="tooltip"]').tooltip({html: true});
 
-			if (movieDetails['desired_languages'] == '[]') {
-				$('#search_button').hide();
-				$('#manual_button').hide();
-				$('#upload_button').hide();
-			} else {
+			if (movieDetails['profileId'].id) {
 				$('#search_button').show();
 				$('#manual_button').show();
 				$('#upload_button').show();
+			} else {
+				$('#search_button').hide();
+				$('#manual_button').hide();
+				$('#upload_button').hide();
 			}
 
 
@@ -1332,6 +1291,15 @@
 			url: "{{ url_for('api.languages') }}?enabled=true",
 			success:function(data) {
 				enabledLanguages = data;
+			}
+		});
+	}
+
+	function getLanguagesProfiles() {
+		$.ajax({
+			url: "{{ url_for('api.languagesprofiles') }}",
+			success: function (data) {
+				languagesProfiles = data['data'];
 			}
 		});
 	}

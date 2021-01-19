@@ -22,10 +22,8 @@
         <tr>
             <th>Name</th>
             <th>Path Exist</th>
-            <th>Audio Profile</th>
-            <th>Subtitles Languages</th>
-            <th>Hearing-Impaired</th>
-            <th>Forced</th>
+            <th>Audio Profile Languages</th>
+            <th>Languages Profile</th>
             <th>Subtitles</th>
             <th></th>
         </tr>
@@ -46,42 +44,19 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Audio Profile
+                                    Audio Profile Languages
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
                                     <span id="edit_audio_language_span"></span>
                                 </div>
                             </div>
+                            <br>
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Subtitles Language(s)
+                                    Languages Profile
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple
-                                            data-live-search="true"></select>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Hearing-Impaired
-                                </div>
-                                <div class="form-group col-sm-1 pl-sm-0">
-                                    <label class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
-                                        <span class="custom-control-label" for="hi_checkbox"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Forced
-                                </div>
-                                <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_forced_select" name="forced">
-                                        <option value="False">False</option>
-                                        <option value="True">True</option>
-                                        <option value="Both">Both</option>
-                                    </select>
+                                    <select class="selectpicker" id="edit_languages_select" name="languages"></select>
                                 </div>
                             </div>
                         </div>
@@ -102,8 +77,7 @@
 {% block tail %}
     <script>
         $(document).ready(function () {
-            getLanguages();
-            getEnabledLanguages();
+            getLanguagesProfiles();
 
             events.on('event', function (event) {
                 var event_json = JSON.parse(event);
@@ -176,29 +150,20 @@
                             }
                         }
                     },
-                    {data: "audio_language.name"},
                     {
-                        data: "languages",
+                        data: 'audio_language',
                         render: function (data) {
-                            if (data && data !== 'None') {
-                                var languages = '';
-                                data.forEach(appendFunc);
-                                return languages;
-                            } else {
-                                return null;
-                            }
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
 
                             function appendFunc(value) {
-                                languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
                             }
                         }
                     },
                     {
-                        data: "hearing_impaired",
-                        className: "dt-center"
-                    },
-                    {
-                        data: "forced",
+                        data: "profileId.name",
                         className: "dt-center"
                     },
                     {
@@ -209,7 +174,8 @@
                             var completed = data.episodeFileCount - data.episodeMissingCount;
                             var completed_style = '';
                             var completed_text = '';
-                            if (data.episodeFileCount && data.languages !== 'None') {
+                            console.log(data.profileId);
+                            if (data.episodeFileCount && data.profileId.id !== null) {
                                 completed_style = ' style="width: ' + completed / total * 100 + '%;"';
                                 completed_text = completed + '/' + total;
                             }
@@ -219,7 +185,7 @@
                     {
                         data: null,
                         render: function (data) {
-                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId=' + data.sonarrSeriesId + ' data-audiolanguage="' + data.audio_language.name + '" data-title="' + data.title + '" data-languages=' + JSON.stringify(data.languages) + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
+                            return '<a href="" class="edit_button badge badge-secondary" data-sonarrSeriesId=' + data.sonarrSeriesId + ' data-audiolanguage=\'' + JSON.stringify(data.audio_language) + '\' data-title="' + data.title + '" data-languages_profile=' + data.profileId.id + ' data-hi="' + data.hearing_impaired + '" data-forced="' + data.forced + '"><i class="fas fa-wrench"></i></a>';
                         }
                     }
                 ]
@@ -229,28 +195,20 @@
         $('#series').on('click', '.edit_button', function (e) {
             e.preventDefault();
             $("#edit_series_title_span").html($(this).data('title'));
-            $("#edit_audio_language_span").html($(this).data('audiolanguage'));
+            $("#edit_audio_language_span").empty();
+            $.each($(this).data('audiolanguage'), function (i, item) {
+                $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
+            })
             $('#edit_sonarrSeriesId').val($(this).data('sonarrseriesid'));
 
 
             $('#edit_languages_select').empty();
-            if ('{{settings.general.single_language}}' === 'True') {
-                $('#edit_languages_select').selectpicker({maxOptions: 1});
-            }
-            if ('{{settings.general.single_language}}' === 'True') {
-                $('#edit_languages_select').append('<option value="None">None</option>');
-            }
-            $.each(enabledLanguages, function (i, item) {
-                $('#edit_languages_select').append('<option value="' + item.code2 + '">' + item.name + '</option>');
+            $('#edit_languages_select').append('<option value="None">None</option>');
+            $.each(languagesProfiles, function (i, item) {
+                $('#edit_languages_select').append('<option value="' + item.profileId + '">' + item.name + '</option>');
             });
             $("#edit_languages_select").selectpicker("refresh");
-            var selected_languages = Array();
-            $.each(Array.from($(this).data('languages')), function (i, item) {
-                selected_languages.push(item.code2);
-            });
-            $('#edit_languages_select').selectpicker('val', selected_languages);
-            $('#hi_checkbox').prop('checked', ($(this).data('hi') === 'True'));
-            $('#edit_forced_select').val($(this).data('forced')).change();
+            $('#edit_languages_select').selectpicker('val', (($(this).data('languages_profile')) ? $(this).data('languages_profile') : 'None'));
 
             $('#editModal')
                 .modal({
@@ -278,20 +236,11 @@
             });
         });
 
-        function getLanguages() {
+        function getLanguagesProfiles() {
             $.ajax({
-                url: "{{ url_for('api.languages') }}?enabled=false",
+                url: "{{ url_for('api.languagesprofiles') }}",
                 success: function (data) {
-                    availableLanguages = data;
-                }
-            });
-        }
-
-        function getEnabledLanguages() {
-            $.ajax({
-                url: "{{ url_for('api.languages') }}?enabled=true",
-                success: function (data) {
-                    enabledLanguages = data;
+                    languagesProfiles = data['data'];
                 }
             });
         }

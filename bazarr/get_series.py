@@ -22,13 +22,11 @@ def update_series():
     serie_default_enabled = settings.general.getboolean('serie_default_enabled')
 
     if serie_default_enabled is True:
-        serie_default_language = settings.general.serie_default_language
-        serie_default_hi = settings.general.serie_default_hi
-        serie_default_forced = settings.general.serie_default_forced
+        serie_default_profile = settings.general.serie_default_profile
+        if serie_default_profile == '':
+            serie_default_profile = None
     else:
-        serie_default_language = '[]'
-        serie_default_hi = 'False'
-        serie_default_forced = 'False'
+        serie_default_profile = None
 
     audio_profiles = get_profile_list()
     tagsDict = get_tags()
@@ -76,6 +74,7 @@ def update_series():
         if show['alternateTitles'] is not None:
             alternate_titles = str([item['title'] for item in show['alternateTitles']])
 
+        audio_language = []
         if sonarr_version.startswith('2'):
             audio_language = profile_id_to_language(show['qualityProfileId'], audio_profiles)
         else:
@@ -96,7 +95,7 @@ def update_series():
                                      'overview': overview,
                                      'poster': poster,
                                      'fanart': fanart,
-                                     'audio_language': audio_language,
+                                     'audio_language': str(audio_language),
                                      'sortTitle': show['sortTitle'],
                                      'year': str(show['year']),
                                      'alternateTitles': alternate_titles,
@@ -107,20 +106,18 @@ def update_series():
             series_to_add.append({'title': show["title"],
                                   'path': show["path"],
                                   'tvdbId': show["tvdbId"],
-                                  'languages': serie_default_language,
-                                  'hearing_impaired': serie_default_hi,
                                   'sonarrSeriesId': show["id"],
                                   'overview': overview,
                                   'poster': poster,
                                   'fanart': fanart,
-                                  'audio_language': audio_language,
+                                  'audio_language': str(audio_language),
                                   'sortTitle': show['sortTitle'],
                                   'year': str(show['year']),
                                   'alternateTitles': alternate_titles,
-                                  'forced': serie_default_forced,
                                   'tags': str(tags),
                                   'seriesType': show['seriesType'],
-                                  'imdbId': imdbId})
+                                  'imdbId': imdbId,
+                                  'profileId': serie_default_profile})
 
     # Remove old series from DB
     removed_series = list(set(current_shows_db_list) - set(current_shows_sonarr))
@@ -197,9 +194,11 @@ def get_profile_list():
 
 
 def profile_id_to_language(id_, profiles):
+    profiles_to_return = []
     for profile in profiles:
         if id_ == profile[0]:
-            return profile[1]
+            profiles_to_return.append(profile[1])
+    return profiles_to_return
 
 
 def get_tags():

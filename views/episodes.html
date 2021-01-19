@@ -87,7 +87,9 @@
                            title="None" data-html="true"></i>
                     </div>
                     <div class="row">
-                        <h5><span id="seriesAudioLanguage" class="badge badge-secondary"></span></h5>
+                        <h5><span id="seriesAudioLanguage"></span></h5>
+                    </div>
+                    <div class="row">
                         <h5><span id="seriesMappedPath" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesFileCount" class="badge badge-secondary"></span></h5>
                         <h5><span id="seriesType" class="badge badge-secondary"></span></h5>
@@ -95,7 +97,7 @@
                                   title="None" data-html="true">Tags</span></h5>
                     </div>
                     <div class="row">
-                        <h5><span id="seriesSubtitlesLanguages"></span></h5>
+                        <h5><span id="seriesSubtitlesLanguagesProfile" class="badge badge-secondary"></span></h5>
                     </div>
                     <div class="row">
                         <h5><span id="seriesHearingImpaired" class="badge badge-secondary"></span></h5>
@@ -117,7 +119,7 @@
             <th></th>
             <th>Episode</th>
             <th>Title</th>
-            <th>Audio Language</th>
+            <th>Audio Languages</th>
             <th>Existing Subtitles</th>
             <th>Missing Subtitles</th>
             <th>Manual Search</th>
@@ -287,42 +289,19 @@
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Audio Profile
+                                    Audio Profile Languages
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
                                     <span id="edit_audio_language_span"></span>
                                 </div>
                             </div>
+                            <br>
                             <div class="row">
                                 <div class="col-sm-3 text-right">
-                                    Subtitles Language(s)
+                                    Languages Profile
                                 </div>
                                 <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_languages_select" name="languages" multiple
-                                            data-live-search="true"></select>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Hearing-Impaired
-                                </div>
-                                <div class="form-group col-sm-1 pl-sm-0">
-                                    <label class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="hi_checkbox" name="hi">
-                                        <span class="custom-control-label" for="hi_checkbox"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-3 text-right">
-                                    Forced
-                                </div>
-                                <div class="form-group col-sm-8 pl-sm-0">
-                                    <select class="selectpicker" id="edit_forced_select" name="forced">
-                                        <option value="False">False</option>
-                                        <option value="True">True</option>
-                                        <option value="Both">Both</option>
-                                    </select>
+                                    <select class="selectpicker" id="edit_languages_select" name="languages"></select>
                                 </div>
                             </div>
                         </div>
@@ -564,6 +543,7 @@
             episodesDetailsRefresh();
             getLanguages();
             getEnabledLanguages();
+            getLanguagesProfiles();
 
             var collapsedGroups = {};
 
@@ -636,7 +616,16 @@
                         }
                     },
                     {
-                        data: 'audio_language.name'
+                        data: 'audio_language',
+                        render: function (data) {
+                            var audio_languages = '';
+                            data.forEach(appendFunc);
+                            return audio_languages;
+
+                            function appendFunc(value) {
+                                audio_languages = audio_languages + '<span class="badge badge-secondary">' + value.name + '</span> ';
+                            }
+                        }
                     },
                     {
                         data: null,
@@ -686,7 +675,7 @@
                         			var advtag = '';
 								}
 
-                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + advtag + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-title="' + data.title + '" data-language="' + value.code3 + '" data-hi="' + seriesDetails.hearing_impaired + '" data-forced="' + value.forced + '" data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + advtag + ' <i class="fas fa-search"></i></a> ';
+                                languages = languages + '<a href="" class="get_subtitle badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + advtag + '" data-episodepath="' + data.mapped_path + '" data-scenename="' + data.scene_name + '" data-title="' + data.title + '" data-language="' + value.code3 + '" data-hi="' + value.hi + '" data-forced="' + value.forced + '" data-sonarrepisodeid=' + data.sonarrEpisodeId + '>' + value.code2 + advtag + ' <i class="fas fa-search"></i></a> ';
                             }
                         }
                     },
@@ -694,7 +683,7 @@
                         data: null,
                         render: function (data) {
                             if (data.desired_languages !== '[]') {
-                                return '<a href="" class="manual_search badge badge-secondary" data-season=' + data.season + ' data-episode=' + data.episode + ' data-episode_title="' + data.title + '" data-episodePath="' + data.mapped_path + '" data-sceneName="' + data.scene_name + '" data-language="' + data.desired_languages + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '><i class="fas fa-user"></i></a>';
+                                return '<a href="" class="manual_search badge badge-secondary" data-season=' + data.season + ' data-episode=' + data.episode + ' data-episode_title="' + data.title + '" data-episodePath="' + data.mapped_path + '" data-sceneName="' + data.scene_name + '" data-sonarrEpisodeId=' + data.sonarrEpisodeId + '><i class="fas fa-user"></i></a>';
                             } else {
                                 return ''
                             }
@@ -704,7 +693,7 @@
                         data: null,
                         render: function (data) {
                             if (data.desired_languages !== '[]') {
-                                return '<a href="" class="upload_subtitle badge badge-secondary" data-episodePath="' + data.mapped_path + '" data-sceneName"' + data.scene_name + '" data-sonarrSeriesId="' + seriesDetails['sonarrSeriesId'] + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-season="' + data.season + '" data-episode="' + data.episode + '" data-episode_title="' + data.title + '" data-audio_language="' + data.audio_language.name + '"><i class="fas fa-cloud-upload-alt"></i></a>';
+                                return '<a href="" class="upload_subtitle badge badge-secondary" data-episodePath="' + data.mapped_path + '" data-sceneName"' + data.scene_name + '" data-sonarrSeriesId="' + seriesDetails['sonarrSeriesId'] + '" data-sonarrEpisodeId="' + data.sonarrEpisodeId + '" data-season="' + data.season + '" data-episode="' + data.episode + '" data-episode_title="' + data.title + '" data-audio_language=\'' + JSON.stringify(data.audio_language) + '\'><i class="fas fa-cloud-upload-alt"></i></a>';
                             } else {
                                 return ''
                             }
@@ -783,9 +772,7 @@
 
                 episodePath = $(this).attr("data-episodePath");
                 sceneName = $(this).attr("data-sceneName");
-                language = $(this).attr("data-language");
-                hi = seriesDetails['hearing_impaired'];
-                forced = seriesDetails['forced'];
+                profileId = seriesDetails['profileId'].id;
                 sonarrSeriesId = seriesDetails['sonarrSeriesId'];
                 sonarrEpisodeId = $(this).attr("data-sonarrEpisodeId");
                 var languages = Array.from(seriesDetails['languages']);
@@ -795,9 +782,7 @@
                 const values = {
                     episodePath: episodePath,
                     sceneName: sceneName,
-                    language: language,
-                    hi: hi,
-                    forced: forced,
+                    profileId: profileId,
                     sonarrSeriesId: sonarrSeriesId,
                     sonarrEpisodeId: sonarrEpisodeId,
                     title: seriesDetails['title']
@@ -906,7 +891,7 @@
                             data: null,
                             searchable: false,
                             render: function (data) {
-                                return '<a href="" class="manual_download badge badge-secondary" data-episodePath="' + episodePath + '" data-sceneName="' + sceneName + '" data-sonarrEpisodeId=' + sonarrEpisodeId + ' data-subtitle="' + data.subtitle + '" data-provider="' + data.provider + '" data-language="' + data.language + '" data-forced="' + forced + '"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
+                                return '<a href="" class="manual_download badge badge-secondary" data-episodePath="' + episodePath + '" data-sceneName="' + sceneName + '" data-sonarrEpisodeId=' + sonarrEpisodeId + ' data-subtitle="' + data.subtitle + '" data-provider="' + data.provider + '" data-language="' + data.language + '" data-forced="' + data.forced + '"><i class="fas fa-download" style="margin-right:0px" ></i></a>';
                             }
                         }
                     ]
@@ -956,7 +941,7 @@
                 $('#upload_sonarrSeriesId').val($(this).data("sonarrseriesid"));
                 $('#upload_sonarrEpisodeId').val($(this).data("sonarrepisodeid"));
                 $('#upload_title').val($(this).data("episode_title"));
-                $('#upload_audioLanguage').val($(this).data("audio_language"));
+                $('#upload_audioLanguage').val(($(this).data("audio_language").length) ? $(this).data("audio_language")[0].name : 'None');
 
                 $('#manual_language_select').empty();
                 $.each(enabledLanguages, function (i, item) {
@@ -1340,26 +1325,20 @@
             $('#edit_button').on('click', function (e) {
                 e.preventDefault();
                 $("#edit_series_title_span").html(seriesDetails['title']);
-                $("#edit_audio_language_span").text(seriesDetails['audio_language']['name']);
+                $("#edit_audio_language_span").empty();
+                $.each(seriesDetails['audio_language'], function (i, item) {
+                    $("#edit_audio_language_span").append('<div class="badge badge-secondary">' + item['name'] + '</div> ');
+                })
                 $('#edit_sonarrSeriesId').val(seriesDetails['sonarrSeriesId']);
 
 
                 $('#edit_languages_select').empty();
-                if ('{{settings.general.single_language}}' === 'True') {
-                    $('#edit_languages_select').selectpicker({maxOptions: 1});
-                    $('#edit_languages_select').append('<option value="None">None</option>');
-                }
-                $.each(enabledLanguages, function (i, item) {
-                    $('#edit_languages_select').append('<option value="' + item.code2 + '">' + item.name + '</option>');
+                $('#edit_languages_select').append('<option value="None">None</option>');
+                $.each(languagesProfiles, function (i, item) {
+                    $('#edit_languages_select').append('<option value="' + item.profileId + '">' + item.name + '</option>');
                 });
                 $("#edit_languages_select").selectpicker("refresh");
-                var selected_languages = Array();
-                $.each(Array.from(seriesDetails['languages']), function (i, item) {
-                    selected_languages.push(item.code2);
-                });
-                $('#edit_languages_select').selectpicker('val', selected_languages);
-                $('#hi_checkbox').prop('checked', (seriesDetails['hearing_impaired'] === 'True'));
-                $('#edit_forced_select').val(seriesDetails['forced']).change();
+                $('#edit_languages_select').selectpicker('val', ((seriesDetails['profileId'].id) ? seriesDetails['profileId'].id : 'None'));
 
                 $('#editModal')
                     .modal({
@@ -1826,30 +1805,23 @@
                     $('#seriesTags').hide();
                 }
 
-                $('#seriesAudioLanguage').text(seriesDetails['audio_language']['name']);
+                $("#seriesAudioLanguage").empty();
+                $.each(seriesDetails['audio_language'], function (i, item) {
+                    $("#seriesAudioLanguage").append('<div class="badge badge-secondary"><i class="fa fa-music"></i> ' + item['name'] + '</div> ');
+                })
                 $('#seriesMappedPath').text(seriesDetails['mapped_path']);
                 $('#seriesMappedPath').attr("data-original-title", seriesDetails['mapped_path']);
                 $('#seriesFileCount').text(seriesDetails['episodeFileCount'] + ' files');
                 $('#seriesType').text(seriesDetails['seriesType']);
 
-                var languages = '';
-                if (seriesDetails['languages'] && seriesDetails['languages'] !== 'None') {
-                    seriesDetails['languages'].forEach(appendFunc);
-                }
+                $('#seriesSubtitlesLanguagesProfile').text(seriesDetails['profileId'].name);
 
-                function appendFunc(value) {
-                    languages = languages + '<span class="badge badge-secondary" data-toggle="tooltip" data-placement="right" title="' + value.name + '">' + value.code2 + '</span> ';
-                }
-
-                $('#seriesSubtitlesLanguages').html(languages);
-                $('#seriesHearingImpaired').text('Hearing-Impaired: ' + seriesDetails['hearing_impaired']);
-                $('#seriesForced').text('Forced: ' + seriesDetails['forced']);
                 $('#seriesDescription').text(seriesDetails['overview']);
 
-                if (seriesDetails['desired_languages'] == '[]') {
-                    $('#search_button').hide();
-                } else {
+                if (seriesDetails['profileId'].id) {
                     $('#search_button').show();
+                } else {
+                    $('#search_button').hide();
                 }
 
                 $('[data-toggle="tooltip"]').tooltip({html: true});
@@ -1870,6 +1842,15 @@
                 url: "{{ url_for('api.languages') }}?enabled=true",
                 success: function (data) {
                     enabledLanguages = data;
+                }
+            });
+        }
+
+        function getLanguagesProfiles() {
+            $.ajax({
+                url: "{{ url_for('api.languagesprofiles') }}",
+                success: function (data) {
+                    languagesProfiles = data['data'];
                 }
             });
         }

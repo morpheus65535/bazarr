@@ -7,7 +7,7 @@ import logging
 from config import settings, url_radarr
 from helper import path_mappings
 from utils import get_radarr_version
-from list_subtitles import store_subtitles_movie, list_missing_subtitles_movies, movies_full_scan_subtitles
+from list_subtitles import store_subtitles_movie, movies_full_scan_subtitles
 
 from get_subtitle import movies_download_subtitles
 from database import database, dict_converter, get_exclusion_clause
@@ -26,13 +26,11 @@ def update_movies():
     movie_default_enabled = settings.general.getboolean('movie_default_enabled')
 
     if movie_default_enabled is True:
-        movie_default_language = settings.general.movie_default_language
-        movie_default_hi = settings.general.movie_default_hi
-        movie_default_forced = settings.general.movie_default_forced
+        movie_default_profile = settings.general.movie_default_profile
+        if movie_default_profile == '':
+            movie_default_profile = None
     else:
-        movie_default_language = '[]'
-        movie_default_hi = 'False'
-        movie_default_forced = 'False'
+        movie_default_profile = None
 
     if apikey_radarr is None:
         pass
@@ -146,13 +144,14 @@ def update_movies():
                                 videoCodec = None
                                 audioCodec = None
 
-                            audio_language = None
+                            audio_language = []
                             if radarr_version.startswith('0'):
                                 if 'mediaInfo' in movie['movieFile']:
                                     if 'audioLanguages' in movie['movieFile']['mediaInfo']:
-                                        audio_language_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
-                                        if len(audio_language_list):
-                                            audio_language = audio_language_list[0].strip()
+                                        audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
+                                        if len(audio_languages_list):
+                                            for audio_language_list in audio_languages_list:
+                                                audio_language.append(audio_language_list.strip())
                                 if not audio_language:
                                     audio_language = profile_id_to_language(movie['qualityProfileId'], audio_profiles)
                             else:
@@ -160,8 +159,7 @@ def update_movies():
                                     for item in movie['movieFile']['languages']:
                                         if isinstance(item, dict):
                                             if 'name' in item:
-                                                audio_language = item['name']
-                                                break
+                                                audio_language.append(item['name'])
 
                             tags = [d['label'] for d in tagsDict if d['id'] in movie['tags']]
 
@@ -175,7 +173,7 @@ def update_movies():
                                                          'tmdbId': str(movie["tmdbId"]),
                                                          'poster': poster,
                                                          'fanart': fanart,
-                                                         'audio_language': audio_language,
+                                                         'audio_language': str(audio_language),
                                                          'sceneName': sceneName,
                                                          'monitored': str(bool(movie['monitored'])),
                                                          'year': str(movie['year']),
@@ -194,13 +192,11 @@ def update_movies():
                                                       'title': movie["title"],
                                                       'path': movie["path"] + separator + movie['movieFile']['relativePath'],
                                                       'tmdbId': str(movie["tmdbId"]),
-                                                      'languages': movie_default_language,
                                                       'subtitles': '[]',
-                                                      'hearing_impaired': movie_default_hi,
                                                       'overview': overview,
                                                       'poster': poster,
                                                       'fanart': fanart,
-                                                      'audio_language': audio_language,
+                                                      'audio_language': str(audio_language),
                                                       'sceneName': sceneName,
                                                       'monitored': str(bool(movie['monitored'])),
                                                       'sortTitle': movie['sortTitle'],
@@ -211,9 +207,9 @@ def update_movies():
                                                       'video_codec': videoCodec,
                                                       'audio_codec': audioCodec,
                                                       'imdbId': imdbId,
-                                                      'forced': movie_default_forced,
                                                       'movie_file_id': int(movie['movieFile']['id']),
-                                                      'tags': str(tags)})
+                                                      'tags': str(tags),
+                                                      'profileId': movie_default_profile})
                         else:
                             logging.error(
                                 'BAZARR Radarr returned a movie without a file path: ' + movie["path"] + separator +
@@ -315,8 +311,10 @@ def get_profile_list():
 
 def profile_id_to_language(id, profiles):
     for profile in profiles:
+        profiles_to_return = []
         if id == profile[0]:
-            return profile[1]
+            profiles_to_return.append(profile[1])
+    return profiles_to_return
 
 
 def RadarrFormatAudioCodec(audioFormat, audioCodecID, audioProfile, audioAdditionalFeatures):

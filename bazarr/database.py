@@ -1,13 +1,19 @@
+# coding=utf-8
+
 import os
 import ast
 import sqlite3
 import logging
+import json
 
 from sqlite3worker import Sqlite3Worker
 
 from get_args import args
 from helper import path_mappings
 from config import settings
+
+global profile_id_list
+profile_id_list = []
 
 
 def db_init():
@@ -95,6 +101,7 @@ def db_upgrade():
         ['table_shows', 'tags', 'text', '[]'],
         ['table_shows', 'seriesType', 'text', ''],
         ['table_shows', 'imdbId', 'text', ''],
+        ['table_shows', 'profileId', 'integer'],
         ['table_episodes', 'format', 'text'],
         ['table_episodes', 'resolution', 'text'],
         ['table_episodes', 'video_codec', 'text'],
@@ -112,6 +119,7 @@ def db_upgrade():
         ['table_movies', 'forced', 'text', 'False'],
         ['table_movies', 'movie_file_id', 'integer'],
         ['table_movies', 'tags', 'text', '[]'],
+        ['table_movies', 'profileId', 'integer'],
         ['table_history', 'video_path', 'text'],
         ['table_history', 'language', 'text'],
         ['table_history', 'provider', 'text'],
@@ -143,19 +151,60 @@ def db_upgrade():
         except:
             pass
 
-    # Fix null languages, hearing-impaired and forced for series and movies.
-    database.execute("UPDATE table_shows SET languages = '[]' WHERE languages is null")
-    database.execute("UPDATE table_shows SET hearing_impaired = 'False' WHERE hearing_impaired is null")
-    database.execute("UPDATE table_shows SET forced = 'False' WHERE forced is null")
-    database.execute("UPDATE table_movies SET languages = '[]' WHERE languages is null")
-    database.execute("UPDATE table_movies SET hearing_impaired = 'False' WHERE hearing_impaired is null")
-    database.execute("UPDATE table_movies SET forced = 'False' WHERE forced is null")
-
     # Create blacklist tables
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist (sonarr_series_id integer, sonarr_episode_id integer, "
                      "timestamp integer, provider text, subs_id text, language text)")
     database.execute("CREATE TABLE IF NOT EXISTS table_blacklist_movie (radarr_id integer, timestamp integer, "
                      "provider text, subs_id text, language text)")
+
+    # Create languages profiles table and populate it
+    lang_table_content = database.execute("SELECT * FROM table_languages_profiles")
+    if isinstance(lang_table_content, list):
+        lang_table_exist = True
+    else:
+        lang_table_exist = False
+        database.execute("CREATE TABLE IF NOT EXISTS table_languages_profiles ("
+                         "profileId INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL, "
+                         "cutoff INTEGER, items TEXT NOT NULL)")
+
+    if not lang_table_exist:
+        profiles_to_create = database.execute("SELECT DISTINCT languages, hearing_impaired, forced "
+                                              "FROM (SELECT languages, hearing_impaired, forced FROM table_shows "
+                                              "UNION ALL SELECT languages, hearing_impaired, forced FROM table_movies) "
+                                              "a WHERE languages NOT null and languages NOT IN ('None', '[]')")
+        for profile in profiles_to_create:
+            profile_items = []
+            languages_list = ast.literal_eval(profile['languages'])
+            for i, language in enumerate(languages_list, 1):
+                if profile['forced'] == 'Both':
+                    profile_items.append({'id': i, 'language': language, 'forced': 'True',
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
+                    profile_items.append({'id': i, 'language': language, 'forced': 'False',
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
+                else:
+                    profile_items.append({'id': i, 'language': language, 'forced': profile['forced'],
+                                          'hi': profile['hearing_impaired'], 'audio_exclude': 'False'})
+            # Create profiles
+            new_profile_name = profile['languages'] + ' (' + profile['hearing_impaired'] + '/' + profile['forced'] + ')'
+            database.execute("INSERT INTO table_languages_profiles (name, cutoff, items) VALUES("
+                             "?,null,?)", (new_profile_name, json.dumps(profile_items),))
+            created_profile_id = database.execute("SELECT profileId FROM table_languages_profiles WHERE name = ?",
+                                                  (new_profile_name,), only_one=True)['profileId']
+            # Assign profiles to series and movies
+            database.execute("UPDATE table_shows SET profileId = ? WHERE languages = ? AND hearing_impaired = ? AND "
+                             "forced = ?", (created_profile_id, profile['languages'], profile['hearing_impaired'],
+                                            profile['forced']))
+            database.execute("UPDATE table_movies SET profileId = ? WHERE languages = ? AND hearing_impaired = ? AND "
+                             "forced = ?", (created_profile_id, profile['languages'], profile['hearing_impaired'],
+                                            profile['forced']))
+
+        # null languages, forced and hearing_impaired for all series and movies
+        database.execute("UPDATE table_shows SET languages = null, forced = null, hearing_impaired = null")
+        database.execute("UPDATE table_movies SET languages = null, forced = null, hearing_impaired = null")
+
+        # Force series, episodes and movies sync with Sonarr to get all the audio track from video files
+        # Set environment variable that is going to be use during the init process to run sync once Bazarr is ready.
+        os.environ['BAZARR_AUDIO_PROFILES_MIGRATION'] = '1'
 
 
 def get_exclusion_clause(type):
@@ -184,3 +233,115 @@ def get_exclusion_clause(type):
             where_clause += ' AND table_shows.seriesType != "' + type + '"'
 
     return where_clause
+
+
+def update_profile_id_list():
+    global profile_id_list
+    profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
+
+
+def get_profiles_list(profile_id=None):
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            if profile['profileId'] == profile_id:
+                return profile
+    else:
+        return profile_id_list
+
+
+def get_desired_languages(profile_id):
+    languages = []
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if profileId == int(profile_id):
+                items_list = ast.literal_eval(items)
+                languages = [x['language'] for x in items_list]
+                break
+
+    return languages
+
+
+def get_profile_id_name(profile_id):
+    name_from_id = None
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if profileId == int(profile_id):
+                name_from_id = name
+                break
+
+    return name_from_id
+
+
+def get_profile_cutoff(profile_id):
+    cutoff_language = None
+
+    if not len(profile_id_list):
+        update_profile_id_list()
+
+    if profile_id:
+        cutoff_language = []
+        for profile in profile_id_list:
+            profileId, name, cutoff, items = profile.values()
+            if cutoff:
+                if profileId == int(profile_id):
+                    for item in ast.literal_eval(items):
+                        if item['id'] == cutoff:
+                            return [item]
+                        elif cutoff == 65535:
+                            cutoff_language.append(item)
+
+        if not len(cutoff_language):
+            cutoff_language = None
+
+    return cutoff_language
+
+
+def get_audio_profile_languages(series_id=None, episode_id=None, movie_id=None):
+    from get_languages import alpha2_from_language, alpha3_from_language
+    audio_languages = []
+
+    if series_id:
+        audio_languages_list_str = database.execute("SELECT audio_language FROM table_shows WHERE sonarrSeriesId=?",
+                                                    (series_id,), only_one=True)['audio_language']
+        audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        for language in audio_languages_list:
+            audio_languages.append(
+                {"name": language,
+                 "code2": alpha2_from_language(language) or None,
+                 "code3": alpha3_from_language(language) or None}
+            )
+    elif episode_id:
+        audio_languages_list_str = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
+                                                    (episode_id,), only_one=True)['audio_language']
+        audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        for language in audio_languages_list:
+            audio_languages.append(
+                {"name": language,
+                 "code2": alpha2_from_language(language) or None,
+                 "code3": alpha3_from_language(language) or None}
+            )
+    elif movie_id:
+        audio_languages_list_str = database.execute("SELECT audio_language FROM table_movies WHERE radarrId=?",
+                                                    (movie_id,), only_one=True)['audio_language']
+        audio_languages_list = ast.literal_eval(audio_languages_list_str)
+        for language in audio_languages_list:
+            audio_languages.append(
+                {"name": language,
+                 "code2": alpha2_from_language(language) or None,
+                 "code3": alpha3_from_language(language) or None}
+            )
+
+    return audio_languages
