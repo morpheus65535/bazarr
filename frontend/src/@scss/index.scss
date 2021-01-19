@@ -1,3 +1,7 @@
 @import "../@scss/global.scss";
 @import "../@scss/sidebar.scss";
 @import "../@scss/components.scss";
+
+.header-container {
+  height: $header-height;
+}

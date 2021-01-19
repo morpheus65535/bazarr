@@ -1,15 +1,29 @@
 @import "./variable.scss";
 
-@mixin anim {
+@mixin sidebar-animation {
   transition: {
     duration: 0.2s;
     timing-function: ease-in-out;
   }
 }
 
+@mixin sidebar-border($side) {
+  border: {
+    #{$side}: {
+      color: rgba(0, 0, 0, 0.125);
+      style: solid;
+      width: 1px;
+    }
+  }
+}
+
 @media (min-width: $sm) {
   .sidebar-container {
     position: sticky;
+  }
+
+  .main-router {
+    max-width: calc(100% - #{$sidebar-width});
   }
 
   .header-icon {
@@ -22,15 +36,19 @@
     position: fixed !important;
     transform: translateX(-100%);
 
-    @include anim();
+    @include sidebar-animation();
 
     &.open {
       transform: translateX(0) !important;
     }
   }
 
+  .main-router {
+    max-width: 100%;
+  }
+
   .sidebar-overlay {
-    @include anim();
+    @include sidebar-animation();
     &.open {
       display: block !important;
       opacity: 0.6;
@@ -40,14 +58,6 @@
   .header-icon {
     min-width: 0;
   }
-}
-
-.main-router {
-  max-width: 100%;
-}
-
-.header-container {
-  height: $header-height;
 }
 
 $sidebar-bg-color: #3a3f51;
@@ -97,6 +107,9 @@ $sidebar-bg-color: #3a3f51;
     align-items: center;
     flex-wrap: nowrap;
 
+    border-top: none;
+    border-bottom: none;
+
     color: white;
     background-color: $sidebar-bg-color;
 
@@ -131,6 +144,10 @@ $sidebar-bg-color: #3a3f51;
     &.sb-collapse {
       border-left-color: var(--secondary);
       @include child();
+    }
+
+    &.sb-action {
+      border-bottom: none;
     }
   }
 }

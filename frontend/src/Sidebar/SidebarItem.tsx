@@ -52,11 +52,14 @@ const Item: FunctionComponent<{ def: SidebarDef; onClick?: () => void }> = (
       <React.Fragment>
         <Accordion.Toggle
           eventKey={name.toLowerCase()}
-          className="list-group-item list-group-item-action sidebar-button"
+          className="list-group-item list-group-item-action sidebar-button sb-action"
         >
           <Content {...props.def}></Content>
         </Accordion.Toggle>
-        <Accordion.Collapse eventKey={name.toLowerCase()}>
+        <Accordion.Collapse
+          className="sidebar-collapse"
+          eventKey={name.toLowerCase()}
+        >
           <React.Fragment>
             {children.map((ch) => (
               <NavLink
