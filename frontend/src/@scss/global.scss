@@ -1,12 +1,9 @@
-* {
-  scrollbar-width: none;
-}
-
-::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
-}
+@import "./variable.scss";
 
 .main-router {
   max-width: 100%;
+}
+
+.header-container {
+  height: $header-height;
 }

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { SidebarDef } from "./types";
 import {
@@ -9,10 +9,12 @@ import {
   faLaptop,
   faClock,
 } from "@fortawesome/free-solid-svg-icons";
-import { Accordion, ListGroup } from "react-bootstrap";
+import { Accordion, ListGroup, Container, Image } from "react-bootstrap";
 
 import SidebarItem from "./SidebarItem";
 import { useHistory } from "react-router-dom";
+
+import logo from "../@static/logo128.png";
 
 interface Props {
   movies_badge: number;
@@ -158,6 +160,9 @@ const Sidebar: FunctionComponent<Props> = ({
   return (
     <React.Fragment>
       <aside className={cls.join(" ")}>
+        <Container className="sidebar-title d-flex align-items-center d-md-none">
+          <Image alt="brand" src={logo} width="32" height="32"></Image>
+        </Container>
         <Accordion defaultActiveKey={active}>
           <ListGroup variant="flush">
             {sidebar.map((def) => (

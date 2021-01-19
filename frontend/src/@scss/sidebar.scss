@@ -74,6 +74,16 @@ $sidebar-bg-color: #3a3f51;
     letter-spacing: 0.5px;
   }
 
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+  }
+
+  .sidebar-title {
+    height: $header-height;
+  }
+
   .sidebar-button {
     display: flex;
     align-items: center;
