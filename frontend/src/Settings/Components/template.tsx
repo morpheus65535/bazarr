@@ -18,7 +18,8 @@ interface Props {
   settings: AsyncState<SystemSettings | undefined>;
   children: (
     settings: SystemSettings,
-    update: (v: any, k?: string) => void
+    update: (v: any, k?: string) => void,
+    change: LooseObject
   ) => JSX.Element;
   update: (data: object) => void;
 }
@@ -60,7 +61,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               Save
             </ContentHeaderButton>
           </ContentHeader>
-          <Row className="p-4">{children(item, updateChange)}</Row>
+          <Row className="p-4">{children(item, updateChange, willChange)}</Row>
         </Container>
       )}
     </AsyncStateOverlay>

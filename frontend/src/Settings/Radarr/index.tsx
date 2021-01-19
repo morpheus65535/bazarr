@@ -10,15 +10,49 @@ import {
   Slider,
   Text,
   CollapseBox,
+  TestUrlButton,
+  TestUrl,
 } from "../Components";
 
 import SettingTemplate from "../Components/template";
 
 interface Props {}
 
+function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
+  let url: TestUrl = {
+    address: settings.radarr.ip,
+    port: settings.radarr.port.toString(),
+    url: settings.radarr.base_url ?? "/",
+    apikey: settings.radarr.apikey,
+    ssl: settings.radarr.ssl,
+  };
+
+  if ("settings-radarr-ip" in change) {
+    url.address = change["settings-radarr-ip"];
+  }
+
+  if ("settings-radarr-port" in change) {
+    url.port = change["settings-radarr-port"];
+  }
+
+  if ("settings-radarr-base_url" in change) {
+    url.url = change["settings-radarr-base_url"];
+  }
+
+  if ("settings-radarr-apikey" in change) {
+    url.apikey = change["settings-radarr-apikey"];
+  }
+
+  if ("settings-radarr-ssl" in change) {
+    url.ssl = change["settings-radarr-ssl"];
+  }
+
+  return url;
+}
+
 const SettingsRadarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Radarr - Bazarr (Settings)">
-    {(settings, update) => (
+    {(settings, update, change) => (
       <Container>
         <CollapseBox
           defaultOpen={settings.general.use_radarr}
@@ -70,6 +104,9 @@ const SettingsRadarrView: FunctionComponent<Props> = () => (
                 defaultValue={settings.radarr.ssl}
                 onChange={(v) => update(v, "settings-radarr-ssl")}
               ></Check>
+            </Input>
+            <Input>
+              <TestUrlButton url={buildUrl(settings, change)}></TestUrlButton>
             </Input>
           </Group>
           <Group header="Options">

@@ -5,12 +5,6 @@
   overflow-x: auto;
 }
 
-.text-overflow-ellipsis {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  max-width: 360px;
-}
-
 .custom-rc-slider {
   .rc-slider-track {
     background-color: var(--primary);

@@ -11,6 +11,8 @@ import {
   Slider,
   Text,
   CollapseBox,
+  TestUrlButton,
+  TestUrl,
 } from "../Components";
 
 import SettingTemplate from "../Components/template";
@@ -23,9 +25,41 @@ const seriesTypeOptions = {
   daily: "Daily",
 };
 
+function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
+  let url: TestUrl = {
+    address: settings.sonarr.ip,
+    port: settings.sonarr.port.toString(),
+    url: settings.sonarr.base_url ?? "/",
+    apikey: settings.sonarr.apikey,
+    ssl: settings.sonarr.ssl,
+  };
+
+  if ("settings-sonarr-ip" in change) {
+    url.address = change["settings-sonarr-ip"];
+  }
+
+  if ("settings-sonarr-port" in change) {
+    url.port = change["settings-sonarr-port"];
+  }
+
+  if ("settings-sonarr-base_url" in change) {
+    url.url = change["settings-sonarr-base_url"];
+  }
+
+  if ("settings-sonarr-apikey" in change) {
+    url.apikey = change["settings-sonarr-apikey"];
+  }
+
+  if ("settings-sonarr-ssl" in change) {
+    url.ssl = change["settings-sonarr-ssl"];
+  }
+
+  return url;
+}
+
 const SettingsSonarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Sonarr - Bazarr (Settings)">
-    {(settings, update) => (
+    {(settings, update, change) => (
       <Container>
         <CollapseBox
           defaultOpen={settings.general.use_sonarr}
@@ -77,6 +111,9 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
                 defaultValue={settings.sonarr.ssl}
                 onChange={(v) => update(v, "settings-sonarr-ssl")}
               ></Check>
+            </Input>
+            <Input>
+              <TestUrlButton url={buildUrl(settings, change)}></TestUrlButton>
             </Input>
           </Group>
           <Group header="Options">
