@@ -158,7 +158,7 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
           style={{
             maxHeight: 256,
             maxWidth: 320,
-            overflowY: "scroll",
+            overflowY: "auto",
           }}
         >
           {items}

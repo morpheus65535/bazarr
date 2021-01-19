@@ -107,3 +107,4 @@ export * from "./ContentHeader";
 export * from "./Tables";
 export * from "./Selector";
 export * from "./Slider";
+export * from "./SearchBar";
