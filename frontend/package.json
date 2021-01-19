@@ -57,6 +57,10 @@
     "redux-thunk": "^2.3.0",
     "typescript": "^3.0.0"
   },
+  "devDependencies": {
+    "husky": "^4.3.8",
+    "pretty-quick": "^3.1.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -78,5 +82,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
