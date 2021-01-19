@@ -69,10 +69,11 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Name",
         accessor: "title",
+        className: "text-nowrap",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
           return (
-            <Link to={target} className="text-nowrap">
+            <Link to={target}>
               <span>{row.value}</span>
             </Link>
           );

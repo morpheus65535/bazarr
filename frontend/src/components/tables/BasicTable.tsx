@@ -65,7 +65,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
               <tr {...row.getRowProps()}>
                 {row.cells.map((cell) => (
                   <td
-                    style={{ verticalAlign: "middle" }}
+                    className={cell.column.className}
                     {...cell.getCellProps()}
                   >
                     {cell.render("Cell")}

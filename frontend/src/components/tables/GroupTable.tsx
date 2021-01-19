@@ -36,7 +36,7 @@ function renderRow<T extends object>(row: Row<T>) {
       return (
         <tr {...row.getRowProps()}>
           <td
-            style={{ verticalAlign: "middle" }}
+            className={cell.column.className}
             {...cell.getCellProps()}
             colSpan={row.cells.length}
           >
@@ -63,7 +63,7 @@ function renderRow<T extends object>(row: Row<T>) {
         {row.cells
           .filter((cell) => !cell.isPlaceholder)
           .map((cell) => (
-            <td style={{ verticalAlign: "middle" }} {...cell.getCellProps()}>
+            <td className={cell.column.className} {...cell.getCellProps()}>
               {renderCell(cell, row)}
             </td>
           ))}

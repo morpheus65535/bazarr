@@ -42,6 +42,14 @@
   }
 }
 
+.main-router {
+  max-width: 100%;
+}
+
+.header-container {
+  height: $header-height;
+}
+
 $sidebar-bg-color: #3a3f51;
 
 .sidebar-overlay {

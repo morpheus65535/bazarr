@@ -84,6 +84,7 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Title",
         accessor: "title",
+        className: "text-nowrap",
       },
       {
         Header: "Audio",
@@ -122,6 +123,7 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Actions",
         accessor: "sonarrEpisodeId",
+        className: "d-flex flex-nowrap",
         Cell: (row) => {
           return (
             <React.Fragment>

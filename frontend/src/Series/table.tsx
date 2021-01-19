@@ -55,10 +55,11 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Name",
         accessor: "title",
+        className: "text-nowrap",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
           return (
-            <Link to={target} className="text-nowrap">
+            <Link to={target}>
               <span>{row.value}</span>
             </Link>
           );
