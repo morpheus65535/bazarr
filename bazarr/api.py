@@ -680,7 +680,7 @@ class EpisodesSubtitles(Resource):
 
 
 
-class EpisodesScanDisk(Resource):
+class SeriesScanDisk(Resource):
     @authenticate
     def patch(self):
         seriesid = request.args.get('seriesid')
@@ -688,7 +688,7 @@ class EpisodesScanDisk(Resource):
         return '', 204
 
 
-class EpisodesSearchMissing(Resource):
+class SeriesSearchMissing(Resource):
     @authenticate
     def patch(self):
         seriesid = request.args.get('seriesid')
@@ -1971,12 +1971,12 @@ api.add_resource(Languages, '/system/languages')
 # api.add_resource(SubMods, '/subtitles/mods')
 
 api.add_resource(Series, '/series')
+api.add_resource(SeriesScanDisk, '/series/disk')
+api.add_resource(SeriesSearchMissing, '/series/missing')
 # api.add_resource(SeriesEditor, '/series_editor')
 # api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
-api.add_resource(EpisodesScanDisk, '/episodes/disk')
-api.add_resource(EpisodesSearchMissing, '/episodes/missing')
 
 api.add_resource(EpisodesHistory, '/episodes/history')
 # api.add_resource(EpisodesTools, '/episodes_tools')
