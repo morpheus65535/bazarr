@@ -70,18 +70,6 @@ class SystemApi {
     });
   }
 
-  async providers() {
-    return new Promise<Array<SystemProvider>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SystemProvider>>>("providers")
-        .then((result) => {
-          resolve(result.data.data);
-        })
-        .catch((reason) => {
-          reject(reason);
-        });
-    });
-  }
-
   async logs() {
     return new Promise<Array<SystemLog>>((resolve, reject) => {
       this.get<DataWrapper<Array<SystemLog>>>("logs")

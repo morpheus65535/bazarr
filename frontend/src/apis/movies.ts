@@ -14,6 +14,10 @@ class MovieApi {
     return apis.post(`/movies${path}`, formdata, params);
   }
 
+  patch(path: string, params?: any): Promise<void> {
+    return apis.axios.patch(`/movies${path}`, { params });
+  }
+
   async movies(id?: number): Promise<Array<Movie>> {
     return new Promise<Array<Movie>>((resolve, reject) => {
       this.get<DataWrapper<Array<Movie>>>("", { radarrid: id })
@@ -58,6 +62,14 @@ class MovieApi {
           reject(reason);
         });
     });
+  }
+
+  async scanDisk(id: number): Promise<void> {
+    return this.patch("/disk");
+  }
+
+  async searchMissing(id: number): Promise<void> {
+    return this.patch("/missing");
   }
 }
 

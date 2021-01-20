@@ -2,7 +2,6 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
-  UPDATE_SYSTEM_PROVIDERS,
   UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
   UPDATE_SYSTEM_SETTINGS,
@@ -24,11 +23,6 @@ export const UpdateSystemStatus = createAsyncAction(UPDATE_SYSTEM_STATUS, () =>
 
 export const UpdateSystemTasks = createAsyncAction(UPDATE_SYSTEM_TASKS, () =>
   SystemApi.getTasks()
-);
-
-export const UpdateSystemProviders = createAsyncAction(
-  UPDATE_SYSTEM_PROVIDERS,
-  () => SystemApi.providers()
 );
 
 export const UpdateSystemLogs = createAsyncAction(UPDATE_SYSTEM_LOGS, () =>

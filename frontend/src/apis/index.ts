@@ -64,4 +64,5 @@ export { default as SeriesApi } from "./series";
 export { default as MoviesApi } from "./movies";
 export { default as HistoryApi } from "./history";
 export { default as EpisodesApi } from "./episodes";
+export { default as ProvidersApi } from "./providers";
 export { default as utils } from "./utils";

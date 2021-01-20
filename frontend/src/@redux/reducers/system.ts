@@ -3,7 +3,7 @@ import {
   UPDATE_LANGUAGES_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
-  UPDATE_SYSTEM_PROVIDERS,
+  UPDATE_PROVIDER_LIST,
   UPDATE_SYSTEM_LOGS,
   EXEC_SYSTEM_TASK,
   UPDATE_SYSTEM_SETTINGS,
@@ -52,7 +52,7 @@ const reducer = handleActions<SystemState, any>(
         };
       },
     },
-    [UPDATE_SYSTEM_PROVIDERS]: {
+    [UPDATE_PROVIDER_LIST]: {
       next(state, action) {
         return {
           ...state,
@@ -77,8 +77,8 @@ const reducer = handleActions<SystemState, any>(
       },
     },
     [EXEC_SYSTEM_TASK]: {
-      next(state, action) {
-        const { payload } = action as RAction<string>;
+      next(state, action: RAction<string>) {
+        const { payload } = action;
 
         let items = state.tasks.items.map((val) => {
           if (val.job_id === payload) {
