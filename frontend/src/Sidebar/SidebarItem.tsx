@@ -17,7 +17,7 @@ const Content: FunctionComponent<{
       className="icon"
       icon={props.icon}
     ></FontAwesomeIcon>
-    <span>
+    <span className="d-flex flex-grow-1 justify-content-between">
       {props.name} <Badge variant="secondary">{props.badge}</Badge>
     </span>
   </React.Fragment>
@@ -26,7 +26,7 @@ const Content: FunctionComponent<{
 const ChildContent: FunctionComponent<{ name: string; badge?: string }> = (
   props
 ) => (
-  <span className="ml-4">
+  <span className="ml-4 d-flex flex-grow-1 justify-content-between">
     {props.name} <Badge variant="secondary">{props.badge}</Badge>
   </span>
 );
