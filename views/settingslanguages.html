@@ -732,7 +732,7 @@
                     name: $('#edit_profile_name').val(),
                     cutoff: $('#edit_language_cutoff').val(),
                     items: JSON.stringify(items)
-                });
+                }).draw();
                 $('#editModal').modal('hide');
                 $('#settings_form').trigger('change');
             });
