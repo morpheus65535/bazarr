@@ -22,12 +22,8 @@ import {
   EpisodeHistoryModal,
 } from "../../Components";
 
-import { EpisodesApi } from "../../apis";
-
-import { updateAsyncState } from "../../utilites";
-
 interface Props {
-  id: string;
+  id: number;
   episodeList: AsyncState<Map<number, Episode[]>>;
 }
 
@@ -38,14 +34,9 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const id = Number.parseInt(props.id);
+  const id = props.id;
   const list = props.episodeList;
   const episodes = useMemo(() => list.items.get(id) ?? [], [id, list]);
-
-  const [history, setHistory] = useState<AsyncState<Array<EpisodeHistory>>>({
-    updating: true,
-    items: [],
-  });
 
   const [modal, setModal] = useState<string>("");
   const [modalItem, setModalItem] = useState<Episode | undefined>(undefined);
@@ -55,8 +46,8 @@ const Table: FunctionComponent<Props> = (props) => {
   };
 
   const showModal = (key: string, item: Episode) => {
-    setModal(key);
     setModalItem(item);
+    setModal(key);
   };
 
   const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
@@ -131,10 +122,7 @@ const Table: FunctionComponent<Props> = (props) => {
               <ActionIcon
                 icon={faHistory}
                 onClick={() => {
-                  const id = row.value;
                   showModal("history", row.row.original);
-
-                  updateAsyncState(EpisodesApi.history(id), setHistory, []);
                 }}
               ></ActionIcon>
               <ActionIcon
@@ -171,15 +159,16 @@ const Table: FunctionComponent<Props> = (props) => {
         {(data) => <GroupTable options={options}></GroupTable>}
       </AsyncStateOverlay>
       <SubtitleToolModal
+        size="lg"
         show={modal === "tools"}
         title={`Tools - ${modalItem?.title}`}
         subtitles={modalItem?.subtitles ?? []}
         onClose={closeModal}
       ></SubtitleToolModal>
       <EpisodeHistoryModal
+        size="lg"
         show={modal === "history"}
-        title={`History - ${modalItem?.title}`}
-        history={history}
+        episode={modalItem}
         onClose={closeModal}
       ></EpisodeHistoryModal>
     </React.Fragment>

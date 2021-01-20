@@ -1,20 +1,23 @@
 import React, { FunctionComponent } from "react";
-import { Badge, Button } from "react-bootstrap";
+import { Badge } from "react-bootstrap";
 import { Column } from "react-table";
 
-import { BasicTable } from "../../Components";
+import { AsyncButton, BasicTable } from "../../Components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
+
+import { MoviesApi } from "../../apis";
 
 const missingText = "Subtitle Missing";
 
 interface Props {
   movie: Movie;
+  refresh: () => void;
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movie } = props;
+  const { movie, refresh } = props;
 
   const columns: Column<Subtitle>[] = React.useMemo<Column<Subtitle>[]>(
     () => [
@@ -46,21 +49,44 @@ const Table: FunctionComponent<Props> = (props) => {
             return null;
           } else if (original.path === missingText) {
             return (
-              <Button variant="light" size="sm">
+              <AsyncButton
+                promise={() =>
+                  MoviesApi.downloadSubtitles(movie.radarrId, {
+                    language: original.code2,
+                    hi: original.hi,
+                    forced: original.forced,
+                  })
+                }
+                success={refresh}
+                variant="light"
+                size="sm"
+              >
                 <FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>
-              </Button>
+              </AsyncButton>
             );
           } else {
             return (
-              <Button variant="light" size="sm">
+              <AsyncButton
+                variant="light"
+                size="sm"
+                promise={() =>
+                  MoviesApi.deleteSubtitles(movie.radarrId, {
+                    language: original.code2,
+                    hi: original.hi,
+                    forced: original.forced,
+                    path: original.path ?? "",
+                  })
+                }
+                success={refresh}
+              >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
-              </Button>
+              </AsyncButton>
             );
           }
         },
       },
     ],
-    []
+    [movie, refresh]
   );
 
   const data: Subtitle[] = React.useMemo(() => {

@@ -6,6 +6,22 @@ class EpisodeApi {
     return apis.axios.get(`/episodes${path}`, { params });
   }
 
+  postForm<T>(
+    path: string,
+    formdata?: any,
+    params?: any
+  ): Promise<AxiosResponse<T>> {
+    return apis.post(`/episodes${path}`, formdata, params);
+  }
+
+  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.patch(`/episodes${path}`, form, params);
+  }
+
+  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.delete(`/episodes${path}`, form, params);
+  }
+
   async all(seriesid: number): Promise<Array<Episode>> {
     return new Promise<Array<Episode>>((resolve, reject) => {
       this.get<DataWrapper<Array<Episode>>>("", { seriesid })
@@ -27,6 +43,42 @@ class EpisodeApi {
         .catch((reason) => {
           reject(reason);
         });
+    });
+  }
+
+  async downloadSubtitles(
+    seriesid: number,
+    episodeid: number,
+    form: SubtitleForm
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/subtitles", form, { seriesid, episodeid })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async uploadSubtitles(
+    seriesid: number,
+    episodeid: number,
+    form: SubtitleUploadForm
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm("/subtitles", form, { seriesid, episodeid })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async deleteSubtitles(
+    seriesid: number,
+    episodeid: number,
+    form: SubtitleDeleteForm
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.delete("/subtitles", form, { seriesid, episodeid })
+        .then(() => resolve())
+        .catch(reject);
     });
   }
 }

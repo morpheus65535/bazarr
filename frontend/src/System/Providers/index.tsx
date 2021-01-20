@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -7,6 +7,8 @@ import { UpdateProviderList } from "../../@redux/actions";
 
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader, ContentHeaderButton } from "../../Components";
+
+import { ProvidersApi } from "../../apis";
 
 import Table from "./table";
 
@@ -22,35 +24,44 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-class SystemProvidersView extends React.Component<Props> {
-  componentDidMount() {
-    this.props.update();
-  }
-  render(): JSX.Element {
-    const { loading, update } = this.props;
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>Providers - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton
-            updating={loading}
-            icon={faSync}
-            disabled={loading}
-            onClick={update}
-          >
-            Refresh
-          </ContentHeaderButton>
-          <ContentHeaderButton icon={faTrash}>Reset</ContentHeaderButton>
-        </ContentHeader>
-        <Row>
-          <Table></Table>
-        </Row>
-      </Container>
-    );
-  }
-}
+const SystemProvidersView: FunctionComponent<Props> = (props) => {
+  const { loading, update } = props;
+
+  useEffect(() => {
+    update();
+  }, [update]);
+
+  const [resetting, setReset] = useState(false);
+
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>Providers - Bazarr (System)</title>
+      </Helmet>
+      <ContentHeader>
+        <ContentHeaderButton updating={loading} icon={faSync} onClick={update}>
+          Refresh
+        </ContentHeaderButton>
+        <ContentHeaderButton
+          icon={faTrash}
+          updating={resetting}
+          onClick={() => {
+            setReset(true);
+            ProvidersApi.reset().finally(() => {
+              setReset(false);
+              update();
+            });
+          }}
+        >
+          Reset
+        </ContentHeaderButton>
+      </ContentHeader>
+      <Row>
+        <Table></Table>
+      </Row>
+    </Container>
+  );
+};
 
 export default connect(mapStateToProps, { update: UpdateProviderList })(
   SystemProvidersView

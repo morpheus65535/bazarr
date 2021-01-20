@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useState } from "react";
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -30,8 +30,6 @@ import Table from "./table";
 import { MoviesApi } from "../../apis";
 import { updateMovieInfo } from "../../@redux/actions";
 
-import { updateAsyncState } from "../../utilites";
-
 interface Params {
   id: string;
 }
@@ -41,11 +39,6 @@ interface Props extends RouteComponentProps<Params> {
   update: (id: number) => void;
 }
 
-interface State {
-  modal: string;
-  history: AsyncState<MovieHistory[]>;
-}
-
 function mapStateToProps({ movie }: StoreState) {
   const { movieList } = movie;
   return {
@@ -53,141 +46,129 @@ function mapStateToProps({ movie }: StoreState) {
   };
 }
 
-class MovieDetailView extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
+const MovieDetailView: FunctionComponent<Props> = ({
+  movieList,
+  match,
+  update,
+}) => {
+  const list = movieList.items;
+  const id = Number.parseInt(match.params.id);
+  const item = list.find((val) => val.radarrId === id);
 
-    this.state = {
-      modal: "",
-      history: {
-        updating: true,
-        items: [],
-      },
-    };
-  }
+  const [modal, setModal] = useState("");
 
-  setHistory(history: AsyncState<MovieHistory[]>) {
-    this.setState({
-      ...this.state,
-      history,
-    });
-  }
+  const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
-  showModal(key: string) {
-    this.setState({
-      ...this.state,
-      modal: key,
-    });
-  }
+  const [scan, setScan] = useState(false);
+  const [search, setSearch] = useState(false);
 
-  closeModal() {
-    this.setState({
-      ...this.state,
-      modal: "",
-    });
-  }
+  if (item) {
+    const allowEdit = item.languages instanceof Array;
 
-  render() {
-    const list = this.props.movieList.items;
-    const id = Number.parseInt(this.props.match.params.id);
-    const item = list.find((val) => val.radarrId === id);
+    const editButton = (
+      <React.Fragment>
+        <ContentHeaderButton
+          icon={faSearch}
+          updating={search}
+          onClick={() => {
+            setSearch(true);
+            MoviesApi.searchMissing(item.radarrId).finally(() => {
+              setSearch(false);
+              update(item.radarrId);
+            });
+          }}
+        >
+          Search
+        </ContentHeaderButton>
+        <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
+        <ContentHeaderButton icon={faCloudUploadAlt}>
+          Upload
+        </ContentHeaderButton>
+      </React.Fragment>
+    );
 
-    const { update } = this.props;
-    const { modal, history } = this.state;
-
-    const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
-
-    if (item) {
-      const allowEdit = item.languages instanceof Array;
-
-      const editButton = (
-        <React.Fragment>
-          <ContentHeaderButton icon={faSearch}>Search</ContentHeaderButton>
-          <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
-          <ContentHeaderButton icon={faCloudUploadAlt}>
-            Upload
-          </ContentHeaderButton>
-        </React.Fragment>
-      );
-
-      const header = (
-        <ContentHeader>
-          <ContentHeaderGroup pos="start">
-            <ContentHeaderButton icon={faSync}>Scan Disk</ContentHeaderButton>
-            {allowEdit && editButton}
-            <ContentHeaderButton
-              icon={faHistory}
-              onClick={() => {
-                updateAsyncState(
-                  MoviesApi.history(id),
-                  this.setHistory.bind(this),
-                  []
-                );
-                this.showModal("history");
-              }}
-            >
-              History
-            </ContentHeaderButton>
-            <ContentHeaderButton
-              icon={faToolbox}
-              onClick={() => this.showModal("tools")}
-            >
-              Tools
-            </ContentHeaderButton>
-          </ContentHeaderGroup>
-          <ContentHeaderGroup pos="end">
-            <ContentHeaderButton
-              icon={faWrench}
-              onClick={() => this.showModal("edit")}
-            >
-              Edit Movie
-            </ContentHeaderButton>
-          </ContentHeaderGroup>
-        </ContentHeader>
-      );
-
-      return (
-        <Container fluid>
-          <Helmet>
-            <title>{item.title} - Bazarr (Movies)</title>
-          </Helmet>
-          {header}
-          <Row>
-            <ItemOverview item={item} details={details}></ItemOverview>
-          </Row>
-          <Row>
-            <Table movie={item}></Table>
-          </Row>
-          <ItemEditorModal
-            show={modal === "edit"}
-            item={item}
-            title={item.title}
-            onClose={this.closeModal.bind(this)}
-            submit={(form) => MoviesApi.modify(item!.radarrId, form)}
-            onSuccess={() => {
-              this.closeModal();
-              update(id);
+    const header = (
+      <ContentHeader>
+        <ContentHeaderGroup pos="start">
+          <ContentHeaderButton
+            icon={faSync}
+            updating={scan}
+            onClick={() => {
+              setScan(true);
+              MoviesApi.scanDisk(item.radarrId).finally(() => {
+                setScan(false);
+                update(item.radarrId);
+              });
             }}
-          ></ItemEditorModal>
-          <SubtitleToolModal
-            show={modal === "tools"}
-            title={item.title}
-            subtitles={item.subtitles}
-            onClose={this.closeModal.bind(this)}
-          ></SubtitleToolModal>
-          <MovieHistoryModal
-            show={modal === "history"}
-            title={item.title}
-            history={history}
-            onClose={this.closeModal.bind(this)}
-          ></MovieHistoryModal>
-        </Container>
-      );
-    } else {
-      return <LoadingOverlay></LoadingOverlay>;
-    }
+          >
+            Scan Disk
+          </ContentHeaderButton>
+          {allowEdit && editButton}
+          <ContentHeaderButton
+            icon={faHistory}
+            onClick={() => {
+              setModal("history");
+            }}
+          >
+            History
+          </ContentHeaderButton>
+          <ContentHeaderButton
+            icon={faToolbox}
+            onClick={() => setModal("tools")}
+          >
+            Tools
+          </ContentHeaderButton>
+        </ContentHeaderGroup>
+        <ContentHeaderGroup pos="end">
+          <ContentHeaderButton icon={faWrench} onClick={() => setModal("edit")}>
+            Edit Movie
+          </ContentHeaderButton>
+        </ContentHeaderGroup>
+      </ContentHeader>
+    );
+
+    return (
+      <Container fluid>
+        <Helmet>
+          <title>{item.title} - Bazarr (Movies)</title>
+        </Helmet>
+        {header}
+        <Row>
+          <ItemOverview item={item} details={details}></ItemOverview>
+        </Row>
+        <Row>
+          <Table movie={item} refresh={() => update(id)}></Table>
+        </Row>
+        <ItemEditorModal
+          show={modal === "edit"}
+          item={item}
+          title={item.title}
+          onClose={() => setModal("")}
+          submit={(form) => MoviesApi.modify(item!.radarrId, form)}
+          onSuccess={() => {
+            setModal("");
+            update(id);
+          }}
+        ></ItemEditorModal>
+        <SubtitleToolModal
+          size="lg"
+          show={modal === "tools"}
+          title={item.title}
+          subtitles={item.subtitles}
+          onClose={() => setModal("")}
+        ></SubtitleToolModal>
+        <MovieHistoryModal
+          size="lg"
+          show={modal === "history"}
+          movie={item}
+          onClose={() => setModal("")}
+        ></MovieHistoryModal>
+      </Container>
+    );
+  } else {
+    return <LoadingOverlay></LoadingOverlay>;
   }
-}
+};
 
 export default withRouter(
   connect(mapStateToProps, { update: updateMovieInfo })(MovieDetailView)

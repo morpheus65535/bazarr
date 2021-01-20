@@ -1,5 +1,4 @@
-import Axios, { AxiosInstance, AxiosResponse } from "axios";
-import { result } from "lodash";
+import Axios, { AxiosInstance } from "axios";
 
 class RequestUtils {
   private axios!: AxiosInstance;

@@ -1,7 +1,12 @@
-import React, { FunctionComponent, MouseEvent } from "react";
+import React, {
+  FunctionComponent,
+  MouseEvent,
+  useState,
+  PropsWithChildren,
+} from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { Badge, Spinner, Button } from "react-bootstrap";
+import { Badge, Spinner, Button, ButtonProps } from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -11,6 +16,7 @@ import {
   faRecycle,
   faCloudUploadAlt,
   faClock,
+  faCircleNotch,
 } from "@fortawesome/free-solid-svg-icons";
 
 export const ActionBadge: FunctionComponent<{
@@ -22,10 +28,7 @@ export const ActionBadge: FunctionComponent<{
       as={Badge}
       className="mx-1 p-1"
       variant="secondary"
-      onClick={(event) => {
-        event.preventDefault();
-        onClick && onClick(event);
-      }}
+      onClick={onClick}
     >
       {children}
     </Button>
@@ -98,6 +101,43 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
     <FontAwesomeIcon icon={props.value ? faCheck : faTimes}></FontAwesomeIcon>
   );
 };
+
+interface AsyncButtonProps<T> {
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+
+  promise: () => Promise<T>;
+  success?: (result: T) => void;
+  error?: () => void;
+}
+
+export function AsyncButton<T>(
+  props: PropsWithChildren<AsyncButtonProps<T>>
+): JSX.Element {
+  const { children, promise, success, error, ...button } = props;
+
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <Button
+      {...button}
+      disabled={loading}
+      onClick={() => {
+        setLoading(true);
+        promise()
+          .then(success)
+          .catch(error)
+          .finally(() => setLoading(false));
+      }}
+    >
+      {loading ? (
+        <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>
+      ) : (
+        children
+      )}
+    </Button>
+  );
+}
 
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";

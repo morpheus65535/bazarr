@@ -14,8 +14,12 @@ class MovieApi {
     return apis.post(`/movies${path}`, formdata, params);
   }
 
-  patch(path: string, params?: any): Promise<void> {
-    return apis.axios.patch(`/movies${path}`, { params });
+  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.patch(`/movies${path}`, form, params);
+  }
+
+  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.delete(`/movies${path}`, form, params);
   }
 
   async movies(id?: number): Promise<Array<Movie>> {
@@ -65,11 +69,43 @@ class MovieApi {
   }
 
   async scanDisk(id: number): Promise<void> {
-    return this.patch("/disk");
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/disk", undefined, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
+    });
   }
 
   async searchMissing(id: number): Promise<void> {
-    return this.patch("/missing");
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/missing", undefined, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async downloadSubtitles(id: number, form: SubtitleForm): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.patch("/subtitles", form, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async uploadSubtitles(id: number, form: SubtitleUploadForm): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.postForm("/subtitles", form, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
+    });
+  }
+
+  async deleteSubtitles(id: number, form: SubtitleDeleteForm): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.delete("/subtitles", form, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
+    });
   }
 }
 

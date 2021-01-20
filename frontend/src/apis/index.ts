@@ -34,6 +34,52 @@ class Api {
     return this.axios.post(path, form, { params });
   }
 
+  patch(path: string, formdata?: any, params?: any) {
+    let form: FormData | undefined = undefined;
+
+    if (formdata) {
+      form = new FormData();
+
+      for (const key in formdata) {
+        const data = formdata[key];
+        if (data instanceof Array) {
+          if (data.length > 0) {
+            data.forEach((val) => form!.append(key, val));
+          } else {
+            form.append(key, "");
+          }
+        } else {
+          form.append(key, formdata[key]);
+        }
+      }
+    }
+
+    return this.axios.patch(path, form, { params });
+  }
+
+  delete(path: string, formdata?: any, params?: any) {
+    let form: FormData | undefined = undefined;
+
+    if (formdata) {
+      form = new FormData();
+
+      for (const key in formdata) {
+        const data = formdata[key];
+        if (data instanceof Array) {
+          if (data.length > 0) {
+            data.forEach((val) => form!.append(key, val));
+          } else {
+            form.append(key, "");
+          }
+        } else {
+          form.append(key, formdata[key]);
+        }
+      }
+    }
+
+    return this.axios.delete(path, { params, data: form });
+  }
+
   recreateAxios(url: string, apikey: string) {
     this.axios = Axios.create({
       baseURL: url,

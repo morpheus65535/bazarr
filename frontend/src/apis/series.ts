@@ -14,6 +14,14 @@ class SeriesApi {
     return apis.post(`/series${path}`, formdata, params);
   }
 
+  patch<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.patch(`/series${path}`, form, params);
+  }
+
+  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
+    return apis.delete(`/series${path}`, form, params);
+  }
+
   async series(id?: number): Promise<Array<Series>> {
     return new Promise<Array<Series>>((resolve, reject) => {
       this.get<DataWrapper<Array<Series>>>("", { seriesid: id })
@@ -46,27 +54,19 @@ class SeriesApi {
     });
   }
 
-  async search(): Promise<void> {
+  async scanDisk(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.get<void>("search_wanted_series")
-        .then(() => {
-          resolve();
-        })
-        .catch((err) => {
-          reject(err);
-        });
+      this.patch("/disk", undefined, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
     });
   }
 
-  async download(form: SeriesDownloadForm): Promise<void> {
+  async searchMissing(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("episodes_subtitles_download", form)
-        .then(() => {
-          resolve();
-        })
-        .catch((err) => {
-          reject(err);
-        });
+      this.patch("/missing", undefined, { radarrid: id })
+        .then(() => resolve())
+        .catch(reject);
     });
   }
 }

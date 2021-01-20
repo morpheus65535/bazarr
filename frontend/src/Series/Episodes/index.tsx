@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -36,10 +36,6 @@ interface Props extends RouteComponentProps<Params> {
   updateEpisodeList: (id: number) => void;
 }
 
-interface State {
-  modal: string;
-}
-
 function mapStateToProps({ series }: StoreState) {
   const { seriesList } = series;
   return {
@@ -47,102 +43,104 @@ function mapStateToProps({ series }: StoreState) {
   };
 }
 
-class SeriesEpisodesView extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
+const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
+  const { updateEpisodeList, match, seriesList } = props;
+  const id = Number.parseInt(match.params.id);
+  const list = seriesList.items;
 
-    this.state = {
-      modal: "",
-    };
-  }
-  componentDidMount() {
-    const { id } = this.props.match.params;
-    this.props.updateEpisodeList(Number.parseInt(id));
-  }
+  const item = useMemo(() => list.find((val) => val.sonarrSeriesId === id), [
+    list,
+    id,
+  ]);
 
-  showModal(key: string) {
-    this.setState({
-      ...this.state,
-      modal: key,
-    });
-  }
+  const [modal, setModal] = useState("");
+  const [scan, setScan] = useState(false);
+  const [search, setSearch] = useState(false);
 
-  closeModal() {
-    this.setState({
-      ...this.state,
-      modal: "",
-    });
-  }
+  useEffect(() => {
+    updateEpisodeList(id);
+  }, [updateEpisodeList, id]);
 
-  render() {
-    const list = this.props.seriesList.items;
-    const { id } = this.props.match.params;
-    const item = list.find((val) => val.sonarrSeriesId === Number.parseInt(id));
+  const header = (
+    <ContentHeader>
+      <ContentHeaderGroup pos="start">
+        <ContentHeaderButton
+          icon={faSync}
+          updating={scan}
+          onClick={() => {
+            setScan(true);
+            SeriesApi.scanDisk(id).finally(() => {
+              setScan(false);
+              updateEpisodeList(id);
+            });
+          }}
+        >
+          Scan Disk
+        </ContentHeaderButton>
+        <ContentHeaderButton
+          icon={faSearch}
+          updating={search}
+          onClick={() => {
+            setSearch(true);
+            SeriesApi.searchMissing(id).finally(() => {
+              setSearch(false);
+              updateEpisodeList(id);
+            });
+          }}
+        >
+          Search
+        </ContentHeaderButton>
+      </ContentHeaderGroup>
+      <ContentHeaderGroup pos="end">
+        <ContentHeaderButton icon={faCloudUploadAlt}>
+          Upload
+        </ContentHeaderButton>
+        <ContentHeaderButton icon={faWrench} onClick={() => setModal("edit")}>
+          Edit Series
+        </ContentHeaderButton>
+      </ContentHeaderGroup>
+    </ContentHeader>
+  );
 
-    const { updateEpisodeList } = this.props;
-
-    const { modal } = this.state;
-
+  if (item) {
     const details = [
-      item?.audio_language.name,
-      item?.mapped_path,
-      `${item?.episodeFileCount} files`,
-      item?.seriesType,
-      item?.tags,
+      item.audio_language.name,
+      item.mapped_path,
+      `${item.episodeFileCount} files`,
+      item.seriesType,
+      item.tags,
     ];
 
-    const header = (
-      <ContentHeader>
-        <ContentHeaderGroup pos="start">
-          <ContentHeaderButton icon={faSync}>Scan Disk</ContentHeaderButton>
-          <ContentHeaderButton icon={faSearch}>Search</ContentHeaderButton>
-        </ContentHeaderGroup>
-        <ContentHeaderGroup pos="end">
-          <ContentHeaderButton icon={faCloudUploadAlt}>
-            Upload
-          </ContentHeaderButton>
-          <ContentHeaderButton
-            icon={faWrench}
-            onClick={() => this.showModal("edit")}
-          >
-            Edit Series
-          </ContentHeaderButton>
-        </ContentHeaderGroup>
-      </ContentHeader>
+    return (
+      <Container fluid>
+        <Helmet>
+          <title>{item.title} - Bazarr (Series)</title>
+        </Helmet>
+        {header}
+        <Row>
+          <ItemOverview item={item} details={details}></ItemOverview>
+        </Row>
+        <Row>
+          <Table id={id}></Table>
+        </Row>
+        <ItemEditorModal
+          show={modal === "edit"}
+          title={item.title}
+          item={item}
+          onClose={() => setModal("")}
+          submit={(form) => SeriesApi.modify(item.sonarrSeriesId, form)}
+          onSuccess={() => {
+            setModal("");
+            // TODO: Websocket
+            updateEpisodeList(item.sonarrSeriesId);
+          }}
+        ></ItemEditorModal>
+      </Container>
     );
-
-    if (item) {
-      return (
-        <Container fluid>
-          <Helmet>
-            <title>{item.title} - Bazarr (Series)</title>
-          </Helmet>
-          {header}
-          <Row>
-            <ItemOverview item={item} details={details}></ItemOverview>
-          </Row>
-          <Row>
-            <Table id={id}></Table>
-          </Row>
-          <ItemEditorModal
-            show={modal === "edit"}
-            title={item.title}
-            item={item}
-            onClose={this.closeModal.bind(this)}
-            submit={(form) => SeriesApi.modify(item.sonarrSeriesId, form)}
-            onSuccess={() => {
-              this.closeModal();
-              // TODO: Websocket
-              updateEpisodeList(item.sonarrSeriesId);
-            }}
-          ></ItemEditorModal>
-        </Container>
-      );
-    } else {
-      return <LoadingOverlay></LoadingOverlay>;
-    }
+  } else {
+    return <LoadingOverlay></LoadingOverlay>;
   }
-}
+};
 
 export default withRouter(
   connect(mapStateToProps, { updateEpisodeList })(SeriesEpisodesView)
