@@ -67,18 +67,15 @@ def authenticate(actual_method):
     return wrapper
 
 
-class Shutdown(Resource):
+class System(Resource):
     @authenticate
-    def get(self):
+    def post(self):
         from server import webserver
-        webserver.shutdown()
-
-
-class Restart(Resource):
-    @authenticate
-    def get(self):
-        from server import webserver
-        webserver.restart()
+        action = request.args.get('action')
+        if action == "shutdown":
+            webserver.shutdown()
+        elif action == "restart":
+            webserver.restart()
 
 
 class BadgesSeries(Resource):
@@ -144,32 +141,6 @@ class Notifications(Resource):
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
         return '', 204
-
-
-class Search(Resource):
-    @authenticate
-    def get(self):
-        query = request.args.get('query')
-        search_list = []
-
-        if query:
-            if settings.general.getboolean('use_sonarr'):
-                # Get matching series
-                series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? "
-                                          "ORDER BY title ASC", ("%"+query+"%",))
-                for serie in series:
-                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', serie['title']) + ' (' + serie['year'] + ')',
-                                        'url': url_for('episodes', no=serie['sonarrSeriesId'])})
-
-            if settings.general.getboolean('use_radarr'):
-                # Get matching movies
-                movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
-                                          "title ASC", ("%"+query+"%",))
-                for movie in movies:
-                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', movie['title']) + ' (' + movie['year'] + ')',
-                                        'url': url_for('movie', no=movie['radarrId'])})
-
-        return jsonify(search_list)
 
 
 class Providers(Resource):
@@ -581,23 +552,28 @@ class SubtitleNameInfo(Resource):
             return '', 400
 
 
-class EpisodesSubtitlesDownload(Resource):
+# PATCH: Download Subtitles
+# POST: Upload Subtitles
+# DELETE: Delete Subtitles
+class EpisodesSubtitles(Resource):
     @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
+    def patch(self):
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        audio_language = episodeInfo['audio_language']
+        if sceneName is None: sceneName = "None"
+
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-        title = request.form.get('title')
+
         providers_list = get_providers()
         providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-                                          (sonarrEpisodeId,), only_one=True)['audio_language']
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -621,99 +597,29 @@ class EpisodesSubtitlesDownload(Resource):
                 store_subtitles(path, episodePath)
             else:
                 event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
-            return result, 201
+
         except OSError:
             pass
 
         return '', 204
 
-
-class EpisodesSubtitlesManualSearch(Resource):
     @authenticate
     def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
-        title = request.form.get('title')
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
-        data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
-                             'series')
-        if not data:
-            data = []
-        return jsonify(data=data)
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        audio_language = episodeInfo['audio_language']
+        if sceneName is None: sceneName = "None"
 
-
-class EpisodesSubtitlesManualDownload(Resource):
-    @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
-        selected_provider = request.form.get('provider')
-        subtitle = request.form.get('subtitle')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-        title = request.form.get('title')
-        providers_auth = get_providers_auth()
-        audio_language = database.execute("SELECT audio_language FROM table_episodes WHERE sonarrEpisodeId=?",
-                                          (sonarrEpisodeId,), only_one=True)['audio_language']
-
-        try:
-            result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'series')
-            if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
-            return result, 201
-        except OSError:
-            pass
-
-        return '', 204
-
-
-# POST: Upload Subtitles
-# DELETE: Delete Subtitles
-class EpisodesSubtitles(Resource):
-    @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'on' else False
-        upload = request.files.get('upload')
-        sonarrSeriesId = request.form.get('seriesId')
-        sonarrEpisodeId = request.form.get('episodeId')
-        title = request.form.get('title')
-        audioLanguage = request.form.get('audioLanguage')
+        subFile = request.files.get('file')
 
-        _, ext = os.path.splitext(upload.filename)
+        _, ext = os.path.splitext(subFile.filename)
 
         if ext not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
@@ -725,8 +631,8 @@ class EpisodesSubtitles(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
-                                            subtitle=upload,
-                                            audio_language=audioLanguage)
+                                            subtitle=subFile,
+                                            audio_language=audio_language)
 
             if result is not None:
                 message = result[0]
@@ -743,7 +649,6 @@ class EpisodesSubtitles(Resource):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
-            return result, 201
         except OSError:
             pass
 
@@ -751,13 +656,16 @@ class EpisodesSubtitles(Resource):
 
     @authenticate
     def delete(self):
-        episodePath = request.form.get('episodePath')
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        episodePath = episodeInfo['path']
+        
         language = request.form.get('language')
         forced = request.form.get('forced')
         hi = request.form.get('hi')
-        subtitlesPath = request.form.get('subtitlesPath')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+        subtitlesPath = request.form.get('path')
 
         result = delete_subtitles(media_type='series',
                                   language=language,
@@ -767,27 +675,25 @@ class EpisodesSubtitles(Resource):
                                   subtitles_path=subtitlesPath,
                                   sonarr_series_id=sonarrSeriesId,
                                   sonarr_episode_id=sonarrEpisodeId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
+
+        return '', 204
 
 
 
 class EpisodesScanDisk(Resource):
     @authenticate
-    def get(self):
+    def patch(self):
         seriesid = request.args.get('seriesid')
         series_scan_subtitles(seriesid)
-        return '', 200
+        return '', 204
 
 
 class EpisodesSearchMissing(Resource):
     @authenticate
-    def get(self):
+    def patch(self):
         seriesid = request.args.get('seriesid')
         series_download_subtitles(seriesid)
-        return '', 200
+        return '', 204
 
 
 class EpisodesHistory(Resource):
@@ -1296,6 +1202,78 @@ class ProviderMovies(Resource):
         return '', 204
 
 
+class ProviderEpisodes(Resource):
+    @authenticate
+    def get(self):
+        # Manual Search
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        if sceneName is None: sceneName = "None"
+
+        language = request.args.getlist('language')
+        hi = request.args.get('hi').capitalize()
+        forced = request.args.get('forced').capitalize()
+
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+                             'series')
+        if not data:
+            data = []
+        return jsonify(data=data)
+
+    @authenticate
+    def post(self):
+        # Manual Download
+        sonarrSeriesId = request.form.get('seriesid')
+        sonarrEpisodeId = request.form.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        if sceneName is None: sceneName = "None"
+        audio_language = episodeInfo['audio_language']
+
+        language = request.form.get('language')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        selected_provider = request.form.get('provider')
+        subtitle = request.form.get('subtitle')
+        providers_auth = get_providers_auth()
+
+        try:
+            result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle, selected_provider, providers_auth, sceneName, title, 'series')
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                forced = result[5]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
+                else:
+                    language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                subs_id = result[6]
+                subs_path = result[7]
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                store_subtitles(path, episodePath)
+            return result, 201
+        except OSError:
+            pass
+
+        return '', 204
+
 class MovieScanDisk(Resource):
     @authenticate
     def patch(self):
@@ -1370,10 +1348,10 @@ class MovieHistory(Resource):
 class MovieTools(Resource):
     @authenticate
     def get(self):
-        movieid = request.args.get('movieid')
+        radarrId = request.args.get('radarrid')
 
         movie_ext_subs = database.execute("SELECT path, subtitles FROM table_movies WHERE radarrId=?",
-                                          (movieid,), only_one=True)
+                                          (radarrId,), only_one=True)
         try:
             all_subs = ast.literal_eval(movie_ext_subs['subtitles'])
         except:
@@ -1745,7 +1723,9 @@ class SearchWantedMovies(Resource):
         wanted_search_missing_subtitles_movies()
         return '', 200
 
-
+# GET: get blacklist
+# POST: add blacklist
+# DELETE: remove blacklist
 class BlacklistSeries(Resource):
     @authenticate
     def get(self):
@@ -1777,8 +1757,6 @@ class BlacklistSeries(Resource):
 
         return jsonify(data=data)
 
-
-class BlacklistEpisodeSubtitlesAdd(Resource):
     @authenticate
     def post(self):
         sonarr_series_id = int(request.form.get('sonarr_series_id'))
@@ -1814,24 +1792,19 @@ class BlacklistEpisodeSubtitlesAdd(Resource):
         event_stream(type='episodeHistory')
         return '', 200
 
-
-class BlacklistEpisodeSubtitlesRemove(Resource):
     @authenticate
     def delete(self):
-        provider = request.form.get('provider')
-        subs_id = request.form.get('subs_id')
+        if request.args.get("all") == "true":
+            blacklist_delete_all()
+        else:
+            provider = request.form.get('provider')
+            subs_id = request.form.get('subs_id')
+            blacklist_delete(provider=provider, subs_id=subs_id)
+        return '', 204
 
-        blacklist_delete(provider=provider, subs_id=subs_id)
-        return '', 200
-
-
-class BlacklistEpisodeSubtitlesRemoveAll(Resource):
-    @authenticate
-    def delete(self):
-        blacklist_delete_all()
-        return '', 200
-
-
+# GET: get blacklist
+# POST: add blacklist
+# DELETE: remove blacklist
 class BlacklistMovies(Resource):
     @authenticate
     def get(self):
@@ -1861,8 +1834,6 @@ class BlacklistMovies(Resource):
 
         return jsonify(data=data)
 
-
-class BlacklistMovieSubtitlesAdd(Resource):
     @authenticate
     def post(self):
         radarr_id = int(request.form.get('radarr_id'))
@@ -1895,21 +1866,14 @@ class BlacklistMovieSubtitlesAdd(Resource):
         event_stream(type='movieHistory')
         return '', 200
 
-
-class BlacklistMovieSubtitlesRemove(Resource):
     @authenticate
     def delete(self):
-        provider = request.form.get('provider')
-        subs_id = request.form.get('subs_id')
-
-        blacklist_delete_movie(provider=provider, subs_id=subs_id)
-        return '', 200
-
-
-class BlacklistMovieSubtitlesRemoveAll(Resource):
-    @authenticate
-    def delete(self):
-        blacklist_delete_all_movie()
+        if request.args.get("all") == "true":
+            blacklist_delete_all_movie()
+        else:
+            provider = request.form.get('provider')
+            subs_id = request.form.get('subs_id')
+            blacklist_delete_movie(provider=provider, subs_id=subs_id)
         return '', 200
 
 
@@ -1982,42 +1946,38 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
-api.add_resource(Shutdown, '/system/shutdown')
-api.add_resource(Restart, '/system/restart')
-
 api.add_resource(BadgesSeries, '/badges/series')
 api.add_resource(BadgesMovies, '/badges/movies')
 api.add_resource(BadgesProviders, '/badges/providers')
-api.add_resource(Languages, '/system/languages')
 api.add_resource(Notifications, '/notifications')
 
-api.add_resource(Search, '/search')
+# Search action happens in frondend
+# api.add_resource(Search, '/search')
 
 api.add_resource(Providers, '/providers')
 api.add_resource(ProviderMovies, '/providers/movies')
+api.add_resource(ProviderEpisodes, '/providers/episodes')
 
-api.add_resource(SystemSettings, '/system/settings')
-
+api.add_resource(System, '/system')
 api.add_resource(SystemTasks, '/system/tasks')
 api.add_resource(SystemLogs, '/system/logs')
 api.add_resource(SystemStatus, '/system/status')
 api.add_resource(SystemReleases, '/system/releases')
+api.add_resource(SystemSettings, '/system/settings')
+api.add_resource(Languages, '/system/languages')
 
-api.add_resource(SubtitleNameInfo, '/subtitles/info')
-api.add_resource(SyncSubtitles, '/subtitles/sync')
-api.add_resource(SubMods, '/subtitles/mods')
+# api.add_resource(SubtitleNameInfo, '/subtitles/info')
+# api.add_resource(SyncSubtitles, '/subtitles/sync')
+# api.add_resource(SubMods, '/subtitles/mods')
 
 api.add_resource(Series, '/series')
 # api.add_resource(SeriesEditor, '/series_editor')
 # api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
 api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
+api.add_resource(EpisodesScanDisk, '/episodes/disk')
+api.add_resource(EpisodesSearchMissing, '/episodes/missing')
 
-# api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
-# api.add_resource(EpisodesSubtitlesManualSearch, '/episodes_subtitles_manual_search')
-# api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_download')
-# api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
-# api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
 api.add_resource(EpisodesHistory, '/episodes/history')
 # api.add_resource(EpisodesTools, '/episodes_tools')
 
@@ -2040,13 +2000,7 @@ api.add_resource(SearchWantedSeries, '/series/wanted/search')
 api.add_resource(SearchWantedMovies, '/movies/wanted/search')
 
 api.add_resource(BlacklistSeries, '/series/blacklist')
-# api.add_resource(BlacklistEpisodeSubtitlesAdd, '/blacklist_episode_subtitles_add')
-# api.add_resource(BlacklistEpisodeSubtitlesRemove, '/blacklist_episode_subtitles_remove')
-# api.add_resource(BlacklistEpisodeSubtitlesRemoveAll, '/blacklist_episode_subtitles_remove_all')
 api.add_resource(BlacklistMovies, '/movies/blacklist')
-# api.add_resource(BlacklistMovieSubtitlesAdd, '/blacklist_movie_subtitles_add')
-# api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remove')
-# api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')
