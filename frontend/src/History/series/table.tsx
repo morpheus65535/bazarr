@@ -26,11 +26,13 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "action",
+        className: "text-center",
         Cell: (row) => <HistoryIcon action={row.value}></HistoryIcon>,
       },
       {
         Header: "Name",
         accessor: "seriesTitle",
+        className: "text-nowrap",
         Cell: (row) => {
           const target = `/series/${row.row.original.sonarrSeriesId}`;
 
@@ -47,14 +49,17 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         accessor: "episodeTitle",
+        className: "text-nowrap",
       },
       {
         Header: "Date",
         accessor: "timestamp",
+        className: "text-nowrap",
       },
       {
         Header: "Description",
         accessor: "description",
+        className: "text-nowrap",
       },
       {
         accessor: "sonarrEpisodeId",

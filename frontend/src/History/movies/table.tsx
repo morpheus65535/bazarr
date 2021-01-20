@@ -24,11 +24,13 @@ const Table: FunctionComponent<Props> = (props) => {
     () => [
       {
         accessor: "action",
+        className: "text-center",
         Cell: (row) => <HistoryIcon action={row.value}></HistoryIcon>,
       },
       {
         Header: "Name",
         accessor: "title",
+        className: "text-nowrap",
         Cell: (row) => {
           const target = `/movies/${row.row.original.radarrId}`;
 
@@ -42,10 +44,12 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Date",
         accessor: "timestamp",
+        className: "text-nowrap",
       },
       {
         Header: "Description",
         accessor: "description",
+        className: "text-nowrap",
       },
       {
         accessor: "radarrId",
