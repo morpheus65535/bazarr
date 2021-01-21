@@ -1,12 +1,14 @@
 import React, {
   FunctionComponent,
   MouseEvent,
+  ChangeEvent,
   useState,
+  useMemo,
   PropsWithChildren,
 } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { Badge, Spinner, Button, ButtonProps } from "react-bootstrap";
+import { Badge, Spinner, Button, ButtonProps, Form } from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -105,6 +107,8 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
 interface AsyncButtonProps<T> {
   variant?: ButtonProps["variant"];
   size?: ButtonProps["size"];
+  disabled?: boolean;
+  onChange?: (v: boolean) => void;
 
   promise: () => Promise<T>;
   success?: (result: T) => void;
@@ -114,20 +118,32 @@ interface AsyncButtonProps<T> {
 export function AsyncButton<T>(
   props: PropsWithChildren<AsyncButtonProps<T>>
 ): JSX.Element {
-  const { children, promise, success, error, ...button } = props;
+  const {
+    children,
+    promise,
+    success,
+    error,
+    onChange,
+    disabled,
+    ...button
+  } = props;
 
   const [loading, setLoading] = useState(false);
 
   return (
     <Button
+      disabled={loading || disabled}
       {...button}
-      disabled={loading}
       onClick={() => {
         setLoading(true);
+        onChange && onChange(true);
         promise()
           .then(success)
           .catch(error)
-          .finally(() => setLoading(false));
+          .finally(() => {
+            setLoading(false);
+            onChange && onChange(false);
+          });
       }}
     >
       {loading ? (
@@ -138,6 +154,51 @@ export function AsyncButton<T>(
     </Button>
   );
 }
+
+interface FileFormProps {
+  multiple?: boolean;
+  emptyText: string;
+  onChange?: (files: File[]) => void;
+}
+
+export const FileForm: FunctionComponent<FileFormProps> = ({
+  emptyText,
+  multiple,
+  onChange,
+}) => {
+  const [fileList, setFileList] = useState<File[]>([]);
+
+  const label = useMemo(() => {
+    if (fileList.length === 0) {
+      return emptyText;
+    } else {
+      if (multiple) {
+        return `${fileList.length} Files`;
+      } else {
+        return fileList[0].name;
+      }
+    }
+  }, [fileList, emptyText, multiple]);
+
+  return (
+    <Form.File
+      custom
+      label={label}
+      multiple={multiple}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+        const { files } = e.target;
+        if (files) {
+          const list: File[] = [];
+          for (const file of files) {
+            list.push(file);
+          }
+          setFileList(list);
+          onChange && onChange(list);
+        }
+      }}
+    ></Form.File>
+  );
+};
 
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";

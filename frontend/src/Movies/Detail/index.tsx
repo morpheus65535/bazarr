@@ -24,6 +24,7 @@ import {
   LoadingOverlay,
   SubtitleToolModal,
   MovieHistoryModal,
+  MovieUploadModal,
 } from "../../Components";
 
 import Table from "./table";
@@ -81,7 +82,10 @@ const MovieDetailView: FunctionComponent<Props> = ({
           Search
         </ContentHeaderButton>
         <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
-        <ContentHeaderButton icon={faCloudUploadAlt}>
+        <ContentHeaderButton
+          icon={faCloudUploadAlt}
+          onClick={() => setModal("upload")}
+        >
           Upload
         </ContentHeaderButton>
       </React.Fragment>
@@ -163,6 +167,11 @@ const MovieDetailView: FunctionComponent<Props> = ({
           movie={item}
           onClose={() => setModal("")}
         ></MovieHistoryModal>
+        <MovieUploadModal
+          show={modal === "upload"}
+          onClose={() => setModal("")}
+          movie={item}
+        ></MovieUploadModal>
       </Container>
     );
   } else {

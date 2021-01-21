@@ -1,17 +1,17 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button, Container, Form, Spinner } from "react-bootstrap";
+import { Container, Form } from "react-bootstrap";
 
 import BasicModal, { ModalProps } from "./BasicModal";
 
-import { LanguageSelector, Selector } from "../";
+import { LanguageSelector, Selector, AsyncButton } from "../";
 
 import { forcedOptions } from "../../utilites/global";
 
 interface Props {
   languages: ExtendLanguage[];
   item?: ExtendItem;
-  submit?: (form: ItemModifyForm) => Promise<void>;
+  submit: (form: ItemModifyForm) => Promise<void>;
   onSuccess?: () => void;
 }
 
@@ -58,49 +58,30 @@ class Editor extends React.Component<Props & ModalProps, State> {
   }
 
   submitForm() {
-    const { submit, onSuccess } = this.props;
-    if (submit === undefined) return;
-
+    const { submit } = this.props;
     const { enabled, hi, forced } = this.state;
 
-    this.updateState("updating", true);
-
-    submit({
+    return submit({
       languages: enabled.map((val) => val.code2 ?? ""),
       hi,
       forced,
-    })
-      .then(() => {
-        onSuccess && onSuccess();
-      })
-      .catch((err) => {})
-      .finally(() => this.updateState("updating", false));
+    });
   }
 
   render() {
-    const { item, languages } = this.props;
+    const { item, languages, onSuccess } = this.props;
 
     const { changed, enabled, hi, forced, updating } = this.state;
 
     const footer = (
-      <Button
-        disabled={!changed || updating}
-        onClick={(e) => {
-          e.preventDefault();
-          this.submitForm();
-        }}
+      <AsyncButton
+        disabled={!changed}
+        onChange={(v) => this.updateState("updating", v)}
+        promise={this.submitForm.bind(this)}
+        success={onSuccess}
       >
-        {updating ? (
-          <Spinner
-            as="span"
-            role="status"
-            size="sm"
-            animation="border"
-          ></Spinner>
-        ) : (
-          <span>Save</span>
-        )}
-      </Button>
+        Save
+      </AsyncButton>
     );
 
     return (
@@ -118,9 +99,12 @@ class Editor extends React.Component<Props & ModalProps, State> {
             <Form.Group>
               <Form.Label>Languages</Form.Label>
               <LanguageSelector
+                multiple
                 options={languages}
                 defaultSelect={enabled}
-                onChange={(val) => this.updateState("enabled", val)}
+                onChange={(val: ExtendLanguage[]) =>
+                  this.updateState("enabled", val)
+                }
               ></LanguageSelector>
             </Form.Group>
             <Form.Group>
@@ -142,14 +126,6 @@ class Editor extends React.Component<Props & ModalProps, State> {
                   this.updateState("hi", e.currentTarget.checked);
                 }}
               ></Form.Check>
-              {/* <Form.Check
-                inline
-                label="Forced"
-                defaultChecked={forced}
-                onChange={(e) => {
-                  this.updateState("forced", e.currentTarget.checked);
-                }}
-              ></Form.Check> */}
             </Form.Group>
           </Form>
         </Container>
