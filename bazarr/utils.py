@@ -264,6 +264,10 @@ def subtitles_apply_mods(language, subtitle_path, mods):
 
     if language == 'pob':
         lang_obj = Language('por', 'BR')
+    elif lang == 'chs':
+            lang_obj = Language('chs', 'CN')
+    elif lang == 'cht':
+            lang_obj = Language('cht', 'CN')
     else:
         lang_obj = Language(language)
 

@@ -135,6 +135,18 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                 lang_obj = Language.rebuild(lang_obj, forced=True)
             if hi == "force HI":
                 lang_obj = Language.rebuild(lang_obj, hi=True)
+        elif l == 'chs':
+            lang_obj = Language('chs', 'ZH')
+            if forced == "True":
+                lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
+        elif l == 'cht':
+            lang_obj = Language('cht', 'ZH')
+            if forced == "True":
+                lang_obj = Language.rebuild(lang_obj, forced=True)
+            if hi == "force HI":
+                lang_obj = Language.rebuild(lang_obj, hi=True)
         else:
             lang_obj = Language(l)
             if forced == "True":
@@ -214,6 +226,10 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
                         downloaded_provider = subtitle.provider_name
                         if subtitle.language == 'pt-BR':
                             downloaded_language_code3 = 'pob'
+                        if subtitle.language == 'jt-ZH':
+                            downloaded_language_code3 = 'chs'
+                        if subtitle.language == 'ft-ZH':
+                            downloaded_language_code3 = 'cht'
                         else:
                             downloaded_language_code3 = subtitle.language.alpha3
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
@@ -323,6 +339,10 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
 
         if lang == 'pob':
             lang_obj = Language('por', 'BR')
+        elif lang == 'chs':
+            lang_obj = Language('chs', 'CN')
+        elif lang == 'cht':
+            lang_obj = Language('cht', 'CN')
         else:
             lang_obj = Language(lang)
 
@@ -530,6 +550,10 @@ def manual_download_subtitle(path, language, audio_language, hi, forced, subtitl
                         downloaded_provider = saved_subtitle.provider_name
                         if saved_subtitle.language == 'pt-BR':
                             downloaded_language_code3 = 'pob'
+                        elif saved_subtitle.language == 'jt-ZH':
+                            downloaded_language_code3 = 'chs'
+                        elif saved_subtitle.language == 'ft-ZH':
+                            downloaded_language_code3 = 'cht'
                         else:
                             downloaded_language_code3 = subtitle.language.alpha3
                         downloaded_language = language_from_alpha3(downloaded_language_code3)
@@ -631,6 +655,10 @@ def manual_upload_subtitle(path, language, forced, title, scene_name, media_type
 
     if language == 'pob':
         lang_obj = Language('por', 'BR')
+    elif language == 'chs':
+        lang_obj = Language('chs', 'ZH')
+    elif language == 'cht':
+        lang_obj = Language('cht', 'ZH')
     else:
         lang_obj = Language(language)
 

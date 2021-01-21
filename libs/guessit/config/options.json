@@ -146,6 +146,12 @@
         "MX": [
           "Latinoamérica",
           "latin america"
+        ],
+        "CN": [
+           "国产",
+           "國産",
+           "大陆",
+           "大陸"
         ]
       }
     },
@@ -154,7 +160,8 @@
       "episode_max_range": 100,
       "max_range_gap": 1,
       "season_markers": [
-        "s"
+        "s",
+        "季"
       ],
       "season_ep_markers": [
         "x"
@@ -167,7 +174,8 @@
         "ex",
         "ep",
         "e",
-        "x"
+        "x",
+        "第"
       ],
       "range_separators": [
         "-",
@@ -191,7 +199,8 @@
         "temp",
         "temporada",
         "temporadas",
-        "stagione"
+        "stagione",
+        "季"
       ],
       "episode_words": [
         "episode",
@@ -201,14 +210,21 @@
         "episodio",
         "episodios",
         "capitulo",
-        "capitulos"
+        "capitulos",
+        "集",
+        "话",
+        "話",
+        "完"
       ],
       "of_words": [
         "of",
         "sur"
       ],
       "all_words": [
-        "All"
+        "All",
+        "合集",
+        "打包",
+        "全集"
       ]
     },
     "language": {
@@ -260,7 +276,18 @@
           "ua"
         ],
         "zho": [
-          "cn"
+          "cn",
+          "中文"
+        ],
+        "chs_CN": [
+          "simplified chinese",
+          "简",
+          "字幕"
+        ],
+        "cht_CN": [
+          "traditional chinese",
+          "繁",
+          "國語"
         ],
         "jpn": [
           "jp"
@@ -270,7 +297,11 @@
         ],
         "mul": [
           "multi",
-          "dl"
+          "dl",
+          "双语",
+          "雙語",
+          "国语言",
+          "國語言"
         ]
       },
       "subtitle_affixes": [
@@ -304,18 +335,25 @@
       "subtitle_suffixes": [
         "subforced",
         "fansub",
-        "hardsub"
+        "hardsub",
+        "字幕"
       ],
       "language_affixes": [
         "dublado",
         "dubbed",
-        "dub"
+        "dub",
+        "双语",
+        "多国",
+        "雙語",
+        "多國"
       ],
       "language_prefixes": [
         "true"
       ],
       "language_suffixes": [
-        "audio"
+        "audio",
+        "音轨",
+        "音軌"
       ],
       "weak_affixes": [
         "v",
@@ -338,7 +376,7 @@
         "pour",
         "rip"
       ],
-      "ignored_seps": "[]{}()"
+      "ignored_seps": "[]{}()【】"
     },
     "screen_size": {
       "frame_rates": [
