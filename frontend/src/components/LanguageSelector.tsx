@@ -8,13 +8,13 @@ interface RootProps {
 }
 
 interface SingleProps extends RootProps {
-  multiply?: false;
+  multiple?: false;
   defaultSelect?: ExtendLanguage;
   onChange?: (lang: ExtendLanguage) => void;
 }
 
 interface MultiProps extends RootProps {
-  multiply: true;
+  multiple: true;
   defaultSelect?: ExtendLanguage[];
   onChange?: (lang: ExtendLanguage[]) => void;
 }
@@ -42,7 +42,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
       return [];
     }
 
-    if (other.multiply) {
+    if (other.multiple) {
       return other.defaultSelect.flatMap((v) => {
         if (v.code2 !== undefined) {
           return v.code2 ?? "";
@@ -55,11 +55,11 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     }
   }, [other]);
 
-  if (other.multiply) {
+  if (other.multiple) {
     return (
       <Selector
         className={className}
-        multiply={true}
+        multiple={true}
         options={items}
         defaultKey={selection}
         onMultiSelect={(k) => {
@@ -80,7 +80,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     return (
       <Selector
         className={className}
-        multiply={false}
+        multiple={false}
         options={items}
         defaultKey={defaultKey}
         onSelect={(k) => {

@@ -16,11 +16,11 @@ type SelectorBasic<T extends string | string[]> = {
 };
 
 export type SingleSelectorProps = {
-  multiply?: false;
+  multiple?: false;
 } & SelectorBasic<string>;
 
 export type MultiSelectorProps = {
-  multiply: true;
+  multiple: true;
 } & SelectorBasic<string[]>;
 
 export type SelectorProps = SingleSelectorProps | MultiSelectorProps;
@@ -30,7 +30,7 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
   const [filter, setFilter] = useState("");
 
   const initializeKey: string[] = useMemo(() => {
-    if (other.multiply) {
+    if (other.multiple) {
       if (other.defaultKey) {
         return other.defaultKey;
       } else if (nullKey) {
@@ -80,17 +80,17 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
       const oldIndex = newSelect.findIndex((v) => v === key);
 
       if (oldIndex === -1) {
-        if (other.multiply) {
+        if (other.multiple) {
           newSelect.push(key);
         } else {
           newSelect[0] = key;
         }
-      } else if (other.multiply) {
+      } else if (other.multiple) {
         newSelect.splice(oldIndex, 1);
       }
 
       setSelect(newSelect);
-      if (other.multiply) {
+      if (other.multiple) {
         other.onMultiSelect && other.onMultiSelect(newSelect);
       } else {
         other.onSelect && other.onSelect(newSelect[0]);
@@ -98,7 +98,7 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
     }
 
     return avaliable.map((p) => {
-      const hasCheck = other.multiply && selectKey.includes(p.key);
+      const hasCheck = other.multiple && selectKey.includes(p.key);
       return (
         <Dropdown.Item
           key={p.key}

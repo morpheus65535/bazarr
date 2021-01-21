@@ -69,7 +69,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             </Input>
             <Input name="Enabled Languages">
               <LanguageSelector
-                multiply
+                multiple
                 defaultSelect={enabled}
                 options={languages}
                 onChange={(val: ExtendLanguage[]) => {
@@ -103,7 +103,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
-                  multiply
+                  multiple
                   options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.serie_default_language
@@ -155,7 +155,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
-                  multiply
+                  multiple
                   options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.movie_default_language

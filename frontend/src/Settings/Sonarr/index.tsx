@@ -139,7 +139,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
             <Input name="Excluded Series Types">
               <Selector
                 // TODO: Bug occure when only select single value
-                multiply={true}
+                multiple={true}
                 options={seriesTypeOptions}
                 defaultKey={settings.sonarr.excluded_series_types}
                 onMultiSelect={(v) =>
