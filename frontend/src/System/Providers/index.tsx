@@ -3,7 +3,7 @@ import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 
-import { UpdateProviderList } from "../../@redux/actions";
+import { UpdateProvider } from "../../@redux/actions";
 
 import { faSync, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { ContentHeader, ContentHeaderButton } from "../../Components";
@@ -63,6 +63,6 @@ const SystemProvidersView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { update: UpdateProviderList })(
+export default connect(mapStateToProps, { update: UpdateProvider })(
   SystemProvidersView
 );

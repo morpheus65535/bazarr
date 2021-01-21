@@ -11,7 +11,7 @@ import {
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 
-import { SetSystemSettings } from "../../@redux/actions";
+import { SystemApi } from "../../apis";
 
 interface Props {
   title: string;
@@ -21,7 +21,6 @@ interface Props {
     update: (v: any, k?: string) => void,
     change: LooseObject
   ) => JSX.Element;
-  update: (data: object) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -31,7 +30,7 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
-  const { settings, children, title, update } = props;
+  const { settings, children, title } = props;
 
   const [willChange, setWillChange] = useState<LooseObject>({});
 
@@ -54,7 +53,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               icon={faSave}
               disabled={Object.keys(willChange).length === 0}
               onClick={() => {
-                update(willChange);
+                SystemApi.setSettings(willChange);
                 setWillChange({});
               }}
             >
@@ -68,6 +67,4 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps, { update: SetSystemSettings })(
-  SettingsSubtitlesView
-);
+export default connect(mapStateToProps)(SettingsSubtitlesView);

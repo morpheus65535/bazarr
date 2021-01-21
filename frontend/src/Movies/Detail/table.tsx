@@ -1,5 +1,6 @@
 import React, { FunctionComponent } from "react";
 import { Badge } from "react-bootstrap";
+import { connect } from "react-redux";
 import { Column } from "react-table";
 
 import { AsyncButton, BasicTable } from "../../Components";
@@ -9,15 +10,17 @@ import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 import { MoviesApi } from "../../apis";
 
+import { updateMovieInfo } from "../../@redux/actions";
+
 const missingText = "Subtitle Missing";
 
 interface Props {
   movie: Movie;
-  refresh: () => void;
+  update: (id: number) => void;
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movie, refresh } = props;
+  const { movie, update } = props;
 
   const columns: Column<Subtitle>[] = React.useMemo<Column<Subtitle>[]>(
     () => [
@@ -57,7 +60,7 @@ const Table: FunctionComponent<Props> = (props) => {
                     forced: original.forced,
                   })
                 }
-                success={refresh}
+                success={() => update(movie.radarrId)}
                 variant="light"
                 size="sm"
               >
@@ -77,7 +80,7 @@ const Table: FunctionComponent<Props> = (props) => {
                     path: original.path ?? "",
                   })
                 }
-                success={refresh}
+                success={() => update(movie.radarrId)}
               >
                 <FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>
               </AsyncButton>
@@ -86,7 +89,7 @@ const Table: FunctionComponent<Props> = (props) => {
         },
       },
     ],
-    [movie, refresh]
+    [movie, update]
   );
 
   const data: Subtitle[] = React.useMemo(() => {
@@ -101,4 +104,4 @@ const Table: FunctionComponent<Props> = (props) => {
   return <BasicTable options={{ columns, data }}></BasicTable>;
 };
 
-export default Table;
+export default connect(undefined, { update: updateMovieInfo })(Table);

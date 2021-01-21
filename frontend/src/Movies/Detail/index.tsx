@@ -141,7 +141,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
           <ItemOverview item={item} details={details}></ItemOverview>
         </Row>
         <Row>
-          <Table movie={item} refresh={() => update(id)}></Table>
+          <Table movie={item}></Table>
         </Row>
         <ItemEditorModal
           show={modal === "edit"}

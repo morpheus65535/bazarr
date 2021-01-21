@@ -5,12 +5,11 @@ import {
   UPDATE_SYSTEM_TASKS,
   UPDATE_PROVIDER_LIST,
   UPDATE_SYSTEM_LOGS,
-  EXEC_SYSTEM_TASK,
   UPDATE_SYSTEM_SETTINGS,
 } from "../constants";
 import { mapToAsyncState } from "./mapper";
 
-import { handleActions, Action as RAction } from "redux-actions";
+import { handleActions } from "redux-actions";
 
 const reducer = handleActions<SystemState, any>(
   {
@@ -73,25 +72,6 @@ const reducer = handleActions<SystemState, any>(
         return {
           ...state,
           settings: mapToAsyncState(action, state.settings.items),
-        };
-      },
-    },
-    [EXEC_SYSTEM_TASK]: {
-      next(state, action: RAction<string>) {
-        const { payload } = action;
-
-        let items = state.tasks.items.map((val) => {
-          if (val.job_id === payload) {
-            val.job_running = true;
-          }
-          return val;
-        });
-        return {
-          ...state,
-          tasks: {
-            ...state.tasks,
-            items,
-          },
         };
       },
     },

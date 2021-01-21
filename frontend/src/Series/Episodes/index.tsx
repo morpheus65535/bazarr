@@ -12,7 +12,7 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { updateEpisodeList } from "../../@redux/actions";
+import { updateSeriesInfo } from "../../@redux/actions";
 
 import {
   ContentHeader,
@@ -33,7 +33,7 @@ interface Params {
 
 interface Props extends RouteComponentProps<Params> {
   seriesList: AsyncState<Series[]>;
-  updateEpisodeList: (id: number) => void;
+  update: (id: number) => void;
 }
 
 function mapStateToProps({ series }: StoreState) {
@@ -44,7 +44,7 @@ function mapStateToProps({ series }: StoreState) {
 }
 
 const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
-  const { updateEpisodeList, match, seriesList } = props;
+  const { update, match, seriesList } = props;
   const id = Number.parseInt(match.params.id);
   const list = seriesList.items;
 
@@ -58,8 +58,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   const [search, setSearch] = useState(false);
 
   useEffect(() => {
-    updateEpisodeList(id);
-  }, [updateEpisodeList, id]);
+    update(id);
+  }, [update, id]);
 
   const header = (
     <ContentHeader>
@@ -71,7 +71,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             setScan(true);
             SeriesApi.scanDisk(id).finally(() => {
               setScan(false);
-              updateEpisodeList(id);
+              update(id);
             });
           }}
         >
@@ -84,7 +84,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             setSearch(true);
             SeriesApi.searchMissing(id).finally(() => {
               setSearch(false);
-              updateEpisodeList(id);
+              update(id);
             });
           }}
         >
@@ -131,8 +131,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
           submit={(form) => SeriesApi.modify(item.sonarrSeriesId, form)}
           onSuccess={() => {
             setModal("");
-            // TODO: Websocket
-            updateEpisodeList(item.sonarrSeriesId);
+            update(item.sonarrSeriesId);
           }}
         ></ItemEditorModal>
       </Container>
@@ -143,5 +142,5 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 };
 
 export default withRouter(
-  connect(mapStateToProps, { updateEpisodeList })(SeriesEpisodesView)
+  connect(mapStateToProps, { update: updateSeriesInfo })(SeriesEpisodesView)
 );

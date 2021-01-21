@@ -3,14 +3,11 @@ import {
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
   UPDATE_SYSTEM_LOGS,
-  EXEC_SYSTEM_TASK,
   UPDATE_SYSTEM_SETTINGS,
-  SET_SYSTEM_SETTINGS,
 } from "../constants";
 
 import { SystemApi } from "../../apis";
-import { createAsyncAction } from "./creator";
-import { Action } from "redux-actions";
+import { createAsyncAction } from "./utils";
 
 export const updateLanguagesList = createAsyncAction(
   UPDATE_LANGUAGES_LIST,
@@ -33,18 +30,3 @@ export const UpdateSystemSettings = createAsyncAction(
   UPDATE_SYSTEM_SETTINGS,
   () => SystemApi.settings()
 );
-
-export const SetSystemSettings = (data: object) => {
-  SystemApi.setSettings(data);
-  return {
-    type: SET_SYSTEM_SETTINGS,
-  };
-};
-
-export const ExecSystemTask = (id: string): Action<string> => {
-  SystemApi.execTasks(id);
-  return {
-    type: EXEC_SYSTEM_TASK,
-    payload: id,
-  };
-};

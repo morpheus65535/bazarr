@@ -1,7 +1,7 @@
 import React from "react";
 import { Column } from "react-table";
 import { BasicTable } from "../../Components";
-import { ExecSystemTask } from "../../@redux/actions";
+import { SystemApi } from "../../apis";
 
 import { connect } from "react-redux";
 
@@ -11,7 +11,6 @@ import { Button } from "react-bootstrap";
 
 interface Props {
   tasks: Array<SystemTaskResult>;
-  exec: (id: string) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
@@ -22,8 +21,6 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 function Table(props: Props) {
-  const { exec } = props;
-
   const columns: Column<SystemTaskResult>[] = React.useMemo<
     Column<SystemTaskResult>[]
   >(
@@ -52,19 +49,17 @@ function Table(props: Props) {
               <FontAwesomeIcon
                 icon={faSync}
                 spin={row.value}
-                onClick={() => exec(job_id)}
+                onClick={() => SystemApi.execTasks(job_id)}
               ></FontAwesomeIcon>
             </Button>
           );
         },
       },
     ],
-    [exec]
+    []
   );
 
   return <BasicTable options={{ columns, data: props.tasks }}></BasicTable>;
 }
 
-export default connect(mapStateToProps, {
-  exec: ExecSystemTask,
-})(Table);
+export default connect(mapStateToProps)(Table);

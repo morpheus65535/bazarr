@@ -7,7 +7,9 @@ import {
 } from "../constants";
 
 import { SeriesApi, EpisodesApi, HistoryApi } from "../../apis";
-import { createAsyncAction, createAsyncAction1 } from "./creator";
+import { createAsyncAction, createCombineAction } from "./utils";
+
+import { updateBadges } from "./badges";
 
 export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
   SeriesApi.series()
@@ -15,11 +17,10 @@ export const updateSeriesList = createAsyncAction(UPDATE_SERIES_LIST, () =>
 
 export const updateWantedSeriesList = createAsyncAction(
   UPDATE_SERIES_WANTED_LIST,
-  // TODO: Hardcode to 0 - 25
   () => SeriesApi.wanted()
 );
 
-export const updateEpisodeList = createAsyncAction1(
+export const updateEpisodeList = createAsyncAction(
   UPDATE_SERIES_EPISODE_LIST,
   (id: number) => EpisodesApi.all(id)
 );
@@ -29,7 +30,13 @@ export const updateHistorySeriesList = createAsyncAction(
   () => HistoryApi.series()
 );
 
-export const updateSeriesInfo = createAsyncAction1(
+export const updateSeries = createAsyncAction(
   UPDATE_SERIES_INFO,
   (id: number) => SeriesApi.series(id)
 );
+
+export const updateSeriesInfo = createCombineAction((id: number) => [
+  updateSeries(id),
+  updateEpisodeList(id),
+  updateBadges(),
+]);

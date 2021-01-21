@@ -5,7 +5,8 @@ import {
   UPDATE_MOVIE_WANTED_LIST,
   UPDATE_MOVIE_INFO,
 } from "../constants";
-import { createAsyncAction, createAsyncAction1 } from "./creator";
+import { updateBadges } from "./badges";
+import { createAsyncAction, createCombineAction } from "./utils";
 
 export const updateMovieList = createAsyncAction(UPDATE_MOVIE_LIST, () =>
   MoviesApi.movies()
@@ -21,7 +22,10 @@ export const updateHistoryMovieList = createAsyncAction(
   () => HistoryApi.movies()
 );
 
-export const updateMovieInfo = createAsyncAction1(
-  UPDATE_MOVIE_INFO,
-  (id: number) => MoviesApi.movies(id)
+export const updateMovie = createAsyncAction(UPDATE_MOVIE_INFO, (id: number) =>
+  MoviesApi.movies(id)
 );
+
+export const updateMovieInfo = createCombineAction((id: number) => {
+  return [updateMovie(id), updateBadges()];
+});
