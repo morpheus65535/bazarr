@@ -2,15 +2,27 @@ import React, { FunctionComponent, useMemo } from "react";
 
 import { Selector } from "./Selector";
 
-interface Props {
+interface RootProps {
   className?: string;
   options: ExtendLanguage[];
-  defaultSelect: ExtendLanguage[];
+}
+
+interface SingleProps extends RootProps {
+  multiply?: false;
+  defaultSelect?: ExtendLanguage;
+  onChange?: (lang: ExtendLanguage) => void;
+}
+
+interface MultiProps extends RootProps {
+  multiply: true;
+  defaultSelect?: ExtendLanguage[];
   onChange?: (lang: ExtendLanguage[]) => void;
 }
 
+type Props = MultiProps | SingleProps;
+
 const LanguageSelector: FunctionComponent<Props> = (props) => {
-  const { className, options, defaultSelect, onChange } = props;
+  const { className, options, ...other } = props;
 
   const items = useMemo(() => {
     return options.flatMap<Pair>((lang) => {
@@ -25,35 +37,61 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     });
   }, [options]);
 
-  const selection = useMemo(() => {
-    return defaultSelect.flatMap((v) => {
-      if (v.code2 !== undefined) {
-        return v.code2;
-      } else {
-        return [];
-      }
-    });
-  }, [defaultSelect]);
+  const selection: string[] = useMemo(() => {
+    if (other.defaultSelect === undefined) {
+      return [];
+    }
 
-  return (
-    <Selector
-      className={className}
-      multiply
-      options={items}
-      defaultKey={selection}
-      onSelect={(k) => {
-        const full = k.flatMap((v) => {
-          const result = options.find((lang) => lang.code2 === v);
+    if (other.multiply) {
+      return other.defaultSelect.flatMap((v) => {
+        if (v.code2 !== undefined) {
+          return v.code2 ?? "";
+        } else {
+          return [];
+        }
+      });
+    } else {
+      return [other.defaultSelect.code2 ?? ""];
+    }
+  }, [other]);
+
+  if (other.multiply) {
+    return (
+      <Selector
+        className={className}
+        multiply={true}
+        options={items}
+        defaultKey={selection}
+        onMultiSelect={(k) => {
+          const full = k.flatMap((v) => {
+            const result = options.find((lang) => lang.code2 === v);
+            if (result) {
+              return result;
+            } else {
+              return [];
+            }
+          });
+          other.onChange && other.onChange(full);
+        }}
+      ></Selector>
+    );
+  } else {
+    const defaultKey = selection.length > 0 ? selection[0] : undefined;
+    return (
+      <Selector
+        className={className}
+        multiply={false}
+        options={items}
+        defaultKey={defaultKey}
+        onSelect={(k) => {
+          const result = options.find((lang) => lang.code2 === k);
           if (result) {
-            return result;
-          } else {
-            return [];
+            other.onChange && other.onChange(result);
           }
-        });
-        onChange && onChange(full);
-      }}
-    ></Selector>
-  );
+        }}
+      ></Selector>
+    );
+  }
 };
 
 export default LanguageSelector;

@@ -66,27 +66,21 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
               <Selector
                 options={seriesSyncOptions}
                 defaultKey={settings.sonarr.series_sync.toString()}
-                onSelect={(v: string) =>
-                  update(v, "settings-sonarr-series_sync")
-                }
+                onSelect={(v) => update(v, "settings-sonarr-series_sync")}
               ></Selector>
             </Input>
             <Input name="Update Episodes List from Sonarr">
               <Selector
                 options={episodesSyncOptions}
                 defaultKey={settings.sonarr.episodes_sync.toString()}
-                onSelect={(v: string) =>
-                  update(v, "settings-sonarr-episodes_sync")
-                }
+                onSelect={(v) => update(v, "settings-sonarr-episodes_sync")}
               ></Selector>
             </Input>
             <Input name="Update Movies List from Radarr">
               <Selector
                 options={moviesSyncOptions}
                 defaultKey={settings.radarr.movies_sync.toString()}
-                onSelect={(v: string) =>
-                  update(v, "settings-radarr-movies_sync")
-                }
+                onSelect={(v) => update(v, "settings-radarr-movies_sync")}
               ></Selector>
             </Input>
           </Group>
@@ -99,7 +93,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                   <Selector
                     options={diskUpdateOptions}
                     defaultKey={settings.sonarr.full_update}
-                    onSelect={(v: string) => {
+                    onSelect={(v) => {
                       change(v);
                       update(v, "settings-sonarr-full_update");
                     }}
@@ -113,7 +107,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                     <Selector
                       options={dayOptions}
                       defaultKey={settings.sonarr.full_update_day.toString()}
-                      onSelect={(v: string) => {
+                      onSelect={(v) => {
                         update(v, "settings-sonarr-full_update_day");
                       }}
                     ></Selector>
@@ -122,7 +116,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                     <Selector
                       options={timeOptions}
                       defaultKey={settings.sonarr.full_update_hour.toString()}
-                      onSelect={(v: string) => {
+                      onSelect={(v) => {
                         update(v, "settings-sonarr-full_update_hour");
                       }}
                     ></Selector>
@@ -138,7 +132,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                   <Selector
                     options={diskUpdateOptions}
                     defaultKey={settings.radarr.full_update}
-                    onSelect={(v: string) => {
+                    onSelect={(v) => {
                       change(v);
                       update(v, "settings-radarr-full_update");
                     }}
@@ -152,7 +146,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                     <Selector
                       options={dayOptions}
                       defaultKey={settings.radarr.full_update_day.toString()}
-                      onSelect={(v: string) => {
+                      onSelect={(v) => {
                         update(v, "settings-radarr-full_update_day");
                       }}
                     ></Selector>
@@ -161,7 +155,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
                     <Selector
                       options={timeOptions}
                       defaultKey={settings.radarr.full_update_hour.toString()}
-                      onSelect={(v: string) => {
+                      onSelect={(v) => {
                         update(v, "settings-radarr-full_update_hour");
                       }}
                     ></Selector>
@@ -175,7 +169,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
               <Selector
                 options={upgradeOptions}
                 defaultKey={settings.general.wanted_search_frequency.toString()}
-                onSelect={(v: string) => {
+                onSelect={(v) => {
                   update(v, "settings-radarr-wanted_search_frequency");
                 }}
               ></Selector>
@@ -184,7 +178,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
               <Selector
                 options={upgradeOptions}
                 defaultKey={settings.general.wanted_search_frequency_movie.toString()}
-                onSelect={(v: string) => {
+                onSelect={(v) => {
                   update(v, "settings-radarr-wanted_search_frequency_movie");
                 }}
               ></Selector>
@@ -193,7 +187,7 @@ const SettingsSchedularView: FunctionComponent<Props> = () => {
               <Selector
                 options={upgradeOptions}
                 defaultKey={settings.general.upgrade_frequency.toString()}
-                onSelect={(v: string) => {
+                onSelect={(v) => {
                   update(v, "settings-radarr-upgrade_frequency");
                 }}
               ></Selector>

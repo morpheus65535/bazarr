@@ -85,7 +85,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                   <Selector
                     options={securityOptions}
                     defaultKey={settings.auth.type}
-                    onSelect={(v: string) => {
+                    onSelect={(v) => {
                       change(v !== "None");
                       update(v, "settings-auth-type");
                     }}
@@ -136,7 +136,7 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
                     defaultKey={settings.proxy.type}
                     options={proxyOptions}
                     nullKey="none"
-                    onSelect={(v: string) => {
+                    onSelect={(v) => {
                       change(v !== "none");
                       update(v, "settings-proxy-type");
                     }}

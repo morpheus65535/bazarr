@@ -11,7 +11,8 @@ type SelectorBasic<T extends string | string[]> = {
   disabled?: boolean;
   nullKey?: string;
   defaultKey?: T;
-  onSelect?: (key: T) => void;
+  onSelect?: (key: string) => void;
+  onMultiSelect?: (keys: string[]) => void;
 };
 
 export type SingleSelectorProps = {
@@ -90,7 +91,7 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
 
       setSelect(newSelect);
       if (other.multiply) {
-        other.onSelect && other.onSelect(newSelect);
+        other.onMultiSelect && other.onMultiSelect(newSelect);
       } else {
         other.onSelect && other.onSelect(newSelect[0]);
       }

@@ -142,7 +142,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
                 multiply={true}
                 options={seriesTypeOptions}
                 defaultKey={settings.sonarr.excluded_series_types}
-                onSelect={(v) =>
+                onMultiSelect={(v) =>
                   update(v, "settings-sonarr-excluded_series_types")
                 }
               ></Selector>

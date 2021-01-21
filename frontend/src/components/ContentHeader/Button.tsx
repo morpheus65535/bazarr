@@ -28,7 +28,6 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
       onClick={onClick}
     >
       <FontAwesomeIcon
-        size="lg"
         className="mx-auto my-1"
         icon={displayIcon}
         spin={updating}

@@ -71,7 +71,7 @@ $sidebar-bg-color: #3a3f51;
   right: 0;
   background-color: black;
   opacity: 0;
-  z-index: 99;
+  z-index: 1000;
 }
 
 .sidebar-container {
@@ -80,7 +80,7 @@ $sidebar-bg-color: #3a3f51;
   overflow-y: auto;
   background-color: $sidebar-bg-color;
 
-  z-index: 100;
+  z-index: 1001;
 
   min-width: $sidebar-width;
   max-width: $sidebar-width;

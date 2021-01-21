@@ -69,9 +69,10 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             </Input>
             <Input name="Enabled Languages">
               <LanguageSelector
+                multiply
                 defaultSelect={enabled}
                 options={languages}
-                onChange={(val) => {
+                onChange={(val: ExtendLanguage[]) => {
                   setAvaliable(val);
                   const langs = val.map((v) => v.code2);
                   update(langs, "enabled_languages");
@@ -102,11 +103,12 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
+                  multiply
                   options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.serie_default_language
                   )}
-                  onChange={(val) => {
+                  onChange={(val: ExtendLanguage[]) => {
                     const langs = val.map((v) => v.code2);
                     update(langs, "settings-general-serie_default_language");
                   }}
@@ -116,7 +118,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Selector
                   defaultKey={settings.general.serie_default_forced}
                   options={forcedOptions}
-                  onSelect={(v: string) =>
+                  onSelect={(v) =>
                     update(v, "settings-general-serie_default_forced")
                   }
                 ></Selector>
@@ -153,11 +155,12 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
             >
               <Input name="Languages">
                 <LanguageSelector
+                  multiply
                   options={avaliable}
                   defaultSelect={getLanguages(
                     settings.general.movie_default_language
                   )}
-                  onChange={(val) => {
+                  onChange={(val: ExtendLanguage[]) => {
                     const langs = val.map((v) => v.code2);
                     update(langs, "settings-general-movie_default_language");
                   }}
@@ -167,7 +170,7 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 <Selector
                   options={forcedOptions}
                   defaultKey={settings.general.movie_default_forced}
-                  onSelect={(v: string) =>
+                  onSelect={(v) =>
                     update(v, "settings-general-movie_default_forced")
                   }
                 ></Selector>
