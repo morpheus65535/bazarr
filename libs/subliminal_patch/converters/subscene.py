@@ -14,7 +14,9 @@ from_subscene = {
 }
 
 from_subscene_with_country = {
-    'Brazillian Portuguese': ('por', 'BR')
+    'Brazillian Portuguese': ('por', 'BR'),
+    'Chinese Simplified': ('zho', 'CN'),
+    'Chinese Traditional': ('zho', 'TW'),
 }
 
 to_subscene_with_country = {val: key for key, val in from_subscene_with_country.items()}
@@ -42,7 +44,8 @@ language_ids = {
         'mkd': 48, 'mal': 64, 'mni': 65, 'mon': 72, 'pus': 67, 'pol': 31,
         'por': 32, 'pan': 66, 'rus': 34, 'srp': 35, 'sin': 58, 'slk': 36,
         'slv': 37, 'som': 70, 'tgl': 53, 'tam': 59, 'tel': 63, 'tha': 40,
-        'tur': 41, 'ukr': 56, 'urd': 42, 'yor': 71, 'pt-BR': 4
+        'tur': 41, 'ukr': 56, 'urd': 42, 'yor': 71, 'pt-BR': 4, 'zh-CN': 81,
+        'zh-TW': 82
 }
 
 # TODO: specify codes for unspecified_languages

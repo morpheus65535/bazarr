@@ -20,10 +20,10 @@ def load_language_in_db():
                      "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
 
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('chs', 'jt', 'Simplified Chinese')")
+                     "VALUES ('chs', 'jt', 'Chinese Simplified')")
     
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
-                     "VALUES ('cht', 'ft', 'Traditional Chinese')")
+                     "VALUES ('cht', 'ft', 'Chinese Traditional')")
 
     langs = [[lang.bibliographic, lang.alpha_3]
              for lang in pycountry.languages
@@ -76,9 +76,9 @@ def get_language_set():
         if lang['code3'] == 'pob':
             language_set.add(Language('por', 'BR'))
         elif lang['code3'] == 'chs':
-            language_set.add(Language('chs', 'CN'))
+            language_set.add(Language('zho', 'CN'))
         elif lang['code3'] == 'cht':
-            language_set.add(Language('cht', 'CN'))
+            language_set.add(Language('zho', 'TW'))
         else:
             language_set.add(Language(lang['code3']))
     
