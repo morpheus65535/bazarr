@@ -540,16 +540,18 @@ class Episodes(Resource):
 class SubtitleNameInfo(Resource):
     @authenticate
     def get(self):
-        name = request.args.get('filename')
-        if name is not None:
+        names = request.args.getlist('filenames[]')
+        results = []
+        for name in names:
             opts = dict()
             opts['type'] = 'episode'
             result = guessit(name, options=opts)
+            result['filename'] = name
             if 'subtitle_language' in result:
                 result['subtitle_language'] = str(result['subtitle_language'])
-            return jsonify(data=result)
-        else:
-            return '', 400
+            results.append(result)
+
+        return jsonify(data=results)
 
 
 # PATCH: Download Subtitles
@@ -1966,7 +1968,7 @@ api.add_resource(SystemReleases, '/system/releases')
 api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')
 
-# api.add_resource(SubtitleNameInfo, '/subtitles/info')
+api.add_resource(SubtitleNameInfo, '/subtitles/info')
 # api.add_resource(SyncSubtitles, '/subtitles/sync')
 # api.add_resource(SubMods, '/subtitles/mods')
 
