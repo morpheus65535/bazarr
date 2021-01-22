@@ -51,6 +51,10 @@ PROVIDER_THROTTLE_MAP = {
         DownloadLimitReached: (datetime.timedelta(hours=6), "6 hours"),
         APIThrottled: (datetime.timedelta(seconds=15), "15 seconds"),
     },
+    "opensubtitlescom": {
+        TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
+        DownloadLimitExceeded: (datetime.timedelta(hours=hours_until_end_of_day), "{} hours".format(str(hours_until_end_of_day))),
+    },
     "addic7ed": {
         DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
         TooManyRequests: (datetime.timedelta(minutes=5), "5 minutes"),

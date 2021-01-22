@@ -10,6 +10,7 @@ from babelfish import language_converters
 from subliminal import Episode, Movie
 from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group, sanitize
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
 from .mixins import ProviderRetryMixin
@@ -154,6 +155,8 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     return True
             elif r.status_code == 401:
                 raise AuthenticationError('Login failed: {}'.format(r.reason))
+            elif r.status_code == 429:
+                    raise TooManyRequests()
             else:
                 raise ProviderError('Bad status code: {}'.format(r.status_code))
         finally:
@@ -178,6 +181,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             self.login()
 
             results = self.session.get(self.server_url + 'features', params=parameters, timeout=10)
+
+            if results.status_code == 429:
+                raise TooManyRequests()
+        elif results.status_code == 429:
+            raise TooManyRequests()
 
         results.raise_for_status()
 
@@ -238,6 +246,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                    timeout=10)
         res.raise_for_status()
 
+        if res.status_code == 429:
+            raise TooManyRequests()
+
         subtitles = []
 
         try:
@@ -295,18 +306,22 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                 timeout=10)
         res.raise_for_status()
 
-
-        try:
-            subtitle.download_link = res.json()['link']
-        except ValueError:
-            raise ProviderError('Invalid JSON returned by provider')
+        if res.status_code == 429:
+            raise TooManyRequests()
+        elif res.status_code == 407:
+            raise DownloadLimitExceeded("Daily download limit reached")
         else:
-            r = self.session.get(subtitle.download_link, timeout=10)
-            r.raise_for_status()
-
-            subtitle_content = r.content
-
-            if subtitle_content:
-                subtitle.content = fix_line_ending(subtitle_content)
+            try:
+                subtitle.download_link = res.json()['link']
+            except ValueError:
+                raise ProviderError('Invalid JSON returned by provider')
             else:
-                logger.debug('Could not download subtitle from {}'.format(subtitle.download_link))
+                r = self.session.get(subtitle.download_link, timeout=10)
+                r.raise_for_status()
+
+                subtitle_content = r.content
+
+                if subtitle_content:
+                    subtitle.content = fix_line_ending(subtitle_content)
+                else:
+                    logger.debug('Could not download subtitle from {}'.format(subtitle.download_link))
