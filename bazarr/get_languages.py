@@ -19,10 +19,6 @@ def load_language_in_db():
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
                      "VALUES ('pob', 'pb', 'Brazilian Portuguese')")
 
-    database.execute("UPDATE OR IGNORE table_settings_languages"
-                     "SET name = 'Chinese Simplified'"
-                     "WHERE code3 = 'zho'")
-    
     database.execute("INSERT OR IGNORE INTO table_settings_languages (code3, code2, name) "
                      "VALUES ('zht', 'zt', 'Chinese Traditional')")
 
@@ -39,6 +35,9 @@ def load_language_in_db():
 
 def create_languages_dict():
     global languages_dict
+    #replace chinese by chinese simplified
+    database.execute("UPDATE table_settings_languages SET name = 'Chinese Simplified' WHERE code3 = 'zho'")
+    
     languages_dict = database.execute("SELECT name, code2, code3, code3b FROM table_settings_languages")
 
 
