@@ -5,10 +5,23 @@ import React, {
   useState,
   useMemo,
   PropsWithChildren,
+  useEffect,
+  useRef,
 } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  FontAwesomeIcon,
+  FontAwesomeIconProps,
+} from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { Badge, Spinner, Button, ButtonProps, Form } from "react-bootstrap";
+import {
+  Badge,
+  Spinner,
+  Button,
+  ButtonProps,
+  Form,
+  OverlayTrigger,
+  Popover,
+} from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -88,6 +101,30 @@ export const HistoryIcon: FunctionComponent<{ action: number }> = (props) => {
   }
 };
 
+interface OverlayIconProps extends FontAwesomeIconProps {
+  messages: string[];
+}
+
+export const OverlayIcon: FunctionComponent<OverlayIconProps> = (props) => {
+  const { messages, ...iconProps } = props;
+
+  const popover = (
+    <Popover hidden={messages.length === 0} id="overlay-icon">
+      <Popover.Content>
+        {messages.map((m) => (
+          <li key={m}>{m}</li>
+        ))}
+      </Popover.Content>
+    </Popover>
+  );
+
+  return (
+    <OverlayTrigger overlay={popover}>
+      <FontAwesomeIcon {...iconProps}></FontAwesomeIcon>
+    </OverlayTrigger>
+  );
+};
+
 export const LoadingOverlay: FunctionComponent = () => {
   return (
     <div className="d-flex flex-grow-1 justify-content-center my-5">
@@ -156,17 +193,34 @@ export function AsyncButton<T>(
 }
 
 interface FileFormProps {
+  disabled?: boolean;
   multiple?: boolean;
   emptyText: string;
+  files?: File[];
   onChange?: (files: File[]) => void;
 }
 
 export const FileForm: FunctionComponent<FileFormProps> = ({
+  files,
   emptyText,
   multiple,
+  disabled,
   onChange,
 }) => {
   const [fileList, setFileList] = useState<File[]>([]);
+
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (files) {
+      setFileList(files);
+
+      if (files.length === 0 && input.current) {
+        // Manual reset file input
+        input.current.value = "";
+      }
+    }
+  }, [files]);
 
   const label = useMemo(() => {
     if (fileList.length === 0) {
@@ -182,9 +236,11 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
 
   return (
     <Form.File
+      disabled={disabled}
       custom
       label={label}
       multiple={multiple}
+      ref={input}
       onChange={(e: ChangeEvent<HTMLInputElement>) => {
         const { files } = e.target;
         if (files) {

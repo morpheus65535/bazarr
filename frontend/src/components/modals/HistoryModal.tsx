@@ -13,7 +13,7 @@ interface MovieHistoryProps {
 export const MovieHistoryModal: FunctionComponent<
   ModalProps & MovieHistoryProps
 > = (props) => {
-  const { movie } = props;
+  const { movie, ...modal } = props;
 
   const [history, setHistory] = useState<AsyncState<MovieHistory[]>>({
     updating: false,
@@ -21,8 +21,10 @@ export const MovieHistoryModal: FunctionComponent<
   });
 
   useEffect(() => {
-    updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
-  }, [movie]);
+    if (modal.show) {
+      updateAsyncState(MoviesApi.history(movie.radarrId), setHistory, []);
+    }
+  }, [movie, modal.show]);
 
   const columns = useMemo<Column<MovieHistory>[]>(
     () => [
@@ -61,7 +63,7 @@ export const MovieHistoryModal: FunctionComponent<
   );
 
   return (
-    <BasicModal title={`History - ${movie.title}`} {...props}>
+    <BasicModal title={`History - ${movie.title}`} {...modal}>
       <AsyncStateOverlay state={history}>
         {(data) => (
           <BasicTable

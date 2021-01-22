@@ -20,6 +20,7 @@ import {
   ContentHeaderGroup,
   ItemOverview,
   ItemEditorModal,
+  SeriesUploadModal,
   LoadingOverlay,
 } from "../../Components";
 
@@ -92,7 +93,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </ContentHeaderButton>
       </ContentHeaderGroup>
       <ContentHeaderGroup pos="end">
-        <ContentHeaderButton icon={faCloudUploadAlt}>
+        <ContentHeaderButton
+          disabled={item?.episodeFileCount === 0 ?? false}
+          icon={faCloudUploadAlt}
+          onClick={() => setModal("upload")}
+        >
           Upload
         </ContentHeaderButton>
         <ContentHeaderButton icon={faWrench} onClick={() => setModal("edit")}>
@@ -134,6 +139,11 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
             update(item.sonarrSeriesId);
           }}
         ></ItemEditorModal>
+        <SeriesUploadModal
+          series={item}
+          show={modal === "upload"}
+          onClose={() => setModal("")}
+        ></SeriesUploadModal>
       </Container>
     );
   } else {

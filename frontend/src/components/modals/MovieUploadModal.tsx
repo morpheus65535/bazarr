@@ -62,7 +62,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & ModalProps> = (
         update(movie.radarrId);
       }}
     >
-      Save
+      Upload
     </AsyncButton>
   );
 

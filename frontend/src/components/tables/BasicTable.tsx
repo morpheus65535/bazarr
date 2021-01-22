@@ -59,7 +59,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         </tr>
       ) : (
         page.map(
-          (row): JSX.Element => {
+          (row, idx): JSX.Element => {
             prepareRow(row);
             return (
               <tr {...row.getRowProps()}>

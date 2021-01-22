@@ -104,3 +104,9 @@ interface WantedMovie extends WantedItem {
   // sceneName?: any;
   title: string;
 }
+
+interface SubtitleNameInfo {
+  filename: string;
+  episode: number;
+  season: number;
+}

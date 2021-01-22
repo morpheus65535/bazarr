@@ -18,10 +18,6 @@ class SeriesApi {
     return apis.patch(`/series${path}`, form, params);
   }
 
-  delete<T>(path: string, form?: any, params?: any): Promise<AxiosResponse<T>> {
-    return apis.delete(`/series${path}`, form, params);
-  }
-
   async series(id?: number): Promise<Array<Series>> {
     return new Promise<Array<Series>>((resolve, reject) => {
       this.get<DataWrapper<Array<Series>>>("", { seriesid: id })
@@ -56,7 +52,7 @@ class SeriesApi {
 
   async scanDisk(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.patch("/disk", undefined, { radarrid: id })
+      this.patch("/disk", undefined, { seriesid: id })
         .then(() => resolve())
         .catch(reject);
     });
@@ -64,7 +60,7 @@ class SeriesApi {
 
   async searchMissing(id: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.patch("/missing", undefined, { radarrid: id })
+      this.patch("/missing", undefined, { seriesid: id })
         .then(() => resolve())
         .catch(reject);
     });

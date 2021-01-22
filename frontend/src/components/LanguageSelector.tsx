@@ -3,6 +3,7 @@ import React, { FunctionComponent, useMemo } from "react";
 import { Selector } from "./Selector";
 
 interface RootProps {
+  disabled?: boolean;
   className?: string;
   options: ExtendLanguage[];
 }
@@ -22,7 +23,7 @@ interface MultiProps extends RootProps {
 type Props = MultiProps | SingleProps;
 
 const LanguageSelector: FunctionComponent<Props> = (props) => {
-  const { className, options, ...other } = props;
+  const { disabled, className, options, ...other } = props;
 
   const items = useMemo(() => {
     return options.flatMap<Pair>((lang) => {
@@ -58,6 +59,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
   if (other.multiple) {
     return (
       <Selector
+        disabled={disabled}
         className={className}
         multiple={true}
         options={items}
@@ -79,6 +81,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     const defaultKey = selection.length > 0 ? selection[0] : undefined;
     return (
       <Selector
+        disabled={disabled}
         className={className}
         multiple={false}
         options={items}

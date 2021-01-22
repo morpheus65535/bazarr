@@ -9,7 +9,6 @@ interface SystemStatusResult {
 }
 
 interface SystemTaskResult {
-  DT_RowId: string;
   interval: string;
   job_id: string;
   job_running: boolean;
