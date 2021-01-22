@@ -6,17 +6,18 @@ import zipfile
 
 import rarfile
 from requests import Session
+from guessit import guessit
 from subliminal import Episode, Movie
 from subliminal.exceptions import ServiceUnavailable
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
 from subliminal_patch.exceptions import APIThrottled
 from subliminal_patch.providers import Provider
-from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
-server_url = "http://sapi.caretas.club/"
+server_url = "http://sapidb.caretas.club/"
 page_url = "https://sucha.caretas.club/"
 
 
@@ -27,56 +28,44 @@ class SuchaSubtitle(Subtitle):
     def __init__(
         self,
         language,
-        page_link,
+        release_info,
         filename,
-        guessit_dict,
-        download_link,
-        hearing_impaired,
+        download_id,
+        download_type,
         matches,
     ):
         super(SuchaSubtitle, self).__init__(
-            language, hearing_impaired=hearing_impaired, page_link=page_url
+            language, hearing_impaired=False, page_link=page_url
         )
-        self.download_link = download_link
-        self.referer = page_link
-        self.guessit = guessit_dict
+        self.download_id = download_id
+        self.download_type = download_type
         self.language = language
-        self.release_info = filename
+        self.guessed_release_info = release_info
         self.filename = filename
+        self.release_info = (
+            release_info if len(release_info) > len(filename) else filename
+        )
         self.found_matches = matches
 
     @property
     def id(self):
-        return self.download_link
+        return self.download_id
 
     def get_matches(self, video):
-        if (
-            video.release_group
-            and str(video.release_group).lower() in self.filename.lower()
-        ):
-            self.found_matches.add("release_group")
-
-        if video.source and video.source.lower() in self.guessit["source"].lower():
-            self.found_matches.add("source")
-
-        if (
-            video.resolution
-            and video.resolution.lower() in self.guessit["resolution"].lower()
-        ):
-            self.found_matches.add("resolution")
-
-        if (
-            video.audio_codec
-            and video.audio_codec.lower() in self.guessit["audio_codec"].lower()
-        ):
-            self.found_matches.add("audio_codec")
-
-        if (
-            video.video_codec
-            and video.video_codec.lower() in self.guessit["video_codec"].lower()
-        ):
-            self.found_matches.add("video_codec")
-
+        self.found_matches |= guess_matches(
+            video,
+            guessit(
+                self.filename,
+                {"type": "episode" if isinstance(video, Episode) else "movie"},
+            ),
+        )
+        self.found_matches |= guess_matches(
+            video,
+            guessit(
+                self.guessed_release_info,
+                {"type": "episode" if isinstance(video, Episode) else "movie"},
+            ),
+        )
         return self.found_matches
 
 
@@ -85,7 +74,6 @@ class SuchaProvider(Provider):
 
     languages = {Language.fromalpha2(l) for l in ["es"]}
     language_list = list(languages)
-    logger.debug(languages)
     video_types = (Episode, Movie)
 
     def initialize(self):
@@ -98,9 +86,8 @@ class SuchaProvider(Provider):
         self.session.close()
 
     def query(self, languages, video):
-        movie_year = video.year if video.year else None
-        is_episode = True if isinstance(video, Episode) else False
-        imdb_id = video.imdb_id if video.imdb_id else None
+        movie_year = video.year if video.year else "0"
+        is_episode = isinstance(video, Episode)
         language = self.language_list[0]
         if is_episode:
             q = {
@@ -109,64 +96,48 @@ class SuchaProvider(Provider):
                 )
             }
         else:
-            if imdb_id:
-                q = {"query": imdb_id}
-            else:
-                q = {"query": video.title, "year": movie_year}
-
+            q = {"query": video.title, "year": movie_year}
         logger.debug("Searching subtitles: {}".format(q["query"]))
-
-        res = self.session.get(server_url + "search", params=q, timeout=10)
+        res = self.session.get(
+            server_url + ("episode" if is_episode else "movie"), params=q, timeout=10
+        )
         res.raise_for_status()
         result = res.json()
-
-        try:
-            subtitles = []
-            for i in result["results"]:
-                matches = set()
-                # We use 'in' instead of '==' since Subdivx titles are
-                # irregular
-                if video.title.lower() in i["title"].lower():
-                    matches.add("title")
-                if is_episode:
-                    if q["query"].lower() in i["title"].lower():
-                        matches.add("title")
-                        matches.add("series")
-                        matches.add("imdb_id")
-                        matches.add("season")
-                        matches.add("episode")
-                        matches.add("year")
-                if i["year"] == video.year:
-                    matches.add("year")
-                if imdb_id:
-                    matches.add("imdb_id")
-
-                # We'll add release group info (if found) to the pseudo filename 
-                # in order to show it in the manual search
-                filename = i["pseudo_file"]
+        subtitles = []
+        for i in result:
+            matches = set()
+            try:
                 if (
-                    video.release_group
-                    and str(video.release_group).lower() in i["original_description"]
+                    video.title.lower() in i["title"].lower()
+                    or video.title.lower() in i["alt_title"].lower()
                 ):
-                    filename = i["pseudo_file"].replace(
-                        ".es.srt", "-" + str(video.release_group) + ".es.srt"
-                    )
-
-                subtitles.append(
-                    SuchaSubtitle(
-                        language,
-                        i["referer"],
-                        filename,
-                        i["guessit"],
-                        i["download_url"],
-                        i["hearing_impaired"],
-                        matches,
-                    )
+                    matches.add("title")
+            except TypeError:
+                logger.debug("No subtitles found")
+                return []
+            if is_episode:
+                if (
+                    q["query"].lower() in i["title"].lower()
+                    or q["query"].lower() in i["alt_title"].lower()
+                ):
+                    matches.add("title")
+                    matches.add("series")
+                    matches.add("season")
+                    matches.add("episode")
+                    matches.add("year")
+            if str(i["year"]) == video.year:
+                matches.add("year")
+            subtitles.append(
+                SuchaSubtitle(
+                    language,
+                    i["release"],
+                    i["filename"],
+                    str(i["id"]),
+                    "episode" if is_episode else "movie",
+                    matches,
                 )
-            return subtitles
-        except KeyError:
-            logger.debug("No subtitles found")
-            return []
+            )
+        return subtitles
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
@@ -206,7 +177,9 @@ class SuchaProvider(Provider):
     def download_subtitle(self, subtitle):
         logger.info("Downloading subtitle %r", subtitle)
         response = self.session.get(
-            subtitle.download_link, headers={"Referer": subtitle.page_link}, timeout=10
+            server_url + "download",
+            params={"id": subtitle.download_id, "type": subtitle.download_type},
+            timeout=10,
         )
         response.raise_for_status()
         self._check_response(response)

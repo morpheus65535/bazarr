@@ -3,8 +3,6 @@
 import os
 import io
 import rarfile
-import json
-import hashlib
 import sys
 import subprocess
 
@@ -126,36 +124,39 @@ if not os.path.exists(os.path.join(args.config_dir, 'config', 'releases.txt')):
 
 config_file = os.path.normpath(os.path.join(args.config_dir, 'config', 'config.ini'))
 
+# Commenting out the password reset process as it could be having unwanted effects and most of the users have already
+# moved to new password hashing algorithm.
+
 # Reset form login password for Bazarr after migration from 0.8.x to 0.9. Password will be equal to username.
-if settings.auth.type == 'form' and \
-        os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-    username = False
-    with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))) as json_file:
-        try:
-            data = json.load(json_file)
-            username = next(iter(data))
-        except:
-            logging.error('BAZARR is unable to migrate credentials. You should disable login by modifying config.ini '
-                          'file and settings [auth]-->type = None')
-    if username:
-        settings.auth.username = username
-        settings.auth.password = hashlib.md5(username.encode('utf-8')).hexdigest()
-        with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
-            settings.write(handle)
-        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
-        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
-        os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
-        logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
-                     'to your username. Please change it as soon as possible in settings.')
-else:
-    if os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
-        try:
-            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
-            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
-            os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
-        except:
-            logging.error("BAZARR cannot delete those file. Please do it manually: users.json, roles.json, "
-                          "register.json")
+# if settings.auth.type == 'form' and \
+#         os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+#     username = False
+#     with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))) as json_file:
+#         try:
+#             data = json.load(json_file)
+#             username = next(iter(data))
+#         except:
+#             logging.error('BAZARR is unable to migrate credentials. You should disable login by modifying config.ini '
+#                           'file and settings [auth]-->type = None')
+#     if username:
+#         settings.auth.username = username
+#         settings.auth.password = hashlib.md5(username.encode('utf-8')).hexdigest()
+#         with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
+#             settings.write(handle)
+#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+#         os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+#         logging.info('BAZARR your login credentials have been migrated successfully and your password is now equal '
+#                      'to your username. Please change it as soon as possible in settings.')
+# else:
+#     if os.path.exists(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json'))):
+#         try:
+#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'users.json')))
+#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'roles.json')))
+#             os.remove(os.path.normpath(os.path.join(args.config_dir, 'config', 'register.json')))
+#         except:
+#             logging.error("BAZARR cannot delete those file. Please do it manually: users.json, roles.json, "
+#                           "register.json")
 
 
 def init_binaries():

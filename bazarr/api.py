@@ -1,15 +1,12 @@
 # coding=utf-8
 
-import os
 import ast
 from datetime import timedelta
-import datetime
 from dateutil import rrule
 import pretty
 import time
 from operator import itemgetter
 import platform
-import io
 import re
 import json
 
@@ -19,13 +16,13 @@ from logger import empty_log
 
 from init import *
 import logging
-from database import database, get_exclusion_clause
+from database import database, get_exclusion_clause, get_profiles_list, get_desired_languages, get_profile_id_name, \
+    get_audio_profile_languages, update_profile_id_list
 from helper import path_mappings
-from get_languages import language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, alpha2_from_language, \
-    alpha3_from_language, alpha3_from_alpha2
-from get_subtitle import download_subtitle, series_download_subtitles, movies_download_subtitles, \
-    manual_search, manual_download_subtitle, manual_upload_subtitle, wanted_search_missing_subtitles_series, \
-    wanted_search_missing_subtitles_movies, episode_download_subtitles, movies_download_subtitles
+from get_languages import language_from_alpha2, alpha3_from_alpha2
+from get_subtitle import download_subtitle, series_download_subtitles, manual_search, manual_download_subtitle, \
+    manual_upload_subtitle, wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    episode_download_subtitles, movies_download_subtitles
 from notifier import send_notifications, send_notifications_movie
 from list_subtitles import store_subtitles, store_subtitles_movie, series_scan_subtitles, movies_scan_subtitles, \
     list_missing_subtitles, list_missing_subtitles_movies
@@ -126,6 +123,12 @@ class Languages(Resource):
         return jsonify(result)
 
 
+class LanguagesProfiles(Resource):
+    @authenticate
+    def get(self):
+        return jsonify(data=get_profiles_list())
+
+
 class Notifications(Resource):
     @authenticate
     def get(self):
@@ -175,6 +178,40 @@ class SystemSettings(Resource):
 
     @authenticate
     def post(self):
+        languages_profiles = request.form.get('languages_profiles')
+        if languages_profiles:
+            existing_ids = database.execute('SELECT profileId FROM table_languages_profiles')
+            existing = [x['profileId'] for x in existing_ids]
+            for item in json.loads(languages_profiles):
+                if item['profileId'] in existing:
+                    # Update existing profiles
+                    database.execute('UPDATE table_languages_profiles SET name = ?, cutoff = ?, items = ? '
+                                     'WHERE profileId = ?', (item['name'],
+                                                             item['cutoff'] if item['cutoff'] != '' else None,
+                                                             item['items'],
+                                                             item['profileId']))
+                    existing.remove(item['profileId'])
+                else:
+                    # Add new profiles
+                    database.execute('INSERT INTO table_languages_profiles (profileId, name, cutoff, items) '
+                                     'VALUES (?, ?, ?, ?)', (item['profileId'],
+                                                             item['name'],
+                                                             item['cutoff'] if item['cutoff'] != '' else None,
+                                                             item['items']))
+            for profileId in existing:
+                # Unassign this profileId from series and movies
+                database.execute('UPDATE table_shows SET profileId = null WHERE profileId = ?', (profileId,))
+                database.execute('UPDATE table_movies SET profileId = null WHERE profileId = ?', (profileId,))
+                # Remove deleted profiles
+                database.execute('DELETE FROM table_languages_profiles WHERE profileId = ?', (profileId,))
+
+            update_profile_id_list()
+
+            if settings.general.getboolean('use_sonarr'):
+                scheduler.add_job(list_missing_subtitles, kwargs={'send_event': False})
+            if settings.general.getboolean('use_radarr'):
+                scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': False})
+
         save_settings(zip(request.form.keys(), request.form.listvalues()))
         return '', 200
 
@@ -200,7 +237,7 @@ class SystemTasks(Resource):
 
         scheduler.execute_job_now(taskid)
 
-        return '', 200
+        return '', 204
 
 
 class SystemLogs(Resource):
@@ -271,19 +308,14 @@ class Series(Resource):
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (seriesId, length, start))
-            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
-                                                 (seriesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
@@ -292,6 +324,9 @@ class Series(Resource):
                                             "code3": alpha3_from_alpha2(subs)}
             else:
                 item.update({"languages": []})
+
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
             # Parse alternate titles
             if item['alternateTitles']:
@@ -335,45 +370,20 @@ class Series(Resource):
             item.update({"poster": f"{base_url}images/series{poster}","fanart": f"{base_url}images/series{fanart}"})
 
             # Add the series desired subtitles language code2
-            try:
-                item.update({"desired_languages": ast.literal_eval(desired_languages)})
-            except NameError:
-                pass
+            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
 
-            item.update({"forced": item["forced"]})
-            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
         return jsonify(data=result)
 
     @authenticate
     def post(self):
         seriesId = request.args.get('seriesid')
 
-        lang = request.form.getlist('languages')
-        if len(lang) > 0:
-            pass
-        else:
-            lang = 'None'
+        languages_profile = request.form.get('profileid')
 
-        single_language = settings.general.getboolean('single_language')
-        if single_language:
-            if str(lang) == "['None']":
-                lang = 'None'
-            else:
-                lang = str(lang)
-        else:
-            if str(lang) == "['']":
-                lang = '[]'
+        if languages_profile == 'None':
+            languages_profile = None
 
-        hi = request.form.get('hi')
-        forced = request.form.get('forced')
-
-        if hi == "true":
-            hi = "True"
-        else:
-            hi = "False"
-
-        result = database.execute("UPDATE table_shows SET languages=?, hearing_impaired=?, forced=? WHERE "
-                                  "sonarrSeriesId=?", (str(lang), hi, forced, seriesId))
+        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (languages_profile, seriesId))
 
         list_missing_subtitles(no=seriesId)
 
@@ -385,16 +395,15 @@ class Series(Resource):
 class SeriesEditor(Resource):
     @authenticate
     def get(self, **kwargs):
-        result = database.execute("SELECT sonarrSeriesId, title, languages, hearing_impaired, forced, audio_language "
+        result = database.execute("SELECT sonarrSeriesId, title, audio_language, profileId "
                                   "FROM table_shows ORDER BY sortTitle")
 
         for item in result:
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
@@ -404,43 +413,30 @@ class SeriesEditor(Resource):
             else:
                 item.update({"languages": []})
 
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
+
         return jsonify(data=result)
 
 
 class SeriesEditSave(Resource):
     @authenticate
     def post(self):
-        lang = request.form.getlist('languages[]')
-        hi = request.form.getlist('hi[]')
-        forced = request.form.getlist('forced[]')
+        lang = request.form.get('languages')
 
-        if lang == ['None']:
-            lang = 'None'
+        if lang == 'None':
+            lang = None
 
         seriesIdList = []
         seriesidLangList = []
-        seriesidHiList = []
-        seriesidForcedList = []
         for item in request.form.getlist('seriesid[]'):
             seriesid = item.lstrip('row_')
             seriesIdList.append(seriesid)
-            if len(lang):
-                seriesidLangList.append([str(lang), seriesid])
-            if len(hi):
-                seriesidHiList.append([hi[0], seriesid])
-            if len(forced):
-                seriesidForcedList.append([forced[0], seriesid])
+            seriesidLangList.append([lang, seriesid])
 
         try:
-            if len(lang):
-                database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?", seriesidLangList,
-                                 execute_many=True)
-            if len(hi):
-                database.execute("UPDATE table_shows SET hearing_impaired=? WHERE  sonarrSeriesId=?", seriesidHiList,
-                                 execute_many=True)
-            if len(forced):
-                database.execute("UPDATE table_shows SET forced=? WHERE sonarrSeriesId=?", seriesidForcedList,
-                                 execute_many=True)
+            database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", seriesidLangList,
+                             execute_many=True)
         except:
             pass
         else:
@@ -460,24 +456,19 @@ class Episodes(Resource):
         episodeId = request.args.get('episodeid')
         if episodeId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
-            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
-                                                 (seriesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         elif seriesId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrSeriesId=? ORDER BY season DESC, "
                                       "episode DESC", (seriesId,))
-            desired_languages = database.execute("SELECT languages FROM table_shows WHERE sonarrSeriesId=?",
-                                                 (seriesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         else:
             return "Series ID not provided", 400
+
+        profileId = database.execute("SELECT profileId FROM table_shows WHERE sonarrSeriesId = ?", (seriesId,),
+                                     only_one=True)['profileId']
+        desired_languages = str(get_desired_languages(profileId))
+
         for item in result:
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])})
 
             # Parse subtitles
             if item['subtitles']:
@@ -549,6 +540,17 @@ class SubtitleNameInfo(Resource):
             result['filename'] = name
             if 'subtitle_language' in result:
                 result['subtitle_language'] = str(result['subtitle_language'])
+
+            if 'episode' in result:
+                result['episode'] = result['episode']
+            else:
+                result['episode'] = 0
+
+            if 'season' in result:
+                result['season'] = result['season']
+            else:
+                result['season'] = 0
+            
             results.append(result)
 
         return jsonify(data=results)
@@ -576,6 +578,12 @@ class EpisodesSubtitles(Resource):
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
+
+        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0]['name']
+        else:
+            audio_language = None
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -792,20 +800,15 @@ class Movies(Resource):
         if moviesId:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (moviesId, length, start))
-            desired_languages = database.execute("SELECT languages FROM table_movies WHERE radarrId=?",
-                                                 (moviesId,), only_one=True)['languages']
-            if desired_languages == "None":
-                desired_languages = '[]'
         else:
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
         for item in result:
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
@@ -814,6 +817,9 @@ class Movies(Resource):
                                             "code3": alpha3_from_alpha2(subs)}
             else:
                 item.update({"languages": []})
+
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
             # Parse alternate titles
             if item['alternativeTitles']:
@@ -879,10 +885,7 @@ class Movies(Resource):
             item.update({"exist": os.path.isfile(mapped_path)})
 
             # Add the movie desired subtitles language code2
-            try:
-                item.update({"desired_languages": ast.literal_eval(desired_languages)})
-            except NameError:
-                pass
+            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
 
             # map poster and fanart to server proxy
             poster = item["poster"]
@@ -898,32 +901,12 @@ class Movies(Resource):
     def post(self):
         radarrId = request.args.get('radarrid')
 
-        lang = request.form.getlist('languages')
-        if len(lang) > 0:
-            pass
-        else:
-            lang = 'None'
+        languages_profile = request.form.get('profileid')
 
-        single_language = settings.general.getboolean('single_language')
-        if single_language:
-            if str(lang) == "['None']":
-                lang = 'None'
-            else:
-                lang = str(lang)
-        else:
-            if str(lang) == "['']":
-                lang = '[]'
+        if languages_profile == 'None':
+            languages_profile = None
 
-        hi = request.form.get('hi')
-        forced = request.form.get('forced')
-
-        if hi == "true":
-            hi = "True"
-        else:
-            hi = "False"
-
-        result = database.execute("UPDATE table_movies SET languages=?, hearing_impaired=?, forced=? WHERE "
-                                  "radarrId=?", (str(lang), hi, forced, radarrId))
+        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (languages_profile, radarrId))
 
         list_missing_subtitles_movies(no=radarrId)
 
@@ -931,20 +914,18 @@ class Movies(Resource):
 
         return '', 204
 
-
 class MoviesEditor(Resource):
     @authenticate
     def get(self):
-        result = database.execute("SELECT radarrId, title, languages, hearing_impaired, forced, audio_language "
+        result = database.execute("SELECT radarrId, title, audio_language, profileId "
                                   "FROM table_movies ORDER BY sortTitle")
 
         for item in result:
             # Parse audio language
-            item.update({"audio_language": {"name": item['audio_language'],
-                                            "code2": alpha2_from_language(item['audio_language']) or None,
-                                            "code3": alpha3_from_language(item['audio_language']) or None}})
+            item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
             # Parse desired languages
+            item['languages'] = str(get_desired_languages(item['profileId']))
             if item['languages'] and item['languages'] != 'None':
                 item.update({"languages": ast.literal_eval(item['languages'])})
                 for i, subs in enumerate(item['languages']):
@@ -954,42 +935,29 @@ class MoviesEditor(Resource):
             else:
                 item.update({"languages": []})
 
+            # Parse profileId
+            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
+
         return jsonify(data=result)
 
 
 class MoviesEditSave(Resource):
     @authenticate
     def post(self):
-        lang = request.form.getlist('languages[]')
-        hi = request.form.getlist('hi[]')
-        forced = request.form.getlist('forced[]')
+        lang = request.form.get('languages')
 
-        if lang == ['None']:
-            lang = 'None'
+        if lang == 'None':
+            lang = None
 
         radarrIdList = []
         radarrIdLangList = []
-        radarrIdHiList = []
-        radarrIdForcedList = []
         for item in request.form.getlist('radarrid[]'):
             radarrid = item.lstrip('row_')
             radarrIdList.append(radarrid)
-            if len(lang):
-                radarrIdLangList.append([str(lang), radarrid])
-            if len(hi):
-                radarrIdHiList.append([hi[0], radarrid])
-            if len(forced):
-                radarrIdForcedList.append([forced[0], radarrid])
+            radarrIdLangList.append([lang, radarrid])
         try:
-            if len(lang):
-                database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?", radarrIdLangList,
-                                 execute_many=True)
-            if len(hi):
-                database.execute("UPDATE table_movies SET hearing_impaired=? WHERE  radarrId=?", radarrIdHiList,
-                                 execute_many=True)
-            if len(forced):
-                database.execute("UPDATE table_movies SET forced=? WHERE radarrId=?", radarrIdForcedList,
-                                 execute_many=True)
+            database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", radarrIdLangList,
+                             execute_many=True)
         except:
             pass
         else:
@@ -1027,6 +995,12 @@ class MovieSubtitles(Resource):
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
+        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0]['name']
+        else:
+            audio_language = None
+
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
                                        providers_auth, sceneName, title, 'movie')
@@ -1049,7 +1023,6 @@ class MovieSubtitles(Resource):
                 store_subtitles_movie(path, moviePath)
             else:
                 event_stream(type='movie', action='update', movie=int(radarrId))
-            return result, 201
         except OSError:
             pass
 
@@ -1137,9 +1110,6 @@ class ProviderMovies(Resource):
     @authenticate
     def get(self):
         # Manual Search
-        language = request.args.getlist('language')
-        hi = request.args.get('hi').capitalize()
-        forced = request.args.get('forced').capitalize()
         radarrId = request.args.get('radarrid')
         movieInfo = database.execute("SELECT title, path, sceneName FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
@@ -1147,11 +1117,13 @@ class ProviderMovies(Resource):
         moviePath = movieInfo['path']
         sceneName = movieInfo['sceneName']
         if sceneName is None: sceneName = "None"
+
+        profileId = request.args.getlist('profileid')
         
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(moviePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        data = manual_search(moviePath, profileId, providers_list, providers_auth, sceneName, title,
                              'movie')
         if not data:
             data = []
@@ -1176,6 +1148,12 @@ class ProviderMovies(Resource):
         subtitle = request.form.get('subtitle')
 
         providers_auth = get_providers_auth()
+
+        audio_language_list = get_audio_profile_languages(movie_id=radarrId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0]['name']
+        else:
+            audio_language = 'None'
 
         try:
             result = manual_download_subtitle(moviePath, language, audio_language, hi, forced, subtitle,
@@ -1208,7 +1186,6 @@ class ProviderEpisodes(Resource):
     @authenticate
     def get(self):
         # Manual Search
-        sonarrSeriesId = request.args.get('seriesid')
         sonarrEpisodeId = request.args.get('episodeid')
         episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
@@ -1217,14 +1194,12 @@ class ProviderEpisodes(Resource):
         sceneName = episodeInfo['scene_name']
         if sceneName is None: sceneName = "None"
 
-        language = request.args.getlist('language')
-        hi = request.args.get('hi').capitalize()
-        forced = request.args.get('forced').capitalize()
+        profileId = request.args.get('profileid')
 
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
-        data = manual_search(episodePath, language, hi, forced, providers_list, providers_auth, sceneName, title,
+        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
                              'series')
         if not data:
             data = []
@@ -1235,13 +1210,12 @@ class ProviderEpisodes(Resource):
         # Manual Download
         sonarrSeriesId = request.form.get('seriesid')
         sonarrEpisodeId = request.form.get('episodeid')
-        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+        episodeInfo = database.execute("SELECT title, path, scene_name FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
         title = episodeInfo['title']
         episodePath = episodeInfo['path']
         sceneName = episodeInfo['scene_name']
         if sceneName is None: sceneName = "None"
-        audio_language = episodeInfo['audio_language']
 
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
@@ -1249,6 +1223,12 @@ class ProviderEpisodes(Resource):
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
         providers_auth = get_providers_auth()
+
+        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0]['name']
+        else:
+            audio_language = 'None'
 
         try:
             result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle, selected_provider, providers_auth, sceneName, title, 'series')
@@ -1398,8 +1378,7 @@ class HistorySeries(Resource):
                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId INNER JOIN table_shows on "
                 "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE action IN (" +
                 ','.join(map(str, query_actions)) + ") AND  timestamp > ? AND score is not null" + 
-                get_exclusion_clause('series') + " GROUP BY table_history.video_path, table_history.language", 
-                (minimum_timestamp,))
+                get_exclusion_clause('series') + " GROUP BY table_history.video_path", (minimum_timestamp,))
 
             for upgradable_episode in upgradable_episodes:
                 if upgradable_episode['timestamp'] > minimum_timestamp:
@@ -1416,16 +1395,16 @@ class HistorySeries(Resource):
                                 "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
                                 "table_history.description, table_history.sonarrSeriesId, table_episodes.path, "
                                 "table_history.language, table_history.score, table_shows.tags, table_history.action, "
-                                "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider "
-                                "FROM table_history LEFT JOIN table_shows on table_shows.sonarrSeriesId = "
-                                "table_history.sonarrSeriesId LEFT JOIN table_episodes on "
+                                "table_history.subtitles_path, table_history.sonarrEpisodeId, table_history.provider, "
+                                "table_shows.seriesType FROM table_history LEFT JOIN table_shows on "
+                                "table_shows.sonarrSeriesId = table_history.sonarrSeriesId LEFT JOIN table_episodes on "
                                 "table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
                                 "table_episodes.title is not NULL ORDER BY timestamp DESC LIMIT ? OFFSET ?",
                                 (length, start))
 
         for item in data:
             # Mark episode as upgradable or not
-            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored'])} in upgradable_episodes_not_perfect:
+            if {"video_path": str(item['path']), "timestamp": float(item['timestamp']), "score": str(item['score']), "tags": str(item['tags']), "monitored": str(item['monitored']), "seriesType": str(item['seriesType'])} in upgradable_episodes_not_perfect:
                 item.update({"upgradable": True})
             else:
                 item.update({"upgradable": False})
@@ -1500,8 +1479,8 @@ class HistoryMovies(Resource):
             upgradable_movies = database.execute(
                 "SELECT video_path, MAX(timestamp) as timestamp, score, tags, monitored FROM table_history_movie "
                 "INNER JOIN table_movies on table_movies.radarrId=table_history_movie.radarrId WHERE action IN (" +
-                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" + 
-                get_exclusion_clause('movie') + " GROUP BY video_path, language", (minimum_timestamp,))
+                ','.join(map(str, query_actions)) + ") AND timestamp > ? AND score is not NULL" +
+                get_exclusion_clause('movie') + " GROUP BY video_path", (minimum_timestamp,))
 
             for upgradable_movie in upgradable_movies:
                 if upgradable_movie['timestamp'] > minimum_timestamp:
@@ -1636,7 +1615,7 @@ class WantedSeries(Resource):
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
-                                "table_episodes.sonarrSeriesId, table_episodes.path, table_shows.hearing_impaired, "
+                                "table_episodes.sonarrSeriesId, table_episodes.path, "
                                 "table_episodes.sonarrEpisodeId, table_episodes.scene_name, table_shows.tags, "
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
@@ -1677,7 +1656,7 @@ class WantedSeries(Resource):
 class WantedMovies(Resource):
     @authenticate
     def get(self):
-        data = database.execute("SELECT title, missing_subtitles, radarrId, path, hearing_impaired, sceneName, "
+        data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
                                 get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
 
@@ -1967,6 +1946,7 @@ api.add_resource(SystemStatus, '/system/status')
 api.add_resource(SystemReleases, '/system/releases')
 api.add_resource(SystemSettings, '/system/settings')
 api.add_resource(Languages, '/system/languages')
+api.add_resource(LanguagesProfiles, '/system/languages/profiles')
 
 api.add_resource(SubtitleNameInfo, '/subtitles/info')
 # api.add_resource(SyncSubtitles, '/subtitles/sync')

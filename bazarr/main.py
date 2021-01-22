@@ -1,31 +1,29 @@
 # coding=utf-8
 
-bazarr_version = '0.9.0.6'
+bazarr_version = '0.9.1'
 
 import os
+
 os.environ["BAZARR_VERSION"] = bazarr_version
 
 import gc
-import sys
 import libs
 
 import hashlib
 import apprise
-import requests
 import calendar
 
-
 from get_args import args
-from config import settings, url_sonarr, url_radarr, url_radarr_short, url_sonarr_short, base_url, configure_proxy_func
+from logger import empty_log
+from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
-from database import database, dict_mapper
+from database import database
 
 from notifier import update_notifier
 
 from urllib.parse import unquote
-from get_languages import load_language_in_db, language_from_alpha3, language_from_alpha2, alpha2_from_alpha3, \
-    alpha3_from_alpha2
+from get_languages import load_language_in_db, language_from_alpha2, alpha3_from_alpha2
 from flask import make_response, request, redirect, abort, render_template, Response, session, flash, url_for, \
     send_file, stream_with_context
 
@@ -81,6 +79,7 @@ def login_required(f):
                 return redirect(url_for('login_page'))
         else:
             return f(*args, **kwargs)
+
     return wrap
 
 
@@ -235,7 +234,6 @@ def proxy(protocol, url):
 @app.route('/test_notification/<protocol>/<path:provider>', methods=['GET'])
 @login_required
 def test_notification(protocol, provider):
-
     provider = unquote(provider)
 
     asset = apprise.AppriseAsset(async_mode=False)
@@ -245,8 +243,8 @@ def test_notification(protocol, provider):
     apobj.add(protocol + "://" + provider)
 
     apobj.notify(
-        title='Bazarr test notification',
-        body='Test notification'
+            title='Bazarr test notification',
+            body='Test notification'
     )
 
     return '', 200

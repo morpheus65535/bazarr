@@ -7,10 +7,10 @@ import os
 import rarfile
 import re
 import zipfile
+import cloudscraper
 
 from subzero.language import Language
 from guessit import guessit
-from requests import Session
 
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
@@ -82,7 +82,7 @@ class Subs4SeriesProvider(Provider):
         self.session = None
 
     def initialize(self):
-        self.session = Session()
+        self.session = cloudscraper.create_scraper(debug=False)
         self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, ' \
                                              'like Gecko) Chrome/83.0.4103.116 Safari/537.36'
         # We don't use FIRST_THOUSAND_OR_SO_USER_AGENTS list because it includes mobile browser that get redirected to

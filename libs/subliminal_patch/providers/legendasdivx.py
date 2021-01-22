@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
 import logging
 import io
 import os
@@ -189,6 +188,8 @@ class LegendasdivxProvider(Provider):
     def login(self):
         logger.debug('Legendasdivx.pt :: Logging in')
         try:
+            # sleep for a 1 second before another request
+            sleep(1)
             res = self.session.get(self.loginpage)
             res.raise_for_status()
             bsoup = ParserBeautifulSoup(res.content, ['lxml'])
@@ -199,9 +200,10 @@ class LegendasdivxProvider(Provider):
             for field in _allinputs:
                 data[field.get('name')] = field.get('value')
 
+            # sleep for a 1 second before another request
+            sleep(1)
             data['username'] = self.username
             data['password'] = self.password
-
             res = self.session.post(self.loginpage, data)
             res.raise_for_status()
             # make sure we're logged in
@@ -328,6 +330,8 @@ class LegendasdivxProvider(Provider):
                     if isinstance(video, Episode):
                         logger.debug("Legendasdivx.pt :: trying again with just series and season on query.")
                         querytext = re.sub("(e|E)(\d{2})", "", querytext)
+                        # sleep for a 1 second before another request
+                        sleep(1)
                         res = self.session.get(_searchurl.format(query=querytext), allow_redirects=False)
                         res.raise_for_status()
                         if (res.status_code == 200 and "A legenda não foi encontrada" in res.text):
@@ -339,6 +343,8 @@ class LegendasdivxProvider(Provider):
                     logger.debug("Legendasdivx.pt :: Logging in again. Cookies have expired!")
                     # login and try again
                     self.login()
+                    # sleep for a 1 second before another request
+                    sleep(1)
                     res = self.session.get(_searchurl.format(query=querytext))
                     res.raise_for_status()
             except HTTPError as e:
@@ -373,6 +379,8 @@ class LegendasdivxProvider(Provider):
                     sleep(1) # another 1 sec before requesting...
                     _search_next = self.searchurl.format(query=querytext) + "&page={0}".format(str(num_page))
                     logger.debug("Legendasdivx.pt :: Moving on to next page: %s", _search_next)
+                    # sleep for a 1 second before another request
+                    sleep(1)
                     res = self.session.get(_search_next)
                     next_page = ParserBeautifulSoup(res.content, ['html.parser'])
                     subs = self._process_page(video, next_page)
@@ -386,6 +394,8 @@ class LegendasdivxProvider(Provider):
     def download_subtitle(self, subtitle):
 
         try:
+            # sleep for a 1 second before another request
+            sleep(1)
             res = self.session.get(subtitle.page_link)
             res.raise_for_status()
         except HTTPError as e:

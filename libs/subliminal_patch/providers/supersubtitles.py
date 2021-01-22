@@ -229,6 +229,8 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 continue
 
             result_title = result_title.strip().replace("�", "").replace(" ", ".")
+            if not result_title:
+                continue
 
             guessable = result_title.strip() + ".s01e01." + result_year
             guess = guessit(guessable, {'type': "episode"})

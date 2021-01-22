@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import pycountry
-import ast
 
 from subzero.language import Language
 from database import database
@@ -74,49 +73,6 @@ def get_language_set():
             language_set.add(Language(lang['code3']))
     
     return language_set
-
-
-def clean_desired_languages():
-    from list_subtitles import list_missing_subtitles, list_missing_subtitles_movies
-    enabled_languages = []
-    enabled_languages_temp = database.execute("SELECT code2 FROM table_settings_languages WHERE enabled=1")
-    for language in enabled_languages_temp:
-        enabled_languages.append(language['code2'])
-
-    series_languages = database.execute("SELECT sonarrSeriesId, languages FROM table_shows")
-    movies_languages = database.execute("SELECT radarrId, languages FROM table_movies")
-
-    for item in series_languages:
-        if item['languages'] != 'None':
-            try:
-                languages_list = ast.literal_eval(item['languages'])
-            except:
-                pass
-            else:
-                cleaned_languages_list = []
-                for language in languages_list:
-                    if language in enabled_languages:
-                        cleaned_languages_list.append(language)
-                if cleaned_languages_list != languages_list:
-                    database.execute("UPDATE table_shows SET languages=? WHERE sonarrSeriesId=?",
-                                     (str(cleaned_languages_list), item['sonarrSeriesId']))
-                    list_missing_subtitles(no=item['sonarrSeriesId'])
-
-    for item in movies_languages:
-        if item['languages'] != 'None':
-            try:
-                languages_list = ast.literal_eval(item['languages'])
-            except:
-                pass
-            else:
-                cleaned_languages_list = []
-                for language in languages_list:
-                    if language in enabled_languages:
-                        cleaned_languages_list.append(language)
-                if cleaned_languages_list != languages_list:
-                    database.execute("UPDATE table_movies SET languages=? WHERE radarrId=?",
-                                     (str(cleaned_languages_list), item['radarrId']))
-                    list_missing_subtitles_movies(no=item['radarrId'])
 
 
 if __name__ == '__main__':

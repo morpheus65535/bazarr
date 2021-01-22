@@ -9,7 +9,7 @@ from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 
 from guessit import guessit
-import cloudscraper
+from subliminal_patch.http import RetryingCFSession
 import chardet
 from bs4 import NavigableString, UnicodeDammit
 from subzero.language import Language
@@ -110,7 +110,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
         self.is_perfect_match = False
 
     def initialize(self):
-        self.session = cloudscraper.create_scraper(debug=False)
+        self.session = RetryingCFSession()
         self.session.headers['Referer'] = self.server_url
 
     def terminate(self):
@@ -119,7 +119,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
     def query_series(self, video, title):
         subtitles = []
 
-        r = self.session.get(self.search_url, params={'q': title}, timeout=10)
+        r = self.session.get(self.search_url, params={'q': title}, timeout=30)
         r.raise_for_status()
 
         soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
@@ -137,7 +137,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
         series_subs_archives_url = []
         for series_page in series_url:
             page_link = self.server_url + series_page
-            r = self.session.get(page_link, timeout=10)
+            r = self.session.get(page_link, timeout=30)
             r.raise_for_status()
 
             soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
@@ -167,7 +167,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 if matching_archive:
                     download_link = self.server_url + 'series/' + item.attrs['href']
-                    res = self.session.get(download_link, timeout=10)
+                    res = self.session.get(download_link, timeout=30)
                     res.raise_for_status()
 
                     archive = self._get_archive(res.content)
@@ -184,7 +184,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
     def query_movies(self, video, title):
         subtitles = []
 
-        r = self.session.get(self.search_url, params={'q': title}, timeout=10)
+        r = self.session.get(self.search_url, params={'q': title}, timeout=30)
         r.raise_for_status()
 
         soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
@@ -202,7 +202,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
         series_subs_archives_url = []
         for movies_page in movies_url:
             page_link = self.server_url + movies_page
-            r = self.session.get(page_link, timeout=10)
+            r = self.session.get(page_link, timeout=30)
             r.raise_for_status()
 
             soup = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
@@ -210,7 +210,7 @@ class SoustitreseuProvider(Provider, ProviderSubtitleArchiveMixin):
             movies_subs_archives = soup.select('a.subList')
             for item in movies_subs_archives:
                 download_link = self.server_url + 'films/' + item.attrs['href']
-                res = self.session.get(download_link, timeout=10)
+                res = self.session.get(download_link, timeout=30)
                 res.raise_for_status()
 
                 archive = self._get_archive(res.content)

@@ -4,7 +4,8 @@ from get_episodes import sync_episodes, update_all_episodes
 from get_movies import update_movies, update_all_movies
 from get_series import update_series
 from config import settings
-from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, upgrade_subtitles
+from get_subtitle import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    upgrade_subtitles
 from utils import cache_maintenance
 from get_args import args
 if not args.no_update:
@@ -21,6 +22,7 @@ from calendar import day_name
 import pretty
 from random import randrange
 from event_handler import event_stream
+import os
 
 
 class Scheduler:
@@ -62,10 +64,10 @@ class Scheduler:
         if args.no_tasks:
             self.__no_task()
 
-    def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None):
+    def add_job(self, job, name=None, max_instances=1, coalesce=True, args=None, kwargs=None):
         self.aps_scheduler.add_job(
             job, DateTrigger(run_date=datetime.now()), name=name, id=name, max_instances=max_instances,
-            coalesce=coalesce, args=args)
+            coalesce=coalesce, args=args, kwargs=kwargs)
 
     def execute_job_now(self, taskid):
         self.aps_scheduler.modify_job(taskid, next_run_time=datetime.now())
@@ -252,3 +254,12 @@ class Scheduler:
 
 
 scheduler = Scheduler()
+
+# Force the execution of the sync process with Sonarr and Radarr after migration to v0.9.1
+if 'BAZARR_AUDIO_PROFILES_MIGRATION' in os.environ:
+    if settings.general.getboolean('use_sonarr'):
+        scheduler.aps_scheduler.modify_job('update_series', next_run_time=datetime.now())
+        scheduler.aps_scheduler.modify_job('sync_episodes', next_run_time=datetime.now())
+    if settings.general.getboolean('use_radarr'):
+        scheduler.aps_scheduler.modify_job('update_movies', next_run_time=datetime.now())
+    del os.environ['BAZARR_AUDIO_PROFILES_MIGRATION']
