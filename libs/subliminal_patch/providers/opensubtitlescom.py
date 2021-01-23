@@ -165,15 +165,22 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def search_titles(self, title):
         title_id = None
+        imdb_id = None
 
-        if self.video.imdb_id:
-            parameters = {'imdb_id': self.video.imdb_id}
-            logging.debug('Searching using this IMDB id: {}'.format(self.video.imdb_id))
+        if isinstance(self.video, Episode) and self.video.series_imdb_id:
+            imdb_id = self.video.series_imdb_id
+        elif isinstance(self.video, Movie) and self.video.imdb_id:
+            imdb_id = self.video.imdb_id
+
+        if imdb_id:
+            parameters = {'imdb_id': imdb_id}
+            logging.debug('Searching using this IMDB id: {}'.format(imdb_id))
         else:
             parameters = {'query': title}
             logging.debug('Searching using this title: {}'.format(title))
 
         results = self.session.get(self.server_url + 'features', params=parameters, timeout=10)
+        results.raise_for_status()
 
         if results.status_code == 401:
             logging.debug('Authentification failed: clearing cache and attempting to login.')
@@ -181,13 +188,12 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             self.login()
 
             results = self.session.get(self.server_url + 'features', params=parameters, timeout=10)
+            results.raise_for_status()
 
             if results.status_code == 429:
                 raise TooManyRequests()
         elif results.status_code == 429:
             raise TooManyRequests()
-
-        results.raise_for_status()
 
         # deserialize results
         try:
@@ -207,7 +213,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 return title_id
         finally:
             if not title_id:
-                logger.debug('No match found for {}}'.format(title))
+                logger.debug('No match found for {}'.format(title))
 
     def query(self, languages, video):
         self.video = video
@@ -275,21 +281,22 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                     else:
                         moviehash_match = False
 
-                    subtitle = OpenSubtitlesComSubtitle(
-                            language=Language.fromietf(item['attributes']['language']),
-                            hearing_impaired=item['attributes']['hearing_impaired'],
-                            page_link=item['attributes']['url'],
-                            file_id=item['attributes']['files'][0]['file_id'],
-                            releases=item['attributes']['release'],
-                            uploader=item['attributes']['uploader']['name'],
-                            title=item['attributes']['feature_details']['movie_name'],
-                            year=item['attributes']['feature_details']['year'],
-                            season=season_number,
-                            episode=episode_number,
-                            hash_matched=moviehash_match
-                        )
-                    subtitle.get_matches(self.video)
-                    subtitles.append(subtitle)
+                    if len(item['attributes']['files']):
+                        subtitle = OpenSubtitlesComSubtitle(
+                                language=Language.fromietf(item['attributes']['language']),
+                                hearing_impaired=item['attributes']['hearing_impaired'],
+                                page_link=item['attributes']['url'],
+                                file_id=item['attributes']['files'][0]['file_id'],
+                                releases=item['attributes']['release'],
+                                uploader=item['attributes']['uploader']['name'],
+                                title=item['attributes']['feature_details']['movie_name'],
+                                year=item['attributes']['feature_details']['year'],
+                                season=season_number,
+                                episode=episode_number,
+                                hash_matched=moviehash_match
+                            )
+                        subtitle.get_matches(self.video)
+                        subtitles.append(subtitle)
 
         return subtitles
 
@@ -308,7 +315,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         if res.status_code == 429:
             raise TooManyRequests()
-        elif res.status_code == 407:
+        elif res.status_code == 406:
             raise DownloadLimitExceeded("Daily download limit reached")
         else:
             try:
@@ -318,6 +325,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             else:
                 r = self.session.get(subtitle.download_link, timeout=10)
                 r.raise_for_status()
+
+                if res.status_code == 429:
+                    raise TooManyRequests()
+                elif res.status_code == 406:
+                    raise DownloadLimitExceeded("Daily download limit reached")
 
                 subtitle_content = r.content
 
