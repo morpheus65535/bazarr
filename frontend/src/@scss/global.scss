@@ -10,8 +10,8 @@ td {
   max-width: 360px;
 }
 
-.table-responsive {
-  .dropdown-menu {
-    overflow: visible;
+.dropdown-hidden {
+  &::after {
+    display: none;
   }
 }

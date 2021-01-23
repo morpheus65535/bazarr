@@ -11,25 +11,28 @@ class SystemApi {
     formdata?: any,
     params?: any
   ): Promise<AxiosResponse<T>> {
-    return apis.post(`/system/${path}`, formdata, params);
+    return apis.post(`/system${path}`, formdata, params);
   }
 
   private delete<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
-    return apis.axios.delete(`/system/${path}`, { params });
+    return apis.axios.delete(`/system${path}`, { params });
   }
 
-  // TODO: Shutdown and Restart
-  // async shutdown() {
-  //   return this.get<void>("shutdown");
-  // }
+  async performAction(action: string) {
+    return this.postForm<void>("", undefined, { action });
+  }
 
-  // async restart() {
-  //   return this.get<void>("restart");
-  // }
+  async shutdown() {
+    return this.performAction("shutdown");
+  }
+
+  async restart() {
+    return this.performAction("restart");
+  }
 
   async settings() {
     return new Promise<SystemSettings>((resolve, reject) => {
-      this.get<SystemSettings>("settings")
+      this.get<SystemSettings>("/settings")
         .then((result) => {
           resolve(result.data);
         })
@@ -39,7 +42,7 @@ class SystemApi {
 
   async setSettings(data: object) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("settings", data)
+      this.postForm<void>("/settings", data)
         .then((res) => {
           resolve();
         })
@@ -49,7 +52,7 @@ class SystemApi {
 
   async languages(enabled: boolean) {
     return new Promise<Array<Language>>((resolve, reject) => {
-      this.get<Array<Language>>("languages", { enabled })
+      this.get<Array<Language>>("/languages", { enabled })
         .then((result) => {
           resolve(result.data);
         })
@@ -61,7 +64,7 @@ class SystemApi {
 
   async languagesProfileList() {
     return new Promise<Array<LanguagesProfile>>((resolve, reject) => {
-      this.get<Array<LanguagesProfile>>("languages/profiles")
+      this.get<Array<LanguagesProfile>>("/languages/profiles")
         .then((result) => resolve(result.data))
         .catch(reject);
     });
@@ -69,7 +72,7 @@ class SystemApi {
 
   async status() {
     return new Promise<SystemStatusResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemStatusResult>>("status")
+      this.get<DataWrapper<SystemStatusResult>>("/status")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -81,7 +84,7 @@ class SystemApi {
 
   async logs() {
     return new Promise<Array<SystemLog>>((resolve, reject) => {
-      this.get<DataWrapper<Array<SystemLog>>>("logs")
+      this.get<DataWrapper<Array<SystemLog>>>("/logs")
         .then((result) => resolve(result.data.data))
         .catch((err) => reject(err));
     });
@@ -89,7 +92,7 @@ class SystemApi {
 
   async deleteLogs() {
     return new Promise<void>((resolve, reject) => {
-      this.delete<void>("logs")
+      this.delete<void>("/logs")
         .then(() => resolve())
         .catch((err) => reject(err));
     });
@@ -97,7 +100,7 @@ class SystemApi {
 
   async getTasks() {
     return new Promise<SystemTaskResult>((resolve, reject) => {
-      this.get<DataWrapper<SystemTaskResult>>("tasks")
+      this.get<DataWrapper<SystemTaskResult>>("/tasks")
         .then((result) => {
           resolve(result.data.data);
         })
@@ -109,7 +112,7 @@ class SystemApi {
 
   async execTasks(id: string) {
     return new Promise<void>((resolve, reject) => {
-      this.postForm<void>("tasks", { taskid: id })
+      this.postForm<void>("/tasks", { taskid: id })
         .then(() => {
           resolve();
         })

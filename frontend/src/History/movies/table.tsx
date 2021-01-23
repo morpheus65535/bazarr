@@ -49,7 +49,6 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         Header: "Description",
         accessor: "description",
-        className: "text-nowrap",
       },
       {
         accessor: "radarrId",

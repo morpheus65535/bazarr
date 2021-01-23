@@ -39,7 +39,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
   const cutoff = useMemo(() => {
     const options = { ...cutoffOptions };
     current.items.forEach((v) => {
-      options[v.id] = `Item ${v.id}`;
+      options[v.id] = `ID ${v.id}`;
     });
     return options;
   }, [current.items]);

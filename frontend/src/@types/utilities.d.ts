@@ -10,3 +10,5 @@ type Pair = {
   key: string;
   value: string;
 };
+
+type PromiseType<T> = T extends Promise<infer D> ? D : T;

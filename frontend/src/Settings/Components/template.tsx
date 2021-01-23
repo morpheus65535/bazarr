@@ -60,7 +60,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
       setUpdating(false);
       update();
     });
-  }, [willChange]);
+  }, [willChange, update]);
 
   return (
     <AsyncStateOverlay state={settings}>

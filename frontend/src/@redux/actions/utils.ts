@@ -5,11 +5,11 @@ import {
 } from "../types";
 
 // Create a async action
-function asyncActionCreator<P, T extends (...args: any[]) => Promise<P>>(
+function asyncActionCreator<T extends (...args: any[]) => Promise<any>>(
   type: string,
   promise: T,
   args: Parameters<T>
-): AsyncActionDispatcher<P> {
+): AsyncActionDispatcher<PromiseType<ReturnType<T>>> {
   return (dispatch) => {
     dispatch({
       type,

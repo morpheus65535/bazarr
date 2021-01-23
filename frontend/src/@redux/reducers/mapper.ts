@@ -26,10 +26,10 @@ export function mapToAsyncState<Payload>(
 }
 
 export function updateAsyncList<T, ID extends keyof T>(
-  action: AsyncAction<Array<T>>,
-  state: AsyncState<Array<T>>,
+  action: AsyncAction<T[]>,
+  state: AsyncState<T[]>,
   match: ID
-): AsyncState<Array<T>> {
+): AsyncState<T[]> {
   if (action.payload.loading) {
     return {
       ...state,
@@ -43,21 +43,20 @@ export function updateAsyncList<T, ID extends keyof T>(
       lastResult: action.payload.item as string,
     };
   } else {
-    // Deep Copy
-    // TODO: Opti Performance
-    const payload = action.payload.item as Array<T>;
-    const items = state.items.map((val) => {
-      const idx = payload.findIndex((old) => old[match] === val[match]);
+    const list = [...(state.items as T[])];
+    const payload = action.payload.item as T[];
+
+    payload.forEach((v) => {
+      const idx = list.findIndex((old) => old[match] === v[match]);
+
       if (idx !== -1) {
-        return payload[idx];
-      } else {
-        return val;
+        list[idx] = v;
       }
     });
+
     return {
       updating: false,
-      lastResult: undefined,
-      items,
+      items: list,
     };
   }
 }

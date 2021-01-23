@@ -109,7 +109,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   if (item) {
     const details = [
-      "TODO",
+      // TODO
       // item.audio_language.name,
       item.mapped_path,
       `${item.episodeFileCount} files`,

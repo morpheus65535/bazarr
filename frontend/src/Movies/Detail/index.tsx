@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useState, useMemo } from "react";
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -58,35 +58,37 @@ const MovieDetailView: FunctionComponent<Props> = ({
 
   const [modal, setModal] = useState("");
 
-  // TODO
-  // const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
-
   const [scan, setScan] = useState(false);
   const [search, setSearch] = useState(false);
 
-  if (item) {
-    const allowEdit = item.languages instanceof Array;
+  const allowEdit = item?.languages instanceof Array ?? false;
 
-    const editButton = (
+  const editButton = useMemo(
+    () => (
       <React.Fragment>
         <ContentHeaderButton
           icon={faSearch}
           updating={search}
           onClick={() => {
             setSearch(true);
-            MoviesApi.searchMissing(item.radarrId).finally(() => {
-              setSearch(false);
-              update(item.radarrId);
-            });
+            if (item) {
+              MoviesApi.searchMissing(item.radarrId).finally(() => {
+                setSearch(false);
+                update(item.radarrId);
+              });
+            }
           }}
         >
           Search
         </ContentHeaderButton>
         <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
       </React.Fragment>
-    );
+    ),
+    [item, search, update]
+  );
 
-    const header = (
+  const header = useMemo(
+    () => (
       <ContentHeader>
         <ContentHeaderGroup pos="start">
           <ContentHeaderButton
@@ -94,10 +96,12 @@ const MovieDetailView: FunctionComponent<Props> = ({
             updating={scan}
             onClick={() => {
               setScan(true);
-              MoviesApi.scanDisk(item.radarrId).finally(() => {
-                setScan(false);
-                update(item.radarrId);
-              });
+              if (item) {
+                MoviesApi.scanDisk(item.radarrId).finally(() => {
+                  setScan(false);
+                  update(item.radarrId);
+                });
+              }
             }}
           >
             Scan Disk
@@ -132,7 +136,13 @@ const MovieDetailView: FunctionComponent<Props> = ({
           </ContentHeaderButton>
         </ContentHeaderGroup>
       </ContentHeader>
-    );
+    ),
+    [allowEdit, editButton, item, scan, update]
+  );
+
+  if (item) {
+    // TODO: Add audio info
+    const details = [item.mapped_path, item.tags];
 
     return (
       <Container fluid>
@@ -141,7 +151,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
         </Helmet>
         {header}
         <Row>
-          <ItemOverview item={item} details={["TODO"]}></ItemOverview>
+          <ItemOverview item={item} details={details}></ItemOverview>
         </Row>
         <Row>
           <Table movie={item}></Table>

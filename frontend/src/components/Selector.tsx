@@ -107,16 +107,14 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
     (p: Pair, checked?: boolean) => (
       <Dropdown.Item
         key={p.key}
+        eventKey={p.key}
         className="d-flex justify-content-between align-items-center"
-        onClick={(e) => {
-          updateSelection(p.key);
-        }}
       >
         <span>{p.value}</span>
         {checked && <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>}
       </Dropdown.Item>
     ),
-    [updateSelection]
+    []
   );
 
   const items = useMemo(() => {
@@ -183,7 +181,15 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
   }, [selectKey, other, findValue]);
 
   return (
-    <Dropdown defaultValue={selectKey} className={className}>
+    <Dropdown
+      defaultValue={selectKey}
+      className={className}
+      onSelect={(key) => {
+        if (key) {
+          updateSelection(key);
+        }
+      }}
+    >
       <Dropdown.Toggle
         disabled={disabled}
         block
