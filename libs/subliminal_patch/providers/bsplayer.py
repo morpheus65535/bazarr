@@ -7,10 +7,10 @@ from requests import Session
 from guessit import guessit
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
-from subliminal.utils import sanitize_release_group
 from subliminal.subtitle import guess_matches
 from subliminal.video import Episode, Movie
 from subzero.language import Language
+from subliminal.exceptions import ServiceUnavailable
 
 import gzip
 import random
@@ -234,12 +234,33 @@ class BSPlayerProvider(Provider):
         return self.query(video, video.hashes['bsplayer'], languages)
 
     def get_sub_domain(self):
+        API_URL_TEMPLATE = None
+        session = Session()
         # s1-9, s101-109
         SUB_DOMAINS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8',
                        's101', 's102', 's103', 's104', 's105', 's106', 's107', 's108', 's109']
-        API_URL_TEMPLATE = "http://{sub_domain}.api.bsplayer-subtitles.com/v1.php"
-        sub_domains_end = len(SUB_DOMAINS) - 1
-        return API_URL_TEMPLATE.format(sub_domain=SUB_DOMAINS[random.randint(0, sub_domains_end)])
+        random.shuffle(SUB_DOMAINS)
+        for domain in SUB_DOMAINS:
+            TEST_URL = "http://{}.api.bsplayer-subtitles.com".format(domain)
+            try:
+                logging.debug('Testing BSplayer sub-domain {}'.format(TEST_URL))
+                res = session.get(TEST_URL, timeout=5)
+            except:
+                continue
+            else:
+                res.raise_for_status()
+
+                if res.status_code == 200:
+                    API_URL_TEMPLATE = "http://{}.api.bsplayer-subtitles.com/v1.php".format(domain)
+                    break
+                else:
+                    sleep(5)
+                    continue
+
+        if API_URL_TEMPLATE:
+            return API_URL_TEMPLATE
+        else:
+            raise ServiceUnavailable()
 
     def download_subtitle(self, subtitle):
         session = Session()
