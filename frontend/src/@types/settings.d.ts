@@ -10,8 +10,6 @@ interface SystemSettings {
 
 // Basic
 
-type ForcedOptions = "True" | "False" | "Both";
-
 interface GeneralSettings {
   adaptive_searching: boolean;
   anti_captcha_provider?: string;
@@ -32,13 +30,9 @@ interface GeneralSettings {
   minimum_score: number;
   minimum_score_movie: number;
   movie_default_enabled: boolean;
-  movie_default_forced: ForcedOptions;
-  movie_default_hi: boolean;
-  movie_default_language: string[];
+  movie_default_profile?: number;
   serie_default_enabled: boolean;
-  serie_default_forced: ForcedOptions;
-  serie_default_hi: boolean;
-  serie_default_language: string[];
+  serie_default_profile?: number;
   path_mappings: string[];
   path_mappings_movie: string[];
   port: number;

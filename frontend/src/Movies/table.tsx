@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useState, useCallback } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -6,9 +6,8 @@ import { Badge } from "react-bootstrap";
 
 import {
   BasicTable,
-  ActionIcon,
+  ActionIconBadge,
   AsyncStateOverlay,
-  BooleanIndicator,
   ItemEditorModal,
 } from "../Components";
 
@@ -28,29 +27,38 @@ import { updateMovieInfo } from "../@redux/actions";
 interface Props {
   movies: AsyncState<Movie[]>;
   update: (id: number) => void;
+  profiles: LanguagesProfile[];
 }
 
-function mapStateToProps({ movie }: StoreState) {
+function mapStateToProps({ movie, system }: StoreState) {
   const { movieList } = movie;
   return {
     movies: movieList,
+    profiles: system.languagesProfiles.items,
   };
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { movies, update } = props;
+  const { movies, profiles, update } = props;
 
   const [modal, setModal] = useState<string>("");
   const [item, setItem] = useState<Movie | undefined>(undefined);
 
-  const showModal = (key: string, item: Movie) => {
+  const getProfile = useCallback(
+    (id: number) => {
+      return profiles.find((v) => v.profileId === id);
+    },
+    [profiles]
+  );
+
+  const showModal = useCallback((key: string, item: Movie) => {
     setItem(item);
     setModal(key);
-  };
+  }, []);
 
-  const hideModal = () => {
+  const hideModal = useCallback(() => {
     setModal("");
-  };
+  }, []);
 
   const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
     () => [
@@ -95,64 +103,32 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Audio",
         accessor: "audio_language",
         Cell: (row) => {
-          const audio_language = row.value;
-          return <span>{audio_language.name}</span>;
+          return row.value.map((v) => (
+            <Badge variant="secondary" key={v.code2}>
+              {v.name}
+            </Badge>
+          ));
         },
       },
       {
-        Header: "Languages",
-        accessor: "languages",
+        Header: "Languages Profile",
+        accessor: "profileId",
         Cell: (row) => {
-          const { missing_subtitles } = row.row.original;
-
-          // Subtitles
-          const languages = row.row.original.languages.map(
-            (val: Language, idx: number): JSX.Element => {
-              const missing = missing_subtitles.find(
-                (item) => item.code2 === val.code2
-              );
-              return (
-                <Badge
-                  className="mx-1"
-                  key={`${idx}-sub`}
-                  variant={missing ? "warning" : "secondary"}
-                >
-                  {val.code2}
-                </Badge>
-              );
-            }
-          );
-
-          return languages;
-        },
-      },
-      {
-        Header: "HI",
-        accessor: "hearing_impaired",
-        Cell: (row) => {
-          return <BooleanIndicator value={row.value}></BooleanIndicator>;
-        },
-      },
-      {
-        Header: "Forced",
-        accessor: "forced",
-        Cell: (row) => {
-          return (
-            <BooleanIndicator value={row.value !== "False"}></BooleanIndicator>
-          );
+          const profileId = row.value;
+          return getProfile(profileId)?.name ?? "";
         },
       },
       {
         accessor: "radarrId",
         Cell: (row) => (
-          <ActionIcon
+          <ActionIconBadge
             icon={faWrench}
             onClick={(e) => showModal("edit", row.row.original)}
-          ></ActionIcon>
+          ></ActionIconBadge>
         ),
       },
     ],
-    []
+    [getProfile, showModal]
   );
 
   return (

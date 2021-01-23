@@ -1,5 +1,5 @@
 import React from "react";
-import { LoadingOverlay } from ".";
+import { LoadingIndicator } from ".";
 
 interface Params<T> {
   state: AsyncState<T>;
@@ -21,7 +21,7 @@ class AsyncStateOverlay<T> extends React.Component<Params<T>> {
     const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
     if (state.updating && missing) {
-      return <LoadingOverlay></LoadingOverlay>;
+      return <LoadingIndicator></LoadingIndicator>;
     } else if (state.items === null || state.items === undefined) {
       return null;
     } else {

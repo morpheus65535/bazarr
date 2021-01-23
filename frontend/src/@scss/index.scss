@@ -2,6 +2,10 @@
 @import "../@scss/sidebar.scss";
 @import "../@scss/components.scss";
 
+#root {
+  height: 100vh;
+}
+
 .header-container {
   height: $header-height;
 }

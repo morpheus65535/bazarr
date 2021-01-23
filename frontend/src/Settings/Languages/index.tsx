@@ -1,10 +1,10 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useState, useMemo } from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 
 import { LanguageSelector } from "../../Components";
 
-import { forcedOptions } from "../../utilites/global";
+import Table from "./table";
 
 import {
   Group,
@@ -18,33 +18,30 @@ import {
 import SettingTemplate from "../Components/template";
 
 interface Props {
-  languages: ExtendLanguage[];
-  enabled: ExtendLanguage[];
+  languages: Language[];
+  enabled: Language[];
+  profiles: LanguagesProfile[];
 }
 
 function mapStateToProps({ system }: StoreState) {
   return {
     languages: system.languages.items,
-    enabled: system.enabledLanguage,
+    enabled: system.enabledLanguage.items,
+    profiles: system.languagesProfiles.items,
   };
 }
 
-const SettingsLanguagesView: FunctionComponent<Props> = ({
-  enabled,
-  languages,
-}) => {
-  function getLanguages(codes: string[]): ExtendLanguage[] {
-    return codes.flatMap((code) => {
-      const res = languages.find((lang) => lang.code2 === code);
-      if (res === undefined) {
-        return [];
-      } else {
-        return res;
-      }
-    });
-  }
+const SettingsLanguagesView: FunctionComponent<Props> = (props) => {
+  const [enabled, setEnabled] = useState(props.enabled);
+  const [profiles, setProfiles] = useState(props.profiles);
 
-  const [avaliable, setAvaliable] = useState(enabled);
+  const profileOptions = useMemo<Pair[]>(
+    () =>
+      profiles.map<Pair>((v) => {
+        return { key: v.profileId.toString(), value: v.name };
+      }),
+    [profiles]
+  );
 
   return (
     <SettingTemplate title="Languages - Bazarr (Settings)">
@@ -67,18 +64,29 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 subtitles filename). Results may vary.
               </Message>
             </Input>
-            <Input name="Enabled Languages">
+            <Input name="Languages Filter">
               <LanguageSelector
                 multiple
                 defaultSelect={enabled}
-                options={languages}
-                onChange={(val: ExtendLanguage[]) => {
-                  setAvaliable(val);
+                options={props.languages}
+                onChange={(val: Language[]) => {
+                  setEnabled(val);
                   const langs = val.map((v) => v.code2);
-                  update(langs, "enabled_languages");
+                  update(langs, "languages-enabled");
                 }}
               ></LanguageSelector>
             </Input>
+          </Group>
+          <Group header="Languages Profiles">
+            <Table
+              languages={enabled}
+              profiles={profiles}
+              setProfiles={(profiles: LanguagesProfile[]) => {
+                setProfiles(profiles);
+
+                update(JSON.stringify(profiles), "languages-profiles");
+              }}
+            ></Table>
           </Group>
           <Group header="Default Settings">
             <CollapseBox
@@ -101,36 +109,18 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 </Input>
               )}
             >
-              <Input name="Languages">
-                <LanguageSelector
-                  multiple
-                  options={avaliable}
-                  defaultSelect={getLanguages(
-                    settings.general.serie_default_language
-                  )}
-                  onChange={(val: ExtendLanguage[]) => {
-                    const langs = val.map((v) => v.code2);
-                    update(langs, "settings-general-serie_default_language");
-                  }}
-                ></LanguageSelector>
-              </Input>
-              <Input name="Forced">
+              <Input name="Profile">
                 <Selector
-                  defaultKey={settings.general.serie_default_forced}
-                  options={forcedOptions}
-                  onSelect={(v) =>
-                    update(v, "settings-general-serie_default_forced")
-                  }
+                  options={profileOptions}
+                  nullKey="None"
+                  defaultKey={settings.general.serie_default_profile?.toString()}
+                  onSelect={(v) => {
+                    update(
+                      v === "None" ? "" : v,
+                      "settings-general-serie_default_profile"
+                    );
+                  }}
                 ></Selector>
-              </Input>
-              <Input>
-                <Check
-                  label="Hearing-Impaired"
-                  defaultValue={settings.general.serie_default_hi}
-                  onChange={(v) =>
-                    update(v, "settings-general-serie_default_hi")
-                  }
-                ></Check>
               </Input>
             </CollapseBox>
             <CollapseBox
@@ -153,36 +143,18 @@ const SettingsLanguagesView: FunctionComponent<Props> = ({
                 </Input>
               )}
             >
-              <Input name="Languages">
-                <LanguageSelector
-                  multiple
-                  options={avaliable}
-                  defaultSelect={getLanguages(
-                    settings.general.movie_default_language
-                  )}
-                  onChange={(val: ExtendLanguage[]) => {
-                    const langs = val.map((v) => v.code2);
-                    update(langs, "settings-general-movie_default_language");
-                  }}
-                ></LanguageSelector>
-              </Input>
-              <Input name="Forced">
+              <Input name="Profile">
                 <Selector
-                  options={forcedOptions}
-                  defaultKey={settings.general.movie_default_forced}
-                  onSelect={(v) =>
-                    update(v, "settings-general-movie_default_forced")
-                  }
+                  options={profileOptions}
+                  nullKey="None"
+                  defaultKey={settings.general.movie_default_profile?.toString()}
+                  onSelect={(v) => {
+                    update(
+                      v === "None" ? "" : v,
+                      "settings-general-movie_default_profile"
+                    );
+                  }}
                 ></Selector>
-              </Input>
-              <Input>
-                <Check
-                  label="Hearing-Impaired"
-                  defaultValue={settings.general.movie_default_hi}
-                  onChange={(v) =>
-                    update(v, "settings-general-movie_default_hi")
-                  }
-                ></Check>
               </Input>
             </CollapseBox>
           </Group>

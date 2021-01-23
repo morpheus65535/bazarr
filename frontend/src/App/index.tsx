@@ -1,78 +1,68 @@
-import React from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { Container, Row } from "react-bootstrap";
 import { BrowserRouter } from "react-router-dom";
 import Router from "./Router";
 import Sidebar from "../Sidebar";
 import Header from "./Header";
 
-import "../@scss/index.scss";
-
-import { updateBadges, updateLanguagesList } from "../@redux/actions";
+import { bootstrap } from "../@redux/actions";
 import { connect } from "react-redux";
 
+import { LoadingIndicator } from "../Components";
+
 interface Props {
-  updateBadges: () => void;
-  updateLanguagesList: (enabled: boolean) => void;
+  bootstrap: () => void;
+  initialized: boolean;
 }
 
-interface State {
-  sidebarOpen: boolean;
+function mapStateToProps({ system }: StoreState) {
+  return {
+    initialized: system.initialized,
+  };
 }
 
-// function mapStateToProps({ series, movie, system }: StoreState) {
-//   return {
-//     init: series.seriesList.
-//   };
-// }
+const App: FunctionComponent<Props> = ({ bootstrap, initialized }) => {
+  useEffect(() => {
+    bootstrap();
+  }, [bootstrap]);
 
-class App extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
+  const [sidebar, setSidebar] = useState(false);
 
-    this.state = {
-      sidebarOpen: false,
-    };
-  }
-  componentDidMount() {
-    // Initialize Here
-    this.props.updateBadges();
-    this.props.updateLanguagesList(false);
-  }
+  const toggleSidebar = useCallback(() => setSidebar(!sidebar), [sidebar]);
 
-  toggleSidebar() {
-    this.setState((s) => ({
-      ...s,
-      sidebarOpen: !s.sidebarOpen,
-    }));
-  }
+  const baseUrl =
+    process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
 
-  render() {
-    const { sidebarOpen } = this.state;
-
-    let baseUrl =
-      process.env.NODE_ENV === "production" ? window.Bazarr.baseUrl : "/";
+  if (!initialized) {
     return (
-      <div id="app">
-        <BrowserRouter basename={baseUrl}>
-          <Container fluid className="p-0">
-            <Row noGutters className="header-container">
-              <Header onToggle={this.toggleSidebar.bind(this)}></Header>
-            </Row>
-            <Row noGutters className="flex-nowrap">
-              <Sidebar
-                open={sidebarOpen}
-                onToggle={this.toggleSidebar.bind(this)}
-              ></Sidebar>
-              <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
-            </Row>
-          </Container>
-        </BrowserRouter>
-      </div>
+      <LoadingIndicator>
+        <span>Please wait</span>
+      </LoadingIndicator>
     );
   }
-}
 
-export default connect(null, {
-  updateBadges,
-  updateLanguagesList,
+  return (
+    <React.Fragment>
+      <BrowserRouter basename={baseUrl}>
+        <Container fluid className="p-0">
+          <Row noGutters className="header-container">
+            <Header onToggle={toggleSidebar}></Header>
+          </Row>
+          <Row noGutters className="flex-nowrap">
+            <Sidebar open={sidebar} onToggle={toggleSidebar}></Sidebar>
+            <Router className="d-flex flex-row flex-grow-1 main-router"></Router>
+          </Row>
+        </Container>
+      </BrowserRouter>
+    </React.Fragment>
+  );
+};
+
+export default connect(mapStateToProps, {
+  bootstrap,
 })(App);

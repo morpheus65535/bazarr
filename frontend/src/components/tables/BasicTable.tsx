@@ -5,6 +5,8 @@ import { TableOptions, usePagination, useTable } from "react-table";
 interface Props<T extends object = {}> {
   options: TableOptions<T>;
   emptyText?: string;
+  pageControl?: boolean;
+  responsive?: boolean;
 }
 
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
@@ -59,7 +61,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         </tr>
       ) : (
         page.map(
-          (row, idx): JSX.Element => {
+          (row): JSX.Element => {
             prepareRow(row);
             return (
               <tr {...row.getRowProps()}>
@@ -125,8 +127,10 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
       });
   }, [pageCount, pageIndex, gotoPage]);
 
+  const pageControlEnabled = props.pageControl ?? true;
+
   const pageControl = (
-    <Container fluid>
+    <Container fluid hidden={!pageControlEnabled}>
       <Row>
         <Col className="d-flex align-items-center justify-content-start">
           <span>
@@ -154,7 +158,12 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
 
   return (
     <React.Fragment>
-      <Table striped borderless responsive {...getTableProps()}>
+      <Table
+        striped
+        borderless
+        responsive={props.responsive ?? true}
+        {...getTableProps()}
+      >
         {header}
         {body}
       </Table>

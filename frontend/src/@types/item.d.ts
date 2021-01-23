@@ -1,15 +1,21 @@
-interface ExtendLanguage {
-  code2?: string;
-  code3?: string;
-  code3b?: string;
-  enabled: boolean;
+interface Language {
+  code2: string;
   name: string;
 }
 
-interface Language {
-  code2: string;
-  code3: string;
+interface LangaugesProfileItem {
+  id: number;
+  audio_exclude: PythonBoolean;
+  forced: PythonBoolean;
+  hi: PythonBoolean;
+  language: string;
+}
+
+interface LanguagesProfile {
   name: string;
+  profileId: number;
+  cutoff: number | null;
+  items: LangaugesProfileItem[];
 }
 
 interface Subtitle extends Language {
@@ -19,7 +25,7 @@ interface Subtitle extends Language {
 }
 
 interface BasicItem {
-  audio_language: Language;
+  audio_language: Language[];
   exist: boolean;
   mapped_path: string;
   path: string;
@@ -28,10 +34,9 @@ interface BasicItem {
 
 // Temp Name
 interface ExtendItem extends BasicItem {
+  profileId: number;
   fanart: string;
-  forced: ForcedOptions;
   overview: string;
-  hearing_impaired: boolean;
   imdbId: string;
   languages: Language[];
   alternateTitles: string[];

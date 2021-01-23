@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useState, useMemo } from "react";
 import { connect } from "react-redux";
-import BasicModal, { ModalProps } from "./BasicModal";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { AsyncButton, FileForm } from "..";
 
@@ -13,24 +13,24 @@ import LanguageSelector from "../LanguageSelector";
 
 interface MovieProps {
   movie: Movie;
-  avaliableLanguages: ExtendLanguage[];
+  avaliableLanguages: Language[];
   update: (id: number) => void;
 }
 
 function mapStateToProps({ system }: StoreState) {
   return {
-    avaliableLanguages: system.enabledLanguage,
+    avaliableLanguages: system.enabledLanguage.items,
   };
 }
 
-const MovieUploadModal: FunctionComponent<MovieProps & ModalProps> = (
+const MovieUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   props
 ) => {
   const { movie, avaliableLanguages, update, ...modal } = props;
 
   const [uploading, setUpload] = useState(false);
 
-  const [language, setLanguage] = useState<ExtendLanguage | undefined>(() => {
+  const [language, setLanguage] = useState<Language | undefined>(() => {
     const lang = movie.languages.length > 0 ? movie.languages[0] : undefined;
     if (lang) {
       return avaliableLanguages.find((v) => v.code2 === lang.code2);
@@ -39,7 +39,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & ModalProps> = (
     return undefined;
   });
   const [file, setFile] = useState<File | undefined>(undefined);
-  const [forced, setForced] = useState(movie.forced === "True");
+  const [forced, setForced] = useState(false);
 
   const canUpload = useMemo(() => {
     return file !== undefined && language?.code2 !== undefined;
@@ -53,7 +53,7 @@ const MovieUploadModal: FunctionComponent<MovieProps & ModalProps> = (
         MoviesApi.uploadSubtitles(movie.radarrId, {
           file: file!,
           forced,
-          hi: movie.hearing_impaired,
+          hi: false,
           language: language!.code2!,
         })
       }

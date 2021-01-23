@@ -9,3 +9,9 @@ td {
   overflow: hidden;
   max-width: 360px;
 }
+
+.table-responsive {
+  .dropdown-menu {
+    overflow: visible;
+  }
+}

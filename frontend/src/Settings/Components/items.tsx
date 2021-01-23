@@ -18,8 +18,8 @@ export interface BasicInput<T> {
 
 type FixElement = string | (() => JSX.Element);
 
-export interface TextProps extends BasicInput<string | number> {
-  placeholder?: string | number;
+export interface TextProps extends BasicInput<React.ReactText> {
+  placeholder?: React.ReactText;
   password?: boolean;
   prefix?: FixElement;
   postfix?: FixElement;

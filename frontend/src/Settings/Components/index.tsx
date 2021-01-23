@@ -2,7 +2,7 @@ import React, { FunctionComponent, useState } from "react";
 
 import { Button } from "react-bootstrap";
 
-import { utils } from "../../apis";
+import { UtilsApi } from "../../apis";
 
 type TestResponse =
   | {
@@ -47,17 +47,19 @@ export const TestUrlButton: FunctionComponent<TestUrlButtonProps> = ({
   const click = () => {
     const request = buildRequest(url);
 
-    utils
-      .urlTest<TestResponse>(request.protocol, request.url, request.params)
-      .then((result) => {
-        if (result.status) {
-          setTitle(`Version: ${result.version}`);
-          setVar("success");
-        } else {
-          setTitle(result.error);
-          setVar("danger");
-        }
-      });
+    UtilsApi.urlTest<TestResponse>(
+      request.protocol,
+      request.url,
+      request.params
+    ).then((result) => {
+      if (result.status) {
+        setTitle(`Version: ${result.version}`);
+        setVar("success");
+      } else {
+        setTitle(result.error);
+        setVar("danger");
+      }
+    });
   };
 
   return (

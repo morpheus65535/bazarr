@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useCallback, useState } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -13,9 +13,12 @@ import { faSave } from "@fortawesome/free-solid-svg-icons";
 
 import { SystemApi } from "../../apis";
 
+import { UpdateAfterSettings } from "../../@redux/actions";
+
 interface Props {
   title: string;
   settings: AsyncState<SystemSettings | undefined>;
+  update: () => void;
   children: (
     settings: SystemSettings,
     update: (v: any, k?: string) => void,
@@ -30,16 +33,34 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
-  const { settings, children, title } = props;
+  const { settings, children, title, update } = props;
 
   const [willChange, setWillChange] = useState<LooseObject>({});
 
-  function updateChange(v: any, k?: string) {
-    if (k) {
-      willChange[k] = v;
-      setWillChange(Object.assign({}, willChange));
-    }
-  }
+  const [updating, setUpdating] = useState(false);
+
+  const updateChange = useCallback(
+    (v: any, k?: string) => {
+      if (k) {
+        willChange[k] = v;
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("stage settings", willChange);
+        }
+        setWillChange({ ...willChange });
+      }
+    },
+    [willChange]
+  );
+
+  const submit = useCallback(() => {
+    setUpdating(true);
+    SystemApi.setSettings(willChange).finally(() => {
+      setWillChange({});
+      setUpdating(false);
+      update();
+    });
+  }, [willChange]);
 
   return (
     <AsyncStateOverlay state={settings}>
@@ -51,11 +72,9 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
           <ContentHeader>
             <ContentHeaderButton
               icon={faSave}
+              updating={updating}
               disabled={Object.keys(willChange).length === 0}
-              onClick={() => {
-                SystemApi.setSettings(willChange);
-                setWillChange({});
-              }}
+              onClick={submit}
             >
               Save
             </ContentHeaderButton>
@@ -67,4 +86,6 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
   );
 };
 
-export default connect(mapStateToProps)(SettingsSubtitlesView);
+export default connect(mapStateToProps, { update: UpdateAfterSettings })(
+  SettingsSubtitlesView
+);

@@ -1,6 +1,7 @@
-import { AsyncAction } from "../types";
 import {
-  UPDATE_LANGUAGES_LIST,
+  UPDATE_ALL_LANGUAGES_LIST,
+  UPDATE_ENABLED_LANGUAGES_LIST,
+  UPDATE_LANGUAGES_PROFILE_LIST,
   UPDATE_SYSTEM_STATUS,
   UPDATE_SYSTEM_TASKS,
   UPDATE_PROVIDER_LIST,
@@ -11,22 +12,48 @@ import { mapToAsyncState } from "./mapper";
 
 import { handleActions } from "redux-actions";
 
+const checkInitialize = (state: SystemState): boolean => {
+  return (
+    state.initialized ||
+    (!state.languages.updating &&
+      !state.enabledLanguage.updating &&
+      !state.languagesProfiles.updating)
+  );
+};
+
 const reducer = handleActions<SystemState, any>(
   {
-    [UPDATE_LANGUAGES_LIST]: {
+    [UPDATE_ALL_LANGUAGES_LIST]: {
       next(state, action) {
-        const payload = (action as AsyncAction<Array<ExtendLanguage>>).payload;
-        let enabled = state.enabledLanguage;
-        if (payload.loading === false) {
-          enabled = (payload.item as ExtendLanguage[]).filter(
-            (val) => Boolean(val.enabled) === true
-          );
-        }
-        return {
+        const newState = {
           ...state,
-          languages: mapToAsyncState<Array<ExtendLanguage>>(action, []),
-          enabledLanguage: enabled,
+          languages: mapToAsyncState<Array<Language>>(action, []),
         };
+        newState.initialized = checkInitialize(newState);
+        return newState;
+      },
+    },
+    [UPDATE_ENABLED_LANGUAGES_LIST]: {
+      next(state, action) {
+        const newState = {
+          ...state,
+          enabledLanguage: mapToAsyncState<Array<Language>>(action, []),
+        };
+        newState.initialized = checkInitialize(newState);
+        return newState;
+      },
+    },
+    [UPDATE_LANGUAGES_PROFILE_LIST]: {
+      next(state, action) {
+        const newState = {
+          ...state,
+          languagesProfiles: mapToAsyncState<Array<LanguagesProfile>>(
+            action,
+            []
+          ),
+        };
+        newState.initialized = checkInitialize(newState);
+        return newState;
       },
     },
     [UPDATE_SYSTEM_STATUS]: {
@@ -77,26 +104,28 @@ const reducer = handleActions<SystemState, any>(
     },
   },
   {
-    languages: { updating: false, items: [] },
-    enabledLanguage: [],
+    initialized: false,
+    languages: { updating: true, items: [] },
+    enabledLanguage: { updating: true, items: [] },
+    languagesProfiles: { updating: true, items: [] },
     status: {
-      updating: false,
+      updating: true,
       items: undefined,
     },
     tasks: {
-      updating: false,
+      updating: true,
       items: [],
     },
     providers: {
-      updating: false,
+      updating: true,
       items: [],
     },
     logs: {
-      updating: false,
+      updating: true,
       items: [],
     },
     settings: {
-      updating: false,
+      updating: true,
       items: undefined,
     },
   }

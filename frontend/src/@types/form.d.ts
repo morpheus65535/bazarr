@@ -1,7 +1,5 @@
 interface ItemModifyForm {
-  languages: string[];
-  hi: boolean;
-  forced: boolean | string;
+  profileid?: number;
 }
 
 interface SubtitleForm {

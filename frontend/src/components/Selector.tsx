@@ -1,5 +1,11 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Dropdown, Form } from "react-bootstrap";
+import { capitalize } from "lodash";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -7,15 +13,16 @@ import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 type SelectorBasic<T extends string | string[]> = {
   className?: string;
+  variant?: string;
   options: LooseObject | Pair[];
   disabled?: boolean;
-  nullKey?: string;
   defaultKey?: T;
   onSelect?: (key: string) => void;
   onMultiSelect?: (keys: string[]) => void;
 };
 
 export type SingleSelectorProps = {
+  nullKey?: string;
   multiple?: false;
 } & SelectorBasic<string>;
 
@@ -26,30 +33,28 @@ export type MultiSelectorProps = {
 export type SelectorProps = SingleSelectorProps | MultiSelectorProps;
 
 export const Selector: FunctionComponent<SelectorProps> = (props) => {
-  const { className, disabled, options, nullKey, ...other } = props;
+  const { className, variant, disabled, options, ...other } = props;
   const [filter, setFilter] = useState("");
 
-  const initializeKey: string[] = useMemo(() => {
+  const defaultKey: string[] = useMemo(() => {
     if (other.multiple) {
       if (other.defaultKey) {
         return other.defaultKey;
-      } else if (nullKey) {
-        return [nullKey];
       } else {
         return [];
       }
     } else {
       if (other.defaultKey) {
         return [other.defaultKey];
-      } else if (nullKey) {
-        return [nullKey];
+      } else if (other.nullKey) {
+        return [other.nullKey];
       } else {
         return [];
       }
     }
-  }, [nullKey, other]);
+  }, [other]);
 
-  const [selectKey, setSelect] = useState(initializeKey);
+  const [selectKey, setSelect] = useState(defaultKey);
 
   const pairs = useMemo(() => {
     if (options instanceof Array) {
@@ -68,15 +73,14 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
     if (filter === "") {
       return pairs;
     } else {
-      return pairs.filter((p) =>
-        p.value.toLowerCase().includes(filter.toLowerCase())
-      );
+      const text = filter.toLowerCase();
+      return pairs.filter((p) => p.value.toLowerCase().includes(text));
     }
   }, [pairs, filter]);
 
-  const items = useMemo(() => {
-    function updateSelection(key: string) {
-      const newSelect = selectKey.slice();
+  const updateSelection = useCallback(
+    (key: string) => {
+      const newSelect = [...selectKey];
       const oldIndex = newSelect.findIndex((v) => v === key);
 
       if (oldIndex === -1) {
@@ -95,42 +99,88 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
       } else {
         other.onSelect && other.onSelect(newSelect[0]);
       }
+    },
+    [other, selectKey]
+  );
+
+  const createItem = useCallback(
+    (p: Pair, checked?: boolean) => (
+      <Dropdown.Item
+        key={p.key}
+        className="d-flex justify-content-between align-items-center"
+        onClick={(e) => {
+          updateSelection(p.key);
+        }}
+      >
+        <span>{p.value}</span>
+        {checked && <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>}
+      </Dropdown.Item>
+    ),
+    [updateSelection]
+  );
+
+  const items = useMemo(() => {
+    const optionItems = [];
+
+    if (
+      !other.multiple &&
+      other.nullKey &&
+      !avaliable.find((v) => v.key === other.nullKey)
+    ) {
+      optionItems.push(
+        <React.Fragment key="null-holder">
+          {createItem({ key: other.nullKey, value: capitalize(other.nullKey) })}
+          <Dropdown.Divider key="null-divider"></Dropdown.Divider>
+        </React.Fragment>
+      );
     }
 
-    return avaliable.map((p) => {
-      const hasCheck = other.multiple && selectKey.includes(p.key);
-      return (
-        <Dropdown.Item
-          key={p.key}
-          className="d-flex justify-content-between align-items-center"
-          onClick={(e) => {
-            e.preventDefault();
-            updateSelection(p.key);
-          }}
-        >
-          <span>{p.value}</span>
-          {hasCheck && <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>}
-        </Dropdown.Item>
-      );
-    });
-  }, [avaliable, selectKey, setSelect, other]);
+    optionItems.push(
+      ...avaliable.map((p) => {
+        const hasCheck = other.multiple && selectKey.includes(p.key);
+        return createItem(p, hasCheck);
+      })
+    );
 
-  const title = useMemo(() => {
+    return optionItems;
+  }, [avaliable, selectKey, other, createItem]);
+
+  const findValue = useCallback(
+    (key: string): string => {
+      if (options instanceof Array) {
+        const text = options.find((v) => v.key === key);
+        if (text) {
+          return text.value;
+        }
+      } else {
+        if (key in options) {
+          return options[key];
+        }
+      }
+
+      if (!other.multiple && other.nullKey === key) {
+        return capitalize(other.nullKey);
+      } else {
+        return "Unknown";
+      }
+    },
+    [options, other]
+  );
+
+  const displayText = useMemo(() => {
     let text: string;
 
     if (selectKey.length !== 0) {
-      if (options instanceof Array) {
-        text = selectKey
-          .map((s) => options.find((v) => v.key === s)!.value)
-          .join(", ");
-      } else {
-        text = selectKey.map((s) => options[s]).join(", ");
-      }
+      text = selectKey.map((s) => findValue(s)).join(", ");
     } else {
-      text = "Select...";
+      if (!other.multiple && other.nullKey) {
+        text = capitalize(other.nullKey);
+      } else {
+        text = "Select...";
+      }
     }
     return text;
-  }, [selectKey, options]);
+  }, [selectKey, other, findValue]);
 
   return (
     <Dropdown defaultValue={selectKey} className={className}>
@@ -138,9 +188,9 @@ export const Selector: FunctionComponent<SelectorProps> = (props) => {
         disabled={disabled}
         block
         className="text-left"
-        variant="outline-secondary"
+        variant={variant ?? "outline-secondary"}
       >
-        {title}
+        {displayText}
       </Dropdown.Toggle>
       <Dropdown.Menu>
         <Dropdown.Header hidden={pairs.length <= 10}>

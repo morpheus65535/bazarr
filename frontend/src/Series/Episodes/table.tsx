@@ -16,7 +16,7 @@ import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 
 import {
   GroupTable,
-  ActionIcon,
+  ActionIconBadge,
   AsyncStateOverlay,
   SubtitleToolModal,
   EpisodeHistoryModal,
@@ -79,7 +79,14 @@ const Table: FunctionComponent<Props> = (props) => {
       },
       {
         Header: "Audio",
-        accessor: (d) => d.audio_language.name,
+        accessor: "audio_language",
+        Cell: (row) => {
+          return row.value.map((v) => (
+            <Badge variant="secondary" key={v.code2}>
+              {v.name}
+            </Badge>
+          ));
+        },
       },
       {
         Header: "Subtitles",
@@ -118,19 +125,19 @@ const Table: FunctionComponent<Props> = (props) => {
         Cell: (row) => {
           return (
             <React.Fragment>
-              <ActionIcon icon={faUser}></ActionIcon>
-              <ActionIcon
+              <ActionIconBadge icon={faUser}></ActionIconBadge>
+              <ActionIconBadge
                 icon={faHistory}
                 onClick={() => {
                   showModal("history", row.row.original);
                 }}
-              ></ActionIcon>
-              <ActionIcon
+              ></ActionIconBadge>
+              <ActionIconBadge
                 icon={faBriefcase}
                 onClick={() => {
                   showModal("tools", row.row.original);
                 }}
-              ></ActionIcon>
+              ></ActionIconBadge>
             </React.Fragment>
           );
         },

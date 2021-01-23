@@ -17,11 +17,11 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 
-import BasicModal, { ModalProps } from "./BasicModal";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { AsyncButton, FileForm, BasicTable, OverlayIcon } from "..";
 
-import { EpisodesApi, utils } from "../../apis";
+import { EpisodesApi, UtilsApi } from "../../apis";
 import { updateSeriesInfo } from "../../@redux/actions";
 
 import LanguageSelector from "../LanguageSelector";
@@ -36,18 +36,18 @@ enum SubtitleState {
 interface MovieProps {
   series: Series;
   episodesList: AsyncState<Map<number, Episode[]>>;
-  avaliableLanguages: ExtendLanguage[];
+  avaliableLanguages: Language[];
   update: (id: number) => void;
 }
 
 function mapStateToProps({ system, series }: StoreState) {
   return {
-    avaliableLanguages: system.enabledLanguage,
+    avaliableLanguages: system.enabledLanguage.items,
     episodesList: series.episodeList,
   };
 }
 
-const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
+const SeriesUploadModal: FunctionComponent<MovieProps & BasicModalProps> = (
   props
 ) => {
   const { series, episodesList, avaliableLanguages, update, ...modal } = props;
@@ -56,7 +56,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
 
   const [subtitleInfoList, setSubtitleInfo] = useState<SubtitleInfo[]>([]);
 
-  const [language, setLanguage] = useState<ExtendLanguage | undefined>(() => {
+  const [language, setLanguage] = useState<Language | undefined>(() => {
     const lang = series.languages.length > 0 ? series.languages[0] : undefined;
     if (lang) {
       return avaliableLanguages.find((v) => v.code2 === lang.code2);
@@ -80,7 +80,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
   }, [episodes]);
 
   const validItem = useCallback(
-    (info: SubtitleInfo, lang?: ExtendLanguage) => {
+    (info: SubtitleInfo, lang?: Language) => {
       info.stateText = [];
       if (info.state === SubtitleState.update) {
         return;
@@ -136,7 +136,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
   );
 
   const updateLanguage = useCallback(
-    (lang?: ExtendLanguage) => {
+    (lang?: Language) => {
       setLanguage(lang);
 
       subtitleInfoList.forEach((v) => validItem(v, lang));
@@ -170,7 +170,7 @@ const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
 
   const uploadSubtitles = useCallback(
     async (list: SubtitleInfo[]) => {
-      const { sonarrSeriesId, hearing_impaired, forced } = series;
+      const { sonarrSeriesId } = series;
       const langCode = language?.code2;
 
       if (langCode) {
@@ -186,8 +186,9 @@ const SeriesUploadModal: FunctionComponent<MovieProps & ModalProps> = (
             await EpisodesApi.uploadSubtitles(sonarrSeriesId, sonarrEpisodeId, {
               file: info.file,
               language: langCode,
-              hi: hearing_impaired,
-              forced: forced === "True",
+              // TODO
+              hi: false,
+              forced: false,
             });
 
             list.find((i) => i === info)!.state = SubtitleState.valid;
@@ -358,8 +359,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
     });
 
     if (names.length !== 0) {
-      utils
-        .subtitleInfo(names)
+      UtilsApi.subtitleInfo(names)
         .then((result) => {
           result.forEach((v) => {
             const idx = data.findIndex((d) => d.file.name === v.filename);
@@ -431,7 +431,9 @@ const Table: FunctionComponent<TableProps> = (props) => {
               <Form.Control
                 style={{ maxWidth: 72 }}
                 disabled={info.state === SubtitleState.update || uploading}
-                isInvalid={season ? season > maxSeason : undefined}
+                isInvalid={
+                  season ? season > maxSeason || season <= 0 : undefined
+                }
                 type="text"
                 defaultValue={season}
                 onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
@@ -445,7 +447,9 @@ const Table: FunctionComponent<TableProps> = (props) => {
               <Form.Control
                 style={{ maxWidth: 96 }}
                 disabled={info.state === SubtitleState.update || uploading}
-                isInvalid={episode ? episode > maxEpisode : false}
+                isInvalid={
+                  episode ? episode > maxEpisode || episode <= 0 : false
+                }
                 type="text"
                 defaultValue={episode}
                 onBlur={(e: React.FocusEvent<HTMLInputElement>) => {

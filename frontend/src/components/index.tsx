@@ -1,10 +1,8 @@
 import React, {
   FunctionComponent,
-  MouseEvent,
   ChangeEvent,
   useState,
   useMemo,
-  PropsWithChildren,
   useEffect,
   useRef,
 } from "react";
@@ -12,16 +10,7 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from "@fortawesome/react-fontawesome";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import {
-  Badge,
-  Spinner,
-  Button,
-  ButtonProps,
-  Form,
-  OverlayTrigger,
-  Popover,
-} from "react-bootstrap";
+import { Spinner, Form, OverlayTrigger, Popover } from "react-bootstrap";
 import {
   faCheck,
   faTimes,
@@ -31,36 +20,7 @@ import {
   faRecycle,
   faCloudUploadAlt,
   faClock,
-  faCircleNotch,
 } from "@fortawesome/free-solid-svg-icons";
-
-export const ActionBadge: FunctionComponent<{
-  onClick?: (e: MouseEvent) => void;
-}> = (props) => {
-  const { children, onClick } = props;
-  return (
-    <Button
-      as={Badge}
-      className="mx-1 p-1"
-      variant="secondary"
-      onClick={onClick}
-    >
-      {children}
-    </Button>
-  );
-};
-
-export const ActionIcon: FunctionComponent<{
-  icon: IconDefinition;
-  onClick?: (e: MouseEvent) => void;
-}> = (props) => {
-  const { icon, onClick } = props;
-  return (
-    <ActionBadge onClick={onClick}>
-      <FontAwesomeIcon icon={icon}></FontAwesomeIcon>
-    </ActionBadge>
-  );
-};
 
 enum HistoryAction {
   Delete = 0,
@@ -125,10 +85,11 @@ export const OverlayIcon: FunctionComponent<OverlayIconProps> = (props) => {
   );
 };
 
-export const LoadingOverlay: FunctionComponent = () => {
+export const LoadingIndicator: FunctionComponent = ({ children }) => {
   return (
-    <div className="d-flex flex-grow-1 justify-content-center my-5">
-      <Spinner animation="border"></Spinner>
+    <div className="d-flex flex-column flex-grow-1 align-items-center justify-content-center py-5">
+      <Spinner animation="border" className="mb-2"></Spinner>
+      {children}
     </div>
   );
 };
@@ -140,57 +101,6 @@ export const BooleanIndicator: FunctionComponent<{ value: boolean }> = (
     <FontAwesomeIcon icon={props.value ? faCheck : faTimes}></FontAwesomeIcon>
   );
 };
-
-interface AsyncButtonProps<T> {
-  variant?: ButtonProps["variant"];
-  size?: ButtonProps["size"];
-  disabled?: boolean;
-  onChange?: (v: boolean) => void;
-
-  promise: () => Promise<T>;
-  success?: (result: T) => void;
-  error?: () => void;
-}
-
-export function AsyncButton<T>(
-  props: PropsWithChildren<AsyncButtonProps<T>>
-): JSX.Element {
-  const {
-    children,
-    promise,
-    success,
-    error,
-    onChange,
-    disabled,
-    ...button
-  } = props;
-
-  const [loading, setLoading] = useState(false);
-
-  return (
-    <Button
-      disabled={loading || disabled}
-      {...button}
-      onClick={() => {
-        setLoading(true);
-        onChange && onChange(true);
-        promise()
-          .then(success)
-          .catch(error)
-          .finally(() => {
-            setLoading(false);
-            onChange && onChange(false);
-          });
-      }}
-    >
-      {loading ? (
-        <FontAwesomeIcon icon={faCircleNotch} spin></FontAwesomeIcon>
-      ) : (
-        children
-      )}
-    </Button>
-  );
-}
 
 interface FileFormProps {
   disabled?: boolean;
@@ -265,3 +175,4 @@ export * from "./Tables";
 export * from "./Selector";
 export * from "./Slider";
 export * from "./SearchBar";
+export * from "./buttons";

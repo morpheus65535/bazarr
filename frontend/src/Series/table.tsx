@@ -1,10 +1,9 @@
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useState, useCallback } from "react";
 import { Column } from "react-table";
 import {
   BasicTable,
-  ActionIcon,
+  ActionIconBadge,
   AsyncStateOverlay,
-  BooleanIndicator,
   ItemEditorModal,
 } from "../Components";
 
@@ -18,37 +17,46 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { Badge, ProgressBar } from "react-bootstrap";
+import { ProgressBar, Badge } from "react-bootstrap";
 
 import { updateSeriesInfo } from "../@redux/actions";
 import { SeriesApi } from "../apis";
 
 interface Props {
   series: AsyncState<Series[]>;
+  profiles: LanguagesProfile[];
   update: (id: number) => void;
 }
 
-function mapStateToProps({ series }: StoreState) {
+function mapStateToProps({ series, system }: StoreState) {
   const { seriesList } = series;
   return {
     series: seriesList,
+    profiles: system.languagesProfiles.items,
   };
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const { series, update } = props;
+  const { series, profiles, update } = props;
 
   const [modal, setModal] = useState<string>("");
   const [item, setItem] = useState<Series | undefined>(undefined);
 
-  const showModal = (key: string, item: Series) => {
+  const getProfile = useCallback(
+    (id: number) => {
+      return profiles.find((v) => v.profileId === id);
+    },
+    [profiles]
+  );
+
+  const showModal = useCallback((key: string, item: Series) => {
     setItem(item);
     setModal(key);
-  };
+  }, []);
 
-  const hideModal = () => {
+  const hideModal = useCallback(() => {
     setModal("");
-  };
+  }, []);
 
   const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
     () => [
@@ -81,43 +89,19 @@ const Table: FunctionComponent<Props> = (props) => {
         Header: "Audio",
         accessor: "audio_language",
         Cell: (row) => {
-          const audio_language = row.value;
-          return <span>{audio_language.name}</span>;
+          return row.value.map((v) => (
+            <Badge variant="secondary" key={v.code2}>
+              {v.name}
+            </Badge>
+          ));
         },
       },
       {
-        Header: "Languages",
-        accessor: "languages",
+        Header: "Languages Profile",
+        accessor: "profileId",
         Cell: (row) => {
-          const languages = row.value;
-          if (languages instanceof Array) {
-            const items = languages.map(
-              (val: Language, idx: number): JSX.Element => (
-                <Badge className="mx-1" key={idx} variant="secondary">
-                  {val.code2}
-                </Badge>
-              )
-            );
-            return items;
-          } else {
-            return <span />;
-          }
-        },
-      },
-      {
-        Header: "HI",
-        accessor: "hearing_impaired",
-        Cell: (row) => {
-          return <BooleanIndicator value={row.value}></BooleanIndicator>;
-        },
-      },
-      {
-        Header: "Forced",
-        accessor: "forced",
-        Cell: (row) => {
-          return (
-            <BooleanIndicator value={row.value !== "False"}></BooleanIndicator>
-          );
+          const profileId = row.value;
+          return getProfile(profileId)?.name ?? "";
         },
       },
       {
@@ -153,16 +137,16 @@ const Table: FunctionComponent<Props> = (props) => {
       {
         accessor: "sonarrSeriesId",
         Cell: (row) => (
-          <ActionIcon
+          <ActionIconBadge
             icon={faWrench}
             onClick={(e) => {
               showModal("edit", row.row.original);
             }}
-          ></ActionIcon>
+          ></ActionIconBadge>
         ),
       },
     ],
-    []
+    [getProfile, showModal]
   );
 
   return (
@@ -177,14 +161,12 @@ const Table: FunctionComponent<Props> = (props) => {
       </AsyncStateOverlay>
       <ItemEditorModal
         show={modal === "edit"}
-        title={item?.title}
         onClose={hideModal}
         key={item?.title}
         item={item}
         submit={(form) => SeriesApi.modify(item!.sonarrSeriesId, form)}
         onSuccess={() => {
           hideModal();
-          // TODO: Websocket
           update(item!.sonarrSeriesId);
         }}
       ></ItemEditorModal>

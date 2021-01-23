@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import BasicModal, { ModalProps } from "./BasicModal";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { Column } from "react-table";
 import { BasicTable } from "..";
@@ -36,7 +36,7 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
       },
       {
         Header: "Tools",
-        accessor: "code3",
+        accessor: "code2",
         Cell: (row) => {
           return null;
         },
@@ -58,7 +58,7 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
   );
 };
 
-const Tools: FunctionComponent<Props & ModalProps> = (props) => {
+const Tools: FunctionComponent<Props & BasicModalProps> = (props) => {
   return (
     <BasicModal {...props}>
       <Table {...props}></Table>

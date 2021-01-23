@@ -1,5 +1,5 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
-import BasicModal, { ModalProps } from "./BasicModal";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 import { Column } from "react-table";
 import { BasicTable, HistoryIcon, AsyncStateOverlay } from "..";
 
@@ -11,7 +11,7 @@ interface MovieHistoryProps {
 }
 
 export const MovieHistoryModal: FunctionComponent<
-  ModalProps & MovieHistoryProps
+  BasicModalProps & MovieHistoryProps
 > = (props) => {
   const { movie, ...modal } = props;
 
@@ -81,7 +81,7 @@ interface EpisodeHistoryProps {
 }
 
 export const EpisodeHistoryModal: FunctionComponent<
-  ModalProps & EpisodeHistoryProps
+  BasicModalProps & EpisodeHistoryProps
 > = (props) => {
   const { episode } = props;
   const [history, setHistory] = useState<AsyncState<EpisodeHistory[]>>({

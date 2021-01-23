@@ -65,7 +65,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Row className={infoRowClass}>{detailBadges}</Row>
             <Row className={infoRowClass}>{subtitleLanguages}</Row>
             <Row className={infoRowClass}>
-              <Badge
+              {/* <Badge
                 variant="secondary"
                 className={badgeClass}
                 hidden={!item.hearing_impaired}
@@ -78,7 +78,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
                 hidden={item.forced === "False"}
               >
                 Forced
-              </Badge>
+              </Badge> */}
             </Row>
             <Row className={infoRowClass}>
               <span>{item.overview}</span>

@@ -11,7 +11,7 @@ interface BasicHistory {
   action: number;
   blacklisted: boolean;
   exist: boolean;
-  language: ExtendLanguage;
+  language: Language;
   mapped_path: string;
   mapped_subtitles_path: string;
   provider?: string;

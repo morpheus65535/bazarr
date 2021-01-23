@@ -2,11 +2,11 @@ import { AxiosResponse } from "axios";
 import apis from ".";
 
 class SystemApi {
-  get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+  private get<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.get(`/system/${path}`, { params });
   }
 
-  postForm<T>(
+  private postForm<T>(
     path: string,
     formdata?: any,
     params?: any
@@ -14,17 +14,18 @@ class SystemApi {
     return apis.post(`/system/${path}`, formdata, params);
   }
 
-  delete<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
+  private delete<T>(path: string, params?: any): Promise<AxiosResponse<T>> {
     return apis.axios.delete(`/system/${path}`, { params });
   }
 
-  async shutdown() {
-    return this.get<void>("shutdown");
-  }
+  // TODO: Shutdown and Restart
+  // async shutdown() {
+  //   return this.get<void>("shutdown");
+  // }
 
-  async restart() {
-    return this.get<void>("restart");
-  }
+  // async restart() {
+  //   return this.get<void>("restart");
+  // }
 
   async settings() {
     return new Promise<SystemSettings>((resolve, reject) => {
@@ -46,15 +47,23 @@ class SystemApi {
     });
   }
 
-  async languages(enabled: boolean = false) {
-    return new Promise<Array<ExtendLanguage>>((resolve, reject) => {
-      this.get<Array<ExtendLanguage>>("languages", { enabled })
+  async languages(enabled: boolean) {
+    return new Promise<Array<Language>>((resolve, reject) => {
+      this.get<Array<Language>>("languages", { enabled })
         .then((result) => {
           resolve(result.data);
         })
         .catch((reason) => {
           reject(reason);
         });
+    });
+  }
+
+  async languagesProfileList() {
+    return new Promise<Array<LanguagesProfile>>((resolve, reject) => {
+      this.get<Array<LanguagesProfile>>("languages/profiles")
+        .then((result) => resolve(result.data))
+        .catch(reject);
     });
   }
 

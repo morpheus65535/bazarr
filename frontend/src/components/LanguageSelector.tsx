@@ -5,25 +5,27 @@ import { Selector } from "./Selector";
 interface RootProps {
   disabled?: boolean;
   className?: string;
-  options: ExtendLanguage[];
+  variant?: string;
+  options: Language[];
 }
 
 interface SingleProps extends RootProps {
   multiple?: false;
-  defaultSelect?: ExtendLanguage;
-  onChange?: (lang: ExtendLanguage) => void;
+  defaultSelect?: Language;
+  onChange?: (lang: Language) => void;
 }
 
 interface MultiProps extends RootProps {
   multiple: true;
-  defaultSelect?: ExtendLanguage[];
-  onChange?: (lang: ExtendLanguage[]) => void;
+  defaultSelect?: Language[];
+  onChange?: (lang: Language[]) => void;
 }
 
 type Props = MultiProps | SingleProps;
 
 const LanguageSelector: FunctionComponent<Props> = (props) => {
-  const { disabled, className, options, ...other } = props;
+  const { disabled, className, variant, options, ...other } = props;
+  const selector = { disabled, className, variant };
 
   const items = useMemo(() => {
     return options.flatMap<Pair>((lang) => {
@@ -59,8 +61,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
   if (other.multiple) {
     return (
       <Selector
-        disabled={disabled}
-        className={className}
+        {...selector}
         multiple={true}
         options={items}
         defaultKey={selection}
@@ -81,8 +82,7 @@ const LanguageSelector: FunctionComponent<Props> = (props) => {
     const defaultKey = selection.length > 0 ? selection[0] : undefined;
     return (
       <Selector
-        disabled={disabled}
-        className={className}
+        {...selector}
         multiple={false}
         options={items}
         defaultKey={defaultKey}

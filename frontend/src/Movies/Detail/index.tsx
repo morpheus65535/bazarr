@@ -21,7 +21,7 @@ import {
   ContentHeaderGroup,
   ItemEditorModal,
   ItemOverview,
-  LoadingOverlay,
+  LoadingIndicator,
   SubtitleToolModal,
   MovieHistoryModal,
   MovieUploadModal,
@@ -58,7 +58,8 @@ const MovieDetailView: FunctionComponent<Props> = ({
 
   const [modal, setModal] = useState("");
 
-  const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
+  // TODO
+  // const details = [item?.audio_language.name, item?.mapped_path, item?.tags];
 
   const [scan, setScan] = useState(false);
   const [search, setSearch] = useState(false);
@@ -82,12 +83,6 @@ const MovieDetailView: FunctionComponent<Props> = ({
           Search
         </ContentHeaderButton>
         <ContentHeaderButton icon={faUser}>Manual</ContentHeaderButton>
-        <ContentHeaderButton
-          icon={faCloudUploadAlt}
-          onClick={() => setModal("upload")}
-        >
-          Upload
-        </ContentHeaderButton>
       </React.Fragment>
     );
 
@@ -123,7 +118,15 @@ const MovieDetailView: FunctionComponent<Props> = ({
             Tools
           </ContentHeaderButton>
         </ContentHeaderGroup>
+
         <ContentHeaderGroup pos="end">
+          <ContentHeaderButton
+            disabled={!allowEdit}
+            icon={faCloudUploadAlt}
+            onClick={() => setModal("upload")}
+          >
+            Upload
+          </ContentHeaderButton>
           <ContentHeaderButton icon={faWrench} onClick={() => setModal("edit")}>
             Edit Movie
           </ContentHeaderButton>
@@ -138,7 +141,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
         </Helmet>
         {header}
         <Row>
-          <ItemOverview item={item} details={details}></ItemOverview>
+          <ItemOverview item={item} details={["TODO"]}></ItemOverview>
         </Row>
         <Row>
           <Table movie={item}></Table>
@@ -146,7 +149,6 @@ const MovieDetailView: FunctionComponent<Props> = ({
         <ItemEditorModal
           show={modal === "edit"}
           item={item}
-          title={item.title}
           onClose={() => setModal("")}
           submit={(form) => MoviesApi.modify(item!.radarrId, form)}
           onSuccess={() => {
@@ -175,7 +177,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
       </Container>
     );
   } else {
-    return <LoadingOverlay></LoadingOverlay>;
+    return <LoadingIndicator></LoadingIndicator>;
   }
 };
 

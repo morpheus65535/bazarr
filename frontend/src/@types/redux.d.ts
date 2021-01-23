@@ -18,8 +18,10 @@ interface BadgeState {
 }
 
 interface SystemState {
-  languages: AsyncState<Array<ExtendLanguage>>;
-  enabledLanguage: Array<ExtendLanguage>;
+  initialized: boolean;
+  languages: AsyncState<Array<Language>>;
+  enabledLanguage: AsyncState<Array<Language>>;
+  languagesProfiles: AsyncState<Array<LanguagesProfile>>;
   status: AsyncState<SystemStatusResult | undefined>;
   tasks: AsyncState<Array<SystemTaskResult>>;
   providers: AsyncState<Array<SystemProvider>>;

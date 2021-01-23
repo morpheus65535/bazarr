@@ -1,137 +1,101 @@
-import React from "react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { connect } from "react-redux";
 import { Container, Form } from "react-bootstrap";
 
-import BasicModal, { ModalProps } from "./BasicModal";
+import BasicModal, { BasicModalProps } from "./BasicModal";
 
-import { LanguageSelector, Selector, AsyncButton } from "../";
-
-import { forcedOptions } from "../../utilites/global";
+import { Selector, AsyncButton } from "../";
 
 interface Props {
-  languages: ExtendLanguage[];
+  profiles: LanguagesProfile[];
   item?: ExtendItem;
   submit: (form: ItemModifyForm) => Promise<void>;
   onSuccess?: () => void;
 }
 
-interface State {
-  updating: boolean;
-  changed: boolean;
-  enabled: ExtendLanguage[];
-  hi: boolean;
-  forced: ForcedOptions;
-}
-
 function mapStateToProps({ system }: StoreState) {
   return {
-    languages: system.enabledLanguage,
+    profiles: system.languagesProfiles.items,
   };
 }
 
-class Editor extends React.Component<Props & ModalProps, State> {
-  constructor(props: Props & ModalProps) {
-    super(props);
+const Editor: FunctionComponent<Props & BasicModalProps> = (props) => {
+  const { item, profiles, onSuccess, submit, ...modal } = props;
 
-    this.state = {
-      enabled:
-        props.item?.languages.map((val) => {
-          return {
-            ...val,
-            enabled: true,
-          };
-        }) ?? [],
-      hi: props.item?.hearing_impaired ?? false,
-      forced: props.item?.forced ?? "False",
-      changed: false,
-      updating: false,
-    };
-  }
+  const submitForm = useCallback(
+    (form: ItemModifyForm) => {
+      return submit(form);
+    },
+    [submit]
+  );
 
-  updateState<K extends keyof State>(key: K, value: State[K]) {
-    let state: State = {
-      ...this.state,
-      changed: true,
-    };
-    state[key] = value;
-    this.setState(state);
-  }
+  const profileOptions = useMemo<Pair[]>(
+    () =>
+      profiles.map<Pair>((v) => {
+        return { key: v.profileId.toString(), value: v.name };
+      }),
+    [profiles]
+  );
+  const [id, setId] = useState(item?.profileId);
+  const [updating, setUpdating] = useState(false);
 
-  submitForm() {
-    const { submit } = this.props;
-    const { enabled, hi, forced } = this.state;
+  const footer = (
+    <AsyncButton
+      onChange={setUpdating}
+      promise={() =>
+        submitForm({
+          profileid: id,
+        })
+      }
+      success={onSuccess}
+    >
+      Save
+    </AsyncButton>
+  );
 
-    return submit({
-      languages: enabled.map((val) => val.code2 ?? ""),
-      hi,
-      forced,
-    });
-  }
+  return (
+    <BasicModal
+      closeable={!updating}
+      footer={footer}
+      title={item?.title}
+      {...modal}
+    >
+      <Container fluid>
+        <Form>
+          <Form.Group>
+            <Form.Label>Audio</Form.Label>
+            <Form.Control
+              type="text"
+              disabled
+              defaultValue={item?.audio_language.map((v) => v.name).join(", ")}
+            ></Form.Control>
+          </Form.Group>
+          <Form.Group>
+            <Form.Label>Languages Profiles</Form.Label>
+            <Selector
+              nullKey="None"
+              options={profileOptions}
+              defaultKey={id?.toString()}
+              onSelect={(k) => {
+                const id = parseInt(k);
 
-  render() {
-    const { item, languages, onSuccess } = this.props;
-
-    const { changed, enabled, hi, forced, updating } = this.state;
-
-    const footer = (
-      <AsyncButton
-        disabled={!changed}
-        onChange={(v) => this.updateState("updating", v)}
-        promise={this.submitForm.bind(this)}
-        success={onSuccess}
-      >
-        Save
-      </AsyncButton>
-    );
-
-    return (
-      <BasicModal closeable={!updating} {...this.props} footer={footer}>
-        <Container fluid>
-          <Form>
-            <Form.Group>
-              <Form.Label>Audio</Form.Label>
-              <Form.Control
-                type="text"
-                disabled
-                defaultValue={item?.audio_language.name}
-              ></Form.Control>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Languages</Form.Label>
-              <LanguageSelector
-                multiple
-                options={languages}
-                defaultSelect={enabled}
-                onChange={(val: ExtendLanguage[]) =>
-                  this.updateState("enabled", val)
+                if (!isNaN(id)) {
+                  setId(id);
+                } else {
+                  setId(undefined);
                 }
-              ></LanguageSelector>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Forced</Form.Label>
-              <Selector
-                options={forcedOptions}
-                defaultKey={forced}
-                onSelect={(val: string) =>
-                  this.updateState("forced", val as ForcedOptions)
-                }
-              ></Selector>
-            </Form.Group>
-            <Form.Group>
-              <Form.Check
-                inline
-                label="Hearing Impaired"
-                defaultChecked={hi}
-                onChange={(e) => {
-                  this.updateState("hi", e.currentTarget.checked);
-                }}
-              ></Form.Check>
-            </Form.Group>
-          </Form>
-        </Container>
-      </BasicModal>
-    );
-  }
-}
+              }}
+            ></Selector>
+          </Form.Group>
+        </Form>
+      </Container>
+    </BasicModal>
+  );
+};
 
 export default connect(mapStateToProps)(Editor);

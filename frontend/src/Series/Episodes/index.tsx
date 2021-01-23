@@ -21,7 +21,7 @@ import {
   ItemOverview,
   ItemEditorModal,
   SeriesUploadModal,
-  LoadingOverlay,
+  LoadingIndicator,
 } from "../../Components";
 
 import { SeriesApi } from "../../apis";
@@ -109,7 +109,8 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
 
   if (item) {
     const details = [
-      item.audio_language.name,
+      "TODO",
+      // item.audio_language.name,
       item.mapped_path,
       `${item.episodeFileCount} files`,
       item.seriesType,
@@ -130,7 +131,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
         </Row>
         <ItemEditorModal
           show={modal === "edit"}
-          title={item.title}
           item={item}
           onClose={() => setModal("")}
           submit={(form) => SeriesApi.modify(item.sonarrSeriesId, form)}
@@ -147,7 +147,7 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
       </Container>
     );
   } else {
-    return <LoadingOverlay></LoadingOverlay>;
+    return <LoadingIndicator></LoadingIndicator>;
   }
 };
 

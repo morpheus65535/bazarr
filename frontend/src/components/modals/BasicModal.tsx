@@ -1,7 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Modal } from "react-bootstrap";
 
-export interface ModalProps {
+export interface BasicModalProps {
   size?: "sm" | "lg" | "xl";
   closeable?: boolean;
   show: boolean;
@@ -10,7 +10,7 @@ export interface ModalProps {
   footer?: JSX.Element;
 }
 
-const BasicModal: FunctionComponent<ModalProps> = (props) => {
+export const BasicModal: FunctionComponent<BasicModalProps> = (props) => {
   const { size, closeable, show, title, onClose, children, footer } = props;
 
   const canClose = closeable !== undefined ? closeable : true;

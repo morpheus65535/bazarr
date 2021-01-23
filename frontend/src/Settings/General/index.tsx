@@ -18,14 +18,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faClipboard } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-  languages: ExtendLanguage[];
-  enabled: ExtendLanguage[];
+  languages: Language[];
+  enabled: Language[];
 }
 
 function mapStateToProps({ system }: StoreState) {
   return {
     languages: system.languages.items,
-    enabled: system.enabledLanguage,
+    enabled: system.enabledLanguage.items,
   };
 }
 
