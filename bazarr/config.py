@@ -2,6 +2,7 @@
 
 import hashlib
 import os
+import ast
 
 from subliminal.cache import region
 
@@ -172,6 +173,60 @@ settings.read(os.path.join(args.config_dir, 'config', 'config.ini'))
 settings.general.base_url = settings.general.base_url if settings.general.base_url else '/'
 base_url = settings.general.base_url
 
+ignore_keys = ['flask_secret_key',
+                'page_size',
+                'page_size_manual_search',
+                'throtteled_providers']
+
+raw_keys = ['movie_default_forced', 'serie_default_forced']
+
+array_keys = ['settings-sonarr-excluded_tags',
+                'settings-sonarr-excluded_series_types',
+                'settings-radarr-excluded_tags',
+                'settings-general-serie_default_language',
+                'settings-general-movie_default_language',
+                'settings-general-path_mappings',
+                'settings-general-path_mappings_movie']
+
+def get_settings():
+    result = dict()
+    sections = settings.sections()
+
+    for sec in sections:
+        sec_values = settings.items(sec, False)
+        values_dict = dict()
+
+        for sec_val in sec_values:
+            key = sec_val[0]
+            value = sec_val[1]
+
+            if key in ignore_keys:
+                continue
+
+            if key not in raw_keys:
+                # Do some postprocessings
+                if value == '' or value == 'None':
+                    continue
+                elif value == 'True':
+                    value = True
+                elif value == 'False':
+                    value = False
+                elif (value[0] == '[' and value[-1] == ']'):
+                    value = ast.literal_eval(value)
+                elif value.find(',') != -1:
+                    value = value.split(',')
+                    pass
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        pass
+            
+            values_dict[key] = value
+        
+        result[sec] = values_dict
+
+    return result
 
 def save_settings(settings_items):
     from database import database
@@ -183,21 +238,20 @@ def save_settings(settings_items):
     configure_proxy = False
     exclusion_updated = False
 
-    for key, value in settings_items:
-        # Intercept database stored settings
-        if key == 'enabled_languages':
-            database.execute("UPDATE table_settings_languages SET enabled=0")
-            for item in value:
-                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
-            continue
+    # Subzero Mods
+    update_subzero = False
+    subzero_mods = settings.general.subzero_mods.strip().split(',')
 
+    if len(subzero_mods) == 1 and subzero_mods[0] == '':
+        subzero_mods = []
+
+    for key, value in settings_items:
         # Make sure that text based form values aren't pass as list unless they are language list
-        if isinstance(value, list) and len(value) == 1 and key not in ['settings-general-serie_default_language',
-                                                                       'settings-general-movie_default_language']:
+        if isinstance(value, list) and len(value) == 1 and key not in array_keys:
             value = value[0]
 
-        # Make sure empty language list are stored correctly due to bug in bootstrap-select
-        if key in ['settings-general-serie_default_language', 'settings-general-movie_default_language'] and value == ['null']:
+        # Make sure empty language list are stored correctly
+        if key in array_keys and value == [''] or value == ['null']:
             value = []
 
         settings_keys = key.split('-')
@@ -256,6 +310,20 @@ def save_settings(settings_items):
 
         if settings_keys[0] == 'settings':
             settings[settings_keys[1]][settings_keys[2]] = str(value)
+
+        if settings_keys[0] == 'subzero':
+            mod = settings_keys[1]
+            enabled = value == 'True'
+            if mod in subzero_mods:
+                if not enabled:
+                    subzero_mods.remove(mod)
+            else:
+                if enabled:
+                    subzero_mods.append(mod)
+            update_subzero = True
+
+    if update_subzero:
+        settings.set('general', 'subzero_mods', ','.join(subzero_mods))
 
     with open(os.path.join(args.config_dir, 'config', 'config.ini'), 'w+') as handle:
         settings.write(handle)

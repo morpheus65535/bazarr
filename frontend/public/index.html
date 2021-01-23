@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="{{baseUrl}}" />
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/static/favicon.ico" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1 minimum-scale=1 maximum-scale=1"
+    />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="manifest" href="%PUBLIC_URL%/static/manifest.json" />
+    <title>Bazarr</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      window.Bazarr = {{BAZARR_SERVER_INJECT | tojson | safe}};
+    </script>
+  </body>
+</html>

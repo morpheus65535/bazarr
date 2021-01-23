@@ -114,10 +114,6 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         hi = "force HI"
     else:
         hi = "force non-HI"
-    language_set = set()
-
-    if not isinstance(language, list):
-        language = [language]
 
     if forced == "True":
         providers_auth['podnapisi']['only_foreign'] = True  ## fixme: This is also in get_providers_auth()
@@ -128,7 +124,15 @@ def download_subtitle(path, language, audio_language, hi, forced, providers, pro
         providers_auth['subscene']['only_foreign'] = False
         providers_auth['opensubtitles']['only_foreign'] = False
 
+    language_set = set()
+
+    if not isinstance(language, list):
+        language = [language]
+
     for l in language:
+        # Always use alpha2 in API Request
+        l = alpha3_from_alpha2(l)
+
         if l == 'pob':
             lang_obj = Language('por', 'BR')
             if forced == "True":
@@ -314,11 +318,12 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_set = set()
 
     # where [3] is items list of dict(id, lang, forced, hi)
-    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
+    language_items = get_profiles_list(profile_id=int(profileId))['items']
 
     for language in language_items:
         lang_id, lang, forced, hi, audio_exclude = language.values()
 
+    for lang in language:
         lang = alpha3_from_alpha2(lang)
 
         if lang == 'pob':

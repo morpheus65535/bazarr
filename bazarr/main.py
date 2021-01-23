@@ -15,7 +15,7 @@ import calendar
 
 from get_args import args
 from logger import empty_log
-from config import settings, url_sonarr, url_radarr, configure_proxy_func
+from config import settings, url_sonarr, url_radarr, configure_proxy_func, base_url
 
 from init import *
 from database import database
@@ -83,13 +83,19 @@ def login_required(f):
     return wrap
 
 
-@app.errorhandler(404)
-@login_required
-def page_not_found(e):
-    if request.path == '/':
-        return redirect(url_for('series'), code=302)
-    return render_template('404.html'), 404
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    apikey = settings.auth.apikey
+    inject = dict()
+    inject["apiKey"] = apikey
+    inject["baseUrl"] = base_url
 
+    template_url = base_url
+    if not template_url.endswith("/"):
+        template_url += "/"
+
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
 
 @app.route('/login/', methods=["GET", "POST"])
 def login_page():
@@ -109,16 +115,14 @@ def login_page():
                 error = "Invalid credentials, try again."
         gc.collect()
 
-        if settings.auth.type == 'form' and not 'logged_in' in session:
-            return render_template("login.html", error=error, password_reset=password_reset)
-        else:
-            return redirect(url_for("redirect_root"))
-
+        # return render_template("login.html", error=error, password_reset=password_reset)
+        return ""
 
     except Exception as e:
         # flash(e)
         error = "Invalid credentials, try again."
-        return render_template("login.html", error=error)
+        # return "render_template("login.html", error=error)"
+        return ""
 
 
 @app.context_processor
@@ -155,13 +159,6 @@ def logout():
         return redirect(url_for('redirect_root'))
 
 
-@app.route('/emptylog')
-@login_required
-def emptylog():
-    empty_log()
-    return '', 200
-
-
 @app.route('/bazarr.log')
 @login_required
 def download_log():
@@ -173,9 +170,9 @@ def download_log():
     return send_file(os.path.join(args.config_dir, 'log', 'bazarr.log'), cache_timeout=0)
 
 
-@app.route('/image_proxy/<path:url>', methods=['GET'])
+@app.route('/images/series/<path:url>', methods=['GET'])
 @login_required
-def image_proxy(url):
+def series_images(url):
     apikey = settings.sonarr.apikey
     url_image = (url_sonarr() + '/api/' + url + '?apikey=' + apikey).replace('poster-250', 'poster-500')
     try:
@@ -186,9 +183,9 @@ def image_proxy(url):
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
 
 
-@app.route('/image_proxy_movies/<path:url>', methods=['GET'])
+@app.route('/images/movies/<path:url>', methods=['GET'])
 @login_required
-def image_proxy_movies(url):
+def movies_images(url):
     apikey = settings.radarr.apikey
     url_image = url_radarr() + '/api/' + url + '?apikey=' + apikey
     try:
@@ -197,164 +194,6 @@ def image_proxy_movies(url):
         return None
     else:
         return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
-
-
-@app.route("/")
-@login_required
-def redirect_root():
-    if settings.general.getboolean('use_sonarr'):
-        return redirect(url_for('series'))
-    elif settings.general.getboolean('use_radarr'):
-        return redirect(url_for('movies'))
-    else:
-        return redirect(url_for('settingsgeneral'))
-
-
-@app.route('/series/')
-@login_required
-def series():
-    return render_template('series.html')
-
-
-@app.route('/serieseditor/')
-@login_required
-def serieseditor():
-    return render_template('serieseditor.html')
-
-
-@app.route('/episodes/<no>')
-@login_required
-def episodes(no):
-    return render_template('episodes.html', id=str(no))
-
-
-@app.route('/movies')
-@login_required
-def movies():
-    return render_template('movies.html')
-
-
-@app.route('/movieseditor')
-@login_required
-def movieseditor():
-    return render_template('movieseditor.html')
-
-
-@app.route('/movie/<no>')
-@login_required
-def movie(no):
-    return render_template('movie.html', id=str(no))
-
-
-@app.route('/history/series/')
-@login_required
-def historyseries():
-    return render_template('historyseries.html')
-
-
-@app.route('/history/movies/')
-@login_required
-def historymovies():
-    return render_template('historymovies.html')
-
-
-@app.route('/history/stats/')
-@login_required
-def historystats():
-    data_providers = database.execute("SELECT DISTINCT provider FROM table_history WHERE provider IS NOT null "
-                                      "UNION SELECT DISTINCT provider FROM table_history_movie WHERE provider "
-                                      "IS NOT null")
-    data_providers_list = []
-    for item in data_providers:
-        data_providers_list.append(item['provider'])
-
-    data_languages = database.execute("SELECT DISTINCT language FROM table_history WHERE language IS NOT null "
-                                      "AND language != '' UNION SELECT DISTINCT language FROM table_history_movie "
-                                      "WHERE language IS NOT null AND language != ''")
-    data_languages_list = []
-    for item in data_languages:
-        splitted_lang = item['language'].split(':')
-        item = {"name"  : language_from_alpha2(splitted_lang[0]),
-                "code2" : splitted_lang[0],
-                "code3" : alpha3_from_alpha2(splitted_lang[0]),
-                "forced": True if len(splitted_lang) > 1 else False}
-        data_languages_list.append(item)
-
-    return render_template('historystats.html', data_providers=data_providers_list,
-                           data_languages=sorted(data_languages_list, key=lambda i: i['name']))
-
-
-@app.route('/blacklist/series/')
-@login_required
-def blacklistseries():
-    return render_template('blacklistseries.html')
-
-
-@app.route('/blacklist/movies/')
-@login_required
-def blacklistmovies():
-    return render_template('blacklistmovies.html')
-
-
-@app.route('/wanted/series/')
-@login_required
-def wantedseries():
-    return render_template('wantedseries.html')
-
-
-@app.route('/wanted/movies/')
-@login_required
-def wantedmovies():
-    return render_template('wantedmovies.html')
-
-
-@app.route('/settings/general/')
-@login_required
-def settingsgeneral():
-    return render_template('settingsgeneral.html')
-
-
-@app.route('/settings/sonarr/')
-@login_required
-def settingssonarr():
-    return render_template('settingssonarr.html')
-
-
-@app.route('/settings/radarr/')
-@login_required
-def settingsradarr():
-    return render_template('settingsradarr.html')
-
-
-@app.route('/settings/subtitles/')
-@login_required
-def settingssubtitles():
-    return render_template('settingssubtitles.html', os=sys.platform)
-
-
-@app.route('/settings/languages/')
-@login_required
-def settingslanguages():
-    return render_template('settingslanguages.html')
-
-
-@app.route('/settings/providers/')
-@login_required
-def settingsproviders():
-    return render_template('settingsproviders.html')
-
-
-@app.route('/settings/notifications/')
-@login_required
-def settingsnotifications():
-    return render_template('settingsnotifications.html')
-
-
-@app.route('/settings/scheduler/')
-@login_required
-def settingsscheduler():
-    days_of_the_week = list(enumerate(calendar.day_name))
-    return render_template('settingsscheduler.html', days=days_of_the_week)
 
 
 @app.route('/check_update')
@@ -366,109 +205,18 @@ def check_update():
     return '', 200
 
 
-@app.route('/system/tasks')
-@login_required
-def systemtasks():
-    return render_template('systemtasks.html')
-
-
-@app.route('/system/logs')
-@login_required
-def systemlogs():
-    return render_template('systemlogs.html')
-
-
-@app.route('/system/providers')
-@login_required
-def systemproviders():
-    return render_template('systemproviders.html')
-
-
-@app.route('/system/status')
-@login_required
-def systemstatus():
-    return render_template('systemstatus.html')
-
-
-@app.route('/system/releases')
-@login_required
-def systemreleases():
-    return render_template('systemreleases.html')
-
-
 def configured():
     database.execute("UPDATE system SET configured = 1")
 
 
-@app.route('/api/series/wanted')
-def api_wanted():
-    data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
-                            "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
-                            "table_episodes.missing_subtitles FROM table_episodes INNER JOIN table_shows on "
-                            "table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
-                            "table_episodes.missing_subtitles != '[]' ORDER BY table_episodes._rowid_ DESC LIMIT 10")
-
-    wanted_subs = []
-    for item in data:
-        wanted_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'],
-                            item['missing_subtitles']])
-
-    return dict(subtitles=wanted_subs)
-
-
-@app.route('/api/series/history')
-def api_history():
-    data = database.execute("SELECT table_shows.title as seriesTitle, "
-                            "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
-                            "table_episodes.title as episodeTitle, "
-                            "strftime('%Y-%m-%d', datetime(table_history.timestamp, 'unixepoch')) as date, "
-                            "table_history.description FROM table_history "
-                            "INNER JOIN table_shows on table_shows.sonarrSeriesId = table_history.sonarrSeriesId "
-                            "INNER JOIN table_episodes on table_episodes.sonarrEpisodeId = "
-                            "table_history.sonarrEpisodeId WHERE table_history.action != '0' ORDER BY id DESC LIMIT 10")
-
-    history_subs = []
-    for item in data:
-        history_subs.append([item['seriesTitle'], item['episode_number'], item['episodeTitle'], item['date'],
-                             item['description']])
-
-    return dict(subtitles=history_subs)
-
-
-@app.route('/api/movies/wanted/')
-def api_movies_wanted():
-    data = database.execute("SELECT table_movies.title, table_movies.missing_subtitles FROM table_movies "
-                            "WHERE table_movies.missing_subtitles != '[]' ORDER BY table_movies._rowid_ DESC LIMIT 10")
-
-    wanted_subs = []
-    for item in data:
-        wanted_subs.append([item['title'], item['missing_subtitles']])
-
-    return dict(subtitles=wanted_subs)
-
-
-@app.route('/api/movies/history/')
-def api_movies_history():
-    data = database.execute("SELECT table_movies.title, strftime('%Y-%m-%d', "
-                            "datetime(table_history_movie.timestamp, 'unixepoch')) as date, "
-                            "table_history_movie.description FROM table_history_movie "
-                            "INNER JOIN table_movies on table_movies.radarrId = table_history_movie.radarrId "
-                            "WHERE table_history_movie.action != '0' ORDER BY id DESC LIMIT 10")
-
-    history_subs = []
-    for item in data:
-        history_subs.append([item['title'], item['date'], item['description']])
-
-    return dict(subtitles=history_subs)
-
-
-@app.route('/test_url', methods=['GET'])
-@app.route('/test_url/<protocol>/<path:url>', methods=['GET'])
+@app.route('/test', methods=['GET'])
+@app.route('/test/<protocol>/<path:url>', methods=['GET'])
 @login_required
-def test_url(protocol, url):
+def proxy(protocol, url):
     url = protocol + '://' + unquote(url)
+    params = request.args
     try:
-        result = requests.get(url, allow_redirects=False, verify=False, timeout=5)
+        result = requests.get(url, params, allow_redirects=False, verify=False, timeout=5)
     except Exception as e:
         return dict(status=False, error=repr(e))
     else:

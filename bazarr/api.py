@@ -11,7 +11,8 @@ import re
 import json
 
 from get_args import args
-from config import settings, base_url, save_settings
+from config import settings, base_url, save_settings, get_settings
+from logger import empty_log
 
 from init import *
 import logging
@@ -63,18 +64,15 @@ def authenticate(actual_method):
     return wrapper
 
 
-class Shutdown(Resource):
+class System(Resource):
     @authenticate
-    def get(self):
+    def post(self):
         from server import webserver
-        webserver.shutdown()
-
-
-class Restart(Resource):
-    @authenticate
-    def get(self):
-        from server import webserver
-        webserver.restart()
+        action = request.args.get('action')
+        if action == "shutdown":
+            webserver.shutdown()
+        elif action == "restart":
+            webserver.restart()
 
 
 class BadgesSeries(Resource):
@@ -87,7 +85,7 @@ class BadgesSeries(Resource):
         missing_episodes = len(missing_episodes)
 
         result = {
-            "missing_episodes": missing_episodes
+            "value": missing_episodes
         }
         return jsonify(result)
 
@@ -100,7 +98,7 @@ class BadgesMovies(Resource):
         missing_movies = len(missing_movies)
 
         result = {
-            "missing_movies": missing_movies
+            "value": missing_movies
         }
         return jsonify(result)
 
@@ -109,7 +107,7 @@ class BadgesProviders(Resource):
     @authenticate
     def get(self):
         result = {
-            "throttled_providers": len(eval(str(settings.general.throtteled_providers)))
+            "value": len(eval(str(settings.general.throtteled_providers)))
         }
         return jsonify(result)
 
@@ -128,9 +126,7 @@ class Languages(Resource):
 class LanguagesProfiles(Resource):
     @authenticate
     def get(self):
-        return jsonify(data=get_profiles_list())
-
-
+        return jsonify(get_profiles_list())
 class Notifications(Resource):
     @authenticate
     def get(self):
@@ -148,44 +144,45 @@ class Notifications(Resource):
         return '', 204
 
 
-class Search(Resource):
+class Providers(Resource):
     @authenticate
     def get(self):
-        query = request.args.get('query')
-        search_list = []
+        throttled_providers = list_throttled_providers()
 
-        if query:
-            if settings.general.getboolean('use_sonarr'):
-                # Get matching series
-                series = database.execute("SELECT title, sonarrSeriesId, year FROM table_shows WHERE title LIKE ? "
-                                          "ORDER BY title ASC", ("%"+query+"%",))
-                for serie in series:
-                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', serie['title']) + ' (' + serie['year'] + ')',
-                                        'url': url_for('episodes', no=serie['sonarrSeriesId'])})
+        providers = list()
+        for provider in throttled_providers:
+            providers.append({
+                "name": provider[0],
+                "status": provider[1] if provider[1] is not None else "Good",
+                "retry": provider[2] if provider[2] != "now" else "-"
+            })
+        return jsonify(data=providers)
 
-            if settings.general.getboolean('use_radarr'):
-                # Get matching movies
-                movies = database.execute("SELECT title, radarrId, year FROM table_movies WHERE title LIKE ? ORDER BY "
-                                          "title ASC", ("%"+query+"%",))
-                for movie in movies:
-                    search_list.append({'name': re.sub(r'\ \(\d{4}\)', '', movie['title']) + ' (' + movie['year'] + ')',
-                                        'url': url_for('movie', no=movie['radarrId'])})
-
-        return jsonify(search_list)
-
-
-class ResetProviders(Resource):
-    @authenticate
-    def get(self):
-        reset_throttled_providers()
-
-        return '', 200
-
-
-class SaveSettings(Resource):
     @authenticate
     def post(self):
-        languages_profiles = request.form.get('languages_profiles')
+        action = request.form.get('action')
+
+        if action == 'reset':
+            reset_throttled_providers()
+            return '', 204
+
+        return '', 400
+
+class SystemSettings(Resource):
+    @authenticate
+    def get(self):
+        data=get_settings()
+        return jsonify(data)
+
+    @authenticate
+    def post(self):
+        enabled_languages = request.form.getlist('languages-enabled')
+        if len(enabled_languages) != 0:
+            database.execute("UPDATE table_settings_languages SET enabled=0")
+            for code in enabled_languages:
+                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (code,))
+
+        languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
             existing_ids = database.execute('SELECT profileId FROM table_languages_profiles')
             existing = [x['profileId'] for x in existing_ids]
@@ -194,8 +191,8 @@ class SaveSettings(Resource):
                     # Update existing profiles
                     database.execute('UPDATE table_languages_profiles SET name = ?, cutoff = ?, items = ? '
                                      'WHERE profileId = ?', (item['name'],
-                                                             item['cutoff'] if item['cutoff'] != '' else None,
-                                                             item['items'],
+                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
+                                                             json.dumps(item['items']),
                                                              item['profileId']))
                     existing.remove(item['profileId'])
                 else:
@@ -203,8 +200,8 @@ class SaveSettings(Resource):
                     database.execute('INSERT INTO table_languages_profiles (profileId, name, cutoff, items) '
                                      'VALUES (?, ?, ?, ?)', (item['profileId'],
                                                              item['name'],
-                                                             item['cutoff'] if item['cutoff'] != '' else None,
-                                                             item['items']))
+                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
+                                                             json.dumps(item['items'])))
             for profileId in existing:
                 # Unassign this profileId from series and movies
                 database.execute('UPDATE table_shows SET profileId = null WHERE profileId = ?', (profileId,))
@@ -220,8 +217,7 @@ class SaveSettings(Resource):
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': False})
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
-
-        return '', 200
+        return '', 204
 
 
 class SystemTasks(Resource):
@@ -230,10 +226,6 @@ class SystemTasks(Resource):
         taskid = request.args.get('taskid')
 
         task_list = scheduler.get_task_list()
-
-        for item in task_list:
-            # Add Datatables rowId
-            item.update({"DT_RowId": item['job_id']})
 
         if taskid:
             for item in task_list:
@@ -249,7 +241,7 @@ class SystemTasks(Resource):
 
         scheduler.execute_job_now(taskid)
 
-        return '', 200
+        return '', 204
 
 
 class SystemLogs(Resource):
@@ -260,19 +252,18 @@ class SystemLogs(Resource):
             for line in file.readlines():
                 lin = []
                 lin = line.split('|')
-                logs.append(lin)
+                log = dict() 
+                log["timestamp"] = lin[0]
+                log["type"] = lin[1].rstrip()
+                log["message"] = lin[3]
+                logs.append(log)
             logs.reverse()
         return jsonify(data=logs)
 
-
-class SystemProviders(Resource):
     @authenticate
-    def get(self):
-        throttled_providers = list_throttled_providers()
-        for i in range(len(throttled_providers)):
-            throttled_providers[i][1] = throttled_providers[i][1] if throttled_providers[i][1] is not None else "Good"
-            throttled_providers[i][2] = throttled_providers[i][2] if throttled_providers[i][2] != "now" else "-"
-        return jsonify(data=throttled_providers)
+    def delete(self):
+        empty_log()
+        return '', 204 
 
 
 class SystemStatus(Resource):
@@ -295,12 +286,15 @@ class SystemReleases(Resource):
         releases = []
         try:
             with io.open(os.path.join(args.config_dir, 'config', 'releases.txt'), 'r', encoding='UTF-8') as f:
-                releases = ast.literal_eval(f.read())
-            for release in releases:
-                release[1] = release[1].replace('- ', '')
-                release[1] = release[1].split('\r\n')
-                release[1].pop(0)
-                release.append(True if release[0].lstrip('v') == os.environ["BAZARR_VERSION"] else False)
+                raw_releases = ast.literal_eval(f.read())
+            for release in raw_releases:
+                rel = dict()
+                rel["version"] = release[0]
+
+                changesets = release[1].replace('- ', '').split('\r\n')
+                changesets.pop(0)
+                rel["changesets"] = changesets
+                releases.append(rel)
 
         except Exception as e:
             logging.exception(
@@ -313,19 +307,14 @@ class Series(Resource):
     def get(self, **kwargs):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         seriesId = request.args.get('seriesid')
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_shows", only_one=True)['count']
         if seriesId:
             result = database.execute("SELECT * FROM table_shows WHERE sonarrSeriesId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (seriesId, length, start))
         else:
             result = database.execute("SELECT * FROM table_shows ORDER BY sortTitle ASC LIMIT ? OFFSET ?", (length, start))
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
-
             # Parse audio language
             item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
@@ -337,9 +326,8 @@ class Series(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
-
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
+            else:
+                item.update({"languages": []})
 
             # Parse alternate titles
             if item['alternateTitles']:
@@ -377,21 +365,31 @@ class Series(Resource):
             episodeFileCount = len(episodeFileCount)
             item.update({"episodeFileCount": episodeFileCount})
 
-            # Add the series desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
+            # map poster and fanart to server proxy
+            poster = item["poster"]
+            fanart = item["fanart"]
+            item.update({"poster": f"{base_url}images/series{poster}","fanart": f"{base_url}images/series{fanart}"})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+            # Add the series desired subtitles language code2
+            item.update({"desired_languages": get_desired_languages(item['profileId'])})
+
+        return jsonify(data=result)
 
     @authenticate
     def post(self):
         seriesId = request.args.get('seriesid')
 
-        languages_profile = request.form.get('languages')
+        profileId = request.form.get('profileid')
 
-        if languages_profile == 'None':
-            languages_profile = None
+        if profileId == 'undefined':
+            profileId = None
+        else:      
+            try:
+                profileId = int(profileId)
+            except Exception:
+                return '', 400
 
-        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (languages_profile, seriesId))
+        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
 
         list_missing_subtitles(no=seriesId)
 
@@ -403,17 +401,10 @@ class Series(Resource):
 class SeriesEditor(Resource):
     @authenticate
     def get(self, **kwargs):
-        draw = request.args.get('draw')
-
         result = database.execute("SELECT sonarrSeriesId, title, audio_language, profileId "
                                   "FROM table_shows ORDER BY sortTitle")
 
-        row_count = len(result)
-
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrSeriesId'])})
-
             # Parse audio language
             item.update({"audio_language": get_audio_profile_languages(series_id=item['sonarrSeriesId'])})
 
@@ -425,11 +416,13 @@ class SeriesEditor(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
             # Parse profileId
             item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
 
 class SeriesEditSave(Resource):
@@ -465,14 +458,8 @@ class SeriesEditSave(Resource):
 class Episodes(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        draw = request.args.get('draw')
-
         seriesId = request.args.get('seriesid')
         episodeId = request.args.get('episodeid')
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_episodes WHERE sonarrSeriesId=?",
-                                     (seriesId,), only_one=True)['count']
         if episodeId:
             result = database.execute("SELECT * FROM table_episodes WHERE sonarrEpisodeId=?", (episodeId,))
         elif seriesId:
@@ -486,31 +473,34 @@ class Episodes(Resource):
         desired_languages = str(get_desired_languages(profileId))
 
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['sonarrEpisodeId'])})
-
             # Parse audio language
             item.update({"audio_language": get_audio_profile_languages(episode_id=item['sonarrEpisodeId'])})
 
             # Parse subtitles
             if item['subtitles']:
-                item.update({"subtitles": ast.literal_eval(item['subtitles'])})
-                for subs in item['subtitles']:
+                raw_subtitles = ast.literal_eval(item['subtitles'])
+                subtitles = []
+
+                for subs in raw_subtitles:
                     subtitle = subs[0].split(':')
-                    subs[0] = {"name": language_from_alpha2(subtitle[0]),
+                    sub = {"name": language_from_alpha2(subtitle[0]),
                                "code2": subtitle[0],
                                "code3": alpha3_from_alpha2(subtitle[0]),
+                               "path": subs[1],
                                "forced": False,
                                "hi": False}
                     if len(subtitle) > 1:
-                        subs[0].update({
-                            "forced": True if subtitle[1] == 'forced' else False,
-                            "hi": True if subtitle[1] == 'hi' else False
-                        })
+                        sub["forced"] = True if subtitle[1] == 'forced' else False
+                        sub["hi"] = True if subtitle[1] == 'hi' else False
+
+                    subtitles.append(sub)
+
+                item.update({"subtitles": subtitles})
 
                 if settings.general.getboolean('embedded_subs_show_desired'):
+                    desired = ast.literal_eval(desired_languages)
                     item['subtitles'] = [x for x in item['subtitles'] if
-                                         x[0]['code2'] in ast.literal_eval(desired_languages) or x[1]]
+                                         x['code2'] in desired or x['path']]
             else:
                 item.update({"subtitles": []})
 
@@ -540,74 +530,58 @@ class Episodes(Resource):
             item.update({"exist": os.path.isfile(mapped_path)})
 
             # Add the series desired subtitles language code2
-            item.update({"desired_languages": desired_languages})
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+            item.update({"desired_languages": ast.literal_eval(desired_languages)})
+            item.update({"monitored": item["monitored"] == "True"})
+        return jsonify(data=result)
 
 class SubtitleNameInfo(Resource):
     @authenticate
     def get(self):
-        name = request.args.get('filename')
-        if name is not None:
+        names = request.args.getlist('filenames[]')
+        results = []
+        for name in names:
             opts = dict()
             opts['type'] = 'episode'
             result = guessit(name, options=opts)
+            result['filename'] = name
+            if 'subtitle_language' in result:
+                result['subtitle_language'] = str(result['subtitle_language'])
 
-            res = dict()
             if 'episode' in result:
-                res['episode'] = result['episode']
+                result['episode'] = result['episode']
             else:
-                res['episode'] = 0
+                result['episode'] = 0
 
             if 'season' in result:
-                res['season'] = result['season']
+                result['season'] = result['season']
             else:
-                res['season'] = 0
+                result['season'] = 0
             
-            if 'subtitle_language' in result:
-                res['subtitle_language'] = str(result['subtitle_language'])
-            
-            return jsonify(data=res)
-        else:
-            return '', 400
+            results.append(result)
 
-class EpisodesSubtitlesDelete(Resource):
+        return jsonify(data=results)
+
+
+# PATCH: Download Subtitles
+# POST: Upload Subtitles
+# DELETE: Delete Subtitles
+class EpisodesSubtitles(Resource):
     @authenticate
-    def delete(self):
-        episodePath = request.form.get('episodePath')
-        language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        subtitlesPath = request.form.get('subtitlesPath')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
+    def patch(self):
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
-        result = delete_subtitles(media_type='series',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=episodePath,
-                                  subtitles_path=subtitlesPath,
-                                  sonarr_series_id=sonarrSeriesId,
-                                  sonarr_episode_id=sonarrEpisodeId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        audio_language = episodeInfo['audio_language']
+        if sceneName is None: sceneName = "None"
 
-
-class EpisodesSubtitlesDownload(Resource):
-    @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-        title = request.form.get('title')
+
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
@@ -615,7 +589,7 @@ class EpisodesSubtitlesDownload(Resource):
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
-            audio_language = 'None'
+            audio_language = None
 
         try:
             result = download_subtitle(episodePath, language, audio_language, hi, forced, providers_list, providers_auth, sceneName,
@@ -639,104 +613,29 @@ class EpisodesSubtitlesDownload(Resource):
                 store_subtitles(path, episodePath)
             else:
                 event_stream(type='episode', action='update', series=int(sonarrSeriesId), episode=int(sonarrEpisodeId))
-            return result, 201
+
         except OSError:
             pass
 
         return '', 204
 
-
-class EpisodesSubtitlesManualSearch(Resource):
     @authenticate
     def post(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        draw = request.args.get('draw')
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
 
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
-        profileId = request.form.get('profileId')
-        title = request.form.get('title')
-        providers_list = get_providers()
-        providers_auth = get_providers_auth()
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        audio_language = episodeInfo['audio_language']
+        if sceneName is None: sceneName = "None"
 
-        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
-                             'series')
-        if not data:
-            data = []
-        row_count = len(data)
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
-
-
-class EpisodesSubtitlesManualDownload(Resource):
-    @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
-        language = request.form.get('language')
-        hi = request.form.get('hi').capitalize()
-        forced = request.form.get('forced').capitalize()
-        selected_provider = request.form.get('provider')
-        subtitle = request.form.get('subtitle')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-        title = request.form.get('title')
-        providers_auth = get_providers_auth()
-
-        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
-
-        try:
-            result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle,
-                                              selected_provider, providers_auth, sceneName, title, 'series')
-            if result is not None:
-                message = result[0]
-                path = result[1]
-                forced = result[5]
-                if result[8]:
-                    language_code = result[2] + ":hi"
-                elif forced:
-                    language_code = result[2] + ":forced"
-                else:
-                    language_code = result[2]
-                provider = result[3]
-                score = result[4]
-                subs_id = result[6]
-                subs_path = result[7]
-                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
-                if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
-                store_subtitles(path, episodePath)
-            return result, 201
-        except OSError:
-            pass
-
-        return '', 204
-
-
-class EpisodesSubtitlesUpload(Resource):
-    @authenticate
-    def post(self):
-        episodePath = request.form.get('episodePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
         language = request.form.get('language')
         forced = True if request.form.get('forced') == 'on' else False
-        upload = request.files.get('upload')
-        sonarrSeriesId = request.form.get('sonarrSeriesId')
-        sonarrEpisodeId = request.form.get('sonarrEpisodeId')
-        title = request.form.get('title')
-        audioLanguage = request.form.get('audioLanguage')
+        subFile = request.files.get('file')
 
-        _, ext = os.path.splitext(upload.filename)
+        _, ext = os.path.splitext(subFile.filename)
 
         if ext not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
@@ -748,8 +647,8 @@ class EpisodesSubtitlesUpload(Resource):
                                             title=title,
                                             scene_name=sceneName,
                                             media_type='series',
-                                            subtitle=upload,
-                                            audio_language=audioLanguage)
+                                            subtitle=subFile,
+                                            audio_language=audio_language)
 
             if result is not None:
                 message = result[0]
@@ -766,27 +665,51 @@ class EpisodesSubtitlesUpload(Resource):
                     send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
                 store_subtitles(path, episodePath)
 
-            return result, 201
         except OSError:
             pass
 
         return '', 204
 
-
-class EpisodesScanDisk(Resource):
     @authenticate
-    def get(self):
+    def delete(self):
+        sonarrSeriesId = request.args.get('seriesid')
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        episodePath = episodeInfo['path']
+        
+        language = request.form.get('language')
+        forced = request.form.get('forced')
+        hi = request.form.get('hi')
+        subtitlesPath = request.form.get('path')
+
+        result = delete_subtitles(media_type='series',
+                                  language=language,
+                                  forced=forced,
+                                  hi=hi,
+                                  media_path=episodePath,
+                                  subtitles_path=subtitlesPath,
+                                  sonarr_series_id=sonarrSeriesId,
+                                  sonarr_episode_id=sonarrEpisodeId)
+
+        return '', 204
+
+
+
+class SeriesScanDisk(Resource):
+    @authenticate
+    def patch(self):
         seriesid = request.args.get('seriesid')
         series_scan_subtitles(seriesid)
-        return '', 200
+        return '', 204
 
 
-class EpisodesSearchMissing(Resource):
+class SeriesSearchMissing(Resource):
     @authenticate
-    def get(self):
+    def patch(self):
         seriesid = request.args.get('seriesid')
         series_download_subtitles(seriesid)
-        return '', 200
+        return '', 204
 
 
 class EpisodesHistory(Resource):
@@ -799,10 +722,8 @@ class EpisodesHistory(Resource):
                                            "WHERE sonarrEpisodeId=? ORDER BY timestamp DESC", (episodeid,))
         for item in episode_history:
             item['raw_timestamp'] = item['timestamp']
-            item['timestamp'] = "<div title='" + \
-                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
-                                "' data-toggle='tooltip' data-placement='left'>" + \
-                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            item['timestamp'] = pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))
+
             if item['language']:
                 language = item['language'].split(':')
                 item['language'] = {"name": language_from_alpha2(language[0]),
@@ -880,10 +801,8 @@ class Movies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         moviesId = request.args.get('radarrid')
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_movies", only_one=True)['count']
         if moviesId:
             result = database.execute("SELECT * FROM table_movies WHERE radarrId=? ORDER BY sortTitle ASC LIMIT ? "
                                       "OFFSET ?", (moviesId, length, start))
@@ -891,9 +810,6 @@ class Movies(Resource):
             result = database.execute("SELECT * FROM table_movies ORDER BY sortTitle ASC LIMIT ? OFFSET ?",
                                       (length, start))
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
-
             # Parse audio language
             item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
@@ -905,9 +821,8 @@ class Movies(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
-
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
+            else:
+                item.update({"languages": []})
 
             # Parse alternate titles
             if item['alternativeTitles']:
@@ -973,20 +888,32 @@ class Movies(Resource):
             item.update({"exist": os.path.isfile(mapped_path)})
 
             # Add the movie desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
+            item.update({"desired_languages": get_desired_languages(item['profileId'])})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+            # map poster and fanart to server proxy
+            poster = item["poster"]
+            fanart = item["fanart"]
+            item.update({"poster": f"{base_url}images/movies{poster}","fanart": f"{base_url}images/movies{fanart}"})
+
+            item.update({"monitored": item["monitored"] == "True"})
+            item.update({"forced": item["forced"]})
+            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
+        return jsonify(data=result)
 
     @authenticate
     def post(self):
         radarrId = request.args.get('radarrid')
+        profileId = request.form.get('profileid')
 
-        languages_profile = request.form.get('languages')
+        if profileId == 'undefined':
+            profileId = None
+        else:
+            try:
+                profileId = int(profileId)
+            except Exception:
+                return '', 400
 
-        if languages_profile == 'None':
-            languages_profile = None
-
-        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (languages_profile, radarrId))
+        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (profileId, radarrId))
 
         list_missing_subtitles_movies(no=radarrId)
 
@@ -994,21 +921,13 @@ class Movies(Resource):
 
         return '', 204
 
-
 class MoviesEditor(Resource):
     @authenticate
     def get(self):
-        draw = request.args.get('draw')
-
         result = database.execute("SELECT radarrId, title, audio_language, profileId "
                                   "FROM table_movies ORDER BY sortTitle")
 
-        row_count = len(result)
-
         for item in result:
-            # Add Datatables rowId
-            item.update({"DT_RowId": 'row_' + str(item['radarrId'])})
-
             # Parse audio language
             item.update({"audio_language": get_audio_profile_languages(movie_id=item['radarrId'])})
 
@@ -1020,11 +939,13 @@ class MoviesEditor(Resource):
                     item['languages'][i] = {"name": language_from_alpha2(subs),
                                             "code2": subs,
                                             "code3": alpha3_from_alpha2(subs)}
+            else:
+                item.update({"languages": []})
 
             # Parse profileId
             item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=result)
+        return jsonify(data=result)
 
 
 class MoviesEditSave(Resource):
@@ -1056,41 +977,28 @@ class MoviesEditSave(Resource):
         return '', 204
 
 
-class MovieSubtitlesDelete(Resource):
+"""
+:param language: Alpha2 language code
+"""
+class MovieSubtitles(Resource):
     @authenticate
-    def delete(self):
-        moviePath = request.form.get('moviePath')
-        language = request.form.get('language')
-        forced = request.form.get('forced')
-        hi = request.form.get('hi')
-        subtitlesPath = request.form.get('subtitlesPath')
-        radarrId = request.form.get('radarrId')
+    def patch(self):
+        # Download
+        radarrId = request.args.get('radarrid')
 
-        result = delete_subtitles(media_type='movie',
-                                  language=language,
-                                  forced=forced,
-                                  hi=hi,
-                                  media_path=moviePath,
-                                  subtitles_path=subtitlesPath,
-                                  radarr_id=radarrId)
-        if result:
-            return '', 202
-        else:
-            return '', 204
+        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
+        moviePath = movieInfo['path']
+        sceneName = movieInfo['sceneName']
+        if sceneName is None: sceneName = 'None'
+ 
+        title = movieInfo['title']
+        audio_language = movieInfo['audio_language']
 
-class MovieSubtitlesDownload(Resource):
-    @authenticate
-    def post(self):
-        moviePath = request.form.get('moviePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
-        radarrId = request.form.get('radarrId')
-        title = request.form.get('title')
+
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
@@ -1098,7 +1006,7 @@ class MovieSubtitlesDownload(Resource):
         if len(audio_language_list) > 0:
             audio_language = audio_language_list[0]['name']
         else:
-            audio_language = 'None'
+            audio_language = None
 
         try:
             result = download_subtitle(moviePath, language, audio_language, hi, forced, providers_list,
@@ -1122,26 +1030,103 @@ class MovieSubtitlesDownload(Resource):
                 store_subtitles_movie(path, moviePath)
             else:
                 event_stream(type='movie', action='update', movie=int(radarrId))
-            return result, 201
         except OSError:
             pass
 
         return '', 204
 
-
-class MovieSubtitlesManualSearch(Resource):
     @authenticate
     def post(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        draw = request.args.get('draw')
+        # Upload
+        # TODO: Support Multiply Upload
+        radarrId = request.args.get('radarrid')
+        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
 
-        moviePath = request.form.get('moviePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
-        profileId = request.form.get('profileId')
-        title = request.form.get('title')
+        moviePath = movieInfo['path']
+        sceneName = movieInfo['sceneName']
+        if sceneName is None: sceneName = 'None'
+
+        title = movieInfo['title']
+        audioLanguage = movieInfo['audio_language']
+
+        language = request.form.get('language')
+        forced = True if request.form.get('forced') == 'true' else False
+        subFile = request.files.get('file')
+
+        _, ext = os.path.splitext(subFile.filename)
+
+        if ext not in SUBTITLE_EXTENSIONS:
+            raise ValueError('A subtitle of an invalid format was uploaded.')
+
+        try:
+            result = manual_upload_subtitle(path=moviePath,
+                                            language=language,
+                                            forced=forced,
+                                            title=title,
+                                            scene_name=sceneName,
+                                            media_type='movie',
+                                            subtitle=subFile,
+                                            audio_language=audioLanguage)
+
+            if result is not None:
+                message = result[0]
+                path = result[1]
+                subs_path = result[2]
+                if forced:
+                    language_code = language + ":forced"
+                else:
+                    language_code = language
+                provider = "manual"
+                score = 120
+                history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
+                if not settings.general.getboolean('dont_notify_manual_actions'):
+                    send_notifications_movie(radarrId, message)
+                store_subtitles_movie(path, moviePath)
+        except OSError:
+            pass
+
+        return '', 204
+
+    @authenticate
+    def delete(self):
+        # Delete
+        radarrId = request.args.get('radarrid')
+        movieInfo = database.execute("SELECT path FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+
+        moviePath = movieInfo['path']
+
+        language = request.form.get('language')
+        forced = request.form.get('forced')
+        hi = request.form.get('hi')
+        subtitlesPath = request.form.get('path')
+
+        result = delete_subtitles(media_type='movie',
+                                  language=language,
+                                  forced=forced,
+                                  hi=hi,
+                                  media_path=moviePath,
+                                  subtitles_path=subtitlesPath,
+                                  radarr_id=radarrId)
+        if result:
+            return '', 202
+        else:
+            return '', 204    
+
+
+class ProviderMovies(Resource):
+    @authenticate
+    def get(self):
+        # Manual Search
+        radarrId = request.args.get('radarrid')
+        movieInfo = database.execute("SELECT title, path, sceneName FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+
+        title = movieInfo['title']
+        moviePath = movieInfo['path']
+        sceneName = movieInfo['sceneName']
+        if sceneName is None: sceneName = "None"
+
+        profileId = request.args.getlist('profileid')
+        
         providers_list = get_providers()
         providers_auth = get_providers_auth()
 
@@ -1149,24 +1134,26 @@ class MovieSubtitlesManualSearch(Resource):
                              'movie')
         if not data:
             data = []
-        row_count = len(data)
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
-
-class MovieSubtitlesManualDownload(Resource):
     @authenticate
     def post(self):
-        moviePath = request.form.get('moviePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
+        # Manual Download
+        radarrId = request.args.get('radarrid')
+        movieInfo = database.execute("SELECT title, path, sceneName, audio_language FROM table_movies WHERE radarrId=?", (radarrId,), only_one=True)
+
+        title = movieInfo['title']
+        moviePath = movieInfo['path']
+        sceneName = movieInfo['sceneName']
+        if sceneName is None: sceneName = "None"
+        audio_language = movieInfo['audio_language']
+
         language = request.form.get('language')
         hi = request.form.get('hi').capitalize()
         forced = request.form.get('forced').capitalize()
         selected_provider = request.form.get('provider')
         subtitle = request.form.get('subtitle')
-        radarrId = request.form.get('radarrId')
-        title = request.form.get('title')
+
         providers_auth = get_providers_auth()
 
         audio_language_list = get_audio_profile_languages(movie_id=radarrId)
@@ -1196,78 +1183,100 @@ class MovieSubtitlesManualDownload(Resource):
                 if not settings.general.getboolean('dont_notify_manual_actions'):
                     send_notifications_movie(radarrId, message)
                 store_subtitles_movie(path, moviePath)
-            return result, 201
         except OSError:
             pass
 
         return '', 204
 
 
-class MovieSubtitlesUpload(Resource):
+class ProviderEpisodes(Resource):
+    @authenticate
+    def get(self):
+        # Manual Search
+        sonarrEpisodeId = request.args.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name, audio_language FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        if sceneName is None: sceneName = "None"
+
+        profileId = request.args.get('profileid')
+
+        providers_list = get_providers()
+        providers_auth = get_providers_auth()
+
+        data = manual_search(episodePath, profileId, providers_list, providers_auth, sceneName, title,
+                             'series')
+        if not data:
+            data = []
+        return jsonify(data=data)
+
     @authenticate
     def post(self):
-        moviePath = request.form.get('moviePath')
-        sceneName = request.form.get('sceneName')
-        if sceneName == "null":
-            sceneName = "None"
+        # Manual Download
+        sonarrSeriesId = request.form.get('seriesid')
+        sonarrEpisodeId = request.form.get('episodeid')
+        episodeInfo = database.execute("SELECT title, path, scene_name FROM table_episodes WHERE sonarrEpisodeId=?", (sonarrEpisodeId,), only_one=True)
+
+        title = episodeInfo['title']
+        episodePath = episodeInfo['path']
+        sceneName = episodeInfo['scene_name']
+        if sceneName is None: sceneName = "None"
+
         language = request.form.get('language')
-        forced = True if request.form.get('forced') == 'on' else False
-        upload = request.files.get('upload')
-        radarrId = request.form.get('radarrId')
-        title = request.form.get('title')
-        audioLanguage = request.form.get('audioLanguage')
+        hi = request.form.get('hi').capitalize()
+        forced = request.form.get('forced').capitalize()
+        selected_provider = request.form.get('provider')
+        subtitle = request.form.get('subtitle')
+        providers_auth = get_providers_auth()
 
-        _, ext = os.path.splitext(upload.filename)
-
-        if ext not in SUBTITLE_EXTENSIONS:
-            raise ValueError('A subtitle of an invalid format was uploaded.')
+        audio_language_list = get_audio_profile_languages(episode_id=sonarrEpisodeId)
+        if len(audio_language_list) > 0:
+            audio_language = audio_language_list[0]['name']
+        else:
+            audio_language = 'None'
 
         try:
-            result = manual_upload_subtitle(path=moviePath,
-                                            language=language,
-                                            forced=forced,
-                                            title=title,
-                                            scene_name=sceneName,
-                                            media_type='movie',
-                                            subtitle=upload,
-                                            audio_language=audioLanguage)
-
+            result = manual_download_subtitle(episodePath, language, audio_language, hi, forced, subtitle, selected_provider, providers_auth, sceneName, title, 'series')
             if result is not None:
                 message = result[0]
                 path = result[1]
-                subs_path = result[2]
-                if forced:
-                    language_code = language + ":forced"
+                forced = result[5]
+                if result[8]:
+                    language_code = result[2] + ":hi"
+                elif forced:
+                    language_code = result[2] + ":forced"
                 else:
-                    language_code = language
-                provider = "manual"
-                score = 120
-                history_log_movie(4, radarrId, message, path, language_code, provider, score, subtitles_path=subs_path)
+                    language_code = result[2]
+                provider = result[3]
+                score = result[4]
+                subs_id = result[6]
+                subs_path = result[7]
+                history_log(2, sonarrSeriesId, sonarrEpisodeId, message, path, language_code, provider, score, subs_id, subs_path)
                 if not settings.general.getboolean('dont_notify_manual_actions'):
-                    send_notifications_movie(radarrId, message)
-                store_subtitles_movie(path, moviePath)
-
+                    send_notifications(sonarrSeriesId, sonarrEpisodeId, message)
+                store_subtitles(path, episodePath)
             return result, 201
         except OSError:
             pass
 
         return '', 204
 
-
 class MovieScanDisk(Resource):
     @authenticate
-    def get(self):
+    def patch(self):
         radarrid = request.args.get('radarrid')
         movies_scan_subtitles(radarrid)
-        return '', 200
+        return '', 204
 
 
 class MovieSearchMissing(Resource):
     @authenticate
-    def get(self):
+    def patch(self):
         radarrid = request.args.get('radarrid')
         movies_download_subtitles(radarrid)
-        return '', 200
+        return '', 204
 
 
 class MovieHistory(Resource):
@@ -1280,10 +1289,7 @@ class MovieHistory(Resource):
                                          "BY timestamp DESC", (radarrid,))
         for item in movie_history:
             item['raw_timestamp'] = item['timestamp']
-            item['timestamp'] = "<div title='" + \
-                                time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(item['timestamp'])) + \
-                                "' data-toggle='tooltip' data-placement='left'>" + \
-                                pretty.date(datetime.datetime.fromtimestamp(item['timestamp'])) + "</div>"
+            item['timestamp'] = pretty.date(datetime.datetime.fromtimestamp(item['timestamp']))
             if item['language']:
                 language = item['language'].split(':')
                 item['language'] = {"name": language_from_alpha2(language[0]),
@@ -1331,10 +1337,10 @@ class MovieHistory(Resource):
 class MovieTools(Resource):
     @authenticate
     def get(self):
-        movieid = request.args.get('movieid')
+        radarrId = request.args.get('radarrid')
 
         movie_ext_subs = database.execute("SELECT path, subtitles FROM table_movies WHERE radarrId=?",
-                                          (movieid,), only_one=True)
+                                          (radarrId,), only_one=True)
         try:
             all_subs = ast.literal_eval(movie_ext_subs['subtitles'])
         except:
@@ -1361,7 +1367,6 @@ class HistorySeries(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         upgradable_episodes_not_perfect = []
         if settings.general.getboolean('upgrade_subs'):
@@ -1392,9 +1397,6 @@ class HistorySeries(Resource):
                         if int(upgradable_episode['score']) < 360:
                             upgradable_episodes_not_perfect.append(upgradable_episode)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history LEFT JOIN table_episodes "
-                                     "on table_episodes.sonarrEpisodeId = table_history.sonarrEpisodeId WHERE "
-                                     "table_episodes.title is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_history.timestamp, table_history.subs_id, "
@@ -1458,7 +1460,9 @@ class HistorySeries(Resource):
             else:
                 item.update({"blacklisted": False})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+            item.update({"monitored": item["monitored"] == "True"})
+
+        return jsonify(data=data)
 
 
 class HistoryMovies(Resource):
@@ -1466,7 +1470,6 @@ class HistoryMovies(Resource):
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
         upgradable_movies = []
         upgradable_movies_not_perfect = []
@@ -1496,9 +1499,6 @@ class HistoryMovies(Resource):
                         if int(upgradable_movie['score']) < 120:
                             upgradable_movies_not_perfect.append(upgradable_movie)
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_history_movie LEFT JOIN table_movies on "
-                                     "table_movies.radarrId = table_history_movie.radarrId WHERE table_movies.title "
-                                     "is not NULL", only_one=True)['count']
         data = database.execute("SELECT table_history_movie.action, table_movies.title, table_history_movie.timestamp, "
                                 "table_history_movie.description, table_history_movie.radarrId, table_movies.monitored,"
                                 " table_history_movie.video_path, table_history_movie.language, table_movies.tags, "
@@ -1558,7 +1558,9 @@ class HistoryMovies(Resource):
             else:
                 item.update({"blacklisted": False})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+            item.update({"monitored": item["monitored"] == "True"})
+
+        return jsonify(data=data)
 
 
 class HistoryStats(Resource):
@@ -1616,15 +1618,7 @@ class HistoryStats(Resource):
 class WantedSeries(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        data_count = database.execute("SELECT table_episodes.monitored, table_shows.tags, table_shows.seriesType FROM "
-                                      "table_episodes INNER JOIN table_shows on table_shows.sonarrSeriesId = "
-                                      "table_episodes.sonarrSeriesId WHERE table_episodes.missing_subtitles != '[]'" +
-                                      get_exclusion_clause('series'))
-        row_count = len(data_count)
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.monitored, "
                                 "table_episodes.season || 'x' || table_episodes.episode as episode_number, "
                                 "table_episodes.title as episodeTitle, table_episodes.missing_subtitles, "
@@ -1633,7 +1627,7 @@ class WantedSeries(Resource):
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+                                " ORDER BY table_episodes._rowid_ ")
 
         for item in data:
             # Parse missing subtitles
@@ -1660,23 +1654,17 @@ class WantedSeries(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"monitored": item["monitored"] == "True"})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class WantedMovies(Resource):
     @authenticate
     def get(self):
-        start = request.args.get('start') or 0
-        length = request.args.get('length') or -1
-        draw = request.args.get('draw')
-
-        data_count = database.execute("SELECT tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                      get_exclusion_clause('movie'))
-        row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ ")
 
         for item in data:
             # Parse missing subtitles
@@ -1703,8 +1691,9 @@ class WantedMovies(Resource):
 
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
+            item.update({"monitored": item["monitored"] == "True"})
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
 
 class SearchWantedSeries(Resource):
@@ -1720,15 +1709,15 @@ class SearchWantedMovies(Resource):
         wanted_search_missing_subtitles_movies()
         return '', 200
 
-
+# GET: get blacklist
+# POST: add blacklist
+# DELETE: remove blacklist
 class BlacklistSeries(Resource):
     @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist", only_one=True)['count']
         data = database.execute("SELECT table_shows.title as seriesTitle, table_episodes.season || 'x' || "
                                 "table_episodes.episode as episode_number, table_episodes.title as episodeTitle, "
                                 "table_episodes.sonarrSeriesId, table_blacklist.provider, table_blacklist.subs_id, "
@@ -1752,10 +1741,8 @@ class BlacklistSeries(Resource):
                                     "forced": True if item['language'].endswith(':forced') else False,
                                     "hi": True if item['language'].endswith(':hi') else False}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
-
-class BlacklistEpisodeSubtitlesAdd(Resource):
     @authenticate
     def post(self):
         sonarr_series_id = int(request.form.get('sonarr_series_id'))
@@ -1791,32 +1778,25 @@ class BlacklistEpisodeSubtitlesAdd(Resource):
         event_stream(type='episodeHistory')
         return '', 200
 
-
-class BlacklistEpisodeSubtitlesRemove(Resource):
     @authenticate
     def delete(self):
-        provider = request.form.get('provider')
-        subs_id = request.form.get('subs_id')
+        if request.args.get("all") == "true":
+            blacklist_delete_all()
+        else:
+            provider = request.form.get('provider')
+            subs_id = request.form.get('subs_id')
+            blacklist_delete(provider=provider, subs_id=subs_id)
+        return '', 204
 
-        blacklist_delete(provider=provider, subs_id=subs_id)
-        return '', 200
-
-
-class BlacklistEpisodeSubtitlesRemoveAll(Resource):
-    @authenticate
-    def delete(self):
-        blacklist_delete_all()
-        return '', 200
-
-
+# GET: get blacklist
+# POST: add blacklist
+# DELETE: remove blacklist
 class BlacklistMovies(Resource):
     @authenticate
     def get(self):
         start = request.args.get('start') or 0
         length = request.args.get('length') or -1
-        draw = request.args.get('draw')
 
-        row_count = database.execute("SELECT COUNT(*) as count FROM table_blacklist_movie", only_one=True)['count']
         data = database.execute("SELECT table_movies.title, table_movies.radarrId, table_blacklist_movie.provider, "
                                 "table_blacklist_movie.subs_id, table_blacklist_movie.language, "
                                 "table_blacklist_movie.timestamp FROM table_blacklist_movie INNER JOIN "
@@ -1838,10 +1818,8 @@ class BlacklistMovies(Resource):
                                     "forced": True if item['language'].endswith(':forced') else False,
                                     "hi": True if item['language'].endswith(':hi') else False}
 
-        return jsonify(draw=draw, recordsTotal=row_count, recordsFiltered=row_count, data=data)
+        return jsonify(data=data)
 
-
-class BlacklistMovieSubtitlesAdd(Resource):
     @authenticate
     def post(self):
         radarr_id = int(request.form.get('radarr_id'))
@@ -1874,21 +1852,14 @@ class BlacklistMovieSubtitlesAdd(Resource):
         event_stream(type='movieHistory')
         return '', 200
 
-
-class BlacklistMovieSubtitlesRemove(Resource):
     @authenticate
     def delete(self):
-        provider = request.form.get('provider')
-        subs_id = request.form.get('subs_id')
-
-        blacklist_delete_movie(provider=provider, subs_id=subs_id)
-        return '', 200
-
-
-class BlacklistMovieSubtitlesRemoveAll(Resource):
-    @authenticate
-    def delete(self):
-        blacklist_delete_all_movie()
+        if request.args.get("all") == "true":
+            blacklist_delete_all_movie()
+        else:
+            provider = request.form.get('provider')
+            subs_id = request.form.get('subs_id')
+            blacklist_delete_movie(provider=provider, subs_id=subs_id)
         return '', 200
 
 
@@ -1961,77 +1932,62 @@ class BrowseRadarrFS(Resource):
         return jsonify(data)
 
 
-api.add_resource(Shutdown, '/shutdown')
-api.add_resource(Restart, '/restart')
-
-api.add_resource(BadgesSeries, '/badges_series')
-api.add_resource(BadgesMovies, '/badges_movies')
-api.add_resource(BadgesProviders, '/badges_providers')
-api.add_resource(Languages, '/languages')
-api.add_resource(LanguagesProfiles, '/languages_profiles')
+api.add_resource(BadgesSeries, '/badges/series')
+api.add_resource(BadgesMovies, '/badges/movies')
+api.add_resource(BadgesProviders, '/badges/providers')
 api.add_resource(Notifications, '/notifications')
 
-api.add_resource(Search, '/search_json')
+# Search action happens in frondend
+# api.add_resource(Search, '/search')
 
-api.add_resource(ResetProviders, '/resetproviders')
+api.add_resource(Providers, '/providers')
+api.add_resource(ProviderMovies, '/providers/movies')
+api.add_resource(ProviderEpisodes, '/providers/episodes')
 
-api.add_resource(SaveSettings, '/savesettings')
+api.add_resource(System, '/system')
+api.add_resource(SystemTasks, '/system/tasks')
+api.add_resource(SystemLogs, '/system/logs')
+api.add_resource(SystemStatus, '/system/status')
+api.add_resource(SystemReleases, '/system/releases')
+api.add_resource(SystemSettings, '/system/settings')
+api.add_resource(Languages, '/system/languages')
+api.add_resource(LanguagesProfiles, '/system/languages/profiles')
 
-api.add_resource(SystemTasks, '/systemtasks')
-api.add_resource(SystemLogs, '/systemlogs')
-api.add_resource(SystemProviders, '/systemproviders')
-api.add_resource(SystemStatus, '/systemstatus')
-api.add_resource(SystemReleases, '/systemreleases')
-
-api.add_resource(SubtitleNameInfo, '/subtitle_name_info')
+api.add_resource(SubtitleNameInfo, '/subtitles/info')
+# api.add_resource(SyncSubtitles, '/subtitles/sync')
+# api.add_resource(SubMods, '/subtitles/mods')
 
 api.add_resource(Series, '/series')
-api.add_resource(SeriesEditor, '/series_editor')
-api.add_resource(SeriesEditSave, '/series_edit_save')
+api.add_resource(SeriesScanDisk, '/series/disk')
+api.add_resource(SeriesSearchMissing, '/series/missing')
+# api.add_resource(SeriesEditor, '/series_editor')
+# api.add_resource(SeriesEditSave, '/series_edit_save')
 api.add_resource(Episodes, '/episodes')
-api.add_resource(EpisodesSubtitlesDelete, '/episodes_subtitles_delete')
-api.add_resource(EpisodesSubtitlesDownload, '/episodes_subtitles_download')
-api.add_resource(EpisodesSubtitlesManualSearch, '/episodes_subtitles_manual_search')
-api.add_resource(EpisodesSubtitlesManualDownload, '/episodes_subtitles_manual_download')
-api.add_resource(EpisodesSubtitlesUpload, '/episodes_subtitles_upload')
-api.add_resource(EpisodesScanDisk, '/episodes_scan_disk')
-api.add_resource(EpisodesSearchMissing, '/episodes_search_missing')
-api.add_resource(EpisodesHistory, '/episodes_history')
-api.add_resource(EpisodesTools, '/episodes_tools')
+api.add_resource(EpisodesSubtitles, '/episodes/subtitles')
+
+api.add_resource(EpisodesHistory, '/episodes/history')
+# api.add_resource(EpisodesTools, '/episodes_tools')
 
 api.add_resource(Movies, '/movies')
-api.add_resource(MoviesEditor, '/movies_editor')
-api.add_resource(MoviesEditSave, '/movies_edit_save')
-api.add_resource(MovieSubtitlesDelete, '/movie_subtitles_delete')
-api.add_resource(MovieSubtitlesDownload, '/movie_subtitles_download')
-api.add_resource(MovieSubtitlesManualSearch, '/movie_subtitles_manual_search')
-api.add_resource(MovieSubtitlesManualDownload, '/movie_subtitles_manual_download')
-api.add_resource(MovieSubtitlesUpload, '/movie_subtitles_upload')
-api.add_resource(MovieScanDisk, '/movie_scan_disk')
-api.add_resource(MovieSearchMissing, '/movie_search_missing')
-api.add_resource(MovieHistory, '/movie_history')
-api.add_resource(MovieTools, '/movie_tools')
+api.add_resource(MovieScanDisk, '/movies/disk')
+api.add_resource(MovieSearchMissing, '/movies/missing')
+api.add_resource(MovieSubtitles, '/movies/subtitles')
+# api.add_resource(MoviesEditor, '/movies_editor')
+# api.add_resource(MoviesEditSave, '/movies_edit_save')
+api.add_resource(MovieHistory, '/movies/history')
+api.add_resource(MovieTools, '/movies/tools')
 
-api.add_resource(HistorySeries, '/history_series')
-api.add_resource(HistoryMovies, '/history_movies')
-api.add_resource(HistoryStats, '/history_stats')
+api.add_resource(HistorySeries, '/history/series')
+api.add_resource(HistoryMovies, '/history/movies')
+api.add_resource(HistoryStats, '/history/stats')
 
-api.add_resource(WantedSeries, '/wanted_series')
-api.add_resource(WantedMovies, '/wanted_movies')
-api.add_resource(SearchWantedSeries, '/search_wanted_series')
-api.add_resource(SearchWantedMovies, '/search_wanted_movies')
+api.add_resource(WantedSeries, '/series/wanted')
+api.add_resource(WantedMovies, '/movies/wanted')
+api.add_resource(SearchWantedSeries, '/series/wanted/search')
+api.add_resource(SearchWantedMovies, '/movies/wanted/search')
 
-api.add_resource(BlacklistSeries, '/blacklist_series')
-api.add_resource(BlacklistEpisodeSubtitlesAdd, '/blacklist_episode_subtitles_add')
-api.add_resource(BlacklistEpisodeSubtitlesRemove, '/blacklist_episode_subtitles_remove')
-api.add_resource(BlacklistEpisodeSubtitlesRemoveAll, '/blacklist_episode_subtitles_remove_all')
-api.add_resource(BlacklistMovies, '/blacklist_movies')
-api.add_resource(BlacklistMovieSubtitlesAdd, '/blacklist_movie_subtitles_add')
-api.add_resource(BlacklistMovieSubtitlesRemove, '/blacklist_movie_subtitles_remove')
-api.add_resource(BlacklistMovieSubtitlesRemoveAll, '/blacklist_movie_subtitles_remove_all')
-
-api.add_resource(SyncSubtitles, '/sync_subtitles')
-api.add_resource(SubMods, '/sub_mods')
+api.add_resource(BlacklistSeries, '/series/blacklist')
+api.add_resource(BlacklistMovies, '/movies/blacklist')
 
 api.add_resource(BrowseBazarrFS, '/browse_bazarr_filesystem')
 api.add_resource(BrowseSonarrFS, '/browse_sonarr_filesystem')

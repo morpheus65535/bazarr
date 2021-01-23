@@ -15,3 +15,8 @@ static/scss/.sass-cache
 
 # Allow
 !*.dll
+node_modules
+frontend/build
+frontend/dist
+frontend/*.local
+frontend/.eslintcache

@@ -1,0 +1,17 @@
+@import "./variable.scss";
+
+td {
+  vertical-align: middle !important;
+}
+
+.text-overflow-ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 360px;
+}
+
+.dropdown-hidden {
+  &::after {
+    display: none;
+  }
+}

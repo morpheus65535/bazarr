@@ -1,0 +1,3 @@
+interface Badge {
+  value: number;
+}

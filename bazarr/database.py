@@ -239,6 +239,9 @@ def update_profile_id_list():
     global profile_id_list
     profile_id_list = database.execute("SELECT profileId, name, cutoff, items FROM table_languages_profiles")
 
+    for profile in profile_id_list:
+            profile['items'] = json.loads(profile['items'])
+
 
 def get_profiles_list(profile_id=None):
     if not len(profile_id_list):
@@ -262,8 +265,7 @@ def get_desired_languages(profile_id):
         for profile in profile_id_list:
             profileId, name, cutoff, items = profile.values()
             if profileId == int(profile_id):
-                items_list = ast.literal_eval(items)
-                languages = [x['language'] for x in items_list]
+                languages = [x['language'] for x in items]
                 break
 
     return languages
@@ -297,7 +299,7 @@ def get_profile_cutoff(profile_id):
             profileId, name, cutoff, items = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
-                    for item in ast.literal_eval(items):
+                    for item in items:
                         if item['id'] == cutoff:
                             return [item]
                         elif cutoff == 65535:
