@@ -126,9 +126,7 @@ class Languages(Resource):
 class LanguagesProfiles(Resource):
     @authenticate
     def get(self):
-        return jsonify(data=get_profiles_list())
-
-
+        return jsonify(get_profiles_list())
 class Notifications(Resource):
     @authenticate
     def get(self):
@@ -178,7 +176,13 @@ class SystemSettings(Resource):
 
     @authenticate
     def post(self):
-        languages_profiles = request.form.get('languages_profiles')
+        enabled_languages = request.form.getlist('languages-enabled')
+        if len(enabled_languages) != 0:
+            database.execute("UPDATE table_settings_languages SET enabled=0")
+            for code in enabled_languages:
+                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (code,))
+
+        languages_profiles = request.form.get('languages-profiles')
         if languages_profiles:
             existing_ids = database.execute('SELECT profileId FROM table_languages_profiles')
             existing = [x['profileId'] for x in existing_ids]
@@ -187,8 +191,8 @@ class SystemSettings(Resource):
                     # Update existing profiles
                     database.execute('UPDATE table_languages_profiles SET name = ?, cutoff = ?, items = ? '
                                      'WHERE profileId = ?', (item['name'],
-                                                             item['cutoff'] if item['cutoff'] != '' else None,
-                                                             item['items'],
+                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
+                                                             json.dumps(item['items']),
                                                              item['profileId']))
                     existing.remove(item['profileId'])
                 else:
@@ -196,8 +200,8 @@ class SystemSettings(Resource):
                     database.execute('INSERT INTO table_languages_profiles (profileId, name, cutoff, items) '
                                      'VALUES (?, ?, ?, ?)', (item['profileId'],
                                                              item['name'],
-                                                             item['cutoff'] if item['cutoff'] != '' else None,
-                                                             item['items']))
+                                                             item['cutoff'] if item['cutoff'] != 'null' else None,
+                                                             json.dumps(item['items'])))
             for profileId in existing:
                 # Unassign this profileId from series and movies
                 database.execute('UPDATE table_shows SET profileId = null WHERE profileId = ?', (profileId,))
@@ -213,7 +217,7 @@ class SystemSettings(Resource):
                 scheduler.add_job(list_missing_subtitles_movies, kwargs={'send_event': False})
 
         save_settings(zip(request.form.keys(), request.form.listvalues()))
-        return '', 200
+        return '', 204
 
 
 class SystemTasks(Resource):
@@ -325,9 +329,6 @@ class Series(Resource):
             else:
                 item.update({"languages": []})
 
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
-
             # Parse alternate titles
             if item['alternateTitles']:
                 item.update({"alternateTitles": ast.literal_eval(item['alternateTitles'])})
@@ -370,7 +371,7 @@ class Series(Resource):
             item.update({"poster": f"{base_url}images/series{poster}","fanart": f"{base_url}images/series{fanart}"})
 
             # Add the series desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
+            item.update({"desired_languages": get_desired_languages(item['profileId'])})
 
         return jsonify(data=result)
 
@@ -378,12 +379,17 @@ class Series(Resource):
     def post(self):
         seriesId = request.args.get('seriesid')
 
-        languages_profile = request.form.get('profileid')
+        profileId = request.form.get('profileid')
 
-        if languages_profile == 'None':
-            languages_profile = None
+        if profileId == 'undefined':
+            profileId = None
+        else:      
+            try:
+                profileId = int(profileId)
+            except Exception:
+                return '', 400
 
-        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (languages_profile, seriesId))
+        database.execute("UPDATE table_shows SET profileId=? WHERE sonarrSeriesId=?", (profileId, seriesId))
 
         list_missing_subtitles(no=seriesId)
 
@@ -818,9 +824,6 @@ class Movies(Resource):
             else:
                 item.update({"languages": []})
 
-            # Parse profileId
-            item['profileId'] = {"id": item['profileId'], "name": get_profile_id_name(item['profileId'])}
-
             # Parse alternate titles
             if item['alternativeTitles']:
                 item.update({"alternativeTitles": ast.literal_eval(item['alternativeTitles'])})
@@ -885,7 +888,7 @@ class Movies(Resource):
             item.update({"exist": os.path.isfile(mapped_path)})
 
             # Add the movie desired subtitles language code2
-            item.update({"desired_languages": get_desired_languages(item['profileId']['id'])})
+            item.update({"desired_languages": get_desired_languages(item['profileId'])})
 
             # map poster and fanart to server proxy
             poster = item["poster"]
@@ -900,13 +903,17 @@ class Movies(Resource):
     @authenticate
     def post(self):
         radarrId = request.args.get('radarrid')
+        profileId = request.form.get('profileid')
 
-        languages_profile = request.form.get('profileid')
+        if profileId == 'undefined':
+            profileId = None
+        else:
+            try:
+                profileId = int(profileId)
+            except Exception:
+                return '', 400
 
-        if languages_profile == 'None':
-            languages_profile = None
-
-        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (languages_profile, radarrId))
+        database.execute("UPDATE table_movies SET profileId=? WHERE radarrId=?", (profileId, radarrId))
 
         list_missing_subtitles_movies(no=radarrId)
 
@@ -1648,7 +1655,6 @@ class WantedSeries(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
             item.update({"monitored": item["monitored"] == "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
 
         return jsonify(data=data)
 
@@ -1686,7 +1692,6 @@ class WantedMovies(Resource):
             # Confirm if path exist
             item.update({"exist": os.path.isfile(mapped_path)})
             item.update({"monitored": item["monitored"] == "True"})
-            item.update({"hearing_impaired": item["hearing_impaired"] == "True"})
 
         return jsonify(data=data)
 

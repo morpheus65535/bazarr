@@ -246,13 +246,6 @@ def save_settings(settings_items):
         subzero_mods = []
 
     for key, value in settings_items:
-        # Intercept database stored settings
-        if key == 'enabled_languages':
-            database.execute("UPDATE table_settings_languages SET enabled=0")
-            for item in value:
-                database.execute("UPDATE table_settings_languages SET enabled=1 WHERE code2=?", (item,))
-            continue
-
         # Make sure that text based form values aren't pass as list unless they are language list
         if isinstance(value, list) and len(value) == 1 and key not in array_keys:
             value = value[0]

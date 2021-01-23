@@ -318,7 +318,7 @@ def manual_search(path, profileId, providers, providers_auth, sceneName, title, 
     language_set = set()
 
     # where [3] is items list of dict(id, lang, forced, hi)
-    language_items = ast.literal_eval(get_profiles_list(profile_id=int(profileId))['items'])
+    language_items = get_profiles_list(profile_id=int(profileId))['items']
 
     for language in language_items:
         lang_id, lang, forced, hi, audio_exclude = language.values()
