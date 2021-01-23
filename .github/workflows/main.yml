@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [15.x]
+        node-version: [14.x]
 
     steps:
     - name: Checkout repository
@@ -38,4 +38,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: react-github-actions-build
-        path: fontend/build
+        path: build
+    
