@@ -1633,7 +1633,7 @@ class WantedSeries(Resource):
                                 "table_episodes.failedAttempts, table_shows.seriesType FROM table_episodes INNER JOIN "
                                 "table_shows on table_shows.sonarrSeriesId = table_episodes.sonarrSeriesId WHERE "
                                 "table_episodes.missing_subtitles != '[]'" + get_exclusion_clause('series') +
-                                " ORDER BY table_episodes._rowid_ DESC LIMIT " + length + " OFFSET " + start)
+                                " ORDER BY table_episodes._rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Parse missing subtitles
@@ -1676,8 +1676,7 @@ class WantedMovies(Resource):
         row_count = len(data_count)
         data = database.execute("SELECT title, missing_subtitles, radarrId, path, sceneName, "
                                 "failedAttempts, tags, monitored FROM table_movies WHERE missing_subtitles != '[]'" +
-                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT " + length + " OFFSET " +
-                                start)
+                                get_exclusion_clause('movie') + " ORDER BY _rowid_ DESC LIMIT ? OFFSET ?", (length, start))
 
         for item in data:
             # Parse missing subtitles
