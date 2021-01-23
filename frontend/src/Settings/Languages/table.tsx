@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Badge, Button } from "react-bootstrap";
 import { Column } from "react-table";
-import { ActionIcon, BasicTable } from "../../Components";
+import { ActionIcon, BasicTable } from "../../components";
 
 import Modal from "./modal";
 

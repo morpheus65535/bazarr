@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../@redux/actions";
 import { Helmet } from "react-helmet";
 
-import { ContentHeader, ContentHeaderButton } from "../../Components";
+import { ContentHeader, ContentHeaderButton } from "../../components";
 
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 

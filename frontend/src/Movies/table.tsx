@@ -9,7 +9,7 @@ import {
   ActionIconBadge,
   AsyncStateOverlay,
   ItemEditorModal,
-} from "../Components";
+} from "../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

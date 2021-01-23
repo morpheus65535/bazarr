@@ -10,9 +10,9 @@ import {
   Message,
   Text,
   CollapseBox,
-} from "../Components";
+} from "../components";
 
-import SettingTemplate from "../Components/template";
+import SettingTemplate from "../components/template";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faClipboard } from "@fortawesome/free-solid-svg-icons";

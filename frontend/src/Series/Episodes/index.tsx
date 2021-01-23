@@ -22,7 +22,7 @@ import {
   ItemEditorModal,
   SeriesUploadModal,
   LoadingIndicator,
-} from "../../Components";
+} from "../../components";
 
 import { SeriesApi } from "../../apis";
 

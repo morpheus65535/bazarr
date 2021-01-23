@@ -13,7 +13,7 @@ import Header from "./Header";
 import { bootstrap } from "../@redux/actions";
 import { connect } from "react-redux";
 
-import { LoadingIndicator } from "../Components";
+import { LoadingIndicator } from "../components";
 
 interface Props {
   bootstrap: () => void;

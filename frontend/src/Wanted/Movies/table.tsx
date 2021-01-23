@@ -3,7 +3,7 @@ import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
 
-import { BasicTable, AsyncStateOverlay, ActionBadge } from "../../Components";
+import { BasicTable, AsyncStateOverlay, ActionBadge } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";

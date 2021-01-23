@@ -3,7 +3,7 @@ import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Column } from "react-table";
 
-import { AsyncButton, BasicTable } from "../../Components";
+import { AsyncButton, BasicTable } from "../../components";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";

@@ -15,7 +15,7 @@ import { SystemApi } from "../apis";
 
 import { connect } from "react-redux";
 
-import { SearchResult, SearchBar } from "../Components";
+import { SearchResult, SearchBar } from "../components";
 
 import logo from "../@static/logo128.png";
 

@@ -7,7 +7,7 @@ import { updateWantedSeriesList } from "../../@redux/actions";
 
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
-import { ContentHeader, ContentHeaderButton } from "../../Components";
+import { ContentHeader, ContentHeaderButton } from "../../components";
 
 import Table from "./table";
 

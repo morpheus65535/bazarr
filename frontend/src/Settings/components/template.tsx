@@ -7,7 +7,7 @@ import {
   ContentHeader,
   ContentHeaderButton,
   AsyncStateOverlay,
-} from "../../Components";
+} from "../../components";
 
 import { faSave } from "@fortawesome/free-solid-svg-icons";
 

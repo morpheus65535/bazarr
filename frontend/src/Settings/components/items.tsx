@@ -86,4 +86,4 @@ export const Check: FunctionComponent<CheckProps> = ({
   );
 };
 
-export { Selector, Slider } from "../../Components";
+export { Selector, Slider } from "../../components";

@@ -11,9 +11,9 @@ import {
   Text,
   Selector,
   Slider,
-} from "../Components";
+} from "../components";
 
-import SettingTemplate from "../Components/template";
+import SettingTemplate from "../components/template";
 
 interface Props {}
 

@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useMemo } from "react";
 
-import SettingsTemplate from "../Components/template";
+import SettingsTemplate from "../components/template";
 
-import { Group, Selector, Input, SelectionBox } from "../Components";
+import { Group, Selector, Input, SelectionBox } from "../components";
 import { Container } from "react-bootstrap";
 
 const seriesSyncOptions = {

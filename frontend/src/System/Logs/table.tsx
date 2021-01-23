@@ -12,7 +12,7 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { BasicTable } from "../../Components";
+import { BasicTable } from "../../components";
 
 interface Props {
   providers: SystemLog[];

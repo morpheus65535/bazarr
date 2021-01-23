@@ -25,7 +25,7 @@ import {
   SubtitleToolModal,
   MovieHistoryModal,
   MovieUploadModal,
-} from "../../Components";
+} from "../../components";
 
 import Table from "./table";
 import { MoviesApi } from "../../apis";

@@ -2,7 +2,7 @@ import React, { FunctionComponent, useState, useMemo } from "react";
 import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 
-import { LanguageSelector } from "../../Components";
+import { LanguageSelector } from "../../components";
 
 import Table from "./table";
 
@@ -13,9 +13,9 @@ import {
   Check,
   Selector,
   CollapseBox,
-} from "../Components";
+} from "../components";
 
-import SettingTemplate from "../Components/template";
+import SettingTemplate from "../components/template";
 
 interface Props {
   languages: Language[];

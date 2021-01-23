@@ -13,8 +13,8 @@ import {
   BasicModalProps,
   Selector,
   LanguageSelector,
-} from "../../Components";
-import { Input, Text, Message, Check } from "../Components";
+} from "../../components";
+import { Input, Text, Message, Check } from "../components";
 
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 

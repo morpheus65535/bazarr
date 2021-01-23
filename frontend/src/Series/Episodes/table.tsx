@@ -20,7 +20,7 @@ import {
   AsyncStateOverlay,
   SubtitleToolModal,
   EpisodeHistoryModal,
-} from "../../Components";
+} from "../../components";
 
 interface Props {
   id: number;

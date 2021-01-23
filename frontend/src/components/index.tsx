@@ -169,9 +169,9 @@ export const FileForm: FunctionComponent<FileFormProps> = ({
 export { default as ItemOverview } from "./ItemOverview";
 export { default as LanguageSelector } from "./LanguageSelector";
 export { default as AsyncStateOverlay } from "./AsyncStateOverlay";
-export * from "./Modals";
+export * from "./modals";
 export * from "./ContentHeader";
-export * from "./Tables";
+export * from "./tables";
 export * from "./Selector";
 export * from "./Slider";
 export * from "./SearchBar";

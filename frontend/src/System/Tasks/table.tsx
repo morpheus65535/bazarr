@@ -1,6 +1,6 @@
 import React from "react";
 import { Column } from "react-table";
-import { BasicTable } from "../../Components";
+import { BasicTable } from "../../components";
 import { SystemApi } from "../../apis";
 
 import { connect } from "react-redux";
