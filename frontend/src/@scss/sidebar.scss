@@ -143,7 +143,7 @@ $sidebar-bg-color: #3a3f51;
     }
 
     &.sb-collapse {
-      border-left-color: var(--secondary);
+      border-left-color: var(--primary);
       @include child();
     }
 

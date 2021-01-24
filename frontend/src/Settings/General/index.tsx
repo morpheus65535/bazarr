@@ -67,8 +67,8 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
             <Input name="Base URL">
               <Text
                 prefix="/"
-                defaultValue={settings.general.base_url}
-                onChange={(v) => update(v, "settings-general-base_url")}
+                defaultValue={settings.general.base_url?.slice(1)}
+                onChange={(v) => update("/" + v, "settings-general-base_url")}
               ></Text>
               <Message type="info">Reverse proxy support</Message>
             </Input>
@@ -129,7 +129,10 @@ const SettingsGeneralView: FunctionComponent<Props> = (props) => {
           <Group header="Proxy">
             <CollapseBox
               indent
-              defaultOpen={settings.proxy.type !== "none"}
+              defaultOpen={
+                settings.proxy.type !== undefined &&
+                settings.proxy.type !== "none"
+              }
               control={(change) => (
                 <Input>
                   <Selector

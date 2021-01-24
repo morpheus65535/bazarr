@@ -132,7 +132,7 @@ const Table: FunctionComponent<Props> = ({
   return (
     <React.Fragment>
       <BasicTable
-        pageControl={false}
+        showPageControl={false}
         columns={columns}
         data={profiles}
       ></BasicTable>

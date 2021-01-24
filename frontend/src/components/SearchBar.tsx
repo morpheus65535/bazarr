@@ -36,11 +36,16 @@ const ResultItem: FunctionComponent<ResultItemProps> = ({
 };
 
 interface Props {
+  className?: string;
   onSearch: (text: string) => SearchResult[];
   size?: FormControlProps["size"];
 }
 
-export const SearchBar: FunctionComponent<Props> = ({ onSearch, size }) => {
+export const SearchBar: FunctionComponent<Props> = ({
+  onSearch,
+  size,
+  className,
+}) => {
   const [text, setText] = useState("");
 
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -68,7 +73,7 @@ export const SearchBar: FunctionComponent<Props> = ({ onSearch, size }) => {
   }, [results]);
 
   return (
-    <Dropdown show={text.length !== 0}>
+    <Dropdown show={text.length !== 0} className={className}>
       <Form.Control
         type="text"
         size={size}

@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from "react";
-import { Navbar, Nav, Row } from "react-bootstrap";
+import { Row } from "react-bootstrap";
 
 import ContentHeaderButton from "./Button";
 import ContentHeaderGroup from "./Group";
@@ -8,9 +8,9 @@ export const ContentHeader: FunctionComponent = (props) => {
   const { children } = props;
   return (
     <Row className="content-header">
-      <Navbar bg="dark" className="flex-grow-1">
-        <Nav className="flex-grow-1">{children}</Nav>
-      </Navbar>
+      <div className="d-flex flex-nowrap flex-grow-1 bg-dark p-2">
+        {children}
+      </div>
     </Row>
   );
 };

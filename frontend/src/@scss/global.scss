@@ -1,5 +1,32 @@
 @import "./variable.scss";
 
+// Override bootstrap primary color
+:root {
+  --primary: #{$theme-color};
+
+  .btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+
+    &:hover,
+    &:active,
+    &:focus {
+      background-color: $theme-color-darked !important;
+      border-color: $theme-color-darked !important;
+    }
+  }
+
+  input {
+    &:matches([type="text"]) {
+      &:active,
+      &:focus {
+        border-color: $theme-color;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
 td {
   vertical-align: middle !important;
 }

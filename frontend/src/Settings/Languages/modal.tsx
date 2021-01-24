@@ -221,7 +221,7 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
       </Input>
       <Input>
         <BasicTable
-          pageControl={false}
+          showPageControl={false}
           responsive={false}
           columns={columns}
           data={current?.items ?? []}

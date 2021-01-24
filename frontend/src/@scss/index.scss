@@ -1,6 +1,7 @@
-@import "../@scss/global.scss";
-@import "../@scss/sidebar.scss";
-@import "../@scss/components.scss";
+@import "./global.scss";
+@import "./sidebar.scss";
+@import "./components.scss";
+@import "./variable.scss";
 
 #root {
   height: 100vh;
@@ -8,4 +9,46 @@
 
 .header-container {
   height: $header-height;
+
+  nav {
+    background-color: $theme-color !important;
+  }
+
+  .btn-light {
+    color: white !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+
+    &:hover,
+    &:active,
+    &:focus {
+      background-color: $theme-color-darked !important;
+      border-color: $theme-color-darked !important;
+    }
+  }
+
+  input {
+    &:matches([type="text"]) {
+      // Fake Material Design Style
+      padding: 0;
+      transition: none;
+      color: white;
+      border-radius: 0;
+      border: none;
+      border-bottom: {
+        color: white;
+        width: 1px;
+        style: solid;
+      }
+      background-color: transparent;
+
+      &::placeholder {
+        color: lightgray;
+      }
+
+      &:focus {
+        box-shadow: none;
+      }
+    }
+  }
 }

@@ -23,7 +23,7 @@ const ContentHeaderButton: FunctionComponent<CHButtonProps> = (props) => {
   return (
     <Button
       variant="dark"
-      className="d-flex flex-column text-nowrap"
+      className="d-flex flex-column text-nowrap py-1"
       disabled={disabled || updating}
       onClick={onClick}
     >

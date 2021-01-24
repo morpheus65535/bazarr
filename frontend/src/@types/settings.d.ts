@@ -61,9 +61,9 @@ interface GeneralSettings {
 
 interface ProxySettings {
   exclude: string[];
-  type: string;
-  url: string;
-  port: number;
+  type?: string;
+  url?: string;
+  port?: number;
   username?: string;
   password?: string;
 }

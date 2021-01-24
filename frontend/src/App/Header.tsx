@@ -96,7 +96,11 @@ const Header: FunctionComponent<Props> = (props) => {
             <SearchBar size="sm" onSearch={search}></SearchBar>
           </Col>
           <Col className="d-flex flex-row align-items-center justify-content-end pr-2">
-            <Button variant="light">
+            <Button
+              variant="light"
+              href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
+              target="_blank"
+            >
               <FontAwesomeIcon icon={faHeart}></FontAwesomeIcon>
             </Button>
             <Dropdown alignRight>

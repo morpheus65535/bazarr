@@ -122,20 +122,20 @@ const Table: FunctionComponent<Props> = (props) => {
           if (episodeFileCount === 0) {
             progress = 0.0;
           } else {
-            progress = 1.0 - episodeMissingCount / episodeFileCount;
+            progress = episodeFileCount - episodeMissingCount;
             label = `${
               episodeFileCount - episodeMissingCount
             }/${episodeFileCount}`;
           }
 
-          const color = progress === 1.0 ? "info" : "warning";
+          const color = episodeMissingCount === 0 ? "success" : "warning";
 
           return (
             <ProgressBar
               className="my-a"
               variant={color}
               min={0}
-              max={1}
+              max={episodeFileCount}
               now={progress}
               label={label}
             ></ProgressBar>
