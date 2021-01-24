@@ -427,9 +427,9 @@ const Table: FunctionComponent<TableProps> = (props) => {
           const season = info.season;
           const episode = info.episode;
           return (
-            <InputGroup>
+            <InputGroup className="d-flex flex-nowrap">
               <Form.Control
-                style={{ maxWidth: 72 }}
+                style={{ maxWidth: 72, minWidth: 56 }}
                 disabled={info.state === SubtitleState.update || uploading}
                 isInvalid={
                   season ? season > maxSeason || season <= 0 : undefined
@@ -445,7 +445,7 @@ const Table: FunctionComponent<TableProps> = (props) => {
                 }}
               ></Form.Control>
               <Form.Control
-                style={{ maxWidth: 96 }}
+                style={{ maxWidth: 96, minWidth: 56 }}
                 disabled={info.state === SubtitleState.update || uploading}
                 isInvalid={
                   episode ? episode > maxEpisode || episode <= 0 : false
@@ -486,7 +486,13 @@ const Table: FunctionComponent<TableProps> = (props) => {
     [removeItem, maxSeason, maxEpisode, updateItem, uploading]
   );
 
-  return <BasicTable options={{ columns, data }}></BasicTable>;
+  return (
+    <BasicTable
+      columns={columns}
+      data={data}
+      autoResetPage={false}
+    ></BasicTable>
+  );
 };
 
 export default connect(mapStateToProps, { update: updateSeriesInfo })(

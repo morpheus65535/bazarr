@@ -1,4 +1,9 @@
-import React, { FunctionComponent, useState, useCallback } from "react";
+import React, {
+  FunctionComponent,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { Column } from "react-table";
 import {
   BasicTable,
@@ -61,7 +66,7 @@ const Table: FunctionComponent<Props> = (props) => {
     setModal("");
   }, []);
 
-  const columns: Column<Series>[] = React.useMemo<Column<Series>[]>(
+  const columns: Column<Series>[] = useMemo<Column<Series>[]>(
     () => [
       {
         Header: "Name",
@@ -93,7 +98,7 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" key={v.code2}>
+            <Badge variant="secondary" className="mr-2" key={v.code2}>
               {v.name}
             </Badge>
           ));
@@ -158,7 +163,8 @@ const Table: FunctionComponent<Props> = (props) => {
         {(data) => (
           <BasicTable
             emptyText="No Series Found"
-            options={{ columns, data }}
+            columns={columns}
+            data={data}
           ></BasicTable>
         )}
       </AsyncStateOverlay>

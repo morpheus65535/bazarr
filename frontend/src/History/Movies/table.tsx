@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
 import { connect } from "react-redux";
@@ -20,7 +20,7 @@ function mapStateToProps({ movie }: StoreState) {
 const Table: FunctionComponent<Props> = (props) => {
   const { movieHistory } = props;
 
-  const columns: Column<MovieHistory>[] = React.useMemo<Column<MovieHistory>[]>(
+  const columns: Column<MovieHistory>[] = useMemo<Column<MovieHistory>[]>(
     () => [
       {
         accessor: "action",
@@ -65,7 +65,8 @@ const Table: FunctionComponent<Props> = (props) => {
       {(data) => (
         <BasicTable
           emptyText="Nothing Found in Movies History"
-          options={{ columns, data }}
+          columns={columns}
+          data={data}
         ></BasicTable>
       )}
     </AsyncStateOverlay>

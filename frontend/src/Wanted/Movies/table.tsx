@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -21,7 +21,7 @@ function mapStateToProps({ movie }: StoreState): Props {
 }
 
 function Table(props: Props): JSX.Element {
-  const columns: Column<WantedMovie>[] = React.useMemo<Column<WantedMovie>[]>(
+  const columns: Column<WantedMovie>[] = useMemo<Column<WantedMovie>[]>(
     () => [
       {
         Header: "Name",
@@ -56,7 +56,8 @@ function Table(props: Props): JSX.Element {
       {(data) => (
         <BasicTable
           emptyText="No Missing Movies Subtitles"
-          options={{ columns, data }}
+          columns={columns}
+          data={data}
         ></BasicTable>
       )}
     </AsyncStateOverlay>

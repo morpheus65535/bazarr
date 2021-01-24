@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -21,9 +21,7 @@ function mapStateToProps({ series }: StoreState): Props {
 }
 
 function Table(props: Props): JSX.Element {
-  const columns: Column<WantedEpisode>[] = React.useMemo<
-    Column<WantedEpisode>[]
-  >(
+  const columns: Column<WantedEpisode>[] = useMemo<Column<WantedEpisode>[]>(
     () => [
       {
         Header: "Name",
@@ -65,7 +63,8 @@ function Table(props: Props): JSX.Element {
       {(data) => (
         <BasicTable
           emptyText="No Missing Episodes Subtitles"
-          options={{ columns, data }}
+          columns={columns}
+          data={data}
         ></BasicTable>
       )}
     </AsyncStateOverlay>

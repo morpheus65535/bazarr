@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Column } from "react-table";
 
@@ -16,9 +16,7 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const columns: Column<SystemProvider>[] = React.useMemo<
-    Column<SystemProvider>[]
-  >(
+  const columns: Column<SystemProvider>[] = useMemo<Column<SystemProvider>[]>(
     () => [
       {
         Header: "Name",
@@ -36,7 +34,7 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: props.providers }}></BasicTable>;
+  return <BasicTable columns={columns} data={props.providers}></BasicTable>;
 };
 
 export default connect(mapStateToProps)(Table);

@@ -1,4 +1,9 @@
-import React, { FunctionComponent, useState, useCallback } from "react";
+import React, {
+  FunctionComponent,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { Column } from "react-table";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -63,7 +68,7 @@ const Table: FunctionComponent<Props> = (props) => {
     setModal("");
   }, []);
 
-  const columns: Column<Movie>[] = React.useMemo<Column<Movie>[]>(
+  const columns: Column<Movie>[] = useMemo<Column<Movie>[]>(
     () => [
       {
         accessor: "monitored",
@@ -107,7 +112,7 @@ const Table: FunctionComponent<Props> = (props) => {
         accessor: "audio_language",
         Cell: (row) => {
           return row.value.map((v) => (
-            <Badge variant="secondary" key={v.code2}>
+            <Badge variant="secondary" className="mr-2" key={v.code2}>
               {v.name}
             </Badge>
           ));
@@ -140,7 +145,8 @@ const Table: FunctionComponent<Props> = (props) => {
         {(data) => (
           <BasicTable
             emptyText="No Movies Found"
-            options={{ columns, data }}
+            columns={columns}
+            data={data}
           ></BasicTable>
         )}
       </AsyncStateOverlay>

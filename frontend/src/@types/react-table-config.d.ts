@@ -61,7 +61,7 @@ declare module "react-table" {
       UseResizeColumnsOptions<D>,
       UseRowSelectOptions<D>,
       UseRowStateOptions<D>,
-      // UseSortByOptions<D>,
+      UseSortByOptions<D>,
       // note that having Record here allows you to add anything to the options, this matches the spirit of the
       // underlying js library, but might be cleaner if it's replaced by a more specific type that matches your
       // feature set, this is a safe default.
@@ -83,8 +83,8 @@ declare module "react-table" {
       UseGroupByInstanceProps<D>,
       UsePaginationInstanceProps<D>,
       UseRowSelectInstanceProps<D>,
-      UseRowStateInstanceProps<D> {}
-  // UseSortByInstanceProps<D> {}
+      UseRowStateInstanceProps<D>,
+      UseSortByInstanceProps<D> {}
 
   export interface TableState<
     D extends Record<string, unknown> = Record<string, unknown>
@@ -96,25 +96,25 @@ declare module "react-table" {
       UsePaginationState<D>,
       UseResizeColumnsState<D>,
       UseRowSelectState<D>,
-      UseRowStateState<D> {}
-  // UseSortByState<D> {}
+      UseRowStateState<D>,
+      UseSortByState<D> {}
 
   export interface ColumnInterface<
     D extends Record<string, unknown> = Record<string, unknown>
   > extends UseFiltersColumnOptions<D>,
       // UseGlobalFiltersColumnOptions<D>,
       UseGroupByColumnOptions<D>,
-      UseResizeColumnsColumnOptions<D> {
+      UseResizeColumnsColumnOptions<D>,
+      UseSortByColumnOptions<D> {
     className?: string;
   }
-  // UseSortByColumnOptions<D> {}
 
   export interface ColumnInstance<
     D extends Record<string, unknown> = Record<string, unknown>
   > extends UseFiltersColumnProps<D>,
       UseGroupByColumnProps<D>,
-      UseResizeColumnsColumnProps<D> {}
-  // UseSortByColumnProps<D> {}
+      UseResizeColumnsColumnProps<D>,
+      UseSortByColumnProps<D> {}
 
   export interface Cell<
     D extends Record<string, unknown> = Record<string, unknown>,

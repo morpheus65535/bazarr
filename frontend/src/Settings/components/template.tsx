@@ -1,4 +1,5 @@
 import React, { FunctionComponent, useCallback, useState } from "react";
+import { Prompt } from "react-router";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -69,6 +70,10 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
           <Helmet>
             <title>{title}</title>
           </Helmet>
+          <Prompt
+            when={Object.keys(willChange).length > 0}
+            message="You have unsaved changes, are you sure you want to leave?"
+          ></Prompt>
           <ContentHeader>
             <ContentHeaderButton
               icon={faSave}

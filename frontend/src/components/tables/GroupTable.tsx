@@ -4,6 +4,7 @@ import {
   TableOptions,
   useGroupBy,
   useExpanded,
+  useSortBy,
   useTable,
   Cell,
   Row,
@@ -11,11 +12,6 @@ import {
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
-
-interface Props<T extends object = {}> {
-  emptyText?: string;
-  options: TableOptions<T>;
-}
 
 function renderCell<T extends object = {}>(cell: Cell<T, any>, row: Row<T>) {
   if (cell.isGrouped) {
@@ -73,8 +69,13 @@ function renderRow<T extends object>(row: Row<T>) {
   }
 }
 
+interface Props<T extends object = {}> extends TableOptions<T> {
+  emptyText?: string;
+}
+
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
-  const instance = useTable(props.options, useGroupBy, useExpanded);
+  const { emptyText, ...options } = props;
+  const instance = useTable(options, useGroupBy, useSortBy, useExpanded);
 
   const {
     getTableProps,
@@ -113,10 +114,10 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const body = useMemo(
     () => (
       <tbody {...getTableBodyProps()}>
-        {props.emptyText && empty ? (
+        {emptyText && empty ? (
           <tr>
             <td colSpan={colCount} className="text-center">
-              {props.emptyText}
+              {emptyText}
             </td>
           </tr>
         ) : (
@@ -127,7 +128,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         )}
       </tbody>
     ),
-    [getTableBodyProps, prepareRow, rows, colCount, empty, props.emptyText]
+    [getTableBodyProps, prepareRow, rows, colCount, empty, emptyText]
   );
 
   return (

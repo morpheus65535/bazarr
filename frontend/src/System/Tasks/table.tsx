@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Column } from "react-table";
 import { BasicTable } from "../../components";
 import { SystemApi } from "../../apis";
@@ -21,7 +21,7 @@ function mapStateToProps({ system }: StoreState) {
 }
 
 function Table(props: Props) {
-  const columns: Column<SystemTaskResult>[] = React.useMemo<
+  const columns: Column<SystemTaskResult>[] = useMemo<
     Column<SystemTaskResult>[]
   >(
     () => [
@@ -59,7 +59,7 @@ function Table(props: Props) {
     []
   );
 
-  return <BasicTable options={{ columns, data: props.tasks }}></BasicTable>;
+  return <BasicTable columns={columns} data={props.tasks}></BasicTable>;
 }
 
 export default connect(mapStateToProps)(Table);

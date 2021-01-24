@@ -133,7 +133,8 @@ const Table: FunctionComponent<Props> = ({
     <React.Fragment>
       <BasicTable
         pageControl={false}
-        options={{ columns, data: profiles }}
+        columns={columns}
+        data={profiles}
       ></BasicTable>
       <Button block variant="light" onClick={() => showModal()}>
         Add New Profile

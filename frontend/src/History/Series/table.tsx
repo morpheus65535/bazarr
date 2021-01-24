@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Column } from "react-table";
 
 import { connect } from "react-redux";
@@ -20,9 +20,7 @@ function mapStateToProps({ series }: StoreState) {
 const Table: FunctionComponent<Props> = (props) => {
   const { seriesHistory } = props;
 
-  const columns: Column<SeriesHistory>[] = React.useMemo<
-    Column<SeriesHistory>[]
-  >(
+  const columns: Column<SeriesHistory>[] = useMemo<Column<SeriesHistory>[]>(
     () => [
       {
         accessor: "action",
@@ -75,7 +73,8 @@ const Table: FunctionComponent<Props> = (props) => {
       {(data) => (
         <BasicTable
           emptyText="Nothing Found in Series History"
-          options={{ columns, data }}
+          columns={columns}
+          data={data}
         ></BasicTable>
       )}
     </AsyncStateOverlay>

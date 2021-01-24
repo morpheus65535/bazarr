@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { Badge } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Column } from "react-table";
@@ -22,7 +22,7 @@ interface Props {
 const Table: FunctionComponent<Props> = (props) => {
   const { movie, update } = props;
 
-  const columns: Column<Subtitle>[] = React.useMemo<Column<Subtitle>[]>(
+  const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
       {
         Header: "Subtitle Path",
@@ -92,7 +92,7 @@ const Table: FunctionComponent<Props> = (props) => {
     [movie, update]
   );
 
-  const data: Subtitle[] = React.useMemo(() => {
+  const data: Subtitle[] = useMemo(() => {
     const missing = movie.missing_subtitles.map((item) => {
       item.path = missingText;
       return item;
@@ -101,7 +101,7 @@ const Table: FunctionComponent<Props> = (props) => {
     return movie.subtitles.concat(missing);
   }, [movie.missing_subtitles, movie.subtitles]);
 
-  return <BasicTable options={{ columns, data }}></BasicTable>;
+  return <BasicTable columns={columns} data={data}></BasicTable>;
 };
 
 export default connect(undefined, { update: updateMovieInfo })(Table);

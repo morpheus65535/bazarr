@@ -223,7 +223,8 @@ const LanguagesProfileModal: FunctionComponent<Props & BasicModalProps> = (
         <BasicTable
           pageControl={false}
           responsive={false}
-          options={{ columns, data: current?.items ?? [] }}
+          columns={columns}
+          data={current?.items ?? []}
         ></BasicTable>
         <Button block variant="light" onClick={addItem}>
           Add

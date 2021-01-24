@@ -2,15 +2,16 @@ import React, { useMemo } from "react";
 import { Pagination, Row, Col, Container, Table } from "react-bootstrap";
 import { TableOptions, usePagination, useTable } from "react-table";
 
-interface Props<T extends object = {}> {
-  options: TableOptions<T>;
+interface Props<T extends object = {}> extends TableOptions<T> {
   emptyText?: string;
-  pageControl?: boolean;
+  showPageControl?: boolean;
   responsive?: boolean;
 }
 
 export default function BasicTable<T extends object = {}>(props: Props<T>) {
-  const instance = useTable(props.options, usePagination);
+  const { emptyText, showPageControl, responsive, ...options } = props;
+
+  const instance = useTable(options, usePagination);
 
   const {
     getTableProps,
@@ -57,10 +58,10 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const body = useMemo(
     () => (
       <tbody {...getTableBodyProps()}>
-        {props.emptyText && empty ? (
+        {emptyText && empty ? (
           <tr>
             <td colSpan={colCount} className="text-center">
-              {props.emptyText}
+              {emptyText}
             </td>
           </tr>
         ) : (
@@ -84,7 +85,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
         )}
       </tbody>
     ),
-    [colCount, empty, getTableBodyProps, page, prepareRow, props.emptyText]
+    [colCount, empty, getTableBodyProps, page, prepareRow, emptyText]
   );
 
   const pageButtons = useMemo(() => {
@@ -126,7 +127,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
   const pageControl = useMemo(() => {
     const start = empty ? 0 : pageSize * pageIndex + 1;
     const end = Math.min(pageSize * (pageIndex + 1), rows.length);
-    const pageControlEnabled = props.pageControl ?? true;
+    const pageControlEnabled = showPageControl ?? true;
 
     return (
       <Container fluid hidden={!pageControlEnabled}>
@@ -163,7 +164,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
     pageButtons,
     pageCount,
     rows.length,
-    props.pageControl,
+    showPageControl,
   ]);
 
   return (
@@ -171,7 +172,7 @@ export default function BasicTable<T extends object = {}>(props: Props<T>) {
       <Table
         striped
         borderless
-        responsive={props.responsive ?? true}
+        responsive={responsive ?? true}
         {...getTableProps()}
       >
         {header}

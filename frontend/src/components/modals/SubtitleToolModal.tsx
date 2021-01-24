@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import BasicModal, { BasicModalProps } from "./BasicModal";
 
 import { Column } from "react-table";
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const Table: FunctionComponent<Props> = ({ subtitles }) => {
-  const columns: Column<Subtitle>[] = React.useMemo<Column<Subtitle>[]>(
+  const columns: Column<Subtitle>[] = useMemo<Column<Subtitle>[]>(
     () => [
       {
         Header: "Language",
@@ -45,7 +45,7 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
     []
   );
 
-  const data: Subtitle[] = React.useMemo<Subtitle[]>(
+  const data: Subtitle[] = useMemo<Subtitle[]>(
     () => subtitles.filter((val) => val.path !== null),
     [subtitles]
   );
@@ -53,7 +53,8 @@ const Table: FunctionComponent<Props> = ({ subtitles }) => {
   return (
     <BasicTable
       emptyText="No External Subtitles Found"
-      options={{ columns, data }}
+      columns={columns}
+      data={data}
     ></BasicTable>
   );
 };

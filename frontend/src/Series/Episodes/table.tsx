@@ -50,7 +50,7 @@ const Table: FunctionComponent<Props> = (props) => {
     setModal(key);
   };
 
-  const columns: Column<Episode>[] = React.useMemo<Column<Episode>[]>(
+  const columns: Column<Episode>[] = useMemo<Column<Episode>[]>(
     () => [
       {
         accessor: "monitored",
@@ -146,16 +146,28 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  const options: TableOptions<Episode> = {
-    columns,
-    data: episodes,
-    initialState: {
-      groupBy: ["season"],
-      expanded: {
-        "season:1": true,
+  const maxSeason = useMemo(
+    () =>
+      episodes.reduce<number>((prev, curr) => Math.max(prev, curr.season), 0),
+    [episodes]
+  );
+
+  const options: TableOptions<Episode> = useMemo(() => {
+    return {
+      columns,
+      data: episodes,
+      initialState: {
+        sortBy: [
+          { id: "season", desc: true },
+          { id: "episode", desc: true },
+        ],
+        groupBy: ["season"],
+        expanded: {
+          [`season:${maxSeason}`]: true,
+        },
       },
-    },
-  };
+    };
+  }, [episodes, columns, maxSeason]);
 
   return (
     <React.Fragment>
@@ -166,7 +178,7 @@ const Table: FunctionComponent<Props> = (props) => {
         {(data) => (
           <GroupTable
             emptyText="No Episode Found For This Series"
-            options={options}
+            {...options}
           ></GroupTable>
         )}
       </AsyncStateOverlay>

@@ -68,7 +68,8 @@ export const MovieHistoryModal: FunctionComponent<
         {(data) => (
           <BasicTable
             emptyText="No History Found"
-            options={{ columns, data }}
+            columns={columns}
+            data={data}
           ></BasicTable>
         )}
       </AsyncStateOverlay>
@@ -141,7 +142,8 @@ export const EpisodeHistoryModal: FunctionComponent<
         {(data) => (
           <BasicTable
             emptyText="No History Found"
-            options={{ columns, data }}
+            columns={columns}
+            data={data}
           ></BasicTable>
         )}
       </AsyncStateOverlay>

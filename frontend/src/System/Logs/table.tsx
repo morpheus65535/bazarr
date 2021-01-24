@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useMemo } from "react";
 import { connect } from "react-redux";
 import { Column } from "react-table";
 
@@ -46,7 +46,7 @@ function mapDateToString(ts: string): string {
 }
 
 const Table: FunctionComponent<Props> = (props) => {
-  const columns: Column<SystemLog>[] = React.useMemo<Column<SystemLog>[]>(
+  const columns: Column<SystemLog>[] = useMemo<Column<SystemLog>[]>(
     () => [
       {
         accessor: "type",
@@ -67,7 +67,7 @@ const Table: FunctionComponent<Props> = (props) => {
     []
   );
 
-  return <BasicTable options={{ columns, data: props.providers }}></BasicTable>;
+  return <BasicTable columns={columns} data={props.providers}></BasicTable>;
 };
 
 export default connect(mapStateToProps)(Table);
