@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useEffect, useMemo } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemStatus } from "../../@redux/actions";
@@ -12,18 +12,6 @@ import {
   faWikipediaW,
   faDiscord,
 } from "@fortawesome/free-brands-svg-icons";
-
-interface Props {
-  status?: SystemStatusResult;
-  update: () => void;
-}
-
-function mapStateToProps({ system }: StoreState) {
-  const { status } = system;
-  return {
-    status: status.items,
-  };
-}
 
 interface InfoProps {
   title: string;
@@ -72,14 +60,23 @@ const InfoContainer: FunctionComponent<{ title: string }> = ({
   );
 };
 
-class SystemStatusView extends React.Component<Props, {}> {
-  componentDidMount() {
-    this.props.update();
-  }
-  render(): JSX.Element {
-    const status = this.props.status;
+interface Props {
+  status?: SystemStatusResult;
+  update: () => void;
+}
 
-    const about: JSX.Element = (
+function mapStateToProps({ system }: StoreState) {
+  const { status } = system;
+  return {
+    status: status.items,
+  };
+}
+
+const SystemStatusView: FunctionComponent<Props> = ({ status, update }) => {
+  useEffect(() => update(), [update]);
+
+  const about = useMemo(
+    () => (
       <InfoContainer title="About">
         <InfoRow title="Bazarr Version">
           <span>{status?.bazarr_version}</span>
@@ -103,9 +100,12 @@ class SystemStatusView extends React.Component<Props, {}> {
           <span>{status?.bazarr_config_directory}</span>
         </InfoRow>
       </InfoContainer>
-    );
+    ),
+    [status]
+  );
 
-    const more: JSX.Element = (
+  const more = useMemo(
+    () => (
       <InfoContainer title="More Info">
         <InfoRow title="Home Page">
           <IconLabel icon={faPaperPlane}>
@@ -152,19 +152,20 @@ class SystemStatusView extends React.Component<Props, {}> {
           </IconLabel>
         </InfoRow>
       </InfoContainer>
-    );
+    ),
+    []
+  );
 
-    return (
-      <Container fluid className="p-5">
-        <Helmet>
-          <title>Status - Bazarr (System)</title>
-        </Helmet>
-        <Row>{about}</Row>
-        <Row>{more}</Row>
-      </Container>
-    );
-  }
-}
+  return (
+    <Container fluid className="p-5">
+      <Helmet>
+        <title>Status - Bazarr (System)</title>
+      </Helmet>
+      <Row>{about}</Row>
+      <Row>{more}</Row>
+    </Container>
+  );
+};
 
 export default connect(mapStateToProps, {
   update: UpdateSystemStatus,

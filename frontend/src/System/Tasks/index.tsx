@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { UpdateSystemTasks } from "../../@redux/actions";
@@ -22,34 +22,25 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-class SystemTasksView extends React.Component<Props, {}> {
-  componentDidMount() {
-    this.props.update();
-  }
+const SystemTasksView: FunctionComponent<Props> = ({ update, loading }) => {
+  useEffect(() => update(), [update]);
 
-  render(): JSX.Element {
-    const { loading, update } = this.props;
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>Tasks - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton
-            updating={loading}
-            icon={faSync}
-            onClick={update}
-          >
-            Refresh
-          </ContentHeaderButton>
-        </ContentHeader>
-        <Row>
-          <Table></Table>
-        </Row>
-      </Container>
-    );
-  }
-}
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>Tasks - Bazarr (System)</title>
+      </Helmet>
+      <ContentHeader>
+        <ContentHeaderButton updating={loading} icon={faSync} onClick={update}>
+          Refresh
+        </ContentHeaderButton>
+      </ContentHeader>
+      <Row>
+        <Table></Table>
+      </Row>
+    </Container>
+  );
+};
 
 export default connect(mapStateToProps, { update: UpdateSystemTasks })(
   SystemTasksView

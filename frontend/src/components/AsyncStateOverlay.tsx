@@ -1,4 +1,4 @@
-import React from "react";
+import React, { PropsWithChildren } from "react";
 import { LoadingIndicator } from ".";
 
 interface Params<T> {
@@ -15,20 +15,18 @@ function defaultExist(item: any) {
   }
 }
 
-class AsyncStateOverlay<T> extends React.Component<Params<T>> {
-  render() {
-    const { exist, state, children } = this.props;
-    const missing = exist ? !exist(state.items) : !defaultExist(state.items);
+function AsyncStateOverlay<T>(props: PropsWithChildren<Params<T>>) {
+  const { exist, state, children } = props;
+  const missing = exist ? !exist(state.items) : !defaultExist(state.items);
 
-    if (state.updating && missing) {
-      return <LoadingIndicator></LoadingIndicator>;
-    } else if (state.items === null || state.items === undefined) {
-      return null;
-    } else {
-      return (
-        <React.Fragment>{children && children(state.items!)}</React.Fragment>
-      );
-    }
+  if (state.updating && missing) {
+    return <LoadingIndicator></LoadingIndicator>;
+  } else if (state.items === null || state.items === undefined) {
+    return null;
+  } else {
+    return (
+      <React.Fragment>{children && children(state.items!)}</React.Fragment>
+    );
   }
 }
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useState, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -17,10 +17,6 @@ interface Props {
   update: () => void;
 }
 
-interface State {
-  resetting: boolean;
-}
-
 function mapStateToProps({ system }: StoreState) {
   const { logs } = system;
   return {
@@ -28,56 +24,46 @@ function mapStateToProps({ system }: StoreState) {
   };
 }
 
-class SystemLogsView extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
+const SystemLogsView: FunctionComponent<Props> = ({ loading, update }) => {
+  useEffect(() => update(), [update]);
 
-    this.state = {
-      resetting: false,
-    };
-  }
-  componentDidMount() {
-    this.props.update();
-  }
-  render(): JSX.Element {
-    const { loading, update } = this.props;
-    const { resetting } = this.state;
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>Providers - Bazarr (System)</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton
-            updating={loading}
-            icon={faSync}
-            disabled={loading}
-            onClick={update}
-          >
-            Refresh
-          </ContentHeaderButton>
-          <ContentHeaderButton icon={faDownload}>Download</ContentHeaderButton>
-          <ContentHeaderButton
-            updating={resetting}
-            icon={faTrash}
-            onClick={() => {
-              this.setState({ ...this.state, resetting: true });
-              SystemApi.deleteLogs().finally(() => {
-                this.setState({ ...this.state, resetting: false });
-                update();
-              });
-            }}
-          >
-            Empty
-          </ContentHeaderButton>
-        </ContentHeader>
-        <Row>
-          <Table></Table>
-        </Row>
-      </Container>
-    );
-  }
-}
+  const [resetting, setReset] = useState(false);
+
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>Providers - Bazarr (System)</title>
+      </Helmet>
+      <ContentHeader>
+        <ContentHeaderButton
+          updating={loading}
+          icon={faSync}
+          disabled={loading}
+          onClick={update}
+        >
+          Refresh
+        </ContentHeaderButton>
+        <ContentHeaderButton icon={faDownload}>Download</ContentHeaderButton>
+        <ContentHeaderButton
+          updating={resetting}
+          icon={faTrash}
+          onClick={() => {
+            setReset(true);
+            SystemApi.deleteLogs().finally(() => {
+              setReset(false);
+              update();
+            });
+          }}
+        >
+          Empty
+        </ContentHeaderButton>
+      </ContentHeader>
+      <Row>
+        <Table></Table>
+      </Row>
+    </Container>
+  );
+};
 
 export default connect(mapStateToProps, { update: UpdateSystemLogs })(
   SystemLogsView

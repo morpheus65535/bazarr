@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
@@ -15,34 +15,30 @@ interface Props {
   update: () => void;
 }
 
-class Router extends React.Component<Props> {
-  componentDidMount() {
-    this.props.update();
-  }
-  render(): JSX.Element {
-    return (
-      <Switch>
-        <Route exact path="/settings/general">
-          <General></General>
-        </Route>
-        <Route exact path="/settings/sonarr">
-          <Sonarr></Sonarr>
-        </Route>
-        <Route exact path="/settings/radarr">
-          <Radarr></Radarr>
-        </Route>
-        <Route exact path="/settings/languages">
-          <Languages></Languages>
-        </Route>
-        <Route exact path="/settings/subtitles">
-          <Subtitles></Subtitles>
-        </Route>
-        <Route exact path="/settings/schedular">
-          <Schedular></Schedular>
-        </Route>
-      </Switch>
-    );
-  }
-}
+const Router: FunctionComponent<Props> = ({ update }) => {
+  useEffect(() => update(), [update]);
+  return (
+    <Switch>
+      <Route exact path="/settings/general">
+        <General></General>
+      </Route>
+      <Route exact path="/settings/sonarr">
+        <Sonarr></Sonarr>
+      </Route>
+      <Route exact path="/settings/radarr">
+        <Radarr></Radarr>
+      </Route>
+      <Route exact path="/settings/languages">
+        <Languages></Languages>
+      </Route>
+      <Route exact path="/settings/subtitles">
+        <Subtitles></Subtitles>
+      </Route>
+      <Route exact path="/settings/schedular">
+        <Schedular></Schedular>
+      </Route>
+    </Switch>
+  );
+};
 
 export default connect(null, { update: UpdateSystemSettings })(Router);

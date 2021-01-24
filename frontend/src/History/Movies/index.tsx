@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -11,23 +11,20 @@ interface Props {
   update: () => void;
 }
 
-class MoviesHistoryView extends React.Component<Props> {
-  componentDidMount() {
-    this.props.update();
-  }
-  render() {
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>Movies History - Bazarr</title>
-        </Helmet>
-        <Row>
-          <Table></Table>
-        </Row>
-      </Container>
-    );
-  }
-}
+const MoviesHistoryView: FunctionComponent<Props> = ({ update }) => {
+  useEffect(() => update(), [update]);
+
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>Movies History - Bazarr</title>
+      </Helmet>
+      <Row>
+        <Table></Table>
+      </Row>
+    </Container>
+  );
+};
 
 export default connect(null, { update: updateHistoryMovieList })(
   MoviesHistoryView

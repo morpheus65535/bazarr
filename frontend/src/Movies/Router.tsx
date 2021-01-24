@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Route, Switch } from "react-router-dom";
 
 import { connect } from "react-redux";
@@ -8,25 +8,22 @@ import Movie from ".";
 import MovieDetail from "./Detail";
 
 interface Props {
-  updateMovieList: () => void;
+  update: () => void;
 }
 
-class Router extends React.Component<Props> {
-  componentDidMount() {
-    this.props.updateMovieList();
-  }
-  render(): JSX.Element {
-    return (
-      <Switch>
-        <Route exact path="/movies">
-          <Movie></Movie>
-        </Route>
-        <Route path="/movies/:id">
-          <MovieDetail></MovieDetail>
-        </Route>
-      </Switch>
-    );
-  }
-}
+const Router: FunctionComponent<Props> = ({ update }) => {
+  useEffect(() => update(), [update]);
 
-export default connect(null, { updateMovieList })(Router);
+  return (
+    <Switch>
+      <Route exact path="/movies">
+        <Movie></Movie>
+      </Route>
+      <Route path="/movies/:id">
+        <MovieDetail></MovieDetail>
+      </Route>
+    </Switch>
+  );
+};
+
+export default connect(null, { update: updateMovieList })(Router);

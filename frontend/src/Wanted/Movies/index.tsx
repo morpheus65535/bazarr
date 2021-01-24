@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Container, Row } from "react-bootstrap";
 import { Helmet } from "react-helmet";
 
@@ -15,26 +15,23 @@ interface Props {
   update: () => void;
 }
 
-class WantedMoviesView extends React.Component<Props> {
-  componentDidMount() {
-    this.props.update();
-  }
-  render() {
-    return (
-      <Container fluid>
-        <Helmet>
-          <title>Wanted Movies - Bazarr</title>
-        </Helmet>
-        <ContentHeader>
-          <ContentHeaderButton icon={faSearch}>Search All</ContentHeaderButton>
-        </ContentHeader>
-        <Row>
-          <Table></Table>
-        </Row>
-      </Container>
-    );
-  }
-}
+const WantedMoviesView: FunctionComponent<Props> = ({ update }) => {
+  useEffect(() => update(), [update]);
+
+  return (
+    <Container fluid>
+      <Helmet>
+        <title>Wanted Movies - Bazarr</title>
+      </Helmet>
+      <ContentHeader>
+        <ContentHeaderButton icon={faSearch}>Search All</ContentHeaderButton>
+      </ContentHeader>
+      <Row>
+        <Table></Table>
+      </Row>
+    </Container>
+  );
+};
 
 export default connect(null, { update: updateWantedMovieList })(
   WantedMoviesView
