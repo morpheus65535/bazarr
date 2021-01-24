@@ -23,7 +23,7 @@ function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
     address: settings.radarr.ip,
     port: settings.radarr.port.toString(),
     url: settings.radarr.base_url ?? "/",
-    apikey: settings.radarr.apikey,
+    apikey: settings.radarr.apikey ?? "",
     ssl: settings.radarr.ssl,
   };
 
@@ -52,7 +52,7 @@ function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
 
 const SettingsRadarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Radarr - Bazarr (Settings)">
-    {(settings, update, change) => (
+    {(settings, update, changed) => (
       <Container>
         <CollapseBox
           defaultOpen={settings.general.use_radarr}
@@ -106,7 +106,7 @@ const SettingsRadarrView: FunctionComponent<Props> = () => (
               ></Check>
             </Input>
             <Input>
-              <TestUrlButton url={buildUrl(settings, change)}></TestUrlButton>
+              <TestUrlButton url={buildUrl(settings, changed)}></TestUrlButton>
             </Input>
           </Group>
           <Group header="Options">

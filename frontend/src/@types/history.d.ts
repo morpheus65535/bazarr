@@ -1,12 +1,3 @@
-// enum HistoryAction {
-//   Delete = 0,
-//   Download,
-//   Manual,
-//   Upgrade,
-//   Upload,
-//   Sync,
-// }
-
 interface BasicHistory {
   action: number;
   blacklisted: boolean;

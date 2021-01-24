@@ -1,3 +1,0 @@
-interface Badge {
-  value: number;
-}

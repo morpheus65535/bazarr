@@ -44,7 +44,7 @@ defaults = {
         'ignore_pgs_subs': 'False',
         'ignore_vobsub_subs': 'False',
         'adaptive_searching': 'False',
-        'enabled_providers': '',
+        'enabled_providers': '[]',
         'throtteled_providers': '{}',
         'multithreading': 'True',
         'chmod_enabled': 'False',
@@ -59,7 +59,7 @@ defaults = {
         'anti_captcha_provider': 'None',
         'wanted_search_frequency': '3',
         'wanted_search_frequency_movie': '3',
-        'subzero_mods': '',
+        'subzero_mods': '[]',
         'dont_notify_manual_actions': 'False'
     },
     'auth': {
@@ -180,13 +180,14 @@ ignore_keys = ['flask_secret_key',
 
 raw_keys = ['movie_default_forced', 'serie_default_forced']
 
-array_keys = ['settings-sonarr-excluded_tags',
-                'settings-sonarr-excluded_series_types',
-                'settings-radarr-excluded_tags',
-                'settings-general-serie_default_language',
-                'settings-general-movie_default_language',
-                'settings-general-path_mappings',
-                'settings-general-path_mappings_movie']
+array_keys = ['excluded_tags',
+                'subzero_mods',
+                'excluded_series_types',
+                'serie_default_language',
+                'movie_default_language',
+                'path_mappings',
+                'enabled_providers',
+                'path_mappings_movie']
 
 def get_settings():
     result = dict()
@@ -206,7 +207,10 @@ def get_settings():
             if key not in raw_keys:
                 # Do some postprocessings
                 if value == '' or value == 'None':
-                    continue
+                    if key in array_keys:
+                        value = []
+                    else:
+                        continue
                 elif value == 'True':
                     value = True
                 elif value == 'False':
@@ -246,15 +250,16 @@ def save_settings(settings_items):
         subzero_mods = []
 
     for key, value in settings_items:
+
+        settings_keys = key.split('-')
+        
         # Make sure that text based form values aren't pass as list unless they are language list
-        if isinstance(value, list) and len(value) == 1 and key not in array_keys:
+        if isinstance(value, list) and len(value) == 1 and settings_keys[-1] not in array_keys:
             value = value[0]
 
         # Make sure empty language list are stored correctly
-        if key in array_keys and value == [''] or value == ['null']:
+        if settings_keys[-1] in array_keys and value == [''] or value == ['null'] or value == ['undefined']:
             value = []
-
-        settings_keys = key.split('-')
 
         if value == 'true':
             value = 'True'

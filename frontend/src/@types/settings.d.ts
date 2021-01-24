@@ -6,6 +6,20 @@ interface SystemSettings {
   analytics: AnalyticSettings;
   sonarr: SonarrSettings;
   radarr: RadarrSettings;
+  // Anitcaptcha
+  anticaptcha: AnticaptchaSettings;
+  deathbycaptcha: DeathByCaptcheSettings;
+  // Providers
+  opensubtitles: OpenSubtitlesSettings;
+  addic7ed: Addic7edSettings;
+  legendasdivx: LegandasdivxSettings;
+  legendastv: LegendastvSettings;
+  xsubs: XSubsSettings;
+  assrt: AssrtSettings;
+  napisy24: Napisy24Settings;
+  subscene: SubsceneSettings;
+  betaseries: BetaseriesSettings;
+  titlovi: titloviSettings;
 }
 
 // Basic
@@ -91,14 +105,12 @@ interface AnalyticSettings {
 // Sonarr / Radarr
 type FullUpdateOptions = "Manually" | "Daily" | "Weekly";
 
-type SeriesType = "Standard" | "Anime" | "Daily";
-
 interface SonarrSettings {
   ip: string;
   port: number;
   base_url?: string;
   ssl: boolean;
-  apikey: string;
+  apikey?: string;
   full_update: FullUpdateOptions;
   full_update_day: number;
   full_update_hour: number;
@@ -106,7 +118,7 @@ interface SonarrSettings {
   series_sync: number;
   episodes_sync: number;
   excluded_tags: string[];
-  excluded_series_types: SeriesType[];
+  excluded_series_types: SonarrSeriesType[];
 }
 
 interface RadarrSettings {
@@ -114,7 +126,7 @@ interface RadarrSettings {
   port: number;
   base_url?: string;
   ssl: boolean;
-  apikey: string;
+  apikey?: string;
   full_update: FullUpdateOptions;
   full_update_day: number;
   full_update_hour: number;
@@ -123,4 +135,50 @@ interface RadarrSettings {
   excluded_tags: string[];
 }
 
+interface AnticaptchaSettings {
+  anti_captcha_key?: string;
+}
+
+interface DeathByCaptcheSettings {
+  username?: string;
+  password?: string;
+}
+
 // Providers
+
+interface BasicProviderSettings {
+  username?: string;
+  password?: string;
+}
+
+interface OpenSubtitlesSettings extends BasicProviderSettings {
+  use_tag_search: boolean;
+  vip: boolean;
+  ssl: boolean;
+  timeout: number;
+  skip_wrong_fps: boolean;
+}
+
+interface Addic7edSettings extends BasicProviderSettings {}
+
+interface LegandasdivxSettings extends BasicProviderSettings {
+  skip_wrong_fps: boolean;
+}
+
+interface LegendastvSettings extends BasicProviderSettings {}
+
+interface XSubsSettings extends BasicProviderSettings {}
+
+interface Napisy24Settings extends BasicProviderSettings {}
+
+interface SubsceneSettings extends BasicProviderSettings {}
+
+interface titloviSettings extends BasicProviderSettings {}
+
+interface BetaseriesSettings {
+  token?: string;
+}
+
+interface AssrtSettings {
+  token?: string;
+}

@@ -10,6 +10,7 @@ import Radarr from "./Radarr";
 import Languages from "./Languages";
 import Subtitles from "./Subtitles";
 import Schedular from "./Schedular";
+import Providers from "./Providers";
 
 interface Props {
   update: () => void;
@@ -36,6 +37,9 @@ const Router: FunctionComponent<Props> = ({ update }) => {
       </Route>
       <Route exact path="/settings/schedular">
         <Schedular></Schedular>
+      </Route>
+      <Route exact path="/settings/providers">
+        <Providers></Providers>
       </Route>
     </Switch>
   );

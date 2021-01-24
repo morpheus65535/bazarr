@@ -30,7 +30,7 @@ function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
     address: settings.sonarr.ip,
     port: settings.sonarr.port.toString(),
     url: settings.sonarr.base_url ?? "/",
-    apikey: settings.sonarr.apikey,
+    apikey: settings.sonarr.apikey ?? "",
     ssl: settings.sonarr.ssl,
   };
 
@@ -59,7 +59,7 @@ function buildUrl(settings: SystemSettings, change: LooseObject): TestUrl {
 
 const SettingsSonarrView: FunctionComponent<Props> = () => (
   <SettingTemplate title="Sonarr - Bazarr (Settings)">
-    {(settings, update, change) => (
+    {(settings, update, changed) => (
       <Container>
         <CollapseBox
           defaultOpen={settings.general.use_sonarr}
@@ -113,7 +113,7 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
               ></Check>
             </Input>
             <Input>
-              <TestUrlButton url={buildUrl(settings, change)}></TestUrlButton>
+              <TestUrlButton url={buildUrl(settings, changed)}></TestUrlButton>
             </Input>
           </Group>
           <Group header="Options">

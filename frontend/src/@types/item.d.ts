@@ -1,3 +1,7 @@
+interface Badge {
+  value: number;
+}
+
 interface Language {
   code2: string;
   name: string;

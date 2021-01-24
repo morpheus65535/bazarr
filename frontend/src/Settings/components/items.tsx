@@ -65,10 +65,12 @@ export const Text: FunctionComponent<TextProps> = ({
 
 export interface CheckProps extends BasicInput<boolean> {
   label?: string;
+  inline?: boolean;
 }
 
 export const Check: FunctionComponent<CheckProps> = ({
   label,
+  inline,
   disabled,
   defaultValue,
   onChange,
@@ -76,6 +78,7 @@ export const Check: FunctionComponent<CheckProps> = ({
   return (
     <Form.Check
       type="checkbox"
+      inline={inline}
       label={label}
       onChange={(e) => {
         onChange && onChange(e.currentTarget.checked);

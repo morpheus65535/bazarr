@@ -11,4 +11,8 @@ type Pair = {
   value: string;
 };
 
+interface DataWrapper<T> {
+  data: T;
+}
+
 type PromiseType<T> = T extends Promise<infer D> ? D : T;

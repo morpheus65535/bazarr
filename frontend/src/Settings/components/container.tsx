@@ -3,11 +3,16 @@ import { Col, Form, Row, Collapse } from "react-bootstrap";
 
 interface GroupProps {
   header: string;
+  hidden?: boolean;
 }
 
-export const Group: FunctionComponent<GroupProps> = ({ header, children }) => {
+export const Group: FunctionComponent<GroupProps> = ({
+  header,
+  hidden,
+  children,
+}) => {
   return (
-    <Row className="flex-column mt-3">
+    <Row hidden={hidden} className="flex-column mt-3">
       <Col>
         <h4>{header}</h4>
         <hr></hr>
@@ -58,7 +63,7 @@ export const CollapseBox: FunctionComponent<CollapseBoxProps> = ({
   return (
     <React.Fragment>
       {control(setOpen)}
-      <Collapse in={open}>
+      <Collapse in={open} className="my-2">
         <div className={cls.join(" ")}>{children}</div>
       </Collapse>
     </React.Fragment>

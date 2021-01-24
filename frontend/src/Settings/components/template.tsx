@@ -16,13 +16,21 @@ import { SystemApi } from "../../apis";
 
 import { UpdateAfterSettings } from "../../@redux/actions";
 
+export type UpdateFunctionType = (v: any, k?: string) => void;
+
+export const ChangeContext = React.createContext<LooseObject>({});
+
+export const UpdateContext = React.createContext<UpdateFunctionType>(
+  (v: any, k?: string) => {}
+);
+
 interface Props {
   title: string;
   settings: AsyncState<SystemSettings | undefined>;
   update: () => void;
   children: (
     settings: SystemSettings,
-    update: (v: any, k?: string) => void,
+    update: UpdateFunctionType,
     change: LooseObject
   ) => JSX.Element;
 }
@@ -40,7 +48,7 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
 
   const [updating, setUpdating] = useState(false);
 
-  const updateChange = useCallback(
+  const updateChange = useCallback<UpdateFunctionType>(
     (v: any, k?: string) => {
       if (k) {
         willChange[k] = v;
@@ -84,7 +92,11 @@ const SettingsSubtitlesView: FunctionComponent<Props> = (props) => {
               Save
             </ContentHeaderButton>
           </ContentHeader>
-          <Row className="p-4">{children(item, updateChange, willChange)}</Row>
+          <UpdateContext.Provider value={updateChange}>
+            <Row className="p-4">
+              {children(item, updateChange, willChange)}
+            </Row>
+          </UpdateContext.Provider>
         </Container>
       )}
     </AsyncStateOverlay>
