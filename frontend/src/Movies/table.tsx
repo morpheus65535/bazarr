@@ -45,8 +45,11 @@ const Table: FunctionComponent<Props> = (props) => {
   const [item, setItem] = useState<Movie | undefined>(undefined);
 
   const getProfile = useCallback(
-    (id: number) => {
-      return profiles.find((v) => v.profileId === id);
+    (id?: number) => {
+      if (id) {
+        return profiles.find((v) => v.profileId === id);
+      }
+      return undefined;
     },
     [profiles]
   );

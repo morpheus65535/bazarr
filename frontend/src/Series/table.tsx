@@ -43,8 +43,11 @@ const Table: FunctionComponent<Props> = (props) => {
   const [item, setItem] = useState<Series | undefined>(undefined);
 
   const getProfile = useCallback(
-    (id: number) => {
-      return profiles.find((v) => v.profileId === id);
+    (id?: number) => {
+      if (id) {
+        return profiles.find((v) => v.profileId === id);
+      }
+      return null;
     },
     [profiles]
   );

@@ -34,7 +34,7 @@ interface BasicItem {
 
 // Temp Name
 interface ExtendItem extends BasicItem {
-  profileId: number;
+  profileId?: number;
   fanart: string;
   overview: string;
   imdbId: string;

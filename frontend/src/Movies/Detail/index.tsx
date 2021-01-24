@@ -141,9 +141,6 @@ const MovieDetailView: FunctionComponent<Props> = ({
   );
 
   if (item) {
-    // TODO: Add audio info
-    const details = [item.mapped_path, item.tags];
-
     return (
       <Container fluid>
         <Helmet>
@@ -151,7 +148,7 @@ const MovieDetailView: FunctionComponent<Props> = ({
         </Helmet>
         {header}
         <Row>
-          <ItemOverview item={item} details={details}></ItemOverview>
+          <ItemOverview item={item} details={[]}></ItemOverview>
         </Row>
         <Row>
           <Table movie={item}></Table>

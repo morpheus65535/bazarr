@@ -5,6 +5,8 @@ import { Helmet } from "react-helmet";
 
 import { Container, Row } from "react-bootstrap";
 
+import { faHdd, faAdjust } from "@fortawesome/free-solid-svg-icons";
+
 import {
   faSync,
   faSearch,
@@ -53,6 +55,20 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
     list,
     id,
   ]);
+
+  const details = useMemo(
+    () => [
+      {
+        icon: faHdd,
+        text: `${item?.episodeFileCount} files`,
+      },
+      {
+        icon: faAdjust,
+        text: item?.seriesType ?? "",
+      },
+    ],
+    [item]
+  );
 
   const [modal, setModal] = useState("");
   const [scan, setScan] = useState(false);
@@ -108,15 +124,6 @@ const SeriesEpisodesView: FunctionComponent<Props> = (props) => {
   );
 
   if (item) {
-    const details = [
-      // TODO
-      // item.audio_language.name,
-      item.mapped_path,
-      `${item.episodeFileCount} files`,
-      item.seriesType,
-      item.tags,
-    ];
-
     return (
       <Container fluid>
         <Helmet>
