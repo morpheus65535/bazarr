@@ -32,13 +32,19 @@ export const TestUrlButton: FunctionComponent<TestUrlButtonProps> = ({
   function buildRequest(
     props: TestUrl
   ): { protocol: string; url: string; params: LooseObject } {
-    return {
+    const request = {
       protocol: props.ssl ? "https" : "http",
       url: `${props.address}:${props.port}${props.url}`,
       params: {
         apikey: props.apikey,
       },
     };
+
+    if (!request.url.endsWith("/")) {
+      request.url += "/";
+    }
+
+    return request;
   }
 
   const [title, setTitle] = useState("Test");

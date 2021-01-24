@@ -88,8 +88,8 @@ const SettingsRadarrView: FunctionComponent<Props> = () => (
             <Input name="Base URL">
               <Text
                 prefix="/"
-                defaultValue={settings.radarr.base_url}
-                onChange={(v) => update(v, "settings-radarr-base_url")}
+                defaultValue={settings.radarr.base_url?.slice(1)}
+                onChange={(v) => update("/" + v, "settings-radarr-base_url")}
               ></Text>
             </Input>
             <Input name="API Key">

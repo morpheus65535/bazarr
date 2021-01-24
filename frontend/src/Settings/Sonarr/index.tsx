@@ -95,8 +95,8 @@ const SettingsSonarrView: FunctionComponent<Props> = () => (
             <Input name="Base URL">
               <Text
                 prefix="/"
-                defaultValue={settings.sonarr.base_url}
-                onChange={(v) => update(v, "settings-sonarr-base_url")}
+                defaultValue={settings.sonarr.base_url?.slice(1)}
+                onChange={(v) => update("/" + v, "settings-sonarr-base_url")}
               ></Text>
             </Input>
             <Input name="API Key">

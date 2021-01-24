@@ -221,7 +221,11 @@ def proxy(protocol, url):
         return dict(status=False, error=repr(e))
     else:
         if result.status_code == 200:
-            return dict(status=True, version=result.json()['version'])
+            try:
+                version = result.json()['version']
+                return dict(status=True, version=version)
+            except Exception:
+                return dict(status=False, error='Error Occured. Check your settings.')
         elif result.status_code == 401:
             return dict(status=False, error='Access Denied. Check API key.')
         elif 300 <= result.status_code <= 399:
